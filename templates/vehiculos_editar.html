@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="sedes-section" style="max-width:900px;margin:auto">
+  <h2 style="margin-top:0">
+    Editar vehículo {{ v.codigo_interno }} — {{ v.patente }}
+  </h2>
+
+  <form method="POST" class="veh-form">
+
+    <!-- ========= DATOS BASE ========= -->
+    <div class="veh-form-grid">
+
+      <label>Patente
+        <input name="patente" value="{{ v.patente }}" readonly>
+      </label>
+
+      <label>Código interno (G-01 / N-01)
+        <input name="codigo_interno" required value="{{ v.codigo_interno or '' }}">
+      </label>
+
+      <label>Tipo
+        <select name="tipo" required>
+          <option value="G" {% if v.tipo=="G" %}selected{% endif %}>G (Gasoil)</option>
+          <option value="N" {% if v.tipo=="N" %}selected{% endif %}>N (Nafta)</option>
+        </select>
+      </label>
+
+      <label>Modelo
+        <input name="modelo" value="{{ v.modelo or '' }}">
+      </label>
+
+      <label>Combustible
+        <select name="combustible" required>
+          <option value="gasoil" {% if v.combustible=="gasoil" %}selected{% endif %}>Gasoil</option>
+          <option value="nafta" {% if v.combustible=="nafta" %}selected{% endif %}>Nafta</option>
+        </select>
+      </label>
+
+      <label>Base ciudad
+        <input name="base_ciudad" value="{{ v.base_ciudad or 'San Salvador de Jujuy' }}">
+      </label>
+
+      <label>Color tag
+        <input type="color" name="color_tag" value="{{ v.color_tag or '#5B5BEA' }}">
+      </label>
+
+    </div>
+
+    <hr style="margin:14px 0;border-color:var(--line)">
+
+    <!-- ========= SERVICE / LAVADO / SEGURO / RTV ========= -->
+    <h3 style="margin:0 0 8px 0">Service / Lavado / Seguro / RTV</h3>
+
+    <div class="veh-form-grid">
+
+      <label>Último service
+        <input type="date" name="ultimo_service" value="{{ v.ultimo_service or '' }}">
+      </label>
+
+      <label>Próximo service
+        <input type="date" name="proximo_service" value="{{ v.proximo_service or '' }}">
+      </label>
+
+      <label>Último lavado
+        <input type="date" name="ultimo_lavado" value="{{ v.ultimo_lavado or '' }}">
+      </label>
+
+      <label>Próximo lavado
+        <input type="date" name="proximo_lavado" value="{{ v.proximo_lavado or '' }}">
+      </label>
+
+      <label>Seguro inicio
+        <input type="date" name="seguro_inicio" value="{{ v.seguro_inicio or '' }}">
+      </label>
+
+      <label>Seguro vence
+        <input type="date" name="seguro_vencimiento" value="{{ v.seguro_vencimiento or '' }}">
+      </label>
+
+      <label>RTV inicio
+        <input type="date" name="rtv_inicio" value="{{ v.rtv_inicio or '' }}">
+      </label>
+
+      <label>RTV vence
+        <input type="date" name="rtv_vencimiento" value="{{ v.rtv_vencimiento or '' }}">
+      </label>
+
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn primary" type="submit">Guardar</button>
+      <a class="btn outline" href="{{ url_for('vehiculos_control_diario') }}">Cancelar</a>
+    </div>
+
+  </form>
+</section>
+
+<style>
+  .veh-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  .veh-form-grid label {
+    font-size: 12px;
+    color: #64748b;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .veh-form-grid input,
+  .veh-form-grid select {
+    font-size: 13px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+  }
+</style>
+
+{% endblock %}

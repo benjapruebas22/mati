@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  :root{
+    --card:#fff; --border:#e5e7eb; --muted:#64748b; --shadow:0 10px 22px rgba(15,23,42,.06);
+    --radius:16px; --primary:#1d4ed8;
+  }
+  .wrap{display:flex;flex-direction:column;gap:14px;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);}
+  .head{padding:14px 16px;display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}
+  .title{margin:0;font-size:18px;font-weight:900;}
+  .sub{margin:4px 0 0;font-size:12px;color:var(--muted);}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;padding:8px 12px;border-radius:999px;
+       border:1px solid var(--border);background:#fff;color:#111827;font-size:12px;text-decoration:none;}
+  .btn.primary{background:var(--primary);border-color:var(--primary);color:#fff;}
+
+  .kpis{padding:0 16px 14px;display:grid;gap:10px;grid-template-columns:repeat(6,minmax(140px,1fr));}
+  .kpi{border:1px solid var(--border);border-radius:14px;padding:10px 12px;display:flex;justify-content:space-between;gap:10px;}
+  .kpi .l{font-size:11px;color:var(--muted);}
+  .kpi .v{font-size:16px;font-weight:900;margin-top:4px;}
+  .kpi .tag{font-size:10px;border:1px solid var(--border);padding:3px 8px;border-radius:999px;color:var(--muted);
+            background:#f8fafc;white-space:nowrap;}
+
+  .table-wrap{overflow:auto;border-top:1px solid var(--border);}
+  table{width:100%;border-collapse:collapse;font-size:12px;background:#fff;}
+  thead{background:#f3f4f6;}
+  th,td{padding:8px;border-bottom:1px solid var(--border);text-align:left;}
+  th.num, td.num{text-align:right;}
+  @media (max-width:1100px){.kpis{grid-template-columns:repeat(2,1fr);}}
+</style>
+
+<div class="wrap">
+  <div class="card">
+    <div class="head">
+      <div>
+        <h1 class="title">Resumen general · todas las sedes</h1>
+        <div class="sub">Solo cantidades por sede (una fila por sede).</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+        <a class="btn" href="{{ url_for('dashboard') }}">⬅ Volver</a>
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div><div class="l">👥 Personal (total)</div><div class="v">{{ tot.personal }}</div></div><div class="tag">Personal</div></div>
+      <div class="kpi"><div><div class="l">❄️ Aires (total)</div><div class="v">{{ tot.aires }}</div></div><div class="tag">Aires</div></div>
+      <div class="kpi"><div><div class="l">🪑 Mobiliario (total)</div><div class="v">{{ tot.mobiliario_total }}</div></div><div class="tag">Inventario</div></div>
+      <div class="kpi"><div><div class="l">💡 Luminarias (total)</div><div class="v">{{ tot.luminarias_total }}</div></div><div class="tag">Iluminación</div></div>
+      <div class="kpi"><div><div class="l">🧯 Matafuegos (total)</div><div class="v">{{ tot.matafuegos_total }}</div></div><div class="tag">Seguridad</div></div>
+      <div class="kpi"><div><div class="l">⏳ Vencen 45d (total)</div><div class="v">{{ tot.matafuegos_vencen_45d }}</div></div><div class="tag">Seguridad</div></div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:80px;">Código</th>
+            <th>Nombre</th>
+            <th>Ciudad</th>
+            <th>Fuero</th>
+            <th class="num">👥 Personal</th>
+            <th class="num">❄️ Aires</th>
+            <th class="num">🪑 Mobiliario</th>
+            <th class="num">💡 Luminarias</th>
+            <th class="num">🧯 Matafuegos</th>
+            <th class="num">⏳ Vencen 45d</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          <tr>
+            <td style="font-weight:900;">{{ r.codigo }}</td>
+            <td>{{ r.nombre }}</td>
+            <td>{{ r.ciudad or "" }}</td>
+            <td>{{ (r.fuero or "")|replace("_"," ")|capitalize }}</td>
+            <td class="num">{{ r.personal }}</td>
+            <td class="num">{{ r.aires }}</td>
+            <td class="num">{{ r.mobiliario_total }}</td>
+            <td class="num">{{ r.luminarias_total }}</td>
+            <td class="num">{{ r.matafuegos_total }}</td>
+            <td class="num">{{ r.matafuegos_vencen_45d }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

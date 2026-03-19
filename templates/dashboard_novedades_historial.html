@@ -1,0 +1,256 @@
+{% block content %}
+<style>
+  .nh-shell {
+    background: linear-gradient(180deg, #f8fafd 0%, #f3f7fc 100%);
+    border: 1px solid #dfe6f1;
+    border-radius: 18px;
+    box-shadow: 0 8px 20px rgba(24, 39, 63, 0.06);
+    padding: 10px;
+    display: grid;
+    gap: 8px;
+    color: #1f2f44;
+  }
+  .nh-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .nh-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 900;
+    color: #2f4f77;
+  }
+  .nh-link {
+    border: 1px solid #d3deee;
+    background: #fff;
+    color: #4f6789;
+    border-radius: 999px;
+    padding: 4px 9px;
+    font-size: 11px;
+    font-weight: 800;
+    text-decoration: none;
+  }
+  .card {
+    background: #fff;
+    border: 1px solid #dfe6f1;
+    border-radius: 14px;
+    box-shadow: 0 8px 20px rgba(24, 39, 63, 0.06);
+    padding: 10px;
+  }
+  .filters {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .filters input,
+  .filters select,
+  .filters button {
+    border: 1px solid #d2e0f5;
+    border-radius: 8px;
+    background: #fff;
+    color: #2b415f;
+    font-size: 12px;
+    padding: 4px 7px;
+    min-height: 30px;
+  }
+  .filters button {
+    font-weight: 800;
+    background: #eef4ff;
+    cursor: pointer;
+  }
+  .table-wrap {
+    overflow: auto;
+    border: 1px solid #e4ebf6;
+    border-radius: 12px;
+    background: #fff;
+    max-height: 650px;
+  }
+  .tbl {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    min-width: 1100px;
+  }
+  .tbl th, .tbl td {
+    padding: 6px 8px;
+    border-bottom: 1px solid #edf2f9;
+    text-align: left;
+    white-space: nowrap;
+  }
+  .tbl th {
+    background: #f4f8ff;
+    color: #4c6282;
+    font-weight: 800;
+  }
+  .st-tag {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    padding: 1px 6px;
+    font-size: 10px;
+    font-weight: 800;
+  }
+  .st-tag.st-ok { background: #edf8f2; color: #3c7c5f; border-color: #d4e9dd; }
+  .st-tag.st-warn { background: #fff8ef; color: #896b3c; border-color: #f0e2c9; }
+  .st-tag.st-alert { background: #fff4f7; color: #8f5765; border-color: #efd9df; }
+  .st-tag.st-info { background: #edf3ff; color: #47699a; border-color: #d4e1f5; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display:inline-block; margin-right:5px; }
+  .dot.urg { background:#d28698; }
+  .dot.ok { background:#7aa1d8; }
+  .muted { color: #8ca0bc; }
+  @media (max-width: 1100px) {
+    .filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+</style>
+
+<section class="nh-shell">
+  <header class="nh-head">
+    <h2 class="nh-title">Historial de novedades y solicitudes</h2>
+    <a class="nh-link" href="{{ url_for('dashboard_exec') }}">Volver al panel</a>
+  </header>
+
+  <article class="card">
+    <div class="filters">
+      <input id="fDesde" type="date" title="Desde">
+      <input id="fHasta" type="date" title="Hasta">
+      <select id="fTipo">
+        <option value="todos">Tipo: todos</option>
+        <option value="materiales">Materiales</option>
+        <option value="licencias">Licencias</option>
+        <option value="horario_especial">Horario especial</option>
+        <option value="salon">Salon</option>
+        <option value="novedad">Novedad</option>
+        <option value="obra">Obra</option>
+        <option value="defensora">Defensora</option>
+        <option value="otros">Otros</option>
+      </select>
+      <select id="fEstado">
+        <option value="todos">Estado: todos</option>
+        <option value="pendiente">Pendiente</option>
+        <option value="pedido">En compras</option>
+        <option value="cargado">Cargado</option>
+        <option value="autorizado">Autorizado</option>
+        <option value="armado">Armado</option>
+        <option value="resuelto">Resuelto</option>
+        <option value="cerrado">Cerrado</option>
+        <option value="nuevo">Nuevo</option>
+      </select>
+      <input id="fResp" type="text" placeholder="Responsable">
+      <button type="button" id="btnBuscar">Buscar</button>
+    </div>
+
+    <div class="table-wrap">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Fecha</th>
+            <th>Tipo</th>
+            <th>Estado</th>
+            <th>Responsable</th>
+            <th>Texto / detalle</th>
+            <th>Urgente</th>
+            <th>Creado</th>
+          </tr>
+        </thead>
+        <tbody id="histBody">
+          <tr><td colspan="8" class="muted">Sin datos.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </article>
+</section>
+
+<script>
+  (function () {
+    function stClass(raw) {
+      var s = String(raw || "").toLowerCase();
+      if (s.indexOf("cerr") >= 0 || s.indexOf("resuel") >= 0 || s.indexOf("entreg") >= 0) return "st-ok";
+      if (s.indexOf("compra") >= 0 || s.indexOf("pedido") >= 0 || s.indexOf("autoriz") >= 0 || s.indexOf("carg") >= 0 || s.indexOf("armad") >= 0) return "st-warn";
+      if (s.indexOf("pend") >= 0 || s.indexOf("nuevo") >= 0) return "st-alert";
+      return "st-info";
+    }
+    function fmtDate(v) {
+      var s = String(v || "");
+      var m = s.match(/(\d{4})-(\d{2})-(\d{2})(?:\s*(\d{2}:\d{2}))?/);
+      if (!m) return s || "-";
+      return m[3] + "/" + m[2] + "/" + m[1] + (m[4] ? (" " + m[4]) : "");
+    }
+    function esc(v) {
+      return String(v || "").replace(/[&<>\"]/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] || c;
+      });
+    }
+
+    function render(items) {
+      var tb = document.getElementById("histBody");
+      if (!tb) return;
+      var rows = Array.isArray(items) ? items : [];
+      if (!rows.length) {
+        tb.innerHTML = '<tr><td colspan="8" class="muted">Sin datos.</td></tr>';
+        return;
+      }
+      tb.innerHTML = rows.map(function (r) {
+        var e = String(r.estado || "").toLowerCase();
+        var eLabel = (e === "pedido") ? "en compras" : (r.estado || "-");
+        return '<tr>' +
+          '<td>' + Number(r.id || 0) + '</td>' +
+          '<td>' + fmtDate(r.fecha) + '</td>' +
+          '<td>' + esc(r.tipo || '-') + '</td>' +
+          '<td><span class="st-tag ' + stClass(r.estado) + '">' + esc(eLabel) + '</span></td>' +
+          '<td>' + esc(r.responsable || '-') + '</td>' +
+          '<td>' + esc(r.texto || '-') + '</td>' +
+          '<td>' + (Number(r.urgente || 0) === 1 ? '<span class="dot urg"></span>Si' : '<span class="dot ok"></span>No') + '</td>' +
+          '<td>' + fmtDate(r.creado_en) + '</td>' +
+        '</tr>';
+      }).join('');
+    }
+
+    function load() {
+      var desde = String((document.getElementById("fDesde") || {}).value || "").trim();
+      var hasta = String((document.getElementById("fHasta") || {}).value || "").trim();
+      var tipo = String((document.getElementById("fTipo") || {}).value || "todos").trim();
+      var estado = String((document.getElementById("fEstado") || {}).value || "todos").trim();
+      var responsable = String((document.getElementById("fResp") || {}).value || "").trim();
+
+      var q = [
+        'desde=' + encodeURIComponent(desde),
+        'hasta=' + encodeURIComponent(hasta),
+        'tipo=' + encodeURIComponent(tipo),
+        'estado=' + encodeURIComponent(estado),
+        'responsable=' + encodeURIComponent(responsable)
+      ].join('&');
+
+      fetch('/api/dashboard/novedades_obra_historial_full?' + q)
+        .then(function (r) { return r.json().then(function (x) { return { ok: r.ok, b: x || {} }; }); })
+        .then(function (res) {
+          if (!res.ok || !res.b || !res.b.ok) throw new Error((res.b && res.b.error) || 'No se pudo cargar historial');
+          render(res.b.items || []);
+        })
+        .catch(function () {
+          render([]);
+        });
+    }
+
+    var b = document.getElementById('btnBuscar');
+    if (b) b.addEventListener('click', load);
+
+    var now = new Date();
+    var y = now.getFullYear();
+    var m = String(now.getMonth() + 1).padStart(2, '0');
+    var d = String(now.getDate()).padStart(2, '0');
+    var hoy = y + '-' + m + '-' + d;
+    var ini = y + '-' + m + '-01';
+    var fd = document.getElementById('fDesde');
+    var fh = document.getElementById('fHasta');
+    if (fd && !fd.value) fd.value = ini;
+    if (fh && !fh.value) fh.value = hoy;
+
+    load();
+  })();
+</script>
+{% endblock %}

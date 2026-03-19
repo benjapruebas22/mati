@@ -1,0 +1,509 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ title or "MPD Intendencia" }}</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  <style>
+    :root {
+      --bg: #0b1220;
+      --card: #0f172a;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --border: #243042;
+      --hover: rgba(148, 163, 184, .12);
+      --shadow: 0 12px 25px rgba(0, 0, 0, .35);
+    }
+
+    html[data-theme="light"] {
+      --bg: #f4f6fb;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --hover: rgba(15, 23, 42, .06);
+      --shadow: 0 12px 25px rgba(15, 23, 42, .18);
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    .container {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 14px 16px;
+    }
+
+    /* Solo para pÃ¡ginas que pidan mÃ¡s ancho (ej: dashboard) */
+    .container-wide {
+      max-width: 1600px;
+      /* mÃ¡s ancho, menos mÃ¡rgenes laterales */
+      width: calc(100vw - 24px);
+      /* aprovecha casi toda la pantalla */
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 12px;
+      border-bottom: 1px solid var(--border);
+      background:
+        linear-gradient(180deg, #f7f9ff 0%, #eef4fb 100%);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      box-shadow: 0 6px 18px rgba(88, 116, 160, .10);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+    .brand-title {
+      display: inline-block;
+      max-width: 460px;
+      font-size: 15px;
+      font-weight: 800;
+      color: #446286;
+      letter-spacing: .02em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .top-sep {
+      width: 3px;
+      height: 28px;
+      background: #4D4D4D;
+      border-radius: 999px;
+      margin: 0 10px;
+      flex: 0 0 auto;
+    }
+    .brand:empty + .top-sep { display: none; }
+
+
+    /* NAV: no agranda topbar. Si no entra â scroll horizontal */
+    .main-nav {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      overflow-y: hidden;
+      white-space: nowrap;
+      scrollbar-width: thin;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .nav-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      border: 1px solid #d9e3ef;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .82);
+      box-shadow: 0 3px 10px rgba(89, 116, 157, .07);
+      flex: 0 0 auto;
+    }
+
+    .nav-group.nav-primary {
+      border-color: #c7d8ef;
+      background: linear-gradient(180deg, #fbfdff 0%, #edf5ff 100%);
+      box-shadow: 0 3px 10px rgba(101, 191, 244, .10);
+    }
+
+    .nav-group.nav-secondary {
+      border-color: #e0daf7;
+      background: linear-gradient(180deg, #fefeff 0%, #f6f3ff 100%);
+      box-shadow: 0 3px 10px rgba(102, 102, 204, .08);
+    }
+
+    .nav-group-label {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: #64748b;
+      padding: 0 4px 0 2px;
+      white-space: nowrap;
+    }
+
+    .nav-primary .nav-group-label {
+      color: #40648e;
+    }
+
+    .nav-secondary .nav-group-label {
+      color: #60558b;
+    }
+
+    .nav-divider {
+      width: 1px;
+      height: 20px;
+      background: linear-gradient(180deg, #dbe7f4 0%, #d8d1ef 100%);
+      border-radius: 999px;
+      flex: 0 0 auto;
+      margin: 0 4px;
+    }
+
+    .main-nav::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    .main-nav::-webkit-scrollbar-thumb {
+      background: color-mix(in srgb, var(--border) 75%, transparent);
+      border-radius: 999px;
+    }
+
+    .btn.btn-mpd,
+    .nav-trigger {
+      border-radius: 999px;
+      padding: 6px 11px;
+      border: 1px solid #d5dfed;
+      background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+      color: #44556d;
+      font-size: 12px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      line-height: 1;
+      flex: 0 0 auto;
+      box-shadow: 0 2px 6px rgba(89, 116, 157, .08);
+    }
+
+    .btn.btn-mpd:hover,
+    .nav-trigger:hover {
+      background: linear-gradient(180deg, #ffffff 0%, #eef5ff 100%);
+      border-color: #c2d3ea;
+    }
+
+    .btn.btn-mpd.btn-sst {
+      background: linear-gradient(180deg, #f8fbff 0%, #edf4ff 100%);
+      border-color: #c7d8ef;
+      color: #4D4D4D;
+      font-weight: 900;
+      letter-spacing: 0.4px;
+      padding: 8px 16px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(89, 116, 157, .10);
+      border-width: 1px;
+      position: relative;
+      gap: 6px;
+    }
+
+    .btn.btn-mpd.btn-sst:hover {
+      background: linear-gradient(180deg, #f4f9ff 0%, #e8f1ff 100%);
+      border-color: #b5cbe7;
+    }
+
+    .btn.btn-mpd.btn-sgi {
+      background: linear-gradient(180deg, #fbfdff 0%, #eef5ff 100%);
+      border-color: #c7d8ef;
+      color: #2f4f77;
+      font-weight: 900;
+      letter-spacing: 0.4px;
+      padding: 8px 14px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(89, 116, 157, .10);
+    }
+
+    .btn.btn-mpd.btn-sgi:hover {
+      background: linear-gradient(180deg, #f6fbff 0%, #e9f2ff 100%);
+      border-color: #b7cfe9;
+    }
+    .btn-sgi .sgi-s { color: #2f7a55; font-weight: 900; }
+    .btn-sgi .sgi-g { color: #3f6f9c; font-weight: 900; }
+    .btn-sgi .sgi-i { color: #6b5aa6; font-weight: 900; }
+
+    .btn-sst .sg-text {
+      color: #111827;
+      font-weight: 900;
+    }
+
+    .btn-sst .dash {
+      color: #111827;
+      font-weight: 900;
+    }
+
+    .btn-sst .sst-celeste { color: #65BFF4; }
+    .btn-sst .sst-violeta { color: #6666cc; }
+    .btn-sst .sst-rosa { color: #F14B94; }
+
+    .nav-dropdown {
+      position: relative;
+      display: inline-block;
+      flex: 0 0 auto;
+    }
+
+    .btn-area-menores {
+      background: color-mix(in srgb, #ffffff 70%, #65BFF4 30%);
+      border-color: #65BFF4;
+    }
+
+    .btn-area-social {
+      background: color-mix(in srgb, #ffffff 70%, #F14B94 30%);
+      border-color: #F14B94;
+    }
+
+    .btn-area-penal {
+      background: color-mix(in srgb, #ffffff 70%, #6666cc 30%);
+      border-color: #6666cc;
+    }
+
+    .btn-area-admin {
+      background: color-mix(in srgb, #ffffff 70%, #f58a5e 30%);
+      border-color: #f58a5e;
+    }
+
+    .btn-area-viajes {
+      background: #eef4ff;
+      border-color: #c9daf9;
+      color: #3f5f8b;
+    }
+
+    .btn-area-obras {
+      background: #fff3e8;
+      border-color: #f2d9bb;
+      color: #835d2f;
+    }
+
+    .btn-area-auditoria {
+      background: #f3efff;
+      border-color: #dcd0ff;
+      color: #3b2f6b;
+    }
+
+    .btn-area-inicio {
+      background: #f4f7fb;
+      border-color: #dbe3ee;
+    }
+
+    .btn-area-sedes {
+      background: #eaf6ff;
+      border-color: #c8e3f7;
+      color: #3b6288;
+    }
+
+    .btn-area-mapa {
+      background: #ffeef5;
+      border-color: #f2c9da;
+      color: #7a3e57;
+    }
+
+    .btn-area-personal {
+      background: #f2efff;
+      border-color: #ddd5fa;
+      color: #504179;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: 0 0 auto;
+    }
+
+    .datebox {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .pill {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .btn.ghost {
+      border-radius: 999px;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      background: #f4f7fb;
+      color: #334a67;
+      font-size: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .btn.ghost:hover {
+      background: #ecf2fa;
+    }
+
+    @media (max-width: 980px) {
+      .topbar {
+        flex-wrap: wrap;
+      }
+
+      .main-nav {
+        width: 100%;
+      }
+
+      .nav-group {
+        padding: 3px 6px;
+      }
+
+      .nav-group-label {
+        display: none;
+      }
+
+    .top-actions {
+      width: 100%;
+      justify-content: space-between;
+    }
+  }
+
+    .nav-dropdown{ position:relative; display:inline-flex; align-items:center; gap:6px; }
+  .nav-dd-caret{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:18px;
+    height:18px;
+    border:1px solid #d4deec;
+    border-radius:999px;
+    background:#fff;
+    color:#5f7898;
+    font-size:10px;
+    font-weight:900;
+    cursor:pointer;
+    user-select:none;
+    line-height:1;
+  }
+  .nav-dropdown .dropdown-menu{
+    display:none; position:absolute; top:100%; left:0; z-index:20;
+    background:#fff; border:1px solid #e5e7eb; border-radius:12px;
+    padding:6px; box-shadow:0 10px 24px rgba(15,23,42,.12); min-width:200px;
+  }
+  .nav-dropdown.nav-menu .dropdown-menu{ min-width:220px; }
+  .nav-dropdown .dropdown-menu a{
+    display:block; padding:8px 10px; border-radius:8px; text-decoration:none; color:#0f172a;
+  }
+  .nav-dropdown .dropdown-menu .dropdown-title{
+    margin: 4px 4px 2px;
+    padding: 4px 6px;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: #5f7898;
+  }
+  .nav-dropdown .dropdown-menu .dropdown-sep{
+    height:1px;
+    background:#e8eef7;
+    margin:4px 4px;
+    border-radius:999px;
+  }
+  .nav-dropdown .dropdown-menu a:hover{ background:#f8fafc; }
+  .nav-dropdown:hover .dropdown-menu{ display:block; }
+  .nav-dropdown.open .dropdown-menu{ display:block; }
+  </style>
+</head>
+
+<body>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-title">Sistema integrado de gestion de intendencia</span>
+    </div>
+
+    <div class="top-sep" aria-hidden="true"></div>
+
+    <nav class="main-nav">
+      <a class="btn btn-mpd btn-area-inicio" href="{{ url_for('dashboard') }}">Centro Operativo</a>
+
+      {% if can_access("sst") %}
+      <div class="nav-dropdown nav-menu">
+        <a class="btn btn-mpd btn-sst nav-dd-link" href="{{ url_for('sst_general') }}" title="Sistema de Gestion de Seguridad Salud en el Trabajo">
+          <span class="sg-text">SG</span><span class="dash">-</span>
+          <span class="sst-celeste">S</span><span class="sst-violeta">S</span><span class="sst-rosa">T</span>
+        </a>
+        <span class="nav-dd-caret" aria-hidden="true">v</span>
+        <div class="dropdown-menu">
+          <div class="dropdown-title">SST</div>
+          <a href="{{ url_for('sst_general') }}">Estado general</a>
+          <a href="{{ url_for('sst_ergonomia_gestion_riesgo') }}">Gestion de riesgos</a>
+          <a href="{{ url_for('sst_plan_gantt') }}">Cronograma SST</a>
+          <a href="{{ url_for('sst_cuadro_unico') }}">Sedes SST</a>
+
+          {% if can_access("obras") %}
+          <div class="dropdown-sep"></div>
+          <div class="dropdown-title">Control interno</div>
+          <a href="{{ url_for('materiales_home') }}">Materiales en stock</a>
+          <a href="{{ url_for('auditoria_mobiliario') }}">Mobiliario</a>
+          <a href="{{ url_for('auditoria_herramientas') }}">Herramientas</a>
+          <a href="{{ url_for('auditoria_operativa', rubro='vehiculos_estado') }}">Auditoria vehiculos (estado)</a>
+          <a href="{{ url_for('auditoria_operativa', rubro='vehiculos_documentacion') }}">Auditoria vehiculos (documentacion)</a>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="nav-dropdown nav-menu">
+        <a class="btn btn-mpd btn-sgi nav-dd-link" href="{{ url_for('sgi_home') }}">
+          <span class="sgi-s">S</span><span class="sgi-g">G</span><span class="sgi-i">I</span>
+        </a>
+        <span class="nav-dd-caret" aria-hidden="true">v</span>
+        <div class="dropdown-menu">
+          <div class="dropdown-title">Principal</div>
+          <a href="{{ url_for('sgi_home') }}">Inicio SGI</a>
+          <a href="{{ url_for('vehiculos_control_diario') }}">Vehiculos</a>
+          <a href="{{ url_for('obras_home') }}">Obras</a>
+          <a href="{{ url_for('sede_ficha', codigo='S01', home=1) }}">Sedes</a>
+          <div class="dropdown-sep"></div>
+          <div class="dropdown-title">Apoyo</div>
+          <a href="{{ url_for('mapa_ssj') }}">Mapa SSJ</a>
+          <a href="{{ url_for('personal_sede_home') }}">Personal</a>
+          <a href="{{ url_for('agentes_home') }}">Agentes</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="top-actions">
+      {% if current_user %}
+      <span class="pill">{{ current_user.full_name }}</span>
+      <a class="btn ghost" href="{{ url_for('password_change') }}">Cambiar clave</a>
+      <a class="btn ghost" href="{{ url_for('logout') }}">Salir</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <main class="container {% block main_class %}{% endblock %}">
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <script>
+    (function(){      const dropdowns = document.querySelectorAll(".nav-dropdown");      dropdowns.forEach(d => {        const caret = d.querySelector(".nav-dd-caret");        if (!caret) return;        caret.addEventListener("click", (e) => {          e.preventDefault();          dropdowns.forEach(x => { if (x !== d) x.classList.remove("open"); });          d.classList.toggle("open");        });      });      document.addEventListener("click", (e) => {        const inside = e.target.closest(".nav-dropdown");        if (!inside) dropdowns.forEach(d => d.classList.remove("open"));      });    })();
+  </script>
+
+  {% block scripts %}{% endblock %}
+</body>
+
+</html>
+
+
+
+
+
+
+

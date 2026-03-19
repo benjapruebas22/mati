@@ -1,0 +1,426 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  .personal-sede-main{
+    padding:16px 4px 18px;
+  }
+
+  .personal-sede-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+    margin-bottom:10px;
+  }
+  .personal-sede-header h1{
+    margin:0;
+    font-size:18px;
+  }
+  .personal-sede-header p{
+    margin:2px 0 0;
+    font-size:12px;
+  }
+
+  .personal-sede-grid{
+    display:grid;
+    grid-template-columns:minmax(520px,2.1fr) minmax(320px,1.4fr);
+    gap:14px;
+    align-items:flex-start;
+  }
+
+  .personal-card{
+    padding:12px 14px;
+  }
+
+  /* Filtros */
+  .filtros-row{
+    margin-top:8px;
+    margin-bottom:10px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:flex-end;
+  }
+  .filtro-group{
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+  }
+  .filtro-group label{
+    font-size:11px;
+    font-weight:600;
+    color:#6b7280;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+  }
+  .filtro-sede{
+    min-width:260px;
+    flex:1 1 260px;
+  }
+  .filtro-buscar{
+    flex:2 1 220px;
+  }
+
+  /* Tabla */
+  .tabla-wrapper{
+    max-height:430px;
+    overflow-y:auto;
+    border-radius:10px;
+    border:1px solid #e5e7eb;
+    background:#ffffff;
+  }
+  .tabla-personal{
+    width:100%;
+    border-collapse:collapse;
+    font-size:12px;
+  }
+  .tabla-personal thead{
+    background:#f3f4f6;
+  }
+  .tabla-personal th,
+  .tabla-personal td{
+    padding:6px 8px;
+    border-bottom:1px solid #e5e7eb;
+    text-align:left;
+  }
+  .tabla-personal th{
+    font-weight:600;
+    font-size:11.5px;
+    color:#374151;
+  }
+  .fila-personal:nth-child(even){
+    background:#fbfdff;
+  }
+  .fila-personal.highlight-row{
+    background:#eff6ff !important;
+  }
+
+  .tabla-sede-detalle{
+    font-size:11px;
+    color:#6b7280;
+  }
+
+  /* Plano / panel derecho */
+  .plano-card{
+    padding:12px 14px;
+  }
+  .plano-title{
+    margin:0 0 4px;
+    font-size:15px;
+    font-weight:600;
+  }
+  .plano-sub{
+    margin:0 0 10px;
+    font-size:11.5px;
+    color:#6b7280;
+  }
+
+  .plano-layout{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+
+  .plano-img-box{
+    border-radius:12px;
+    border:1px solid #e5e7eb;
+    background:#f9fafb;
+    padding:8px;
+  }
+  .plano-img-inner{
+    position:relative;
+    overflow:hidden;
+    border-radius:10px;
+    border:1px solid #e5e7eb;
+    background:#e5e7eb;
+  }
+  .plano-img-inner img{
+    display:block;
+    width:100%;
+    height:auto;
+  }
+
+  .plano-legend{
+    font-size:11.5px;
+    color:#4b5563;
+  }
+  .plano-legend ul{
+    margin:4px 0 0;
+    padding-left:16px;
+  }
+
+  /* Chips de locales */
+  .plano-chips{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-top:4px;
+  }
+  .plano-chip{
+    font-size:11px;
+    padding:3px 8px;
+    border-radius:999px;
+    border:1px solid #d1d5db;
+    background:#f9fafb;
+    cursor:pointer;
+  }
+  .plano-chip.active{
+    border-color:#1d4ed8;
+    background:#e0ebff;
+    color:#1d4ed8;
+    font-weight:600;
+  }
+
+  /* Instrucciones */
+  .plano-howto{
+    font-size:11.5px;
+    color:#4b5563;
+  }
+  .plano-howto ul{
+    margin:4px 0 0;
+    padding-left:16px;
+  }
+
+  /* Responsive */
+  @media (max-width: 980px){
+    .personal-sede-grid{
+      grid-template-columns:1fr;
+    }
+  }
+</style>
+
+<section class="personal-sede-main">
+  <div class="card personal-card">
+    <header class="personal-sede-header">
+      <div>
+        <h1>Personal por sede</h1>
+        <p class="text-muted">
+          Listado de personas por sede, con buscador por nombre o dependencia.
+        </p>
+      </div>
+    </header>
+
+    <div class="personal-sede-grid">
+
+      <!-- COLUMNA IZQUIERDA: FILTROS + TABLA -->
+      <div>
+        <!-- Filtros -->
+        <form method="get" class="filtros-row">
+          <div class="filtro-group filtro-sede">
+            <label for="filtro-sede">Sede</label>
+            <select id="filtro-sede" name="sede" class="input">
+              <option value="">Todas</option>
+              {% for s in sedes %}
+                <option value="{{ s.codigo }}"
+                        {% if cod_sede == s.codigo %}selected{% endif %}>
+                  {{ s.codigo }} – {{ s.nombre }} ({{ s.ciudad }})
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="filtro-group filtro-buscar">
+            <label for="filtro-q">Buscar</label>
+            <input id="filtro-q"
+                   type="text"
+                   name="q"
+                   value="{{ q }}"
+                   class="input"
+                   placeholder="Nombre, apellido o dependencia">
+          </div>
+
+          <div class="filtro-group">
+            <label style="visibility:hidden;">Acción</label>
+            <button type="submit" class="btn primary xs">
+              Buscar
+            </button>
+          </div>
+        </form>
+
+        <!-- Tabla -->
+        <div class="tabla-wrapper" id="tablaPersonalWrapper">
+          <table class="tabla-personal">
+            <thead>
+              <tr>
+                <th style="width:80px;">Sede</th>
+                <th style="width:60px;">Local</th>
+                <th>Nombre y apellido</th>
+                <th>Dependencia</th>
+                <th>Texto sede</th>
+                <th>Email</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% if filas %}
+                {% for r in filas %}
+                  <tr class="fila-personal"
+                      data-local="{{ r.codigo_local }}">
+                    <td>
+                      <strong>{{ r.codigo_sede }}</strong>
+                      <div class="tabla-sede-detalle">
+                        {{ r.sede_nombre }} – {{ r.ciudad }}
+                      </div>
+                    </td>
+                    <td>{{ r.codigo_local }}</td>
+                    <td>{{ r.nombre_apellido }}</td>
+                    <td>{{ r.dependencia }}</td>
+                    <td>{{ r.sede_texto }}</td>
+                    <td>{{ r.email_admin }}</td>
+                  </tr>
+                {% endfor %}
+              {% else %}
+                <tr>
+                  <td colspan="6"
+                      style="padding:10px 8px;font-size:12px;color:#9ca3af;text-align:center;">
+                    No hay registros para los filtros seleccionados.
+                  </td>
+                </tr>
+              {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- COLUMNA DERECHA: PLANO / AYUDA -->
+      <aside class="card plano-card">
+        {% if cod_sede == 'S04' %}
+          <h2 class="plano-title">Plano – S04 Alto Comedero</h2>
+          <p class="plano-sub">
+            Hacé clic en un local (D01…D09) para resaltar quién trabaja en ese espacio.
+          </p>
+
+          <div class="plano-layout">
+            <div class="plano-img-box">
+              <div class="plano-img-inner">
+                <img src="{{ url_for('static', filename='img/planos/s04_planta.png') }}"
+                     alt="Plano S04 Alto Comedero">
+              </div>
+            </div>
+
+            <div class="plano-legend">
+              Locales marcados:
+              <div class="plano-chips">
+                {% for loc in ['D01','D03','D04','D05','D06','D07','D08','D09'] %}
+                  <button type="button"
+                          class="plano-chip"
+                          data-local="{{ loc }}">
+                    {{ loc }}
+                  </button>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="plano-howto">
+              <strong>Cómo usar</strong>
+              <ul>
+                <li>Hacé clic en un local (por ejemplo, D05).</li>
+                <li>Las filas de la tabla con ese local se iluminan.</li>
+                <li>La pantalla hace scroll hasta la primera coincidencia.</li>
+              </ul>
+            </div>
+          </div>
+
+        {% elif cod_sede == 'S01' %}
+          <h2 class="plano-title">Plano – S01 Independencia 202</h2>
+          <p class="plano-sub">
+            Sede grande con varios pisos. De momento se muestran los locales
+            principales como botones rápidos.
+          </p>
+
+          <div class="plano-layout">
+            <div class="plano-img-box">
+              <div class="plano-img-inner">
+                {# Cuando tengas la imagen general de Independencia, reemplazá el archivo #}
+                <img src="{{ url_for('static', filename='img/planos/s01_planta_general.png') }}"
+                     alt="Plano S01 Independencia 202">
+              </div>
+            </div>
+
+            <div class="plano-legend">
+              Locales con personal cargado:
+              <div class="plano-chips">
+                {% for loc in [
+                  'D01','D02','D05','D10','D11','D12','D13','D14','D15',
+                  'D17','D18','D21','D22','D23','D24','D25','D26','D29','D35'
+                ] %}
+                  <button type="button"
+                          class="plano-chip"
+                          data-local="{{ loc }}">
+                    {{ loc }}
+                  </button>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="plano-howto">
+              <strong>Cómo usar</strong>
+              <ul>
+                <li>Hacé clic en un botón de local (por ejemplo, D21).</li>
+                <li>Se resalta en la tabla quiénes trabajan en ese local.</li>
+                <li>Después podemos separar por piso (P01, P02, P03) con planos individuales.</li>
+              </ul>
+            </div>
+          </div>
+
+        {% else %}
+          <h2 class="plano-title">Plano de sede</h2>
+          <p class="plano-sub">
+            Seleccioná una sede específica (por ejemplo S01 o S04) para ver su
+            plano y resaltar el personal por local.
+          </p>
+          <p style="font-size:11.5px;color:#6b7280;margin-top:8px;">
+            Los planos interactivos se irán cargando progresivamente para cada sede.
+          </p>
+        {% endif %}
+      </aside>
+
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function(){
+    const rows  = Array.from(document.querySelectorAll(".fila-personal"));
+    const chips = Array.from(document.querySelectorAll(".plano-chip"));
+    const wrapper = document.getElementById("tablaPersonalWrapper");
+
+    if (!rows.length) return;
+
+    function limpiarResaltado(){
+      rows.forEach(r => r.classList.remove("highlight-row"));
+      chips.forEach(c => c.classList.remove("active"));
+    }
+
+    function resaltarLocal(codigo){
+      if (!codigo) return;
+      limpiarResaltado();
+
+      const seleccionadas = rows.filter(r => r.dataset.local === codigo);
+      if (!seleccionadas.length) return;
+
+      seleccionadas.forEach(r => r.classList.add("highlight-row"));
+
+      // Scroll suave hasta la primera coincidencia
+      const primera = seleccionadas[0];
+      if (primera && wrapper){
+        const top = primera.offsetTop - 40;
+        wrapper.scrollTo({ top: top, behavior:"smooth" });
+      }
+    }
+
+    chips.forEach(chip => {
+      chip.addEventListener("click", () => {
+        const codigo = chip.dataset.local;
+        if (!codigo) return;
+        limpiarResaltado();
+        chip.classList.add("active");
+        resaltarLocal(codigo);
+      });
+    });
+  })();
+</script>
+{% endblock %}

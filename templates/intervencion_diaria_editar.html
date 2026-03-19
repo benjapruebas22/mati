@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="obras-shell">
+  <header class="obras-top">
+    <div>
+      <h2 class="obras-h2">Editar intervencion diaria</h2>
+      <p class="obras-sub">Registro operativo independiente del modulo Obras.</p>
+    </div>
+    <div class="obras-top-actions">
+      <a class="btn outline-blue btn-sm" href="{{ back_url }}">Volver</a>
+    </div>
+  </header>
+
+  <section class="cardx">
+    <div class="cardx-head">
+      <div>
+        <h3>Datos de la intervencion</h3>
+        <p>Actualiza sede, detalle y estado sin mezclar con obras formales.</p>
+      </div>
+      <span class="pill-soft">Intervencion diaria</span>
+    </div>
+
+    <form method="post" action="{{ form_action }}" class="formx">
+      <div class="gridx">
+        <div class="fg">
+          <label>Fecha</label>
+          <input type="date" name="fecha" value="{{ intervencion.fecha or '' }}" required>
+        </div>
+
+        <div class="fg">
+          <label>Sede</label>
+          <select name="codigo_sede" required>
+            <option value="">-- elegir sede --</option>
+            {% for s in sedes %}
+              <option value="{{ s.codigo }}" {% if intervencion.codigo_sede == s.codigo %}selected{% endif %}>
+                {{ s.codigo }} - {{ s.nombre }} ({{ s.ciudad }})
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="fg">
+          <label>Tipo</label>
+          <select name="tipo" required>
+            {% for t in interv_tipos %}
+              <option value="{{ t[0] }}" {% if intervencion.tipo == t[0] %}selected{% endif %}>{{ t[1] }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="fg">
+          <label>Estado</label>
+          <select name="estado">
+            {% for e in interv_estados %}
+              <option value="{{ e[0] }}" {% if intervencion.estado == e[0] %}selected{% endif %}>{{ e[1] }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="fg full">
+          <label>Detalle / descripcion</label>
+          <textarea name="detalle" rows="3" required>{{ intervencion.detalle or '' }}</textarea>
+        </div>
+
+        <div class="fg">
+          <label>Autorizado por</label>
+          <input type="text" name="autorizado_por" value="{{ intervencion.autorizado_por or '' }}">
+        </div>
+
+        <div class="fg">
+          <label>Observacion</label>
+          <input type="text" name="observacion" value="{{ intervencion.observacion or '' }}">
+        </div>
+      </div>
+
+      <div class="formx-actions">
+        <button type="submit" class="btn primary btn-wide">Guardar cambios</button>
+        <a class="btn ghost btn-wide" href="{{ back_url }}">Cancelar</a>
+      </div>
+    </form>
+  </section>
+</section>
+
+<style>
+  .obras-shell{ display:flex; flex-direction:column; gap:12px; }
+  .obras-top{ display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; }
+  .obras-h2{ margin:0; font-size:20px; }
+  .obras-sub{ margin:2px 0 0; font-size:13px; color:#64748b; }
+  .obras-top-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+
+  .cardx{ background:#fff; border:1px solid #e5e7eb; border-radius:16px; box-shadow:0 8px 22px rgba(15,23,42,.06); overflow:hidden; }
+  .cardx-head{ padding:12px 14px; border-bottom:1px solid #eef2f7; display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+  .cardx-head h3{ margin:0; font-size:14px; }
+  .cardx-head p{ margin:2px 0 0; font-size:12px; color:#64748b; }
+  .pill-soft{ font-size:11px; padding:3px 10px; border-radius:999px; background:#f1f5f9; border:1px solid #e2e8f0; color:#475569; white-space:nowrap; }
+
+  .formx{ padding:12px 14px 14px; }
+  .gridx{ display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:10px; }
+  .fg{ display:flex; flex-direction:column; gap:4px; }
+  .fg label{ font-size:11px; color:#64748b; }
+  .fg input, .fg select, .fg textarea{ font-size:13px; padding:7px 10px; border-radius:12px; border:1px solid #e5e7eb; background:#fff; outline:none; }
+  .fg textarea{ resize:vertical; min-height:72px; }
+  .fg.full{ grid-column:1 / -1; }
+
+  .formx-actions{ margin-top:10px; display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap; }
+  .btn-wide{ min-width:180px; }
+  .btn-sm{ padding:7px 12px; font-size:12px; border-radius:999px; }
+</style>
+
+{% endblock %}

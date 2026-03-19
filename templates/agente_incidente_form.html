@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+  .license-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .license-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .license-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
+    padding: 14px 16px;
+  }
+</style>
+
+<section class="agentes-main license-shell">
+
+  <header class="section-header license-head">
+    <div>
+      <h1>Editar incidente / accidente del agente</h1>
+      <p class="section-sub">
+        {{ agente.agente }} - Rubro: {{ agente.rubro|upper }}
+      </p>
+    </div>
+
+    <div class="section-actions">
+      <a class="btn outline-slate" href="{{ url_for('agentes_home', id=agente.id) }}">
+        Volver a la ficha del agente
+      </a>
+    </div>
+  </header>
+
+  <div class="grid-main">
+    <div class="left-panel">
+      <div class="license-card">
+        <div class="agent-detail-header">
+          <div class="agent-photo" style="display:flex;align-items:center;justify-content:center;">
+            AG
+          </div>
+          <div>
+            <div class="agent-detail-name">{{ agente.agente }}</div>
+            <div class="agent-detail-rubro">Rubro: {{ agente.rubro|upper }}</div>
+          </div>
+        </div>
+
+        <div class="agent-detail-body">
+          <div class="agent-detail-section">
+            <div class="agent-detail-section-title">FORMULARIO</div>
+
+            <form method="post" class="license-form">
+              <div class="license-grid">
+                <div class="license-field">
+                  <label for="fecha">Fecha</label>
+                  <input type="date"
+                         id="fecha"
+                         name="fecha"
+                         value="{{ incidente.fecha }}"
+                         required>
+                </div>
+                <div class="license-field">
+                  <label for="tipo">Tipo</label>
+                  {% set tipo_sel = incidente.tipo or '' %}
+                  <select id="tipo" name="tipo" required>
+                    <option value="">Seleccionar...</option>
+                    <option value="incidente"
+                            {{ 'selected' if tipo_sel == 'incidente' else '' }}>
+                      Incidente
+                    </option>
+                    <option value="accidente"
+                            {{ 'selected' if tipo_sel == 'accidente' else '' }}>
+                      Accidente
+                    </option>
+                    <option value="casi_accidente"
+                            {{ 'selected' if tipo_sel == 'casi_accidente' else '' }}>
+                      Casi accidente
+                    </option>
+                  </select>
+                </div>
+
+                <div class="license-field full">
+                  <label for="lugar">Lugar</label>
+                  <input type="text"
+                         id="lugar"
+                         name="lugar"
+                         value="{{ incidente.lugar }}"
+                         placeholder="Ej: Sede S08, Taller, Calle, etc.">
+                </div>
+
+                <div class="license-field full">
+                  <label for="descripcion">Descripcion</label>
+                  <textarea id="descripcion"
+                            name="descripcion"
+                            rows="3"
+                            placeholder="Descripcion breve de lo ocurrido.">{{ incidente.descripcion }}</textarea>
+                </div>
+
+                <div class="license-field full">
+                  <label for="consecuencia">Consecuencia</label>
+                  <textarea id="consecuencia"
+                            name="consecuencia"
+                            rows="2"
+                            placeholder="Sin lesion, lesion leve, dano material, etc.">{{ incidente.consecuencia }}</textarea>
+                </div>
+
+                <div class="license-field full">
+                  <label for="acciones">Acciones / medidas</label>
+                  <textarea id="acciones"
+                            name="acciones"
+                            rows="2"
+                            placeholder="Medidas correctivas, informe ART, etc.">{{ incidente.acciones }}</textarea>
+                </div>
+
+                <div class="license-field full">
+                  <label for="estado">Estado</label>
+                  {% set est_sel = incidente.estado or '' %}
+                  <select id="estado" name="estado">
+                    <option value="" {{ 'selected' if est_sel == '' else '' }}>
+                      (sin especificar)
+                    </option>
+                    <option value="ABIERTO" {{ 'selected' if est_sel == 'ABIERTO' else '' }}>
+                      Abierto
+                    </option>
+                    <option value="CERRADO" {{ 'selected' if est_sel == 'CERRADO' else '' }}>
+                      Cerrado
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="license-actions">
+                <button type="submit" class="btn outline-amber">
+                  Guardar cambios
+                </button>
+                <a class="btn outline-slate"
+                   href="{{ url_for('agentes_home', id=agente.id) }}">
+                  Cancelar
+                </a>
+              </div>
+
+            </form>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    {% if incidentes and incidentes|length > 0 %}
+    <div class="right-panel">
+      <div class="agent-licenses-card license-card">
+        <div class="agent-licenses-header">
+          <h3>Historial de incidentes / accidentes</h3>
+        </div>
+
+        <div class="agent-licenses-table-wrapper">
+          <table class="agent-licenses-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Tipo</th>
+                <th>Lugar</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for i in incidentes %}
+                <tr>
+                  <td>{{ i.fecha }}</td>
+                  <td>{{ i.tipo|replace('_',' ')|capitalize }}</td>
+                  <td>{{ i.lugar }}</td>
+                  <td>{{ i.estado }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+</section>
+
+{% endblock %}

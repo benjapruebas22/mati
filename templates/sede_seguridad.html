@@ -1,0 +1,459 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  .seguridad-layout{
+    display:grid;
+    grid-template-columns:minmax(260px,320px) minmax(520px,1fr);
+    gap:18px;
+    align-items:flex-start;
+  }
+
+  .seg-card{
+    background:#ffffff;
+    border-radius:14px;
+    border:1px solid #e5e7eb;
+    box-shadow:0 8px 16px rgba(15,23,42,0.06);
+    padding:14px 16px;
+  }
+
+  .seg-title{
+    font-size:16px;
+    font-weight:600;
+    color:#111827;
+    margin:0 0 6px;
+  }
+
+  .seg-sub{
+    font-size:12px;
+    color:#6b7280;
+    margin:0 0 4px;
+  }
+
+  .seg-chip-sede{
+    display:inline-flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    width:68px;
+    height:64px;
+    border-radius:18px;
+    background:#fee2e2;
+    border:1px solid #fecaca;
+    margin-right:10px;
+  }
+  .seg-chip-sede span:nth-child(1){
+    font-size:11px;
+    color:#b91c1c;
+  }
+  .seg-chip-sede span:nth-child(2){
+    font-size:18px;
+    font-weight:700;
+    color:#7f1d1d;
+  }
+
+  .seg-sede-head{
+    display:flex;
+    gap:12px;
+    align-items:flex-start;
+  }
+
+  .seg-sede-body{
+    margin-top:8px;
+    font-size:12px;
+    color:#4b5563;
+  }
+
+  .seg-kpi-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:10px;
+  }
+  .seg-kpi{
+    flex:1 1 0;
+    min-width:120px;
+    padding:6px 10px;
+    border-radius:999px;
+    font-size:11.5px;
+    background:#f9fafb;
+    border:1px solid #e5e7eb;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .seg-kpi span:first-child{ color:#6b7280; }
+  .seg-kpi span:last-child{ font-weight:600; color:#111827; }
+
+  .seg-tabs{
+    display:flex;
+    gap:8px;
+    margin-top:14px;
+  }
+  .seg-tab-btn{
+    border-radius:999px;
+    border:1px solid #e5e7eb;
+    background:#f9fafb;
+    padding:6px 12px;
+    font-size:12px;
+    cursor:default;
+  }
+  .seg-tab-btn.active{
+    background:#1d4ed8;
+    border-color:#1d4ed8;
+    color:#ffffff;
+  }
+
+  /* tablas derecha */
+  .seg-block-title{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:6px;
+  }
+
+  .seg-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:12px;
+    margin-top:4px;
+  }
+  .seg-table thead{
+    background:#eff6ff;
+  }
+  .seg-table th,
+  .seg-table td{
+    padding:6px 8px;
+    border-bottom:1px solid #e5e7eb;
+    text-align:left;
+    vertical-align:top;
+    white-space:nowrap;
+  }
+  .seg-table th{
+    font-weight:600;
+    color:#374151;
+    font-size:11.5px;
+  }
+  .seg-table td{
+    color:#4b5563;
+    font-size:11.5px;
+  }
+  .seg-table tbody tr:hover{
+    background:#f9fafb;
+  }
+
+  .seg-tag-vto{
+    display:inline-flex;
+    align-items:center;
+    padding:2px 6px;
+    border-radius:999px;
+    font-size:10px;
+    background:#fef2f2;
+    color:#b91c1c;
+    border:1px solid #fecaca;
+    margin-left:4px;
+  }
+
+  .seg-empty{
+    font-size:12px;
+    color:#9ca3af;
+    padding:4px 2px;
+  }
+
+  .btn.soft{
+    border-radius:999px;
+    font-size:12px;
+    padding:5px 10px;
+    border:1px solid #e5e7eb;
+    background:#f9fafb;
+  }
+  .btn.soft:hover{
+    background:#e5e7eb;
+  }
+  .btn.soft-primary{
+    border-color:#1d4ed8;
+    background:#1d4ed8;
+    color:#ffffff;
+  }
+  .btn.soft-primary:hover{
+    background:#1e40af;
+  }
+
+  .btn-table{
+    border-radius:999px;
+    border:1px solid #e5e7eb;
+    background:#f9fafb;
+    padding:3px 8px;
+    font-size:11px;
+  }
+  .btn-table:hover{
+    background:#e5e7eb;
+  }
+  .btn-table-danger{
+    border-color:#fecaca;
+    background:#fef2f2;
+  }
+  .btn-table-danger:hover{
+    background:#fee2e2;
+  }
+
+  @media (max-width: 900px){
+    .seguridad-layout{
+      grid-template-columns:1fr;
+    }
+  }
+</style>
+
+<section class="seguridad-layout">
+
+  <!-- COLUMNA IZQUIERDA: ficha de sede + mini KPIs -->
+  <div class="seg-card">
+
+    <p class="seg-sub" style="margin-bottom:8px;">Seguridad: matafuegos y desinfecciones</p>
+
+    <div class="seg-sede-head">
+      <div class="seg-chip-sede">
+        <span>Código</span>
+        <span>{{ sede.codigo }}</span>
+      </div>
+
+      <div>
+        <h2 class="seg-title" style="margin-bottom:2px;">
+          {{ sede.nombre }}
+        </h2>
+        <p class="seg-sub" style="margin-bottom:2px;">
+          {{ sede.ciudad }} · {{ sede.departamento }}
+        </p>
+        <p class="seg-sub">
+          Control de vencimientos, recargas y desinfecciones de la sede.
+        </p>
+      </div>
+    </div>
+
+    <div class="seg-sede-body">
+      <div class="seg-kpi-row">
+        <div class="seg-kpi">
+          <span>Matafuegos cargados</span>
+          <span>{{ matafuegos|length }}</span>
+        </div>
+        <div class="seg-kpi">
+          <span>Desinfecciones registradas</span>
+          <span>{{ desinfecciones|length }}</span>
+        </div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <a href="{{ url_for('sede_ficha', codigo=sede.codigo) }}"
+           class="btn soft">
+          ⬅ Volver a ficha de sede
+        </a>
+      </div>
+
+      <div class="seg-tabs">
+        <button class="seg-tab-btn active">Seguridad</button>
+        <button class="seg-tab-btn">Planos e infraestructura</button>
+        <button class="seg-tab-btn">Limpieza y protocolo</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- COLUMNA DERECHA: tablas de matafuegos y desinfecciones -->
+  <div style="display:flex;flex-direction:column;gap:16px;">
+
+    <!-- MATAFUEGOS -->
+    <div class="seg-card">
+      <div class="seg-block-title">
+        <div>
+          <h3 class="seg-title">Matafuegos de la sede</h3>
+          <p class="seg-sub">
+            Listado por número de serie, ubicación y fechas de recarga / vencimiento.
+          </p>
+        </div>
+        <a href="{{ url_for('matafuego_nuevo', codigo=sede.codigo) }}"
+           class="btn soft-primary">
+          ➕ Agregar matafuego
+        </a>
+      </div>
+
+      {% if matafuegos and matafuegos|length > 0 %}
+        <div style="overflow-x:auto;margin-top:4px;">
+          <table class="seg-table">
+            <thead>
+              <tr>
+                <th>N° Serie</th>
+                <th>Ubicación</th>
+                <th>Peso</th>
+                <th>Recarga</th>
+                <th>Vencimiento</th>
+                <th>Observaciones</th>
+                <th style="text-align:right;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for m in matafuegos %}
+                <tr>
+                  <td>{{ m.numero_serie or 's/serie' }}</td>
+                  <td>{{ m.ubicacion or '—' }}</td>
+                  <td>{{ m.peso_kg }} kg</td>
+                  <td>{{ m.fecha_recarga or '—' }}</td>
+                  <td>
+                    {{ m.fecha_vencimiento or '—' }}
+                    {% if m.fecha_vencimiento %}
+                      <span class="seg-tag-vto">control calendario</span>
+                    {% endif %}
+                  </td>
+                  <td style="white-space:normal;max-width:220px;">
+                    {{ m.observaciones or '' }}
+                  </td>
+                  <td style="text-align:right;">
+                    <!-- EDITAR -->
+                    <a href="{{ url_for('matafuego_editar',
+                                        codigo=sede.codigo,
+                                        mid=m.id) }}"
+                       class="btn-table">
+                      ✏ Editar
+                    </a>
+
+                    <!-- BORRAR -->
+                    <form method="post"
+                          action="{{ url_for('matafuego_borrar',
+                                             codigo=sede.codigo,
+                                             mid=m.id) }}"
+                          style="display:inline;"
+                          onsubmit="return confirm('¿Seguro que querés borrar este matafuego?');">
+                      <button type="submit"
+                              class="btn-table btn-table-danger">
+                        🗑 Borrar
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="seg-empty">
+          No hay matafuegos cargados para esta sede.
+        </div>
+      {% endif %}
+    </div>
+
+<!-- DESINFECCIONES -->
+<div class="seg-card">
+  <div class="seg-block-title">
+    <div>
+      <h3 class="seg-title">Desinfecciones</h3>
+      <p class="seg-sub">
+        Registro de desinfecciones realizadas en la sede.
+      </p>
+    </div>
+    <a href="{{ url_for('desinfeccion_nueva', codigo=sede.codigo) }}"
+       class="btn soft">
+      ➕ Agregar desinfección
+    </a>
+  </div>
+
+  {% if desinfecciones and desinfecciones|length > 0 %}
+    <div style="overflow-x:auto;margin-top:4px;">
+      <table class="seg-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Empresa</th>
+            <th>Observaciones</th>
+            <th style="text-align:right;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in desinfecciones %}
+            <tr>
+              <td>{{ d.fecha or '' }}</td>
+              <td>{{ d.empresa or '' }}</td>
+              <td style="white-space:normal;max-width:260px;">
+                {{ d.observaciones or '' }}
+              </td>
+              <td style="text-align:right;">
+                <!-- EDITAR -->
+                <a href="{{ url_for('desinfeccion_editar',
+                                    codigo=sede.codigo,
+                                    did=d.id) }}"
+                   class="btn-table">
+                  ✏ Editar
+                </a>
+
+                <!-- BORRAR -->
+                <form method="post"
+                      action="{{ url_for('desinfeccion_borrar',
+                                         codigo=sede.codigo,
+                                         did=d.id) }}"
+                      style="display:inline;"
+                      onsubmit="return confirm('¿Seguro que querés borrar esta desinfección?');">
+                  <button type="submit"
+                          class="btn-table btn-table-danger">
+                    🗑 Borrar
+                  </button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="seg-empty">
+      No hay desinfecciones registradas para esta sede.
+    </div>
+  {% endif %}
+</div>
+
+  </div>
+
+  <div style="margin-top:16px;">
+  <a href="{{ url_for('checklist_seguridad_form', codigo=sede.codigo) }}"
+     class="btn soft-primary">
+    ✓ Registrar checklist de seguridad
+  </a>
+</div>
+<div class="seg-card">
+  <h3 class="seg-title">Checklist de Seguridad</h3>
+  <p class="seg-sub">Últimos controles realizados.</p>
+
+  {% if checklist and checklist|length > 0 %}
+    <table class="seg-table">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Estado general</th>
+          <th>Observaciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in checklist %}
+          <tr>
+            <td>{{ c.fecha }}</td>
+            <td>
+              {% set aprobado = (c.matafuegos_ok and c.senaletica_ok and c.luces_ok
+                                 and c.botiquin_ok and c.evacuacion_ok and c.orden_ok) %}
+              
+              {% if aprobado %}
+                ✔ Aprobado
+              {% else %}
+                ⚠ Con observaciones
+              {% endif %}
+            </td>
+            <td>{{ c.observaciones or '' }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="seg-empty">Aún no hay checklist registrados.</div>
+  {% endif %}
+
+</div>
+
+</section>
+
+{% endblock %}

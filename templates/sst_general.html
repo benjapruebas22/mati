@@ -1,0 +1,1653 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+  .license-shell.compact-top {
+    --sst-radius: 10px;
+    --sst-control-h: 28px;
+    --sst-gap: 4px;
+  }
+
+  .license-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .license-shell.compact-top {
+    gap: 2px;
+    margin-top: 0;
+  }
+
+  .compact-top .section-header {
+    margin-bottom: 0;
+  }
+
+  .compact-top .section-sub {
+    margin: 0;
+    font-size: 11px;
+    color: #374151;
+  }
+
+  .compact-top .license-head h1 {
+    margin: 0;
+    font-size: clamp(13px, 1vw, 17px);
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  .sst-title-accent-s { color: #38bdf8; }
+  .sst-title-seguridad { color: #38bdf8; }
+  .sst-title-salud { color: #8b5cf6; }
+  .sst-title-trabajo { color: #ec4899; }
+
+  .sst-topline {
+    margin: 0 0 1px;
+    font-size: 10px;
+    font-weight: 800;
+    color: #375a84;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+  }
+
+  .license-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .sst-main-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1 1 560px;
+    min-width: 340px;
+  }
+
+  .sst-main-brand > div {
+    text-align: left;
+  }
+
+  .sst-head-right {
+    display: flex;
+    align-items: center;
+    gap: var(--sst-gap);
+    margin-top: 6px;
+    margin-left: auto;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .sst-main-logo {
+    width: 84px;
+    height: 84px;
+    object-fit: contain;
+    object-position: center;
+    border: 1px solid #dbe4f2;
+    border-radius: 16px;
+    background: #fff;
+    padding: 0;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, .08);
+  }
+
+  .license-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
+    padding: 5px 7px;
+  }
+
+  .sst-table-wrapper {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .sst-table {
+    table-layout: auto;
+  }
+
+  .sst-table th,
+  .sst-table td {
+    font-size: 13px;
+    padding: 7px 8px;
+    white-space: normal;
+    line-height: 1.2;
+    word-break: break-word;
+  }
+
+  .sst-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 5px;
+    align-items: end;
+  }
+
+  .sst-filters .license-field {
+    gap: 4px;
+  }
+
+  .sst-filter-toggle {
+    border-radius: 999px;
+    font-weight: 800;
+  }
+
+  .sst-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid #e5e7eb;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .sst-badge.alta { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
+  .sst-badge.media { background: #fff7e9; color: #92400e; border-color: #f3d08c; }
+  .sst-badge.baja { background: #eaf8ef; color: #166534; border-color: #9fe8b8; }
+
+  .sst-fast-links {
+    display: flex;
+    gap: var(--sst-gap);
+    flex-wrap: wrap;
+  }
+  .sst-fast-links .btn {
+    border-radius: 999px;
+    font-weight: 800;
+    padding: 0 10px;
+    height: var(--sst-control-h);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    line-height: 1.1;
+  }
+  .sst-fast-links .btn.cu {
+    background: #eef2ff;
+    border-color: #c7d2fe;
+    color: #3730a3;
+  }
+  .sst-fast-links .btn.ergo {
+    background: #ecfdf3;
+    border-color: #9fceb0;
+    color: #166534;
+  }
+  .sst-fast-links .btn.gantt {
+    background: #fff7ed;
+    border-color: #fed7aa;
+    color: #9a3412;
+  }
+  .sst-fast-links .btn.sedes {
+    background: #f5f3ff;
+    border-color: #ddd6fe;
+    color: #5b21b6;
+  }
+
+  .sst-agent-pick {
+    min-width: 280px;
+    font-size: 14px;
+    color: #0f172a;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 0 8px;
+    height: 38px;
+    line-height: 38px;
+    box-sizing: border-box;
+    background: #fff;
+    font-family: inherit;
+  }
+
+  .sst-quick {
+    display: flex;
+    gap: var(--sst-gap);
+    flex-wrap: wrap;
+    margin: 0;
+  }
+
+  .sst-quick .main {
+    height: var(--sst-control-h);
+    padding: 0 10px;
+    border-radius: 999px;
+    border: 1px solid #0f172a;
+    background: #0f172a;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1.1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .sst-quick .sub {
+    height: var(--sst-control-h);
+    padding: 0 10px;
+    border-radius: 999px;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    color: #0f172a;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+
+  .grid-main.sst-only-table {
+    grid-template-columns: 1fr !important;
+  }
+
+  .sst-intro {
+    padding: 8px 10px;
+    border: 1px solid #dbe4f2;
+    background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+    display: grid;
+    gap: 4px;
+  }
+
+  .sst-intro-top {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--sst-gap);
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 1px;
+  }
+
+  .sst-intro-brand {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .sst-intro-logo {
+    width: 46px;
+    height: 46px;
+    object-fit: contain;
+    border: 1px solid #dbe4f2;
+    border-radius: 10px;
+    background: #fff;
+    padding: 4px;
+  }
+
+  .sst-intro-title {
+    margin: 0;
+    font-size: 12px;
+    color: #1e3a5f;
+    font-weight: 900;
+  }
+
+  .sst-intro-sub {
+    margin: 1px 0 0;
+    color: #5a7395;
+    font-size: 9px;
+  }
+
+  .sst-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid #d7e3f4;
+    background: #eef4ff;
+    color: #2f4f77;
+    border-radius: 999px;
+    padding: 3px 9px;
+    font-size: 10px;
+    font-weight: 800;
+  }
+
+  .sst-intro-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--sst-gap);
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .sst-intro-legal-toggle,
+  .sst-intro-present-toggle {
+    border: 1px solid #c7d2fe;
+    background: #eef2ff;
+    color: #3730a3;
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 9px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .sst-intro-present-toggle {
+    border-color: #cfdcf0;
+    background: #f5f9ff;
+    color: #2f557f;
+  }
+
+  .sst-intro-panels {
+    display: grid;
+    gap: 5px;
+  }
+
+  .sst-intro-legal-panel,
+  .sst-intro-present-panel {
+    display: none;
+    padding: 7px 8px;
+    border: 1px solid #dbe4f2;
+    border-radius: 10px;
+    background: #f9fbff;
+  }
+
+  .sst-intro-legal-panel.open,
+  .sst-intro-present-panel.open {
+    display: block;
+  }
+
+  .sst-intro-legal-panel h4,
+  .sst-intro-present-panel h4 {
+    margin: 0 0 3px;
+    font-size: 10px;
+    color: #1f3557;
+    font-weight: 900;
+  }
+
+  .sst-intro-legal-panel p,
+  .sst-intro-present-panel p {
+    margin: 0;
+    font-size: 9px;
+    line-height: 1.34;
+    color: #4f6789;
+  }
+
+  .sst-top-btn {
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    color: #1f3557;
+    font-size: 10px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .sst-top-btn.legal {
+    background: #eef2ff;
+    border-color: #c7d2fe;
+    color: #3730a3;
+  }
+
+  .sst-top-btn.art {
+    background: #ecfeff;
+    border-color: #a5f3fc;
+    color: #155e75;
+  }
+
+
+  .sst-doc-panel.open { display: block; }
+
+  .sst-doc-panel h4 {
+    margin: 0 0 6px;
+    font-size: 13px;
+    color: #1f3557;
+  }
+
+  .sst-doc-panel p,
+  .sst-doc-panel li {
+    margin: 0;
+    color: #4f6789;
+    font-size: 10px;
+    line-height: 1.45;
+  }
+
+  .sst-doc-panel ul {
+    margin: 6px 0 0;
+    padding-left: 16px;
+  }
+
+  .sst-links {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+
+  .sst-links a {
+    text-decoration: none;
+    border: 1px solid #bfdbfe;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-radius: 999px;
+    padding: 3px 9px;
+    font-size: 10px;
+    font-weight: 800;
+  }
+
+  .sst-links-extra {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 6px;
+  }
+
+  .sst-links-extra input {
+    min-width: 280px;
+    height: 28px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 0 8px;
+    font-size: 10px;
+  }
+
+  .sst-intro-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+
+  .sst-mini-board {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--sst-gap);
+    margin: 0 0 3px;
+  }
+
+  .sst-mini-item {
+    border: 1px solid #d6e5f8;
+    border-radius: var(--sst-radius);
+    background: #f5f9ff;
+    padding: 5px 7px;
+    min-height: 58px;
+  }
+
+  .sst-mini-item.complete {
+    background: #eaf8ef;
+    border-color: #9fe8b8;
+  }
+
+  .sst-mini-item.pending {
+    background: #fff7e9;
+    border-color: #f3d08c;
+  }
+
+  .sst-mini-item.dev {
+    background: #eef5ff;
+    border-color: #c6d7f0;
+  }
+
+  .sst-mini-item.linked {
+    background: #e9f8f4;
+    border-color: #9edfcc;
+  }
+
+  .sst-mini-top {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .sst-mini-pct {
+    margin-left: auto;
+    font-size: 12px;
+    font-weight: 900;
+    line-height: 1;
+    padding: 3px 9px;
+    border-radius: 999px;
+    border: 1px solid #c7d6ee;
+    background: rgba(255, 255, 255, .9);
+    color: #4b6890;
+    white-space: nowrap;
+    min-width: 48px;
+    text-align: center;
+    letter-spacing: .2px;
+  }
+
+  .sst-mini-item.complete .sst-mini-pct { color: #0d6f45; border-color: #9fe8b8; }
+  .sst-mini-item.pending .sst-mini-pct { color: #9a5600; border-color: #f3d08c; }
+  .sst-mini-item.dev .sst-mini-pct { color: #1d4f84; border-color: #c6d7f0; }
+
+  .sst-mini-icon {
+    width: 14px;
+    height: 14px;
+    color: #2d5486;
+    flex: 0 0 auto;
+  }
+
+  .sst-mini-item.complete .sst-mini-icon { color: #0d6f45; }
+  .sst-mini-item.pending .sst-mini-icon { color: #9a5600; }
+  .sst-mini-item.dev .sst-mini-icon { color: #1d4f84; }
+  .sst-mini-item.linked .sst-mini-icon { color: #0f6b5a; }
+  .sst-mini-item.complete .sst-mini-v { color: #0d6f45; }
+  .sst-mini-item.pending .sst-mini-v { color: #9a5600; }
+  .sst-mini-item.dev .sst-mini-v { color: #1d4f84; }
+  .sst-mini-item.linked .sst-mini-v { color: #0f6b5a; }
+
+  .sst-mini-k { margin: 0; font-size: 10px; color: #2d5486; font-weight: 800; line-height: 1.1; }
+  .sst-mini-v { margin: 1px 0 0; font-size: 13px; color: #0e2f57; font-weight: 900; line-height: 1.08; }
+  .sst-mini-sub { margin: 1px 0 0; font-size: 8px; color: #4b6890; line-height: 1.15; font-weight: 700; }
+
+  .sst-mini-note {
+    margin: 0 0 4px;
+    font-size: 9px;
+    color: #375983;
+    font-weight: 700;
+  }
+
+  .sst-scope-note {
+    margin: 0;
+    padding: 6px 7px;
+    border: 1px solid #dbe4f2;
+    border-radius: var(--sst-radius);
+    background: #f8fbff;
+    min-height: 100%;
+  }
+
+  .sst-scope-note h4 {
+    margin: 0 0 1px;
+    font-size: 10px;
+    color: #1f3557;
+    font-weight: 900;
+  }
+
+  .sst-scope-note p {
+    margin: 0;
+    font-size: 9px;
+    line-height: 1.34;
+    color: #4f6789;
+  }
+
+  .sst-scope-compact {
+    margin: 0;
+    font-size: 9px;
+    line-height: 1.34;
+    color: #4f6789;
+  }
+
+  .sst-scope-extra {
+    display: none;
+    margin-top: 4px;
+  }
+
+  .sst-scope-extra.open {
+    display: block;
+  }
+
+  .sst-scope-toggle {
+    margin-top: 4px;
+    border: 0;
+    background: transparent;
+    color: #1d4ed8;
+    font-size: 9px;
+    font-weight: 800;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .sst-responsable-note {
+    margin: 0;
+    padding: 6px 7px;
+    border: 1px solid #dbe4f2;
+    border-radius: var(--sst-radius);
+    background: #f8fbff;
+    min-height: 100%;
+  }
+
+  .sst-scope-resp-row {
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: var(--sst-gap);
+    align-items: stretch;
+  }
+
+  .sst-responsable-note h4 {
+    margin: 0 0 2px;
+    font-size: 10px;
+    color: #1f3557;
+    font-weight: 900;
+  }
+
+  .sst-responsable-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sst-gap);
+  }
+
+  .sst-responsable-item {
+    font-size: 9px;
+    color: #4f6789;
+    line-height: 1.34;
+    border: 1px solid #dbe4f2;
+    border-radius: 8px;
+    padding: 4px 6px;
+    background: #ffffff;
+  }
+
+  .sst-responsable-item b {
+    color: #1f3557;
+  }
+
+  .sst-intro-card {
+    border: 1px solid #e2e8f5;
+    border-radius: var(--sst-radius);
+    background: #fff;
+    padding: 5px 7px;
+    min-height: 104px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .sst-intro-card h4 { margin: 0 0 2px; font-size: 11px; color: #1f3557; line-height: 1.15; }
+  .sst-intro-card ul { margin: 0; padding-left: 14px; color: #4f6789; font-size: 9px; line-height: 1.2; }
+  .sst-intro-card ul li { display: none; }
+  .sst-intro-card ul li:first-child {
+    display: list-item;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sst-intro-card.expanded ul li {
+    display: list-item;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: initial;
+  }
+
+  .sst-card-foot {
+    margin-top: auto;
+    padding-top: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sst-gap);
+    flex-wrap: wrap;
+  }
+
+  .sst-card-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 18px;
+    padding: 0 8px;
+    border-radius: 999px;
+    font-size: 8px;
+    font-weight: 800;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .sst-card-status.complete { color: #166534; background: #dcfce7; border: 1px solid #bbf7d0; }
+  .sst-card-status.dev { color: #1e3a8a; background: #dbeafe; border: 1px solid #bfdbfe; }
+  .sst-card-status.pending { color: #92400e; background: #fef3c7; border: 1px solid #fde68a; }
+  .sst-card-status.linked { color: #0f766e; background: #ccfbf1; border: 1px solid #99f6e4; }
+
+  .sst-card-more {
+    border: 0;
+    background: transparent;
+    color: #1d4ed8;
+    font-size: 8px;
+    font-weight: 800;
+    padding: 0;
+    cursor: pointer;
+    min-width: 60px;
+    text-align: right;
+  }
+
+  .sst-card-extra { display: none; margin-top: 2px; }
+  .sst-intro-card.expanded .sst-card-extra { display: block; }
+  .sst-intro-card.expanded .sst-card-foot { margin-top: 3px; }
+
+  .sst-doc-panel {
+    display: none;
+    margin-top: 0;
+    border: 1px solid #dbe4f2;
+    border-top: 0;
+    border-radius: 0 0 12px 12px;
+    background: #ffffff;
+    padding: 7px 9px;
+  }
+
+  .sst-collapse { margin-top: 2px; }
+  .sst-collapse-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sst-gap);
+  }
+  .sst-collapse-head {
+    width: 100%;
+    border: 1px solid #dbe4f2;
+    border-radius: var(--sst-radius);
+    background: #f9fbff;
+    padding: 6px 9px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 5px;
+    cursor: pointer;
+    text-align: left;
+  }
+  .sst-collapse-title { font-size: 11px; font-weight: 900; color: #1f3557; margin: 0; line-height: 1.1; }
+  .sst-collapse-sub { font-size: 9px; color: #5a7395; margin: 1px 0 0; }
+  .sst-collapse-cta { font-size: 8px; font-weight: 800; color: #1d4ed8; white-space: nowrap; }
+  .sst-collapse.open .sst-collapse-head { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+  .sst-collapse.open .sst-doc-panel { display: block; }
+
+  @media (max-width: 900px) {
+    .sst-collapse-grid {
+      grid-template-columns: 1fr;
+      gap: 4px;
+    }
+  }
+
+  .sst-operativa-head {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid #dbe4f2;
+  }
+
+  .sst-operativa-head h3 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 900;
+    color: #1f3557;
+    letter-spacing: .02em;
+  }
+
+  .sst-operativa-head p {
+    margin: 2px 0 0;
+    font-size: 10px;
+    color: #5a7395;
+  }
+
+  .sst-drive-link {
+    display: inline-flex;
+    margin-top: 6px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    color: #1e40af;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    text-decoration: none;
+  }
+
+  .sst-drive-link:hover {
+    background: #dbeafe;
+  }
+
+  .sst-drive-wrap {
+    margin-top: 5px;
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: var(--sst-gap);
+    align-items: center;
+  }
+
+  .sst-drive-input {
+    height: var(--sst-control-h);
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 0 8px;
+    font-size: 9px;
+    color: #1e293b;
+    background: #fff;
+  }
+
+  .sst-drive-btn {
+    height: var(--sst-control-h);
+    border: 1px solid #c7d2fe;
+    border-radius: 8px;
+    background: #eef2ff;
+    color: #3730a3;
+    font-size: 9px;
+    font-weight: 800;
+    padding: 0 8px;
+    cursor: pointer;
+  }
+
+  .sst-drive-btn.open {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+    color: #1d4ed8;
+  }
+
+  @media (max-width: 760px) {
+    .sst-drive-wrap { grid-template-columns: 1fr 1fr; }
+    .sst-drive-wrap .sst-drive-input { grid-column: 1 / -1; }
+  }
+
+  @media (max-width: 1100px) {
+    .sst-intro-grid { grid-template-columns: 1fr 1fr; }
+    .sst-mini-board { grid-template-columns: 1fr 1fr; }
+    .sst-head-right { width: 100%; justify-content: flex-start; margin-top: 0; }
+    .sst-main-logo { width: 84px; height: 84px; }
+  }
+
+  @media (min-width: 1101px) {
+    .license-head { flex-wrap: nowrap; }
+    .sst-main-brand { min-width: 0; flex: 1 1 auto; }
+    .sst-head-right { flex-wrap: nowrap; margin-top: 8px; }
+  }
+
+  @media (max-width: 760px) {
+    .sst-intro-grid { grid-template-columns: 1fr; }
+    .sst-mini-board { grid-template-columns: 1fr; }
+    .sst-main-brand { min-width: 0; flex: 1 1 100%; }
+    .sst-head-right { width: 100%; justify-content: space-between; align-items: center; }
+    .sst-main-logo { width: 72px; height: 72px; }
+    .sst-responsable-grid { grid-template-columns: 1fr; }
+    .sst-scope-resp-row { grid-template-columns: 1fr; }
+  }
+</style>
+
+<section class="agentes-main license-shell compact-top">
+  <header class="section-header license-head">
+    <div class="sst-main-brand">
+      <div>
+        <p class="sst-topline">Sistema en implementacion institucional - Area de Intendencia</p>
+        <h1>Sistema de Gestion de Seguridad y Salud en el Trabajo (SG-<span class="sst-title-seguridad">S</span><span class="sst-title-salud">S</span><span class="sst-title-trabajo">T</span>)</h1>
+        <p class="section-sub">Panel de estado general y gestion operativa del sistema en el Ministerio Publico de la Defensa.</p>
+      </div>
+    </div>
+    <div class="sst-head-right">
+      <div class="sst-fast-links">
+        <a class="btn outline-slate cu" href="{{ url_for('sst_cuadro_unico') }}">Estado general</a>
+        <a class="btn outline-slate ergo" href="{{ url_for('sst_ergonomia_panel') }}">Gestion de riesgos</a>
+        <a class="btn outline-slate gantt" href="{{ url_for('sst_plan_gantt') }}">Cronograma SST</a>
+        <a class="btn outline-slate sedes" href="{{ url_for('sede_ficha', codigo='S01', home=1) }}">Sedes</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="license-card sst-intro">
+    <div class="sst-intro-top">
+      <div>
+        <h2 class="sst-intro-title">SG-SST | Sistema de Seguridad y Salud en el Trabajo</h2>
+        <p class="sst-intro-sub">Marco general del modulo: politica, plan de accion, roles y lineamientos operativos de Intendencia.</p>
+      </div>
+      <div class="sst-intro-actions">
+        <button type="button" class="sst-intro-legal-toggle" onclick="toggleSstIntroLegal()">Fundamentos y obligaciones legales</button>
+        <button type="button" class="sst-intro-present-toggle" onclick="toggleSstIntroPresent()">Presentacion institucional</button>
+      </div>
+    </div>
+
+    <div class="sst-intro-panels">
+      <div id="sst-intro-legal-panel" class="sst-intro-legal-panel">
+        <h4>Fundamentos y obligaciones legales</h4>
+        <p>El SG-SST se sustenta en la Ley 19.587, la Ley 24.557 y normativa complementaria aplicable. El empleador debe identificar riesgos, aplicar medidas preventivas, registrar evidencias y sostener seguimiento continuo. La articulacion con la ART y las areas tecnicas competentes garantiza cumplimiento y mejora operativa del sistema.</p>
+        <div class="sst-drive-wrap" data-drive-key="fundamentos_legales">
+          <input class="sst-drive-input" type="url" placeholder="Pegar enlace Drive (https://...)" />
+          <button type="button" class="sst-drive-btn save">Guardar</button>
+          <button type="button" class="sst-drive-btn open">Abrir</button>
+        </div>
+      </div>
+      <div id="sst-intro-present-panel" class="sst-intro-present-panel">
+        <h4>Presentacion institucional</h4>
+        <p>Resumen institucional del SG-SST: alcance operativo, lineamientos de gestion, responsables y avance de implementacion en el MPD.</p>
+        <div class="sst-drive-wrap" data-drive-key="presentacion_institucional">
+          <input class="sst-drive-input" type="url" placeholder="Pegar enlace Drive (https://...)" />
+          <button type="button" class="sst-drive-btn save">Guardar</button>
+          <button type="button" class="sst-drive-btn open">Abrir</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sst-mini-board">
+      <article class="sst-mini-item complete">
+        <div class="sst-mini-top">
+          <svg class="sst-mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="9" cy="8" r="3"></circle><circle cx="17" cy="9" r="2.5"></circle><path d="M3.5 18c0-2.8 2.5-5 5.5-5s5.5 2.2 5.5 5"></path><path d="M14 18c.2-2 1.8-3.6 3.9-3.9 2.1-.3 3.9.9 4.6 2.8"></path></svg>
+          <p class="sst-mini-k">Alcance</p>
+          <span class="sst-mini-pct">{{ sst_pct_alcance }}</span>
+        </div>
+        <p class="sst-mini-v">Personal MPD</p>
+      </article>
+      <article class="sst-mini-item pending">
+        <div class="sst-mini-top">
+          <svg class="sst-mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3L2.8 19h18.4L12 3z"></path><path d="M12 9v5"></path><circle cx="12" cy="17" r="1"></circle></svg>
+          <p class="sst-mini-k">Riesgo activo</p>
+          <span class="sst-mini-pct">{{ sst_pct_riesgo }}</span>
+        </div>
+        <p class="sst-mini-v">Ergonomia</p>
+        <p class="sst-mini-sub">Avance relevamientos puesto trabajo</p>
+        <p class="sst-mini-sub">Avance relevamiento</p>
+      </article>
+      <article class="sst-mini-item dev">
+        <div class="sst-mini-top">
+          <svg class="sst-mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 3h7l5 5v13H7z"></path><path d="M14 3v6h5"></path><path d="M10 14h6M10 18h6"></path></svg>
+          <p class="sst-mini-k">Estado documental</p>
+          <span class="sst-mini-pct" id="sst-doc-pct">{{ sst_pct_documental }}</span>
+        </div>
+        <p class="sst-mini-v">En desarrollo</p>
+      </article>
+      <article class="sst-mini-item linked">
+        <div class="sst-mini-top">
+          <svg class="sst-mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M8 12.5l2.5 2.5L16 9.5"></path></svg>
+          <p class="sst-mini-k">Seguimiento operativo</p>
+        </div>
+        <p class="sst-mini-v">Activo</p>
+      </article>
+    </div>
+
+    <p class="sst-mini-note">Sistema implementado en desarrollo progresivo conforme a las Directrices Nacionales de Sistemas de Gestion de Seguridad y Salud en el Trabajo (Resolucion SRT 523/2007).</p>
+
+    <div class="sst-scope-resp-row">
+      <div class="sst-scope-note">
+        <h4>Alcance del sistema</h4>
+        <p class="sst-scope-compact">Aplicacion del SG-SST en actividades operativas del MPD con foco inicial en Intendencia, registro de incidentes, acciones preventivas y medidas correctivas del personal.</p>
+        <div id="sst-scope-extra" class="sst-scope-extra">
+          <p>El Sistema de Gestion de Seguridad y Salud en el Trabajo (SG-SST) se aplica a las actividades operativas del Ministerio Publico de la Defensa, con foco inicial en el area de Intendencia.</p>
+          <p style="margin-top:5px;">El sistema permite registrar incidentes, acciones preventivas, riesgos laborales y medidas correctivas que puedan afectar al personal del organismo. La gestion tecnica especifica de cada riesgo puede corresponder a las areas competentes o a la Aseguradora de Riesgos del Trabajo (ART) conforme a la normativa vigente.</p>
+        </div>
+        <button type="button" class="sst-scope-toggle" onclick="toggleSstScopeMore(this)">Ver mas</button>
+      </div>
+
+      <div class="sst-responsable-note">
+        <h4>Responsables tecnicos del sistema</h4>
+        <div class="sst-responsable-grid">
+          <div class="sst-responsable-item">
+            <b>Responsable tecnico SG-SST</b><br>
+            Lic. Matias Calderari<br>
+            Licenciado en Higiene y Seguridad en el Trabajo
+          </div>
+          <div class="sst-responsable-item">
+            <b>Apoyo tecnico operativo</b><br>
+            Mauro Vega Murguia<br>
+            Tecnico en Higiene y Seguridad en el Trabajo
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sst-intro-grid">
+      <article class="sst-intro-card">
+        <h4>1. Politica de gestion</h4>
+        <ul>
+          <li>Gestion preventiva y trazable del area de Intendencia.</li>
+          <li>Proteccion de la integridad psicofisica del personal.</li>
+        </ul>
+        <div class="sst-card-extra"><ul><li>Alinear operacion diaria con estandares de higiene y seguridad laboral.</li><li>Base para auditorias internas y mejora continua.</li></ul></div>
+        <div class="sst-card-foot"><span class="sst-card-status complete">Estado: Completo</span><button type="button" class="sst-card-more" onclick="toggleSstCardMore(this)">Ver mas -></button></div>
+        <div class="sst-drive-wrap" data-drive-key="politica_gestion">
+          <input class="sst-drive-input" type="url" placeholder="Pegar enlace Drive (https://...)" />
+          <button type="button" class="sst-drive-btn save">Guardar</button>
+          <button type="button" class="sst-drive-btn open">Abrir</button>
+        </div>
+      </article>
+
+      <article class="sst-intro-card">
+        <h4>2. Plan de accion e implementacion</h4>
+        <ul>
+          <li>Diagnostico inicial por sede y proceso.</li>
+          <li>Priorizacion de riesgos y no conformidades criticas.</li>
+        </ul>
+        <div class="sst-card-extra"><ul><li>Ejecucion de acciones, seguimiento y cierre con evidencia.</li><li>Metas anuales y cronograma macro por etapa.</li></ul></div>
+        <div class="sst-card-foot"><span class="sst-card-status pending">Estado: Pendiente</span><button type="button" class="sst-card-more" onclick="toggleSstCardMore(this)">Ver mas -></button></div>
+        <div class="sst-drive-wrap" data-drive-key="plan_accion">
+          <input class="sst-drive-input" type="url" placeholder="Pegar enlace Drive (https://...)" />
+          <button type="button" class="sst-drive-btn save">Guardar</button>
+          <button type="button" class="sst-drive-btn open">Abrir</button>
+        </div>
+      </article>
+
+      <article class="sst-intro-card">
+        <h4>3. Roles y responsabilidades</h4>
+        <ul>
+          <li>Choferes: traslados, documentacion y checklists operativos.</li>
+          <li>Mantenimiento: obras, movimientos, desinfecciones y soporte.</li>
+        </ul>
+        <div class="sst-card-extra"><ul><li>Inventario/matafuegos: trazabilidad de recargas y control.</li><li>Higiene y seguridad: relevamientos, alertas y mejoras.</li></ul></div>
+        <div class="sst-card-foot"><span class="sst-card-status dev">Estado: En desarrollo</span><button type="button" class="sst-card-more" onclick="toggleSstCardMore(this)">Ver mas -></button></div>
+        <div class="sst-drive-wrap" data-drive-key="roles_resp">
+          <input class="sst-drive-input" type="url" placeholder="Pegar enlace Drive (https://...)" />
+          <button type="button" class="sst-drive-btn save">Guardar</button>
+          <button type="button" class="sst-drive-btn open">Abrir</button>
+        </div>
+      </article>
+
+      <article class="sst-intro-card">
+        <h4>4. Protocolos operativos</h4>
+        <ul>
+          <li>Limpieza y desinfeccion por sede.</li>
+          <li>Ergonomia y adecuacion de puestos.</li>
+        </ul>
+        <div class="sst-card-extra"><ul><li>Evacuacion y respuesta inicial ante emergencias.</li><li>Protocolos normalizados y versionados por sede.</li></ul></div>
+        <div class="sst-card-foot"><span class="sst-card-status pending">Estado: Pendiente</span><button type="button" class="sst-card-more" onclick="toggleSstCardMore(this)">Ver mas -></button></div>
+        <div class="sst-drive-wrap" data-drive-key="protocolos">
+          <input class="sst-drive-input" type="url" placeholder="Pegar enlace Drive (https://...)" />
+          <button type="button" class="sst-drive-btn save">Guardar</button>
+          <button type="button" class="sst-drive-btn open">Abrir</button>
+        </div>
+      </article>
+
+      <article class="sst-intro-card">
+        <h4>5. Instructivos y documentacion</h4>
+        <ul>
+          <li>Instructivo de carga de novedades y evidencias.</li>
+          <li>Instructivo de seguimiento de acciones correctivas.</li>
+        </ul>
+        <div class="sst-card-extra"><ul><li>Instructivo de cierre y control de cumplimiento.</li><li>Guia breve de uso por rol operativo.</li></ul></div>
+        <div class="sst-card-foot"><span class="sst-card-status dev">Estado: En desarrollo</span><button type="button" class="sst-card-more" onclick="toggleSstCardMore(this)">Ver mas -></button></div>
+        <div class="sst-drive-wrap" data-drive-key="instructivos">
+          <input class="sst-drive-input" type="url" placeholder="Pegar enlace Drive (https://...)" />
+          <button type="button" class="sst-drive-btn save">Guardar</button>
+          <button type="button" class="sst-drive-btn open">Abrir</button>
+        </div>
+      </article>
+
+      <article class="sst-intro-card">
+        <h4>6. Proceso de gestion de riesgos</h4>
+        <ul>
+          <li>Identificacion y valoracion (matriz IPER complementaria).</li>
+          <li>Definicion de controles y responsables.</li>
+        </ul>
+        <div class="sst-card-extra"><ul><li>Reevaluacion periodica y mejora continua.</li><li>Seguimiento de desvios y cierre por criticidad.</li></ul></div>
+        <div class="sst-card-foot"><span class="sst-card-status linked">Estado: Con enlace cargado</span><button type="button" class="sst-card-more" onclick="toggleSstCardMore(this)">Ver mas -></button></div>
+        <div class="sst-drive-wrap" data-drive-key="proceso_riesgos">
+          <input class="sst-drive-input" type="url" placeholder="Pegar enlace Drive (https://...)" />
+          <button type="button" class="sst-drive-btn save">Guardar</button>
+          <button type="button" class="sst-drive-btn open">Abrir</button>
+        </div>
+      </article>
+    </div>
+
+    <div class="sst-collapse-grid">
+      <div class="sst-collapse" id="sst-legal-collapse">
+        <button type="button" class="sst-collapse-head" onclick="toggleSstCollapse('legal')">
+          <div>
+            <p class="sst-collapse-title">Marco normativo aplicable</p>
+            <p class="sst-collapse-sub">Base normativa principal del sistema y anexos de referencia.</p>
+          </div>
+          <span class="sst-collapse-cta">Ver detalle</span>
+        </button>
+        <div id="sst-panel-legal" class="sst-doc-panel">
+          <h4>Marco normativo aplicable</h4>
+          <ul>
+            <li>Ley 19.587 de Higiene y Seguridad en el Trabajo.</li>
+            <li>Decreto 351/79 (reglamentario), y normativa complementaria por actividad.</li>
+            <li>Ley 24.557 de Riesgos del Trabajo, Art. 28 (obligaciones del empleador).</li>
+            <li>Resolucion SRT 463/09 para Relevamiento General de Riesgos Laborales (RGRL).</li>
+          </ul>
+          <div class="sst-links">
+            <a href="http://servicios.infoleg.gob.ar/infolegInternet/anexos/150000-154999/153431/texact.htm" target="_blank" rel="noopener">Normativa 463/09</a>
+            <a href="http://servicios.infoleg.gob.ar/infolegInternet/anexos/150000-154999/153431/res463-AnexoI-1.pdf" target="_blank" rel="noopener">Anexo I - Parte 1</a>
+            <a href="http://servicios.infoleg.gob.ar/infolegInternet/anexos/150000-154999/153431/res463-AnexoI-2.pdf" target="_blank" rel="noopener">Anexo I - Parte 2</a>
+          </div>
+          <div class="sst-links-extra" data-drive-key="legal_anexos_extra">
+            <input class="sst-drive-input" type="url" placeholder="Pegar enlace Drive adicional (anexo / archivo)" />
+            <button type="button" class="sst-drive-btn save">Guardar</button>
+            <button type="button" class="sst-drive-btn open">Abrir</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="sst-collapse" id="sst-art-collapse">
+        <button type="button" class="sst-collapse-head" onclick="toggleSstCollapse('art')">
+          <div>
+            <p class="sst-collapse-title">Documentacion ART / RGRL</p>
+            <p class="sst-collapse-sub">Documentacion operativa requerida para cumplimiento y regularizacion.</p>
+          </div>
+          <span class="sst-collapse-cta">Ver detalle</span>
+        </button>
+        <div id="sst-panel-art" class="sst-doc-panel">
+          <h4>Documentacion ART | RGRL (Resumen operativo)</h4>
+          <p>El RGRL es una declaracion jurada de cumplimiento SST (tipo checklist CUMPLE / NO CUMPLE / NO APLICA), presentada al contratar ART, al cambiar de ART y en renovacion anual.</p>
+          <ul>
+            <li>Si hay NO CUMPLE, debe definirse plazo de regularizacion y seguimiento.</li>
+            <li>La ART debe establecer visitas periodicas para verificar avances.</li>
+            <li>Debe quedar copia del ultimo RGRL presentado (papel o constancia web).</li>
+            <li>Plazo maximo de regularizacion: hasta un ano natural, segun nivel de riesgo.</li>
+          </ul>
+          <div class="sst-links">
+            <a href="#" target="_blank" rel="noopener">Enlace Drive RGRL</a>
+            <a href="#" target="_blank" rel="noopener">Relevamientos por sede</a>
+            <a href="#" target="_blank" rel="noopener">Resumen ejecutivo</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="sst-quick">
+    <button type="button" class="sub" onclick="toggleSstAgentes(true)">Ver SST de agentes</button>
+    <button type="button" class="main" onclick="toggleSstCarga(true)">+ Cargar novedad</button>
+    <button type="button" class="sub" id="sstCuadroBtn" onclick="toggleSstCuadro()">Ver cuadro</button>
+  </div>
+
+  <div class="license-card" id="sst-agentes-box" style="padding:12px 14px;display:none;">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+      <div style="font-weight:900;">SST de agentes (EPP e incidentes)</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <form method="get" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <input type="hidden" name="sede" value="{{ q_sede or '' }}">
+          <input type="hidden" name="tipo" value="{{ q_tipo or '' }}">
+          <input type="hidden" name="estado" value="{{ q_estado or '' }}">
+          <input type="hidden" name="categoria" value="{{ q_categoria or '' }}">
+          <input type="hidden" name="prioridad" value="{{ q_prioridad or '' }}">
+          <input type="hidden" name="q" value="{{ q_buscar or '' }}">
+          <select name="agente_id" class="sst-agent-pick">
+            <option value="">-- elegir agente --</option>
+            {% for a in agentes_sst %}
+              <option value="{{ a.id }}" {% if q_agente_id and (q_agente_id|string)==(a.id|string) %}selected{% endif %}>{{ a.agente }}</option>
+            {% endfor %}
+          </select>
+          <button class="btn outline-amber" type="submit">Ver</button>
+        </form>
+        <button type="button" class="btn outline-slate" onclick="toggleSstAgentes(false)">Ocultar</button>
+      </div>
+    </div>
+
+    {% if agente_sst_sel %}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-weight:800;">Entrega EPP</div>
+            <a class="btn xs outline-amber" href="{{ url_for('agente_epp', id=agente_sst_sel.id) }}">Gestionar</a>
+          </div>
+          {% if entregas_epp_sst %}
+            <div style="margin-top:8px;max-height:180px;overflow:auto;border:1px solid #e5e7eb;border-radius:8px;">
+              <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                <thead style="background:#e5edff;">
+                  <tr><th style="text-align:left;padding:6px;">Fecha</th><th style="text-align:left;padding:6px;">Tipo</th><th style="text-align:left;padding:6px;">Cant.</th></tr>
+                </thead>
+                <tbody>
+                  {% for e in entregas_epp_sst %}
+                    <tr><td style="padding:6px;border-top:1px solid #e5e7eb;">{{ e.fecha_entrega }}</td><td style="padding:6px;border-top:1px solid #e5e7eb;">{{ e.tipo }}</td><td style="padding:6px;border-top:1px solid #e5e7eb;">{{ e.cantidad }}</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p style="margin-top:8px;color:#6b7280;">No hay entregas cargadas.</p>
+          {% endif %}
+        </div>
+
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-weight:800;">Incidentes</div>
+            <a class="btn xs outline-amber" href="{{ url_for('agente_incidentes', id=agente_sst_sel.id) }}">Gestionar</a>
+          </div>
+          {% if incidentes_sst %}
+            <div style="margin-top:8px;max-height:180px;overflow:auto;border:1px solid #e5e7eb;border-radius:8px;">
+              <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                <thead style="background:#e5edff;">
+                  <tr><th style="text-align:left;padding:6px;">Fecha</th><th style="text-align:left;padding:6px;">Tipo</th><th style="text-align:left;padding:6px;">Estado</th></tr>
+                </thead>
+                <tbody>
+                  {% for i in incidentes_sst %}
+                    <tr><td style="padding:6px;border-top:1px solid #e5e7eb;">{{ i.fecha }}</td><td style="padding:6px;border-top:1px solid #e5e7eb;">{{ i.tipo|replace('_',' ')|capitalize }}</td><td style="padding:6px;border-top:1px solid #e5e7eb;">{{ i.estado or '-' }}</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p style="margin-top:8px;color:#6b7280;">No hay incidentes cargados.</p>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <section class="sst-operativa-head" id="sst-operativa-head" style="display:none;">
+    <h3>SEGUIMIENTO OPERATIVO</h3>
+    <p>Registro de acciones preventivas, no conformidades y seguimiento del SG-SST.</p>
+  </section>
+
+  <div class="grid-main sst-only-table" id="sst-grid-main" style="display:none;">
+    <div class="agent-licenses-card license-card">
+      <div class="agent-licenses-header" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+        <h3 style="margin:0;">Gestion operativa SST</h3>
+        <button type="button" id="sstFiltrosBtn" class="btn outline-slate sst-filter-toggle" onclick="toggleSstFiltros()">Filtrar</button>
+      </div>
+      <form id="sst-filtros-box" method="get" class="sst-filters" style="margin-bottom:10px;display:{{ 'grid' if (q_sede or q_tipo or q_categoria or q_estado or q_prioridad or q_buscar) else 'none' }};">
+        <div class="license-field">
+          <label>Sede</label>
+          <select name="sede">
+            <option value="">Todas</option>
+            {% for s in sedes %}
+              <option value="{{ s.codigo }}" {% if q_sede==s.codigo %}selected{% endif %}>{{ s.codigo }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="license-field">
+          <label>Tipo</label>
+          <select name="tipo">
+            <option value="">Todos</option>
+            <option value="prevencion" {% if q_tipo=="prevencion" %}selected{% endif %}>Prevencion</option>
+            <option value="no_conformidad" {% if q_tipo=="no_conformidad" %}selected{% endif %}>No conformidad</option>
+            <option value="informe" {% if q_tipo=="informe" %}selected{% endif %}>Informe</option>
+          </select>
+        </div>
+        <div class="license-field">
+          <label>Categoria</label>
+          <select name="categoria">
+            <option value="">Todas</option>
+            <option value="Matafuego mal ubicado" {% if q_categoria=="Matafuego mal ubicado" %}selected{% endif %}>Matafuego mal ubicado</option>
+            <option value="Sin luz de emergencia" {% if q_categoria=="Sin luz de emergencia" %}selected{% endif %}>Sin luz de emergencia</option>
+            <option value="Sin carteleria" {% if q_categoria=="Sin carteleria" %}selected{% endif %}>Sin carteleria</option>
+            <option value="Sin plano de evacuacion" {% if q_categoria=="Sin plano de evacuacion" %}selected{% endif %}>Sin plano de evacuacion</option>
+            <option value="Plan de evacuacion" {% if q_categoria=="Plan de evacuacion" %}selected{% endif %}>Plan de evacuacion</option>
+            <option value="Riesgo electrico" {% if q_categoria=="Riesgo electrico" %}selected{% endif %}>Riesgo electrico</option>
+            <option value="Iluminacion" {% if q_categoria=="Iluminacion" %}selected{% endif %}>Iluminacion</option>
+            <option value="Orden y limpieza" {% if q_categoria=="Orden y limpieza" %}selected{% endif %}>Orden y limpieza</option>
+            <option value="EPP" {% if q_categoria=="EPP" %}selected{% endif %}>EPP</option>
+            <option value="Otro" {% if q_categoria=="Otro" %}selected{% endif %}>Otro</option>
+          </select>
+        </div>
+        <div class="license-field">
+          <label>Estado</label>
+          <select name="estado">
+            <option value="">Todos</option>
+            <option value="ABIERTO" {% if q_estado=="ABIERTO" %}selected{% endif %}>Abierto</option>
+            <option value="EN_PROGRESO" {% if q_estado=="EN_PROGRESO" %}selected{% endif %}>En progreso</option>
+            <option value="CERRADO" {% if q_estado=="CERRADO" %}selected{% endif %}>Cerrado</option>
+          </select>
+        </div>
+        <div class="license-field">
+          <label>Prioridad</label>
+          <select name="prioridad">
+            <option value="">Todas</option>
+            <option value="Alta" {% if q_prioridad=="Alta" %}selected{% endif %}>Alta</option>
+            <option value="Media" {% if q_prioridad=="Media" %}selected{% endif %}>Media</option>
+            <option value="Baja" {% if q_prioridad=="Baja" %}selected{% endif %}>Baja</option>
+          </select>
+        </div>
+        <div class="license-field">
+          <label>Buscar</label>
+          <input type="text" name="q" value="{{ q_buscar or '' }}" placeholder="Titulo, detalle, responsable">
+        </div>
+        <div class="license-actions" style="grid-column:1 / -1;">
+          <button class="btn outline-amber" type="submit">Filtrar</button>
+          <a class="btn outline-slate" href="{{ url_for('sst_general') }}">Reset</a>
+        </div>
+      </form>
+
+      {% if sst_registros and sst_registros|length > 0 %}
+        <div class="agent-licenses-table-wrapper sst-table-wrapper">
+          <table class="agent-licenses-table sst-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Sede</th>
+                <th>Tipo</th>
+                <th>Categoria</th>
+                <th>Titulo</th>
+                <th>Prioridad</th>
+                <th>Estado</th>
+                <th>Responsable</th>
+                <th>Objetivo</th>
+                <th>Evidencia</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in sst_registros %}
+                <tr>
+                  <td>{{ r.fecha }}</td>
+                  <td>{{ r.sede_codigo or '-' }}</td>
+                  <td>{{ r.tipo|replace('_',' ')|capitalize }}</td>
+                  <td>{{ r.categoria or '-' }}</td>
+                  <td>{{ r.titulo or '-' }}</td>
+                  <td>
+                    {% if r.prioridad %}
+                      <span class="sst-badge {{ r.prioridad|lower }}">{{ r.prioridad }}</span>
+                    {% else %}
+                      -
+                    {% endif %}
+                  </td>
+                  <td>{{ r.estado or '-' }}</td>
+                  <td>{{ r.responsable or '-' }}</td>
+                  <td>{{ r.fecha_objetivo or '-' }}</td>
+                  <td>
+                    {% if r.evidencia_url %}
+                      <a class="btn xs outline-slate" href="{{ r.evidencia_url }}" target="_blank" rel="noopener">Ver</a>
+                    {% else %}
+                      -
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                      <a class="btn xs outline-slate" href="{{ url_for('sst_general_editar', sst_id=r.id) }}">Editar</a>
+                      <form method="post"
+                            action="{{ url_for('sst_general_eliminar', sst_id=r.id) }}"
+                            onsubmit="return confirm('Eliminar este registro?');">
+                        <button type="submit" class="btn xs outline-amber">Eliminar</button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="panel-note">No hay registros SST.</p>
+      {% endif %}
+    </div>
+
+    <div class="license-card" id="sst-carga-box" style="display:none;">
+      <div class="agent-detail-body">
+        <div class="agent-detail-section">
+          <div class="agent-detail-section-title">CARGAR NOVEDAD SST</div>
+
+          <form method="post" class="license-form">
+            <div class="license-grid">
+              <div class="license-field">
+                <label for="fecha">Fecha</label>
+                <input type="date" id="fecha" name="fecha" required>
+              </div>
+              <div class="license-field">
+                <label for="fecha_objetivo">Fecha objetivo</label>
+                <input type="date" id="fecha_objetivo" name="fecha_objetivo">
+              </div>
+              <div class="license-field">
+                <label for="sede_codigo">Sede</label>
+                <select id="sede_codigo" name="sede_codigo">
+                  <option value="">(todas / general)</option>
+                  {% for s in sedes %}
+                    <option value="{{ s.codigo }}">{{ s.codigo }} - {{ s.nombre }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="license-field">
+                <label for="tipo">Tipo</label>
+                <select id="tipo" name="tipo" required>
+                  <option value="">Seleccionar...</option>
+                  <option value="prevencion">Prevencion</option>
+                  <option value="no_conformidad">No conformidad</option>
+                  <option value="informe">Informe</option>
+                </select>
+              </div>
+              <div class="license-field">
+                <label for="categoria">Categoria</label>
+                <select id="categoria" name="categoria">
+                  <option value="">Seleccionar...</option>
+                  <option value="Matafuego mal ubicado">Matafuego mal ubicado</option>
+                  <option value="Sin luz de emergencia">Sin luz de emergencia</option>
+                  <option value="Sin carteleria">Sin carteleria</option>
+                  <option value="Sin plano de evacuacion">Sin plano de evacuacion</option>
+                  <option value="Plan de evacuacion">Plan de evacuacion</option>
+                  <option value="Riesgo electrico">Riesgo electrico</option>
+                  <option value="Iluminacion">Iluminacion</option>
+                  <option value="Orden y limpieza">Orden y limpieza</option>
+                  <option value="EPP">EPP</option>
+                  <option value="Otro">Otro</option>
+                </select>
+              </div>
+              <div class="license-field">
+                <label for="area">Area / Sector</label>
+                <input type="text" id="area" name="area" placeholder="Ej: Pasillo, Deposito">
+              </div>
+
+              <div class="license-field full">
+                <label for="titulo">Titulo</label>
+                <input type="text" id="titulo" name="titulo" placeholder="Breve resumen">
+              </div>
+
+              <div class="license-field full">
+                <label for="detalle">Detalle</label>
+                <textarea id="detalle" name="detalle" rows="3"
+                          placeholder="Descripcion del caso, acciones, observaciones."></textarea>
+              </div>
+
+              <div class="license-field">
+                <label for="responsable">Responsable</label>
+                <input type="text" id="responsable" name="responsable" placeholder="Nombre">
+              </div>
+              <div class="license-field">
+                <label for="prioridad">Prioridad</label>
+                <select id="prioridad" name="prioridad">
+                  <option value="">(sin especificar)</option>
+                  <option value="Alta">Alta</option>
+                  <option value="Media">Media</option>
+                  <option value="Baja">Baja</option>
+                </select>
+              </div>
+              <div class="license-field">
+                <label for="estado">Estado</label>
+                <select id="estado" name="estado">
+                  <option value="">(sin especificar)</option>
+                  <option value="ABIERTO">Abierto</option>
+                  <option value="EN_PROGRESO">En progreso</option>
+                  <option value="CERRADO">Cerrado</option>
+                </select>
+              </div>
+              <div class="license-field">
+                <label for="fecha_cierre">Fecha cierre</label>
+                <input type="date" id="fecha_cierre" name="fecha_cierre">
+              </div>
+
+              <div class="license-field full">
+                <label for="accion_correctiva">Accion correctiva</label>
+                <textarea id="accion_correctiva" name="accion_correctiva" rows="2"
+                          placeholder="Accion propuesta o aplicada."></textarea>
+              </div>
+
+              <div class="license-field full">
+                <label for="evidencia_url">Evidencia (link/foto)</label>
+                <input type="url" id="evidencia_url" name="evidencia_url" placeholder="https://">
+              </div>
+
+            </div>
+
+            <div class="license-actions">
+              <button type="submit" class="btn outline-amber">Guardar registro</button>
+              <a class="btn outline-slate" href="{{ url_for('dashboard') }}">
+                Cancelar
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  function toggleSstCarga(show) {
+    var box = document.getElementById('sst-carga-box');
+    var grid = document.getElementById('sst-grid-main');
+    var head = document.getElementById('sst-operativa-head');
+    var cuadroBtn = document.getElementById('sstCuadroBtn');
+    if (!box || !grid) return;
+    if (show) {
+      goSstCuadro(true);
+      box.style.display = 'block';
+      grid.classList.remove('sst-only-table');
+      if (cuadroBtn) cuadroBtn.textContent = 'Ocultar cuadro';
+      box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    box.style.display = 'none';
+    grid.classList.add('sst-only-table');
+    if (cuadroBtn) {
+      var visible = window.getComputedStyle ? (window.getComputedStyle(grid).display !== 'none') : (grid.style.display !== 'none');
+      cuadroBtn.textContent = visible ? 'Ocultar cuadro' : 'Ver cuadro';
+    }
+  }
+
+  function goSstCuadro(forceShow) {
+    var box = document.getElementById('sst-grid-main');
+    var carga = document.getElementById('sst-carga-box');
+    var head = document.getElementById('sst-operativa-head');
+    var btn = document.getElementById('sstCuadroBtn');
+    if (!box) return;
+
+    var isVisible = window.getComputedStyle ? (window.getComputedStyle(box).display !== 'none') : (box.style.display !== 'none');
+    if (forceShow === true) isVisible = false;
+
+    if (isVisible) {
+      box.style.display = 'none';
+      if (head) head.style.display = 'none';
+      if (carga) carga.style.display = 'none';
+      if (btn) btn.textContent = 'Ver cuadro';
+      return;
+    }
+
+    box.style.display = 'grid';
+    if (head) head.style.display = 'block';
+    if (carga) carga.style.display = 'none';
+    box.classList.add('sst-only-table');
+    if (btn) btn.textContent = 'Ocultar cuadro';
+    box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function toggleSstCuadro() {
+    goSstCuadro();
+  }
+
+  function toggleSstAgentes(show) {
+    var box = document.getElementById('sst-agentes-box');
+    if (!box) return;
+    box.style.display = show ? 'block' : 'none';
+    if (show) {
+      box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  function toggleSstIntroLegal() {
+    var panel = document.getElementById('sst-intro-legal-panel');
+    var other = document.getElementById('sst-intro-present-panel');
+    if (!panel) return;
+    panel.classList.toggle('open');
+    if (other) other.classList.remove('open');
+  }
+
+  function toggleSstIntroPresent() {
+    var panel = document.getElementById('sst-intro-present-panel');
+    var other = document.getElementById('sst-intro-legal-panel');
+    if (!panel) return;
+    panel.classList.toggle('open');
+    if (other) other.classList.remove('open');
+  }
+
+  function toggleSstScopeMore(btn) {
+    var box = document.getElementById('sst-scope-extra');
+    if (!box || !btn) return;
+    var open = box.classList.toggle('open');
+    btn.textContent = open ? 'Ver menos' : 'Ver mas';
+  }
+
+  function toggleSstDocPanel(which) {
+    toggleSstCollapse(which);
+  }
+
+  function toggleSstCollapse(which) {
+    var legalWrap = document.getElementById('sst-legal-collapse');
+    var artWrap = document.getElementById('sst-art-collapse');
+    if (!legalWrap || !artWrap) return;
+
+    var openLegal = legalWrap.classList.contains('open');
+    var openArt = artWrap.classList.contains('open');
+
+    if (which === 'legal') {
+      legalWrap.classList.toggle('open', !openLegal);
+      artWrap.classList.remove('open');
+      return;
+    }
+
+    if (which === 'art') {
+      artWrap.classList.toggle('open', !openArt);
+      legalWrap.classList.remove('open');
+    }
+  }
+
+  function toggleSstCardMore(btn) {
+    var card = btn ? btn.closest('.sst-intro-card') : null;
+    if (!card) return;
+    var expanded = card.classList.toggle('expanded');
+    btn.textContent = expanded ? 'Ver menos' : 'Ver mas ->';
+  }
+
+  function toggleSstFiltros() {
+    var box = document.getElementById('sst-filtros-box');
+    var btn = document.getElementById('sstFiltrosBtn');
+    if (!box || !btn) return;
+    var showing = (box.style.display !== 'none' && box.style.display !== '');
+    if (showing) {
+      box.style.display = 'none';
+      btn.textContent = 'Filtrar';
+      return;
+    }
+    box.style.display = 'grid';
+    btn.textContent = 'Ocultar filtros';
+    box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  (function initSstFiltrosBtn(){
+    var box = document.getElementById('sst-filtros-box');
+    var btn = document.getElementById('sstFiltrosBtn');
+    if (!box || !btn) return;
+    var computed = window.getComputedStyle ? window.getComputedStyle(box).display : box.style.display;
+    if (computed && computed !== 'none') {
+      btn.textContent = 'Ocultar filtros';
+    } else {
+      btn.textContent = 'Filtrar';
+    }
+  })();
+
+  (function initSstCuadroBtn(){
+    var grid = document.getElementById('sst-grid-main');
+    var btn = document.getElementById('sstCuadroBtn');
+    if (!grid || !btn) return;
+    var visible = window.getComputedStyle ? (window.getComputedStyle(grid).display !== 'none') : (grid.style.display !== 'none');
+    btn.textContent = visible ? 'Ocultar cuadro' : 'Ver cuadro';
+  })();
+
+  (function setupSstDriveLinks(){
+    var wraps = document.querySelectorAll('[data-drive-key]');
+    if (!wraps || !wraps.length) return;
+
+    function updateDocPct() {
+      var target = document.getElementById('sst-doc-pct');
+      if (!target) return;
+      var keys = ['fundamentos_legales', 'presentacion_institucional'];
+      var loaded = 0;
+      keys.forEach(function(k){
+        try {
+          var v = String(localStorage.getItem('sst_drive_' + k) || '').trim();
+          if (v) loaded += 1;
+        } catch(e) {}
+      });
+      var pct = keys.length ? Math.round((loaded * 100) / keys.length) : 0;
+      target.textContent = String(pct) + '%';
+    }
+
+    wraps.forEach(function(w){
+      var key = 'sst_drive_' + String(w.getAttribute('data-drive-key') || '').trim();
+      var inp = w.querySelector('.sst-drive-input');
+      var bSave = w.querySelector('.sst-drive-btn.save');
+      var bOpen = w.querySelector('.sst-drive-btn.open');
+      if (!inp || !bSave || !bOpen || !key) return;
+
+      try {
+        var old = localStorage.getItem(key) || '';
+        if (old) inp.value = old;
+      } catch(e) {}
+
+      bSave.addEventListener('click', function(){
+        var v = String(inp.value || '').trim();
+        try { localStorage.setItem(key, v); } catch(e) {}
+        updateDocPct();
+      });
+
+      bOpen.addEventListener('click', function(){
+        var v = String(inp.value || '').trim();
+        if (!v) return;
+        if (v.indexOf('http://') !== 0 && v.indexOf('https://') !== 0) {
+          v = 'https://' + v;
+        }
+        window.open(v, '_blank');
+      });
+    });
+
+    updateDocPct();
+  })();
+</script>
+
+{% endblock %}

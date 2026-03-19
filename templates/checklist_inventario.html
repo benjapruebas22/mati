@@ -1,0 +1,384 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="chk-main">
+
+  <header class="section-header">
+    <div>
+      <h1>Checklist · Control de inventario por depósito</h1>
+      <p class="section-sub">
+        Recuento de mobiliario por ambiente (sede + código de local) para comparar con el inventario oficial.
+      </p>
+    </div>
+
+    <div class="section-actions">
+      <a class="btn outline-slate" href="{{ url_for('dashboard') }}">⬅ Volver al inicio</a>
+    </div>
+  </header>
+
+  {# Estilos SOLO para la tabla de historial #}
+  <style>
+    .chk-history-card .card-header {
+      padding-bottom: 4px;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+
+    .chk-history-card .card-header h2 {
+      font-size: 16px;
+      margin: 0;
+    }
+
+    .chk-history-card .card-header span {
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .chk-table-wrapper {
+      margin-top: 8px;
+      max-height: 340px;        /* scroll si hay muchos registros */
+      overflow: auto;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+      background: #ffffff;
+    }
+
+    .chk-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .chk-table thead th {
+      position: sticky;
+      top: 0;
+      background: #e0ebff;
+      color: #111827;
+      font-weight: 600;
+      padding: 6px 8px;
+      border-bottom: 1px solid #d1d5db;
+      white-space: nowrap;
+      text-align: left;
+    }
+
+    .chk-table tbody td {
+      padding: 6px 8px;
+      border-bottom: 1px solid #eef0f5;
+      vertical-align: top;
+    }
+
+    .chk-table tbody tr:nth-child(even) {
+      background: #f9fafb;
+    }
+
+    .chk-cell-small {
+      font-size: 12px;
+      color: #4b5563;
+    }
+
+    .chk-tag-sede {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #e0ebff;
+      font-size: 11px;
+      font-weight: 500;
+      color: #111827;
+    }
+
+    .chk-tag-sede span {
+      margin-left: 4px;
+      color: #6b7280;
+      font-weight: 400;
+    }
+
+    .chk-tag-agente {
+      font-size: 12px;
+      color: #6b7280;
+    }
+
+    .chk-obs {
+      max-width: 220px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 12px;
+      color: #374151;
+    }
+  </style>
+
+  {% set is_full = (user_role == 'full') %}
+
+  <div class="chk-grid">
+
+    <!-- COLUMNA IZQUIERDA: NUEVO CONTROL -->
+    <div class="chk-card">
+      <h2>Nuevo control de inventario</h2>
+      <p class="hint">
+        Seleccioná el depósito, el agente que realiza el control y cargá el recuento real de mobiliario.
+        Si dejás un campo vacío, se toma el valor oficial actual.
+      </p>
+
+      <form method="post" class="form-soft">
+
+        <!-- FECHA -->
+        <label for="fecha">Fecha del control</label>
+        <input type="date" id="fecha" name="fecha" value="{{ hoy }}" required>
+
+        <!-- AGENTE -->
+        <label for="agente_id">Agente que realiza el control</label>
+        <select name="agente_id" id="agente_id">
+          <option value="">-- Seleccionar agente --</option>
+          {% for ag in agentes %}
+            <option value="{{ ag.id }}">{{ ag.agente }}</option>
+          {% endfor %}
+        </select>
+
+        <!-- DEPÓSITO -->
+        <label for="deposito_sel">Depósito / ambiente</label>
+        <select name="deposito_sel" id="deposito_sel" required>
+          <option value="">-- Elegir sede + código de local --</option>
+          {% for sede, rows in depositos_rows|groupby("codigo_sede") %}
+            <optgroup label="{{ sede }}">
+              {% for row in rows %}
+                {% set key = row.codigo_sede ~ '|' ~ row.codigo_local %}
+                {% set inv = inv_map.get(key) %}
+                <option value="{{ row.codigo_sede }}|{{ row.codigo_local }}">
+                  {{ row.codigo_local }}{% if row.descripcion %} · {{ row.descripcion }}{% endif %}
+                  {% if is_full %}
+                    {% if inv %}
+                      (Aire: {{ inv.aire_marca }},
+                       Escr: {{ inv.escritorio_prof }},
+                       Mesa PC: {{ inv.mesa_pc }},
+                       Silla gir: {{ inv.silla_giratoria }},
+                       Silla fija: {{ inv.silla_fija }},
+                       Armarios: {{ inv.armario_alto }},
+                       Biblio: {{ inv.biblioteca_baja }},
+                       Otros: {{ inv.otros }})
+                    {% endif %}
+                  {% endif %}
+                </option>
+              {% endfor %}
+            </optgroup>
+          {% endfor %}
+        </select>
+        <p class="hint small">
+          {% if is_full %}
+            El paréntesis muestra el inventario oficial actual para ese ambiente.
+          {% else %}
+            Elegí la sede y el depósito a relevar.
+          {% endif %}
+        </p>
+
+        <hr class="divider">
+
+        <h3>Recuento real del día del control</h3>
+
+        <div class="form-grid-2">
+          <div>
+            <label for="aire_marca_control">Aires acondicionados instalados</label>
+            <input type="number" id="aire_marca_control" name="aire_marca_control" min="0" placeholder="Ej: 1">
+          </div>
+
+          <div>
+            <label for="escritorio_prof_control">Escritorios profesionales</label>
+            <input type="number" id="escritorio_prof_control" name="escritorio_prof_control" min="0">
+          </div>
+
+          <div>
+            <label for="mesa_pc_control">Mesas de PC</label>
+            <input type="number" id="mesa_pc_control" name="mesa_pc_control" min="0">
+          </div>
+
+          <div>
+            <label for="silla_giratoria_control">Sillas giratorias</label>
+            <input type="number" id="silla_giratoria_control" name="silla_giratoria_control" min="0">
+          </div>
+
+          <div>
+            <label for="silla_fija_control">Sillas fijas</label>
+            <input type="number" id="silla_fija_control" name="silla_fija_control" min="0">
+          </div>
+
+          <div>
+            <label for="armario_alto_control">Armarios altos</label>
+            <input type="number" id="armario_alto_control" name="armario_alto_control" min="0">
+          </div>
+
+          <div>
+            <label for="biblioteca_baja_control">Bibliotecas bajas</label>
+            <input type="number" id="biblioteca_baja_control" name="biblioteca_baja_control" min="0">
+          </div>
+
+          <div>
+            <label for="otros_control">Otros (bancas, sillones, etc.)</label>
+            <input type="number" id="otros_control" name="otros_control" min="0">
+          </div>
+        </div>
+
+        <label for="observaciones">Observaciones</label>
+        <textarea id="observaciones" name="observaciones" rows="3"
+          placeholder="Ej: falta una silla, se rompió un escritorio, etc."></textarea>
+
+        <button type="submit" class="btn primary full">Guardar control</button>
+      </form>
+    </div>
+
+    <!-- COLUMNA DERECHA: HISTORIAL DE CONTROLES EN TABLA -->
+    <div class="chk-card chk-history-card">
+      <div class="card-header">
+        <h2>Últimos controles registrados</h2>
+        <span>Mostrando los últimos 30 controles</span>
+      </div>
+
+      <p class="hint">
+        Compará el valor oficial vs. el recuento real para cada depósito.
+      </p>
+
+      {% if controles %}
+        <div class="chk-table-wrapper">
+          <table class="chk-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Sede / ambiente</th>
+                <th>Agente</th>
+                {% if is_full %}
+                  <th>Aire</th>
+                  <th>Escr.</th>
+                  <th>Mesa PC</th>
+                  <th>Silla gir.</th>
+                  <th>Silla fija</th>
+                  <th>Armario</th>
+                  <th>Biblioteca</th>
+                  <th>Otros</th>
+                {% else %}
+                  <th>Aire</th>
+                  <th>Escr.</th>
+                  <th>Mesa PC</th>
+                  <th>Silla gir.</th>
+                  <th>Silla fija</th>
+                  <th>Armario</th>
+                  <th>Biblioteca</th>
+                  <th>Otros</th>
+                {% endif %}
+                <th>Observaciones</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in controles %}
+              <tr>
+                <!-- Fecha -->
+                <td>{{ c.fecha }}</td>
+
+                <!-- Sede + depósito -->
+                <td>
+                  <span class="chk-tag-sede">
+                    {{ c.sede_codigo }}
+                    <span>{{ c.deposito_codigo }}</span>
+                  </span>
+                </td>
+
+                <!-- Agente -->
+                <td class="chk-tag-agente">
+                  {{ c.agente_nombre or c.agente or "Sin agente" }}
+                </td>
+
+                <!-- Aire -->
+                <td class="chk-cell-small">
+                  {% if is_full %}
+                    {{ c.aire_marca_oficial }} / {{ c.aire_marca }}
+                  {% else %}
+                    {{ c.aire_marca }}
+                  {% endif %}
+                </td>
+
+                <!-- Escritorios -->
+                <td class="chk-cell-small">
+                  {% if is_full %}
+                    {{ c.escritorio_prof_oficial }} / {{ c.escritorio_prof }}
+                  {% else %}
+                    {{ c.escritorio_prof }}
+                  {% endif %}
+                </td>
+
+                <!-- Mesas PC -->
+                <td class="chk-cell-small">
+                  {% if is_full %}
+                    {{ c.mesa_pc_oficial }} / {{ c.mesa_pc }}
+                  {% else %}
+                    {{ c.mesa_pc }}
+                  {% endif %}
+                </td>
+
+                <!-- Sillas giratorias -->
+                <td class="chk-cell-small">
+                  {% if is_full %}
+                    {{ c.silla_giratoria_oficial }} / {{ c.silla_giratoria }}
+                  {% else %}
+                    {{ c.silla_giratoria }}
+                  {% endif %}
+                </td>
+
+                <!-- Sillas fijas -->
+                <td class="chk-cell-small">
+                  {% if is_full %}
+                    {{ c.silla_fija_oficial }} / {{ c.silla_fija }}
+                  {% else %}
+                    {{ c.silla_fija }}
+                  {% endif %}
+                </td>
+
+                <!-- Armarios altos -->
+                <td class="chk-cell-small">
+                  {% if is_full %}
+                    {{ c.armario_alto_oficial }} / {{ c.armario_alto }}
+                  {% else %}
+                    {{ c.armario_alto }}
+                  {% endif %}
+                </td>
+
+                <!-- Bibliotecas bajas -->
+                <td class="chk-cell-small">
+                  {% if is_full %}
+                    {{ c.biblioteca_baja_oficial }} / {{ c.biblioteca_baja }}
+                  {% else %}
+                    {{ c.biblioteca_baja }}
+                  {% endif %}
+                </td>
+
+                <!-- Otros -->
+                <td class="chk-cell-small">
+                  {% if is_full %}
+                    {{ c.otros_oficial }} / {{ c.otros }}
+                  {% else %}
+                    {{ c.otros }}
+                  {% endif %}
+                </td>
+
+                <!-- Observaciones -->
+                <td class="chk-obs" title="{{ c.observaciones or '' }}">
+                  {{ c.observaciones or "-" }}
+                </td>
+
+                <td>
+                  <a class="btn xs outline" href="{{ url_for('checklist_inventario_editar', cid=c.id) }}">Editar</a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="hint">Todavía no hay controles registrados.</p>
+      {% endif %}
+    </div>
+
+  </div>
+</section>
+
+{% endblock %}

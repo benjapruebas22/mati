@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+{% block content %}
+
+{% set titulo_fuero = {
+  "penal": "Defensorías Penales",
+  "menores": "Defensorías de Menores, Incapaces y Capacidad Restringida",
+  "ajs": "Defensorías de Asistencia Jurídico Social",
+  "civil": "Defensorías Civiles",
+  "adm": "Sedes Administrativas"
+}[fuero_slug] %}
+
+{% set color_fuero = {
+  "penal": "#6666cc",
+  "menores": "#65BFF4",
+  "ajs": "#F14B94",
+  "civil": "#65BFF4",
+  "adm": "#4D4D4D"
+}[fuero_slug] %}
+
+<style>
+  .sedes-fuero-main{
+    max-width:1200px;
+    margin:0 auto;
+    padding:14px 18px 22px;
+  }
+  .sedes-fuero-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    margin-bottom:12px;
+  }
+  .sedes-fuero-titlebox{
+    padding:10px 14px;
+    border-radius:14px;
+    background:{{ color_fuero }};
+    color:#fff;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    box-shadow:0 10px 22px rgba(15,23,42,0.25);
+  }
+  .sedes-fuero-titlebox h1{
+    margin:0;
+    font-size:18px;
+    font-weight:700;
+  }
+  .sedes-fuero-titlebox p{
+    margin:0;
+    font-size:12px;
+    opacity:.95;
+  }
+  .sedes-fuero-actions{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+  }
+  .btn-small{
+    padding:6px 10px;
+    font-size:12px;
+    border-radius:999px;
+    border:1px solid #e5e7eb;
+    background:#fff;
+    color:#111827;
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+  }
+  .btn-small.ghost{
+    background:#f9fafb;
+  }
+
+  .sedes-grid{
+    margin-top:14px;
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    gap:10px;
+  }
+
+  /* Fichas (las mismas que te pasé recién) */
+  .sede-card-fuero{
+    background: radial-gradient(circle at top left, rgba(255,255,255,0.28), transparent 55%), {{ color_fuero }};
+    border-radius:14px;
+    padding:9px 11px 10px 11px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    box-shadow:0 2px 6px rgba(15,23,42,0.18);
+    min-height:96px;
+    cursor:pointer;
+    color:#ffffff;
+    position:relative;
+    overflow:hidden;
+  }
+  .sede-card-fuero::after{
+    content:"";
+    position:absolute;
+    inset:0;
+    border-radius:14px;
+    border:1px solid rgba(255,255,255,0.35);
+    pointer-events:none;
+  }
+  .sede-mainrow{
+    display:flex;
+    gap:8px;
+    align-items:flex-start;
+    min-width:0;
+    position:relative;
+    z-index:1;
+  }
+  .sede-code-circle{
+    min-width:34px;
+    height:34px;
+    border-radius:999px;
+    background:#ffffff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:12px;
+    font-weight:800;
+    box-shadow:0 1px 3px rgba(0,0,0,0.25);
+    color:{{ color_fuero }};
+  }
+  .sede-fuero-pill{
+    font-size:11px;
+    padding:2px 7px;
+    border-radius:999px;
+    background:rgba(0,0,0,0.18);
+    border:1px solid rgba(255,255,255,0.22);
+    text-transform:uppercase;
+    letter-spacing:.04em;
+  }
+  .sede-nombre{
+    font-weight:700;
+    font-size:13px;
+    margin-top:2px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .sede-dir{
+    font-size:11px;
+    color:rgba(255,255,255,0.9);
+    margin-top:1px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .sede-thumb-fuero{
+    position:relative;
+    width:86px;
+    height:56px;
+    border-radius:10px;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,0.70);
+    background:rgba(15,23,42,0.20);
+    flex-shrink:0;
+  }
+  .sede-thumb-fuero img{
+    width:100%;height:100%;object-fit:cover;display:block;
+  }
+  .sede-thumb-badge{
+    position:absolute;
+    right:4px;
+    bottom:4px;
+    font-size:9px;
+    padding:1px 5px;
+    border-radius:999px;
+    background:rgba(0,0,0,0.55);
+    color:#f9fafb;
+  }
+
+  .sede-actions{
+    margin-top:7px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:4px;
+    position:relative;
+    z-index:1;
+  }
+  .sede-actions a{
+    font-size:10px;
+    padding:3px 9px;
+    border-radius:999px;
+    text-decoration:none;
+  }
+  .sede-actions .primary{
+    background:#ffffff;
+    border:1px solid rgba(15,23,42,0.05);
+    color:{{ color_fuero }};
+    font-weight:600;
+  }
+  .sede-actions .ghost{
+    background:rgba(0,0,0,0.18);
+    border:1px solid rgba(255,255,255,0.40);
+    color:#ffffff;
+    font-weight:500;
+  }
+</style>
+
+<section class="sedes-fuero-main">
+
+  <header class="sedes-fuero-header">
+    <div class="sedes-fuero-titlebox">
+      <h1>{{ titulo_fuero }}</h1>
+      <p>Listado de sedes del fuero seleccionado con acceso rápido a ficha y registro fotográfico.</p>
+    </div>
+    <div class="sedes-fuero-actions">
+      <a href="{{ url_for('dashboard', mes=mes, fecha=fecha_dia, q_cal='') if mes is defined else url_for('dashboard') }}"
+         class="btn-small ghost">⬅ Volver al tablero</a>
+    </div>
+  </header>
+
+  <div class="sedes-grid">
+    {% for s in sedes %}
+      <div class="sede-card-fuero"
+           data-sede="{{ s.codigo }}">
+        <div class="sede-mainrow">
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+              <span class="sede-code-circle">{{ s.codigo }}</span>
+              <span class="sede-fuero-pill">
+                {{ s.fuero|replace('_',' ')|capitalize }}
+              </span>
+            </div>
+            <div class="sede-nombre">{{ s.nombre }}</div>
+            <div class="sede-dir">
+              {{ s.ciudad }}
+              {% if s.direccion %}
+                · {{ s.direccion }}
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="sede-thumb-fuero">
+            <img src="{{ url_for('static', filename='img/sedes/' ~ s.codigo|lower ~ '_frente.jpg') }}"
+                 alt="Frente sede {{ s.codigo }}">
+            <span class="sede-thumb-badge">Frente</span>
+          </div>
+        </div>
+
+        <div class="sede-actions">
+          <a class="primary"
+             href="{{ url_for('sede_ficha', codigo=s.codigo) }}">
+            📋 Ficha de la sede
+          </a>
+          <a class="ghost"
+             href="{{ s.url_planos_drive or 'https://drive.google.com/drive/folders/1rQfUwlcFmLJ-AnRj8GC2lCAvfzK5X4SU' }}" target="_blank" rel="noopener">
+            📷 Registro fotográfico
+          </a>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+</section>
+
+{% endblock %}

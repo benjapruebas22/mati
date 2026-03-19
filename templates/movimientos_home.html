@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="grid-main">
+  <div class="left-panel">
+
+    <div class="map-card">
+      <h3>Movimientos de mobiliario</h3>
+      <p class="muted">
+        Registrá traslados de muebles entre sedes y depósitos.
+      </p>
+
+      <form method="post" class="veh-form" style="margin-top:10px;">
+        <div class="veh-form-grid">
+
+          <label>
+            Fecha
+            <input type="date" name="fecha" value="{{ request.form.get('fecha', '') }}">
+          </label>
+
+          <label>
+            Ítem / mobiliario
+            <select name="item" required>
+              {% set _item_sel = request.form.get('item','') %}
+              <option value="">-- seleccionar --</option>
+              <option value="escritorio_prof" {% if _item_sel=='escritorio_prof' %}selected{% endif %}>Escritorio prof</option>
+              <option value="mesa_pc" {% if _item_sel=='mesa_pc' %}selected{% endif %}>Mesa PC</option>
+              <option value="silla_giratoria" {% if _item_sel=='silla_giratoria' %}selected{% endif %}>Silla giratoria</option>
+              <option value="silla_fija" {% if _item_sel=='silla_fija' %}selected{% endif %}>Silla fija</option>
+              <option value="armario_alto" {% if _item_sel=='armario_alto' %}selected{% endif %}>Armario alto</option>
+              <option value="biblioteca_baja" {% if _item_sel=='biblioteca_baja' %}selected{% endif %}>Biblioteca baja</option>
+              <option value="otros" {% if _item_sel=='otros' %}selected{% endif %}>Otros</option>
+            </select>
+          </label>
+
+          <label>
+            Cantidad
+            <input type="number" step="0.01" name="cantidad" value="{{ request.form.get('cantidad','1') }}">
+          </label>
+
+          <label>
+            Sede origen
+            <select name="sede_origen">
+              <option value="">-- sin origen (alta nueva) --</option>
+              {% for s in sedes %}
+                <option value="{{ s.codigo }}" {% if sede_origen_pref==s.codigo %}selected{% endif %}>{{ s.codigo }} - {{ s.nombre }}</option>
+              {% endfor %}
+            </select>
+          </label>
+
+          <label>
+            Depósito / ambiente origen
+            <select name="deposito_origen">
+              <option value="">-- seleccionar --</option>
+              {% set sede_actual = None %}
+              {% for d in depositos %}
+                {% if d.codigo_sede != sede_actual %}
+                  {% if sede_actual is not none %}</optgroup>{% endif %}
+                  <optgroup label="{{ d.codigo_sede }}">
+                  {% set sede_actual = d.codigo_sede %}
+                {% endif %}
+                <option value="{{ d.codigo_local }}" {% if dep_origen_pref==d.codigo_local %}selected{% endif %}>
+                  {{ d.codigo_local }} – {{ d.descripcion }}
+                </option>
+              {% endfor %}
+              {% if sede_actual is not none %}</optgroup>{% endif %}
+            </select>
+          </label>
+
+          <label>
+            Sede destino
+            <select name="sede_destino">
+              <option value="">-- sin destino (baja a depósito general) --</option>
+              {% for s in sedes %}
+                <option value="{{ s.codigo }}" {% if sede_destino_pref==s.codigo %}selected{% endif %}>{{ s.codigo }} - {{ s.nombre }}</option>
+              {% endfor %}
+            </select>
+          </label>
+
+          <label>
+            Depósito / ambiente destino
+            <select name="deposito_destino">
+              <option value="">-- seleccionar --</option>
+              {% set sede_actual = None %}
+              {% for d in depositos %}
+                {% if d.codigo_sede != sede_actual %}
+                  {% if sede_actual is not none %}</optgroup>{% endif %}
+                  <optgroup label="{{ d.codigo_sede }}">
+                  {% set sede_actual = d.codigo_sede %}
+                {% endif %}
+                <option value="{{ d.codigo_local }}" {% if dep_destino_pref==d.codigo_local %}selected{% endif %}>
+                  {{ d.codigo_local }} – {{ d.descripcion }}
+                </option>
+              {% endfor %}
+              {% if sede_actual is not none %}</optgroup>{% endif %}
+            </select>
+          </label>
+
+          <label style="grid-column:1 / -1;">
+            Observaciones
+            <textarea name="observaciones" rows="2">{{ request.form.get('observaciones','') }}</textarea>
+          </label>
+
+        </div>
+
+        <div style="margin-top:10px;display:flex;gap:8px;">
+          <button type="submit" class="btn primary">💾 Guardar movimiento</button>
+          <a href="{{ url_for('movimientos_home') }}" class="btn outline-slate">↻ Limpiar</a>
+        </div>
+      </form>
+    </div>
+
+  </div>
+
+  <div class="right-panel">
+    <h3 style="margin-top:0;">Últimos movimientos</h3>
+    <p class="muted">Se muestran los 50 más recientes.</p>
+
+    {% if movimientos %}
+      <table class="table-soft" style="font-size:12px;margin-top:6px;">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Ítem</th>
+            <th>Cant.</th>
+            <th>Origen</th>
+            <th>Destino</th>
+            <th>Obs.</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in movimientos %}
+            <tr>
+              <td>{{ m.fecha }}</td>
+              <td>{{ m.item }}</td>
+              <td style="text-align:right;">{{ m.cantidad }}</td>
+              <td>
+                {{ m.sede_origen or '-' }}
+                {% if m.deposito_origen %}
+                  <br><span class="muted">{{ m.deposito_origen }}</span>
+                {% endif %}
+              </td>
+              <td>
+                {{ m.sede_destino or '-' }}
+                {% if m.deposito_destino %}
+                  <br><span class="muted">{{ m.deposito_destino }}</span>
+                {% endif %}
+              </td>
+              <td>{{ m.observaciones or '' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="muted" style="margin-top:8px;">
+        Aún no hay movimientos cargados.
+      </p>
+    {% endif %}
+  </div>
+</section>
+
+{% endblock %}

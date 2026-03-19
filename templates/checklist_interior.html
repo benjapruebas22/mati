@@ -1,0 +1,380 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  .ck-main{
+    display:grid;
+    grid-template-columns:minmax(380px, 480px) minmax(420px,1fr);
+    gap:18px;
+    align-items:flex-start;
+  }
+  .ck-card{
+    background:#ffffff;
+    border-radius:14px;
+    border:1px solid #e5e7eb;
+    box-shadow:0 8px 16px rgba(15,23,42,0.06);
+    padding:14px 16px;
+  }
+  .ck-title{
+    font-size:18px;
+    font-weight:600;
+    margin:0 0 4px;
+    color:#111827;
+  }
+  .ck-sub{
+    font-size:12px;
+    color:#6b7280;
+    margin:0 0 10px;
+  }
+
+  /* Etiquetas e inputs, mismo estilo institucional */
+  .ck-card label{
+    display:block;
+    font-size:11px;
+    font-weight:600;
+    color:#6b7280;
+    text-transform:uppercase;
+    letter-spacing:.03em;
+    margin-bottom:2px;
+  }
+  .ck-card .input,
+  .ck-card input[type="text"],
+  .ck-card input[type="date"],
+  .ck-card textarea,
+  .ck-card select{
+    border-radius:8px;
+    border:1px solid #d1d5db;
+    padding:6px 8px;
+    font-size:12px;
+    color:#111827;
+    background:#f9fafb;
+    width:100%;
+    box-sizing:border-box;
+    outline:none;
+  }
+  .ck-card .input:focus,
+  .ck-card input[type="text"]:focus,
+  .ck-card input[type="date"]:focus,
+  .ck-card textarea:focus,
+  .ck-card select:focus{
+    border-color:#1d4ed8;
+    box-shadow:0 0 0 1px rgba(37,99,235,0.25);
+    background:#ffffff;
+  }
+
+  .ck-section-title{
+    font-size:13px;
+    font-weight:600;
+    margin:12px 0 4px;
+    color:#111827;
+  }
+
+  .ck-grid-2{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+  .ck-grid-3{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:8px;
+  }
+
+  .ck-check-group{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:4px 12px;
+    font-size:11.5px;
+    margin-top:4px;
+  }
+  .ck-check-item{
+    display:flex;
+    align-items:center;
+    gap:5px;
+  }
+  .ck-check-item input{
+    margin:0;
+  }
+
+  .ck-actions{
+    display:flex;
+    justify-content:flex-end;
+    margin-top:10px;
+  }
+
+  .btn.ck-primary{
+    border-radius:999px;
+    font-weight:500;
+    font-size:12px;
+    padding:4px 14px;
+    background:#1d4ed8;
+    border:1px solid #1d4ed8;
+    color:#ffffff;
+    cursor:pointer;
+  }
+  .btn.ck-primary:hover{
+    background:#1e40af;
+    border-color:#1e40af;
+  }
+
+  .ck-prohibido{
+    margin-top:10px;
+    padding:8px 10px;
+    border-radius:10px;
+    background:#fef2f2;
+    border:1px solid #fecaca;
+    font-size:11.5px;
+    color:#7f1d1d;
+  }
+  .ck-prohibido-title{
+    font-weight:600;
+    margin-bottom:4px;
+  }
+  .ck-prohibido ul{
+    margin:0 0 0 16px;
+    padding:0;
+  }
+
+  .ck-table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:11.5px;
+    margin-top:8px;
+  }
+  .ck-table th,
+  .ck-table td{
+    border:1px solid #e5e7eb;
+    padding:4px 6px;
+    text-align:left;
+  }
+  .ck-table thead{
+    background:#eff6ff;
+  }
+
+  .ck-pill-ok{
+    display:inline-flex;
+    align-items:center;
+    padding:1px 6px;
+    border-radius:999px;
+    font-size:10px;
+    background:#ecfdf3;
+    color:#15803d;
+  }
+  .ck-pill-pend{
+    display:inline-flex;
+    align-items:center;
+    padding:1px 6px;
+    border-radius:999px;
+    font-size:10px;
+    background:#fef3c7;
+    color:#92400e;
+  }
+
+  @media (max-width: 900px){
+    .ck-main{
+      grid-template-columns:1fr;
+    }
+  }
+</style>
+
+<section>
+  <header style="margin-bottom:14px;">
+    <h1 class="ck-title">Check list – Visita sedes del interior</h1>
+    <p class="ck-sub">
+      Registro de viajes largos (Tilcara, Humahuaca, Abra Pampa, La Quiaca) con control de día previo,
+      horarios por tramo y cierre del viaje.
+    </p>
+  </header>
+
+  <div class="ck-main">
+
+    <!-- FORMULARIO -->
+    <div class="ck-card">
+      <form method="post" style="display:flex;flex-direction:column;gap:8px;">
+
+        <!-- 1. DATOS DEL VIAJE -->
+        <div class="ck-section-title">1. Datos del viaje</div>
+        <div class="ck-grid-2">
+          <div>
+            <label>Fecha</label>
+            <input type="date" name="fecha" class="input" value="{{ hoy }}">
+          </div>
+          <div>
+            <label>Chofer</label>
+            <input type="text" name="chofer" class="input" placeholder="Apellido y nombre">
+          </div>
+        </div>
+        <div class="ck-grid-2">
+          <div>
+            <label>Vehículo</label>
+            <input type="text" name="vehiculo" class="input" placeholder="Ej: AB 946 VK – Ranger">
+          </div>
+          <div>
+            <label>Tareas previstas</label>
+            <input type="text" name="tareas_previstas" class="input"
+                   placeholder="Relevar matafuegos, mobiliario, luminarias…">
+          </div>
+        </div>
+
+        <!-- 2. DÍA PREVIO -->
+        <div class="ck-section-title">2. Día previo – Checklist general</div>
+        <div class="ck-check-group">
+          <label class="ck-check-item">
+            <input type="checkbox" name="doc_ok">
+            <span>Documentación (DNI, cédula, seguro, VTV, carnet, YPF)</span>
+          </label>
+          <label class="ck-check-item">
+            <input type="checkbox" name="vehiculo_ok">
+            <span>Vehículo (combustible, luces, gomas, limpiaparabrisas)</span>
+          </label>
+          <label class="ck-check-item">
+            <input type="checkbox" name="materiales_ok">
+            <span>Materiales (electricidad, plomería, pintura, etc.)</span>
+          </label>
+          <label class="ck-check-item">
+            <input type="checkbox" name="herramientas_ok">
+            <span>Herramientas (amoladora, atornilladora, llaves, etc.)</span>
+          </label>
+          <label class="ck-check-item">
+            <input type="checkbox" name="insumos_ok">
+            <span>Insumos y mobiliario nuevo (librería, limpieza, MPD)</span>
+          </label>
+          <label class="ck-check-item">
+            <input type="checkbox" name="expediente_ok">
+            <span>Expediente / documentación administrativa</span>
+          </label>
+        </div>
+
+        <!-- 3. HORARIOS POR TRAMO -->
+        <div class="ck-section-title">3. Horarios por tramo (ida)</div>
+        <div class="ck-grid-3">
+          <div>
+            <label>Tilcara</label>
+            <input type="text" name="tilcara_hora" class="input" placeholder="Hora llegada">
+          </div>
+          <div>
+            <label>Humahuaca Penal</label>
+            <input type="text" name="humapenal_hora" class="input" placeholder="Hora llegada">
+          </div>
+          <div>
+            <label>Humahuaca Civil</label>
+            <input type="text" name="humacivil_hora" class="input" placeholder="Hora llegada">
+          </div>
+        </div>
+        <div class="ck-grid-2">
+          <div>
+            <label>Abra Pampa</label>
+            <input type="text" name="abrapampa_hora" class="input" placeholder="Hora llegada">
+          </div>
+          <div>
+            <label>La Quiaca</label>
+            <input type="text" name="laquiaca_hora" class="input" placeholder="Hora llegada">
+          </div>
+        </div>
+
+        <!-- 4. TAREAS REALIZADAS -->
+        <div class="ck-section-title">4. Tareas de Intendencia realizadas</div>
+        <textarea name="tareas_realizadas" rows="3" class="input"
+                  placeholder="Detalle por sede: luminarias, muebles, matafuegos, limpieza, etc."></textarea>
+
+        <!-- 5. OBSERVACIONES -->
+        <div class="ck-section-title">5. Observaciones</div>
+        <textarea name="observaciones" rows="2" class="input"
+                  placeholder="Novedades, faltantes, temas a seguir en próxima visita."></textarea>
+
+        <!-- 6. CIERRE DE VIAJE -->
+        <div class="ck-section-title">6. Cierre de viaje – regreso a S08</div>
+        <div class="ck-grid-2">
+          <div>
+            <label>Hora llegada S08</label>
+            <input type="text" name="hora_regreso_s08" class="input" placeholder="Ej: 19:45 hs">
+          </div>
+          <div style="margin-top:18px;">
+            <label class="ck-check-item">
+              <input type="checkbox" name="check_reg_vehiculo_ok">
+              <span>Vehículo revisado al regreso (combustible, luces, gomas, daños).</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="ck-actions">
+          <button type="submit" class="btn ck-primary">
+            Guardar checklist
+          </button>
+        </div>
+
+        <!-- RECORDATORIO PROHIBIDOS -->
+        <div class="ck-prohibido">
+          <div class="ck-prohibido-title">Recordatorio – PROHIBIDO</div>
+          <ul>
+            <li>Dejar el vehículo oficial estacionado en la vereda / calle.</li>
+            <li>No marcar el reloj biométrico al regreso.</li>
+            <li>Dejar herramientas, materiales, mobiliario o documentación dentro del vehículo.</li>
+            <li>No informar al encargado de Intendencia el horario de regreso.</li>
+            <li>Llevarse las llaves o dejarlas en otra sede sin avisar.</li>
+          </ul>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- HISTORIAL -->
+    <div class="ck-card">
+      <div class="ck-section-title">Historial de visitas al interior</div>
+      <p class="ck-sub" style="margin-bottom:6px;">
+        Últimos registros guardados. Te dejan ver rápidamente qué sedes se visitaron
+        y si el checklist del día previo estuvo completo.
+      </p>
+
+      <table class="ck-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Chofer</th>
+            <th>Vehículo</th>
+            <th>Tramos</th>
+            <th>Día previo</th>
+            <th>Llegada S08</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in registros %}
+          <tr>
+            <td>{{ r.fecha }}</td>
+            <td>{{ r.chofer }}</td>
+            <td>{{ r.vehiculo }}</td>
+            <td>
+              {% set tramos = [] %}
+              {% if r.tilcara_hora %}{% set _ = tramos.append('Tilcara') %}{% endif %}
+              {% if r.humapenal_hora %}{% set _ = tramos.append('Humahuaca P.') %}{% endif %}
+              {% if r.humacivil_hora %}{% set _ = tramos.append('Humahuaca C.') %}{% endif %}
+              {% if r.abrapampa_hora %}{% set _ = tramos.append('Abra Pampa') %}{% endif %}
+              {% if r.laquiaca_hora %}{% set _ = tramos.append('La Quiaca') %}{% endif %}
+              {{ tramos|join(', ') }}
+            </td>
+            <td>
+              {% if r.doc_ok and r.vehiculo_ok and r.materiales_ok
+                    and r.herramientas_ok and r.insumos_ok and r.expediente_ok %}
+                <span class="ck-pill-ok">Completo</span>
+              {% else %}
+                <span class="ck-pill-pend">Incompleto</span>
+              {% endif %}
+            </td>
+            <td>{{ r.hora_regreso_s08 or '' }}</td>
+          </tr>
+          {% endfor %}
+          {% if registros|length == 0 %}
+          <tr>
+            <td colspan="6" style="text-align:center;color:#9ca3af;">
+              Todavía no hay checklists cargados.
+            </td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</section>
+
+{% endblock %}

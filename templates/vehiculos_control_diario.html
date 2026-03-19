@@ -1,0 +1,699 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section style="max-width:none;margin:auto">
+  <style>
+    .vd-quick { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 12px 0; }
+    .vd-quick .main { padding:10px 14px; border-radius:999px; border:1px solid #0f172a; background:#0f172a; color:#fff; font-weight:800; cursor:pointer; }
+    .vd-quick .sub { padding:10px 14px; border-radius:999px; border:1px solid #cbd5e1; background:#fff; color:#0f172a; font-weight:700; cursor:pointer; }
+
+    .vd-box { border:1px solid #e5e7eb; border-radius:12px; background:#fff; padding:10px; margin-bottom:10px; }
+    .vd-block-head { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
+    .vd-block-head h3 { margin:0; font-size:16px; color:#0f172a; }
+
+    .vd-kpis { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:8px; margin:0 0 12px 0; }
+    .vd-kpi { border:1px solid #e5e7eb; border-radius:12px; background:#fff; padding:8px 10px; }
+    .vd-kpi small { display:block; font-size:11px; color:#64748b; }
+    .vd-kpi b { display:block; font-size:22px; color:#0f172a; line-height:1.05; }
+
+    .vd-kpi.kpi-neutral { background:#f8fafc; border-color:#cbd5e1; }
+    .vd-kpi.kpi-good { background:#ecfdf5; border-color:#86efac; }
+    .vd-kpi.kpi-good b { color:#166534; }
+    .vd-kpi.kpi-warn { background:#fffbeb; border-color:#fcd34d; }
+    .vd-kpi.kpi-warn b { color:#a16207; }
+    .vd-kpi.kpi-danger { background:#fff1f2; border-color:#fda4af; }
+    .vd-kpi.kpi-danger b { color:#be123c; }
+
+    .vd-kpi.kpi-tramos { background:#f8fafc; border-color:#cbd5e1; }
+    .vd-kpi.kpi-km { background:#eff6ff; border-color:#93c5fd; }
+    .vd-kpi.kpi-monto { background:#fefce8; border-color:#fde047; }
+    .vd-kpi.kpi-litros { background:#ecfdf5; border-color:#86efac; }
+
+    .vd-alerts { border-radius:12px; }
+    .vd-alerts.no-alerts { border-color:#dbe3ef; background:#f8fafc; }
+    .vd-alerts.warn-alerts { border-color:#fcd34d; background:#fffbeb; }
+    .vd-alerts.has-alerts { border-color:#fda4af; background:#fff1f2; }
+    .vd-alerts ul { margin:0; padding-left:18px; display:grid; gap:4px; }
+    .vd-alerts li { font-size:12px; color:#334155; }
+
+    .vd-dispo-grid { display:grid; grid-template-columns:repeat(5, minmax(0, 1fr)); gap:8px; }
+    .vd-dispo-card { border:1px solid #e5e7eb; border-radius:10px; background:#fff; padding:8px; display:grid; gap:4px; }
+    .vd-dispo-code { font-size:14px; font-weight:900; color:#0f172a; line-height:1.1; }
+    .vd-dispo-pat { font-size:10px; color:#64748b; }
+    .vd-dispo-state { display:inline-flex; align-items:center; padding:2px 8px; border-radius:999px; font-size:10px; font-weight:800; border:1px solid transparent; width:fit-content; }
+    .vd-dispo-state.st-ok { background:#ecfdf5; border-color:#86efac; color:#166534; }
+    .vd-dispo-state.st-use { background:#eff6ff; border-color:#93c5fd; color:#1d4ed8; }
+    .vd-dispo-state.st-out { background:#fff1f2; border-color:#fda4af; color:#be123c; }
+    .vd-dispo-last { font-size:10px; color:#475569; }
+
+    .vd-mini-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; }
+    .vd-links { display:flex; gap:8px; flex-wrap:wrap; }
+
+    .estado-viaje { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:999px; border:1px solid transparent; font-size:11px; font-weight:800; margin-right:4px; }
+    .estado-viaje.est-curso { background:#eff6ff; border-color:#93c5fd; color:#1d4ed8; }
+    .estado-viaje.est-cerrado { background:#ecfdf5; border-color:#86efac; color:#166534; }
+    .estado-viaje.est-error { background:#fff1f2; border-color:#fda4af; color:#be123c; }
+    .estado-viaje.est-revisar { background:#fff7ed; border-color:#fdba74; color:#9a3412; }
+
+    @media (max-width: 1100px) {
+      .vd-kpis { grid-template-columns:1fr 1fr; }
+      .vd-dispo-grid { grid-template-columns:repeat(3, minmax(0,1fr)); }
+    }
+    @media (max-width: 760px) {
+      .vd-dispo-grid { grid-template-columns:1fr 1fr; }
+      .vd-mini-grid { grid-template-columns:1fr; }
+    }
+    @media (max-width: 640px) {
+      .vd-dispo-grid { grid-template-columns:1fr; }
+      .vd-kpis { grid-template-columns:1fr; }
+    }
+
+    @media (max-width: 860px) {
+      .hide-mobile { display:none !important; }
+      .mobile-priority { display:block; }
+    }
+  </style>
+
+  <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px">
+    <div>
+      <h2 style="margin:0 0 6px 0">Control diario / Traslados</h2>
+      <p style="margin:0;color:#64748b;font-size:13px">
+        Registro simple de tramos por vehículo (igual a la planilla de Excel).
+      </p>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+      <a class="btn btn-mpd" href="{{ url_for('vehiculos_control_diario', fecha=fecha) }}">Control diario</a>
+      <a class="btn btn-mpd" href="{{ url_for('vehiculos_combustible') }}">Combustible</a>
+      <a class="btn btn-mpd" href="{{ url_for('vehiculos_estadisticas') }}">Estadisticas</a>
+      <a class="btn btn-mpd" href="{{ url_for('vehiculos_documentacion') }}">Documentacion</a>
+      <a class="btn btn-mpd" href="{{ url_for('vehiculos_bd_home') }}">Base de datos</a>
+    </div>
+  </header>
+  {% set calc = namespace(open_patentes=[], fuera_patentes=[], inco=0, sin_estado=0) %}
+  {% for r in viajes %}
+    {% set est_u = (r.estado or '')|upper %}
+    {% if not est_u %}{% set calc.sin_estado = calc.sin_estado + 1 %}{% endif %}
+    {% if est_u == 'ABIERTO' and r.patente and r.patente not in calc.open_patentes %}{% set _ = calc.open_patentes.append(r.patente) %}{% endif %}
+    {% if est_u in ['FUERA_SERVICIO', 'FUERA DE SERVICIO'] and r.patente and r.patente not in calc.fuera_patentes %}{% set _ = calc.fuera_patentes.append(r.patente) %}{% endif %}
+    {% if (r.km_fin is not none) and (r.km_ini is not none) and (r.km_fin|float < r.km_ini|float) %}{% set calc.inco = calc.inco + 1 %}{% endif %}
+  {% endfor %}
+  {% set total_veh = vehiculos|length %}
+  {% set en_uso = calc.open_patentes|length %}
+  {% set fuera_servicio = calc.fuera_patentes|length %}
+  {% set disponibles = total_veh - en_uso - fuera_servicio %}
+  {% if disponibles < 0 %}{% set disponibles = 0 %}{% endif %}
+
+  <div class="vd-box hide-mobile">
+    <div class="vd-block-head">
+      <h3>Resumen operativo</h3>
+      <span style="font-size:11px;color:#64748b;font-weight:700;">Control rapido de disponibilidad</span>
+    </div>
+    <div class="vd-kpis">
+      <div class="vd-kpi kpi-neutral">
+        <small>Total vehiculos</small>
+        <b>{{ total_veh }}</b>
+      </div>
+      <div class="vd-kpi {{ 'kpi-good' if (disponibles == total_veh and total_veh > 0) else ('kpi-danger' if disponibles == 0 and total_veh > 0 else 'kpi-warn') }}">
+        <small>Disponibles</small>
+        <b>{{ disponibles }}</b>
+      </div>
+      <div class="vd-kpi {{ 'kpi-warn' if en_uso > 0 else 'kpi-good' }}">
+        <small>En uso (viajes abiertos)</small>
+        <b>{{ en_uso }}</b>
+      </div>
+      <div class="vd-kpi {{ 'kpi-danger' if fuera_servicio > 0 else 'kpi-good' }}">
+        <small>Fuera de servicio</small>
+        <b>{{ fuera_servicio }}</b>
+      </div>
+    </div>
+  </div>
+
+  <div class="vd-box vd-alerts hide-mobile {{ 'has-alerts' if (calc.inco > 0 or calc.sin_estado > 0) else ('warn-alerts' if en_uso > 0 else 'no-alerts') }}">
+    <div class="vd-block-head">
+      <h3>Alertas operativas</h3>
+    </div>
+    <ul>
+      {% if calc.inco > 0 %}<li>KM incoherente detectado en {{ calc.inco }} viaje(s).</li>{% endif %}
+      {% if calc.sin_estado > 0 %}<li>Hay {{ calc.sin_estado }} viaje(s) sin estado cargado.</li>{% endif %}
+      {% if en_uso > 0 %}<li>Hay {{ en_uso }} viaje(s) en curso (abiertos).</li>{% endif %}
+      {% if calc.inco == 0 and calc.sin_estado == 0 and en_uso == 0 %}<li>Sin alertas criticas ni inconsistencias.</li>{% endif %}
+    </ul>
+  </div>
+
+  <div class="vd-box mobile-priority" style="display:none">
+    <div class="vd-block-head">
+      <h3>Disponibilidad rapida de vehiculos</h3>
+      <span style="font-size:11px;color:#64748b;">Vista prioritaria para operacion</span>
+    </div>
+    <div class="vd-dispo-grid">
+      {% for v in vehiculos %}
+        {% set row_open = (viajes | selectattr('patente', 'equalto', v.patente) | selectattr('estado', 'equalto', 'ABIERTO') | list | first) %}
+        {% set row_last = (viajes | selectattr('patente', 'equalto', v.patente) | list | first) %}
+        {% set est_v = 'DISPONIBLE' %}
+        {% if row_open %}{% set est_v = 'EN USO' %}{% endif %}
+        {% if row_last and ((row_last.estado or '')|upper in ['FUERA_SERVICIO', 'FUERA DE SERVICIO']) %}{% set est_v = 'FUERA DE SERVICIO' %}{% endif %}
+        {% set est_cls = 'st-use' if est_v == 'EN USO' else ('st-out' if est_v == 'FUERA DE SERVICIO' else 'st-ok') %}
+        <div class="vd-dispo-card" title="Ultimo viaje: {{ row_last.fecha if row_last else '-' }} | Chofer: {{ row_last.chofer_nombre if row_last else '-' }} | Destino: {{ row_last.destino_nombre if row_last else '-' }}">
+          <div class="vd-dispo-code">{{ v.codigo_interno or '-' }}</div>
+          <div class="vd-dispo-pat">{{ v.patente }}</div>
+          <span class="vd-dispo-state {{ est_cls }}">{{ est_v }}</span>
+          <div class="vd-dispo-last">Ultimo: {{ row_last.fecha if row_last else 'Sin movimientos' }}{% if row_last and row_last.destino_nombre %} - {{ row_last.destino_nombre }}{% endif %}</div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="vd-box hide-mobile">
+    <div class="vd-block-head">
+      <h3>Combustible</h3>
+      <a class="btn btn-mpd" href="{{ url_for('vehiculos_combustible') }}">Ver combustible</a>
+    </div>
+    <div class="vd-kpis">
+      <div class="vd-kpi kpi-monto">
+        <small>$ combustible total</small>
+        <b>${{ "{:,.2f}".format(kpi_rango.monto_total or 0) }}</b>
+      </div>
+      <div class="vd-kpi kpi-litros">
+        <small>Litros cargados totales</small>
+        <b>{{ '%.2f'|format(kpi_rango.litros_total or 0) }}</b>
+      </div>
+      <div class="vd-kpi kpi-km">
+        <small>KM recorridos totales</small>
+        <b>{{ '%.1f'|format(kpi_rango.km_total or 0) }}</b>
+      </div>
+      <div class="vd-kpi kpi-tramos">
+        <small>Tramos totales</small>
+        <b>{{ kpi_rango.tramos }}</b>
+      </div>
+    </div>
+  </div>
+
+  <div class="vd-box hide-mobile">
+    <div class="vd-block-head">
+      <h3>Estadisticas</h3>
+      <div class="vd-links">
+        <a class="btn btn-mpd" href="{{ url_for('vehiculos_estadisticas') }}">KM por vehiculo / chofer</a>
+        <a class="btn btn-mpd" href="{{ url_for('vehiculos_combustible_estadisticas') }}">Rendimiento combustible</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="vd-box hide-mobile">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+      <h3 style="margin:0;font-size:16px;">Documentos SGI vinculados a vehiculos</h3>
+      <button type="button" id="btnToggleDocsVeh" class="btn btn-mpd" onclick="toggleDocsVehiculos()">Ver Informes</button>
+    </div>
+
+    <div id="panelDocsVehiculos" style="display:none;margin-top:8px;">
+      {% if documentos_vinculados_vehiculos and documentos_vinculados_vehiculos|length > 0 %}
+        <div style="display:grid;gap:6px;max-height:220px;overflow:auto;">
+          {% for d in documentos_vinculados_vehiculos[:40] %}
+            <div style="border:1px solid #e5e7eb;border-radius:10px;background:#f8fbff;padding:8px;display:grid;gap:3px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                <strong style="font-size:12px;color:#0f172a;">{{ d.titulo }}</strong>
+                <span style="font-size:10px;font-weight:800;color:#0f6f85;border:1px solid #a9e5ef;border-radius:999px;padding:2px 8px;background:#ecfbff;">{{ d.patente }}</span>
+              </div>
+              <div style="font-size:11px;color:#64748b;">
+                {% if d.fecha %}<span><b>Fecha:</b> {{ d.fecha }}</span>{% endif %}
+                {% if d.tipo_documento %} ? <span><b>Tipo:</b> {{ d.tipo_documento }}</span>{% endif %}
+                {% if d.estado %} ? <span><b>Estado:</b> {{ d.estado }}</span>{% endif %}
+                {% if d.tags_txt %} ? <span><b>Tags:</b> {{ d.tags_txt }}</span>{% endif %}
+              </div>
+              {% if d.archivo_url %}
+                <div><a href="{{ d.archivo_url }}" target="_blank" rel="noopener" style="font-size:11px;font-weight:800;color:#1d4ed8;text-decoration:none;">Abrir documento</a></div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p style="margin:8px 0 0;color:#64748b;">No hay documentos SGI vinculados a vehiculos.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="vd-quick hide-mobile">
+    <button type="button" class="main" onclick="goBlock('form-carga-viaje')">+ Cargar viaje</button>
+    <button type="button" class="sub" onclick="goBlock('tabla-viajes')">Ver tabla</button>
+  </div>
+  <div id="box-carga-viaje" class="vd-box hide-mobile" style="display:none">
+  <!-- FORM ALTA (POST) -->
+  <form id="form-carga-viaje" method="post" style="display:grid;grid-template-columns: 320px 320px 1fr;gap:14px;align-items:start">
+    <div>
+      <label style="font-size:12px;color:#64748b">Fecha</label>
+      <input type="date" name="fecha" value="{{ fecha }}"
+        style="width:100%;padding:10px;border-radius:10px;border:1px solid #e5e7eb">
+    </div>
+
+    <div>
+      <label style="font-size:12px;color:#64748b">Vehículo</label>
+      <select name="patente" required style="width:100%;padding:10px;border-radius:10px;border:1px solid #e5e7eb">
+        <option value="">-- seleccionar --</option>
+        {% for v in vehiculos %}
+        <option value="{{ v.patente }}">{{ v.codigo_interno }} — {{ v.patente }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label style="font-size:12px;color:#64748b">Observaciones</label>
+      <textarea name="observaciones" rows="2" placeholder="Notas internas, detalle del viaje..."
+        style="width:100%;padding:10px;border-radius:10px;border:1px solid #e5e7eb"></textarea>
+    </div>
+
+    <div>
+      <label style="font-size:12px;color:#64748b">Chofer</label>
+      <select name="chofer_id" required style="width:100%;padding:10px;border-radius:10px;border:1px solid #e5e7eb">
+        <option value="">-- seleccionar --</option>
+        {% for c in choferes %}
+        <option value="{{ c.id }}">{{ c.agente }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label style="font-size:12px;color:#64748b">KM inicial tramo</label>
+      <input type="number" step="0.1" name="km_ini" required
+        style="width:100%;padding:10px;border-radius:10px;border:1px solid #e5e7eb">
+    </div>
+
+    <div>
+      <label style="font-size:12px;color:#64748b">KM final tramo</label>
+      <input type="number" step="0.1" name="km_fin"
+        style="width:100%;padding:10px;border-radius:10px;border:1px solid #e5e7eb">
+    </div>
+
+    <div>
+      <label style="font-size:12px;color:#64748b">Agente del traslado (Personal)</label>
+      <select name="personal_id" required style="width:100%;padding:10px;border-radius:10px;border:1px solid #e5e7eb">
+        <option value="">-- seleccionar --</option>
+        {% for p in personal %}
+        <option value="{{ p.id }}">{{ p.nombre_apellido }} — {{ p.dependencia }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label style="font-size:12px;color:#64748b">Destino</label>
+      <select name="destino_id" required style="width:100%;padding:10px;border-radius:10px;border:1px solid #e5e7eb">
+        <option value="">-- seleccionar --</option>
+        {% for d in destinos %}
+        <option value="{{ d.id }}">{{ d.nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="display:flex;align-items:end;gap:10px">
+      <button type="submit"
+        style="padding:10px 16px;border-radius:999px;border:1px solid #e5e7eb;background:#fff;font-weight:700;cursor:pointer">
+        Cargar viaje
+      </button>
+
+      <!-- botón rápido: recarga manteniendo rango -->
+      <a class="btn btn-mpd" href="{{ url_for('vehiculos_control_diario', fecha=fecha) }}"
+        style="padding:10px 16px;border-radius:999px">
+        Actualizar
+      </a>
+    </div>
+  </form>
+  </div>
+
+
+  <h3 class="hide-mobile" style="margin:0 0 10px 0">
+    Control diario / Viajes
+  </h3>
+  <!-- =========================
+       FILTROS RÁPIDOS (BOTONES)
+       (NO rompe backend, filtra en JS)
+  ========================= -->
+  <div id="quick-filters" class="hide-mobile" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0 12px 0">
+
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+      <span style="font-size:12px;color:#64748b;font-weight:700">Vehículos:</span>
+      <button type="button" class="chip chip-all" onclick="setVehiculo('')">Todos</button>
+
+      {# Botones únicos por patente (desde viajes cargados) #}
+      {% set seen_patentes = [] %}
+      {% for r in viajes %}
+      {% if r.patente and r.patente not in seen_patentes %}
+      {% set _ = seen_patentes.append(r.patente) %}
+      <button type="button" class="chip chip-veh" data-chip-veh="{{ r.patente }}"
+        onclick="setVehiculo('{{ r.patente }}')">
+        {{ r.patente }}
+      </button>
+      {% endif %}
+      {% endfor %}
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-left:12px">
+      <span style="font-size:12px;color:#64748b;font-weight:700">Choferes:</span>
+      <button type="button" class="chip chip-all" onclick="setChofer('')">Todos</button>
+
+      {# Botones únicos por chofer (desde viajes cargados) #}
+      {% set seen_choferes = [] %}
+      {% for r in viajes %}
+      {% set ch = r.chofer_nombre or '' %}
+      {% if ch and ch not in seen_choferes and ('Mauro Vea' in ch or 'Ignacio Baroni' in ch or 'Emiliano' in ch or 'Luis Cardozo' in ch) %}
+      {% set _ = seen_choferes.append(ch) %}
+      <button type="button" class="chip chip-ch" data-chip-ch="{{ ch }}"
+        onclick="setChofer('{{ ch|replace("'","\\'") }}')">
+        {{ ch }}
+      </button>
+      {% endif %}
+      {% endfor %}
+    </div>
+
+    <button type="button" class="chip chip-reset" onclick="resetFiltros()" style="margin-left:auto">
+      Reset
+    </button>
+  </div>
+
+  <div id="tabla-viajes" class="hide-mobile" style="height:60vh;overflow:auto;border:1px solid #e5e7eb;border-radius:12px;background:#fff">
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead>
+        <tr style="background:#f8fafc;text-align:left;position:sticky;top:0;z-index:2">
+          <th style="padding:10px;border-bottom:1px solid #e5e7eb">#</th>
+          <th style="padding:10px;border-bottom:1px solid #e5e7eb">Fecha</th>
+          <th style="padding:10px;border-bottom:1px solid #e5e7eb">Vehículo</th>
+          <th style="padding:10px;border-bottom:1px solid #e5e7eb">Chofer</th>
+          <th style="padding:10px;border-bottom:1px solid #e5e7eb">KM inicial</th>
+          <th style="padding:10px;border-bottom:1px solid #e5e7eb">KM final</th>
+          <th style="padding:10px;border-bottom:1px solid #e5e7eb">Dif Km</th>
+          <th style="padding:10px;border-bottom:1px solid #e5e7eb">Agente</th>
+          <th style="padding:10px;border-bottom:1px solid #e5e7eb">Sector</th>
+          <th style="padding:10px;border-bottom:1px solid #e5e7eb">Dpto/Def</th>
+          <th style="padding:10px;border-bottom:1px solid #e5e7eb">Destino</th>
+          <th style="padding:10px;border-bottom:1px solid #e5e7eb">Estado</th>
+          <th style="padding:10px;border-bottom:1px solid #e5e7eb">Acciones</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for v in viajes %}
+        <tr data-vehiculo="{{ v.patente or '' }}" data-chofer="{{ v.chofer_nombre or '' }}" data-estado="{{ (v.estado or '')|upper }}">
+          <td style="padding:10px;border-bottom:1px solid #eef2f7">{{ v.nro or v.id }}</td>
+          <td style="padding:10px;border-bottom:1px solid #eef2f7">{{ v.fecha }}</td>
+
+          <td style="padding:10px;border-bottom:1px solid #eef2f7">
+            <span class="veh-badge"
+              style="display:inline-block;padding:4px 8px;border-radius:999px;border:1px solid #e5e7eb;font-weight:800">
+              {{ v.codigo_interno }} — {{ v.patente }}
+            </span>
+          </td>
+
+          <td style="padding:10px;border-bottom:1px solid #eef2f7">
+            <span class="chofer-txt">{{ v.chofer_nombre or "-" }}</span>
+          </td>
+
+          <td style="padding:10px;border-bottom:1px solid #eef2f7">{{ v.km_ini or 0 }}</td>
+          <td style="padding:10px;border-bottom:1px solid #eef2f7">{{ v.km_fin or 0 }}</td>
+
+          <td style="padding:10px;border-bottom:1px solid #eef2f7;font-weight:800;color:#0f172a;background:#eef2ff">
+            {{ v.recorrido_km or 0 }}
+          </td>
+
+          <td style="padding:10px;border-bottom:1px solid #eef2f7">{{ v.agente_nombre or "-" }}</td>
+          <td style="padding:10px;border-bottom:1px solid #eef2f7">{{ v.sector or "" }}</td>
+          <td style="padding:10px;border-bottom:1px solid #eef2f7">{{ v.dependencia or "" }}</td>
+          <td style="padding:10px;border-bottom:1px solid #eef2f7">{{ v.destino_nombre or "-" }}</td>
+          {% set estado_u = (v.estado or '')|upper %}
+          {% set inco = (v.km_fin is not none) and (v.km_ini is not none) and (v.km_fin|float < v.km_ini|float) %}
+          <td style="padding:10px;border-bottom:1px solid #eef2f7">
+            {% if estado_u == 'ABIERTO' %}
+              <span class="estado-viaje est-curso">EN CURSO</span>
+            {% elif estado_u == 'CERRADO' %}
+              <span class="estado-viaje est-cerrado">CERRADO</span>
+            {% elif estado_u %}
+              <span class="estado-viaje est-error">{{ estado_u }}</span>
+            {% else %}
+              <span class="estado-viaje est-error">SIN ESTADO</span>
+            {% endif %}
+            {% if inco or not estado_u %}
+              <span class="estado-viaje est-revisar">Revisar</span>
+            {% endif %}
+          </td>
+
+          <td style="padding:10px;border-bottom:1px solid #eef2f7;white-space:nowrap">
+
+            <!-- IMPORTANTE: conservar fecha seleccionada -->
+            <a class="btn btn-mpd" style="padding:6px 10px;font-size:12px"
+              href="{{ url_for('viaje_editar', viaje_id=v.id, fecha=fecha) }}">
+              Editar
+            </a>
+
+            <form method="post"
+              action="{{ url_for('viaje_eliminar', viaje_id=v.id, fecha=fecha) }}"
+              style="display:inline" onsubmit="return confirm('¿Eliminar viaje #{{ v.id }}?');">
+              <button type="submit" class="btn btn-mpd" style="padding:6px 10px;font-size:12px;border-color:#fecaca">
+                Eliminar
+              </button>
+            </form>
+
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="13" style="padding:14px;text-align:center;color:#94a3b8">
+            Sin viajes cargados.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</section>
+
+<!-- =========================
+     ESTILOS FILTROS + COLORES
+========================= -->
+<style>
+  .chip {
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    color: #0f172a;
+    padding: 6px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .chip:hover {
+    background: #f1f5f9;
+  }
+
+  .chip-all {
+    border-color: #cbd5e1;
+  }
+
+  .chip-reset {
+    border-color: #fecaca;
+    color: #b91c1c;
+  }
+
+  .chip.active {
+    outline: 2px solid rgba(15, 23, 42, .25);
+    background: #0f172a;
+    color: #fff;
+    border-color: #0f172a;
+  }
+
+  /* ===== Colores en chips de patente (mismos de la tabla) ===== */
+  .chip-veh[data-chip-veh="AB946VK"] {
+    background: #dbeafe;
+    border-color: #93c5fd;
+    color: #1d4ed8;
+  }
+  .chip-veh[data-chip-veh="AE856GD"] {
+    background: #dcfce7;
+    border-color: #86efac;
+    color: #166534;
+  }
+  .chip-veh[data-chip-veh="AE856GE"] {
+    background: #fef9c3;
+    border-color: #fde047;
+    color: #854d0e;
+  }
+  .chip-veh[data-chip-veh="AF277OA"] {
+    background: #cffafe;
+    border-color: #67e8f9;
+    color: #155e75;
+  }
+  .chip-veh[data-chip-veh="AG846FR"] {
+    background: #ffe4e6;
+    border-color: #fda4af;
+    color: #9f1239;
+  }
+
+  /* ===== Colores por vehículo (patente) ===== */
+  tr[data-vehiculo="AB946VK"] .veh-badge {
+    background: #dbeafe;
+    border-color: #93c5fd;
+    color: #1d4ed8;
+  }
+
+  tr[data-vehiculo="AE856GD"] .veh-badge {
+    background: #dcfce7;
+    border-color: #86efac;
+    color: #166534;
+  }
+
+  tr[data-vehiculo="AE856GE"] .veh-badge {
+    background: #fef9c3;
+    border-color: #fde047;
+    color: #854d0e;
+  }
+
+  tr[data-vehiculo="AF277OA"] .veh-badge {
+    background: #cffafe;
+    border-color: #67e8f9;
+    color: #155e75;
+  }
+
+  tr[data-vehiculo="AG846FR"] .veh-badge {
+    background: #ffe4e6;
+    border-color: #fda4af;
+    color: #9f1239;
+  }
+
+  /* ===== Colores por chofer (texto) ===== */
+  tr[data-chofer*="Ignacio Baroni"] .chofer-txt {
+    color: #4e342e;
+    font-weight: 800;
+  }
+
+  tr[data-chofer*="Mauro Vea"] .chofer-txt {
+    color: #6a1b9a;
+    font-weight: 800;
+  }
+
+  tr[data-chofer*="Emiliano"] .chofer-txt {
+    color: #0d47a1;
+    font-weight: 800;
+  }
+
+  tr[data-chofer*="Luis Cardozo"] .chofer-txt {
+    color: #166534;
+    font-weight: 800;
+  }
+
+  /* Chip de filtro por chofer (mismos 4) */
+  .chip-ch[data-chip-ch*="Ignacio Baroni"] {
+    background: #fef3c7;
+    border-color: #fcd34d;
+    color: #7c2d12;
+  }
+  .chip-ch[data-chip-ch*="Mauro Vea"] {
+    background: #f3e8ff;
+    border-color: #d8b4fe;
+    color: #6b21a8;
+  }
+  .chip-ch[data-chip-ch*="Emiliano"] {
+    background: #dbeafe;
+    border-color: #93c5fd;
+    color: #1d4ed8;
+  }
+  .chip-ch[data-chip-ch*="Luis Cardozo"] {
+    background: #dcfce7;
+    border-color: #86efac;
+    color: #166534;
+  }
+
+  /* Viaje abierto destacado para cierre posterior */
+  tr[data-estado="ABIERTO"] td {
+    background: #fffbeb;
+  }
+  tr[data-estado="ABIERTO"] td:last-child {
+    border-right: 2px solid #f59e0b;
+  }
+  tr[data-estado="ABIERTO"] td:nth-child(12) {
+    color: #b45309;
+    font-weight: 800;
+  }
+</style>
+
+<!-- =========================
+     SCRIPT FILTRO COMBINADO
+========================= -->
+<script>
+  function goBlock(id) {
+    const boxCarga = document.getElementById("box-carga-viaje");
+    const quick = document.getElementById("quick-filters");
+    if (boxCarga) boxCarga.style.display = "none";
+
+    if (id === "form-carga-viaje" && boxCarga) {
+      boxCarga.style.display = "";
+      if (quick) quick.style.display = "none";
+    }
+    if (id === "tabla-viajes" && quick) {
+      quick.style.display = "flex";
+    }
+
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function toggleDocsVehiculos(forceOpen) {
+    const panel = document.getElementById("panelDocsVehiculos");
+    const btn = document.getElementById("btnToggleDocsVeh");
+    if (!panel || !btn) return;
+
+    const isHidden = panel.style.display === "none" || panel.style.display === "";
+    const open = (typeof forceOpen === "boolean") ? forceOpen : isHidden;
+
+    panel.style.display = open ? "block" : "none";
+    btn.textContent = open ? "Ocultar Informes" : "Ver Informes";
+  }
+
+  let filtroVehiculo = "";
+  let filtroChofer = "";
+
+  function applyFiltros() {
+    const filas = document.querySelectorAll("tbody tr[data-vehiculo]");
+    filas.forEach(tr => {
+      const veh = (tr.dataset.vehiculo || "");
+      const ch = (tr.dataset.chofer || "");
+
+      const okVeh = !filtroVehiculo || veh === filtroVehiculo;
+      const okCh = !filtroChofer || ch.includes(filtroChofer);
+
+      tr.style.display = (okVeh && okCh) ? "" : "none";
+    });
+
+    // marca botones activos (vehículo)
+    document.querySelectorAll(".chip-veh").forEach(b => b.classList.remove("active"));
+    if (filtroVehiculo) {
+      document.querySelectorAll(".chip-veh").forEach(b => {
+        if ((b.dataset.chipVeh || "") === filtroVehiculo) b.classList.add("active");
+      });
+    }
+
+    // marca botones activos (chofer)
+    document.querySelectorAll(".chip-ch").forEach(b => b.classList.remove("active"));
+    if (filtroChofer) {
+      document.querySelectorAll(".chip-ch").forEach(b => {
+        if ((b.dataset.chipCh || "") === filtroChofer) b.classList.add("active");
+      });
+    }
+  }
+
+  function setVehiculo(p) {
+    filtroVehiculo = p || "";
+    applyFiltros();
+  }
+
+  function setChofer(c) {
+    filtroChofer = c || "";
+    applyFiltros();
+  }
+
+  function resetFiltros() {
+    filtroVehiculo = "";
+    filtroChofer = "";
+    applyFiltros();
+  }
+</script>
+
+{% endblock %}

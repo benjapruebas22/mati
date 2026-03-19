@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+    /* ====== LISTADO SEDES — PRESENTACIÓN (SIN FOTOS) ====== */
+
+    .sedes-wrap {
+        max-width: 1150px;
+        margin: 0 auto;
+        padding: 12px 10px;
+    }
+
+    .sedes-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 10px;
+    }
+
+    .sedes-title {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 900;
+        letter-spacing: .2px;
+        color: #0f172a;
+    }
+
+    .sedes-sub {
+        margin: 4px 0 0 0;
+        font-size: 12px;
+        color: #64748b;
+    }
+
+    .sedes-search input {
+        width: 420px;
+        max-width: 55vw;
+        padding: 10px 12px;
+        border: 1px solid #e5e7eb;
+        border-radius: 999px;
+        outline: none;
+        background: #fff;
+        font-size: 12px;
+    }
+
+    @media (max-width: 860px) {
+        .sedes-head {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .sedes-search input {
+            width: 100%;
+            max-width: 100%;
+        }
+    }
+
+    .sedes-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(240px, 1fr));
+        gap: 12px;
+    }
+
+    @media (max-width:1100px) {
+        .sedes-grid {
+            grid-template-columns: repeat(3, minmax(240px, 1fr));
+        }
+    }
+
+    @media (max-width:860px) {
+        .sedes-grid {
+            grid-template-columns: repeat(2, minmax(240px, 1fr));
+        }
+    }
+
+    @media (max-width:540px) {
+        .sedes-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .sede-card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        box-shadow: 0 10px 22px rgba(15, 23, 42, .06);
+        padding: 12px 12px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        text-decoration: none;
+        color: inherit;
+        transition: transform .08s ease, box-shadow .08s ease;
+    }
+
+    .sede-card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 12px 24px rgba(15, 23, 42, .08);
+    }
+
+    .sede-circle {
+        width: 56px;
+        height: 56px;
+        border-radius: 999px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 900;
+        letter-spacing: .3px;
+        color: #0f172a;
+        border: 1px solid rgba(15, 23, 42, .08);
+        flex: 0 0 auto;
+    }
+
+    /* Pasteles por fuero */
+    .fuero-penal {
+        background: #ede9fe;
+    }
+
+    /* violeta pastel */
+    .fuero-menores {
+        background: #e0f2fe;
+    }
+
+    /* celeste pastel */
+    .fuero-js {
+        background: #fce7f3;
+    }
+
+    /* rosado pastel */
+    .fuero-otro {
+        background: #f1f5f9;
+    }
+
+    /* gris pastel */
+
+    .sede-info {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .sede-topline {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .sede-city {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 900;
+        line-height: 1.15;
+        color: #0f172a;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .sede-fuero {
+        margin-top: 3px;
+        font-size: 11px;
+        color: #64748b;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: .3px;
+        white-space: nowrap;
+    }
+
+    .sede-dir {
+        margin-top: 3px;
+        font-size: 11px;
+        color: #64748b;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .pill-fuero {
+        font-size: 10px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid #e5e7eb;
+        background: #f8fafc;
+        color: #111827;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        white-space: nowrap;
+        flex: 0 0 auto;
+    }
+</style>
+
+<div class="sedes-wrap">
+
+    <div class="sedes-head">
+        <div>
+            <h2 class="sedes-title">Listado de sedes</h2>
+            <p class="sedes-sub">Código + Ciudad + Fuero. Colores institucionales pastel. (Sin fotos)</p>
+        </div>
+
+        <div class="sedes-search">
+            <input id="sedeSearch" type="text" placeholder="Buscar sede (código / ciudad / dirección / fuero)…">
+        </div>
+    </div>
+
+    <div class="sedes-grid" id="sedesGrid">
+
+        {% for s in sedes %}
+
+        {# =========================
+        COLOR INSTITUCIONAL POR CÓDIGO
+        Regla fija:
+        S11 y S12 -> JS (rosado)
+        S13 -> Menores (celeste)
+        S14+ -> JS (rosado)
+        ========================= #}
+
+        {% set cod = (s.codigo or '')|upper %}
+        {% if cod.startswith('S') %}
+        {% set n = cod[1:]|int %}
+        {% else %}
+        {% set n = 0 %}
+        {% endif %}
+
+        {% if n == 11 or n == 12 %}
+        {% set cls = 'fuero-js' %}
+        {% set fuero_txt = 'JURÍDICO SOCIAL' %}
+        {% elif n == 13 %}
+        {% set cls = 'fuero-menores' %}
+        {% set fuero_txt = 'MENORES / INCAPACES' %}
+        {% elif n >= 14 %}
+        {% set cls = 'fuero-js' %}
+        {% set fuero_txt = 'JURÍDICO SOCIAL' %}
+        {% else %}
+        {# Para S01–S10 usa lo que venga en DB #}
+        {% set fu = (s.fuero or '')|lower %}
+        {% if 'penal' in fu %}
+        {% set cls = 'fuero-penal' %}
+        {% set fuero_txt = 'PENAL' %}
+        {% elif 'menor' in fu %}
+        {% set cls = 'fuero-menores' %}
+        {% set fuero_txt = 'MENORES / INCAPACES' %}
+        {% elif 'jurid' in fu or 'social' in fu or 'ajs' in fu %}
+        {% set cls = 'fuero-js' %}
+        {% set fuero_txt = 'JURÍDICO SOCIAL' %}
+        {% else %}
+        {% set cls = 'fuero-otro' %}
+        {% set fuero_txt = (s.fuero or 'OTRO')|upper %}
+        {% endif %}
+        {% endif %}
+
+        <a class="sede-card" href="{{ url_for('sede_ficha', codigo=s.codigo) }}"
+            data-text="{{ (s.codigo or '') ~ ' ' ~ (s.ciudad or '') ~ ' ' ~ (s.direccion or '') ~ ' ' ~ fuero_txt }}">
+            <div class="sede-circle {{ cls }}">{{ s.codigo }}</div>
+
+            <div class="sede-info">
+                <div class="sede-topline">
+                    <p class="sede-city">{{ s.ciudad or s.nombre or 'Sede' }}</p>
+                    <span class="pill-fuero">{{ fuero_txt }}</span>
+                </div>
+
+                <div class="sede-dir">
+                    {% if s.direccion %}{{ s.direccion }}{% else %}—{% endif %}
+                </div>
+            </div>
+        </a>
+
+        {% endfor %}
+
+    </div>
+</div>
+
+<script>
+    // Buscador sedes (instantáneo)
+    (function () {
+        const input = document.getElementById("sedeSearch");
+        const grid = document.getElementById("sedesGrid");
+        if (!input || !grid) return;
+
+        input.addEventListener("input", () => {
+            const q = (input.value || "").toLowerCase().trim();
+            grid.querySelectorAll(".sede-card").forEach(card => {
+                const text = (card.dataset.text || "").toLowerCase();
+                card.style.display = text.includes(q) ? "" : "none";
+            });
+        });
+    })();
+</script>
+
+{% endblock %}

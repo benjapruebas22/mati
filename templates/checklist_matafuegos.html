@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="grid-main">
+
+  <!-- FORMULARIO -->
+  <div class="card" style="padding:12px 14px;grid-column:1 / 3;">
+    <h3>Checklist · Control de matafuegos</h3>
+    <p class="text-muted">
+      Verificación rápida de que los matafuegos estén presentes y en buen estado en cada sede.
+    </p>
+
+    <form method="post"
+          style="display:flex;flex-direction:column;gap:12px;max-width:620px;margin-top:8px;">
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:160px;">
+          <label>Fecha</label>
+          <input type="date" name="fecha" class="input"
+                 value="{{ fecha_hoy if fecha_hoy is defined else '' }}" required>
+        </div>
+
+        <div style="flex:1;min-width:200px;">
+          <label>Sede</label>
+          <select name="cod_sede" class="input" required>
+            <option value="">-- Seleccionar sede --</option>
+            {% for s in sedes %}
+              <option value="{{ s.codigo }}">{{ s.codigo }} — {{ s.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div style="flex:1;min-width:180px;">
+          <label>Responsable</label>
+          <input type="text" name="responsable" class="input"
+                 placeholder="Ej: Ignacio Baroni">
+        </div>
+      </div>
+
+      <div>
+        <label>Estado general de los matafuegos</label>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:13px;">
+          <label style="display:flex;align-items:center;gap:4px;">
+            <input type="radio" name="estado" value="ok" required>
+            ✅ Están todos y en buen estado
+          </label>
+          <label style="display:flex;align-items:center;gap:4px;">
+            <input type="radio" name="estado" value="faltan">
+            ⚠️ Faltan / no se ven todos
+          </label>
+          <label style="display:flex;align-items:center;gap:4px;">
+            <input type="radio" name="estado" value="reemplazar">
+            ❌ Dañados / vencidos / mal ubicados
+          </label>
+        </div>
+      </div>
+
+      <div>
+        <label>Observaciones</label>
+        <textarea name="observaciones" rows="3"
+                  class="input"
+                  style="resize:vertical;"
+                  placeholder="Ej: Falta uno en pasillo del 2° piso, etiqueta ilegible, etc."></textarea>
+      </div>
+
+      <div style="display:flex;justify-content:flex-start;gap:10px;margin-top:4px;">
+        <button type="submit" class="btn primary xs">
+          💾 Guardar control
+        </button>
+        <a href="{{ url_for('dashboard') }}" class="btn ghost xs">
+          ⬅ Volver al inicio
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <!-- HISTÓRICO DE CONTROLES -->
+  <div class="card" style="padding:12px 14px;grid-column:1 / 4;">
+    <h3>Últimos controles registrados</h3>
+
+    {% if controles %}
+      <table class="table-soft" style="width:100%;margin-top:8px;font-size:12px;">
+        <thead>
+          <tr>
+            <th style="text-align:left;">Fecha</th>
+            <th style="text-align:left;">Sede</th>
+            <th style="text-align:left;">Responsable</th>
+            <th style="text-align:left;">Estado</th>
+            <th style="text-align:left;">Observaciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in controles %}
+            <tr>
+              <td>{{ c.fecha }}</td>
+              <td>{{ c.cod_sede }} — {{ c.sede_nombre or '' }}</td>
+              <td>{{ c.responsable or "-" }}</td>
+              <td>
+                {% if c.estado == 'ok' %}
+                  <span style="color:#16a34a;font-weight:600;">OK</span>
+                {% elif c.estado == 'faltan' %}
+                  <span style="color:#b45309;font-weight:600;">Faltan</span>
+                {% else %}
+                  <span style="color:#b91c1c;font-weight:600;">Reemplazar</span>
+                {% endif %}
+              </td>
+              <td style="max-width:420px;">{{ c.observaciones or "" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="text-muted" style="margin-top:8px;">
+        Todavía no hay controles cargados.
+      </p>
+    {% endif %}
+  </div>
+
+</section>
+
+{% endblock %}

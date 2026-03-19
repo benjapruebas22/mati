@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  :root{
+    --bg:#f4f6fb; --card:#fff; --border:#e5e7eb;
+    --text:#0f172a; --muted:#64748b;
+    --primary:#1d4ed8; --soft:#eef2ff;
+    --radius:16px; --shadow:0 10px 22px rgba(15,23,42,.06);
+  }
+  body{ background:var(--bg); color:var(--text); }
+
+  .wrap{ padding:14px 4px 18px; }
+  .card{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); }
+  .head{
+    display:flex; justify-content:space-between; align-items:flex-start; gap:12px;
+    padding:14px 16px; border-bottom:1px solid var(--border);
+  }
+  .h-title{ margin:0; font-size:18px; font-weight:900; }
+  .h-sub{ margin:4px 0 0; font-size:12px; color:var(--muted); }
+  .actions{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center;
+    padding:8px 12px; border-radius:999px;
+    border:1px solid var(--border);
+    background:#fff; color:#111827;
+    font-size:12px; text-decoration:none; cursor:pointer;
+  }
+  .btn.primary{ background:var(--primary); border-color:var(--primary); color:#fff; }
+  .btn:hover{ filter:brightness(.98); }
+
+  .grid{
+    display:grid;
+    grid-template-columns:minmax(520px,2.2fr) minmax(320px,1.2fr);
+    gap:14px; align-items:start;
+    padding:14px 16px 16px;
+  }
+
+  .form{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:12px;
+  }
+  .fg{ display:flex; flex-direction:column; gap:6px; }
+  .fg label{
+    font-size:11px; font-weight:800; color:var(--muted);
+    text-transform:uppercase; letter-spacing:.04em;
+  }
+  .input{
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:9px 10px;
+    font-size:12px;
+    outline:none;
+    background:#fff;
+  }
+  .input:focus{ border-color:#93c5fd; box-shadow:0 0 0 2px rgba(59,130,246,.15); }
+  .span2{ grid-column:1 / -1; }
+
+  .right-card{ padding:12px 14px; }
+  .rt-title{ margin:0 0 6px; font-size:14px; font-weight:900; }
+  .rt-sub{ margin:0; font-size:12px; color:var(--muted); }
+
+  .footer{
+    display:flex; gap:8px; flex-wrap:wrap;
+    padding:12px 16px 16px;
+    border-top:1px solid var(--border);
+  }
+
+  @media (max-width: 980px){
+    .grid{ grid-template-columns:1fr; }
+    .form{ grid-template-columns:1fr; }
+  }
+</style>
+
+{% set _modo = (modo or 'editar') %}
+{% set _titulo = 'Editar aire' %}
+
+{% set _sede_pref = '' %}
+{% if r and r.sede_codigo %}{% set _sede_pref = r.sede_codigo %}{% endif %}
+{% set _piso_pref = (r.piso if r else 'PB') %}
+{% set _local_pref = (r.ambiente_codigo if r else '') %}
+
+{% set _back_url = url_for('sede_ficha', codigo=_sede_pref, piso=_piso_pref, local=_local_pref, tab='aires') %}
+
+<div class="wrap">
+  <div class="card">
+
+    <div class="head">
+      <div>
+        <h1 class="h-title">Aires - {{ _titulo }}</h1>
+        <p class="h-sub">Editar ambiente, marca, estado, limpieza y service.</p>
+      </div>
+
+      <div class="actions">
+        <a class="btn" href="{{ _back_url }}">Volver</a>
+      </div>
+    </div>
+
+    <div class="grid">
+
+      <div>
+        <form method="post" class="form">
+
+          <div class="fg">
+            <label>Sede</label>
+            <select class="input" name="sede_codigo" required>
+              {% for s in sedes %}
+                {% set val = s.codigo %}
+                {% set sel = 'selected' if r and r.sede_codigo == val else '' %}
+                <option value="{{ val }}" {{ sel }}>{{ s.codigo }} - {{ s.nombre }} ({{ s.ciudad }})</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="fg">
+            <label>Piso</label>
+            {% set piso_val = (r.piso if r else 'PB') %}
+            <select class="input" name="piso">
+              {% for p in ['PB','P1','P2','P3'] %}
+                <option value="{{ p }}" {% if piso_val == p %}selected{% endif %}>{{ p }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="fg">
+            <label>Ambiente (codigo)</label>
+            <input class="input" name="ambiente_codigo" placeholder="D01 / D02 / etc."
+                   value="{{ r.ambiente_codigo if r else '' }}">
+          </div>
+
+          <div class="fg">
+            <label>Ambiente (descripcion)</label>
+            <input class="input" name="ambiente_desc"
+                   value="{{ r.ambiente_desc if r else '' }}">
+          </div>
+
+          <div class="fg">
+            <label>Marca</label>
+            <input class="input" name="marca" value="{{ r.marca if r else '' }}">
+          </div>
+
+          <div class="fg">
+            <label>Estado</label>
+            <input class="input" name="estado" value="{{ r.estado if r else '' }}">
+          </div>
+
+          <div class="fg">
+            <label>Limpieza</label>
+            <input class="input" type="date" name="fecha_limpieza"
+                   value="{{ r.fecha_limpieza if r and r.fecha_limpieza else '' }}">
+          </div>
+
+          <div class="fg">
+            <label>Service</label>
+            <input class="input" type="date" name="fecha_ultimo_service"
+                   value="{{ r.fecha_ultimo_service if r and r.fecha_ultimo_service else '' }}">
+          </div>
+
+          <div class="fg span2">
+            <label>Observaciones</label>
+            <input class="input" name="observaciones" value="{{ r.observaciones if r else '' }}">
+          </div>
+
+          <div class="fg span2">
+            <button class="btn primary" type="submit">Guardar</button>
+          </div>
+
+        </form>
+      </div>
+
+      <div class="card right-card">
+        <h3 class="rt-title">Ayuda</h3>
+        <p class="rt-sub">
+          Edita los datos del aire y vuelve a la ficha de sede.
+        </p>
+      </div>
+    </div>
+
+    <div class="footer">
+      <a class="btn" href="{{ _back_url }}">Volver</a>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

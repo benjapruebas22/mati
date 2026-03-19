@@ -1,0 +1,332 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  .mg-shell {
+    background: linear-gradient(180deg, #f8fafd 0%, #f3f7fc 100%);
+    border: 1px solid #dfe6f1;
+    border-radius: 18px;
+    box-shadow: 0 8px 20px rgba(24, 39, 63, 0.06);
+    padding: 10px;
+    display: grid;
+    gap: 8px;
+    color: #1f2f44;
+  }
+
+  .mg-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .mg-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 900;
+    color: #2f4f77;
+  }
+
+  .mg-head-right {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .mg-link {
+    border: 1px solid #d3deee;
+    background: #fff;
+    color: #4f6789;
+    border-radius: 999px;
+    padding: 4px 9px;
+    font-size: 11px;
+    font-weight: 800;
+    text-decoration: none;
+  }
+
+  .mg-grid {
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 8px;
+    align-items: start;
+  }
+
+  .card {
+    background: #fff;
+    border: 1px solid #dfe6f1;
+    border-radius: 14px;
+    box-shadow: 0 8px 20px rgba(24, 39, 63, 0.06);
+    padding: 10px;
+  }
+
+  .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .card-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 900;
+  }
+
+  .card-link {
+    font-size: 11px;
+    color: #5d7597;
+    text-decoration: none;
+    font-weight: 700;
+  }
+
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .kpi {
+    border: 1px solid #e5ecf6;
+    border-radius: 10px;
+    background: #fbfdff;
+    padding: 7px 8px;
+  }
+
+  .kpi:nth-child(1) { background: #eef5ff; border-color: #d7e6fb; }
+  .kpi:nth-child(2) { background: #f2fbf5; border-color: #dcefe3; }
+  .kpi:nth-child(3) { background: #fff9ef; border-color: #f0e2c9; }
+
+  .kpi-label {
+    font-size: 11px;
+    color: #5c7393;
+  }
+
+  .kpi-value {
+    margin-top: 2px;
+    font-size: 20px;
+    line-height: 1;
+    font-weight: 900;
+    color: #203650;
+  }
+
+  .split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .subcard {
+    border: 1px solid #e5ecf6;
+    border-radius: 10px;
+    background: #fbfdff;
+    padding: 8px;
+  }
+
+  .sub-title {
+    margin: 0 0 7px;
+    font-size: 12px;
+    font-weight: 900;
+    color: #2b415f;
+  }
+
+  .bar-list {
+    display: grid;
+    gap: 6px;
+    max-height: 300px;
+    overflow: auto;
+    padding-right: 2px;
+  }
+
+  .bar-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 6px;
+    align-items: center;
+    font-size: 11px;
+    color: #486589;
+  }
+
+  .bar-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .bar-track {
+    grid-column: 1 / span 2;
+    height: 8px;
+    border-radius: 999px;
+    border: 1px solid #d6e4f7;
+    background:
+      linear-gradient(90deg, rgba(255,255,255,.45) 10%, transparent 10%) 0 0/10% 100%,
+      #eef4fd;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #8fb1e1 0%, #6cae8f 100%);
+  }
+
+  .bar-fill.warn { background: linear-gradient(90deg, #e8c08e 0%, #d89d57 100%); }
+  .bar-fill.alert { background: linear-gradient(90deg, #eaa3b5 0%, #ee7c98 100%); }
+
+  .chip {
+    border: 1px solid #ccddf9;
+    background: #e9f1ff;
+    color: #36577f;
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 800;
+  }
+
+  @media (max-width: 1180px) {
+    .mg-grid { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 760px) {
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+    .split { grid-template-columns: 1fr; }
+  }
+</style>
+
+<section class="mg-shell">
+  <header class="mg-head">
+    <h2 class="mg-title">Panel de gestion</h2>
+    <div class="mg-head-right">
+      <a class="mg-link" href="{{ url_for('dashboard_sede_estado_manual') }}">Cargar estado</a>
+      <a class="mg-link" href="{{ url_for('dashboard_exec') }}">Volver al centro operativo</a>
+    </div>
+  </header>
+
+  <div class="mg-grid">
+    <article class="card">
+      <div class="card-head">
+        <h3 class="card-title">Indicadores estrategicos</h3>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-label">Km total 2026</div>
+          <div class="kpi-value" id="kpiKmTotal">0</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Vehiculos con km</div>
+          <div class="kpi-value" id="kpiVehCount">0</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Choferes con km</div>
+          <div class="kpi-value" id="kpiChoCount">0</div>
+        </div>
+      </div>
+
+      <div class="split">
+        <div class="subcard">
+          <h4 class="sub-title">Top km por vehiculo</h4>
+          <div class="bar-list" id="indVehList">
+            <div class="bar-row"><span class="bar-name">Sin datos</span><strong>0 km</strong><div class="bar-track"><div class="bar-fill" style="width:0%"></div></div></div>
+          </div>
+        </div>
+        <div class="subcard">
+          <h4 class="sub-title">Top km por chofer</h4>
+          <div class="bar-list" id="indChoList">
+            <div class="bar-row"><span class="bar-name">Sin datos</span><strong>0 km</strong><div class="bar-track"><div class="bar-fill" style="width:0%"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <article class="card">
+      <div class="card-head">
+        <h3 class="card-title">Estado general sedes</h3>
+        <span class="chip" id="sedePromedio">0%</span>
+      </div>
+      <div class="bar-list" id="gestionSedes">
+        <div class="bar-row">
+          <span class="bar-name">S01</span><strong>0%</strong>
+          <div class="bar-track"><div class="bar-fill" style="width:0%"></div></div>
+        </div>
+      </div>
+    </article>
+  </div>
+</section>
+
+<script>
+  (function () {
+    function kmFmt(n) {
+      return Math.round(Number(n || 0)).toLocaleString("es-AR") + " km";
+    }
+
+    function renderBars(elId, items) {
+      var el = document.getElementById(elId);
+      if (!el) return;
+      if (!items || !items.length) {
+        el.innerHTML = '<div class="bar-row"><span class="bar-name">Sin datos</span><strong>0 km</strong><div class="bar-track"><div class="bar-fill" style="width:0%"></div></div></div>';
+        return;
+      }
+      var max = 0;
+      items.forEach(function (x) { max = Math.max(max, Number(x.km || 0)); });
+      if (max <= 0) max = 1;
+      el.innerHTML = items.slice(0, 8).map(function (x) {
+        var v = Number(x.km || 0);
+        var pct = Math.max(5, Math.round((v / max) * 100));
+        return '<div class="bar-row">' +
+          '<span class="bar-name">' + (x.label || "-") + '</span>' +
+          "<strong>" + kmFmt(v) + "</strong>" +
+          '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%"></div></div>' +
+        "</div>";
+      }).join("");
+    }
+
+    function renderSedes(items) {
+      var el = document.getElementById("gestionSedes");
+      if (!el) return;
+      if (!items || !items.length) {
+        el.innerHTML = '<div class="bar-row"><span class="bar-name">Sin datos</span><strong>0%</strong><div class="bar-track"><div class="bar-fill" style="width:0%"></div></div></div>';
+        return;
+      }
+      el.innerHTML = items.slice(0, 20).map(function (x) {
+        var pct = Number(x.pct || 0);
+        var cls = "";
+        if (pct < 40) cls = " alert";
+        else if (pct < 70) cls = " warn";
+        return '<div class="bar-row">' +
+          '<span class="bar-name">' + (x.sede || "-") + '</span>' +
+          "<strong>" + pct + "%</strong>" +
+          '<div class="bar-track"><div class="bar-fill' + cls + '" style="width:' + pct + '%"></div></div>' +
+        "</div>";
+      }).join("");
+    }
+
+    fetch("/api/dashboard_operativo")
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var ind = d.indicadores2026 || {};
+        var veh = (ind.kmPorVehiculo || []).slice(0, 12);
+        var cho = (ind.kmPorChofer || []).slice(0, 12);
+        var total = Math.round(Number(ind.totalKm || 0));
+
+        var kpiTotal = document.getElementById("kpiKmTotal");
+        var kpiVeh = document.getElementById("kpiVehCount");
+        var kpiCho = document.getElementById("kpiChoCount");
+        if (kpiTotal) kpiTotal.textContent = total.toLocaleString("es-AR");
+        if (kpiVeh) kpiVeh.textContent = String(veh.length);
+        if (kpiCho) kpiCho.textContent = String(cho.length);
+
+        renderBars("indVehList", veh);
+        renderBars("indChoList", cho);
+
+        var se = (d.sedeEstado && d.sedeEstado.items) || [];
+        var prom = Number((d.sedeEstado && d.sedeEstado.promedioPct) || 0);
+        var promEl = document.getElementById("sedePromedio");
+        if (promEl) promEl.textContent = prom + "%";
+        renderSedes(se);
+      })
+      .catch(function () {});
+  })();
+</script>
+{% endblock %}

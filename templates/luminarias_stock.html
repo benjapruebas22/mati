@@ -1,0 +1,365 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="stock-lum-main">
+  <style>
+    .stock-lum-main{
+      padding:16px 6px 24px;
+    }
+    .sl-title{
+      font-size:24px;
+      font-weight:700;
+      margin-bottom:4px;
+      color:#0f172a;
+    }
+    .sl-sub{
+      font-size:13px;
+      color:#6b7280;
+      margin-bottom:16px;
+    }
+    .sl-grid{
+      display:grid;
+      grid-template-columns:minmax(320px,380px) minmax(480px,1fr);
+      gap:16px;
+      align-items:flex-start;
+    }
+    .sl-card{
+      background:#ffffff;
+      border-radius:16px;
+      border:1px solid #e5e7eb;
+      box-shadow:0 8px 16px rgba(15,23,42,0.04);
+      padding:14px 16px 16px;
+    }
+    .sl-card h2{
+      font-size:16px;
+      font-weight:600;
+      margin:0 0 4px;
+      color:#111827;
+    }
+    .sl-muted{
+      font-size:12px;
+      color:#6b7280;
+      margin-bottom:10px;
+    }
+    label{
+      display:block;
+      font-size:11px;
+      font-weight:600;
+      text-transform:uppercase;
+      letter-spacing:.04em;
+      color:#6b7280;
+      margin-bottom:2px;
+    }
+    .sl-input,
+    .sl-select,
+    .sl-textarea{
+      width:100%;
+      box-sizing:border-box;
+      border-radius:10px;
+      border:1px solid #d1d5db;
+      padding:6px 8px;
+      font-size:13px;
+      background:#f9fafb;
+      color:#111827;
+      outline:none;
+    }
+    .sl-input:focus,
+    .sl-select:focus,
+    .sl-textarea:focus{
+      border-color:#2563eb;
+      background:#ffffff;
+      box-shadow:0 0 0 1px rgba(37,99,235,0.25);
+    }
+    .sl-textarea{
+      min-height:60px;
+      resize:vertical;
+    }
+    .sl-row-2{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+    }
+    .sl-row-3{
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:8px;
+    }
+    .sl-actions{
+      display:flex;
+      justify-content:flex-end;
+      margin-top:8px;
+    }
+    .btn-primary{
+      border-radius:999px;
+      border:1px solid #2563eb;
+      background:#2563eb;
+      color:#ffffff;
+      font-size:13px;
+      padding:6px 14px;
+      font-weight:500;
+      cursor:pointer;
+    }
+    .btn-primary:hover{
+      background:#1d4ed8;
+      border-color:#1d4ed8;
+    }
+
+    .sl-table-wrap{
+      margin-top:8px;
+      border-radius:12px;
+      border:1px solid #e5e7eb;
+      overflow:auto;
+      max-height:260px;
+    }
+    table.sl-table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:12px;
+      background:#f9fafb;
+    }
+    .sl-table thead{
+      background:#e5e7ff;
+      position:sticky;
+      top:0;
+      z-index:1;
+    }
+    .sl-table th,
+    .sl-table td{
+      padding:6px 8px;
+      border-bottom:1px solid #e5e7eb;
+      text-align:left;
+      white-space:nowrap;
+    }
+
+    .sl-pill-stock{
+      display:inline-flex;
+      align-items:center;
+      padding:2px 8px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:600;
+      background:#ecfdf3;
+      border:1px solid #bbf7d0;
+      color:#15803d;
+    }
+    .sl-pill-stock.low{
+      background:#fef2f2;
+      border-color:#fecaca;
+      color:#b91c1c;
+    }
+
+    .sl-mov-wrap{
+      margin-top:16px;
+      border-radius:12px;
+      border:1px solid #e5e7eb;
+      overflow:auto;
+      max-height:260px;
+    }
+    .sl-tag-mov{
+      display:inline-flex;
+      padding:2px 8px;
+      border-radius:999px;
+      font-size:11px;
+      border:1px solid #e5e7eb;
+    }
+    .sl-tag-ingreso{
+      background:#ecfdf3;
+      border-color:#bbf7d0;
+      color:#15803d;
+    }
+    .sl-tag-egreso{
+      background:#fef2f2;
+      border-color:#fecaca;
+      color:#b91c1c;
+    }
+
+    @media (max-width: 900px){
+      .sl-grid{
+        grid-template-columns:1fr;
+      }
+    }
+  </style>
+
+  <h1 class="sl-title">Stock de luminarias</h1>
+  <p class="sl-sub">
+    Módulo rápido para saber cuántas luminarias tenés disponibles. Cada cambio cargado en el checklist descuenta stock
+    automáticamente como egreso. Acá registrás las compras o ajustes de stock.
+  </p>
+
+  <div class="sl-grid">
+
+    <!-- IZQUIERDA: NUEVO MOVIMIENTO -->
+    <div class="sl-card">
+      <h2>Nuevo movimiento de stock</h2>
+      <p class="sl-muted">
+        Usá este formulario para registrar compras (ingresos) o ajustes. Los egresos por instalación se generan solos
+        desde el checklist de luminarias.
+      </p>
+
+      <form method="post">
+        <div class="sl-row-2">
+          <div>
+            <label>Fecha</label>
+            <input type="date" name="fecha" class="sl-input" value="{{ hoy }}">
+          </div>
+          <div>
+            <label>Movimiento</label>
+            <select name="movimiento" class="sl-select">
+              <option value="ingreso">Ingreso (compra / alta)</option>
+              <option value="egreso">Egreso (ajuste)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="sl-row-3" style="margin-top:8px;">
+          <div>
+            <label>Tipo</label>
+            <select name="tipo" class="sl-select" required>
+              <option value="">-- elegir --</option>
+              <option value="tubo_led">Tubo LED</option>
+              <option value="panel_led">Panel LED</option>
+              <option value="foco_comun">Foco común</option>
+              <option value="otra">Otra / especial</option>
+            </select>
+          </div>
+          <div>
+            <label>Color luz</label>
+            <select name="color_luz" class="sl-select">
+              <option value="">--</option>
+              <option value="fria">Fría</option>
+              <option value="calida">Cálida</option>
+            </select>
+          </div>
+          <div>
+            <label>Potencia / modelo</label>
+            <input type="text" name="potencia" class="sl-input"
+                   placeholder="Ej: 18W, 60x60, 12W">
+          </div>
+        </div>
+
+        <div class="sl-row-2" style="margin-top:8px;">
+          <div>
+            <label>Cantidad</label>
+            <input type="number" name="cantidad" class="sl-input" min="1" value="1">
+          </div>
+          <div>
+            <label>Observaciones</label>
+            <input type="text" name="observaciones" class="sl-input"
+                   placeholder="Ej: Compra YPF, ajuste por conteo, etc.">
+          </div>
+        </div>
+
+        <div class="sl-actions">
+          <button type="submit" class="btn-primary">
+            💡 Guardar movimiento
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- DERECHA: STOCK ACTUAL -->
+    <div class="sl-card">
+      <h2>Stock actual</h2>
+      <p class="sl-muted">
+        Resumen por tipo, color de luz y potencia. Si el stock es bajo (≤ 5 unidades), se marca en rojo.
+      </p>
+
+      <div class="sl-table-wrap">
+        <table class="sl-table">
+          <thead>
+            <tr>
+              <th>Tipo</th>
+              <th>Color</th>
+              <th>Potencia / modelo</th>
+              <th>Stock</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if stock_rows %}
+              {% for r in stock_rows %}
+                {% set low = r.stock_actual <= 5 %}
+                <tr>
+                  <td>
+                    {% if r.tipo == 'tubo_led' %}Tubo LED
+                    {% elif r.tipo == 'panel_led' %}Panel LED
+                    {% elif r.tipo == 'foco_comun' %}Foco común
+                    {% else %}{{ r.tipo|capitalize }}
+                    {% endif %}
+                  </td>
+                  <td>{{ r.color_luz|capitalize if r.color_luz else '-' }}</td>
+                  <td>{{ r.potencia or '-' }}</td>
+                  <td>
+                    <span class="sl-pill-stock {% if low %}low{% endif %}">
+                      {{ r.stock_actual }}
+                    </span>
+                  </td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="4" style="text-align:center;color:#9ca3af;">
+                  Todavía no hay movimientos de stock cargados.
+                </td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORIAL DE MOVIMIENTOS -->
+  <div class="sl-card" style="margin-top:16px;">
+    <h2>Últimos movimientos</h2>
+    <p class="sl-muted">
+      Listado de los últimos registros de stock. Te deja ver compras, ajustes y egresos producidos por el checklist.
+    </p>
+
+    <div class="sl-mov-wrap">
+      <table class="sl-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Movimiento</th>
+            <th>Tipo</th>
+            <th>Color</th>
+            <th>Potencia</th>
+            <th>Cantidad</th>
+            <th>Origen</th>
+            <th>Obs.</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if movimientos %}
+            {% for m in movimientos %}
+              <tr>
+                <td>{{ m.fecha }}</td>
+                <td>
+                  {% if m.movimiento == 'ingreso' %}
+                    <span class="sl-tag-mov sl-tag-ingreso">Ingreso</span>
+                  {% else %}
+                    <span class="sl-tag-mov sl-tag-egreso">Egreso</span>
+                  {% endif %}
+                </td>
+                <td>{{ m.tipo }}</td>
+                <td>{{ m.color_luz|capitalize if m.color_luz else '-' }}</td>
+                <td>{{ m.potencia or '-' }}</td>
+                <td>{{ m.cantidad }}</td>
+                <td>{{ m.origen or '-' }}</td>
+                <td>{{ m.observaciones }}</td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="8" style="text-align:center;color:#9ca3af;">
+                Sin movimientos registrados todavía.
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

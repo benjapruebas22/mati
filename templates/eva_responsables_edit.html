@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section style="padding:16px 10px;">
+    <div
+        style="max-width:640px;margin:0 auto;background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:14px;">
+        <h2 style="margin:0 0 6px;font-size:18px;font-weight:900;">Editar responsables de evacuación</h2>
+
+        <div style="font-size:12px;color:#64748b;margin-bottom:12px;">
+            Sede: <b>{{ sede.codigo }}</b>{% if sede.nombre %} · {{ sede.nombre }}{% endif %}
+        </div>
+
+        <form method="post">
+            {% for p in pisos %}
+            <div style="margin-bottom:10px;">
+                <label style="display:block;font-size:12px;font-weight:800;margin-bottom:4px;">
+                    Piso {{ p }}
+                </label>
+                <input name="resp_{{ p }}" value="{{ evac_responsables.get(p,'') }}" placeholder="Nombre y apellido"
+                    style="width:100%;box-sizing:border-box;border:1px solid #d1d5db;border-radius:12px;padding:10px;font-size:13px;">
+            </div>
+            {% endfor %}
+
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px;">
+                <a class="btn" href="{{ url_for('sede_ficha', codigo=sede.codigo, tab='evacuacion') }}">Volver</a>
+                <button class="btn primary" type="submit">Guardar</button>
+            </div>
+        </form>
+
+        <div style="margin-top:10px;font-size:12px;color:#64748b;">
+            Nota: si dejás un responsable vacío, no se pisa el dato anterior (si querés que BORRE, te lo ajusto).
+        </div>
+    </div>
+</section>
+
+{% endblock %}

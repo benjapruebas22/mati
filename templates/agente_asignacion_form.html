@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<section class="agentes-main">
+
+  <header class="section-header">
+    <div>
+      <h1>Asignación de sede</h1>
+      <p class="section-sub">
+        {{ agente.agente }} · Rubro: {{ agente.rubro|upper }}
+      </p>
+    </div>
+
+    <div class="section-actions">
+      <a class="btn outline-slate" href="{{ url_for('agentes_home', id=agente.id) }}">
+        ⬅ Volver a Agentes
+      </a>
+    </div>
+  </header>
+
+  <div class="grid-main">
+    <div class="left-panel">
+      <div class="agent-detail-card">
+        <div class="agent-detail-header">
+          <div class="agent-photo" style="display:flex;align-items:center;justify-content:center;">
+            📍
+          </div>
+          <div>
+            <div class="agent-detail-name">{{ agente.agente }}</div>
+            <div class="agent-detail-rubro">Rubro: {{ agente.rubro|upper }}</div>
+          </div>
+        </div>
+
+        <div class="agent-detail-body">
+          <div class="agent-detail-section">
+            <div class="agent-detail-section-title">Nueva asignación a sede</div>
+
+            <form method="post" class="license-form">
+
+              <div class="form-row">
+                <label for="sede_codigo">Sede</label>
+                <select id="sede_codigo" name="sede_codigo" required>
+                  <option value="">Seleccionar sede…</option>
+                  {% for s in sedes %}
+                    <option value="{{ s.codigo }}">
+                      {{ s.codigo }} - {{ s.nombre }} ({{ s.ciudad }})
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <div class="form-row-inline">
+                <div>
+                  <label for="fecha_desde">Fecha desde</label>
+                  <input type="date" id="fecha_desde" name="fecha_desde" required>
+                </div>
+                <div>
+                  <label for="fecha_hasta">Fecha hasta (opcional)</label>
+                  <input type="date" id="fecha_hasta" name="fecha_hasta" disabled>
+                  <small>Por ahora solo usamos “desde”, después vemos fin.</small>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <label for="observaciones">Observaciones</label>
+                <textarea id="observaciones" name="observaciones" rows="3"
+                          placeholder="Ej: Asignación temporal a S01 por refuerzo de limpieza."></textarea>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn outline-amber">💾 Guardar asignación</button>
+                <a class="btn outline-slate"
+                   href="{{ url_for('agentes_home', id=agente.id) }}">
+                  Cancelar
+                </a>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="right-panel">
+      <div class="agent-licenses-card">
+        <div class="agent-licenses-header">
+          <h3>Historial de asignaciones</h3>
+        </div>
+
+        {% if asignaciones and asignaciones|length > 0 %}
+          <div class="agent-licenses-table-wrapper">
+            <table class="agent-licenses-table">
+              <thead>
+                <tr>
+                  <th>Sede</th>
+                  <th>Desde</th>
+                  <th>Hasta</th>
+                  <th>Estado</th>
+                  <th>Observaciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for a in asignaciones %}
+                  <tr>
+                    <td>{{ a.sede_codigo }}</td>
+                    <td>{{ a.fecha_desde }}</td>
+                    <td>{{ a.fecha_hasta or "-" }}</td>
+                    <td>{{ a.estado or "" }}</td>
+                    <td>{{ a.observaciones }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="panel-note">
+            Todavía no hay asignaciones registradas para este agente.
+          </p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</section>
+
+{% endblock %}

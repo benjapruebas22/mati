@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  /* Layout específico de la pantalla de planos */
+  .planos-grid{
+    display:grid;
+    grid-template-columns:minmax(420px, 2fr) minmax(280px, 1.2fr);
+    gap:16px;
+    align-items:flex-start;
+  }
+
+  .planos-card{
+    background:#ffffff;
+    border-radius:14px;
+    border:1px solid #e5e7eb;
+    box-shadow:0 1px 3px rgba(15,23,42,0.06);
+    padding:14px 16px;
+  }
+
+  .planos-header-title{
+    font-size:16px;
+    font-weight:600;
+    margin:0 0 4px;
+    color:#111827;
+  }
+  .planos-header-sub{
+    font-size:13px;
+    color:#6b7280;
+  }
+
+  .planos-upload-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px 14px;
+    align-items:end;
+  }
+
+  .planos-label-small{
+    font-size:11px;
+    color:#6b7280;
+    margin-bottom:2px;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    font-weight:600;
+  }
+
+  .planos-input{
+    width:100%;
+    font-size:12px;
+    padding:6px 8px;
+    border-radius:8px;
+    border:1px solid #d1d5db;
+    background:#f9fafb;
+  }
+
+  .planos-input:focus{
+    outline:none;
+    border-color:#2563eb;
+    box-shadow:0 0 0 1px rgba(37,99,235,0.25);
+    background:#ffffff;
+  }
+
+  .planos-btn-full{
+    width:100%;
+    margin-top:12px;
+  }
+
+  .planos-list{
+    font-size:13px;
+    color:#4b5563;
+    padding-left:18px;
+  }
+  .planos-list li{
+    margin-bottom:4px;
+  }
+
+  .planos-tag-empty{
+    font-size:12px;
+    color:#9ca3af;
+  }
+
+  /* Visor */
+  .planos-viewer-tabs{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-bottom:8px;
+  }
+  .planos-tab-btn{
+    font-size:12px;
+    padding:4px 10px;
+    border-radius:999px;
+    border:1px solid #e5e7eb;
+    background:#f9fafb;
+    cursor:pointer;
+  }
+  .planos-tab-btn.active{
+    border-color:#2563eb;
+    background:#e0ebff;
+    color:#1d4ed8;
+    font-weight:600;
+  }
+
+  @media (max-width: 900px){
+    .planos-grid{
+      grid-template-columns:1fr;
+    }
+    .planos-upload-grid{
+      grid-template-columns:1fr;
+    }
+  }
+</style>
+
+<section class="planos-grid">
+
+  <!-- FILA 1: ENCABEZADO ANCHO -->
+  <div class="planos-card" style="grid-column:1 / -1;">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+      <div>
+        <h2 class="planos-header-title">Planos de la sede</h2>
+        <p class="planos-header-sub">
+          Sede {{ sede.codigo }} · {{ sede.nombre }} – {{ sede.ciudad }}
+        </p>
+      </div>
+      <div>
+        <a href="{{ url_for('sede_ficha', codigo=sede.codigo) }}"
+           class="btn xs outline-slate">
+          ⬅ Volver a ficha de sede
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILA 2: VISOR DE PLANOS (ANCHO, ARRIBA) -->
+  <div class="planos-card" style="grid-column:1 / -1;">
+    <h3 style="margin:0 0 6px;">Visualizador de planos</h3>
+    <p class="planos-header-sub" style="margin-bottom:8px;">
+      Elegí el tipo de plano y se muestra en el visor de abajo.
+    </p>
+
+    {% set default_plano = plano_depositos_url or plano_evacuacion_url or plano_analisis_url %}
+
+    {% if default_plano %}
+      <!-- Botones de tipo de plano -->
+      <div class="planos-viewer-tabs">
+        {% if plano_analisis_url %}
+          <button type="button"
+                  class="planos-tab-btn"
+                  data-plano-src="{{ plano_analisis_url }}#view=FitH">
+            Plano general / mobiliario
+          </button>
+        {% endif %}
+        {% if plano_depositos_url %}
+          <button type="button"
+                  class="planos-tab-btn"
+                  data-plano-src="{{ plano_depositos_url }}#view=FitH">
+            Depósitos
+          </button>
+        {% endif %}
+        {% if plano_evacuacion_url %}
+          <button type="button"
+                  class="planos-tab-btn"
+                  data-plano-src="{{ plano_evacuacion_url }}#view=FitH">
+            Evacuación
+          </button>
+        {% endif %}
+      </div>
+
+      <!-- Visor -->
+      <div style="
+           border-radius:12px;
+           overflow:hidden;
+           border:1px solid #e5e7eb;
+           height:520px;
+         ">
+        <iframe
+          id="planoViewer"
+          src="{{ default_plano }}#view=FitH"
+          style="width:100%;height:100%;border:none;"
+        ></iframe>
+      </div>
+    {% else %}
+      <div class="planos-tag-empty">
+        Todavía no hay planos cargados para esta sede.
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- FILA 3 – COLUMNA IZQUIERDA: CARGA DE PLANOS -->
+  <div class="planos-card">
+
+    <h3 style="margin:0 0 6px;">Cargar o actualizar planos</h3>
+    <p style="font-size:12px;color:#6b7280;margin-bottom:10px;">
+      Subí un archivo PDF (o imagen) para cada tipo de plano:
+      plano general / mobiliario, depósitos y evacuación.
+      Para cada tipo usás un solo archivo con todos los ambientes.
+    </p>
+
+    <form method="post" enctype="multipart/form-data">
+      <input type="hidden" name="accion" value="planos">
+
+      <div class="planos-upload-grid">
+
+        <!-- PLANO GENERAL / MOBILIARIO (usa archivo_analisis) -->
+        <div>
+          <div class="planos-label-small">
+            Plano general / mobiliario (1 archivo)
+          </div>
+          <input type="file"
+                 name="archivo_analisis"
+                 accept=".pdf,image/*"
+                 class="planos-input">
+        </div>
+
+        <!-- DEPÓSITOS -->
+        <div>
+          <div class="planos-label-small">
+            Planos de depósitos (un solo archivo con todos)
+          </div>
+          <input type="file"
+                 name="archivo_depositos"
+                 accept=".pdf,image/*"
+                 class="planos-input">
+        </div>
+
+        <!-- EVACUACIÓN (FILA COMPLETA) -->
+        <div style="grid-column:1 / -1;">
+          <div class="planos-label-small">
+            Planos de evacuación (un solo archivo con todos)
+          </div>
+          <input type="file"
+                 name="archivo_evacuacion"
+                 accept=".pdf,image/*"
+                 class="planos-input">
+        </div>
+
+      </div>
+
+      <button type="submit"
+              class="btn primary planos-btn-full">
+        💾 Guardar planos
+      </button>
+
+    </form>
+  </div>
+
+  <!-- FILA 3 – COLUMNA DERECHA: PLANOS CARGADOS -->
+  <div class="planos-card">
+    <h3 style="margin:0 0 6px;">Planos cargados</h3>
+
+    <ul class="planos-list">
+      <li>
+        <strong>Plano general / mobiliario:</strong>
+        {% if plano_analisis_url %}
+          <a href="{{ plano_analisis_url }}" target="_blank">Ver archivo</a>
+        {% else %}
+          <span class="planos-tag-empty">Sin archivo cargado.</span>
+        {% endif %}
+      </li>
+
+      <li>
+        <strong>Planos de depósitos:</strong>
+        {% if plano_depositos_url %}
+          <a href="{{ plano_depositos_url }}" target="_blank">Ver archivo</a>
+        {% else %}
+          <span class="planos-tag-empty">Sin archivo cargado.</span>
+        {% endif %}
+      </li>
+
+      <li>
+        <strong>Planos de evacuación:</strong>
+        {% if plano_evacuacion_url %}
+          <a href="{{ plano_evacuacion_url }}" target="_blank">Ver archivo</a>
+        {% else %}
+          <span class="planos-tag-empty">Sin archivo cargado.</span>
+        {% endif %}
+      </li>
+    </ul>
+  </div>
+
+</section>
+
+<script>
+  // Cambio de plano en el visor sin recargar la página
+  document.addEventListener("DOMContentLoaded", function () {
+    const viewer = document.getElementById("planoViewer");
+    const buttons = document.querySelectorAll(".planos-tab-btn");
+
+    if (!viewer || !buttons.length) return;
+
+    // Marcar el primero como activo
+    buttons[0].classList.add("active");
+
+    buttons.forEach(btn => {
+      btn.addEventListener("click", function () {
+        const src = this.getAttribute("data-plano-src");
+        if (!src) return;
+
+        viewer.src = src;
+
+        buttons.forEach(b => b.classList.remove("active"));
+        this.classList.add("active");
+      });
+    });
+  });
+</script>
+
+{% endblock %}

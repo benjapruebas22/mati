@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="sedes-section">
+
+  <!-- CABECERA -->
+  <div class="vh-actions" style="justify-content:space-between;align-items:flex-end;gap:10px;">
+    <div>
+      <h2 style="margin:0">Mapa Asistidos</h2>
+      <p style="margin:2px 0 0;color:#64748b;font-size:12px">
+        Buscá una localidad/barrio para hacer zoom. Click en el mapa para cargar Lat/Lng y guardar.
+      </p>
+    </div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <a class="btn sm outline" href="{{ url_for('vehiculos_control_diario') }}">Volver</a>
+    </div>
+  </div>
+
+  <!-- LEYENDA -->
+  <div class="asistidos-leyenda" style="margin-top:10px">
+    <span class="dot gris"></span> <span>Medida no realizada</span>
+    <span class="dot azul"></span> <span>Domicilio a volver</span>
+    <span class="dot rojo"></span> <span>Domicilio con problema</span>
+    <span class="dot verde"></span> <span>Medida cerrada</span>
+  </div>
+
+  <div class="asistidos-grid">
+
+    <!-- MAPA -->
+    <div class="map-wrap">
+      <div id="map" style="height:78vh;"></div>
+    </div>
+
+    <!-- PANEL DERECHO -->
+    <div class="side-card">
+
+      <!-- BUSCADOR -->
+      <div class="card-block">
+        <h3 style="margin:0 0 8px 0;">Buscar en Jujuy</h3>
+
+        <label style="font-size:11px;color:#64748b;margin-bottom:4px;display:block;">
+          Localidad / barrio / dirección
+        </label>
+
+        <div style="display:flex;gap:6px;">
+          <input id="q-buscar" class="form-control"
+                 placeholder="Ej: Humahuaca / Abra Pampa / Barrio Chijra">
+          <button id="btn-buscar" class="btn btn-outline-secondary" type="button">
+            Buscar
+          </button>
+        </div>
+
+        <p style="margin:6px 0 0;color:#94a3b8;font-size:11px;">
+          Requiere internet (usa OpenStreetMap).
+        </p>
+      </div>
+
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:12px 0;">
+
+      <!-- ALTA RÁPIDA -->
+      <div class="card-block">
+        <h3 style="margin:0 0 8px 0;">Alta rápida</h3>
+
+        <label>Nombre</label>
+        <input id="a-nombre" class="form-control" placeholder="Apellido y nombre">
+
+        <label style="margin-top:8px;">Barrio</label>
+        <input id="a-barrio" class="form-control" placeholder="Ej: Chijra / Alto Comedero">
+
+        <label style="margin-top:8px;">Dirección</label>
+        <input id="a-direccion" class="form-control" placeholder="Calle y número / referencia">
+
+        <label style="margin-top:8px;">Referencia</label>
+        <input id="a-ref" class="form-control" placeholder="Ej: frente a..., esquina...">
+
+        <label style="margin-top:8px;">Teléfono</label>
+        <input id="a-tel" class="form-control" placeholder="Opcional">
+
+        <label style="margin-top:8px;">Estado</label>
+        <select id="a-estado" class="form-control">
+          <option value="NO_REALIZADA" selected>Medida no realizada</option>
+          <option value="A_VOLVER">Domicilio a volver</option>
+          <option value="PROBLEMA">Domicilio con problema</option>
+          <option value="CERRADA">Medida cerrada</option>
+        </select>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+          <div>
+            <label>Lat</label>
+            <input id="a-lat" class="form-control" placeholder="Click en mapa" readonly>
+          </div>
+          <div>
+            <label>Lng</label>
+            <input id="a-lng" class="form-control" placeholder="Click en mapa" readonly>
+          </div>
+        </div>
+
+        <button id="btn-guardar" class="btn btn-primary" style="width:100%;margin-top:10px;" type="button">
+          Guardar asistido
+        </button>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- Leaflet + Cluster -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+<style>
+  /* layout */
+  .asistidos-grid{
+    display:grid;
+    grid-template-columns: 1fr 380px;
+    gap:14px;
+    align-items:start;
+    margin-top:10px;
+  }
+  .map-wrap{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+    overflow:hidden;
+  }
+  .side-card{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:14px;
+    padding:12px;
+  }
+  .card-block label{
+    display:block;
+    font-size:11px;
+    color:#64748b;
+    margin:6px 0 2px;
+  }
+
+  /* leyenda */
+  .dot{
+    width:10px;height:10px;border-radius:50%;
+    display:inline-block;
+    border:1px solid rgba(15,23,42,.12);
+    margin-right:4px;
+  }
+  .dot.gris{ background:#94a3b8; }
+  .dot.azul{ background:#2563eb; }
+  .dot.rojo{ background:#dc2626; }
+  .dot.verde{ background:#16a34a; }
+  .asistidos-leyenda{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:center;
+    font-size:11px;
+    color:#475569;
+  }
+
+  @media (max-width: 980px){
+    .asistidos-grid{ grid-template-columns: 1fr; }
+  }
+</style>
+
+<script src="{{ url_for('static', filename='js/asistidos_map.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,911 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="sedes-section vehiculos-home">
+
+  <!-- CABECERA + BOTONES -->
+  <div class="vh-actions">
+    <a class="btn sm outline" href="{{ url_for('vehiculos_control_diario') }}">
+      Control diario
+    </a>
+    <a class="btn sm outline" href="{{ url_for('vehiculos_combustible') }}">
+      Combustible
+    </a>
+    <a class="btn sm outline" href="{{ url_for('vehiculos_bd_home') }}">
+      Editar vehículos
+    </a>
+
+    <!-- NUEVO: MAPA ASISTIDOS -->
+    <a class="btn sm primary" href="{{ url_for('vehiculos_asistidos_mapa') }}">
+      Mapa Asistidos
+    </a>
+  </div>
+
+  <!-- KPIS PRINCIPALES -->
+  <div class="vh-kpis">
+    <div class="kpi-card">
+      <span class="kpi-label">Total vehículos</span>
+      <span class="kpi-value">{{ total_vehiculos }}</span>
+    </div>
+    <div class="kpi-card kpi-reservados">
+      <span class="kpi-label">Con lugar reservado</span>
+      <span class="kpi-value">{{ reservados }}</span>
+    </div>
+    <div class="kpi-card kpi-libres">
+      <span class="kpi-label">Sin lugar asignado</span>
+      <span class="kpi-value">{{ libres }}</span>
+    </div>
+  </div>
+
+  <!-- NUEVO: KPIS ESTADOS ASISTIDOS + LEYENDA -->
+  <div class="asistidos-strip">
+    <div class="asistidos-strip-title">
+      <strong>Asistidos (estado operativo)</strong>
+      <span class="asistidos-strip-sub">Colores unificados para el mapa</span>
+    </div>
+
+    <div class="asistidos-kpis">
+      <div class="akpi akpi-gris">
+        <span class="akpi-tag">Medida no realizada</span>
+        <span class="akpi-val">{{ asist_no_realizada or 0 }}</span>
+      </div>
+      <div class="akpi akpi-azul">
+        <span class="akpi-tag">Domicilio a volver</span>
+        <span class="akpi-val">{{ asist_a_volver or 0 }}</span>
+      </div>
+      <div class="akpi akpi-rojo">
+        <span class="akpi-tag">Domicilio con problema</span>
+        <span class="akpi-val">{{ asist_problema or 0 }}</span>
+      </div>
+      <div class="akpi akpi-verde">
+        <span class="akpi-tag">Medida cerrada</span>
+        <span class="akpi-val">{{ asist_cerrada or 0 }}</span>
+      </div>
+    </div>
+
+    <div class="asistidos-leyenda">
+      <span class="dot gris"></span> <span>Medida no realizada</span>
+      <span class="dot azul"></span> <span>Domicilio a volver</span>
+      <span class="dot rojo"></span> <span>Domicilio con problema</span>
+      <span class="dot verde"></span> <span>Medida cerrada</span>
+    </div>
+  </div>
+
+  {# ===== macro para dibujar cada box del plano usando el listado "plano" ===== #}
+  {% macro slot_box(codigo, etiqueta) %}
+  {% set slot = (plano | selectattr('codigo', 'equalto', codigo) | list | first) %}
+  {% if slot %}
+  {% set v = slot.vehiculo %}
+  {% else %}
+  {% set v = None %}
+  {% endif %}
+  <div class="plano-box {% if v %}ocupado{% else %}libre{% endif %}">
+    <div class="pb-title">{{ etiqueta }}</div>
+    {% if v %}
+    <div class="pb-veh">
+      <span class="pb-veh-code">{{ v["codigo_interno"] }}</span>
+      <span class="pb-veh-plate">{{ v["patente"] }}</span>
+    </div>
+    <span class="pb-tag">Reservado</span>
+    {% else %}
+    <div class="pb-veh pb-libre">Libre</div>
+    {% endif %}
+  </div>
+  {% endmacro %}
+
+  <div class="vh-layout">
+    <!-- =================== PLANO =================== -->
+    <section class="vh-plano">
+      <div class="vh-plano-header">
+        <h3>Plano de lugares reservados</h3>
+        <p>Estado actual de cocheras, lavadero, autorizadas, etc.</p>
+      </div>
+
+      <!-- formulario asignar -->
+      <form method="post" class="plano-form">
+        <input type="hidden" name="tipo_form" value="plano">
+        <div class="plano-form-row">
+          <div>
+            <label>Lugar</label>
+            <select name="lugar" required>
+              <option value="">Lugar...</option>
+              {% for codigo, nombre in lugares %}
+              <option value="{{ codigo }}">{{ nombre }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div>
+            <label>Vehículo</label>
+            <select name="patente" required>
+              <option value="">Vehículo...</option>
+              {% for v in vehiculos %}
+              <option value="{{ v['patente'] }}">
+                {{ v['codigo_interno'] }} — {{ v['patente'] }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="plano-form-btn">
+            <button class="btn primary" type="submit">Asignar</button>
+          </div>
+        </div>
+      </form>
+
+      <!-- ====== PLANO ORDENADO ====== -->
+      <div class="plano-card">
+
+        <!-- fila superior: servicios -->
+        <div class="plano-sector">
+          <div class="plano-row">
+            {{ slot_box('LAV_R1', 'Lavadero') }}
+            {{ slot_box('SERV_R1', 'Service') }}
+            {{ slot_box('VIG_R1', 'Autorizada') }}
+            {{ slot_box('INDEP202_R1','Indep 202 R05') }}
+          </div>
+        </div>
+
+        <!-- independencia al 100 (coch1–4) -->
+        <div class="plano-sector">
+          <div class="plano-sector-title">Independencia al 100</div>
+          <div class="plano-row">
+            {{ slot_box('SM148_R1', 'Coch1') }}
+            {{ slot_box('SM148_R2', 'Coch2') }}
+            {{ slot_box('SM148_R3', 'Coch3') }}
+            {{ slot_box('SM148_R4', 'Coch4') }}
+          </div>
+        </div>
+
+        <!-- san martín / cocheras principales -->
+        <div class="plano-sector">
+          <div class="plano-sector-title">San Martín al 100</div>
+          <div class="plano-row">
+            {{ slot_box('SM137_R1', 'SM 137 R01') }}
+            {{ slot_box('SM137_R2', 'SM 137 R02') }}
+            {{ slot_box('SM137_R3', 'SM 137 R03') }}
+            {{ slot_box('SM271_R1', 'SM 271 R04') }}
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =================== STATS + MINI CALENDARIO =================== -->
+    <section class="vh-stats">
+      <h3>Estadísticas y filtros</h3>
+      <p class="vh-sub">
+        Filtrá por fechas, vehículo, chofer y agente trasladado.
+        Abajo ves viajes, KM y combustible aproximado.
+      </p>
+
+      <!-- filtros -->
+      <form method="get" class="vh-filtros">
+        <div>
+          <label>Desde</label>
+          <input type="date" name="desde" value="{{ f_desde }}">
+        </div>
+        <div>
+          <label>Hasta</label>
+          <input type="date" name="hasta" value="{{ f_hasta }}">
+        </div>
+
+        <div>
+          <label>Vehículo</label>
+          <select name="f_patente">
+            <option value="">(Todos)</option>
+            {% for v in vehiculos %}
+            <option value="{{ v['patente'] }}" {% if f_patente==v['patente'] %}selected{% endif %}>
+              {{ v['codigo_interno'] }} — {{ v['patente'] }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label>Chofer</label>
+          <select name="f_chofer_id">
+            <option value="">(Todos)</option>
+            {% for c in choferes %}
+            <option value="{{ c['id'] }}" {% if f_chofer_id==c['id']|string %}selected{% endif %}>
+              {{ c['agente'] }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label>Agente trasladado</label>
+          <select name="f_agente">
+            <option value="">(Todos)</option>
+            {% for a in agentes_tras %}
+            <option value="{{ a['agente_trasladado'] }}" {% if f_agente==a['agente_trasladado'] %}selected{% endif %}>
+              {{ a['agente_trasladado'] }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="km-filtros-boton">
+          <button class="btn primary sm" type="submit">Filtrar</button>
+        </div>
+      </form>
+
+      <!-- tabla resultados -->
+      <table class="table-soft vh-table">
+        <thead>
+          <tr>
+            <th>Vehículo</th>
+            <th>Chofer</th>
+            <th>Agente</th>
+            <th>Viajes</th>
+            <th>KM</th>
+            <th>Litros</th>
+            <th>$ combustible</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in stats %}
+          <tr>
+            <td>{{ s.codigo_interno }} — {{ s.patente }}</td>
+            <td>{{ s.chofer_nombre }}</td>
+            <td>{{ s.agente_nombre }}</td>
+            <td>{{ s.cant_viajes }}</td>
+            <td>{{ '%.1f'|format(s.km_totales) }}</td>
+            <td>{{ '%.1f'|format(s.litros) }}</td>
+            <td>{{ '%.2f'|format(s.importe) }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" style="text-align:center;color:#94a3b8">
+              Sin datos para este filtro.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- mini calendario -->
+      <div class="vh-mini-cal">
+        <h4>Calendario {{ hoy.year }}</h4>
+
+        {% set meses = [
+        'Enero','Febrero','Marzo','Abril','Mayo','Junio',
+        'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'
+        ] %}
+
+        <div class="mini-cal-months">
+          {% for nombre in meses %}
+          <a class="mini-pill-month {% if loop.index == hoy.month %}active{% endif %}"
+            href="{{ url_for('calendario', fecha=hoy.replace(month=loop.index, day=1).isoformat()) }}">
+            {{ nombre }}
+          </a>
+          {% endfor %}
+        </div>
+
+        <div class="mini-cal-day">
+          <p class="mini-cal-title">
+            Novedades del día {{ hoy.isoformat() }}
+          </p>
+          <p class="mini-cal-sub">
+            Sincronizado con el módulo Calendario.
+            <a href="{{ url_for('calendario', fecha=hoy.isoformat()) }}">
+              Ver detalles
+            </a>
+          </p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- =================== NOVEDADES / PEDIDOS DEL DÍA =================== -->
+  <section class="vh-calendario-detalle">
+    <h3>Novedades del {{ fecha_sel.strftime('%d/%m/%Y') }}</h3>
+
+    {% if pedidos %}
+    <ul class="vh-pedido-list">
+      {% for p in pedidos %}
+      <li>
+        <div class="vh-pedido-top">
+          <span class="vh-badge-prio {{ (p['prioridad'] or 'Media')|lower }}">
+            {{ p['prioridad'] or 'Media' }}
+          </span>
+          <span class="vh-pedido-estado">
+            {{ p['estado'] or 'PENDIENTE' }}
+          </span>
+        </div>
+        <div class="vh-pedido-detalle">
+          <strong>{{ p['sede'] or 'Sin sede' }}</strong>
+          {% if p['solicitante'] %}
+          · {{ p['solicitante'] }}
+          {% endif %}
+        </div>
+        <div class="vh-pedido-nota">
+          {{ p['detalle'] }}
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="vh-no-novedades">
+      Sin pedidos cargados para este día.
+    </p>
+    {% endif %}
+
+    <hr class="vh-divider">
+
+    <h4>Nuevo pedido / novedad</h4>
+
+    <form method="post" class="vh-pedido-form">
+      <input type="hidden" name="tipo_form" value="pedido">
+
+      <div class="vh-pedido-row">
+        <div class="vh-pedido-group">
+          <label>Fecha</label>
+          <input type="date" name="fecha" value="{{ fecha_sel.isoformat() }}">
+        </div>
+
+        <div class="vh-pedido-group">
+          <label>Sede / lugar</label>
+          <input type="text" name="sede" placeholder="Ej: Penal, Depósito, Taller">
+        </div>
+
+        <div class="vh-pedido-group">
+          <label>Solicitante</label>
+          <input type="text" name="solicitante" placeholder="Nombre del agente">
+        </div>
+
+        <div class="vh-pedido-group">
+          <label>Prioridad</label>
+          <select name="prioridad">
+            <option value="Baja">Baja</option>
+            <option value="Media" selected>Media</option>
+            <option value="Alta">Alta</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="vh-pedido-row">
+        <div class="vh-pedido-group vh-pedido-detalle-group">
+          <label>Detalle</label>
+          <textarea name="detalle" rows="2" placeholder="Descripción de la novedad / pedido..."></textarea>
+        </div>
+
+        <div class="vh-pedido-group vh-pedido-btn-group">
+          <label>&nbsp;</label>
+          <button class="btn primary" type="submit">Guardar</button>
+        </div>
+      </div>
+    </form>
+  </section>
+
+</section>
+
+<style>
+  .vehiculos-home {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* acciones */
+  .vh-actions {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  /* KPIs vehículos */
+  .vh-kpis {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  .kpi-card {
+    min-width: 120px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .kpi-label {
+    font-size: 11px;
+    color: #64748b;
+  }
+
+  .kpi-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .kpi-reservados {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+  }
+
+  .kpi-libres {
+    background: #ecfdf5;
+    border-color: #bbf7d0;
+  }
+
+  /* NUEVO: strip asistidos */
+  .asistidos-strip {
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .asistidos-strip-title {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: baseline;
+    justify-content: space-between;
+    font-size: 13px;
+    color: #0f172a;
+  }
+
+  .asistidos-strip-sub {
+    font-size: 11px;
+    color: #64748b;
+  }
+
+  .asistidos-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(160px, 1fr));
+    gap: 8px;
+  }
+
+  .akpi {
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .akpi-tag {
+    font-size: 11px;
+    color: #475569;
+    font-weight: 600;
+  }
+
+  .akpi-val {
+    font-size: 18px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  /* colores por estado (los mismos que vas a usar en el mapa) */
+  .akpi-gris {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+  }
+
+  .akpi-azul {
+    background: #eff6ff;
+    border-color: #93c5fd;
+  }
+
+  .akpi-rojo {
+    background: #fef2f2;
+    border-color: #fca5a5;
+  }
+
+  .akpi-verde {
+    background: #ecfdf5;
+    border-color: #86efac;
+  }
+
+  .asistidos-leyenda {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    font-size: 11px;
+    color: #475569;
+  }
+
+  .dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    border: 1px solid rgba(15, 23, 42, .12);
+    margin-right: 4px;
+  }
+
+  .dot.gris {
+    background: #94a3b8;
+  }
+
+  .dot.azul {
+    background: #2563eb;
+  }
+
+  .dot.rojo {
+    background: #dc2626;
+  }
+
+  .dot.verde {
+    background: #16a34a;
+  }
+
+  /* layout principal */
+  .vh-layout {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 18px;
+  }
+
+  .vh-plano,
+  .vh-stats {
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    padding: 12px 14px;
+  }
+
+  .vh-plano-header h3,
+  .vh-stats h3 {
+    margin: 0 0 2px;
+    font-size: 15px;
+  }
+
+  .vh-plano-header p {
+    margin: 0;
+    font-size: 12px;
+    color: #64748b;
+  }
+
+  .vh-sub {
+    margin: 2px 0 0;
+    font-size: 13px;
+    color: #64748b;
+  }
+
+  .plano-form {
+    margin: 8px 0;
+  }
+
+  .plano-form-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: flex-end;
+  }
+
+  .plano-form-row label {
+    display: block;
+    font-size: 11px;
+    margin-bottom: 2px;
+    color: #64748b;
+  }
+
+  .plano-form-row select {
+    min-width: 140px;
+    padding: 4px 6px;
+    font-size: 12px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+  }
+
+  .plano-form-btn {
+    padding-top: 16px;
+  }
+
+  /* ---- plano ---- */
+  .plano-card {
+    margin-top: 8px;
+    border-radius: 14px;
+    border: 1px solid #e5e7eb;
+    background: #f8fafc;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .plano-sector-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #94a3b8;
+    margin-bottom: 4px;
+  }
+
+  .plano-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .plano-box {
+    flex: 1 1 120px;
+    min-width: 120px;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 8px;
+    background: #ffffff;
+  }
+
+  .plano-box.ocupado {
+    background: #ecfdf5;
+    border-color: #4ade80;
+  }
+
+  .pb-title {
+    font-size: 11px;
+    color: #64748b;
+  }
+
+  .pb-veh {
+    margin-top: 2px;
+    display: flex;
+    flex-direction: column;
+    font-size: 11.5px;
+  }
+
+  .pb-veh-code {
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  .pb-veh-plate {
+    color: #64748b;
+  }
+
+  .pb-veh.pb-libre {
+    margin-top: 2px;
+    color: #9ca3af;
+  }
+
+  .pb-tag {
+    display: inline-block;
+    margin-top: 2px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    font-size: 10px;
+    background: #bbf7d0;
+    color: #166534;
+  }
+
+  /* filtros / stats */
+  .vh-filtros {
+    margin: 10px 0;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .vh-filtros input,
+  .vh-filtros select {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+  }
+
+  .km-filtros-boton {
+    display: flex;
+    align-items: flex-end;
+  }
+
+  .vh-table th,
+  .vh-table td {
+    font-size: 12px;
+  }
+
+  .vh-mini-cal {
+    margin-top: 12px;
+  }
+
+  .mini-cal-months {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .mini-pill-month {
+    padding: 3px 9px;
+    border-radius: 999px;
+    border: 1px solid #e2e8f0;
+    font-size: 11px;
+    text-decoration: none;
+    color: #475569;
+    background: #fff;
+  }
+
+  .mini-pill-month.active {
+    background: #2563eb;
+    color: #fff;
+    border-color: #2563eb;
+  }
+
+  .mini-cal-title {
+    font-size: 12px;
+    font-weight: 600;
+    margin: 8px 0 2px;
+  }
+
+  .mini-cal-sub {
+    font-size: 11px;
+    color: #64748b;
+  }
+
+  /* ----- sección novedades / pedidos ----- */
+  .vh-calendario-detalle {
+    margin-top: 10px;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    padding: 12px 14px;
+  }
+
+  .vh-calendario-detalle h3 {
+    margin: 0 0 6px;
+    font-size: 15px;
+  }
+
+  .vh-calendario-detalle h4 {
+    margin: 6px 0;
+    font-size: 13px;
+  }
+
+  .vh-pedido-list {
+    list-style: none;
+    padding: 0;
+    margin: 6px 0 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .vh-pedido-list li {
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 8px;
+    background: #f8fafc;
+    font-size: 11px;
+  }
+
+  .vh-pedido-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2px;
+  }
+
+  .vh-badge-prio {
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+
+  .vh-badge-prio.baja {
+    background: #ecfeff;
+    color: #0e7490;
+  }
+
+  .vh-badge-prio.media {
+    background: #fef9c3;
+    color: #854d0e;
+  }
+
+  .vh-badge-prio.alta {
+    background: #fee2e2;
+    color: #b91c1c;
+  }
+
+  .vh-pedido-estado {
+    font-size: 10px;
+    color: #64748b;
+  }
+
+  .vh-pedido-detalle {
+    font-size: 11px;
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  .vh-pedido-nota {
+    font-size: 11px;
+    color: #475569;
+    margin-top: 2px;
+    white-space: pre-wrap;
+  }
+
+  .vh-no-novedades {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 4px;
+  }
+
+  .vh-divider {
+    margin: 10px 0;
+    border: none;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  .vh-pedido-form {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .vh-pedido-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .vh-pedido-group {
+    flex: 1;
+    min-width: 140px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .vh-pedido-group label {
+    font-size: 11px;
+    color: #64748b;
+  }
+
+  .vh-pedido-group input,
+  .vh-pedido-group select,
+  .vh-pedido-group textarea {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+  }
+
+  .vh-pedido-detalle-group {
+    flex: 3;
+  }
+
+  .vh-pedido-btn-group {
+    flex: 0 0 140px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
+  @media (max-width:900px) {
+    .vh-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .vh-kpis {
+      justify-content: flex-start;
+    }
+
+    .asistidos-kpis {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media (max-width:520px) {
+    .asistidos-kpis {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+{% endblock %}

@@ -1,0 +1,233 @@
+
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  :root{
+    --bg:#f4f6fb; --card:#fff; --border:#e5e7eb;
+    --text:#0f172a; --muted:#64748b;
+    --primary:#1d4ed8; --soft:#eef2ff;
+    --radius:16px; --shadow:0 10px 22px rgba(15,23,42,.06);
+  }
+  body{ background:var(--bg); color:var(--text); }
+
+  .wrap{ padding:14px 4px 18px; }
+  .card{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); }
+  .head{
+    display:flex; justify-content:space-between; align-items:flex-start; gap:12px;
+    padding:14px 16px; border-bottom:1px solid var(--border);
+  }
+  .h-title{ margin:0; font-size:18px; font-weight:900; }
+  .h-sub{ margin:4px 0 0; font-size:12px; color:var(--muted); }
+  .actions{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center;
+    padding:8px 12px; border-radius:999px;
+    border:1px solid var(--border);
+    background:#fff; color:#111827;
+    font-size:12px; text-decoration:none; cursor:pointer;
+  }
+  .btn.primary{ background:var(--primary); border-color:var(--primary); color:#fff; }
+  .btn:hover{ filter:brightness(.98); }
+
+  .grid{
+    display:grid;
+    grid-template-columns:minmax(520px,2.2fr) minmax(320px,1.2fr);
+    gap:14px; align-items:start;
+    padding:14px 16px 16px;
+  }
+
+  .form{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:12px;
+  }
+  .fg{ display:flex; flex-direction:column; gap:6px; }
+  .fg label{
+    font-size:11px; font-weight:800; color:var(--muted);
+    text-transform:uppercase; letter-spacing:.04em;
+  }
+  .input{
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:9px 10px;
+    font-size:12px;
+    outline:none;
+    background:#fff;
+  }
+  .input:focus{ border-color:#93c5fd; box-shadow:0 0 0 2px rgba(59,130,246,.15); }
+  .span2{ grid-column:1 / -1; }
+
+  .hint{
+    margin-top:10px;
+    font-size:12px;
+    color:#334155;
+    background:#f8fafc;
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:10px 12px;
+  }
+
+  .right-card{ padding:12px 14px; }
+  .rt-title{ margin:0 0 6px; font-size:14px; font-weight:900; }
+  .rt-sub{ margin:0; font-size:12px; color:var(--muted); }
+
+  .footer{
+    display:flex; gap:8px; flex-wrap:wrap;
+    padding:12px 16px 16px;
+    border-top:1px solid var(--border);
+  }
+
+  @media (max-width: 980px){
+    .grid{ grid-template-columns:1fr; }
+    .form{ grid-template-columns:1fr; }
+  }
+</style>
+
+{% set _modo = (modo or 'nuevo') %}
+{% set _titulo = 'Nuevo registro' if _modo=='nuevo' else 'Editar registro' %}
+
+{% set _sede_pref = '' %}
+{% if sede is defined and sede %}
+  {% if sede.codigo is defined %}
+    {% set _sede_pref = sede.codigo %}
+  {% else %}
+    {% set _sede_pref = sede %}
+  {% endif %}
+{% elif sede_codigo is defined and sede_codigo %}
+  {% set _sede_pref = sede_codigo %}
+{% endif %}
+
+{% set _piso_pref = (piso if piso is defined and piso else '') %}
+{% set _local_pref = (codigo_local if codigo_local is defined and codigo_local else '') %}
+
+{% set _back_url = url_for('dashboard') %}
+{% if _sede_pref %}
+  {% set _back_url = url_for('sede_ficha', codigo=_sede_pref, piso=_piso_pref, local=_local_pref, tab='luminarias') %}
+{% endif %}
+
+<div class="wrap">
+  <div class="card">
+
+    <div class="head">
+      <div>
+        <h1 class="h-title">Luminarias - {{ _titulo }}</h1>
+        <p class="h-sub">Carga por sede, piso y local.</p>
+      </div>
+
+      <div class="actions">
+        <a class="btn" href="{{ _back_url }}">Volver</a>
+      </div>
+    </div>
+
+    <div class="grid">
+
+      <div>
+        <form method="post" class="form">
+
+          <div class="fg">
+            <label>Sede</label>
+            <select class="input" name="codigo_sede" required>
+              <option value="" disabled {% if not r %}selected{% endif %}>Seleccionar</option>
+              {% for s in sedes %}
+                {% set val = s.codigo %}
+                {% set sel = '' %}
+                {% if r and r.codigo_sede == val %}{% set sel='selected' %}{% endif %}
+                {% if (not r) and _sede_pref and _sede_pref == val %}{% set sel='selected' %}{% endif %}
+                <option value="{{ val }}" {{ sel }}>{{ s.codigo }} - {{ s.nombre }} ({{ s.ciudad }})</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="fg">
+            <label>Piso</label>
+            {% set piso_val = (r.piso if r else (_piso_pref if _piso_pref else 'PB')) %}
+            <select class="input" name="piso">
+              {% for p in ['PB','P1','P2','P3'] %}
+                <option value="{{ p }}" {% if piso_val == p %}selected{% endif %}>{{ p }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="fg">
+            <label>Local</label>
+            <input class="input" name="codigo_local" placeholder="D01 / D02 / etc."
+                   value="{{ r.codigo_local if r else _local_pref }}">
+          </div>
+
+          <div class="fg">
+            <label>Estado</label>
+            {% set act = (r.activo if r else 1) %}
+            <select class="input" name="activo">
+              <option value="1" {% if act==1 %}selected{% endif %}>Activo</option>
+              <option value="0" {% if act==0 %}selected{% endif %}>Inactivo</option>
+            </select>
+          </div>
+
+          <div class="fg">
+            <label>Tubo fria</label>
+            <input class="input" type="number" min="0" name="tubo_led_fria"
+                   value="{{ r.tubo_led_fria if r else 0 }}">
+          </div>
+
+          <div class="fg">
+            <label>Tubo calida</label>
+            <input class="input" type="number" min="0" name="tubo_led_calido"
+                   value="{{ r.tubo_led_calido if r else 0 }}">
+          </div>
+
+          <div class="fg">
+            <label>Foco</label>
+            <input class="input" type="number" min="0" name="foco_comun"
+                   value="{{ r.foco_comun if r else 0 }}">
+          </div>
+
+          <div class="fg">
+            <label>Panel</label>
+            <input class="input" type="number" min="0" name="panel_led"
+                   value="{{ r.panel_led if r else 0 }}">
+          </div>
+
+          <div class="fg">
+            <label>Puestos trabajo</label>
+            <input class="input" type="number" min="0" name="puestos_trabajo"
+                   value="{{ r.puestos_trabajo if r else 0 }}">
+          </div>
+
+          <div class="fg span2">
+            <label>Otros (detalle)</label>
+            <input class="input" name="otros_detalle"
+                   placeholder="Ej: reflectores, etc."
+                   value="{{ r.otros_detalle if r else '' }}">
+          </div>
+
+          <div class="fg span2">
+            <div class="hint">
+              Puestos trabajo: 2 tomas dobles y 1 toma RJ45.
+            </div>
+          </div>
+
+          <div class="fg span2">
+            <button class="btn primary" type="submit">Guardar</button>
+          </div>
+
+        </form>
+      </div>
+
+      <div class="card right-card">
+        <h3 class="rt-title">Guia</h3>
+        <p class="rt-sub">
+          Carga por local. Luego podes registrar cambios desde la ficha.
+        </p>
+      </div>
+    </div>
+
+    <div class="footer">
+      <a class="btn" href="{{ _back_url }}">Volver</a>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

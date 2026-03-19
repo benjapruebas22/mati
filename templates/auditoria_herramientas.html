@@ -1,0 +1,270 @@
+﻿{% extends "base.html" %}
+{% block content %}
+
+<section class="aud-shell">
+  <header class="aud-top">
+    <div>
+      <h2 class="aud-h2">Auditoria de herramientas</h2>
+      <p class="aud-sub">Marcar presencia y cantidad por sede/deposito.</p>
+    </div>
+    <div class="aud-top-actions">
+      <a class="btn outline-green btn-sm" href="{{ url_for('auditoria_mobiliario') }}">Auditoria mobiliario</a>
+      <a class="btn outline-amber btn-sm" href="{{ url_for('auditoria_operativa') }}">Auditoria operativa</a>
+      <a class="btn outline-blue btn-sm" href="{{ url_for('materiales_home') }}">Volver a Materiales</a>
+    </div>
+  </header>
+
+  <div class="aud-grid">
+    <section class="cardx">
+      <div class="cardx-head">
+        <div>
+          <h3>Nuevo relevamiento</h3>
+          <p>Elegi sede y completa presencia/cantidad.</p>
+        </div>
+        <span class="pill-soft">Carga</span>
+      </div>
+
+      <form method="post" class="formx">
+        <div class="gridx aud-form">
+          <div class="fg">
+            <label>Sede</label>
+            <select id="aud_sede_her" name="sede_codigo" required>
+              <option value="">-- elegir sede --</option>
+              {% for s in sedes %}
+                <option value="{{ s.codigo }}">{{ s.codigo }} - {{ s.nombre }} ({{ s.ciudad }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="fg">
+            <label>Deposito</label>
+            <select id="aud_deposito_her" name="deposito">
+              <option value="">-- elegir deposito --</option>
+              {% for d in depositos %}
+                <option value="{{ d.codigo_local }}{% if d.descripcion %} - {{ d.descripcion }}{% endif %}" data-sede="{{ (d.codigo_sede or '')|upper }}">
+                  {{ d.codigo_sede }} - {{ d.codigo_local }}{% if d.descripcion %} · {{ d.descripcion }}{% endif %}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="fg">
+            <label>Fecha</label>
+            <input type="date" name="fecha" value="{{ today }}">
+          </div>
+          <div class="fg">
+            <label>Responsable</label>
+            <input type="text" name="responsable" placeholder="Nombre del auditor">
+          </div>
+        </div>
+
+        <div class="aud-table-wrap">
+          <table class="table-soft aud-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Presente</th>
+                <th>Cantidad</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for label in items %}
+                <tr>
+                  <td>{{ label }}</td>
+                  <td><input type="checkbox" name="pres_{{ loop.index0 }}"></td>
+                  <td><input type="number" step="1" min="0" name="qty_{{ loop.index0 }}" placeholder="0"></td>
+                </tr>
+              {% endfor %}
+              <tr>
+                <td><input type="text" name="otro_item" placeholder="Otro item"></td>
+                <td><input type="checkbox" checked></td>
+                <td><input type="number" step="1" min="0" name="otro_qty" placeholder="0"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="fg full">
+          <label>Observaciones</label>
+          <input type="text" name="observaciones" placeholder="Notas generales">
+        </div>
+
+        <div class="formx-actions">
+          <button type="submit" class="btn primary btn-wide">Guardar auditoria</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="cardx">
+      <div class="cardx-head">
+        <div>
+          <h3>Ultimos relevamientos</h3>
+          <p>Historial para control.</p>
+        </div>
+        <span class="pill-soft">Historial</span>
+      </div>
+      <div class="table-wrap">
+        <table class="table-soft aud-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Sede</th>
+              <th>Deposito</th>
+              <th>Responsable</th>
+              <th>Obs.</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in auditorias %}
+              <tr>
+                <td>{{ a.fecha }}</td>
+                <td>{{ a.sede_codigo }}</td>
+                <td>{{ a.deposito or '-' }}</td>
+                <td>{{ a.responsable or '-' }}</td>
+                <td>{{ a.observaciones or '-' }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="cardx">
+      <div class="cardx-head">
+        <div>
+          <h3>Listado de herramientas</h3>
+          <p>Agregar, editar o eliminar ítems.</p>
+        </div>
+        <span class="pill-soft">Catálogo</span>
+      </div>
+
+      <form method="post" action="{{ url_for('auditoria_herramientas_catalogo_agregar') }}" class="formx">
+        <div class="gridx">
+          <div class="fg">
+            <label>Herramienta</label>
+            <input type="text" name="nombre" placeholder="Nombre">
+          </div>
+          <div class="fg">
+            <label>Orden</label>
+            <input type="number" name="orden" step="1" min="0" placeholder="0">
+          </div>
+          <div class="fg">
+            <label>Activo</label>
+            <input type="checkbox" name="activo" checked>
+          </div>
+        </div>
+        <div class="formx-actions">
+          <button type="submit" class="btn primary btn-wide">Agregar</button>
+        </div>
+      </form>
+
+      <div class="table-wrap">
+        <table class="table-soft aud-table aud-history">
+          <thead>
+            <tr>
+              <th>Orden</th>
+              <th>Herramienta</th>
+              <th>Activo</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for h in catalogo %}
+              <tr>
+                <td>
+                  <form id="form-h-{{ h.id }}" method="post" action="{{ url_for('auditoria_herramientas_catalogo_editar', cid=h.id) }}"></form>
+                  <input type="number" name="orden" step="1" min="0" value="{{ h.orden or 0 }}" form="form-h-{{ h.id }}">
+                </td>
+                <td>
+                  <input type="text" name="nombre" value="{{ h.nombre }}" form="form-h-{{ h.id }}">
+                </td>
+                <td>
+                  <input type="checkbox" name="activo" {% if h.activo %}checked{% endif %} form="form-h-{{ h.id }}">
+                </td>
+                <td>
+                  <button type="submit" class="btn xs outline" form="form-h-{{ h.id }}">Guardar</button>
+                  <form method="post" action="{{ url_for('auditoria_herramientas_catalogo_borrar', cid=h.id) }}"
+                        onsubmit="return confirm('¿Eliminar herramienta?');" style="display:inline-block">
+                    <button type="submit" class="btn xs outline">Borrar</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</section>
+
+<style>
+  .aud-shell{display:flex;flex-direction:column;gap:12px;max-width:100%;margin:0 auto;padding:4px 10px 16px}
+  .aud-top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+  .aud-h2{margin:0;font-size:20px;font-weight:900;color:#0f172a}
+  .aud-sub{margin:2px 0 0;font-size:13px;color:#64748b}
+  .aud-grid{display:grid;grid-template-columns:minmax(0,1220px);gap:14px;align-items:start;justify-content:center}
+  .aud-shell .cardx{border:1px solid #e5e7eb;box-shadow:0 10px 22px rgba(15,23,42,.06)}
+  .aud-shell label{font-size:12px;font-weight:800;color:#0f172a}
+  .aud-shell input,.aud-shell select{border-radius:10px;padding:8px 10px;font-size:12px}
+  .aud-form .fg{display:flex;flex-direction:column;gap:6px}
+  .aud-table-wrap{margin-top:8px}
+  .aud-table input[type="number"]{width:100%;max-width:120px}
+  .aud-shell .table-wrap{overflow:visible}
+  .aud-shell .aud-table{width:100%;min-width:0;table-layout:fixed}
+  .aud-shell .aud-table th,.aud-shell .aud-table td{white-space:normal;word-break:break-word}
+  .aud-shell .aud-history th:nth-child(1){width:16%}
+  .aud-shell .aud-history th:nth-child(2){width:12%}
+  .aud-shell .aud-history th:nth-child(3){width:20%}
+  .aud-shell .aud-history th:nth-child(4){width:20%}
+  .aud-shell .aud-history th:nth-child(5){width:32%}
+  @media (max-width:1100px){.aud-grid{grid-template-columns:1fr}}
+</style>
+
+<script>
+  (function(){
+    const sedeSel = document.getElementById("aud_sede_her");
+    const depSel = document.getElementById("aud_deposito_her");
+    if (!sedeSel || !depSel) return;
+
+    const allOptions = Array.from(depSel.querySelectorAll("option")).map(o => ({
+      value: o.value,
+      text: o.textContent,
+      sede: (o.getAttribute("data-sede") || "").toUpperCase()
+    }));
+
+    function repoblarDepositos() {
+      const sede = (sedeSel.value || "").toUpperCase();
+      const actual = depSel.value;
+      depSel.innerHTML = "";
+
+      const base = document.createElement("option");
+      base.value = "";
+      base.textContent = "-- elegir deposito --";
+      depSel.appendChild(base);
+
+      let count = 0;
+      allOptions.forEach(o => {
+        if (!o.value) return;
+        if (!sede || o.sede === sede) {
+          const opt = document.createElement("option");
+          opt.value = o.value;
+          opt.textContent = o.text;
+          opt.setAttribute("data-sede", o.sede);
+          if (o.value === actual) opt.selected = true;
+          depSel.appendChild(opt);
+          count += 1;
+        }
+      });
+
+      if (sede && count === 0) {
+        const none = document.createElement("option");
+        none.value = "";
+        none.textContent = "-- sin depositos cargados en " + sede + " --";
+        depSel.appendChild(none);
+      }
+    }
+
+    sedeSel.addEventListener("change", repoblarDepositos);
+    repoblarDepositos();
+  })();
+</script>
+
+{% endblock %}

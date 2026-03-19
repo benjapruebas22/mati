@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="placeholder">
+  <h2>Legajo de {{ agente.agente }}</h2>
+  <p>Rubro: <b>{{ agente.rubro }}</b></p>
+  <p>Días de feria: <b>{{ agente.dias_feria }}</b></p>
+
+  <hr style="margin:14px 0; border-color: var(--line);">
+
+  <p>
+    Acá vamos a cargar:
+    <ul style="text-align:left; max-width:520px; margin:0 auto;">
+      <li>Carnet de conducir (choferes)</li>
+      <li>Incidentes / novedades</li>
+      <li>Contraseñas / accesos</li>
+      <li>Historial de desempeño</li>
+      <li>Documentación adjunta</li>
+    </ul>
+  </p>
+
+  <a class="btn" href="{{ url_for('dashboard') }}">Volver</a>
+</div>
+
+{% endblock %}

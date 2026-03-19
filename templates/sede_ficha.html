@@ -1,0 +1,8671 @@
+{% extends "base.html" %}
+
+
+
+{% block content %}
+
+
+
+
+
+
+
+<style>
+
+
+
+  :root {
+
+
+
+    --bg: #f6f8fb;
+
+
+
+    --card: #ffffff;
+
+
+
+    --border: #e2e8f0;
+
+
+
+    --text: #0b1220;
+
+
+
+    --muted: #6b7280;
+
+
+
+    --primary: #2563eb;
+
+
+
+    --soft: #eff6ff;
+
+
+
+    --radius: 16px;
+
+
+
+    --shadow: 0 12px 28px rgba(15, 23, 42, .06);
+
+
+
+    --ok: #16a34a;
+
+
+
+    --warn: #f59e0b;
+
+
+
+    --danger: #ef4444;
+
+
+
+  }
+
+
+
+
+
+
+
+  body {
+
+
+
+    background: var(--bg);
+
+
+
+    color: var(--text);
+
+
+
+  }
+
+
+
+
+
+
+
+  .wrap {
+
+
+
+    display: flex;
+
+
+
+    flex-direction: column;
+
+
+
+    gap: 14px;
+
+
+
+  }
+
+
+
+
+
+
+
+  .home-layout {
+
+
+
+    display: grid;
+
+
+
+    grid-template-columns: 300px minmax(0, 1fr);
+
+
+
+    gap: 16px;
+
+
+
+    align-items: start;
+
+
+
+  }
+
+
+
+
+
+
+
+  .home-sidebar {
+
+
+
+    display: flex;
+
+
+
+    flex-direction: column;
+
+
+
+    gap: 12px;
+
+
+
+    position: sticky;
+
+
+
+    top: 90px;
+
+
+
+  }
+
+
+
+
+
+
+
+  .home-summary {
+
+
+
+    display: grid;
+
+
+
+    grid-template-columns: repeat(4, minmax(220px, 1fr));
+
+
+
+    gap: 10px;
+
+
+
+    margin-bottom: 8px;
+
+
+
+  }
+
+
+
+
+
+
+
+  .home-summary-head {
+
+
+
+    display: flex;
+
+
+
+    align-items: center;
+
+
+
+    justify-content: space-between;
+
+
+
+    gap: 12px;
+
+
+
+    margin-bottom: 6px;
+
+
+
+  }
+
+
+
+
+
+
+
+  .home-summary-title {
+
+
+
+    font-size: 12px;
+
+
+
+    font-weight: 900;
+
+
+
+    letter-spacing: .06em;
+
+
+
+    text-transform: uppercase;
+
+
+
+    color: var(--muted);
+
+
+
+  }
+
+
+
+
+
+
+
+  .home-toggle {
+
+
+
+    border: 1px solid var(--border);
+
+
+
+    background: #ffffff;
+
+
+
+    border-radius: 999px;
+
+
+
+    padding: 6px 10px;
+
+
+
+    font-size: 11px;
+
+
+
+    cursor: pointer;
+
+
+
+  }
+
+
+
+
+
+
+
+  .home-layout.collapsed {
+
+
+
+    grid-template-columns: 1fr;
+
+
+
+  }
+
+
+
+
+
+
+
+  .home-layout.collapsed .home-sidebar {
+
+
+
+    display: none;
+
+
+
+  }
+
+
+
+
+
+
+
+  .home-layout.collapsed .home-main {
+
+
+
+    grid-column: 1 / -1;
+
+
+
+  }
+
+
+
+
+
+
+
+  .home-card {
+
+
+
+    border: 1px solid var(--border);
+
+
+
+    border-radius: 14px;
+
+
+
+    background: #fff;
+
+
+
+    padding: 10px 12px;
+
+
+
+    min-height: 72px;
+
+
+
+    display: flex;
+
+
+
+    flex-direction: column;
+
+
+
+    justify-content: space-between;
+
+
+
+  }
+
+
+
+
+
+
+
+  .home-card .label {
+
+
+
+    font-size: 11px;
+
+
+
+    color: var(--muted);
+
+
+
+    text-transform: uppercase;
+
+
+
+    letter-spacing: .04em;
+
+
+
+  }
+
+
+
+
+
+
+
+  .home-card .value {
+
+
+
+    font-size: 18px;
+
+
+
+    font-weight: 900;
+
+
+
+    margin-top: 4px;
+
+
+
+  }
+
+
+
+
+
+
+
+  .home-card .hint {
+
+
+
+    font-size: 11px;
+
+
+
+    color: var(--muted);
+
+
+
+    margin-top: 2px;
+
+
+
+  }
+
+
+
+  .home-card .names {
+
+
+
+    font-size: 10px;
+
+
+
+    color: #475569;
+
+
+
+    margin-top: 4px;
+
+
+
+    display: flex;
+
+
+
+    flex-wrap: wrap;
+
+
+
+    gap: 4px 6px;
+
+
+
+  }
+
+
+
+  .home-card .names span {
+
+
+
+    background: #fff;
+
+
+
+    border: 1px solid var(--border);
+
+
+
+    padding: 2px 6px;
+
+
+
+    border-radius: 999px;
+
+
+
+    line-height: 1;
+
+
+
+  }
+
+
+
+
+
+
+
+  .home-card.tone-info {
+
+
+
+    background: #eff6ff;
+
+
+
+    border-color: #bfdbfe;
+
+
+
+  }
+
+
+
+
+
+
+
+  .home-card.tone-warn {
+
+
+
+    background: #ecfeff;
+
+
+
+    border-color: #a5f3fc;
+
+
+
+  }
+
+
+
+
+
+
+
+  .home-card.tone-danger {
+
+
+
+    background: #fef2f2;
+
+
+
+    border-color: #fecaca;
+
+
+
+  }
+
+
+
+
+
+
+
+  .home-card.tone-accent {
+
+
+
+    background: #eef2ff;
+
+
+
+    border-color: #c7d2fe;
+
+
+
+  }
+
+
+
+
+
+
+
+  .side-title {
+
+
+
+    font-size: 13px;
+
+
+
+    font-weight: 900;
+
+
+
+    margin: 0 0 8px;
+
+
+
+  }
+
+
+
+
+
+
+
+  .home-cal {
+
+
+
+    width: 100%;
+
+
+
+    border-collapse: collapse;
+
+
+
+    font-size: 11px;
+
+
+
+  }
+
+
+
+
+
+
+
+  .home-cal th,
+
+
+
+  .home-cal td {
+
+
+
+    border: 1px solid var(--border);
+
+
+
+    padding: 6px 4px;
+
+
+
+    text-align: center;
+
+
+
+    vertical-align: top;
+
+
+
+    background: #fff;
+
+
+
+  }
+
+
+
+
+
+
+
+  .home-cal th {
+
+
+
+    background: #f1f5f9;
+
+
+
+    font-weight: 900;
+
+
+
+  }
+
+
+
+
+
+
+
+  .home-cal .cal-day {
+
+
+
+    display: inline-flex;
+
+
+
+    width: 22px;
+
+
+
+    height: 22px;
+
+
+
+    border-radius: 999px;
+
+
+
+    align-items: center;
+
+
+
+    justify-content: center;
+
+
+
+    font-weight: 900;
+
+
+
+  }
+
+
+
+
+
+
+
+  .cal-legend {
+
+
+
+    display: flex;
+
+
+
+    flex-wrap: wrap;
+
+
+
+    gap: 6px 8px;
+
+
+
+    font-size: 11px;
+
+
+
+    color: var(--muted);
+
+
+
+    margin: 6px 0 8px;
+
+
+
+  }
+
+
+
+
+
+
+
+  .cal-legend-item {
+
+
+
+    display: inline-flex;
+
+
+
+    align-items: center;
+
+
+
+    gap: 6px;
+
+
+
+  }
+
+
+
+
+
+
+
+  .cal-dot {
+
+
+
+    width: 8px;
+
+
+
+    height: 8px;
+
+
+
+    border-radius: 999px;
+
+
+
+    display: inline-block;
+
+
+
+  }
+
+
+
+
+
+
+
+  .cal-summary {
+
+
+
+    margin-top: 8px;
+
+
+
+    border-top: 1px dashed var(--border);
+
+
+
+    padding-top: 8px;
+
+
+
+  }
+
+
+
+
+
+
+
+  .cal-summary-title {
+
+
+
+    font-size: 10px;
+
+
+
+    font-weight: 800;
+
+
+
+    letter-spacing: .05em;
+
+
+
+    text-transform: uppercase;
+
+
+
+    color: var(--text);
+
+
+
+    margin-bottom: 6px;
+
+
+
+  }
+
+
+
+
+
+
+
+  .cal-summary-list {
+
+
+
+    display: flex;
+
+
+
+    flex-direction: column;
+
+
+
+    gap: 6px;
+
+
+
+    max-height: 260px;
+
+
+
+    overflow: auto;
+
+
+
+  }
+
+
+
+
+
+
+
+  .cal-summary-item {
+
+
+
+    display: flex;
+
+
+
+    gap: 6px;
+
+
+
+    align-items: flex-start;
+
+
+
+    font-size: 11px;
+
+
+
+    color: var(--text);
+
+
+
+    line-height: 1.2;
+
+
+
+  }
+
+
+
+  .cal-chip {
+
+
+
+    font-size: 9px;
+
+
+
+    font-weight: 800;
+
+
+
+    padding: 2px 6px;
+
+
+
+    border-radius: 999px;
+
+
+
+    border: 1px solid var(--border);
+
+
+
+    background: #f8fafc;
+
+
+
+    color: #475569;
+
+
+
+    line-height: 1;
+
+
+
+  }
+
+
+
+  .cal-chip.obra { background:#fff7ed; border-color:#fed7aa; color:#9a3412; }
+
+
+
+  .cal-chip.sst { background:#ecfeff; border-color:#a5f3fc; color:#0e7490; }
+
+
+
+  .cal-chip.lic { background:#fef9c3; border-color:#fde68a; color:#854d0e; }
+
+
+
+
+
+
+
+  .cal-summary-sub {
+
+
+
+    font-size: 10px;
+
+
+
+    color: var(--muted);
+
+
+
+    margin-left: 14px;
+
+
+
+  }
+
+
+
+
+
+
+
+  .home-cal .is-today .cal-day {
+
+
+
+    background: var(--primary);
+
+
+
+    color: #fff;
+
+
+
+    box-shadow: 0 0 0 3px rgba(59,130,246,.18), 0 6px 16px rgba(59,130,246,.22);
+
+
+
+  }
+
+
+
+  .home-cal .is-today .cal-badge{
+
+    display:inline-flex;align-items:center;justify-content:center;
+
+    min-width:18px;height:18px;padding:0 6px;border-radius:999px;
+
+    background:#0ea5e9;color:#fff;font-size:10px;font-weight:800;
+
+    margin-left:6px;box-shadow:0 4px 10px rgba(14,165,233,.25);
+
+  }
+
+
+
+  .sede-active-card{
+
+    border:1px solid #c7d2fe;
+
+    box-shadow:0 10px 22px rgba(79,70,229,.12), 0 0 0 3px rgba(99,102,241,.08);
+
+  }
+
+
+
+
+
+
+
+  .cal-dots {
+
+
+
+    display: flex;
+
+
+
+    flex-wrap: wrap;
+
+
+
+    gap: 3px;
+
+
+
+    justify-content: center;
+
+
+
+    margin-top: 4px;
+
+
+
+  }
+
+
+
+
+
+
+
+  .cal-dot-mini {
+
+
+
+    width: 6px;
+
+
+
+    height: 6px;
+
+
+
+  }
+
+
+
+
+
+
+
+  .cal-dot-more {
+
+
+
+    font-size: 9px;
+
+
+
+    color: var(--muted);
+
+
+
+    line-height: 1;
+
+
+
+  }
+
+
+
+
+
+
+
+  .home-search {
+
+
+
+    width: 100%;
+
+
+
+    padding: 8px 10px;
+
+
+
+    border-radius: 999px;
+
+
+
+    border: 1px solid var(--border);
+
+
+
+    background: #fff;
+
+
+
+    font-size: 12px;
+
+
+
+    outline: none;
+
+
+
+  }
+
+
+
+  .cal-filters {
+
+
+
+    display: flex;
+
+
+
+    gap: 6px;
+
+
+
+    flex-wrap: wrap;
+
+
+
+    margin: 6px 0 8px;
+
+
+
+  }
+
+
+
+  .cal-filter {
+
+
+
+    padding: 4px 10px;
+
+
+
+    border-radius: 999px;
+
+
+
+    border: 1px solid var(--border);
+
+
+
+    background: #fff;
+
+
+
+    font-size: 11px;
+
+
+
+    text-decoration: none;
+
+
+
+    color: #111827;
+
+
+
+  }
+
+
+
+  .cal-filter.active {
+
+
+
+    background: var(--primary);
+
+
+
+    border-color: var(--primary);
+
+
+
+    color: #fff;
+
+
+
+  }
+
+
+
+  .cal-add {
+
+
+
+    border-bottom: 1px dashed var(--border);
+
+
+
+    padding-bottom: 8px;
+
+
+
+    margin-bottom: 8px;
+
+
+
+  }
+
+
+
+  .cal-add-title {
+
+
+
+    font-size: 10px;
+
+
+
+    font-weight: 800;
+
+
+
+    letter-spacing: .05em;
+
+
+
+    text-transform: uppercase;
+
+
+
+    color: var(--text);
+
+
+
+    margin-bottom: 6px;
+
+
+
+  }
+
+
+
+  .cal-add-form {
+
+
+
+    display: flex;
+
+
+
+    flex-wrap: wrap;
+
+
+
+    gap: 6px;
+
+
+
+    align-items: center;
+
+
+
+  }
+
+
+
+  .cal-add .field {
+
+
+
+    width: 100%;
+
+
+
+    padding: 6px 9px;
+
+
+
+    border-radius: 10px;
+
+
+
+    border: 1px solid var(--border);
+
+
+
+    background: #fff;
+
+
+
+    font-size: 11px;
+
+
+
+  }
+
+
+
+  .cal-add .field.tpl { width: 140px; }
+
+
+
+  .cal-add .field.title { flex: 1 1 160px; min-width: 140px; }
+
+
+
+  .cal-add .field.detail { flex: 1 1 100%; display: none; }
+
+
+
+  .cal-add .btn {
+
+
+
+    justify-self: end;
+
+
+
+    padding: 6px 10px;
+
+
+
+    font-size: 11px;
+
+
+
+  }
+
+
+
+  .cal-add .btn.ghost {
+
+
+
+    background: #f8fafc;
+
+
+
+    border: 1px solid var(--border);
+
+
+
+    color: #334155;
+
+
+
+  }
+
+
+
+
+
+
+
+  .agenda-list {
+
+
+
+    display: flex;
+
+
+
+    flex-direction: column;
+
+
+
+    gap: 8px;
+
+
+
+    max-height: 320px;
+
+
+
+    overflow: auto;
+
+
+
+  }
+
+
+
+
+
+
+
+  .agenda-item {
+
+
+
+    border: 1px solid var(--border);
+
+
+
+    border-radius: 12px;
+
+
+
+    background: #f8fafc;
+
+
+
+    padding: 8px 10px;
+
+
+
+  }
+
+
+
+
+
+
+
+  .agenda-date {
+
+
+
+    font-size: 11px;
+
+
+
+    font-weight: 900;
+
+
+
+    color: #0f172a;
+
+
+
+  }
+
+
+
+
+
+
+
+  .agenda-title {
+
+
+
+    font-size: 12px;
+
+
+
+    font-weight: 800;
+
+
+
+    margin-top: 2px;
+
+
+
+  }
+
+
+
+
+
+
+
+  .home-main {
+
+
+
+    display: flex;
+
+
+
+    flex-direction: column;
+
+
+
+    gap: 12px;
+
+
+
+  }
+
+
+
+
+
+
+
+  .home-sidebar .card {
+
+
+
+    padding: 12px;
+
+
+
+  }
+
+
+
+
+
+
+
+  .home-sidebar .card + .card {
+
+
+
+    margin-top: 0;
+
+
+
+  }
+
+
+
+  .home-sidebar .card.cal-card {
+
+
+
+    max-height: 68vh;
+
+
+
+    overflow-y: auto;
+
+
+
+  }
+
+
+
+
+
+
+
+  @media (max-width: 1100px) {
+
+
+
+    .home-layout {
+
+
+
+      grid-template-columns: 1fr;
+
+
+
+    }
+
+
+
+
+
+
+
+    .home-summary {
+
+
+
+      grid-template-columns: repeat(2, minmax(160px, 1fr));
+
+
+
+    }
+
+
+
+
+
+
+
+    .home-sidebar {
+
+
+
+      position: static;
+
+
+
+    }
+
+
+
+  }
+
+
+
+
+
+
+
+  .card {
+
+
+
+    background: var(--card);
+
+
+
+    border: 1px solid var(--border);
+
+
+
+    border-radius: var(--radius);
+
+
+
+    box-shadow: var(--shadow);
+
+
+
+  }
+
+
+
+
+
+
+
+  .head {
+
+    padding: 14px 16px;
+
+    display: grid;
+
+    gap: 8px;
+
+    align-items: stretch;
+
+  }
+
+  .head-top {
+
+    display: flex;
+
+    gap: 10px;
+
+    align-items: flex-start;
+
+    justify-content: flex-start;
+
+  }
+
+
+
+
+
+
+  .sede-nav {
+
+    display: flex;
+
+    gap: 6px;
+
+    flex-wrap: nowrap;
+
+    margin-top: 0;
+
+    overflow-x: auto;
+
+    padding: 2px 2px 4px;
+
+    scrollbar-width: thin;
+
+  }
+
+
+
+
+
+
+  .sede-nav-quick {
+
+
+
+    display: flex;
+
+
+
+    gap: 6px;
+
+
+
+    flex-wrap: wrap;
+
+
+
+  }
+
+
+
+
+
+
+
+  .sede-nav-more summary {
+
+
+
+    list-style: none;
+
+
+
+    cursor: pointer;
+
+
+
+  }
+
+
+
+
+
+
+
+  .sede-nav-more summary::-webkit-details-marker {
+
+
+
+    display: none;
+
+
+
+  }
+
+
+
+
+
+
+
+  .sede-nav-more .more-btn {
+
+
+
+    display: inline-flex;
+
+
+
+    align-items: center;
+
+
+
+    justify-content: center;
+
+
+
+    padding: 6px 10px;
+
+
+
+    border-radius: 999px;
+
+
+
+    border: 1px solid var(--border);
+
+
+
+    background: #fff;
+
+
+
+    font-size: 11px;
+
+
+
+    color: #111827;
+
+
+
+  }
+
+
+
+
+
+
+
+  .sede-nav-list {
+
+
+
+    margin-top: 6px;
+
+
+
+    display: flex;
+
+
+
+    gap: 6px;
+
+
+
+    flex-wrap: wrap;
+
+
+
+  }
+
+
+
+
+
+
+
+  .sede-nav a {
+
+
+
+    display: inline-flex;
+
+
+
+    align-items: center;
+
+
+
+    justify-content: center;
+
+
+
+    padding: 6px 10px;
+
+
+
+    border-radius: 999px;
+
+
+
+    border: 1px solid var(--border);
+
+
+
+    background: #fff;
+
+
+
+    font-size: 11px;
+
+
+
+    text-decoration: none;
+
+
+
+    color: #111827;
+
+
+
+  }
+
+
+
+
+
+
+
+  .sede-nav a.active {
+
+
+
+    border-width: 2px;
+
+
+
+    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.12);
+
+
+
+  }
+
+
+
+
+
+
+
+  .sede-nav a[data-fuero="Administración"] { background: #fde8dd; border-color: #f5b089; color: #6b3c1f; }
+
+
+
+  .sede-nav a[data-fuero="Administración / Violencia Inst."] { background: #fde8dd; border-color: #f5b089; color: #6b3c1f; }
+
+
+
+  .sede-nav a[data-fuero="Penal"] { background: #efe9ff; border-color: #c9bfff; color: #3f2f7a; }
+
+
+
+  .sede-nav a[data-fuero="Civil"] { background: #e6f4ff; border-color: #9fd7ff; color: #1c4c77; }
+
+
+
+  .sede-nav a[data-fuero="Central Menores e Incapaces"] { background: #e6f4ff; border-color: #9fd7ff; color: #1c4c77; }
+
+
+
+  .sede-nav a[data-fuero="Juridico Social"] { background: #ffe6f1; border-color: #f7a7c8; color: #7a2a4b; }
+
+
+
+  .sede-nav a[data-code="S13"] { background: #e6f4ff; border-color: #9fd7ff; color: #1c4c77; }
+
+
+
+  .sede-nav a[data-code="S14"] { background: #ffe6f1; border-color: #f7a7c8; color: #7a2a4b; }
+
+
+
+  .sede-nav a[data-code="S11"] { background: #ffe6f1; border-color: #f7a7c8; color: #7a2a4b; }
+
+
+
+  .sede-nav a[data-code="S12"] { background: #fde8dd; border-color: #f5b089; color: #6b3c1f; }
+
+  .sede-nav a[data-code="S01"],
+  .sede-nav a[data-code="S02"],
+  .sede-nav a[data-code="S03"],
+  .sede-nav a[data-code="S04"],
+  .sede-nav a[data-code="S05"],
+  .sede-nav a[data-code="S06"],
+  .sede-nav a[data-code="S07"],
+  .sede-nav a[data-code="S08"],
+  .sede-nav a[data-code="S09"],
+  .sede-nav a[data-code="S10"] { background: #efe9ff; border-color: #c9bfff; color: #3f2f7a; }
+
+  .sede-nav a[data-code="S15"],
+
+
+  .sede-nav a[data-code="S16"],
+
+
+
+  .sede-nav a[data-code="S17"],
+
+
+
+  .sede-nav a[data-code="S18"],
+
+
+
+  .sede-nav a[data-code="S19"],
+
+
+
+  .sede-nav a[data-code="S20"] { background: #ffe6f1; border-color: #f7a7c8; color: #7a2a4b; }
+
+
+
+  .h-left {
+
+
+
+    display: flex;
+
+
+
+    gap: 12px;
+
+
+
+    min-width: 0;
+
+
+
+    align-items: flex-start;
+
+
+
+  }
+
+
+
+
+
+
+
+  .chip {
+
+
+
+    width: 44px;
+
+
+
+    height: 44px;
+
+
+
+    border-radius: 999px;
+
+
+
+    background: var(--soft);
+
+
+
+    color: var(--primary);
+
+
+
+    display: flex;
+
+
+
+    align-items: center;
+
+
+
+    justify-content: center;
+
+
+
+    font-weight: 900;
+
+
+
+    flex-shrink: 0;
+
+
+
+  }
+
+
+
+
+
+
+
+  .h-title {
+
+
+
+    margin: 0;
+
+
+
+    font-size: 18px;
+
+
+
+    font-weight: 900;
+
+
+
+    letter-spacing: .2px;
+
+
+
+  }
+
+
+
+
+
+
+
+  .h-sub {
+
+
+
+    margin: 4px 0 0;
+
+
+
+    font-size: 12px;
+
+
+
+    color: var(--muted);
+
+
+
+  }
+
+
+
+
+
+
+
+  .h-actions {
+
+    display: flex;
+
+    gap: 6px;
+
+    flex-wrap: nowrap;
+
+    justify-content: flex-start;
+
+    align-items: center;
+
+    overflow-x: auto;
+
+    padding-bottom: 2px;
+
+    scrollbar-width: thin;
+
+  }
+
+  .h-actions .btn {
+
+    padding: 5px 9px;
+
+    font-size: 11px;
+
+    font-weight: 800;
+
+    white-space: nowrap;
+
+    border-color: #d7e2f3;
+
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+
+    box-shadow: 0 1px 0 rgba(30, 58, 95, .04);
+
+  }
+
+  .h-actions .btn.btn-calendario {
+
+    border-color: #b9d7ff;
+
+    background: #edf5ff;
+
+    color: #1e5b96;
+
+  }
+
+  .h-actions .btn.btn-maps {
+
+    border-color: #f3c9da;
+
+    background: #fff4f8;
+
+    color: #a34067;
+
+  }
+
+  .h-actions .btn.btn-planos {
+
+    border-color: #d9d0ef;
+
+    background: #f7f4ff;
+
+    color: #5d4a8f;
+
+  }
+
+  .h-actions .btn.btn-protocolo {
+
+    border-color: #f5d3ee;
+
+    background: #fff3fb;
+
+    color: #a54184;
+
+  }
+
+  .h-actions .btn.btn-fotos {
+
+    border-color: #d6def2;
+
+    background: #f3f7ff;
+
+    color: #365c96;
+
+  }
+
+  .h-actions .btn.btn-metricas {
+
+    border-color: #d5e9fb;
+
+    background: #eef7ff;
+
+    color: #0f5f9a;
+
+  }
+
+  .h-actions .btn.btn-resumen-sedes {
+
+    border-color: #a7f3d0;
+
+    background: #ecfdf3;
+
+    color: #047857;
+
+  }
+
+  .h-actions .btn.btn-volver {
+
+    border-color: #dce2ec;
+
+    background: #f8fafc;
+
+    color: #1f3554;
+
+  }
+
+
+  .view-tabs {
+
+
+
+    display: flex;
+
+
+
+    gap: 8px;
+
+
+
+    flex-wrap: wrap;
+
+
+
+    margin-top: 10px;
+
+
+
+  }
+
+
+
+  .view-tab {
+
+
+
+    padding: 6px 10px;
+
+
+
+    border-radius: 999px;
+
+
+
+    border: 1px solid var(--border);
+
+
+
+    background: #fff;
+
+
+
+    font-size: 12px;
+
+
+
+    text-decoration: none;
+
+
+
+    color: #111827;
+
+
+
+  }
+
+
+
+  .view-tab.active {
+
+
+
+    background: var(--primary);
+
+
+
+    border-color: var(--primary);
+
+
+
+    color: #fff;
+
+
+
+  }
+
+
+
+
+
+
+
+  .btn {
+
+
+
+    display: inline-flex;
+
+
+
+    align-items: center;
+
+
+
+    justify-content: center;
+
+
+
+    padding: 8px 12px;
+
+
+
+    border-radius: 999px;
+
+
+
+    border: 1px solid var(--border);
+
+
+
+    background: #fff;
+
+
+
+    color: #111827;
+
+
+
+    font-size: 12px;
+
+
+
+    text-decoration: none;
+
+
+
+    box-shadow: 0 1px 0 rgba(15, 23, 42, .02);
+
+
+
+  }
+
+
+
+
+
+
+
+  .btn.primary {
+
+
+
+    background: var(--primary);
+
+
+
+    border-color: var(--primary);
+
+
+
+    color: #fff;
+
+
+
+  }
+
+
+
+  .btn.btn-resumen-sedes {
+
+
+
+    background: #ecfdf3;
+
+
+
+    border-color: #a7f3d0;
+
+
+
+    color: #047857;
+
+
+
+  }
+
+
+
+
+
+
+
+  .btn:hover {
+
+
+
+    filter: brightness(.98);
+
+
+
+  }
+
+
+
+
+
+
+
+  /* KPI TOP */
+
+
+
+  .kpis {
+
+    padding: 0 16px 14px 16px;
+
+    display: grid;
+
+    gap: 8px;
+
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+
+  }
+
+
+
+
+
+
+  .kpi {
+
+    border: 1px solid var(--border);
+
+    border-radius: 10px;
+
+    background: #fff;
+
+    padding: 8px 10px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 8px;
+
+    min-height: 62px;
+
+    box-sizing: border-box;
+
+  }
+
+  .kpi > div:first-child {
+
+    min-width: 0;
+
+    flex: 1 1 auto;
+
+  }
+
+
+
+
+
+
+  .kpi.kpi-personal {
+
+
+
+    background: #eef2ff;
+
+
+
+    border-color: #c7d2fe;
+
+
+
+  }
+
+
+
+
+
+
+
+  .kpi.kpi-infra {
+
+
+
+    background: #f1f5f9;
+
+
+
+    border-color: #e2e8f0;
+
+
+
+  }
+
+
+
+
+
+
+
+  .kpi.kpi-obras {
+
+
+
+    background: #fff7ed;
+
+
+
+    border-color: #fed7aa;
+
+
+
+  }
+
+
+
+
+
+
+
+  .kpi.kpi-inventario {
+
+
+
+    background: #ecfeff;
+
+
+
+    border-color: #a5f3fc;
+
+
+
+  }
+
+
+
+
+
+
+
+  .kpi.kpi-aires {
+
+
+
+    background: #f0f9ff;
+
+
+
+    border-color: #bae6fd;
+
+
+
+  }
+
+
+
+
+
+
+
+  .kpi.kpi-mobiliario {
+
+
+
+    background: #fef9c3;
+
+
+
+    border-color: #fde68a;
+
+
+
+  }
+
+
+
+
+
+
+
+  .kpi.kpi-seguridad {
+
+
+    background: #fef2f2;
+
+
+
+    border-color: #fecaca;
+
+
+  }
+
+  .sede-analisis {
+    margin: 0 16px 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: linear-gradient(180deg, #fbfdff 0%, #f6f9ff 100%);
+    padding: 8px;
+    display: grid;
+    gap: 6px;
+  }
+
+  .sede-analisis-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .sede-analisis-head h4 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 900;
+    color: #163a64;
+  }
+
+  .sede-analisis-ref {
+    font-size: 9px;
+    color: #5b728f;
+    font-weight: 700;
+  }
+
+  .sede-analisis-tools {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+
+  .sede-criterios {
+    position: relative;
+  }
+
+  .sede-criterios > summary {
+    list-style: none;
+    cursor: pointer;
+    border: 1px solid #c7d2fe;
+    background: #eef2ff;
+    color: #3730a3;
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 9px;
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .sede-criterios > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .sede-criterios-box {
+    margin-top: 4px;
+    width: min(360px, 82vw);
+    border: 1px solid #dbe4f2;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 10px 20px rgba(15, 23, 42, .08);
+    padding: 7px 8px;
+    font-size: 9px;
+    color: #334155;
+    line-height: 1.25;
+  }
+
+  .sede-criterios-box h5 {
+    margin: 0 0 4px;
+    font-size: 9px;
+    font-weight: 900;
+    color: #1f3557;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+  }
+
+  .sede-criterios-box ul {
+    margin: 5px 0 0 14px;
+    padding: 0;
+    display: grid;
+    gap: 2px;
+  }
+
+  .sede-analisis-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .sede-analisis-card {
+    border: 1px solid #d8e4f5;
+    border-radius: 10px;
+    background: #ffffff;
+    padding: 7px 8px;
+    display: grid;
+    gap: 3px;
+    box-shadow: 0 1px 0 rgba(15, 23, 42, .02);
+  }
+
+  .sede-analisis-card:nth-child(1) {
+    background: linear-gradient(180deg, #fffefb 0%, #fffaf0 100%);
+    border-color: #f8dfb0;
+  }
+
+  .sede-analisis-card:nth-child(2) {
+    background: linear-gradient(180deg, #fbfefe 0%, #f2fbfa 100%);
+    border-color: #cdece6;
+  }
+
+  .sede-analisis-card:nth-child(3) {
+    background: linear-gradient(180deg, #fffdf9 0%, #fff7ea 100%);
+    border-color: #f7dfb6;
+  }
+
+  .sede-analisis-card:nth-child(4) {
+    background: linear-gradient(180deg, #fbfcff 0%, #f2f7ff 100%);
+    border-color: #cfe0fa;
+  }
+
+  .sede-analisis-card .t {
+    font-size: 10px;
+    font-weight: 900;
+    color: #1f3557;
+    line-height: 1.15;
+  }
+
+  .sede-analisis-card .v {
+    font-size: 12px;
+    font-weight: 900;
+    color: #0f172a;
+    line-height: 1.1;
+  }
+
+  .sede-analisis-card .r {
+    font-size: 9px;
+    color: #5a7395;
+    line-height: 1.2;
+  }
+
+  .sede-estado {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 18px;
+    border-radius: 999px;
+    padding: 0 8px;
+    font-size: 8px;
+    font-weight: 800;
+    width: fit-content;
+    border: 1px solid transparent;
+    line-height: 1;
+  }
+
+  .sede-estado.ok { background: #dcfce7; border-color: #bbf7d0; color: #166534; }
+  .sede-estado.warn { background: #fef3c7; border-color: #fde68a; color: #92400e; }
+  .sede-estado.bad { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
+  .sede-estado.info { background: #dbeafe; border-color: #bfdbfe; color: #1e3a8a; }
+  .sede-estado.na { background: #f1f5f9; border-color: #e2e8f0; color: #475569; }
+
+  .sede-analisis-base {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+
+  .sede-analisis-base .b {
+    border: 1px solid #dbe4f2;
+    border-radius: 999px;
+    background: #fdfefe;
+    padding: 2px 7px;
+    font-size: 9px;
+    color: #375983;
+    line-height: 1;
+    font-weight: 700;
+  }
+
+  .sede-analisis-foot {
+    font-size: 9px;
+    color: #64748b;
+    border-top: 1px dashed #dbe4f2;
+    padding-top: 5px;
+  }
+
+
+
+
+
+
+  .panel-body table {
+
+
+
+    font-size: 12.5px !important;
+
+
+
+  }
+
+
+
+
+
+
+
+  .panel-body th {
+
+
+
+    color: #475569 !important;
+
+
+
+    font-weight: 700 !important;
+
+
+
+  }
+
+
+
+
+
+
+
+  .panel-body td {
+
+
+
+    color: #0f172a !important;
+
+
+
+  }
+
+
+
+
+
+
+
+  .panel-body th,
+
+
+
+  .panel-body td {
+
+
+
+    border-bottom-color: #edf2f7 !important;
+
+
+
+  }
+
+
+
+
+
+
+
+  .kpi .l {
+
+    font-size: 10px;
+
+    color: var(--muted);
+
+    min-height: 24px;
+
+    line-height: 1.15;
+
+    overflow: hidden;
+
+    display: -webkit-box;
+
+    -webkit-line-clamp: 2;
+
+    -webkit-box-orient: vertical;
+
+  }
+
+
+
+
+
+
+  .kpi .v {
+
+    font-size: 15px;
+
+    font-weight: 900;
+
+    margin-top: 2px;
+
+  }
+
+
+
+
+
+
+  .kpi .tag {
+
+    font-size: 9px;
+
+
+    border: 1px solid var(--border);
+
+
+
+    padding: 2px 6px;
+
+
+
+    border-radius: 999px;
+
+
+
+    color: var(--muted);
+
+
+
+    background: #f8fafc;
+
+
+
+    white-space: nowrap;
+
+
+
+    opacity: .7;
+
+  }
+
+
+
+
+
+
+  /* Layout principal */
+
+
+
+  .grid {
+
+
+
+    display: grid;
+
+
+
+    gap: 14px;
+
+
+
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, .9fr);
+
+
+
+    align-items: start;
+
+
+
+  }
+
+
+
+
+
+
+
+  .plan-head {
+
+
+
+    padding: 12px 14px;
+
+
+
+    display: flex;
+
+
+
+    align-items: center;
+
+
+
+    justify-content: space-between;
+
+
+
+    gap: 10px;
+
+
+
+    border-bottom: 1px solid var(--border);
+
+
+
+  }
+
+
+
+
+
+
+
+  .plan-actions {
+
+
+
+    display: flex;
+
+
+
+    align-items: center;
+
+
+
+    gap: 8px;
+
+
+
+    flex-wrap: wrap;
+
+
+
+    justify-content: flex-end;
+
+
+
+  }
+
+
+
+
+
+
+
+  .tabs {
+
+
+
+    display: flex;
+
+
+
+    gap: 8px;
+
+
+
+    flex-wrap: wrap;
+
+
+
+  }
+
+
+
+
+
+
+
+  .tab {
+
+
+
+    padding: 6px 10px;
+
+
+
+    border-radius: 999px;
+
+
+
+    border: 1px solid var(--border);
+
+
+
+    background: #fff;
+
+
+
+    font-size: 12px;
+
+
+
+    text-decoration: none;
+
+
+
+    color: #111827;
+
+
+
+  }
+
+
+
+
+
+
+
+  .tab.active {
+
+
+
+    background: var(--primary);
+
+
+
+    border-color: var(--primary);
+
+
+
+    color: #fff;
+
+
+
+  }
+
+
+
+
+
+
+
+  .badge {
+
+
+
+    font-size: 11px;
+
+
+
+    padding: 4px 10px;
+
+
+
+    border-radius: 999px;
+
+
+
+    background: #f8fafc;
+
+
+
+    border: 1px solid var(--border);
+
+
+
+    color: var(--muted);
+
+
+
+    white-space: nowrap;
+
+
+
+  }
+
+
+
+
+
+
+
+  .status-pill {
+
+
+
+    display: inline-flex;
+
+
+
+    align-items: center;
+
+
+
+    justify-content: center;
+
+
+
+    padding: 2px 8px;
+
+
+
+    border-radius: 999px;
+
+
+
+    font-size: 11px;
+
+
+
+    font-weight: 800;
+
+
+
+    border: 1px solid var(--border);
+
+
+
+    background: #f8fafc;
+
+
+
+    color: #475569;
+
+
+
+  }
+
+
+
+
+
+
+
+  .status-pill.ok {
+
+
+
+    background: #dcfce7;
+
+
+
+    border-color: #86efac;
+
+
+
+    color: #166534;
+
+
+
+  }
+
+
+
+
+
+
+
+  .status-pill.warn {
+
+
+
+    background: #fef3c7;
+
+
+
+    border-color: #fcd34d;
+
+
+
+    color: #92400e;
+
+
+
+  }
+
+
+
+
+
+
+
+  .status-pill.bad {
+
+
+
+    background: #fee2e2;
+
+
+
+    border-color: #fecaca;
+
+
+
+    color: #b91c1c;
+
+
+
+  }
+
+
+
+
+
+
+
+  .status-pill.neutral {
+
+
+
+    background: #e2e8f0;
+
+
+
+    border-color: #cbd5e1;
+
+
+
+    color: #334155;
+
+
+
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  .plan-body {
+
+
+
+    padding: 12px 14px;
+
+
+
+  }
+
+
+
+
+
+
+
+  .plan-img {
+
+
+
+    width: 100%;
+
+
+
+    border-radius: 14px;
+
+
+
+    border: 1px solid var(--border);
+
+
+
+    background: #f8fafc;
+
+
+
+    overflow: hidden;
+
+
+
+  }
+
+
+
+
+
+
+
+  .plan-img img {
+
+
+
+    width: 100%;
+
+
+
+    height: auto;
+
+
+
+    display: block;
+
+
+
+  }
+
+
+
+
+
+
+
+  .locals {
+
+
+
+    padding: 0 14px 14px 14px;
+
+
+
+    display: flex;
+
+
+
+    gap: 8px;
+
+
+
+    flex-wrap: wrap;
+
+
+
+  }
+
+
+
+
+
+
+
+  .loc {
+
+
+
+    padding: 6px 10px;
+
+
+
+    border-radius: 999px;
+
+
+
+    border: 1px solid var(--border);
+
+
+
+    background: #fff;
+
+
+
+    font-size: 12px;
+
+
+
+    text-decoration: none;
+
+
+
+    color: #111827;
+
+
+
+  }
+
+
+
+
+
+
+
+  .loc.active {
+
+
+
+    background: #e0ebff;
+
+
+
+    border-color: #bfdbfe;
+
+
+
+    color: #1e3a8a;
+
+
+
+    font-weight: 800;
+
+
+
+  }
+
+
+
+
+
+
+
+  .loc.clear {
+
+
+
+    background: #fff7ed;
+
+
+
+    border-color: #fed7aa;
+
+
+
+    color: #9a3412;
+
+
+
+    font-weight: 700;
+
+
+
+  }
+
+
+
+
+
+
+
+  .panel-head {
+
+
+
+    padding: 12px 14px;
+
+
+
+    border-bottom: 1px solid var(--border);
+
+
+
+    display: flex;
+
+
+
+    align-items: center;
+
+
+
+    justify-content: space-between;
+
+
+
+    gap: 10px;
+
+
+
+  }
+
+
+
+
+
+
+
+  .panel-title {
+
+
+
+    font-weight: 900;
+
+
+
+  }
+
+
+
+
+
+
+
+  .panel-tabs {
+
+
+
+    padding: 12px 14px;
+
+
+
+    display: flex;
+
+
+
+    gap: 8px;
+
+
+
+    flex-wrap: wrap;
+
+
+
+  }
+
+  .panel-tab-groups {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, max-content));
+    gap: 8px;
+    width: 100%;
+  }
+
+  .panel-tab-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #f8fafc;
+  }
+
+  .panel-tab-group-title {
+    font-size: 10px;
+    font-weight: 900;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    margin-right: 2px;
+  }
+
+
+
+
+
+
+
+
+  .ptab {
+
+
+
+    padding: 6px 10px;
+
+
+
+    border-radius: 999px;
+
+
+
+    border: 1px solid var(--border);
+
+
+
+    background: #fff;
+
+
+
+    font-size: 12px;
+
+
+
+    text-decoration: none;
+
+
+
+    color: #111827;
+
+
+
+  }
+
+
+
+
+
+
+
+  .ptab.active {
+
+
+
+    border-width: 2px;
+
+
+
+    box-shadow: 0 6px 12px rgba(15, 23, 42, 0.12);
+
+
+
+  }
+
+
+
+  .ptab.tone-mob { background: #efe9ff; border-color: #d1c7ff; }
+
+  .ptab.tone-dep { background: #e6f4ff; border-color: #b9defa; }
+
+  .ptab.tone-mata { background: #fde8dd; border-color: #f5b089; }
+
+  .ptab.tone-personal { background: #f3f4f6; border-color: #e2e8f0; }
+
+  .ptab.tone-lum { background: #fff7ed; border-color: #fed7aa; }
+
+  .ptab.tone-eva { background: #fef2f2; border-color: #fecaca; }
+
+  .ptab.tone-aires { background: #ecfeff; border-color: #a5f3fc; }
+
+
+
+
+
+
+
+  .panel-body {
+
+
+
+    padding: 12px 14px;
+
+
+
+  }
+
+
+
+  .panel-body.scrollable {
+
+
+
+    max-height: 60vh;
+
+
+
+    overflow: auto;
+
+
+
+  }
+
+
+
+  .resumen-grid {
+
+
+
+    display: grid;
+
+
+
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+
+
+
+    gap: 12px;
+
+
+
+  }
+
+
+
+  .resumen-card {
+
+
+
+    border: 1px solid var(--border);
+
+
+
+    border-radius: 12px;
+
+
+
+    padding: 10px 12px;
+
+
+
+    background: #fff;
+
+
+
+  }
+
+
+
+  .resumen-title {
+
+
+
+    font-size: 11px;
+
+
+
+    font-weight: 900;
+
+
+
+    letter-spacing: .04em;
+
+
+
+    text-transform: uppercase;
+
+
+
+    color: var(--muted);
+
+
+
+    margin-bottom: 8px;
+
+
+
+  }
+
+
+
+  .resumen-list {
+
+
+
+    display: grid;
+
+
+
+    grid-template-columns: 1fr 1fr;
+
+
+
+    gap: 8px 12px;
+
+
+
+    font-size: 12px;
+
+
+
+  }
+
+
+
+  .resumen-item .label {
+
+
+
+    color: var(--muted);
+
+
+
+    font-size: 11px;
+
+
+
+  }
+
+
+
+  .resumen-item .value {
+
+
+
+    font-weight: 800;
+
+
+
+  }
+
+
+
+
+
+
+
+  @media (max-width:1100px) {
+
+    .kpis { grid-template-columns: repeat(2, 1fr); }
+    .sede-analisis-grid { grid-template-columns: 1fr 1fr; }
+
+
+
+    .grid {
+
+      grid-template-columns: 1fr;
+
+    }
+
+    .h-actions {
+
+      flex-wrap: wrap;
+
+      overflow-x: visible;
+
+      justify-content: flex-start;
+
+    }
+
+    .head-top {
+
+      flex-direction: column;
+
+      align-items: stretch;
+
+    }
+
+    .sede-nav {
+
+      flex-wrap: wrap;
+
+      overflow-x: visible;
+
+    }
+
+  }
+
+  @media (max-width: 760px) {
+    .kpis { grid-template-columns: 1fr; }
+    .sede-analisis-grid { grid-template-columns: 1fr; }
+    .sede-analisis-tools { width: 100%; align-items: flex-start; }
+  }
+
+
+</style>
+
+
+
+
+
+
+
+{% set piso = (piso_sel or request.args.get('piso','PB')) %}
+
+
+
+{% set local = request.args.get('local','') %}
+
+
+
+{% set tab = request.args.get('tab','personal') %}
+
+
+
+{% set view = request.args.get('view','operativo') %}
+
+
+
+{% set home_mode = home_mode if home_mode is defined else (request.args.get('home') == '1') %}
+
+
+
+{% set home_arg = 1 if home_mode else None %}
+
+
+
+
+
+
+
+{% if locales is not defined %}
+
+
+
+{% set locales = [] %}
+
+
+
+{% endif %}
+
+
+
+
+
+
+
+{% if home_mode %}
+
+<div class="home-layout collapsed">
+
+
+  <aside class="home-sidebar">
+
+
+
+    <div class="card cal-card" style="padding:12px;">
+
+
+
+      <div class="side-title">Calendario</div>
+
+
+
+      <div style="font-size:11px;color:#64748b;margin-bottom:6px;">Puntos = tipos de evento del dia</div>
+
+
+
+      <form method="get" action="{{ url_for('sede_ficha', codigo=sede.codigo, view=view) }}" style="margin-bottom:6px;">
+
+
+
+        <input type="hidden" name="home" value="1">
+
+
+
+        <input type="hidden" name="piso" value="{{ piso }}">
+
+
+
+        <input type="hidden" name="tab" value="{{ tab }}">
+
+
+
+        {% if local %}<input type="hidden" name="local" value="{{ local }}">{% endif %}
+
+
+
+        <input type="hidden" name="mes" value="{{ mes or '' }}">
+
+
+
+        <input type="hidden" name="fecha" value="{{ fecha_dia or '' }}">
+
+
+
+        <input class="home-search" type="text" name="q_cal" value="{{ q_cal or '' }}"
+
+
+
+          placeholder="Buscar evento o vencimiento">
+
+
+
+      </form>
+
+
+
+      <form method="get" action="{{ url_for('sede_ficha', codigo=sede.codigo, view=view) }}" style="margin-bottom:6px;">
+
+
+
+        <input type="hidden" name="home" value="1">
+
+
+
+        <input type="hidden" name="piso" value="{{ piso }}">
+
+
+
+        <input type="hidden" name="tab" value="{{ tab }}">
+
+
+
+        {% if local %}<input type="hidden" name="local" value="{{ local }}">{% endif %}
+
+
+
+        <input type="hidden" name="mes" value="{{ mes or '' }}">
+
+
+
+        <input type="hidden" name="q_cal" value="{{ q_cal or '' }}">
+
+
+
+        <input class="home-search" type="date" name="fecha" value="{{ fecha_dia or '' }}"
+
+
+
+          onchange="this.form.submit()">
+
+
+
+      </form>
+
+
+
+      <div class="cal-filters">
+
+
+
+        {% set _qc = (q_cal or '')|lower %}
+
+
+
+        <a class="cal-filter {% if not _qc %}active{% endif %}"
+
+
+
+           href="{{ url_for('sede_ficha', codigo=sede.codigo, home=1, piso=piso, tab=tab, local=local, mes=mes, fecha=fecha_dia, view=view) }}">Todos</a>
+
+
+
+        <a class="cal-filter {% if 'obra' in _qc %}active{% endif %}"
+
+
+
+           href="{{ url_for('sede_ficha', codigo=sede.codigo, home=1, piso=piso, tab=tab, local=local, mes=mes, fecha=fecha_dia, q_cal='obra', view=view) }}">Obras</a>
+
+
+
+        <a class="cal-filter {% if 'sst' in _qc %}active{% endif %}"
+
+
+
+           href="{{ url_for('sede_ficha', codigo=sede.codigo, home=1, piso=piso, tab=tab, local=local, mes=mes, fecha=fecha_dia, q_cal='sst', view=view) }}">SST</a>
+
+
+
+        <a class="cal-filter {% if 'viaje' in _qc or 'combustible' in _qc or 'rtv' in _qc or 'seguro' in _qc or 'lavado' in _qc or 'service' in _qc %}active{% endif %}"
+
+
+
+           href="{{ url_for('sede_ficha', codigo=sede.codigo, home=1, piso=piso, tab=tab, local=local, mes=mes, fecha=fecha_dia, q_cal='viaje', view=view) }}">Vehículos</a>
+
+
+
+        <a class="cal-filter {% if 'licencia' in _qc %}active{% endif %}"
+
+
+
+           href="{{ url_for('sede_ficha', codigo=sede.codigo, home=1, piso=piso, tab=tab, local=local, mes=mes, fecha=fecha_dia, q_cal='licencia', view=view) }}">Licencias</a>
+
+
+
+      </div>
+
+
+
+
+
+
+
+      {% if cal_legend %}
+
+
+
+      <div class="cal-legend">
+
+
+
+        {% for item in cal_legend %}
+
+
+
+          <span class="cal-legend-item">
+
+
+
+            <span class="cal-dot" style="background: {{ item.color }}"></span>
+
+
+
+            {{ item.label }}
+
+
+
+          </span>
+
+
+
+        {% endfor %}
+
+
+
+  </div>
+
+
+
+{% endif %}
+
+
+
+
+
+
+
+<script>
+  (function () {
+    function initCalendarToggle() {
+      const layout = document.querySelector('.home-layout');
+      const toggle = document.getElementById('toggleCalendar');
+      if (!layout || !toggle) return;
+      const qs = new URLSearchParams(window.location.search || "");
+      const forceOpen = qs.get("cal") === "1";
+
+      const apply = () => {
+        const collapsed = layout.classList.contains('collapsed');
+        toggle.textContent = collapsed ? 'Mostrar calendario' : 'Ocultar calendario';
+      };
+
+      // Por defecto oculto; si viene desde SGI con cal=1, abrir.
+      layout.classList.toggle('collapsed', !forceOpen);
+      apply();
+
+      toggle.addEventListener('click', () => {
+        layout.classList.toggle('collapsed');
+        apply();
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initCalendarToggle);
+    } else {
+      initCalendarToggle();
+    }
+  })();
+</script>
+
+
+
+
+
+
+      <table class="home-cal">
+
+
+
+        <thead>
+
+
+
+          <tr>
+
+
+
+            <th>L</th>
+
+
+
+            <th>M</th>
+
+
+
+            <th>X</th>
+
+
+
+            <th>J</th>
+
+
+
+            <th>V</th>
+
+
+
+            <th>S</th>
+
+
+
+            <th>D</th>
+
+
+
+          </tr>
+
+
+
+        </thead>
+
+
+
+        <tbody>
+
+
+
+          {% for week in cal_weeks %}
+
+
+
+          <tr>
+
+
+
+            {% for day in week %}
+
+
+
+            {% if day == 0 %}
+
+
+
+            <td></td>
+
+
+
+            {% else %}
+
+
+
+            {% set fecha_celda = mes[:4] ~ '-' ~ mes[5:7] ~ '-' ~ ("%02d" % day) %}
+
+
+
+            {% set evs_resumen = eventos_por_dia_resumen.get(fecha_celda, []) %}
+
+
+
+            {% set ns = namespace(lines=[]) %}
+
+
+
+            {% for item in evs_resumen %}
+
+
+
+              {% if item.titles and item.titles|length > 0 %}
+
+
+
+                {% set _ = ns.lines.append(item.label ~ ': ' ~ (item.titles|join(' · '))) %}
+
+
+
+              {% else %}
+
+
+
+                {% set _ = ns.lines.append(item.label) %}
+
+
+
+              {% endif %}
+
+
+
+            {% endfor %}
+
+
+
+            <td>
+
+
+
+              <div class="{% if fecha_celda == fecha_dia %}is-today{% endif %}">
+
+
+
+                <span class="cal-day" title="{{ ns.lines|join('\n') }}">{{ day }}</span>
+
+                {% if fecha_celda == fecha_dia and evs_resumen %}
+
+                  {% set _cnt = 0 %}
+
+                  {% for item in evs_resumen %}
+
+                    {% if item.titles %}
+
+                      {% set _cnt = _cnt + (item.titles|length) %}
+
+                    {% else %}
+
+                      {% set _cnt = _cnt + 1 %}
+
+                    {% endif %}
+
+                  {% endfor %}
+
+                  {% if _cnt > 0 %}
+
+                    <span class="cal-badge" title="Eventos de hoy">{{ _cnt }}</span>
+
+                  {% endif %}
+
+                {% endif %}
+
+
+
+                {% if evs_resumen %}
+
+
+
+                <div class="cal-dots">
+
+
+
+                  {% for item in evs_resumen[:4] %}
+
+
+
+                  <span class="cal-dot cal-dot-mini" style="background: {{ item.color }};"
+
+
+
+                    title="{{ item.label }}{% if item.titles %}: {{ item.titles|join(' · ') }}{% endif %}"></span>
+
+
+
+                  {% endfor %}
+
+
+
+                  {% if evs_resumen|length > 4 %}
+
+
+
+                  <span class="cal-dot-more">+{{ evs_resumen|length - 4 }}</span>
+
+
+
+                  {% endif %}
+
+
+
+                </div>
+
+
+
+                {% endif %}
+
+
+
+              </div>
+
+
+
+            </td>
+
+
+
+            {% endif %}
+
+
+
+            {% endfor %}
+
+
+
+          </tr>
+
+
+
+          {% endfor %}
+
+
+
+        </tbody>
+
+
+
+      </table>
+
+
+
+
+
+
+
+      <div class="cal-add">
+
+
+
+        <div class="cal-add-title">Agregar recordatorio</div>
+
+
+
+        <form class="cal-add-form" method="post" action="{{ url_for('eventos_nuevo') }}">
+
+
+
+          <input type="hidden" name="fecha" value="{{ fecha_dia or '' }}">
+
+
+
+          <input type="hidden" id="cal_tipo_hidden" name="tipo" value="otro">
+
+
+
+          <select class="field tpl" id="cal_tpl">
+
+
+
+            <option value="">Plantilla...</option>
+
+
+
+            <option value="uso_salon">Uso de salon</option>
+
+
+
+            <option value="reunion_defensora">Reunion con la defensora</option>
+
+
+
+            <option value="reunion_adjunto">Reunion con defensor adjunto</option>
+
+
+
+            <option value="corte_servicio_electricidad">Corte de servicio - Electricidad</option>
+
+
+
+            <option value="pedir_materiales">Pedir materiales</option>
+
+
+
+            <option value="mail_horario">Enviar mail autorizando horario especial</option>
+
+
+
+            <option value="personalizado">Otro (personalizado)</option>
+
+
+
+          </select>
+
+
+
+          <input class="field title" type="text" id="cal_titulo" name="titulo" placeholder="Titulo">
+
+
+
+          <button class="btn ghost" type="button" id="cal_detail_toggle">Detalle</button>
+
+
+
+          <button class="btn primary" type="submit">Guardar</button>
+
+
+
+          <input class="field detail" type="text" id="cal_detalle" name="detalle" placeholder="Detalle (opcional)">
+
+
+
+        </form>
+
+
+
+        <script>
+
+
+
+          (function () {
+
+
+
+            var sel = document.getElementById("cal_tpl");
+
+
+
+            var titulo = document.getElementById("cal_titulo");
+
+
+
+            var detalle = document.getElementById("cal_detalle");
+
+
+
+            var tipoHidden = document.getElementById("cal_tipo_hidden");
+
+
+
+            var toggle = document.getElementById("cal_detail_toggle");
+
+
+
+            if (!sel || !titulo || !detalle || !tipoHidden || !toggle) return;
+
+
+
+
+
+
+
+            var presets = {
+
+
+
+              uso_salon: { titulo: "Uso de salon", tipo: "uso_salon", detalle: "" },
+
+
+
+              reunion_defensora: { titulo: "Reunion con la defensora", tipo: "uso_salon", detalle: "" },
+
+
+
+              reunion_adjunto: { titulo: "Reunion con defensor adjunto", tipo: "uso_salon", detalle: "" },
+
+
+
+              corte_servicio_electricidad: { titulo: "Corte de servicio - Electricidad", tipo: "corte_servicio_electricidad", detalle: "" },
+
+
+
+              pedir_materiales: { titulo: "Pedir materiales", tipo: "pedido_materiales", detalle: "" },
+
+
+
+              mail_horario: { titulo: "Enviar mail autorizando horario especial", tipo: "otro", detalle: "" }
+
+
+
+            };
+
+
+
+
+
+
+
+            sel.addEventListener("change", function () {
+
+
+
+              var v = sel.value;
+
+
+
+              if (presets[v]) {
+
+
+
+                titulo.value = presets[v].titulo;
+
+
+
+                tipoHidden.value = presets[v].tipo;
+
+
+
+                detalle.value = presets[v].detalle;
+
+
+
+              } else {
+
+
+
+                tipoHidden.value = "otro";
+
+
+
+              }
+
+
+
+            });
+
+
+
+            toggle.addEventListener("click", function () {
+
+
+
+              if (detalle.style.display === "none" || !detalle.style.display) {
+
+
+
+                detalle.style.display = "block";
+
+
+
+                detalle.focus();
+
+
+
+              } else {
+
+
+
+                detalle.style.display = "none";
+
+
+
+              }
+
+
+
+            });
+
+
+
+          })();
+
+
+
+        </script>
+
+
+
+      </div>
+
+
+
+
+
+
+
+      <div class="cal-summary">
+
+
+
+        <div class="cal-summary-title">Eventos del dia ({{ eventos_dia|length }})</div>
+
+
+
+        {% if eventos_dia %}
+
+
+
+          <div class="cal-summary-list">
+
+
+
+            {% for ev in eventos_dia %}
+
+
+
+              <div>
+
+
+
+                <div class="cal-summary-item">
+
+
+
+                  <span class="cal-dot" style="background: {{ ev.color }}"></span>
+
+
+
+                  {% set t = (ev.titulo or '')|lower %}
+
+
+
+                  {% set f = (ev.fuente or '')|lower %}
+
+
+
+                  {% if 'obra' in t or f == 'obras' %}
+
+
+
+                    <span class="cal-chip obra">Obra</span>
+
+
+
+                  {% elif 'sst' in t %}
+
+
+
+                    <span class="cal-chip sst">SST</span>
+
+
+
+                  {% elif 'licencia' in t %}
+
+
+
+                    <span class="cal-chip lic">Licencia</span>
+
+
+
+                  {% endif %}
+
+
+
+                  {% if ev.link %}
+
+
+
+                    <a href="{{ ev.link }}" style="color:inherit;text-decoration:none;">
+
+
+
+                      {{ ev.titulo }}
+
+
+
+                    </a>
+
+
+
+                  {% else %}
+
+
+
+                    <span>{{ ev.titulo }}</span>
+
+
+
+                  {% endif %}
+
+
+
+                </div>
+
+
+
+                {% if ev.detalle %}
+
+
+
+                  <div class="cal-summary-sub">{{ ev.detalle }}</div>
+
+
+
+                {% endif %}
+
+
+
+              </div>
+
+
+
+            {% endfor %}
+
+
+
+          </div>
+
+
+
+        {% else %}
+
+
+
+          <div style="font-size:11px;color:#64748b;">Sin eventos para el dia.</div>
+
+
+
+        {% endif %}
+
+
+
+      </div>
+
+
+
+    </div>
+
+
+
+
+
+
+
+    <div class="card" style="padding:12px;">
+
+
+
+      <div class="side-title">Agenda del mes</div>
+
+
+
+      {% if eventos_mes %}
+
+
+
+      <div class="agenda-list">
+
+
+
+        {% for ev in eventos_mes[:40] %}
+
+
+
+        <div class="agenda-item">
+
+
+
+          <div class="agenda-date">{{ ev.fecha }}</div>
+
+
+
+          <div class="agenda-title">{{ ev.titulo }}</div>
+
+
+
+          {% if ev.detalle %}<div style="font-size:11px;color:#64748b;">{{ ev.detalle }}</div>{% endif %}
+
+
+
+        </div>
+
+
+
+        {% endfor %}
+
+
+
+      </div>
+
+
+
+      {% else %}
+
+
+
+      <div style="font-size:12px;color:#64748b;">Sin eventos para este mes.</div>
+
+
+
+      {% endif %}
+
+
+
+    </div>
+
+
+
+  </aside>
+
+
+
+
+
+
+
+  <div class="home-main">
+
+{% endif %}
+
+
+
+
+
+
+<div class="wrap">
+
+
+
+
+
+
+
+  <!-- CABECERA -->
+
+
+
+  <div class="card sede-active-card">
+
+
+
+    <div class="head">
+      <div class="head-top">
+
+        <div class="h-left">
+
+
+        <div class="chip">{{ sede.codigo }}</div>
+
+
+
+        <div style="min-width:0;">
+
+
+
+          <h1 class="h-title">{{ sede.nombre }}</h1>
+
+
+
+          <div class="h-sub">
+
+
+
+            {{ sede.ciudad }}{% if sede.direccion %} · {{ sede.direccion }}{% endif %}
+
+
+
+            · {{ sede.fuero|replace('_',' ')|capitalize }}
+
+
+
+          </div>
+
+
+
+        </div>
+
+
+      </div>
+
+
+
+
+
+
+
+      </div>
+
+      <div class="h-actions">
+
+        {% if home_mode %}
+        <button type="button" class="btn btn-calendario" id="toggleCalendar">Calendario</button>
+        {% else %}
+        <a class="btn btn-calendario"
+           href="{{ url_for('sede_ficha', codigo=sede.codigo, home=1, piso=piso, tab=tab, view=view) }}">Calendario</a>
+        {% endif %}
+
+        {% set link_maps = sede.url_punto_encuentro or sede.url_maps %}
+
+
+        {% if link_maps %}
+
+
+
+        <a class="btn btn-maps" href="{{ link_maps }}" target="_blank" rel="noopener">Maps</a>
+
+
+        {% endif %}
+
+
+        {% if sede.codigo == 'S08' %}
+
+
+
+        <a class="btn btn-fotos" href="{{ url_for('depositos_home') }}">Deposito general</a>
+
+
+        {% endif %}
+
+        <a class="btn btn-metricas" href="{{ url_for('sede_metricas_edit', codigo=sede.codigo) }}">Editar metricas</a>
+
+
+        {% if home_mode %}
+
+
+
+        <a class="btn btn-resumen-sedes" href="{{ url_for('sedes_resumen_mpd') }}">Resumen sedes</a>
+
+
+        {% endif %}
+
+
+
+        <a class="btn btn-volver" href="{{ url_for('dashboard') }}">Volver</a>
+
+
+      </div>
+
+      <div class="sede-nav">
+        {% for s in sedes_nav %}
+        <a class="{% if s.codigo == sede.codigo %}active{% endif %}" data-fuero="{{ s.fuero }}" data-code="{{ s.codigo }}"
+          href="{{ url_for('sede_ficha', codigo=s.codigo, piso=piso, tab=tab, view=view) }}">{{ s.codigo }}</a>
+        {% endfor %}
+      </div>
+
+    </div>
+
+
+    <div class="view-tabs" style="padding:0 16px 12px 16px;">
+
+
+
+      <a class="view-tab {% if view=='resumen' %}active{% endif %}"
+
+
+
+        href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab=tab, view='resumen', home=home_arg) }}">Resumen</a>
+
+
+
+      <a class="view-tab {% if view!='resumen' %}active{% endif %}"
+
+
+
+        href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab=tab, view='operativo', home=home_arg) }}">Operativo</a>
+
+
+
+    </div>
+
+
+
+
+
+
+
+    <!-- KPIs TOP -->
+
+
+
+    <div class="kpis{% if view=='resumen' %} kpis-hidden-resumen{% endif %}">
+      <div class="kpi kpi-obras">
+        <div>
+          <div class="l">Obras (P/EC/F)</div>
+          <div class="v">{{ obras_kpi.pendientes }}/{{ obras_kpi.en_curso }}/{{ obras_kpi.finalizadas }}</div>
+        </div>
+        <div class="tag">Obras</div>
+      </div>
+
+      <div class="kpi kpi-inventario">
+        <div>
+          <div class="l">Inventario cargado</div>
+          <div class="v">{{ inv_kpi.depositos_cargados }}</div>
+        </div>
+        <div class="tag">Inventario</div>
+      </div>
+
+      <div class="kpi kpi-aires">
+        <div>
+          <div class="l">Aires (total sede)</div>
+          <div class="v">{{ aires_total_kpi.total }}</div>
+        </div>
+        <div class="tag">Aires</div>
+      </div>
+
+      <div class="kpi kpi-mobiliario">
+        <div>
+          <div class="l">Mobiliario (total)</div>
+          <div class="v">{{ mobiliario_total_items }}</div>
+        </div>
+        <div class="tag">Mobiliario</div>
+      </div>
+
+      <div class="kpi kpi-seguridad">
+        <div>
+          <div class="l">Vencen pronto (45d)</div>
+          <div class="v">{{ seg_vencen.vencen_pronto }}</div>
+        </div>
+        <div class="tag">Seguridad</div>
+      </div>
+    </div>
+
+    {% set m2pp_base = metricas.m2_por_persona if metricas.m2_por_persona is not none else none %}
+    {% set amb_oficinas = (metricas.oficinas if metricas.oficinas is not none else infra.oficinas) or 0 %}
+    {% set amb_entrev = infra.salas_entrevistas or 0 %}
+    {% set amb_banios = infra.banios or 0 %}
+    {% set amb_comunes = infra.espacios_comunes or 0 %}
+    {% set amb_depositos = (metricas.depositos if metricas.depositos is not none else infra.depositos) or 0 %}
+    {% set amb_utiles = amb_oficinas + amb_entrev + amb_banios + amb_comunes %}
+    {% set amb_total = amb_utiles + amb_depositos %}
+    {% set factor_deposito = (amb_depositos / amb_total) if amb_total > 0 else 0 %}
+    {# Potencial operativo: si hay mas depositos, se considera mayor capacidad de reorganizacion. #}
+    {% set factor_potencial = (1 + (factor_deposito * 0.7)) %}
+    {% set m2pp = ((m2pp_base|float) * factor_potencial)|round(2) if m2pp_base is not none else none %}
+    {% set ppo = metricas.personas_por_oficina if metricas.personas_por_oficina is not none else none %}
+    {% set venc45 = seg_vencen.vencen_pronto if seg_vencen is defined and seg_vencen.vencen_pronto is not none else none %}
+
+    {% if m2pp is none %}
+      {% set m2_class = 'na' %}{% set m2_state = 'Dato no disponible' %}{% set m2_score = none %}
+    {% elif m2pp|float < 8 %}
+      {% set m2_class = 'bad' %}{% set m2_state = 'Espacio insuficiente' %}{% set m2_score = 35 %}
+    {% elif m2pp|float <= 12 %}
+      {% set m2_class = 'ok' %}{% set m2_state = 'Ocupacion adecuada' %}{% set m2_score = 100 %}
+    {% elif m2pp|float <= 20 %}
+      {% set m2_class = 'warn' %}{% set m2_state = 'Espacio amplio' %}{% set m2_score = 70 %}
+    {% else %}
+      {% set m2_class = 'info' %}{% set m2_state = 'Espacio sobredimensionado' %}{% set m2_score = 60 %}
+    {% endif %}
+
+    {% if m2pp_base is not none and m2pp is not none and m2pp_base|float < 8 and m2pp|float >= 8 and amb_depositos > 0 %}
+      {% set m2_class = 'warn' %}{% set m2_state = 'Espacio ampliable (potencial)' %}{% set m2_score = 75 %}
+    {% endif %}
+
+    {% if ppo is none %}
+      {% set ppo_class = 'na' %}{% set ppo_state = 'Dato no disponible' %}{% set ppo_score = none %}
+    {% elif ppo|float <= 2 %}
+      {% set ppo_class = 'ok' %}{% set ppo_state = 'Distribucion adecuada' %}{% set ppo_score = 100 %}
+    {% elif ppo|float <= 3 %}
+      {% set ppo_class = 'warn' %}{% set ppo_state = 'Uso intensivo' %}{% set ppo_score = 70 %}
+    {% else %}
+      {% set ppo_class = 'bad' %}{% set ppo_state = 'Oficinas saturadas' %}{% set ppo_score = 35 %}
+    {% endif %}
+
+    {% if venc45 is none %}
+      {% set seg_class = 'na' %}{% set seg_state = 'Dato no disponible' %}{% set seg_score = none %}
+    {% elif venc45|int == 0 %}
+      {% set seg_class = 'ok' %}{% set seg_state = 'Sin vencimientos' %}{% set seg_score = 100 %}
+    {% elif venc45|int <= 2 %}
+      {% set seg_class = 'warn' %}{% set seg_state = 'Atencion preventiva' %}{% set seg_score = 70 %}
+    {% else %}
+      {% set seg_class = 'bad' %}{% set seg_state = 'Requiere intervencion' %}{% set seg_score = 35 %}
+    {% endif %}
+
+    {% set idx = namespace(sum=0, n=0) %}
+    {% if m2_score is not none %}{% set idx.sum = idx.sum + m2_score %}{% set idx.n = idx.n + 1 %}{% endif %}
+    {% if ppo_score is not none %}{% set idx.sum = idx.sum + ppo_score %}{% set idx.n = idx.n + 1 %}{% endif %}
+    {% if seg_score is not none %}{% set idx.sum = idx.sum + seg_score %}{% set idx.n = idx.n + 1 %}{% endif %}
+    {% set idx_general = (idx.sum / idx.n)|round(0, 'common')|int if idx.n > 0 else none %}
+
+    {% if idx_general is none %}
+      {% set idx_class = 'na' %}{% set idx_state = 'Dato no disponible' %}
+    {% elif idx_general >= 85 %}
+      {% set idx_class = 'ok' %}{% set idx_state = 'Condicion adecuada' %}
+    {% elif idx_general >= 70 %}
+      {% set idx_class = 'warn' %}{% set idx_state = 'Requiere mejoras' %}
+    {% else %}
+      {% set idx_class = 'bad' %}{% set idx_state = 'Intervencion necesaria' %}
+    {% endif %}
+
+    <div class="sede-analisis sede-analisis-main">
+      <div class="sede-analisis-head">
+        <h4>Analisis de sede</h4>
+        <div class="sede-analisis-tools">
+          <details class="sede-criterios">
+            <summary>Criterios de analisis</summary>
+            <div class="sede-criterios-box">
+              <h5>Parametros V1</h5>
+              <ul>
+                <li>Ocupacion: 8-12 m2/persona = adecuado; &lt;8 = insuficiente; 12-20 = amplio; &gt;20 = sobredimensionado.</li>
+                <li>Ajuste potencial: se pondera disponibilidad de depositos como capacidad de reorganizacion operativa.</li>
+                <li>Densidad: hasta 2 pers/of = adecuada; 2-3 = intensivo; &gt;3 = saturado.</li>
+                <li>Seguridad: vencen pronto (45d): 0 = ok; 1-2 = atencion; 3+ = intervencion.</li>
+                <li>Indice general interno: promedio de ocupacion + densidad + seguridad.</li>
+              </ul>
+              <h5 style="margin-top:7px;">Detalle base de datos</h5>
+              <ul>
+                <li><strong>sedes_metricas</strong>: m2_totales, personas, oficinas, depositos.</li>
+                <li><strong>sedes_infra</strong>: salas_entrevistas, banios, espacios_comunes (y deposito de referencia).</li>
+                <li><strong>seg_vencen</strong>: vencen_pronto (horizonte 45 dias).</li>
+                <li><strong>Calculado</strong>: m2/p ajustado por distribucion de ambientes e indice general interno.</li>
+              </ul>
+            </div>
+          </details>
+          <span class="sede-analisis-ref">Lectura interna orientativa (no certifica cumplimiento legal).</span>
+        </div>
+      </div>
+
+      <div class="sede-analisis-base">
+        <span class="b">Personas: {{ per_kpi.personas }}</span>
+        <span class="b">Oficinas: {{ metricas.oficinas if metricas.oficinas is not none else infra.oficinas }}</span>
+        <span class="b">Depositos: {{ depositos_kpi }}</span>
+        <span class="b">M2 totales: {{ metricas.m2_totales if metricas.m2_totales is not none else '-' }}</span>
+        <span class="b">Potencial por depositos: {{ (factor_deposito * 100)|round(0, 'common')|int }}%</span>
+      </div>
+
+      <div class="sede-analisis-grid">
+        <article class="sede-analisis-card">
+          <div class="t">Ocupacion del espacio</div>
+          <div class="v">{{ m2pp if m2pp is not none else '-' }} m2/p</div>
+          <div class="r">
+            Referencia: 8 a 12 m2 por persona.
+            {% if m2pp_base is not none %}
+              Base {{ m2pp_base }} m2/p, potencial {{ m2pp }} m2/p por disponibilidad de espacios.
+            {% endif %}
+          </div>
+          <span class="sede-estado {{ m2_class }}">{{ m2_state }}</span>
+        </article>
+
+        <article class="sede-analisis-card">
+          <div class="t">Densidad por oficina</div>
+          <div class="v">{{ ppo if ppo is not none else '-' }} pers/of</div>
+          <div class="r">Referencia: hasta 2 adecuado, 2-3 intensivo, mas de 3 saturado.</div>
+          <span class="sede-estado {{ ppo_class }}">{{ ppo_state }}</span>
+        </article>
+
+        <article class="sede-analisis-card">
+          <div class="t">Seguridad y vencimientos</div>
+          <div class="v">{{ venc45 if venc45 is not none else '-' }} proximos</div>
+          <div class="r">Lectura segun vencimientos de seguridad en 45 dias.</div>
+          <span class="sede-estado {{ seg_class }}">{{ seg_state }}</span>
+        </article>
+
+        <article class="sede-analisis-card">
+          <div class="t">Indice general interno</div>
+          <div class="v">{{ idx_general if idx_general is not none else '-' }}{% if idx_general is not none %}%{% endif %}</div>
+          <div class="r">Promedio interno de ocupacion, densidad y seguridad.</div>
+          <span class="sede-estado {{ idx_class }}">{{ idx_state }}</span>
+        </article>
+      </div>
+
+      <div class="sede-analisis-foot">
+        Criterios orientativos para gestion interna basados en estandares de ocupacion administrativa y condiciones basicas de higiene y seguridad.
+      </div>
+    </div>
+
+  </div>
+
+  {% if view == 'resumen' %}
+
+
+
+  <style>
+
+
+
+    .resumen-title-band {
+
+
+
+      display: inline-flex;
+
+
+
+      align-items: center;
+
+
+
+      gap: 8px;
+
+
+
+      padding: 4px 10px;
+
+
+
+      border-radius: 999px;
+
+
+
+      background: color-mix(in srgb, #22c55e 16%, var(--card));
+
+
+
+      border: 1px solid color-mix(in srgb, #22c55e 28%, var(--border));
+
+
+
+      font-size: 12px;
+
+
+
+      font-weight: 800;
+
+
+
+      color: #0f766e;
+
+
+
+    }
+
+
+
+
+
+
+
+    .resumen-card.soft-blue {
+
+
+
+      border-color: color-mix(in srgb, #60a5fa 40%, var(--border));
+
+
+
+      background: color-mix(in srgb, #eff6ff 55%, var(--card));
+
+
+
+    }
+
+
+
+
+
+
+
+    .resumen-card.soft-amber {
+
+
+
+      border-color: color-mix(in srgb, #f59e0b 35%, var(--border));
+
+
+
+      background: color-mix(in srgb, #fff7ed 60%, var(--card));
+
+
+
+    }
+
+
+
+
+
+
+
+    .resumen-card.soft-mint {
+
+
+
+      border-color: color-mix(in srgb, #22c55e 35%, var(--border));
+
+
+
+      background: color-mix(in srgb, #ecfdf5 60%, var(--card));
+
+
+
+    }
+
+
+
+
+
+
+
+    .resumen-card.soft-lilac {
+
+
+
+      border-color: color-mix(in srgb, #a78bfa 40%, var(--border));
+
+
+
+      background: color-mix(in srgb, #f5f3ff 60%, var(--card));
+
+
+
+    }
+
+
+
+
+
+
+
+    .services-actions .btn {
+
+
+
+      padding: 6px 12px;
+
+
+
+      font-size: 12px;
+
+
+
+      font-weight: 700;
+
+
+
+    }
+
+
+
+
+
+
+
+    .btn.btn-protocolo {
+
+
+
+      background: #10b981;
+
+
+
+      color: #ffffff;
+
+
+
+      border-color: #059669;
+
+
+
+    }
+
+
+
+
+
+
+
+    .btn.btn-protocolo:hover {
+
+
+
+      background: #059669;
+
+
+
+      color: #ffffff;
+
+
+
+    }
+
+
+
+
+
+
+
+    .services-form {
+
+
+
+      display: block;
+
+
+
+    }
+
+
+
+
+
+
+
+    .services-grid {
+
+
+
+      display: grid;
+
+
+
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+
+
+
+      gap: 12px;
+
+
+
+    }
+
+
+
+
+
+
+
+    .services-field.full {
+
+
+
+      grid-column: 1 / -1;
+
+
+
+    }
+
+
+
+
+
+
+
+    .services-form label {
+
+
+
+      display: block;
+
+
+
+      font-size: 12px;
+
+
+
+      font-weight: 600;
+
+
+
+      color: var(--muted);
+
+
+
+      margin-bottom: 4px;
+
+
+
+    }
+
+
+
+
+
+
+
+    .services-form input,
+
+
+
+    .services-form textarea {
+
+
+
+      width: 100%;
+
+
+
+      box-sizing: border-box;
+
+
+
+      padding: 7px 8px;
+
+
+
+      border-radius: 8px;
+
+
+
+      border: 1px solid var(--line);
+
+
+
+      background: var(--card);
+
+
+
+      color: var(--text);
+
+
+
+    }
+
+
+
+
+
+
+
+    .services-links {
+
+
+
+      margin-top: 8px;
+
+
+
+      display: flex;
+
+
+
+      justify-content: flex-start;
+
+
+
+    }
+
+
+
+
+
+
+
+    .parti-list {
+
+
+
+      list-style: none;
+
+
+
+      margin: 6px 0 0;
+
+
+
+      padding: 0;
+
+
+
+      display: grid;
+
+
+
+      gap: 6px;
+
+
+
+      font-size: 12px;
+
+
+
+      color: var(--text);
+
+
+
+    }
+
+
+
+
+
+
+
+    .parti-list li {
+
+
+
+      display: grid;
+
+
+
+      grid-template-columns: 12px 1fr;
+
+
+
+      gap: 6px;
+
+
+
+      align-items: start;
+
+
+
+      line-height: 1.3;
+
+
+
+    }
+
+
+
+
+
+
+
+    .parti-list li::before {
+
+
+
+      content: "•";
+
+
+
+      color: #6366f1;
+
+
+
+      font-weight: 800;
+
+
+
+      font-size: 14px;
+
+
+
+      line-height: 1;
+
+
+
+      margin-top: 2px;
+
+
+
+    }
+
+
+
+
+
+
+
+    .parti-actions {
+
+
+
+      display: flex;
+
+
+
+      justify-content: flex-end;
+
+
+
+      gap: 8px;
+
+
+
+      margin-top: 8px;
+
+
+
+    }
+
+
+
+
+
+
+
+    .parti-actions .btn {
+
+
+
+      padding: 6px 12px;
+
+
+
+      font-size: 12px;
+
+
+
+      font-weight: 700;
+
+
+
+    }
+
+
+
+
+
+
+
+    .parti-add {
+
+
+
+      margin-top: 6px;
+
+
+
+      display: flex;
+
+
+
+      gap: 6px;
+
+
+
+      align-items: center;
+
+
+
+    }
+
+
+
+
+
+
+
+    .parti-add input {
+
+
+
+      flex: 1;
+
+
+
+      padding: 6px 8px;
+
+
+
+      border-radius: 8px;
+
+
+
+      border: 1px solid var(--line);
+
+
+
+      background: var(--card);
+
+
+
+      color: var(--text);
+
+
+
+      font-size: 12px;
+
+
+
+    }
+
+
+
+
+
+
+
+    .parti-actions .btn.danger {
+
+
+
+      border-color: #ef4444;
+
+
+
+      color: #ef4444;
+
+
+
+    }
+
+
+
+
+
+
+
+    .parti-actions .btn.danger:hover {
+
+
+
+      background: rgba(239, 68, 68, 0.08);
+
+
+
+    }
+
+
+
+
+
+
+
+    .parti-card {
+
+
+
+      border: 1px solid var(--line);
+
+
+
+      border-radius: 10px;
+
+
+
+      padding: 10px;
+
+
+
+      background: rgba(255, 255, 255, 0.35);
+
+
+
+    }
+
+
+
+
+
+
+
+    .parti-title {
+
+
+
+      font-size: 12px;
+
+
+
+      font-weight: 800;
+
+
+
+      color: #4338ca;
+
+
+
+      display: flex;
+
+
+
+      align-items: center;
+
+
+
+      justify-content: space-between;
+
+
+
+      gap: 8px;
+
+
+
+    }
+
+
+
+
+
+
+
+    .parti-edit details {
+
+
+
+      margin-top: 6px;
+
+
+
+    }
+
+
+
+
+
+
+
+    .parti-edit summary {
+
+
+
+      cursor: pointer;
+
+
+
+      font-size: 12px;
+
+
+
+      font-weight: 700;
+
+
+
+      color: #4f46e5;
+
+
+
+    }
+
+
+
+
+
+
+
+    .parti-form {
+
+
+
+      display: grid;
+
+
+
+      gap: 8px;
+
+
+
+    }
+
+
+
+
+
+
+
+    .parti-form label {
+
+
+
+      display: block;
+
+
+
+      font-size: 12px;
+
+
+
+      font-weight: 600;
+
+
+
+      color: var(--muted);
+
+
+
+      margin-bottom: 4px;
+
+
+
+    }
+
+
+
+
+
+
+
+    .parti-form input,
+
+
+
+    .parti-form textarea {
+
+
+
+      width: 100%;
+
+
+
+      box-sizing: border-box;
+
+
+
+      padding: 8px 10px;
+
+
+
+      border-radius: 8px;
+
+
+
+      border: 1px solid var(--line);
+
+
+
+      background: var(--card);
+
+
+
+      color: var(--text);
+
+
+
+    }
+
+  .kpis-hidden-resumen { display: none; }
+
+  .resumen-title-flex {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .svc-state {
+    display: inline-flex;
+    align-items: center;
+    height: 18px;
+    border-radius: 999px;
+    padding: 0 8px;
+    font-size: 10px;
+    font-weight: 800;
+    border: 1px solid transparent;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .svc-state.svc-verde { background: #dcfce7; border-color: #86efac; color: #166534; }
+  .svc-state.svc-amarillo { background: #fef3c7; border-color: #fde68a; color: #92400e; }
+  .svc-state.svc-rojo { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
+
+  .parti-tag {
+    display: inline-flex;
+    align-items: center;
+    height: 18px;
+    border-radius: 999px;
+    padding: 0 8px;
+    font-size: 10px;
+    font-weight: 800;
+    border: 1px solid transparent;
+    white-space: nowrap;
+  }
+
+  .parti-tag-critico { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
+  .parti-tag-atencion { background: #fef3c7; border-color: #fde68a; color: #92400e; }
+  .parti-tag-info { background: #e0f2fe; border-color: #bae6fd; color: #075985; }
+
+  .sede-resumen-main { order: 10; }
+  .sede-analisis-main { order: 20; }
+  .sede-panel-operativo { order: 30; }
+
+
+
+
+
+
+
+
+    .parti-form textarea {
+
+
+
+      min-height: 86px;
+
+
+
+    }
+
+
+
+  </style>
+
+
+
+
+
+
+
+  <div class="card sede-resumen-main" style="padding:12px 16px;margin-bottom:12px;">
+
+
+
+    <div class="resumen-title-band">Resumen sede</div>
+
+
+
+    <div class="resumen-grid">
+
+
+
+      <div class="resumen-card soft-mint">
+
+
+
+        {% set svc_fields = [sede.telefono_sede or '', sede.agua_sedes or '', sede.num_serv_edsa or '', sede.num_serv_gasnor or '', sede.internet_sedes or '', sede.responsable_ejesa or ''] %}
+        {% set svc_ns = namespace(empty=0) %}
+        {% for sv in svc_fields %}{% if not sv or not sv|trim %}{% set svc_ns.empty = svc_ns.empty + 1 %}{% endif %}{% endfor %}
+        {% set svc_text = (svc_fields|join(' ')|lower) %}
+        {% if 'corte' in svc_text or 'problema' in svc_text or 'sin ' in svc_text or 'caid' in svc_text or 'fuera' in svc_text %}
+          {% set svc_state = 'rojo' %}
+          {% set svc_label = 'Corte / problema' %}
+        {% elif svc_ns.empty > 0 %}
+          {% set svc_state = 'amarillo' %}
+          {% set svc_label = 'Riesgo' %}
+        {% else %}
+          {% set svc_state = 'verde' %}
+          {% set svc_label = 'OK' %}
+        {% endif %}
+        <div class="resumen-title resumen-title-flex">Servicios <span class="svc-state svc-{{ svc_state }}">{{ svc_label }}</span></div>
+
+
+
+        <form method="post" action="{{ url_for('sede_servicios_guardar', codigo=sede.codigo) }}" class="services-form">
+
+
+
+          <input type="hidden" name="next" value="{{ request.full_path }}">
+
+
+
+          <div class="services-grid">
+
+
+
+            <div class="services-field">
+
+
+
+              <label>Telefono sede</label>
+
+
+
+              <input type="text" name="telefono_sede" value="{{ sede.telefono_sede or '' }}">
+
+
+
+            </div>
+
+
+
+            <div class="services-field">
+
+
+
+              <label>Agua potable</label>
+
+
+
+              <input type="text" name="agua_sedes" value="{{ sede.agua_sedes or '' }}">
+
+
+
+            </div>
+
+
+
+            <div class="services-field">
+
+
+
+              <label>N° servicio EJESA</label>
+
+
+
+              <input type="text" name="num_serv_edsa" value="{{ sede.num_serv_edsa or '' }}">
+
+
+
+            </div>
+
+
+
+            <div class="services-field">
+
+
+
+              <label>N° servicio Gasnor</label>
+
+
+
+              <input type="text" name="num_serv_gasnor" value="{{ sede.num_serv_gasnor or '' }}">
+
+
+
+            </div>
+
+
+
+            <div class="services-field">
+
+
+
+              <label>Internet</label>
+
+
+
+              <input type="text" name="internet_sedes" value="{{ sede.internet_sedes or '' }}">
+
+
+
+            </div>
+
+
+
+            <div class="services-field">
+
+
+
+              <label>Responsable asignado</label>
+
+
+
+              <input type="text" name="responsable_ejesa" value="{{ sede.responsable_ejesa or '' }}">
+
+
+
+            </div>
+
+
+
+          </div>
+
+
+
+          <div class="services-actions" style="display:flex;justify-content:flex-end;margin-top:8px;">
+
+
+
+            <button class="btn" type="submit">Guardar</button>
+
+
+
+          </div>
+
+
+
+        </form>
+
+
+
+      </div>
+
+
+
+      <div class="resumen-card soft-lilac">
+
+
+
+        <div class="resumen-title">Particularidades sede</div>
+
+
+
+        <div style="display:grid;gap:10px;">
+
+
+
+          {% if parti_rows and parti_rows|length > 0 %}
+
+
+
+            {% for p in parti_rows %}
+
+
+
+            <div class="parti-card">
+
+
+
+              <div class="parti-title">
+
+
+
+                <span>{{ p.titulo }}</span>
+                {% set ptxt = ((p.titulo or '') ~ ' ' ~ (p.detalle or ''))|lower %}
+                {% if 'crit' in ptxt or 'urgente' in ptxt or 'riesgo' in ptxt or 'peligro' in ptxt or 'corte' in ptxt %}
+                  {% set ptag = 'critico' %}{% set ptag_txt = 'Critico' %}
+                {% elif 'atencion' in ptxt or 'pendiente' in ptxt or 'revisar' in ptxt or 'falta' in ptxt %}
+                  {% set ptag = 'atencion' %}{% set ptag_txt = 'Atencion' %}
+                {% else %}
+                  {% set ptag = 'info' %}{% set ptag_txt = 'Informativo' %}
+                {% endif %}
+                <span class="parti-tag parti-tag-{{ ptag }}">{{ ptag_txt }}</span>
+
+
+
+                <form method="post" action="{{ url_for('sede_particularidad_eliminar', codigo=sede.codigo, pid=p.id) }}">
+
+
+
+                  <input type="hidden" name="next" value="{{ request.full_path }}">
+
+
+
+                  <button class="btn danger" type="submit">Eliminar</button>
+
+
+
+                </form>
+
+
+
+              </div>
+
+
+
+              <ul class="parti-list">
+
+
+
+                {% for line in p.detalle.splitlines() %}
+
+
+
+                  {% if line|trim %}
+
+
+
+                  <li>{{ line }}</li>
+
+
+
+                  {% endif %}
+
+
+
+                {% endfor %}
+
+
+
+              </ul>
+
+
+
+              <div class="parti-edit">
+
+
+
+                <details>
+
+
+
+                  <summary>Editar</summary>
+
+
+
+                  <form method="post" action="{{ url_for('sede_particularidad_editar', codigo=sede.codigo, pid=p.id) }}" class="parti-form">
+
+
+
+                    <input type="hidden" name="next" value="{{ request.full_path }}">
+
+
+
+                    <div>
+
+
+
+                      <label>Titulo</label>
+
+
+
+                      <input type="text" name="titulo" value="{{ p.titulo }}">
+
+
+
+                    </div>
+
+
+
+                    <div>
+
+
+
+                      <label>Detalle</label>
+
+
+
+                      <textarea name="detalle">{{ p.detalle }}</textarea>
+
+
+
+                    </div>
+
+
+
+                    <div style="display:flex;justify-content:flex-end;">
+
+
+
+                      <button class="btn" type="submit">Guardar</button>
+
+
+
+                    </div>
+
+
+
+                  </form>
+
+
+
+                </details>
+
+
+
+              </div>
+
+
+
+            </div>
+
+
+
+            {% endfor %}
+
+
+
+          {% else %}
+
+
+
+            <div class="muted" style="font-size:12px;">Sin particularidades cargadas.</div>
+
+
+
+          {% endif %}
+
+
+
+        </div>
+
+
+
+        <div class="parti-edit" style="margin-top:10px;">
+
+
+
+          <details>
+
+
+
+            <summary>Agregar particularidad</summary>
+
+
+
+            <form method="post" action="{{ url_for('sede_particularidad_agregar', codigo=sede.codigo) }}" class="parti-form">
+
+
+
+              <input type="hidden" name="next" value="{{ request.full_path }}">
+
+
+
+              <div>
+
+
+
+                <label>Titulo</label>
+
+
+
+                <input type="text" name="titulo" placeholder="Ej: Electricidad">
+
+
+
+              </div>
+
+
+
+              <div>
+
+
+
+                <label>Detalle (una linea por punto)</label>
+
+
+
+                <textarea name="detalle" placeholder="Ej: Instalacion trifasica&#10;Puede cortarse una fase&#10;No usar pavas electricas"></textarea>
+
+
+
+              </div>
+
+
+
+              <div style="display:flex;justify-content:flex-end;">
+
+
+
+                <button class="btn" type="submit">Agregar</button>
+
+
+
+              </div>
+
+
+
+            </form>
+
+
+
+          </details>
+
+
+
+        </div>
+
+
+
+      </div>
+
+
+
+    </div>
+
+
+
+  </div>
+
+
+
+  <div class="card" style="padding:12px 16px;">
+
+
+
+    <div style="font-size:13px;font-weight:900;margin-bottom:8px;">Eventos recientes</div>
+
+
+
+    {% if eventos_sede and eventos_sede|length > 0 %}
+
+
+
+      <div style="display:flex;flex-direction:column;gap:6px;font-size:12px;">
+
+
+
+        {% for ev in eventos_sede[:10] %}
+
+
+
+          <div style="display:flex;gap:8px;align-items:flex-start;">
+
+
+
+            <span class="cal-dot" style="background: {{ ev.color or '#64748b' }}"></span>
+
+
+
+            <div>
+
+
+
+              <div style="font-weight:800;">{{ ev.titulo }}</div>
+
+
+
+              {% if ev.detalle %}<div style="color:var(--muted);">{{ ev.detalle }}</div>{% endif %}
+
+
+
+            </div>
+
+
+
+          </div>
+
+
+
+        {% endfor %}
+
+
+
+      </div>
+
+
+
+    {% else %}
+
+
+
+      <div style="color:var(--muted);font-size:12px;">Sin eventos recientes.</div>
+
+
+
+    {% endif %}
+
+
+
+  </div>
+
+
+
+  {% else %}
+
+
+
+  <!-- CUERPO -->
+
+
+
+  <div class="grid">
+
+
+
+
+
+
+
+    <!-- PLANO -->
+
+
+
+    <div class="card">
+
+
+
+      <div class="plan-head">
+
+
+
+        <div class="tabs">
+
+
+
+          {% if pisos and pisos|length > 0 %}
+
+
+
+          {% for p in pisos %}
+
+
+
+          <a class="tab {% if piso==p %}active{% endif %}"
+
+
+
+            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=p, local=local, tab=tab, view=view) }}">{{ p }}</a>
+
+
+
+          {% endfor %}
+
+
+
+          {% else %}
+
+
+
+          <span class="badge">Sin planos cargados</span>
+
+
+
+          {% endif %}
+
+
+
+        </div>
+
+
+
+
+
+
+
+        <div class="plan-actions">
+
+
+
+          <div class="badge">
+
+
+
+            {% if local %}Filtro: {{ local }}{% else %}Sin filtro{% endif %}
+
+
+
+          </div>
+
+
+
+          {% if sede.url_planos_drive %}
+
+
+
+          <a class="btn" target="_blank" rel="noopener" href="{{ sede.url_planos_drive }}">Planos (Drive)</a>
+
+
+
+          {% endif %}
+
+
+
+        </div>
+
+
+
+      </div>
+
+
+
+
+
+
+
+      <div class="plan-body">
+
+
+
+        <div class="plan-img">
+
+
+
+          <img src="{{ plano_url }}" alt="Plano {{ sede.codigo }} {{ piso }}">
+
+
+
+        </div>
+
+
+
+      </div>
+
+
+
+
+
+
+
+      <div class="locals">
+
+
+
+        {% if locales and locales|length > 0 %}
+
+
+
+        {% for d in locales %}
+
+
+
+        <a class="loc {% if local==d %}active{% endif %}"
+
+
+
+          href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=d, tab=tab, view=view) }}">{{ d }}</a>
+
+
+
+        {% endfor %}
+
+
+
+        {% else %}
+
+
+
+        <span class="badge">Sin locales cargados</span>
+
+
+
+        {% endif %}
+
+
+
+        <a class="loc clear" href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, tab=tab, view=view) }}">Quitar
+
+
+
+          filtro</a>
+
+
+
+      </div>
+
+
+
+    </div>
+
+
+
+
+
+
+
+    <!-- PANEL -->
+
+
+
+    <div class="card">
+
+
+
+      <div class="panel-head">
+
+
+
+        <div class="panel-title">Panel operativo</div>
+
+
+
+        <div class="badge">{{ sede.codigo }} · {{ piso }}{% if local %} · {{ local }}{% endif %}</div>
+
+
+
+      </div>
+
+
+
+
+
+
+
+      <div class="panel-tabs">
+        <a class="btn {% if tab=='resumen' %}active{% endif %}"
+          href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='resumen', view=view) }}">Resumen sedes</a>
+
+        <div class="panel-tab-groups">
+          <div class="panel-tab-group">
+            <span class="panel-tab-group-title">Infraestructura</span>
+            <a class="ptab tone-aires {% if tab=='aires' %}active{% endif %}"
+              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='aires', view=view) }}">Aires</a>
+            <a class="ptab tone-lum {% if tab=='luminarias' %}active{% endif %}"
+              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='luminarias', view=view) }}">Luminarias</a>
+          </div>
+
+          <div class="panel-tab-group">
+            <span class="panel-tab-group-title">Seguridad</span>
+            <a class="ptab tone-mata {% if tab=='matafuegos' %}active{% endif %}"
+              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='matafuegos', view=view) }}">Matafuegos</a>
+            <a class="ptab tone-eva {% if tab=='evacuacion' %}active{% endif %}"
+              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='evacuacion', view=view) }}">Evacuacion</a>
+          </div>
+
+          <div class="panel-tab-group">
+            <span class="panel-tab-group-title">Logistica</span>
+            <a class="ptab tone-dep {% if tab=='depositos' %}active{% endif %}"
+              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='depositos', view=view) }}">Depositos</a>
+            <a class="ptab tone-mob {% if tab=='mobiliario' %}active{% endif %}"
+              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='mobiliario', view=view) }}">Mobiliario</a>
+          </div>
+
+          <div class="panel-tab-group">
+            <span class="panel-tab-group-title">Equipo</span>
+            <a class="ptab tone-personal {% if tab=='personal' %}active{% endif %}"
+              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='personal', view=view) }}">Personal</a>
+          </div>
+        </div>
+      </div>
+
+<div class="panel-body{% if view != 'resumen' %} scrollable{% endif %}">
+
+
+
+
+
+
+
+        {% if tab == 'personal' %}
+
+        {% if home_mode %}
+
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">
+
+          <div style="font-size:13px;font-weight:900;">Personal</div>
+
+          <a class="btn primary" href="{{ url_for('personal_home', sede=sede.codigo, piso=piso, q='') }}">Ver detalle</a>
+
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;">
+
+          <div style="border:1px solid var(--border);border-radius:12px;padding:10px;background:#fff;">
+
+            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Total</div>
+
+            <div style="font-size:18px;font-weight:900;">{{ per_kpi.personas }}</div>
+
+          </div>
+
+          <div style="border:1px solid var(--border);border-radius:12px;padding:10px;background:#fff;">
+
+            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Ultimas altas</div>
+
+            {% if personal_rows and personal_rows|length > 0 %}
+
+              <div style="display:flex;flex-direction:column;gap:4px;font-size:12px;margin-top:6px;">
+
+                {% for p in personal_rows[:3] %}
+
+                  <div><strong>{{ p.nombre_apellido }}</strong> ? {{ p.codigo_local }}</div>
+
+                {% endfor %}
+
+              </div>
+
+            {% else %}
+
+              <div style="font-size:12px;color:var(--muted);margin-top:6px;">Sin personal cargado.</div>
+
+            {% endif %}
+
+          </div>
+
+        </div>
+
+        {% else %}
+
+
+
+
+
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">
+
+
+
+          <div style="font-size:13px;font-weight:900;">Personal</div>
+
+
+
+          <a class="btn primary" href="{{ url_for('personal_home', sede=sede.codigo, piso=piso, q='') }}">+ Agregar /
+
+
+
+            Editar</a>
+
+
+
+        </div>
+
+
+
+
+
+
+
+        {% if personal_rows and personal_rows|length > 0 %}
+
+
+
+        <div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+
+
+
+          <table style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;">
+
+
+
+            <thead style="background:#f3f4f6;">
+
+
+
+              <tr>
+
+
+
+                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);width:70px;">Local</th>
+
+
+
+                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);">Nombre</th>
+
+
+
+                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);">Dependencia</th>
+
+
+
+                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);">Email</th>
+
+
+
+              </tr>
+
+
+
+            </thead>
+
+
+
+            <tbody>
+
+
+
+              {% for p in personal_rows %}
+
+
+
+              <tr>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);font-weight:800;">{{ p.codigo_local }}</td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);">{{ p.nombre_apellido }}</td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);">{{ p.dependencia }}</td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);">{{ p.email_admin or "" }}</td>
+
+
+
+              </tr>
+
+
+
+              {% endfor %}
+
+
+
+            </tbody>
+
+
+
+          </table>
+
+
+
+        </div>
+
+
+
+        {% else %}
+
+
+
+        <div style="color:var(--muted);font-size:12px;">
+
+
+
+          No hay personal cargado para este filtro:
+
+
+
+          <strong>{{ sede.codigo }}</strong> · <strong>{{ piso }}</strong>{% if local %} · <strong>{{ local
+
+
+
+            }}</strong>{% endif %}.
+
+
+
+          <br>Probá tocar un local o “Quitar filtro”.
+
+
+
+        </div>
+
+
+
+        {% endif %}
+
+
+
+
+
+
+
+        {% endif %}
+
+
+
+        {% elif tab == 'mobiliario' %}
+
+
+
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">
+
+
+
+          <div style="font-size:13px;font-weight:900;">Mobiliario</div>
+
+
+
+
+
+
+
+          <a class="btn primary"
+
+
+
+            href="{{ url_for('mobiliario_nuevo') }}?codigo_sede={{ sede.codigo }}&piso={{ piso }}{% if local %}&codigo_local={{ local }}{% endif %}">
+
+
+
+            + Agregar
+
+
+
+          </a>
+
+
+
+        </div>
+
+
+
+
+
+
+
+        {% if mobiliario_rows and mobiliario_rows|length > 0 %}
+
+
+
+        <div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+
+
+
+          <table style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;">
+
+
+
+            <thead style="background:#f3f4f6;">
+
+
+
+              <tr>
+
+
+
+                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);width:60px;">Local</th>
+
+
+
+                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);">Descripción</th>
+
+
+
+                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:52px;">Aire</th>
+
+
+
+                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:52px;">Esc</th>
+
+
+
+                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:52px;">Mesa</th>
+
+
+
+                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:52px;">Gir</th>
+
+
+
+                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:52px;">Fija</th>
+
+
+
+                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:52px;">Arm</th>
+
+
+
+                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:52px;">Bib</th>
+
+
+
+                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);">Otros</th>
+
+
+
+                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);width:120px;">Accion</th>
+
+
+
+              </tr>
+
+
+
+            </thead>
+
+
+
+            <tbody>
+
+
+
+              {% for m in mobiliario_rows %}
+
+
+
+              <tr>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);font-weight:900;">{{ m.codigo_local }}</td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);">{{ m.descripcion or "" }}</td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);text-align:center;">{{ m.aire_marca }}</td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);text-align:center;">{{ m.escritorio_prof }}
+
+
+
+                </td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);text-align:center;">{{ m.mesa_pc }}</td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);text-align:center;">{{ m.silla_giratoria }}
+
+
+
+                </td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);text-align:center;">{{ m.silla_fija }}</td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);text-align:center;">{{ m.armario_alto }}
+
+
+
+                </td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);text-align:center;">{{ m.biblioteca_baja }}
+
+
+
+                </td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);">
+
+
+
+                  {% if m.otros_detalle %}{{ m.otros_detalle }}{% else %}{% if m.otros %}{{ m.otros }}{% endif %}{%
+
+
+
+                  endif %}
+
+
+
+                </td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);">
+
+
+
+                  <a class="btn" href="{{ url_for('mobiliario_editar', id=m.id) }}">Editar</a>
+
+
+
+                  <form method="post" action="{{ url_for('mobiliario_eliminar', id=m.id) }}" style="display:inline;">
+
+
+
+                    <button class="btn" type="submit">Eliminar</button>
+
+
+
+                  </form>
+
+
+
+                </td>
+
+
+
+              </tr>
+
+
+
+              {% endfor %}
+
+
+
+            </tbody>
+
+
+
+          </table>
+
+
+
+        </div>
+
+
+
+        {% else %}
+
+
+
+        <div style="color:var(--muted);font-size:12px;">
+
+
+
+          No hay mobiliario cargado para este filtro:
+
+
+
+          <strong>{{ sede.codigo }}</strong> · <strong>{{ piso }}</strong>{% if local %} · <strong>{{ local
+
+
+
+            }}</strong>{% endif %}.
+
+
+
+        </div>
+
+
+
+        {% endif %}
+
+
+
+
+
+
+
+        {% elif tab == 'depositos' %}
+
+
+
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">
+
+
+
+          <div style="font-size:13px;font-weight:900;">Depósitos</div>
+
+
+
+          <a class="btn" href="{{ url_for('movimientos_home', sede_origen=sede.codigo) }}">Mover mobiliario</a>
+
+
+
+          <a class="btn primary" href="{{ url_for('sede_depositos_edit', codigo=sede.codigo) }}">Editar</a>
+
+
+
+        </div>
+
+
+
+
+
+
+
+        {% if depositos_rows and depositos_rows|length > 0 %}
+
+
+
+        <div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+
+
+
+          <table style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;">
+
+
+
+            <thead style="background:#f3f4f6;">
+
+
+
+              <tr>
+
+
+
+                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);width:90px;">Local</th>
+
+
+
+                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);">Descripción</th>
+
+
+
+              </tr>
+
+
+
+            </thead>
+
+
+
+            <tbody>
+
+
+
+              {% for d in depositos_rows %}
+
+
+
+              <tr>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);font-weight:900;">{{ d.codigo_local }}</td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);">{{ d.descripcion or "" }}</td>
+
+
+
+              </tr>
+
+
+
+              {% endfor %}
+
+
+
+            </tbody>
+
+
+
+          </table>
+
+
+
+        </div>
+
+
+
+        {% else %}
+
+
+
+        <div style="color:var(--muted);font-size:12px;">
+
+
+
+          No hay depósitos cargados para esta sede.
+
+
+
+        </div>
+
+
+
+        {% endif %}
+
+
+
+
+
+
+
+        {% elif tab == 'luminarias' %}
+
+
+
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">
+
+
+
+          <div>
+
+
+
+            <div style="font-size:13px;font-weight:900;">Luminarias</div>
+
+
+
+            <div style="font-size:12px;color:var(--muted);margin-top:2px;">
+
+
+
+              Totales (filtro actual): Fria <strong>{{ luminarias_kpi.tubo_fria }}</strong> ·
+
+
+
+              Calida <strong>{{ luminarias_kpi.tubo_calido }}</strong> ·
+
+
+
+              Foco <strong>{{ luminarias_kpi.foco }}</strong> ·
+
+
+
+              Panel <strong>{{ luminarias_kpi.panel }}</strong> ·
+
+
+
+              Puestos <strong>{{ luminarias_kpi.puestos_trabajo }}</strong>
+
+
+
+            </div>
+
+
+
+          </div>
+
+
+
+          <a class="btn primary"
+
+
+
+            href="{{ url_for('luminarias_nuevo') }}?codigo_sede={{ sede.codigo }}&piso={{ piso }}{% if local %}&codigo_local={{ local }}{% endif %}">
+
+
+
+            + Agregar
+
+
+
+          </a>
+
+
+
+        </div>
+
+
+
+
+
+
+
+        {% if luminarias_rows and luminarias_rows|length > 0 %}
+
+
+
+        <div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+
+
+
+          <table style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;">
+
+
+
+            <thead style="background:#f3f4f6;">
+
+
+
+              <tr>
+
+
+
+                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);width:70px;">Local</th>
+
+
+
+                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:80px;">Tubo fría
+
+
+
+                </th>
+
+
+
+                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:90px;">Tubo cálida
+
+
+
+                </th>
+
+
+
+                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:70px;">Foco</th>
+
+
+
+                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:70px;">Panel</th>
+
+
+
+                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:90px;">Puesto</th>
+
+
+
+                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);">Otros</th>
+
+
+
+                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);width:140px;">Acción</th>
+
+
+
+              </tr>
+
+
+
+            </thead>
+
+
+
+            <tbody>
+
+
+
+              {% for l in luminarias_rows %}
+
+
+
+              <tr>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);font-weight:900;">{{ l.codigo_local }}</td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);text-align:center;">{{ l.tubo_led_fria }}
+
+
+
+                </td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);text-align:center;">{{ l.tubo_led_calido }}
+
+
+
+                </td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);text-align:center;">{{ l.foco_comun }}</td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);text-align:center;">{{ l.panel_led }}</td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);text-align:center;">{{ l.puestos_trabajo }}</td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);">{{ l.otros_detalle or "" }}</td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);">
+
+
+
+                  <a class="btn primary"
+
+
+
+                    href="{{ url_for('checklist_luminarias', sede_filtro=sede.codigo, ambiente=l.codigo_local) }}">
+
+
+
+                    Registrar cambio
+
+
+
+                  </a>
+
+
+
+                  <a class="btn" href="{{ url_for('luminarias_editar', id=l.id) }}">Editar</a>
+
+
+
+                  <form method="post" action="{{ url_for('luminarias_eliminar', id=l.id) }}" style="display:inline;">
+
+
+
+                    <button class="btn" type="submit">Eliminar</button>
+
+
+
+                  </form>
+
+
+
+                </td>
+
+
+
+              </tr>
+
+
+
+              {% endfor %}
+
+
+
+            </tbody>
+
+
+
+          </table>
+
+
+
+        </div>
+
+
+
+        {% else %}
+
+
+
+        <div style="color:var(--muted);font-size:12px;">No hay luminarias cargadas para este filtro.</div>
+
+
+
+        {% endif %}
+
+
+
+
+
+
+
+        {% elif tab == 'matafuegos' %}
+
+
+
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px;">
+
+
+
+          <div>
+
+
+
+            <div style="font-size:13px;font-weight:900;">Matafuegos</div>
+
+
+
+            <div style="font-size:12px;color:var(--muted);margin-top:2px;">
+
+
+
+              Totales (filtro actual): <strong>{{ matafuegos_kpi.total }}</strong> ·
+
+
+
+              Vencen pronto (45d): <strong>{{ matafuegos_kpi.vencen_pronto }}</strong>
+
+
+
+            </div>
+
+
+
+          </div>
+
+
+
+          <a class="btn primary" href="{{ url_for('matafuegos_home', sede=sede.codigo, piso=piso, q='') }}">+ Agregar /
+
+
+
+            Editar</a>
+
+
+
+        </div>
+
+
+
+
+
+
+
+        {% if matafuegos_rows and matafuegos_rows|length > 0 %}
+
+
+
+        <div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+
+
+
+          <table style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;">
+
+
+
+            <thead style="background:#f3f4f6;">
+
+
+
+              <tr>
+
+
+
+                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);width:70px;">Local</th>
+
+
+
+                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);width:80px;">Tipo</th>
+
+
+
+                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:60px;">Kg</th>
+
+
+
+                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);width:110px;">Serie</th>
+
+
+
+                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);">Ubicación</th>
+
+
+
+                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:92px;">Recarga</th>
+
+
+
+                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:92px;">Vence</th>
+
+
+
+                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:92px;">Hidro</th>
+
+
+
+                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);width:92px;">Estado</th>
+
+
+
+                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);">Obs</th>
+
+
+
+              </tr>
+
+
+
+            </thead>
+
+
+
+            <tbody>
+
+
+
+              {% for mf in matafuegos_rows %}
+
+
+
+              <tr {% if mf.fecha_vencimiento and (mf.fecha_vencimiento|string) <=(fecha_45d|string)
+
+
+
+                %}style="background:#fff1f2" {% endif %}>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);font-weight:900;">{{ mf.codigo_local }}
+
+
+
+                </td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);">{{ mf.tipo or "" }}</td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);text-align:center;">{{ mf.capacidad_kg or
+
+
+
+                  "" }}</td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);">{{ mf.nro_serie or "" }}</td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);">{{ mf.ubicacion or "" }}</td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);text-align:center;">{{ mf.fecha_recarga or
+
+
+
+                  "" }}</td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);text-align:center;font-weight:900;">{{
+
+
+
+                  mf.fecha_vencimiento or "" }}</td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);text-align:center;">{{
+
+
+
+                  mf.fecha_prueba_hidro or "" }}</td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);">{{ mf.estado or "" }}</td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid var(--border);">{{ mf.observaciones or "" }}</td>
+
+
+
+              </tr>
+
+
+
+              {% endfor %}
+
+
+
+            </tbody>
+
+
+
+          </table>
+
+
+
+        </div>
+
+
+
+        {% else %}
+
+
+
+        <div style="color:var(--muted);font-size:12px;">No hay matafuegos cargados para este filtro.</div>
+
+
+
+        {% endif %}
+
+
+
+
+
+
+
+        {% elif tab == 'evacuacion' %}
+
+
+
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px;">
+
+
+
+          <div>
+
+
+
+            <div style="font-size:13px;font-weight:900;margin-bottom:4px;">Evacuación</div>
+
+
+
+            <div style="color:var(--muted);font-size:12px;line-height:1.35;">
+
+
+
+              Plan operativo resumido por piso + punto de encuentro. (Plano {{ piso }})
+
+
+
+            </div>
+
+
+
+          </div>
+
+
+
+          <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+
+
+
+            <a class="btn primary" href="{{ url_for('eva_responsables_edit', codigo=sede.codigo) }}">Editar
+
+
+
+              responsables</a>
+
+
+
+            {% if sede.url_punto_encuentro %}
+
+
+
+            <a class="btn" target="_blank" rel="noopener" href="{{ sede.url_punto_encuentro }}">Ver punto de encuentro
+
+
+
+              (Maps)</a>
+
+
+
+            {% endif %}
+
+
+
+          </div>
+
+
+
+        </div>
+
+
+
+
+
+
+
+        <form method="post" action="{{ url_for('sede_evacuacion_punto_encuentro', codigo=sede.codigo) }}"
+
+
+
+          style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px;">
+
+
+
+          <input type="hidden" name="piso" value="{{ piso }}">
+
+
+
+          {% if local %}<input type="hidden" name="local" value="{{ local }}">{% endif %}
+
+
+
+          <input type="url" name="url_punto_encuentro" value="{{ sede.url_punto_encuentro or '' }}"
+
+
+
+            placeholder="Link de Maps del punto de encuentro"
+
+
+
+            style="flex:1;min-width:220px;padding:8px 10px;border-radius:999px;border:1px solid var(--border);font-size:12px;">
+
+
+
+          <button class="btn primary" type="submit">Guardar punto</button>
+
+
+
+        </form>
+
+
+
+
+
+
+
+        <div class="card" style="box-shadow:none;border:1px solid var(--border);padding:12px;margin-bottom:10px;">
+
+
+
+          <div style="font-size:12px;font-weight:800;margin-bottom:6px;">Punto de encuentro</div>
+
+
+
+          <div style="font-size:12px;color:#334155;line-height:1.35;">
+
+
+
+            Vereda exterior – Palacio de Tribunales (referencia en plano).
+
+
+
+          </div>
+
+
+
+        </div>
+
+
+
+
+
+
+
+        <div class="card" style="box-shadow:none;border:1px solid var(--border);padding:12px;margin-bottom:10px;">
+
+
+
+          <div style="font-size:12px;font-weight:800;margin-bottom:8px;">Responsables por piso</div>
+
+
+
+          <div style="display:grid;grid-template-columns:1fr;gap:6px;font-size:12px;">
+
+
+
+            {% for p in pisos %}
+
+
+
+            <div style="display:flex;justify-content:space-between;gap:10px;">
+
+
+
+              <span style="color:var(--muted);">{{ p }}</span>
+
+
+
+              <span style="font-weight:700;">{{ evac_responsables.get(p, '-') }}</span>
+
+
+
+            </div>
+
+
+
+            {% endfor %}
+
+
+
+          </div>
+
+
+
+          <div style="margin-top:10px;font-size:12px;color:var(--muted);line-height:1.35;">
+
+
+
+            Función: coordinar salida, verificar que no queden personas y reportar en el punto de encuentro.
+
+
+
+          </div>
+
+
+
+        </div>
+
+
+
+
+
+
+
+        {% elif tab == 'aires' %}
+
+
+
+        <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;margin:8px 0 10px;">
+
+
+
+          <div style="font-size:13px;font-weight:900;">Aires acondicionados</div>
+
+
+
+          <a class="btn primary" href="{{ url_for('sede_aires', codigo=sede.codigo) }}">+ Agregar / Editar</a>
+
+
+
+        </div>
+
+
+
+
+
+
+
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+
+
+
+            <div style="padding:8px 10px;border:1px solid #e5e7eb;border-radius:12px;background:#fff;">
+
+
+
+              <div style="font-size:12px;color:#64748b;">Total</div>
+
+
+
+              <div style="font-weight:800;font-size:18px;">{{ aires_kpi.total or 0 }}</div>
+
+
+
+            </div>
+
+
+
+          <div style="padding:8px 10px;border:1px solid #e5e7eb;border-radius:12px;background:#fff;">
+
+
+
+            <div style="font-size:12px;color:#64748b;">Operativos</div>
+
+
+
+            <div style="font-weight:800;font-size:18px;">{{ aires_kpi.operativos or 0 }}</div>
+
+
+
+          </div>
+
+
+
+          <div style="padding:8px 10px;border:1px solid #e5e7eb;border-radius:12px;background:#fff;">
+
+
+
+            <div style="font-size:12px;color:#64748b;">Fuera de servicio</div>
+
+
+
+            <div style="font-weight:800;font-size:18px;">{{ aires_kpi.fuera_servicio or 0 }}</div>
+
+
+
+          </div>
+
+
+
+        </div>
+
+
+
+
+
+
+
+        <div style="overflow:auto;border:1px solid #e5e7eb;border-radius:14px;background:#fff;">
+
+
+
+          <table style="width:100%;border-collapse:collapse;font-size:12px;">
+
+
+
+            <thead style="background:#f3f4f6;">
+
+
+
+              <tr style="text-align:left;color:#64748b;">
+
+
+
+                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:180px;">Ambiente</th>
+
+
+
+                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:120px;">Marca</th>
+
+
+
+                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:160px;">Estado</th>
+
+
+
+                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:92px;">Limpieza</th>
+
+
+
+                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:92px;">Service</th>
+
+
+
+                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:120px;">Accion</th>
+
+
+
+              </tr>
+
+
+
+            </thead>
+
+
+
+            <tbody>
+
+
+
+              {% for a in aires_rows %}
+
+
+
+              {% set _estado = (a.estado or '')|lower %}
+
+
+
+              {% set _cls = 'ok' if _estado in ['operativo','ok'] else ('warn' if 'pend' in _estado else ('bad' if 'fuera' in _estado else 'neutral')) %}
+
+
+
+              <tr>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid #f1f5f9;font-weight:800;">{{ a.ambiente_desc or a.ambiente_codigo or '-' }}</td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid #f1f5f9;">{{ a.marca or '-' }}</td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid #f1f5f9;">
+
+
+
+                  <span class="status-pill {{ _cls }}">{{ a.estado or '-' }}</span>
+
+
+
+                </td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid #f1f5f9;">{{ a.fecha_limpieza or '-' }}</td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid #f1f5f9;">{{ a.fecha_ultimo_service or '-' }}</td>
+
+
+
+                <td style="padding:8px;border-bottom:1px solid #f1f5f9;">
+
+
+
+                  <a class="btn" href="{{ url_for('aires_sede_editar', id=a.id) }}">Editar</a>
+
+
+
+                </td>
+
+
+
+              </tr>
+
+
+
+              {% else %}
+
+
+
+              <tr>
+
+
+
+                <td colspan="6" style="padding:12px;color:#64748b;">No hay equipos cargados para este piso / filtro.
+
+
+
+                </td>
+
+
+
+              </tr>
+
+
+
+              {% endfor %}
+
+
+
+            </tbody>
+
+
+
+          </table>
+
+
+
+        </div>
+
+
+
+        {% endif %}
+
+
+
+
+
+
+
+      </div>
+
+
+
+    </div>
+
+
+
+
+
+
+
+  </div>
+
+
+
+  {% endif %}
+
+
+
+</div>
+
+
+
+
+
+
+
+{% if home_mode %}
+
+
+
+  </div>
+
+
+
+</div>
+
+
+
+{% endif %}
+
+
+
+
+
+
+
+
+<details style="margin-top:14px;border:1px solid #dbe4f2;border-radius:12px;background:#f8fbff;padding:10px;">
+  <summary style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;list-style:none;">
+    <span style="font-size:14px;font-weight:800;color:#1f3c68;">Documentos vinculados (SGI)</span>
+    <span class="btn btn-mpd" style="pointer-events:none;">Ver documentos</span>
+  </summary>
+
+  <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;">
+    <a class="btn btn-mpd" href="{{ url_for('sgi_documentacion_informes', sede=sede.codigo) }}">Ver en Informes</a>
+  </div>
+
+  {% if documentos_vinculados_sede and documentos_vinculados_sede|length > 0 %}
+    <div style="margin-top:8px;display:grid;gap:6px;">
+      {% for d in documentos_vinculados_sede[:12] %}
+        <div style="border:1px solid #d6e5f8;border-radius:10px;background:#fff;padding:8px;display:grid;gap:3px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+            <strong style="font-size:12px;color:#17345e;">{{ d.titulo }}</strong>
+            <span style="font-size:10px;font-weight:800;color:#4b6890;border:1px solid #c7d6ee;border-radius:999px;padding:2px 8px;background:#eef4ff;">{{ d.tipo_documento }}</span>
+          </div>
+          <div style="font-size:11px;color:#5a7395;">
+            {% if d.fecha %}<span><b>Fecha:</b> {{ d.fecha }}</span>{% endif %}
+            {% if d.estado %} ? <span><b>Estado:</b> {{ d.estado }}</span>{% endif %}
+            {% if d.tags_txt %} ? <span><b>Tags:</b> {{ d.tags_txt }}</span>{% endif %}
+          </div>
+          {% if d.archivo_url %}
+            <div><a href="{{ d.archivo_url }}" target="_blank" rel="noopener" style="font-size:11px;font-weight:800;color:#1d4ed8;text-decoration:none;">Abrir documento</a></div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p style="margin:8px 0 0;color:#6b7280;font-size:12px;">No hay documentos SGI vinculados para esta sede todavia.</p>
+  {% endif %}
+</details>
+
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  .manual-wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 12px 0 18px;
+  }
+  .manual-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .manual-title {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 900;
+    color: #0f172a;
+  }
+  .manual-sub {
+    margin: 4px 0 0;
+    color: #64748b;
+    font-size: 13px;
+  }
+  .manual-grid {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 12px;
+  }
+  .manual-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
+    padding: 12px 14px;
+  }
+  .manual-card h3 {
+    margin: 0 0 8px;
+    font-size: 15px;
+    font-weight: 900;
+    color: #0f172a;
+  }
+  .manual-card p,
+  .manual-card li,
+  .manual-card td,
+  .manual-card th {
+    font-size: 12px;
+    line-height: 1.45;
+    color: #334155;
+  }
+  .manual-list {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .manual-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .manual-table th,
+  .manual-table td {
+    border-bottom: 1px solid #e5e7eb;
+    padding: 6px 8px;
+    text-align: left;
+  }
+  .manual-table th {
+    background: #f8fafc;
+    color: #0f172a;
+    font-weight: 800;
+  }
+  .chip {
+    display: inline-block;
+    border-radius: 999px;
+    border: 1px solid #e5e7eb;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    margin-right: 5px;
+    margin-bottom: 5px;
+  }
+  .chip.ok { background: #dcfce7; border-color: #86efac; color: #166534; }
+  .chip.warn { background: #fef3c7; border-color: #fde68a; color: #92400e; }
+  .chip.risk { background: #fee2e2; border-color: #fecaca; color: #991b1b; }
+  .chip.info { background: #dbeafe; border-color: #93c5fd; color: #1e3a8a; }
+  .manual-note {
+    margin-top: 8px;
+    border: 1px solid #bfdbfe;
+    border-radius: 10px;
+    background: #eff6ff;
+    padding: 8px 10px;
+    font-size: 12px;
+    color: #1e3a8a;
+  }
+  .manual-steps .manual-card {
+    margin-bottom: 10px;
+  }
+  @media (max-width: 960px) {
+    .manual-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<section class="manual-wrap">
+  <div class="manual-head">
+    <div>
+      <h1 class="manual-title">Instructivo Ergonomía</h1>
+      <p class="manual-sub">Guía técnica y operativa para carga en campo con cálculo automático.</p>
+    </div>
+    <a class="btn outline-slate" href="{{ url_for('sst_plan_cargar') if request.args.get('next') == 'cargar' else url_for('sst_plan') }}">Volver</a>
+  </div>
+
+  <div class="manual-grid">
+    <div class="manual-steps">
+      <div class="manual-card">
+        <h3>Paso 1. Cargar Datos Base</h3>
+        <ol class="manual-list">
+          <li>Seleccionar persona.</li>
+          <li>Completar fecha de relevamiento y evaluador.</li>
+          <li>Completar fecha de nacimiento (calcula edad automática).</li>
+          <li>Completar horas diarias en PC.</li>
+        </ol>
+      </div>
+
+      <div class="manual-card">
+        <h3>Paso 2. Relevar Puesto</h3>
+        <ol class="manual-list">
+          <li>Silla y escritorio.</li>
+          <li>Soporte y altura del monitor.</li>
+          <li>Espacio para piernas y ajuste recomendado.</li>
+          <li>Uso de notebook (con o sin base).</li>
+        </ol>
+      </div>
+
+      <div class="manual-card">
+        <h3>Paso 3. Puntajes Actuales</h3>
+        <table class="manual-table">
+          <thead>
+            <tr><th>Regla</th><th>Puntaje</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Silla fija</td><td>+2</td></tr>
+            <tr><td>Silla giratoria</td><td>+1</td></tr>
+            <tr><td>Sin soporte monitor</td><td>+1</td></tr>
+            <tr><td>Monitor bajo/alto</td><td>+1</td></tr>
+            <tr><td>Espacio reducido / insuficiente</td><td>+1 / +2</td></tr>
+            <tr><td>Notebook sin base</td><td>+2</td></tr>
+            <tr><td>Horas PC ≥ 6</td><td>+1</td></tr>
+          </tbody>
+        </table>
+        <div class="manual-note">Promedio operativo = (punt_edad + punt_puesto + punt_salud) / 3. Si falta edad o salud: <strong>Pendiente</strong>.</div>
+      </div>
+
+      <div class="manual-card">
+        <h3>Paso 4. Semáforo y Acción Automática</h3>
+        <p>
+          <span class="chip ok">Bajo: 0-3</span>
+          <span class="chip warn">Medio: 4-6</span>
+          <span class="chip risk">Alto: 7+</span>
+        </p>
+        <p>
+          La acción se calcula automáticamente:
+          <span class="chip info">Condición adecuada</span>
+          <span class="chip warn">Programado</span>
+          <span class="chip risk">Urgente</span>
+        </p>
+      </div>
+
+      <div class="manual-card">
+        <h3>Paso 5. Gestión del Caso</h3>
+        <p>Flujo: <strong>Programado → Riesgo evaluado → Implementado → Verificado → Cerrado</strong></p>
+        <p>Usar botones según corresponda: <strong>Reevaluar</strong> o <strong>Cerrar caso</strong>.</p>
+      </div>
+    </div>
+
+    <div>
+      <div class="manual-card">
+        <h3>Alertas Automáticas</h3>
+        <ul class="manual-list">
+          <li>Edad 60+: alerta.</li>
+          <li>Edad 70+: crítica.</li>
+          <li>Horas PC &gt; 6.</li>
+          <li>Puntaje puesto alto.</li>
+          <li>Caso urgente.</li>
+        </ul>
+      </div>
+
+      <div class="manual-card">
+        <h3>Auditoría y Trazabilidad</h3>
+        <ul class="manual-list">
+          <li>Fecha y hora de cada cambio.</li>
+          <li>Usuario/evaluador.</li>
+          <li>Campos modificados.</li>
+          <li>Snapshot completo del registro.</li>
+        </ul>
+      </div>
+
+      <div class="manual-card">
+        <h3>Validación PRO (Paralelo)</h3>
+        <p>Comparación actual vs modelo PRO para revisión técnica:</p>
+        <div class="manual-note"><code>/sst/ergonomia/pro_validacion?limit=100</code></div>
+      </div>
+
+      <div class="manual-card">
+        <h3>Criterio de Campo</h3>
+        <p>Completar datos reales, guardar, y concentrarse en casos con alerta o semáforo medio/alto.</p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

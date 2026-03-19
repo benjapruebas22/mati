@@ -1,0 +1,38 @@
+Flask==3.1.1
+flask-cors==6.0.1
+Flask-WTF==1.2.2
+Jinja2==3.1.6
+Werkzeug==3.1.3
+WTForms==3.2.1
+itsdangerous==2.2.0
+MarkupSafe==3.0.2
+blinker==1.9.0
+click==8.1.8
+
+# Data & Database
+SQLAlchemy==2.0.43
+sqlite3
+
+# Utilities
+python-dateutil==2.9.0.post0
+pytz==2025.2
+requests==2.32.4
+urllib3==2.5.0
+charset-normalizer==3.4.2
+idna==3.10
+certifi==2025.7.14
+
+# Excel handling
+openpyxl==3.1.5
+pandas==2.3.0
+numpy==2.3.0
+
+# Reports
+reportlab==4.4.2
+pillow==11.3.0
+qrcode==8.2
+
+# Other
+gTTS==2.5.4
+beautifulsoup4==4.13.4
+soupsieve==2.7

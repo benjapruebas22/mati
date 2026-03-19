@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="sedes-section">
+
+  <h2>Checklist Vehicular</h2>
+
+  <form method="post" class="form-soft">
+    <label>Fecha</label>
+    <input type="date" name="fecha" required>
+
+    <label>Vehículo</label>
+    <select name="patente" required>
+      {% for v in vehiculos %}
+      <option value="{{ v.patente }}">{{ v.codigo_interno }} — {{ v.patente }}</option>
+      {% endfor %}
+    </select>
+
+    <label>Chofer</label>
+    <select name="chofer_id">
+      <option value="">--</option>
+      {% for c in choferes %}
+      <option value="{{ c.id }}">{{ c.agente }}</option>
+      {% endfor %}
+    </select>
+
+    <label>Tipo</label>
+    <select name="tipo" required>
+      <option value="salida">Salida</option>
+      <option value="entrada">Entrada</option>
+    </select>
+
+    <div style="margin-top:8px">
+      {% for it in items %}
+      <div class="check-row">
+        <label>
+          <input type="checkbox" name="item_{{ it.id }}" checked>
+          {{ it.nombre }}
+        </label>
+        <input type="text" name="nota_{{ it.id }}" placeholder="nota opcional">
+      </div>
+      {% endfor %}
+    </div>
+
+    <label>Observaciones generales</label>
+    <input type="text" name="observaciones">
+
+    <button class="btn primary" type="submit">Guardar checklist</button>
+  </form>
+
+  <hr style="margin:12px 0">
+
+  <table class="table-soft">
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Vehículo</th>
+        <th>Chofer</th>
+        <th>Tipo</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in registros %}
+      <tr>
+        <td>{{ r.fecha }}</td>
+        <td>{{ r.codigo_interno }} — {{ r.patente }}</td>
+        <td>{{ r.chofer_nombre or "-" }}</td>
+        <td>{{ r.tipo }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

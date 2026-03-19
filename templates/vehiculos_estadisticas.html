@@ -1,0 +1,445 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  .stats-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .stats-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .stats-title {
+    margin: 0;
+    font-size: 16px;
+  }
+
+  .stats-sub {
+    margin: 2px 0 0;
+    color: #64748b;
+    font-size: 11px;
+  }
+
+  .card {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #fff;
+    overflow: hidden;
+  }
+
+  .card-body {
+    padding: 8px 10px;
+  }
+
+  .filters {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(120px, 1fr));
+    gap: 6px;
+    align-items: end;
+  }
+
+  .filters label {
+    font-size: 10px;
+    color: #64748b;
+  }
+
+  .filters input,
+  .filters select {
+    width: 100%;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    font-size: 11px;
+  }
+
+  .filters .wide {
+    grid-column: span 1;
+  }
+
+  .filters .actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .kpi-box {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #f8fafc;
+    padding: 6px 8px;
+  }
+
+  .kpi-box .kpi-l {
+    font-size: 10px;
+    color: #64748b;
+  }
+
+  .kpi-box .kpi-v {
+    font-size: 13px;
+    font-weight: 900;
+    color: #0f172a;
+  }
+
+  .charts-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .chart-box {
+    padding: 8px 10px;
+  }
+
+  .chart-mini {
+    position: relative;
+    height: 150px;
+    max-height: 150px;
+  }
+
+  .chart-mini canvas {
+    width: 100% !important;
+    height: 150px !important;
+    max-height: 150px !important;
+    display: block;
+  }
+
+  .chart-title {
+    margin: 0 0 4px;
+    font-size: 12px;
+  }
+
+  .table-wrap {
+    padding: 8px 10px 10px;
+    overflow: auto;
+  }
+
+  .tables-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .table-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #fff;
+    overflow: hidden;
+  }
+
+  .table-card h4 {
+    margin: 0;
+    padding: 8px 10px;
+    font-size: 12px;
+    border-bottom: 1px solid #eef2f7;
+    background: #f8fafc;
+  }
+
+  .table-card .table-wrap {
+    max-height: 180px;
+    padding: 4px 8px 8px;
+  }
+
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+
+  .table th,
+  .table td {
+    padding: 6px;
+    border-bottom: 1px solid #eef2f7;
+    white-space: nowrap;
+  }
+
+    @media (max-width: 1100px) {
+    .filters {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .kpi-row {
+      grid-template-columns: 1fr;
+    }
+
+    .charts-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .tables-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<section class="veh-page">
+    <header class="stats-head">
+        <div>
+            <h1 class="stats-title">Estadisticas de Vehiculos</h1>
+            <p class="stats-sub">Graficos por KM recorridos (vehiculo, chofer, persona).</p>
+        </div>
+    </header>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="get" class="filters">
+                <div>
+                    <label>Desde</label>
+                    <input type="date" name="desde" value="{{ desde }}">
+                </div>
+                <div>
+                    <label>Hasta</label>
+                    <input type="date" name="hasta" value="{{ hasta }}">
+                </div>
+                <div>
+                    <label>Vehiculo</label>
+                    <select name="patente">
+                        <option value="">Todos</option>
+                        {% for v in vehiculos %}
+                        <option value="{{ v.patente }}" {% if patente==v.patente %}selected{% endif %}>
+                            {{ v.codigo_interno }} - {{ v.patente }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label>Chofer</label>
+                    <select name="chofer_id">
+                        <option value="">Todos</option>
+                        {% for c in choferes %}
+                        <option value="{{ c.id }}" {% if chofer_id|string==c.id|string %}selected{% endif %}>
+                            {{ c.agente }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="wide">
+                    <label>Persona trasladada</label>
+                    <select name="personal_id">
+                        <option value="">Todas</option>
+                        {% for p in personal %}
+                        <option value="{{ p.id }}" {% if personal_id|string==p.id|string %}selected{% endif %}>
+                            {{ p.nombre_apellido }} - {{ p.dependencia }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="actions">
+                    <button class="btn btn-mpd" type="submit">Aplicar filtros</button>
+                    <a class="btn" href="{{ url_for('vehiculos_estadisticas') }}">Limpiar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="kpi-row">
+        <div class="kpi-box">
+            <div class="kpi-l">Tramos</div>
+            <div class="kpi-v">{{ kpi.tramos }}</div>
+        </div>
+        <div class="kpi-box">
+            <div class="kpi-l">KM total</div>
+            <div class="kpi-v">{{ '%.1f'|format(kpi.km_total) }}</div>
+        </div>
+        <div class="kpi-box">
+            <div class="kpi-l">Promedio KM / tramo</div>
+            <div class="kpi-v">{{ '%.1f'|format(kpi.km_prom_tramo) }}</div>
+        </div>
+    </div>
+
+    <div class="charts-grid">
+        <div class="card">
+            <div class="chart-box">
+                <h3 class="chart-title">Distribucion KM por vehiculo (torta)</h3>
+                <div class="chart-mini">
+                    <canvas id="chVehiculoPie"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="chart-box">
+                <h3 class="chart-title">KM por Chofer (Top 20)</h3>
+                <canvas id="chChofer" height="75"></canvas>
+            </div>
+        </div>
+        <div class="card">
+            <div class="chart-box">
+                <h3 class="chart-title">KM por Vehiculo (Top 20)</h3>
+                <canvas id="chVehiculo" height="75"></canvas>
+            </div>
+        </div>
+        <div class="card">
+            <div class="chart-box">
+                <h3 class="chart-title">KM por Persona trasladada (Top 20)</h3>
+                <canvas id="chPersona" height="75"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <h3 style="margin:0 0 8px 0;font-size:13px">Tablas compactas</h3>
+            <div class="tables-grid">
+                <div class="table-card">
+                    <h4>Chofer</h4>
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Chofer</th>
+                                    <th>KM</th>
+                                    <th>Tramos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for r in por_chofer %}
+                                <tr>
+                                    <td>{{ r.label }}</td>
+                                    <td>{{ '%.1f'|format(r.km) }}</td>
+                                    <td>{{ r.tramos }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <h4>Vehiculo</h4>
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Vehiculo</th>
+                                    <th>KM</th>
+                                    <th>Tramos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for r in por_vehiculo %}
+                                <tr>
+                                    <td>{{ r.label }}</td>
+                                    <td>{{ '%.1f'|format(r.km) }}</td>
+                                    <td>{{ r.tramos }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <h4>Persona</h4>
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Persona</th>
+                                    <th>KM</th>
+                                    <th>Tramos</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for r in por_persona %}
+                                <tr>
+                                    <td>{{ r.label }}</td>
+                                    <td>{{ '%.1f'|format(r.km) }}</td>
+                                    <td>{{ r.tramos }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const choferLabels = {{ por_chofer| map(attribute = 'label') | list | tojson }};
+    const choferKm = {{ por_chofer| map(attribute = 'km') | list | tojson }};
+
+    const vehLabels = {{ por_vehiculo| map(attribute = 'label') | list | tojson }};
+    const vehKm = {{ por_vehiculo| map(attribute = 'km') | list | tojson }};
+
+    const perLabels = {{ por_persona| map(attribute = 'label') | list | tojson }};
+    const perKm = {{ por_persona| map(attribute = 'km') | list | tojson }};
+
+    new Chart(document.getElementById('chChofer'), {
+        type: 'bar',
+        data: { labels: choferLabels, datasets: [{ label: 'KM', data: choferKm }] },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+
+    new Chart(document.getElementById('chVehiculo'), {
+        type: 'bar',
+        data: { labels: vehLabels, datasets: [{ label: 'KM', data: vehKm }] },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+
+    new Chart(document.getElementById('chPersona'), {
+        type: 'bar',
+        data: { labels: perLabels, datasets: [{ label: 'KM', data: perKm }] },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+
+    const pieLabels = [];
+    const pieData = [];
+    const maxPie = 6;
+    let otros = 0;
+    vehKm.forEach((v, i) => {
+        if (i < maxPie) {
+            pieLabels.push(vehLabels[i]);
+            pieData.push(v);
+        } else {
+            otros += v;
+        }
+    });
+    if (otros > 0) {
+        pieLabels.push('Otros');
+        pieData.push(otros);
+    }
+
+    const pieColors = [
+        '#60a5fa', '#34d399', '#fbbf24', '#f472b6',
+        '#a78bfa', '#22d3ee', '#f97316'
+    ];
+
+    new Chart(document.getElementById('chVehiculoPie'), {
+        type: 'doughnut',
+        data: {
+            labels: pieLabels,
+            datasets: [{
+                data: pieData,
+                backgroundColor: pieColors,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom' }
+            },
+            cutout: '55%'
+        }
+    });
+</script>
+
+{% endblock %}

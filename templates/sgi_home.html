@@ -1,0 +1,882 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  .sgi-shell {
+    display: grid;
+    gap: 9px;
+    width: min(1280px, 100%);
+    margin: 0 auto;
+  }
+
+  .sgi-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .sgi-head h1 {
+    margin: 0;
+    font-size: clamp(22px, 2vw, 30px);
+    line-height: 1.1;
+    color: #0b1f44;
+    font-weight: 900;
+  }
+
+  .sgi-title-s { color: #2f7a55; font-weight: 900; }
+  .sgi-title-g { color: #3f6f9c; font-weight: 900; }
+  .sgi-title-i { color: #6b5aa6; font-weight: 900; }
+
+  .sgi-head-main {
+    display: grid;
+    gap: 2px;
+  }
+
+  .sgi-head .section-sub {
+    margin: 6px 0 0;
+    font-size: 15px;
+    color: #4e6482;
+  }
+
+  .sgi-head-doc {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    border-radius: 999px;
+    border: 1px solid #e6c996;
+    background: #fff7e8;
+    color: #875300;
+    font-weight: 800;
+    font-size: 13px;
+    padding: 0 14px;
+    text-decoration: none;
+  }
+
+  .sgi-head-doc:hover { background: #ffefcd; }
+
+  .sgi-menu-board {
+    border: 1px solid #d9e5f6;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #f8fbff 0%, #f2f7ff 100%);
+    padding: 6px 8px;
+    display: grid;
+    gap: 6px;
+  }
+
+  .sgi-menu-main {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: .4px;
+    color: #1e3a5f;
+    text-transform: uppercase;
+    text-align: center;
+  }
+
+  .sgi-menu-groups {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .sgi-menu-group {
+    border: 1px solid #dbe4f6;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 6px 8px;
+    display: grid;
+    gap: 4px;
+  }
+
+  .sgi-menu-group .grp-title {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: .35px;
+    color: #4b6488;
+    text-transform: uppercase;
+    text-align: center;
+  }
+
+  .sgi-menu-group .grp-links {
+    display: flex;
+    gap: 6px;
+    row-gap: 4px;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .sgi-menu-group .btn {
+    min-height: 28px;
+    min-width: 96px;
+    border-radius: 999px;
+    border: 1px solid #c9d4f7;
+    background: #f2f5ff;
+    color: #3c46c7;
+    font-weight: 800;
+    font-size: 10px;
+    padding: 0 10px;
+    line-height: 1;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    text-decoration: none;
+  }
+
+  .sgi-menu-group .btn.vehiculos { border-color: #86c8ff; background: #eef7ff; color: #0e5f97; }
+  .sgi-menu-group .btn.obras { border-color: #9fe8b8; background: #ecfbf2; color: #0d7a3f; }
+  .sgi-menu-group .btn.progreso { border-color: #c9b7f4; background: #f5f1ff; color: #5b3fa7; }
+  .sgi-menu-group .btn.sedes { border-color: #bcd3ff; background: #f1f6ff; color: #2d5da6; }
+  .sgi-menu-group .btn.mapa { border-color: #a9e5ef; background: #ecfbff; color: #0f6f85; }
+  .sgi-menu-group .btn.agentes { border-color: #f0bdd1; background: #fff2f8; color: #a23f6a; }
+  .sgi-menu-group .btn.personal { border-color: #c9b7f4; background: #f5f1ff; color: #5b3fa7; }
+  .sgi-menu-group .btn.docs { border-color: #f0d7a6; background: #fff8ea; color: #8a5a00; }
+
+  .sgi-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+    align-items: stretch;
+  }
+
+  .sgi-kpi {
+    border: 1px solid #d6e5f8;
+    border-radius: 12px;
+    background: #f5f9ff;
+    padding: 8px 10px;
+    display: grid;
+    gap: 3px;
+    min-height: 88px;
+    text-align: left;
+    align-content: start;
+  }
+
+  .sgi-kpi .l {
+    font-size: 10px;
+    font-weight: 900;
+    color: #2d5486;
+    line-height: 1.15;
+    text-transform: uppercase;
+    letter-spacing: .02em;
+  }
+
+  .sgi-kpi .v {
+    font-size: clamp(18px, 1.1vw, 22px);
+    font-weight: 900;
+    line-height: 1.05;
+    color: #0e2f57;
+    letter-spacing: -.01em;
+  }
+
+  .sgi-kpi .s {
+    font-size: 11px;
+    color: #4b6890;
+    line-height: 1.2;
+    margin: 0;
+  }
+
+  .sgi-kpi .s.hot {
+    color: #b45309;
+    font-weight: 900;
+  }
+
+  .sgi-kpi.alcance { background: #eef7f2; border-color: #b9e3c8; }
+  .sgi-kpi.alcance .v { color: #0d6f45; }
+  .sgi-kpi.sedes { background: #fff7e9; border-color: #f3d08c; }
+  .sgi-kpi.sedes .v { color: #9a5600; }
+  .sgi-kpi.flota { background: #eef5ff; border-color: #c6d7f0; }
+  .sgi-kpi.flota .v { color: #1d4f84; }
+  .sgi-kpi.seguimiento { background: #e9f8f4; border-color: #9edfcc; }
+  .sgi-kpi.seguimiento .v { color: #0f6b5a; }
+  .sgi-kpi.obras { background: #fff4ed; border-color: #fec89a; }
+  .sgi-kpi.obras .v { color: #b45309; }
+  .sgi-kpi.alertas { background: #f4f5f9; border-color: #d8deeb; }
+  .sgi-kpi.alertas .v { color: #334155; }
+
+  /* Semaforo pastel operativo */
+  .sgi-kpi.state-ok {
+    background: #edf9f3;
+    border-color: #9edfcc;
+  }
+  .sgi-kpi.state-ok .v { color: #0f6b5a; }
+
+  .sgi-kpi.state-warn {
+    background: #fff8ea;
+    border-color: #f3d08c;
+  }
+  .sgi-kpi.state-warn .v { color: #9a5600; }
+
+  .sgi-kpi.state-danger {
+    background: #fff1f1;
+    border-color: #f7c3c3;
+  }
+  .sgi-kpi.state-danger .v { color: #b42318; }
+  .sgi-kpi.state-danger .s.hot { color: #b42318; }
+
+  .state-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 1px 8px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    font-weight: 800;
+    font-size: 10px;
+    line-height: 1.2;
+  }
+  .state-chip::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: .9;
+  }
+  .state-chip.ok { background:#ecfdf5; border-color:#a7f3d0; color:#0f6b5a; }
+  .state-chip.warn { background:#fff7ed; border-color:#fdba74; color:#9a5600; }
+  .state-chip.danger { background:#fef2f2; border-color:#fecaca; color:#b42318; }
+
+  .sgi-kpi-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .sgi-kpi-secondary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .sgi-kpi.secondary {
+    min-height: 58px;
+    padding: 7px 10px;
+    border-radius: 10px;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    column-gap: 10px;
+  }
+
+  .sgi-kpi.secondary .v {
+    font-size: 24px;
+    line-height: 1;
+  }
+
+  .sgi-kpi.secondary .l {
+    font-size: 10px;
+    margin: 0 0 2px;
+  }
+
+  .sgi-kpi.secondary .s {
+    font-size: 11px;
+  }
+
+
+  .sgi-modules {
+    border: 1px solid #dbe4f2;
+    border-radius: 12px;
+    background: #f8fbff;
+    padding: 7px 8px;
+    display: grid;
+    gap: 6px;
+  }
+
+  .sgi-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .sgi-section-head h2 {
+    margin: 0;
+    font-size: 14px;
+    color: #153a66;
+    font-weight: 900;
+  }
+
+  .sgi-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 20px;
+    border-radius: 999px;
+    border: 1px solid #cddbf2;
+    background: #edf3ff;
+    color: #2f4e7b;
+    font-weight: 800;
+    font-size: 9px;
+    padding: 0 8px;
+  }
+
+  .sgi-mod-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .sgi-mod {
+    border: 1px solid #d7e3f5;
+    border-radius: 11px;
+    background: #ffffff;
+    padding: 6px 7px;
+    display: grid;
+    gap: 4px;
+  }
+
+
+  .sgi-mod.mod-flota { background: #eef5ff; border-color: #c6d7f0; }
+  .sgi-mod.mod-obras { background: #fff4ed; border-color: #fec89a; }
+  .sgi-mod.mod-sedes { background: #fff7e9; border-color: #f3d08c; }
+  .sgi-mod.mod-materiales { background: #f4f5f9; border-color: #d8deeb; }
+  .sgi-mod.mod-logistica { background: #e9f8f4; border-color: #9edfcc; }
+  .sgi-mod.mod-registro { background: #eaf8ef; border-color: #9fe8b8; }
+
+  .sgi-mod-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  .sgi-mod h3 {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.12;
+    color: #163a64;
+    font-weight: 900;
+  }
+
+  .sgi-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 18px;
+    border-radius: 999px;
+    padding: 0 6px;
+    font-size: 8px;
+    font-weight: 900;
+    border: 1px solid transparent;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .sgi-badge.ok { color: #0f6f44; background: #e7faef; border-color: #88ddb6; }
+  .sgi-badge.dev { color: #8a5a00; background: #fff4de; border-color: #edd08e; }
+
+  .sgi-mod-kpi {
+    margin: 0;
+    font-size: 10px;
+    color: #2e4f79;
+    line-height: 1.15;
+    font-weight: 700;
+  }
+
+  .sgi-mod-actions {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .sgi-mod-actions .btn {
+    min-height: 24px;
+    border-radius: 999px;
+    border: 1px solid #bfdbfe;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 0 8px;
+    text-decoration: none;
+  }
+
+  .sgi-link-panel {
+    border: 1px dashed #cddbf2;
+    border-radius: 8px;
+    background: #f8fbff;
+    padding: 3px 4px;
+  }
+
+  .sgi-link-panel summary {
+    cursor: pointer;
+    font-size: 9px;
+    font-weight: 800;
+    color: #2f4e7b;
+    list-style: none;
+  }
+
+  .sgi-link-panel summary::-webkit-details-marker { display: none; }
+
+  .sgi-drive-wrap {
+    margin-top: 3px;
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 3px;
+    align-items: center;
+  }
+
+  .sgi-drive-input {
+    height: 24px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 0 7px;
+    font-size: 9px;
+    color: #1e293b;
+    background: #fff;
+  }
+
+  .sgi-drive-btn {
+    height: 24px;
+    border: 1px solid #c7d2fe;
+    border-radius: 8px;
+    background: #eef2ff;
+    color: #3730a3;
+    font-size: 9px;
+    font-weight: 800;
+    padding: 0 7px;
+    cursor: pointer;
+  }
+
+  .sgi-drive-btn.open {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+    color: #1d4ed8;
+  }
+
+  .sgi-accordions {
+    border: 1px solid #dbe4f2;
+    border-radius: 16px;
+    background: #f8fbff;
+    padding: 10px;
+    display: grid;
+    gap: 8px;
+  }
+
+  .sgi-accordions > summary {
+    list-style: none;
+    cursor: pointer;
+    margin: 0;
+    font-size: 16px;
+    color: #153a66;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .sgi-accordions > summary::-webkit-details-marker { display: none; }
+
+  .sgi-accordions > summary::after {
+    content: "+";
+    font-size: 18px;
+    line-height: 1;
+    color: #54719b;
+  }
+
+  .sgi-accordions[open] > summary::after { content: "-"; }
+
+  .sgi-accordions-body {
+    margin-top: 8px;
+    display: grid;
+    gap: 8px;
+  }
+
+  .sgi-accordion {
+    border: 1px solid #d7e3f5;
+    border-radius: 11px;
+    background: #ffffff;
+    padding: 8px 10px;
+  }
+
+  .sgi-accordion summary {
+    list-style: none;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 900;
+    color: #1e3a5f;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .sgi-accordion summary::-webkit-details-marker { display: none; }
+
+  .sgi-accordion summary::after {
+    content: "+";
+    font-size: 18px;
+    line-height: 1;
+    color: #54719b;
+  }
+
+  .sgi-accordion[open] summary::after { content: "-"; }
+
+  .sgi-acc-body {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #e9eef7;
+    display: grid;
+    gap: 6px;
+  }
+
+  .sgi-acc-body p {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.35;
+    color: #3a567e;
+  }
+
+  .sgi-footer {
+    margin: 0;
+    border: 1px solid #dbe7f9;
+    background: #f7fbff;
+    border-radius: 12px;
+    padding: 8px 10px;
+    color: #375983;
+    font-size: 12px;
+    line-height: 1.3;
+    font-weight: 700;
+  }
+
+  @media (max-width: 1300px) {
+    .sgi-kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .sgi-mod-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
+  @media (max-width: 850px) {
+    .sgi-head {
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+    .sgi-menu-groups { grid-template-columns: 1fr; }
+    .sgi-kpi-grid { grid-template-columns: 1fr 1fr; }
+    .sgi-mod-grid { grid-template-columns: 1fr; }
+    .sgi-drive-wrap { grid-template-columns: 1fr 1fr; }
+    .sgi-drive-wrap .sgi-drive-input { grid-column: 1 / -1; }
+  }
+
+  @media (max-width: 560px) {
+    .sgi-kpi-grid { grid-template-columns: 1fr; }
+    .sgi-head-doc { width: 100%; }
+  }
+</style>
+
+<section class="sgi-shell">
+  <header class="sgi-head">
+    <div class="sgi-head-main">
+      <h1>Sistema Integrado de Gestion de Intendencia (<span class="sgi-title-s">S</span><span class="sgi-title-g">G</span><span class="sgi-title-i">I</span>)</h1>
+      <p class="section-sub">Panel operativo, logistica y control de recursos.</p>
+    </div>
+    <a class="sgi-head-doc" href="{{ url_for('sgi_documentacion') }}">Documentacion del sistema</a>
+  </header>
+
+  <section class="sgi-menu-board">
+    <p class="sgi-menu-main">Menu principal</p>
+    <div class="sgi-menu-groups">
+      <div class="sgi-menu-group">
+        <p class="grp-title">Registros diarios</p>
+        <div class="grp-links">
+          <a class="btn vehiculos" href="{{ url_for('vehiculos_control_diario') }}">Vehiculos</a>
+          <a class="btn obras" href="{{ url_for('obras_home') }}">Obras</a>
+          <a class="btn progreso" href="{{ url_for('dashboard_sede_estado_manual') }}">Progreso sedes</a>
+        </div>
+      </div>
+
+      <div class="sgi-menu-group">
+        <p class="grp-title">Infraestructura</p>
+        <div class="grp-links">
+          <a class="btn sedes" href="{{ url_for('sede_ficha', codigo='S01', home=1) }}">Sedes</a>
+          <a class="btn mapa" href="{{ url_for('mapa_ssj') }}">Mapa</a>
+        </div>
+      </div>
+
+      <div class="sgi-menu-group">
+        <p class="grp-title">Gestion</p>
+        <div class="grp-links">
+          <a class="btn personal" href="{{ url_for('personal_sede_home') }}">Personal MPD</a>
+          <a class="btn agentes" href="{{ url_for('agentes_home') }}">Agentes</a>
+          <a class="btn mapa" href="{{ url_for('sede_ficha', codigo='S01', home=1, cal='1') }}">Calendario</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sgi-kpi-grid">
+    <article class="sgi-kpi flota {% if sgi.vehiculos.estado == 'Fuera de servicio' %}state-danger{% elif sgi.vehiculos.estado == 'Atencion' %}state-warn{% else %}state-ok{% endif %}">
+      <div class="sgi-kpi-top">
+        <span class="l">Vehiculos</span>
+        <span class="state-chip {% if sgi.vehiculos.estado == 'Fuera de servicio' %}danger{% elif sgi.vehiculos.estado == 'Atencion' %}warn{% else %}ok{% endif %}">{{ sgi.vehiculos.estado }}</span>
+      </div>
+      <span class="v">{{ sgi.vehiculos.total }} unidades</span>
+      <span class="s">Estado: {{ sgi.vehiculos.estado }}</span>
+      <span class="s">{{ sgi.vehiculos.fuera_servicio|int }} fuera de servicio</span>
+    </article>
+
+    <article class="sgi-kpi obras {% if sgi.obras.alta_prioridad|int > 0 %}state-warn{% else %}state-ok{% endif %}">
+      <div class="sgi-kpi-top">
+        <span class="l">Obras activas</span>
+        <span class="state-chip {% if sgi.obras.alta_prioridad|int > 0 %}warn{% else %}ok{% endif %}">{% if sgi.obras.alta_prioridad|int > 0 %}Atencion{% else %}Normal{% endif %}</span>
+      </div>
+      <span class="v">{{ sgi.obras.pendientes }} pendientes</span>
+      <span class="s">{{ sgi.obras.en_curso }} en curso</span>
+      <span class="s{% if sgi.obras.alta_prioridad|int > 0 %} hot{% endif %}">
+        {% if sgi.obras.alta_prioridad|int > 0 %}
+          {{ sgi.obras.alta_prioridad }} alta prioridad
+        {% else %}
+          Sin alta prioridad
+        {% endif %}
+      </span>
+    </article>
+
+    <article class="sgi-kpi sedes {% if sgi.sedes.con_alertas|int > 0 %}state-warn{% else %}state-ok{% endif %}">
+      <div class="sgi-kpi-top">
+        <span class="l">Sedes registradas</span>
+        <span class="state-chip {% if sgi.sedes.con_alertas|int > 0 %}warn{% else %}ok{% endif %}">{% if sgi.sedes.con_alertas|int > 0 %}Atencion{% else %}Normal{% endif %}</span>
+      </div>
+      <span class="v">{{ sgi.sedes.total }} registradas</span>
+      <span class="s">{{ sgi.sedes.con_alertas|int }} con alertas</span>
+    </article>
+
+    <article class="sgi-kpi seguimiento state-ok">
+      <div class="sgi-kpi-top">
+        <span class="l">Seguimiento operativo</span>
+        <span class="state-chip ok">{{ sgi.seguimiento.estado }}</span>
+      </div>
+      <span class="v">{{ sgi.seguimiento.estado }}</span>
+      <span class="s">{{ sgi.seguimiento.novedades_hoy }} novedades hoy</span>
+      <span class="s">Registro operativo diario consolidado</span>
+    </article>
+
+    <article class="sgi-kpi alertas {% if sgi.alertas.criticas|int > 0 %}state-danger{% else %}state-ok{% endif %}">
+      <div class="sgi-kpi-top">
+        <span class="l">Alertas</span>
+        <span class="state-chip {% if sgi.alertas.criticas|int > 0 %}danger{% else %}ok{% endif %}">{% if sgi.alertas.criticas|int > 0 %}Criticas{% else %}Sin criticas{% endif %}</span>
+      </div>
+      <span class="v">{{ sgi.alertas.estado }}</span>
+      <span class="s">
+        {% if sgi.alertas.criticas|int > 0 %}
+          {{ sgi.alertas.criticas }} criticas
+        {% else %}
+          Sin criticas
+        {% endif %}
+      </span>
+      <span class="s">Seniales de atencion priorizadas</span>
+    </article>
+  </section>
+
+  <section class="sgi-kpi-secondary">
+    <article class="sgi-kpi alcance secondary">
+      <span class="v">{{ sgi.alcance.sigla }}</span>
+      <div>
+        <p class="l">Cobertura operativa</p>
+        <p class="s">MPD activo</p>
+      </div>
+    </article>
+  </section>
+
+  <section class="sgi-modules">
+    <div class="sgi-section-head">
+      <h2>Modulos principales SGI</h2>
+    </div>
+
+    <div class="sgi-mod-grid">
+      <article class="sgi-mod mod-flota">
+        <div class="sgi-mod-top">
+          <h3>1. Gestion de vehiculos</h3>
+          <span class="sgi-badge ok">Activo</span>
+        </div>
+        <p class="sgi-mod-kpi">Traslados, kilometraje y combustible.</p>
+        <div class="sgi-mod-actions">
+          <a class="btn" href="{{ url_for('vehiculos_control_diario') }}">Ver modulo</a>
+        </div>
+        <details class="sgi-link-panel">
+          <summary>Enlace operativo</summary>
+          <div class="sgi-drive-wrap">
+            <input class="sgi-drive-input" data-drive-key="m1" placeholder="Pegar enlace Drive (https://...)" />
+            <button type="button" class="sgi-drive-btn" data-drive-save="m1">Guardar</button>
+            <button type="button" class="sgi-drive-btn open" data-drive-open="m1">Abrir</button>
+          </div>
+        </details>
+      </article>
+
+      <article class="sgi-mod mod-obras">
+        <div class="sgi-mod-top">
+          <h3>2. Obras y mantenimiento</h3>
+          <span class="sgi-badge ok">Activo</span>
+        </div>
+        <p class="sgi-mod-kpi">Reparaciones y seguimiento por sede.</p>
+        <div class="sgi-mod-actions">
+          <a class="btn" href="{{ url_for('obras_home') }}">Ver modulo</a>
+        </div>
+        <details class="sgi-link-panel">
+          <summary>Enlace operativo</summary>
+          <div class="sgi-drive-wrap">
+            <input class="sgi-drive-input" data-drive-key="m2" placeholder="Pegar enlace Drive (https://...)" />
+            <button type="button" class="sgi-drive-btn" data-drive-save="m2">Guardar</button>
+            <button type="button" class="sgi-drive-btn open" data-drive-open="m2">Abrir</button>
+          </div>
+        </details>
+      </article>
+
+      <article class="sgi-mod mod-sedes">
+        <div class="sgi-mod-top">
+          <h3>3. Gestion de sedes</h3>
+          <span class="sgi-badge ok">Activo</span>
+        </div>
+        <p class="sgi-mod-kpi">Inventario institucional y condiciones edilicias.</p>
+        <div class="sgi-mod-actions">
+          <a class="btn" href="{{ url_for('sede_ficha', codigo='S01', home=1) }}">Ver modulo</a>
+        </div>
+        <details class="sgi-link-panel">
+          <summary>Enlace operativo</summary>
+          <div class="sgi-drive-wrap">
+            <input class="sgi-drive-input" data-drive-key="m3" placeholder="Pegar enlace Drive (https://...)" />
+            <button type="button" class="sgi-drive-btn" data-drive-save="m3">Guardar</button>
+            <button type="button" class="sgi-drive-btn open" data-drive-open="m3">Abrir</button>
+          </div>
+        </details>
+      </article>
+
+      <article class="sgi-mod mod-materiales">
+        <div class="sgi-mod-top">
+          <h3>4. Materiales e insumos</h3>
+          <span class="sgi-badge dev">En desarrollo</span>
+        </div>
+        <p class="sgi-mod-kpi">Stock y asignacion de recursos.</p>
+        <div class="sgi-mod-actions">
+          <a class="btn" href="{{ url_for('depositos_home') }}">Ver modulo</a>
+        </div>
+        <details class="sgi-link-panel">
+          <summary>Enlace operativo</summary>
+          <div class="sgi-drive-wrap">
+            <input class="sgi-drive-input" data-drive-key="m4" placeholder="Pegar enlace Drive (https://...)" />
+            <button type="button" class="sgi-drive-btn" data-drive-save="m4">Guardar</button>
+            <button type="button" class="sgi-drive-btn open" data-drive-open="m4">Abrir</button>
+          </div>
+        </details>
+      </article>
+
+      <article class="sgi-mod mod-logistica">
+        <div class="sgi-mod-top">
+          <h3>5. Logistica operativa</h3>
+          <span class="sgi-badge ok">Activo</span>
+        </div>
+        <p class="sgi-mod-kpi">Coordinacion de traslados entre sedes.</p>
+        <div class="sgi-mod-actions">
+          <a class="btn" href="{{ url_for('mapa_ssj') }}">Ver modulo</a>
+        </div>
+        <details class="sgi-link-panel">
+          <summary>Enlace operativo</summary>
+          <div class="sgi-drive-wrap">
+            <input class="sgi-drive-input" data-drive-key="m5" placeholder="Pegar enlace Drive (https://...)" />
+            <button type="button" class="sgi-drive-btn" data-drive-save="m5">Guardar</button>
+            <button type="button" class="sgi-drive-btn open" data-drive-open="m5">Abrir</button>
+          </div>
+        </details>
+      </article>
+
+      <article class="sgi-mod mod-registro">
+        <div class="sgi-mod-top">
+          <h3>6. Registro operativo y estadisticas</h3>
+          <span class="sgi-badge ok">Activo</span>
+        </div>
+        <p class="sgi-mod-kpi">Registro operativo e indicadores de gestion.</p>
+        <div class="sgi-mod-actions">
+          <a class="btn" href="{{ url_for('dashboard_sede_estado_manual') }}">Ver modulo</a>
+        </div>
+        <details class="sgi-link-panel">
+          <summary>Enlace operativo</summary>
+          <div class="sgi-drive-wrap">
+            <input class="sgi-drive-input" data-drive-key="m6" placeholder="Pegar enlace Drive (https://...)" />
+            <button type="button" class="sgi-drive-btn" data-drive-save="m6">Guardar</button>
+            <button type="button" class="sgi-drive-btn open" data-drive-open="m6">Abrir</button>
+          </div>
+        </details>
+      </article>
+    </div>
+  </section>
+
+  <details class="sgi-accordions">
+    <summary>Informacion institucional (resumen oculto)</summary>
+
+    <div class="sgi-accordions-body">
+      <details class="sgi-accordion">
+        <summary>A) Alcance del sistema</summary>
+        <div class="sgi-acc-body">
+          <p>El SGI organiza, registra y optimiza la gestion diaria del Area Intendencia del Ministerio Publico de la Defensa.</p>
+          <p>Consolida informacion de mantenimiento, sedes, traslados, vehiculos, materiales y seguimiento operativo para mejorar planificacion y control.</p>
+        </div>
+      </details>
+
+      <details class="sgi-accordion">
+        <summary>B) Responsables operativos</summary>
+        <div class="sgi-acc-body">
+          <p><strong>Responsable operativo del SGI:</strong> Matias Calderari.</p>
+          <p><strong>Area:</strong> Intendencia.</p>
+          <p><strong>Coordinacion operativa:</strong> equipo de mantenimiento, choferes y personal de apoyo.</p>
+        </div>
+      </details>
+
+      <details class="sgi-accordion">
+        <summary>C) Descripcion institucional / marco general</summary>
+        <div class="sgi-acc-body">
+          <p>Sistema implementado en desarrollo progresivo con enfoque en trazabilidad operativa y mejora continua.</p>
+          <p>Integra gestion de sedes, vehiculos, obras, logistica y documentacion para seguimiento institucional unificado.</p>
+        </div>
+      </details>
+    </div>
+  </details>
+
+  <p class="sgi-footer">
+    El Sistema de Gestion Integral de Intendencia (SGI) consolida una gestion operativa trazable, con navegacion rapida y foco en indicadores de decision.
+  </p>
+</section>
+
+<script>
+  (function () {
+    function keyFor(id) { return "sgi_drive_link_" + id; }
+    function readInput(id) { return document.querySelector('[data-drive-key="' + id + '"]'); }
+
+    function normalizeUrl(v) {
+      var s = (v || "").trim();
+      if (!s) return "";
+      if (!/^https?:\/\//i.test(s)) s = "https://" + s;
+      return s;
+    }
+
+    document.querySelectorAll("[data-drive-save]").forEach(function (btn) {
+      var id = btn.getAttribute("data-drive-save");
+      var input = readInput(id);
+      if (input) input.value = localStorage.getItem(keyFor(id)) || "";
+
+      btn.addEventListener("click", function () {
+        if (!input) return;
+        var v = normalizeUrl(input.value);
+        if (!v) return;
+        input.value = v;
+        localStorage.setItem(keyFor(id), v);
+      });
+    });
+
+    document.querySelectorAll("[data-drive-open]").forEach(function (btn) {
+      var id = btn.getAttribute("data-drive-open");
+      btn.addEventListener("click", function () {
+        var input = readInput(id);
+        var v = normalizeUrl((input && input.value) || localStorage.getItem(keyFor(id)) || "");
+        if (!v) return;
+        if (input) input.value = v;
+        localStorage.setItem(keyFor(id), v);
+        window.open(v, "_blank", "noopener");
+      });
+    });
+  })();
+</script>
+{% endblock %}

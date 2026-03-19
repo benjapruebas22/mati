@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section style="max-width:1100px;margin:auto">
+  <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px">
+    <div>
+      <h2 style="margin:0 0 6px 0">Depositos · {{ sede.nombre }} ({{ sede.codigo }})</h2>
+      <p style="margin:0;color:#64748b;font-size:12px">
+        Edita los locales (D01, D02, etc.) y sus descripciones.
+      </p>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <a class="btn" href="{{ url_for('sede_ficha', codigo=sede.codigo, tab='depositos') }}">Volver a ficha</a>
+    </div>
+  </header>
+
+  <div style="border:1px solid #e5e7eb;border-radius:14px;background:#fff;padding:14px;margin-bottom:14px">
+    <form method="post" style="display:flex;gap:10px;flex-wrap:wrap;align-items:end">
+      <input type="hidden" name="action" value="add">
+      <div>
+        <label style="font-size:12px;color:#64748b">Local (D01)</label>
+        <input name="codigo_local" placeholder="D01" required
+          style="padding:10px;border-radius:10px;border:1px solid #e5e7eb;min-width:120px">
+      </div>
+      <div style="flex:1;min-width:220px">
+        <label style="font-size:12px;color:#64748b">Descripcion</label>
+        <input name="descripcion" placeholder="Ej: Cocina, Pasillo, Oficina..."
+          style="padding:10px;border-radius:10px;border:1px solid #e5e7eb;width:100%">
+      </div>
+      <button class="btn btn-mpd" type="submit" style="padding:10px 16px;border-radius:999px">
+        Agregar
+      </button>
+    </form>
+    <form method="post" style="margin-top:10px">
+      <input type="hidden" name="action" value="cleanup">
+      <button class="btn btn-mpd" type="submit" style="padding:6px 10px;border-color:#fecaca">
+        Depurar duplicados
+      </button>
+    </form>
+  </div>
+
+  <div style="border:1px solid #e5e7eb;border-radius:14px;background:#fff;overflow:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead style="background:#f8fafc;text-align:left">
+        <tr>
+          <th style="padding:10px;border-bottom:1px solid #e5e7eb;width:120px">Local</th>
+          <th style="padding:10px;border-bottom:1px solid #e5e7eb">Descripcion</th>
+          <th style="padding:10px;border-bottom:1px solid #e5e7eb;width:180px">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in depositos %}
+        <tr>
+          <td style="padding:10px;border-bottom:1px solid #eef2f7;font-weight:800">
+            {{ d.codigo_local }}
+          </td>
+          <td style="padding:10px;border-bottom:1px solid #eef2f7">
+            <form method="post" style="display:flex;gap:8px;align-items:center">
+              <input type="hidden" name="action" value="update">
+              <input type="hidden" name="dep_id" value="{{ d.id }}">
+              <input name="codigo_local" value="{{ d.codigo_local }}" required
+                style="padding:6px 8px;border-radius:8px;border:1px solid #e5e7eb;min-width:90px">
+              <input name="descripcion" value="{{ d.descripcion }}"
+                style="padding:6px 8px;border-radius:8px;border:1px solid #e5e7eb;width:100%">
+              <button class="btn btn-mpd" type="submit" style="padding:6px 10px">Guardar</button>
+            </form>
+          </td>
+          <td style="padding:10px;border-bottom:1px solid #eef2f7">
+            <form method="post" action="{{ url_for('sede_depositos_borrar', dep_id=d.id) }}"
+              onsubmit="return confirm('Eliminar este deposito?');">
+              <button class="btn btn-mpd" type="submit" style="padding:6px 10px;border-color:#fecaca">
+                Eliminar
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="3" style="padding:12px;color:#64748b;text-align:center">
+            No hay depositos cargados.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+{% endblock %}

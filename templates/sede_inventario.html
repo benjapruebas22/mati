@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  /* Layout general solo para esta pantalla */
+  .sede-inv-main{
+    display:grid;
+    grid-template-columns: 320px minmax(0,1fr);
+    gap:18px;
+    align-items:flex-start;
+  }
+  @media (max-width: 1100px){
+    .sede-inv-main{
+      grid-template-columns: minmax(0,1fr);
+    }
+  }
+
+  .sede-inv-main .right-panel-inner{
+    max-width: 980px;
+    margin: 0 auto;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+  }
+
+  .sede-inv-card{
+    background:#ffffff;
+    border-radius:14px;
+    padding:16px;
+    box-shadow:0 1px 3px rgba(15,23,42,.06);
+  }
+
+  .sede-inv-main .table-wrapper{
+    max-height:260px;
+    overflow-y:auto;
+    overflow-x:hidden;
+  }
+
+  .sede-inv-main table.table.basic{
+    width:100%;
+  }
+
+  .sede-inv-main .otros-detalle{
+    font-size:12px;
+  }
+
+  /* Grillas formulario */
+  .sede-inv-main .form-grid-1{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    gap:10px 14px;
+  }
+
+  .sede-inv-main .form-grid-3{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:10px 14px;
+  }
+
+  @media (max-width: 900px){
+    .sede-inv-main .form-grid-3{
+      grid-template-columns:minmax(0,1fr);
+    }
+  }
+
+  .sede-inv-main .inv-actions{
+    margin-top:12px;
+    display:flex;
+    justify-content:flex-end;
+    gap:8px;
+  }
+
+  /* Que el botón no se estire en altura */
+  .sede-inv-main .btn.primary{
+    height:auto;
+    align-self:flex-end;
+  }
+
+  /* Ajustes visuales solo para esta tarjeta de sede */
+  .sede-inv-main .map-card h3{
+    margin:0 0 10px;
+    font-size:17px;
+  }
+  .sede-inv-main .sede-mini-header{
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+  }
+  .sede-inv-main .sede-mini-info{
+    font-size:12px;
+    color:#6b7280;
+  }
+  .sede-inv-main .sede-mini-info strong{
+    display:block;
+    color:#111827;
+    font-size:14px;
+    margin-bottom:2px;
+  }
+</style>
+
+<section class="sede-inv-main">
+
+  <!-- PANEL IZQUIERDO: info sede + menú de la sede -->
+  <div class="left-panel">
+
+    <div class="hero">
+      <div class="map-card">
+        <h3>Inventario de la sede</h3>
+
+        <div class="sede-mini-header">
+          <!-- Código / fuero -->
+          <div style="
+              min-width:80px;
+              padding:10px 12px;
+              border-radius:14px;
+              background:#e5edff;
+              text-align:center;">
+            <div style="font-size:11px;color:#64748b;">Código</div>
+            <div style="font-weight:700;font-size:18px;">
+              {{ sede.codigo }}
+            </div>
+            <div style="margin-top:8px;font-size:11px;color:#334155;">
+              {{ sede.fuero|replace('_',' ')|title }}
+            </div>
+          </div>
+
+          <!-- Nombre y ubicación -->
+          <div class="sede-mini-info">
+            <strong>{{ sede.nombre }}</strong>
+            <div>
+              {{ sede.ciudad }}{% if sede.departamento %} · {{ sede.departamento }}{% endif %}
+            </div>
+            <div style="margin-top:6px;">
+              Inventario detallado de mobiliario y equipamiento
+              por depósito / ambiente.
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">
+          <a href="{{ url_for('sede_ficha', codigo=sede.codigo) }}"
+             class="btn xs outline-slate">
+            ⬅ Volver a ficha de sede
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Menú de módulos de la sede (vertical y ordenado) -->
+    <div class="buttons-row" style="flex-direction:column;gap:8px;display:flex;">
+      <a class="btn big solid-blue"
+         href="{{ url_for('sede_inventario', codigo=sede.codigo) }}">
+        📦 Inventario
+      </a>
+      <a class="btn big outline-amber"
+         href="{{ url_for('sede_planos', codigo=sede.codigo) }}">
+        🗺️ Planos e infraestructura
+      </a>
+      <a class="btn big outline-pink"
+         href="{{ url_for('sede_limpieza', codigo=sede.codigo) }}">
+        🧹 Limpieza y protocolo
+      </a>
+      <a class="btn big outline-red"
+         href="{{ url_for('sede_seguridad', codigo=sede.codigo) }}">
+        🔒 Seguridad: matafuegos y desinfecciones
+      </a>
+    </div>
+
+  </div>
+
+
+</section>
+
+
+{% endblock %}

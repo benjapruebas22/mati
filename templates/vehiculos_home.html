@@ -1,0 +1,593 @@
+{% extends "base.html" %}
+{% block content %}
+
+{# =========================
+MACRO SLOT (usa tu lista "plano")
+========================= #}
+{% macro slot_box(plano, codigo, etiqueta, extra_class='') %}
+{% set slot = (plano | selectattr('codigo', 'equalto', codigo) | list | first) %}
+{% set v = slot.vehiculo if slot else None %}
+<div class="slot-card {% if v %}ocupado{% else %}libre{% endif %} {{ extra_class }}">
+    <div class="slot-top">
+        <span class="slot-ico"></span>
+        <div class="slot-title">{{ etiqueta }}</div>
+    </div>
+
+    {% if v %}
+    <div class="slot-mid">
+        <div class="slot-cod">{{ v["codigo_interno"] }}</div>
+        <div class="slot-pat">{{ v["patente"] }}</div>
+    </div>
+    <div class="slot-badge">Reservado</div>
+    {% else %}
+    <div class="slot-mid slot-free">Libre</div>
+    {% endif %}
+</div>
+{% endmacro %}
+
+<section class="veh-page">
+
+    <!-- CABECERA -->
+    <header class="veh-head">
+        <div>
+            <h1 class="veh-title">Vehículos</h1>
+            <p class="veh-sub">Plano unificado de lugares reservados y estadísticas operativas.</p>
+        </div>
+
+        <div class="veh-actions">
+            <a class="btn btn-mpd" href="/vehiculos/control_diario">Control diario</a>
+            <a class="btn btn-mpd" href="{{ url_for('vehiculos_combustible') }}">Combustible</a>
+            <a class="btn btn-mpd" href="{{ url_for('vehiculos_bd_home') }}">Editar vehículos</a>
+            <a class="btn btn-mpd" href="{{ url_for('vehiculos_estadisticas2') }}">Estadísticas</a>
+        </div>
+
+
+
+        <!-- KPIs -->
+        <div class="veh-kpis">
+            <div class="kpi">
+                <div class="kpi-l">Total vehículos</div>
+                <div class="kpi-v">{{ total_vehiculos }}</div>
+            </div>
+
+            <div class="kpi kpi-soft-blue">
+                <div class="kpi-l">Con lugar reservado</div>
+                <div class="kpi-v">{{ reservados }}</div>
+            </div>
+            <div class="kpi kpi-soft-green">
+                <div class="kpi-l">Sin lugar asignado</div>
+                <div class="kpi-v">{{ libres }}</div>
+            </div>
+        </div>
+
+        <!-- LAYOUT 2 COLUMNAS -->
+        <div class="veh-layout">
+
+            <!-- =================== IZQUIERDA: PLANO =================== -->
+            <section class="card veh-card">
+                <div class="card-head card-head-row">
+                    <div>
+                        <h3>Plano de lugares reservados</h3>
+                        <p>Cochera / lavadero / autorizadas / etc.</p>
+                    </div>
+
+                    <!-- ASIGNAR / LIBERAR -->
+                    <form method="post" class="asignar-inline">
+                        <input type="hidden" name="tipo_form" value="plano">
+
+                        <div class="asignar-group">
+                            <span class="asignar-label">Asignar lugar →</span>
+
+                            <select name="lugar" class="in in-sm" required>
+                                <option value="">Lugar...</option>
+                                {% for codigo, nombre in lugares %}
+                                <option value="{{ codigo }}">{{ nombre }}</option>
+                                {% endfor %}
+                            </select>
+
+                            <select name="patente" class="in in-sm" required>
+                                <option value="">Vehículo...</option>
+                                <option value="__LIBRE__">— LIBERAR (Libre) —</option>
+                                {% for v in vehiculos %}
+                                <option value="{{ v['patente'] }}">{{ v['codigo_interno'] }} — {{ v['patente'] }}
+                                </option>
+                                {% endfor %}
+                            </select>
+
+                            <button class="btn btn-mpd btn-sm" type="submit">Aplicar</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- PLANO -->
+                <div class="plano-wrap">
+                    <div class="plano-row">
+                        {{ slot_box(plano, 'LAV_R1', 'Lavadero', 'tag-ico lav') }}
+                        {{ slot_box(plano, 'SERV_R1', 'Service', 'tag-ico svc') }}
+                        {{ slot_box(plano, 'VIG_R1', 'Autorizada', 'tag-ico aut') }}
+                        {{ slot_box(plano, 'INDEP202_R1', 'Indep202 R05', 'tag-ico indep') }}
+                    </div>
+
+                    <div class="plano-sep">Independencia al 100</div>
+
+                    <div class="plano-row">
+                        {{ slot_box(plano, 'SM148_R4', 'Coch4', 'tag-ico coch') }}
+                        {{ slot_box(plano, 'SM148_R3', 'Coch3', 'tag-ico coch') }}
+                        {{ slot_box(plano, 'SM148_R2', 'Coch2', 'tag-ico coch') }}
+                        {{ slot_box(plano, 'SM148_R1', 'Coch1', 'tag-ico coch') }}
+                        <div class="plano-vert">BUSTAMANTE</div>
+                    </div>
+
+                    <div class="plano-sep">San Martín al 100</div>
+
+                    <div class="plano-row">
+                        {{ slot_box(plano, 'SM137_R1', 'SM 137 R01', 'tag-ico sm') }}
+                        {{ slot_box(plano, 'SM137_R2', 'SM 137 R02', 'tag-ico sm') }}
+                        {{ slot_box(plano, 'SM137_R3', 'SM 137 R03', 'tag-ico sm') }}
+                        <div class="plano-gap"></div>
+                        {{ slot_box(plano, 'SM271_R1', 'SM 271 R04', 'tag-ico sm') }}
+                    </div>
+
+                    <div class="plano-pill">San Martín al 200</div>
+                </div>
+            </section>
+
+            <!-- =================== DERECHA: STATS =================== -->
+            <aside class="veh-right">
+                <section class="card veh-card">
+                    <div class="card-head">
+                        <h3>Estadísticas y filtros</h3>
+                        <p>Viajes por vehículo y agente trasladado (según el filtro).</p>
+                    </div>
+
+                    <!-- FILTROS -->
+                    <form method="get" class="filtros-grid">
+                        <div class="fg">
+                            <label>Desde</label>
+                            <input class="in" type="date" name="desde" value="{{ f_desde }}">
+                        </div>
+
+                        <div class="fg">
+                            <label>Hasta</label>
+                            <input class="in" type="date" name="hasta" value="{{ f_hasta }}">
+                        </div>
+
+                        <div class="fg">
+                            <label>Vehículo</label>
+                            <select class="in" name="f_patente">
+                                <option value="">(Todos)</option>
+                                {% for v in vehiculos %}
+                                <option value="{{ v['patente'] }}" {% if f_patente==v['patente'] %}selected{% endif %}>
+                                    {{ v['codigo_interno'] }} — {{ v['patente'] }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="fg">
+                            <label>Agente trasladado</label>
+                            <select class="in" name="f_agente">
+                                <option value="">(Todos)</option>
+                                {% for a in agentes_tras %}
+                                <option value="{{ a['agente_trasladado'] }}" {% if f_agente==a['agente_trasladado']
+                                    %}selected{% endif %}>
+                                    {{ a['agente_trasladado'] }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="fg fg-btn">
+                            <label>&nbsp;</label>
+                            <button class="btn btn-mpd" type="submit">Filtrar</button>
+                        </div>
+                    </form>
+
+                    <!-- TABLA -->
+                    <div class="table-wrap">
+                        <table class="table-soft vh-table">
+                            <thead>
+                                <tr>
+                                    <th>Vehículo</th>
+                                    <th>Chofer</th>
+                                    <th>Agente</th>
+                                    <th>Viajes</th>
+                                    <th>KM</th>
+                                    <th>Litros</th>
+                                    <th>$ combustible</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for s in stats %}
+                                <tr>
+                                    <td>{{ s.codigo_interno }} — {{ s.patente }}</td>
+                                    <td>{{ s.chofer_nombre }}</td>
+                                    <td>{{ s.agente_nombre }}</td>
+                                    <td>{{ s.cant_viajes }}</td>
+                                    <td>{{ '%.1f'|format(s.km_totales) }}</td>
+                                    <td>{{ '%.1f'|format(s.litros) }}</td>
+                                    <td>{{ '%.2f'|format(s.importe) }}</td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="7" class="muted-center">Sin datos para este filtro.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </aside>
+
+        </div>
+</section>
+
+<style>
+    .veh-page {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .veh-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: flex-end;
+        flex-wrap: wrap;
+    }
+
+    .veh-title {
+        margin: 0;
+        font-size: 22px;
+    }
+
+    .veh-sub {
+        margin: 2px 0 0;
+        color: #6b7280;
+        font-size: 13px;
+    }
+
+    .veh-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .veh-kpis {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .kpi {
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        background: #fff;
+        padding: 10px 12px;
+        min-width: 160px;
+    }
+
+    .kpi-l {
+        font-size: 12px;
+        color: #6b7280;
+    }
+
+    .kpi-v {
+        font-size: 22px;
+        font-weight: 800;
+        color: #111827;
+    }
+
+    .kpi-soft-blue {
+        background: #eff6ff;
+        border-color: #bfdbfe;
+    }
+
+    .kpi-soft-green {
+        background: #ecfdf5;
+        border-color: #bbf7d0;
+    }
+
+    .veh-layout {
+        display: grid;
+        grid-template-columns: minmax(520px, 1.2fr) minmax(420px, 0.9fr);
+        gap: 14px;
+        align-items: start;
+    }
+
+    .veh-right {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .card {
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        background: #fff;
+        overflow: hidden;
+    }
+
+    .veh-card {
+        box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
+    }
+
+    .card-head {
+        padding: 12px 14px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .card-head h3 {
+        margin: 0;
+        font-size: 15px;
+    }
+
+    .card-head p {
+        margin: 2px 0 0;
+        font-size: 12px;
+        color: #6b7280;
+    }
+
+    .card-head-row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .asignar-inline {
+        margin: 0;
+    }
+
+    .asignar-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .asignar-label {
+        font-size: 12px;
+        color: #64748b;
+        white-space: nowrap;
+    }
+
+    .in {
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 8px 10px;
+        font-size: 13px;
+        background: #fff;
+    }
+
+    .in-sm {
+        padding: 6px 10px;
+        font-size: 12px;
+        border-radius: 999px;
+        min-width: 160px;
+    }
+
+    .btn-sm {
+        padding: 7px 12px;
+        font-size: 12px;
+        border-radius: 999px;
+    }
+
+    .plano-wrap {
+        padding: 12px 14px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        background: #f8fafc;
+    }
+
+    .plano-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: nowrap;
+        align-items: stretch;
+    }
+
+    .plano-sep {
+        height: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        background: #e5e7eb;
+        color: #334155;
+        font-size: 12px;
+    }
+
+    .plano-pill {
+        align-self: flex-end;
+        margin-top: 2px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: #e5e7eb;
+        color: #334155;
+        font-size: 12px;
+    }
+
+    .plano-vert {
+        width: 34px;
+        border-radius: 12px;
+        background: #e5e7eb;
+        color: #334155;
+        font-size: 11px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        writing-mode: vertical-rl;
+        transform: rotate(180deg);
+    }
+
+    .plano-gap {
+        flex: 1 1 auto;
+    }
+
+    .slot-card {
+        flex: 1 1 160px;
+        min-width: 140px;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 10px 10px 9px;
+        background: #fff;
+        box-shadow: 0 6px 14px rgba(15, 23, 42, .06);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .slot-card.ocupado {
+        border-color: #1d4ed8;
+        box-shadow: 0 10px 18px rgba(29, 78, 216, .12);
+    }
+
+    .slot-top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .slot-ico {
+        width: 10px;
+        height: 10px;
+        border-radius: 3px;
+        background: #cbd5e1;
+        display: inline-block;
+    }
+
+    .slot-card.ocupado .slot-ico {
+        background: #1d4ed8;
+    }
+
+    .slot-title {
+        font-size: 12px;
+        color: #334155;
+        font-weight: 700;
+    }
+
+    .slot-mid {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .slot-cod {
+        font-weight: 900;
+        color: #0f172a;
+        font-size: 13px;
+    }
+
+    .slot-pat {
+        color: #64748b;
+        font-size: 12px;
+    }
+
+    .slot-free {
+        color: #94a3b8;
+        font-size: 12px;
+        padding-top: 4px;
+    }
+
+    .slot-badge {
+        align-self: flex-start;
+        font-size: 10px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: #e0ebff;
+        color: #1d4ed8;
+        font-weight: 700;
+    }
+
+    .tag-ico.lav .slot-ico {
+        background: #f59e0b;
+    }
+
+    .tag-ico.svc .slot-ico {
+        background: #94a3b8;
+    }
+
+    .tag-ico.aut .slot-ico {
+        background: #22c55e;
+    }
+
+    .tag-ico.indep .slot-ico {
+        background: #1d4ed8;
+    }
+
+    .tag-ico.coch .slot-ico {
+        background: #0ea5e9;
+    }
+
+    .tag-ico.sm .slot-ico {
+        background: #a855f7;
+    }
+
+    .filtros-grid {
+        padding: 12px 14px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .fg {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .fg label {
+        font-size: 11px;
+        color: #64748b;
+    }
+
+    .fg-btn {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    .table-wrap {
+        padding: 10px 14px 14px;
+        overflow: auto;
+    }
+
+    .vh-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .vh-table th,
+    .vh-table td {
+        font-size: 12px;
+        padding: 8px 8px;
+        border-bottom: 1px solid #eef2f7;
+        white-space: nowrap;
+    }
+
+    .muted-center {
+        text-align: center;
+        color: #94a3b8;
+        padding: 14px 8px;
+    }
+
+    @media (max-width: 1100px) {
+        .veh-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .plano-row {
+            flex-wrap: wrap;
+        }
+
+        .plano-vert {
+            display: none;
+        }
+    }
+</style>
+
+{% endblock %}

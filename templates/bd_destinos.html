@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="sedes-section" style="max-width:900px;margin:auto">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+    <h2 style="margin:0;">Destinos</h2>
+    <a class="btn ghost" href="{{ url_for('vehiculos_bd_home') }}">← Volver</a>
+  </div>
+
+  <form method="post" class="form-soft" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;align-items:end;">
+    <div>
+      <label>Destino</label>
+      <input name="nombre" placeholder="Ej: San Pedro" required>
+    </div>
+
+    <div>
+      <button class="btn primary" type="submit" style="margin-top:2px">Agregar</button>
+    </div>
+  </form>
+
+  <hr style="margin:12px 0">
+
+  <table class="table-soft">
+    <thead>
+      <tr>
+        <th>Destino</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in destinos %}
+      <tr>
+        <td>{{ d.nombre }}</td>
+        <td style="text-align:right">
+          <form method="post" action="{{ url_for('bd_destinos_delete', did=d.id) }}">
+            <button class="btn xs outline-red">Eliminar</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+</section>
+{% endblock %}

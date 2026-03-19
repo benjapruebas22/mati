@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="sedes-section">
+  <h2>Equipo Interdisciplinario</h2>
+
+  <form method="post" class="form-soft" style="max-width:520px">
+    <label>Nombre</label>
+    <input name="nombre" required>
+
+    <label>Profesión</label>
+    <input name="profesion" required placeholder="Asistente Social / Psicología / Perito ...">
+
+    <button class="btn primary" type="submit">Agregar</button>
+  </form>
+
+  <hr style="margin:12px 0">
+
+  <table class="table-soft">
+    <thead><tr><th>Profesión</th><th>Nombre</th><th></th></tr></thead>
+    <tbody>
+      {% for e in equipo %}
+      <tr>
+        <td>{{ e.profesion }}</td>
+        <td>{{ e.nombre }}</td>
+        <td>
+          <form method="post" action="{{ url_for('bd_equipo_delete', eid=e.id) }}">
+            <button class="btn xs outline-red">Baja</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <a class="btn ghost" href="{{ url_for('vehiculos_bd_home') }}">⬅ Volver</a>
+</section>
+{% endblock %}

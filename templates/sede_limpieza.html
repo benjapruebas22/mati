@@ -1,0 +1,381 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  .limp-main{
+    display:grid;
+    grid-template-columns:minmax(260px, 300px) minmax(0,1fr);
+    gap:18px;
+    align-items:flex-start;
+  }
+
+  @media (max-width: 1100px){
+    .limp-main{
+      grid-template-columns:minmax(0,1fr);
+    }
+  }
+
+  .limp-main .right-panel{
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+  }
+
+  .limp-row-top{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);
+    gap:14px;
+    align-items:flex-start;
+  }
+
+  @media (max-width: 900px){
+    .limp-row-top{
+      grid-template-columns:minmax(0,1fr);
+    }
+  }
+
+  .chip-limp{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:6px 10px;
+    border-radius:999px;
+    background:#eef2ff;
+    font-size:12px;
+    margin-bottom:6px;
+  }
+  .chip-limp-main{
+    font-weight:600;
+    color:#111827;
+  }
+  .chip-limp-sub{
+    color:#6b7280;
+  }
+
+  .tabla-limpieza{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
+  }
+  .tabla-limpieza th,
+  .tabla-limpieza td{
+    padding:6px 8px;
+    border-bottom:1px solid #e5e7eb;
+  }
+  .tabla-limpieza th{
+    text-align:left;
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.04em;
+    color:#6b7280;
+  }
+  .tabla-limpieza td.text-end{
+    text-align:right;
+  }
+
+  .form-grid-limp{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+    gap:10px 12px;
+  }
+
+  .label-soft{
+    font-size:12px;
+    font-weight:600;
+    color:#4b5563;
+    display:block;
+    margin-bottom:3px;
+  }
+
+  .input-soft,
+  .select-soft,
+  .textarea-soft{
+    width:100%;
+    font-size:13px;
+    padding:6px 8px;
+    border-radius:8px;
+    border:1px solid #d1d5db;
+    background:#f9fafb;
+  }
+  .input-soft:focus,
+  .select-soft:focus,
+  .textarea-soft:focus{
+    outline:none;
+    border-color:#2563eb;
+    box-shadow:0 0 0 1px rgba(37,99,235,0.25);
+    background:#ffffff;
+  }
+  .textarea-soft{
+    resize:vertical;
+  }
+
+</style>
+
+<section class="limp-main">
+
+  <!-- PANEL IZQUIERDO: info sede + menú -->
+  <div class="left-panel">
+
+    <div class="hero">
+      <div class="map-card">
+        <h3>Limpieza y protocolo</h3>
+
+        <div style="display:flex;align-items:flex-start;gap:16px">
+          <!-- Código / fuero -->
+          <div style="
+              min-width:70px;
+              padding:10px 12px;
+              border-radius:14px;
+              background:#e5edff;
+              text-align:center;">
+            <div style="font-size:11px;color:#64748b;">Código</div>
+            <div style="font-weight:700;font-size:16px;">
+              {{ sede.codigo }}
+            </div>
+            <div style="margin-top:8px;font-size:11px;color:#334155;">
+              {{ sede.fuero|capitalize }}
+            </div>
+          </div>
+
+          <!-- Nombre y ubicación -->
+          <div style="flex:1 1 auto">
+            <h4 style="margin:0 0 4px 0;">{{ sede.nombre }}</h4>
+            <div style="font-size:13px;color:#64748b;">
+              {{ sede.ciudad }}{% if sede.departamento %} · {{ sede.departamento }}{% endif %}
+            </div>
+            <div style="font-size:12px;color:#94a3b8;margin-top:4px;">
+              Desde acá manejás el personal de limpieza asignado a la sede
+              y el protocolo específico que corresponde.
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;">
+          <a href="{{ url_for('sede_ficha', codigo=sede.codigo) }}"
+             class="btn xs outline-slate">
+            ⬅ Volver a ficha de sede
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Menú de módulos de la sede -->
+    <div class="buttons-row">
+      <a class="btn big outline-blue"
+         href="{{ url_for('sede_inventario', codigo=sede.codigo) }}">
+        📦 Inventario
+      </a>
+      <a class="btn big outline-amber"
+         href="{{ url_for('sede_planos', codigo=sede.codigo) }}">
+        🗺️ Planos e infraestructura
+      </a>
+      <a class="btn big solid-pink"
+         href="{{ url_for('sede_limpieza', codigo=sede.codigo) }}">
+        🧹 Limpieza y protocolo
+      </a>
+    </div>
+
+    <div class="buttons-row">
+      <a class="btn big outline-red"
+         href="{{ url_for('sede_seguridad', codigo=sede.codigo) }}">
+        🔒 Seguridad: matafuegos y desinfecciones
+      </a>
+    </div>
+
+  </div>
+
+  <!-- PANEL DERECHO -->
+  <div class="right-panel">
+
+    <!-- FILA SUPERIOR: Resumen + Historial -->
+    <div class="limp-row-top">
+
+      <!-- Resumen actual -->
+      <div class="card-soft">
+        <h3 style="margin-top:0;margin-bottom:8px;">Resumen actual de limpieza</h3>
+
+        {% if resumen and resumen|length > 0 %}
+          {% for r in resumen %}
+            <div class="chip-limp">
+              <div class="chip-limp-main">
+                {{ r.responsable }}
+              </div>
+              <div class="chip-limp-sub">
+                {{ r.turno or "s/d" }} · {{ r.frecuencia or "s/d" }}
+              </div>
+            </div>
+          {% endfor %}
+          <p class="muted" style="font-size:12px;margin-top:8px;">
+            Última actualización:
+            {{ ultima_actualizacion or "s/d" }}
+          </p>
+        {% else %}
+          <p class="muted" style="font-size:13px;">
+            Todavía no hay asignaciones cargadas para esta sede.
+          </p>
+        {% endif %}
+      </div>
+
+      <!-- Historial de asignaciones -->
+      <div class="card-soft">
+        <h3 style="margin-top:0;margin-bottom:8px;">Historial de asignaciones</h3>
+
+        {% if limpieza_lista and limpieza_lista|length > 0 %}
+          <div style="max-height:220px;overflow:auto;">
+            <table class="tabla-limpieza">
+              <thead>
+                <tr>
+                  <th>Responsable</th>
+                  <th>Turno</th>
+                  <th>Frecuencia</th>
+                  <th>Observaciones</th>
+                  <th>Período</th>
+                  <th class="text-end">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for reg in limpieza_lista %}
+                  <tr>
+                    <td>{{ reg.responsable }}</td>
+                    <td>{{ reg.turno or "s/d" }}</td>
+                    <td>{{ reg.frecuencia or "s/d" }}</td>
+                    <td>{{ reg.observaciones or "—" }}</td>
+                    <td>
+                      {% if reg.fecha_desde %}
+                        {{ reg.fecha_desde }}
+                        {% if reg.fecha_hasta %} → {{ reg.fecha_hasta }}{% endif %}
+                      {% else %}
+                        —
+                      {% endif %}
+                    </td>
+                    <td class="text-end">
+                      {# Botón editar (para más adelante) #}
+                      {# 
+                      <a href="{{ url_for('sede_limpieza', codigo=sede.codigo, edit_id=reg.id) }}"
+                         class="btn xs ghost">✏️</a>
+                      #}
+
+                      <!-- Botón borrar -->
+                      <form method="post"
+                            action="{{ url_for('sede_limpieza_borrar', codigo=sede.codigo, lid=reg.id) }}"
+                            style="display:inline;">
+                        <button type="submit"
+                                class="btn xs outline-red"
+                                onclick="return confirm('¿Eliminar esta asignación de limpieza?');">
+                          🗑
+                        </button>
+                      </form>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="empty">
+            No hay historial de asignaciones para esta sede.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- PROTOCOLO DE LA SEDE -->
+    <div class="card-soft">
+      <h3 style="margin-top:0;margin-bottom:8px;">Protocolo de limpieza de la sede</h3>
+
+      {% if protocolo_url %}
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+          <a class="btn xs outline-blue" href="{{ protocolo_url }}" target="_blank" rel="noopener">
+            Ver protocolo completo
+          </a>
+        </div>
+      {% else %}
+        <p class="muted" style="font-size:13px;margin-bottom:10px;">
+          Esta sede no tiene protocolo cargado todavia.
+        </p>
+      {% endif %}
+    </div>
+
+    <!-- ASIGNAR PERSONAL (ANCHO COMPLETO) -->
+    <div class="card-soft">
+      <h3 style="margin-top:0;margin-bottom:8px;">Asignar personal de limpieza</h3>
+      <p class="muted" style="font-size:12px;margin-bottom:12px;">
+        Elegí quién limpia esta sede, en qué turno, con qué frecuencia y por qué período
+        (fecha desde / hasta). Cada guardado crea una línea nueva en el historial.
+      </p>
+
+      <form method="post">
+        <input type="hidden" name="accion" value="asignar_limpieza">
+
+        <div class="form-grid-limp">
+
+          <!-- Persona asignada -->
+          <div style="grid-column:1 / -1;">
+            <label class="label-soft">Persona asignada</label>
+            <select name="agente_id" class="select-soft">
+              <option value="">— Elegir agente —</option>
+              {% for ag in agentes_limpieza %}
+                <option value="{{ ag.id }}">{{ ag.agente }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Turno -->
+          <div>
+            <label class="label-soft">Turno</label>
+            <select name="turno" class="select-soft">
+              <option value="">— Elegir turno —</option>
+              <option value="Matutino">Matutino</option>
+              <option value="Vespertino">Vespertino</option>
+              <option value="Ambos">Ambos</option>
+            </select>
+          </div>
+
+          <!-- Frecuencia -->
+          <div>
+            <label class="label-soft">Frecuencia</label>
+            <select name="frecuencia" class="select-soft">
+              <option value="">— Elegir frecuencia —</option>
+              <option value="Diario">Diario</option>
+              <option value="2 veces por semana">2 veces por semana</option>
+              <option value="Semanal">Semanal</option>
+              <option value="Quincenal">Quincenal</option>
+              <option value="Mensual">Mensual</option>
+            </select>
+          </div>
+
+          <!-- Fechas -->
+          <div>
+            <label class="label-soft">Fecha desde</label>
+            <input type="date" name="fecha_desde" class="input-soft">
+          </div>
+
+          <div>
+            <label class="label-soft">Fecha hasta</label>
+            <input type="date" name="fecha_hasta" class="input-soft">
+          </div>
+
+        </div>
+
+        <!-- Observaciones -->
+        <div style="margin-top:10px;">
+          <label class="label-soft">Observaciones</label>
+          <textarea name="observaciones" rows="2"
+                    class="textarea-soft"
+                    placeholder="Ej.: reemplaza a Mabel los lunes, limpiar patio, etc."></textarea>
+        </div>
+
+        <div style="margin-top:12px;display:flex;justify-content:flex-end;">
+          <button type="submit" class="btn primary">
+            💾 Guardar asignación
+          </button>
+        </div>
+      </form>
+
+    </div>
+
+  </div> <!-- /right-panel -->
+
+</section>
+
+{% endblock %}

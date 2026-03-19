@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  .mh-shell {
+    background: linear-gradient(180deg, #f8fafd 0%, #f3f7fc 100%);
+    border: 1px solid #dfe6f1;
+    border-radius: 18px;
+    box-shadow: 0 8px 20px rgba(24, 39, 63, 0.06);
+    padding: 10px;
+    display: grid;
+    gap: 8px;
+    color: #1f2f44;
+  }
+  .mh-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .mh-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 900;
+    color: #2f4f77;
+  }
+  .mh-link {
+    border: 1px solid #d3deee;
+    background: #fff;
+    color: #4f6789;
+    border-radius: 999px;
+    padding: 4px 9px;
+    font-size: 11px;
+    font-weight: 800;
+    text-decoration: none;
+  }
+  .mh-grid {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 8px;
+    align-items: start;
+  }
+  .card {
+    background: #fff;
+    border: 1px solid #dfe6f1;
+    border-radius: 14px;
+    box-shadow: 0 8px 20px rgba(24, 39, 63, 0.06);
+    padding: 10px;
+  }
+  .card h3 {
+    margin: 0 0 7px;
+    font-size: 14px;
+    font-weight: 900;
+  }
+  .list {
+    margin: 0;
+    padding-left: 16px;
+    display: grid;
+    gap: 4px;
+    font-size: 12px;
+    color: #4f6789;
+    max-height: 520px;
+    overflow: auto;
+  }
+  .table-wrap {
+    overflow: auto;
+    border: 1px solid #e4ebf6;
+    border-radius: 12px;
+    background: #fff;
+    max-height: 640px;
+  }
+  .tbl {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    min-width: 980px;
+  }
+  .tbl th, .tbl td {
+    padding: 6px 8px;
+    border-bottom: 1px solid #edf2f9;
+    text-align: left;
+    white-space: nowrap;
+  }
+  .tbl th {
+    background: #f4f8ff;
+    color: #4c6282;
+    font-weight: 800;
+  }
+  .st-tag {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    padding: 1px 6px;
+    font-size: 10px;
+    font-weight: 800;
+  }
+  .st-tag.generado { background: #fff8ef; color: #896b3c; border-color: #f0e2c9; }
+  .st-tag.compras { background: #edf3ff; color: #47699a; border-color: #d4e1f5; }
+  .st-tag.recibido { background: #edf8f2; color: #3c7c5f; border-color: #d4e9dd; }
+  .st-tag.cerrado { background: #f4f4f4; color: #515151; border-color: #dddddd; }
+  .muted { color: #8ca0bc; }
+
+  .filters {
+    margin-bottom: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .filters label {
+    font-size: 11px;
+    font-weight: 800;
+    color: #486589;
+  }
+
+  .filters select {
+    border: 1px solid #d2e0f5;
+    border-radius: 8px;
+    background: #fff;
+    color: #2b415f;
+    font-size: 12px;
+    padding: 4px 7px;
+    min-width: 120px;
+  }
+  @media (max-width: 1100px) {
+    .mh-grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<section class="mh-shell">
+  <header class="mh-head">
+    <h2 class="mh-title">Historial de pedidos de materiales</h2>
+    <a class="mh-link" href="{{ url_for('dashboard_exec') }}">Volver al panel</a>
+  </header>
+
+  <div class="mh-grid">
+    <article class="card">
+      <h3>Consumo por sede</h3>
+      <ul class="list" id="resumenSede">
+        <li>Sin datos.</li>
+      </ul>
+    </article>
+
+    <article class="card">
+      <h3>Trazabilidad completa</h3>
+      <div class="filters">
+        <label for="fSede">Sede</label>
+        <select id="fSede">
+          <option value="">Todas</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Sede</th>
+              <th>Detalle / material</th>
+              <th>Estado actual</th>
+              <th>Generado</th>
+              <th>A compras</th>
+              <th>Recibido</th>
+              <th>Cerrado</th>
+            </tr>
+          </thead>
+          <tbody id="histBody">
+            <tr><td colspan="8" class="muted">Sin pedidos.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </article>
+  </div>
+</section>
+
+<script>
+  (function () {
+    var allRows = [];
+    var allResumen = [];
+
+    function fmtDate(v) {
+      var s = String(v || "");
+      var m = s.match(/(\d{4})-(\d{2})-(\d{2})(?:\s*(\d{2}:\d{2}))?/);
+      if (!m) return s || "-";
+      return m[3] + "/" + m[2] + "/" + m[1] + (m[4] ? " " + m[4] : "");
+    }
+    function stMeta(raw) {
+      var e = String(raw || "").toLowerCase();
+      if (e.indexOf("cerrad") >= 0) return { cls: "cerrado", txt: "Cerrado" };
+      if (e.indexOf("recib") >= 0) return { cls: "recibido", txt: "Recibido" };
+      if (e.indexOf("compra") >= 0 || e.indexOf("pedido") >= 0 || e.indexOf("autoriz") >= 0) return { cls: "compras", txt: "En compras" };
+      return { cls: "generado", txt: "Generado" };
+    }
+
+    function renderResumen(rows) {
+      var rs = document.getElementById("resumenSede");
+      if (!rs) return;
+      var by = {};
+      rows.forEach(function (r) {
+        var s = String(r.sede || "S/D").trim() || "S/D";
+        by[s] = (by[s] || 0) + 1;
+      });
+      var keys = Object.keys(by).sort();
+      rs.innerHTML = keys.length
+        ? keys.map(function (k) { return "<li><strong>" + k + "</strong>: " + by[k] + " pedidos</li>"; }).join("")
+        : "<li>Sin datos.</li>";
+    }
+
+    function renderTable(rows) {
+      var tb = document.getElementById("histBody");
+      if (!tb) return;
+      if (!rows.length) {
+        tb.innerHTML = '<tr><td colspan="8" class="muted">Sin pedidos.</td></tr>';
+        return;
+      }
+      tb.innerHTML = rows.map(function (r) {
+        var st = stMeta(r.estado);
+        return "<tr>" +
+          "<td>" + Number(r.id || 0) + "</td>" +
+          "<td>" + (r.sede || "-") + "</td>" +
+          "<td>" + (r.detalle || "-") + "</td>" +
+          '<td><span class="st-tag ' + st.cls + '">' + st.txt + "</span></td>" +
+          "<td>" + fmtDate(r.fecha_generado || r.fecha) + "</td>" +
+          "<td>" + fmtDate(r.fecha_autorizado) + "</td>" +
+          "<td>" + fmtDate(r.fecha_recibido) + "</td>" +
+          "<td>" + fmtDate(r.fecha_cerrado) + "</td>" +
+        "</tr>";
+      }).join("");
+    }
+
+    function applyFilter() {
+      var s = document.getElementById("fSede");
+      var val = String((s && s.value) || "").trim().toUpperCase();
+      var rows = allRows.slice();
+      if (val) {
+        rows = rows.filter(function (r) { return String(r.sede || "").trim().toUpperCase() === val; });
+      }
+      renderTable(rows);
+      renderResumen(rows);
+    }
+
+    function loadSedesOptions(rows) {
+      var s = document.getElementById("fSede");
+      if (!s) return;
+      var set = {};
+      rows.forEach(function (r) {
+        var v = String(r.sede || "").trim().toUpperCase();
+        if (v) set[v] = 1;
+      });
+      var sedes = Object.keys(set).sort();
+      s.innerHTML = '<option value="">Todas</option>' + sedes.map(function (x) {
+        return '<option value="' + x + '">' + x + "</option>";
+      }).join("");
+      if (!s.dataset.bound) {
+        s.dataset.bound = "1";
+        s.addEventListener("change", applyFilter);
+      }
+    }
+
+    fetch("/api/dashboard/materiales_historial_full")
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        allResumen = Array.isArray(d.resumen) ? d.resumen : [];
+        allRows = Array.isArray(d.rows) ? d.rows : [];
+        loadSedesOptions(allRows);
+        applyFilter();
+      })
+      .catch(function () {});
+  })();
+</script>
+{% endblock %}

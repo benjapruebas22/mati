@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  .risk-wrap {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 12px 0 18px;
+  }
+  .risk-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .risk-title {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 900;
+    color: #0f172a;
+  }
+  .risk-sub {
+    margin: 4px 0 0;
+    color: #64748b;
+    font-size: 13px;
+  }
+  .risk-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 12px;
+  }
+  .risk-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
+    padding: 12px 14px;
+  }
+  .risk-card h3 {
+    margin: 0 0 8px;
+    font-size: 15px;
+    font-weight: 900;
+    color: #0f172a;
+  }
+  .risk-card p, .risk-card li, .risk-card td, .risk-card th {
+    font-size: 12px;
+    line-height: 1.45;
+    color: #334155;
+  }
+  .risk-list {
+    margin: 0;
+    padding-left: 18px;
+  }
+  .flow {
+    display: grid;
+    gap: 8px;
+  }
+  .flow-step {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #f8fafc;
+    padding: 8px 10px;
+    font-size: 12px;
+    color: #0f172a;
+    font-weight: 700;
+  }
+  .flow-step small {
+    display: block;
+    color: #64748b;
+    margin-top: 3px;
+    font-weight: 600;
+  }
+  .pyramid {
+    display: grid;
+    gap: 6px;
+    margin-top: 6px;
+  }
+  .pyr-flow {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+    margin: 0 0 8px;
+  }
+  .pyr-box {
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    padding: 7px 8px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 800;
+    position: relative;
+  }
+  .pyr-box::after {
+    content: "→";
+    position: absolute;
+    right: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-weight: 900;
+    font-size: 13px;
+  }
+  .pyr-box:last-child::after {
+    content: "";
+  }
+  .pyr-box small {
+    display: block;
+    margin-top: 2px;
+    font-size: 10px;
+    font-weight: 700;
+  }
+  .pyr-lvl {
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    padding: 8px 10px;
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .pyr-lvl small {
+    display: block;
+    margin-top: 4px;
+    font-weight: 600;
+    color: #334155;
+  }
+  .pyr-1 { background: #dcfce7; border-color: #86efac; color: #166534; }
+  .pyr-2 { background: #e0f2fe; border-color: #7dd3fc; color: #0c4a6e; }
+  .pyr-3 { background: #ede9fe; border-color: #c4b5fd; color: #5b21b6; }
+  .pyr-4 { background: #fef3c7; border-color: #fde68a; color: #92400e; }
+  .pyr-5 { background: #fee2e2; border-color: #fecaca; color: #991b1b; }
+  .risk-note {
+    margin-top: 8px;
+    border: 1px solid #bfdbfe;
+    border-radius: 10px;
+    background: #eff6ff;
+    color: #1e3a8a;
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+  .case-summary {
+    margin-bottom: 12px;
+    border: 1px solid #dbeafe;
+    border-radius: 12px;
+    background: #eff6ff;
+    padding: 10px 12px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .case-chip {
+    background: #fff;
+    border: 1px solid #bfdbfe;
+    border-radius: 9px;
+    padding: 6px 8px;
+    font-size: 12px;
+    color: #1e3a8a;
+    line-height: 1.3;
+  }
+  .flow-step.is-active {
+    border-color: #60a5fa;
+    background: #dbeafe;
+    box-shadow: inset 0 0 0 1px #93c5fd;
+  }
+  .risk-list li {
+    padding: 3px 6px;
+    border-radius: 7px;
+  }
+  .risk-list li.is-active {
+    background: #dbeafe;
+    color: #1e3a8a;
+    font-weight: 800;
+  }
+  .pyr-box.is-active,
+  .pyr-lvl.is-active {
+    box-shadow: 0 0 0 2px #0f172a inset;
+    transform: translateY(-1px);
+  }
+  @media (max-width: 960px) {
+    .risk-grid { grid-template-columns: 1fr; }
+    .pyr-flow { grid-template-columns: 1fr; }
+    .pyr-box::after { content: "↓"; right: 50%; top: auto; bottom: -10px; transform: translateX(50%); }
+    .pyr-box:last-child::after { content: ""; }
+    .case-summary { grid-template-columns: 1fr; }
+  }
+</style>
+
+<section class="risk-wrap">
+  <div class="risk-head">
+    <div>
+      <h1 class="risk-title">Como Gestionamos el Riesgo</h1>
+      <p class="risk-sub">Modelo operativo de gestion del riesgo ergonomico MPD.</p>
+    </div>
+    <a class="btn outline-slate" href="{{ volver_url if volver_url is defined else url_for('sst_plan') }}">Volver</a>
+  </div>
+
+  <div class="case-summary">
+    <div class="case-chip"><strong>Persona:</strong><br>{{ persona or 'No seleccionada' }}</div>
+    <div class="case-chip"><strong>Sede:</strong><br>{{ sede or '-' }}</div>
+    <div class="case-chip"><strong>Estado actual:</strong><br>{{ estado_ui or estado_flujo or 'Pendiente relevamiento' }}</div>
+    <div class="case-chip"><strong>Piramide recomendada:</strong><br>{{ ('Escalon ' ~ pyramid_level) if pyramid_level else 'Pendiente definir control' }}</div>
+  </div>
+
+  <div class="risk-grid">
+    <div>
+      <div class="risk-card">
+        <h3>Proceso de gestion (1-2-3)</h3>
+        <div class="flow">
+          <div class="flow-step {% if (paso_actual or 1) == 1 %}is-active{% endif %}">
+            1) Relevamiento de puestos de trabajo
+            <small>Se identifican tareas, condiciones de puesto y factores de exposicion.</small>
+          </div>
+          <div class="flow-step {% if (paso_actual or 1) == 2 %}is-active{% endif %}">
+            2) Evaluacion de riesgo segun gravedad
+            <small>Se calcula nivel de riesgo con criterios tecnicos y prioridad automatica.</small>
+          </div>
+          <div class="flow-step {% if (paso_actual or 1) == 3 %}is-active{% endif %}">
+            3) Medidas preventivas/correctivas segun prioridad
+            <small>Se define accion por orden de eficacia y se realiza seguimiento hasta cierre.</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="risk-card" style="margin-top:10px;">
+        <h3>Estados del caso</h3>
+        <ul class="risk-list">
+          <li class="{% if estado_ui == 'Pendiente relevamiento' %}is-active{% endif %}">Pendiente relevamiento</li>
+          <li class="{% if estado_ui == 'Evaluado' %}is-active{% endif %}">Evaluado</li>
+          <li class="{% if estado_ui == 'En implementacion' %}is-active{% endif %}">En implementacion</li>
+          <li class="{% if estado_ui == 'Implementado' %}is-active{% endif %}">Implementado</li>
+          <li class="{% if estado_ui == 'Verificado' %}is-active{% endif %}">Verificado</li>
+          <li class="{% if estado_ui == 'Cerrado' %}is-active{% endif %}">Cerrado</li>
+        </ul>
+        <div class="risk-note">
+          La condicion de riesgo y el estado del caso se gestionan por separado para asegurar trazabilidad.
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="risk-card">
+        <h3>Piramide de actuacion (jerarquia de controles)</h3>
+        <div class="pyr-flow">
+          <div class="pyr-box pyr-1 {% if pyramid_level == 1 %}is-active{% endif %}">1. Eliminacion<small>Maximo control</small></div>
+          <div class="pyr-box pyr-2 {% if pyramid_level == 2 %}is-active{% endif %}">2. Sustitucion<small>Reemplazo seguro</small></div>
+          <div class="pyr-box pyr-3 {% if pyramid_level == 3 %}is-active{% endif %}">3. Ingenieria<small>Diseno del puesto</small></div>
+          <div class="pyr-box pyr-4 {% if pyramid_level == 4 %}is-active{% endif %}">4. Administrativo<small>Capacitacion y gestion</small></div>
+          <div class="pyr-box pyr-5 {% if pyramid_level == 5 %}is-active{% endif %}">5. EPP<small>Ultima barrera</small></div>
+        </div>
+        <div class="pyramid">
+          <div class="pyr-lvl pyr-1 {% if pyramid_level == 1 %}is-active{% endif %}">
+            1. Eliminacion del peligro (mas eficaz)
+            <small>Ejemplo: retirar tarea prolongada en postura forzada o eliminar puesto no apto para PC continua.</small>
+          </div>
+          <div class="pyr-lvl pyr-2 {% if pyramid_level == 2 %}is-active{% endif %}">
+            2. Sustitucion del riesgo
+            <small>Ejemplo: reemplazar silla fija por silla ergonomica regulable.</small>
+          </div>
+          <div class="pyr-lvl pyr-3 {% if pyramid_level == 3 %}is-active{% endif %}">
+            3. Controles de ingenieria
+            <small>Ejemplo: redisenar el puesto (altura de monitor, mesa, soporte, distribucion de elementos).</small>
+          </div>
+          <div class="pyr-lvl pyr-4 {% if pyramid_level == 4 %}is-active{% endif %}">
+            4. Controles administrativos (capacitacion/senalizacion)
+            <small>Ejemplo: capacitacion en postura, pausas activas, rotacion y seguimiento programado.</small>
+          </div>
+          <div class="pyr-lvl pyr-5 {% if pyramid_level == 5 %}is-active{% endif %}">
+            5. EPP (ultima barrera)
+            <small>Ejemplo en oficina: apoyo visual especifico o elementos complementarios, solo cuando no alcanza el control de fuente.</small>
+          </div>
+        </div>
+        <div class="risk-note">
+          Criterio central: intervenir primero en la fuente del riesgo antes de depender de la proteccion individual.
+        </div>
+        {% if intervencion %}
+        <div class="risk-note" style="margin-top:6px;">
+          Intervencion registrada: <strong>{{ intervencion }}</strong>.
+          {% if motivos %}<br>Motivos detectados: {{ motivos }}.{% endif %}
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="risk-card" style="margin-top:10px;">
+        <h3>Resultado esperado</h3>
+        <ul class="risk-list">
+          <li>Priorizacion objetiva de casos</li>
+          <li>Reduccion de exposicion y lesiones</li>
+          <li>Evidencia para auditorias y ART</li>
+          <li>Mejora continua de condiciones de trabajo</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

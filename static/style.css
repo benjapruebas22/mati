@@ -1,0 +1,1893 @@
+:root {
+  /* =========================
+     COLORES OFICIALES MPD (según tu cuadro)
+     ========================= */
+  --fuero-penal: #6666cc;
+  /* Penal – violeta */
+  --fuero-ajs: #F14B94;
+  /* Jurídico Social – rosa */
+  --fuero-menores: #65BFF4;
+  /* Menores / Incapaces – celeste */
+  --fuero-gris: #4D4D4D;
+  /* Adm. Gral / Equipo Interdisciplinario */
+
+  /* =========================
+     UI GENERAL (tema claro)
+     ========================= */
+  --bg: #f3f4f6;
+  /* fondo general gris claro */
+  --bg2: #ffffff;
+  /* fondo de tarjetas / paneles */
+  --card: #ffffff;
+  --muted: #64748b;
+  /* texto suavizado */
+  --text: #0f172a;
+  /* texto principal */
+  --line: #e5e7eb;
+  /* líneas y bordes suaves */
+  --btn: #f8fafc;
+  --btnText: #0f172a;
+
+  /* color naranja para “lo del día” */
+  --accent-dia: #f58a5e;
+
+  /* aliases para cosas que usan mpd-xxx */
+  --mpd-bg: #f3f4f6;
+  --mpd-card: #ffffff;
+  --mpd-border: #e5e7eb;
+  --mpd-soft-text: #64748b;
+  --mpd-strong-text: #111827;
+  --mpd-primary: #6666cc;
+  --mpd-shadow-soft: 0 10px 20px rgba(15, 23, 42, 0.12);
+}
+
+/* reseteo básico */
+* {
+  box-sizing: border-box
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, Segoe UI, Roboto, Arial;
+  background: var(--bg);
+  color: var(--text);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* =========================
+   TOPBAR
+   ========================= */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand {
+  display: flex;
+  gap: 10px;
+  align-items: center
+}
+
+.logo {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: #0ea5e9;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  color: white;
+  letter-spacing: 1px;
+}
+
+.brand-title {
+  font-size: 18px;
+  font-weight: 700
+}
+
+.brand-sub {
+  font-size: 12px;
+  color: var(--muted)
+}
+
+.top-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center
+}
+
+.datebox {
+  display: flex;
+  gap: 6px
+}
+
+.pill {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  font-size: 12px
+}
+
+/* =============== MODULO MAPA DE SEDES =============== */
+
+.mapa-sedes-card {
+  padding: 10px 12px;
+  margin-top: 8px;
+}
+
+.mapa-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.mapa-header h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.mapa-header p {
+  margin: 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.mapa-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+/* versión vieja de tab – la dejamos neutra por si se usa en otra parte */
+.tab {
+  border-radius: 999px;
+  border: 1px solid #cbd5f5;
+  padding: 4px 10px;
+  font-size: 11.5px;
+  background: #f9fafb;
+  cursor: pointer;
+}
+
+.tab.active {
+  background: var(--mpd-primary);
+  border-color: var(--mpd-primary);
+  color: #ffffff;
+}
+
+.mapa-body {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.mapa-img-wrap {
+  flex: 0 0 45%;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f9fafb;
+  padding: 6px;
+}
+
+.mapa-img-wrap img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+}
+
+.mapa-sedes-list {
+  flex: 1;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.mapa-fuero-list {
+  display: none;
+}
+
+.mapa-fuero-list.active {
+  display: block;
+}
+
+.sede-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: #111827;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  margin-bottom: 5px;
+  transition: background .12s, transform .05s;
+}
+
+.sede-item:hover {
+  background: #eef2ff;
+  transform: translateY(-1px);
+}
+
+.sede-pin {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  margin-top: 5px;
+}
+
+.sede-pin-penal {
+  background: var(--fuero-penal);
+}
+
+.sede-pin-menores {
+  background: var(--fuero-menores);
+}
+
+.sede-pin-ajs {
+  background: var(--fuero-ajs);
+}
+
+.sede-textos {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sede-nombre {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sede-dir {
+  font-size: 11px;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* =========================
+   LAYOUT
+   ========================= */
+.container {
+  padding: 14px
+}
+
+/* ==== Layout general del dashboard ==== */
+.grid-main {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+/* Paneles izquierdo y derecho */
+.left-panel,
+.right-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Mapa + calendario uno al lado del otro */
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 1.5rem;
+}
+
+@media (max-width:1100px) {
+  .grid-main {
+    grid-template-columns: 1fr
+  }
+
+  .right-panel {
+    order: -1
+  }
+}
+
+.left-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px
+}
+
+.right-panel {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 12px;
+  height: fit-content;
+}
+
+/* Fila de botones grandes (Vehículos, Obras, Maestranza/Agentes) */
+.buttons-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.map-card,
+.cal-card {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 12px;
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* =========================
+   MAPA - TABS (colores por fuero)
+   ========================= */
+.map-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 6px 0 10px 0;
+}
+
+.map-tabs .tab {
+  border: none;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  color: white;
+  opacity: .75;
+  transition: .12s ease;
+}
+
+.map-tabs .tab.active {
+  opacity: 1;
+  outline: 2px solid white;
+}
+
+.tab-penal {
+  background: var(--fuero-penal);
+}
+
+.tab-menores {
+  background: var(--fuero-menores);
+}
+
+.tab-ajs {
+  background: var(--fuero-ajs);
+}
+
+.map-frame {
+  background: #fff;
+  border-radius: 12px;
+  padding: 8px;
+  display: grid;
+  place-items: center;
+  min-height: 320px;
+}
+
+.map-frame img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+/* =========================
+   BOTONES PRINCIPALES
+   ========================= */
+.buttons-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  background: var(--btn);
+  color: var(--btnText);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: .12s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px)
+}
+
+.btn.ghost {
+  background: transparent
+}
+
+.btn.big {
+  padding: 12px 16px;
+  border-radius: 12px;
+  min-width: 180px;
+  text-align: center
+}
+
+.btn.xs {
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 8px
+}
+
+.btn.primary {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: white;
+}
+
+.outline-red {
+  border: 2px solid #ef4444;
+  color: #ef4444;
+  background: transparent
+}
+
+.outline-amber {
+  border: 2px solid #f59e0b;
+  color: #f59e0b;
+  background: transparent
+}
+
+.outline-slate {
+  border: 2px solid #94a3b8;
+  color: #94a3b8;
+  background: transparent
+}
+
+/* =========================
+   SEDES SECTION
+   ========================= */
+/* ========== LISTADO DE SEDES ========== */
+
+.sedes-section {
+  margin-top: 18px;
+}
+
+/* Tarjetas de sedes en grilla prolija */
+.sedes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+/* TARJETA FULL PASTEL SUAVE */
+.sede-card {
+  border-radius: 16px;
+  padding: 14px 14px 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  transform: translateY(0);
+  transition: .12s ease;
+}
+
+/* capa pastelizadora */
+.sede-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, .14);
+  pointer-events: none;
+}
+
+/* brillo suave */
+.sede-card::before {
+  content: "";
+  position: absolute;
+  top: -45%;
+  left: -20%;
+  width: 80%;
+  height: 80%;
+  background: rgba(255, 255, 255, .18);
+  transform: rotate(12deg);
+  filter: blur(35px);
+  pointer-events: none;
+}
+
+.sede-card:hover {
+  transform: translateY(-2px);
+  filter: saturate(.95);
+}
+
+/* chip código */
+.sede-code.chip {
+  align-self: flex-start;
+  background: rgba(255, 255, 255, .28);
+  color: #fff;
+  font-weight: 800;
+  font-size: 12px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  letter-spacing: .4px;
+}
+
+.sede-name {
+  font-weight: 800;
+  font-size: 15px;
+  line-height: 1.15;
+}
+
+.sede-city {
+  font-size: 12px;
+  opacity: .95;
+}
+
+/* COLORES INSTITUCIONALES POR FUERO */
+.sede-card.fuero-penal {
+  background: #6666cc;
+}
+
+/* violeta */
+.sede-card.fuero-juridico_social {
+  background: #F14B94;
+}
+
+/* rosa */
+.sede-card.fuero-menores_incapaces {
+  background: #65BFF4;
+}
+
+/* celeste */
+.sede-card.fuero-administracion {
+  background: #4D4D4D;
+}
+
+/* gris */
+.sede-card.fuero-equipo_interdisciplinario {
+  background: #4D4D4D;
+}
+
+/* o el que quieras */
+
+/* destacado en naranja opcional */
+.sede-card.destacado {
+  background: #f58a5e;
+}
+
+
+/* =========================
+   CALENDARIO MAQUETA
+   ========================= */
+.cal-card h3 {
+  margin: 0
+}
+
+/* grid meses */
+.calendar-fake {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+/* mes normal */
+.month {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 8px;
+  text-align: center;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  transition: .12s ease;
+  position: relative;
+}
+
+.month:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, .25);
+}
+
+/* mes actual */
+.month.active {
+  font-weight: 800;
+  outline: 2px solid #fff;
+  border-color: transparent;
+  background: linear-gradient(180deg,
+      rgba(255, 255, 255, .14),
+      rgba(255, 255, 255, 0));
+}
+
+.month.active::after {
+  content: "●";
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-size: 10px;
+  color: #fff;
+  opacity: .95;
+}
+
+/* panel novedades día */
+.day-panel {
+  margin-top: 8px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 140px;
+}
+
+.day-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.day-date {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.day-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12.5px;
+}
+
+.day-item {
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px dashed var(--line);
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tag {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 999px;
+  color: white;
+  white-space: nowrap;
+}
+
+.tag-viaje {
+  background: #ef4444;
+}
+
+.tag-obra {
+  background: #f59e0b;
+}
+
+.tag-otro {
+  background: #64748b;
+}
+
+.empty {
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* =========================
+   AGENTES
+   ========================= */
+.agent-group {
+  margin-top: 8px
+}
+
+.group-title {
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 8px 0 6px 0;
+}
+
+.agent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px
+}
+
+.agent-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 8px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.agent-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  background: #0ea5e9;
+  color: white;
+}
+
+.agent-name {
+  font-weight: 700;
+  font-size: 14px
+}
+
+.agent-sub {
+  font-size: 12px;
+  color: var(--muted)
+}
+
+.agent-actions {
+  display: flex;
+  gap: 6px
+}
+
+/* color lateral rubro */
+.rubro-choferes {
+  border-left: 4px solid #ef4444
+}
+
+.rubro-mantenimiento {
+  border-left: 4px solid #f59e0b
+}
+
+.rubro-limpieza {
+  border-left: 4px solid #22c55e
+}
+
+/* =========================
+   PLACEHOLDER
+   ========================= */
+.placeholder {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 20px;
+  text-align: center;
+}
+
+.table-mpd {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table-mpd th,
+.table-mpd td {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+}
+
+.table-mpd thead {
+  background: var(--bg2);
+}
+
+.table-mpd tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, .03);
+}
+
+.table-soft {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+}
+
+.table-soft th,
+.table-soft td {
+  border: 1px solid var(--line);
+  padding: 6px 8px;
+  background: var(--bg2);
+}
+
+.table-soft thead th {
+  font-weight: 800;
+  text-align: left;
+}
+
+.form-soft {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.form-soft input,
+.form-soft select {
+  padding: 7px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--text);
+}
+
+.form-soft label {
+  grid-column: span 1;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.check-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  align-items: center;
+  margin: 4px 0;
+}
+
+.muted {
+  color: var(--muted)
+}
+
+/* =========================
+   VEHICULOS
+   ========================= */
+.veh-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.veh-table th,
+.veh-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.veh-table thead th {
+  background: var(--card);
+  font-weight: 800;
+}
+
+.veh-table tr:last-child td {
+  border-bottom: none;
+}
+
+.veh-table th:last-child,
+.veh-table td:last-child {
+  border-right: none;
+}
+
+.veh-panels {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+@media (max-width:900px) {
+  .veh-panels {
+    grid-template-columns: 1fr;
+  }
+}
+
+.veh-panel {
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px;
+  min-height: 120px;
+}
+
+.veh-panel.big {
+  min-height: 160px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 8px 10px;
+  margin-top: 10px;
+}
+
+.form-grid input,
+.form-grid select {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg2);
+  color: var(--text);
+}
+
+/* VEHICULOS HOME */
+.veh-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.veh-title {
+  margin: 0;
+}
+
+.veh-actions {
+  margin-top: 0;
+}
+
+/* tabla */
+.veh-table-wrap {
+  overflow: auto;
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg2);
+}
+
+.veh-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 950px;
+  font-size: 13px;
+}
+
+.veh-table th,
+.veh-table td {
+  border: 1px solid var(--line);
+  padding: 8px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.veh-table thead th {
+  background: var(--card);
+  font-weight: 800;
+}
+
+.veh-code {
+  width: 70px;
+}
+
+.veh-plate {
+  width: 90px;
+}
+
+.veh-col-actions {
+  min-width: 140px;
+}
+
+.veh-actions-cell {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* paneles abajo */
+@media (max-width:1100px) {
+  .veh-panels {
+    grid-template-columns: 1fr;
+  }
+}
+
+.veh-form {
+  margin-top: 10px;
+}
+
+.veh-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.veh-form-grid label {
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.veh-form-grid input,
+.veh-form-grid select,
+.veh-form-grid textarea {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--bg2);
+  color: var(--text);
+  font-size: 14px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+@media (max-width:700px) {
+  .veh-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.km-filtros {
+  margin: 10px 0 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.km-filtros>div label {
+  display: block;
+  font-size: 11px;
+  color: #64748b;
+  margin-bottom: 2px;
+}
+
+.km-filtros input,
+.km-filtros select {
+  font-size: 12px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.km-filtros-boton {
+  padding-top: 18px;
+}
+
+/* ===== MÓDULO AGENTES – COLORES CLAROS ===== */
+.agentes-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.section-sub {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.section-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Grupos de agentes a la izquierda */
+.agent-group {
+  background: #f8fafc;
+  border-radius: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid #cbd5e1;
+}
+
+.group-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+  color: #0f172a;
+}
+
+/* Lista y tarjetas */
+.agent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: calc(100vh - 260px);
+  overflow-y: auto;
+  padding-right: 0.4rem;
+}
+
+.agent-card {
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  padding: 0.55rem 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #ffffff;
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.agent-card:hover {
+  background: #f1f5f9;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+}
+
+/* Avatar circular */
+.agent-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  background: #0f766e;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.agent-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.agent-sub {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+/* Botones adentro de la tarjeta */
+.agent-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+/* Ficha detalle del agente (panel derecho) */
+.agent-detail-card {
+  background: #f8fafc;
+  border-radius: 18px;
+  padding: 1.5rem 1.75rem;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.12);
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.agent-detail-header {
+  display: flex;
+  gap: 1.25rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.agent-photo {
+  width: 72px;
+  height: 72px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 3px solid #3b82f6;
+  background: #e5e7eb;
+}
+
+.agent-detail-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.agent-detail-rubro {
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-top: 0.1rem;
+}
+
+.agent-detail-info {
+  font-size: 0.9rem;
+  color: #0f766e;
+  margin-top: 0.25rem;
+}
+
+.agent-detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.3rem;
+}
+
+.agent-detail-section {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 0.9rem 1rem;
+  border: 1px solid #e5e7eb;
+  margin-bottom: 0.75rem;
+}
+
+.agent-detail-section-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #475569;
+  margin-bottom: 0.35rem;
+}
+
+.agent-detail-section-text {
+  font-size: 0.9rem;
+  color: #334155;
+}
+
+/* Listas de puntos en capacitaciones / documentación */
+.doc-list {
+  margin: 0.3rem 0 0.4rem 0;
+  padding-left: 1.2rem;
+  font-size: 0.88rem;
+  color: #334155;
+}
+
+.doc-list li {
+  margin-bottom: 0.15rem;
+}
+
+/* Borde de color según rubro */
+.agent-card.rubro-Choferes {
+  border-left: 4px solid #3b82f6;
+}
+
+.agent-card.rubro-Mantenimiento {
+  border-left: 4px solid #0f766e;
+}
+
+.agent-card.rubro-Limpieza {
+  border-left: 4px solid #f97316;
+}
+
+/* ===== HISTORIAL DE LICENCIAS (AGENTES) ===== */
+.agent-licenses-card {
+  margin-top: 1rem;
+  background: #ffffff;
+  border-radius: 0.9rem;
+  border: 1px solid #cbd5e1;
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.agent-licenses-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.agent-licenses-header h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0;
+  color: #0f172a;
+}
+
+.agent-licenses-count {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.agent-licenses-table-wrapper {
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.agent-licenses-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.agent-licenses-table thead {
+  position: sticky;
+  top: 0;
+  background: #e5f0ff;
+  z-index: 1;
+}
+
+.agent-licenses-table th,
+.agent-licenses-table td {
+  padding: 0.35rem 0.45rem;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+}
+
+.agent-licenses-table th {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.agent-licenses-table tr:nth-child(even) td {
+  background: #f8fafc;
+}
+
+.agent-card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+/* Mini KPIs en cards del dashboard */
+.kpi-row {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.6rem 0 0.4rem;
+  flex-wrap: wrap;
+}
+
+.kpi-pill {
+  flex: 1;
+  min-width: 0;
+  background: #f1f5f9;
+  border-radius: 0.75rem;
+  padding: 0.4rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  border: 1px solid #e2e8f0;
+}
+
+.kpi-label {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.kpi-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.kpi-total {
+  background: #eff6ff;
+}
+
+.kpi-alert {
+  background: #fef2f2;
+}
+
+.kpi-ok {
+  background: #ecfdf3;
+}
+
+/* lista de novedades del día */
+.day-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 0.4rem 0 0;
+  font-size: 0.85rem;
+}
+
+.day-list li+li {
+  margin-top: 0.15rem;
+}
+
+/* =========================
+   TABLA OBRAS – estilo limpio
+   ========================= */
+.obras-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+  background: var(--bg2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.obras-table th {
+  background: var(--card);
+  padding: 10px 8px;
+  font-weight: 700;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  color: var(--text);
+}
+
+.obras-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+  color: var(--text);
+}
+
+.obras-table tr:last-child td {
+  border-bottom: none;
+}
+
+.obras-table td .sub {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.obras-table tbody tr:hover {
+  background: rgba(148, 163, 184, 0.10);
+}
+
+/* EVENTOS MES (CALENDARIO) */
+.calendar-month-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.calendar-month-item {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  font-size: 12px;
+}
+
+.calendar-month-date {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.calendar-month-body strong {
+  display: block;
+  margin-bottom: 1px;
+}
+
+.calendar-month-detalle {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.cal-day-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.cal-day-number {
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.cal-day-dots {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.cal-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.cal-dot-more {
+  font-size: 10px;
+  color: #6b7280;
+}
+
+/* NAV – Dropdown Inventario */
+.main-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-dropdown {
+  position: relative;
+}
+
+.nav-drop-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nav-drop-caret {
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+/* Caja del menú */
+.nav-drop-menu {
+  position: absolute;
+  top: 80%;
+  left: 0;
+  min-width: 230px;
+  padding: 6px;
+  border-radius: 12px;
+  background: var(--mpd-card);
+  border: 1px solid var(--mpd-border);
+  box-shadow: var(--mpd-shadow-soft);
+  display: none;
+  z-index: 30;
+}
+
+/* Ítems del menú */
+.nav-drop-item {
+  display: block;
+  font-size: 13px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--mpd-strong-text);
+}
+
+.nav-drop-item:hover {
+  background: #eef2ff;
+}
+
+/* Separador y etiqueta "Check list" */
+.nav-drop-sep {
+  height: 1px;
+  margin: 4px 0;
+  background: #e5e7eb;
+}
+
+.nav-drop-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--mpd-soft-text);
+  padding: 3px 6px;
+}
+
+/* Estado abierto */
+.nav-dropdown.open .nav-drop-menu {
+  display: block;
+}
+
+/* Links a listados de sedes por fuero */
+.sedes-links {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  font-size: 11px;
+}
+
+.sedes-links-label {
+  color: #6b7280;
+  margin-right: 2px;
+}
+
+.sedes-link {
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 11px;
+  text-decoration: none;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.sedes-link.penal {
+  border-color: var(--fuero-penal);
+  color: var(--fuero-penal);
+  background: rgba(102, 102, 204, 0.06);
+}
+
+.sedes-link.menores {
+  border-color: var(--fuero-menores);
+  color: var(--fuero-menores);
+  background: rgba(101, 191, 244, 0.06);
+}
+
+.sedes-link.ajs {
+  border-color: var(--fuero-ajs);
+  color: var(--fuero-ajs);
+  background: rgba(241, 75, 148, 0.06);
+}
+
+.sedes-link:hover {
+  filter: brightness(0.97);
+}
+
+.list-item {
+  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.list-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.list-name {
+  font-weight: 700;
+  font-size: 12px;
+  color: #0f172a;
+}
+
+.list-meta {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, .12);
+}
+
+:root {
+  --t-sede: #2563eb;
+  --t-proveedor: #f59e0b;
+  --t-agente: #22c55e;
+  --t-tarea: #ef4444;
+  --t-otro: #64748b;
+
+  --st-ok: #16a34a;
+  --st-pend: #f97316;
+  --st-prob: #dc2626;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.dot.sede {
+  background: var(--t-sede);
+}
+
+.dot.proveedor {
+  background: var(--t-proveedor);
+}
+
+.dot.agente {
+  background: var(--t-agente);
+}
+
+.dot.tarea {
+  background: var(--t-tarea);
+}
+
+.dot.otro {
+  background: var(--t-otro);
+}
+
+.badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, .35);
+}
+
+.badge.ok {
+  background: color-mix(in srgb, var(--st-ok) 22%, transparent);
+}
+
+.badge.pend {
+  background: color-mix(in srgb, var(--st-pend) 22%, transparent);
+}
+
+.badge.prob {
+  background: color-mix(in srgb, var(--st-prob) 22%, transparent);
+}
+
+
+
+/* ====== CARDS SEDES (PRESENTACIÓN) ====== */
+.sedes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.sede-card2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px 12px 14px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: #fff;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, .06);
+  text-decoration: none;
+  color: var(--text);
+  position: relative;
+  transition: transform .06s ease, box-shadow .12s ease, border-color .12s ease;
+}
+
+.sede-card2:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(15, 23, 42, .09);
+  border-color: #cbd5e1;
+}
+
+/* línea institucional lateral */
+.sede-card2::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 6px;
+  border-radius: 16px;
+  background: var(--fueroColor, #e5e7eb);
+}
+
+.sede-badge {
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--fueroColor) 22%, #ffffff 78%);
+  border: 1px solid color-mix(in srgb, var(--fueroColor) 35%, #e5e7eb 65%);
+  flex-shrink: 0;
+}
+
+.sede-code {
+  font-weight: 900;
+  letter-spacing: .3px;
+  color: #0f172a;
+  font-size: 14px;
+}
+
+.sede-info {
+  min-width: 0;
+}
+
+.sede-ciudad {
+  font-weight: 900;
+  font-size: 14px;
+  line-height: 1.15;
+  margin: 0;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sede-fuero {
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--fueroColor) 55%, #334155 45%);
+}
+
+.sede-dire {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 1) Que el bloque de sedes tenga aire a los costados */
+.sedes-wrap {
+  padding: 0 14px;
+  /* antes estaba sin padding */
+  box-sizing: border-box;
+}
+
+/* 2) Que el grid NO recorte bordes */
+.sedes-grid {
+  padding: 6px 0;
+  /* un poco arriba/abajo */
+  box-sizing: border-box;
+}
+
+/* 3) Por si algún padre está cortando */
+body {
+  overflow-x: hidden;
+}
+
+/* 4) Que cada card ocupe bien su columna (sin desbordes raros) */
+.sede-card2 {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Formularios estilo licencia */
+.license-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.license-grid .full {
+  grid-column: 1 / -1;
+}
+
+.license-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.license-field label {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.license-field input,
+.license-field select,
+.license-field textarea {
+  font-size: 13px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+.license-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.license-hint {
+  font-size: 12px;
+  color: #64748b;
+}
+
+@media (max-width: 900px) {
+  .license-grid {
+    grid-template-columns: 1fr;
+  }
+}

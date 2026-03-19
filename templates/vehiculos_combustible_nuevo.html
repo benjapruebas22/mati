@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="sedes-section">
+  <h2>Nueva carga de combustible</h2>
+
+  <form method="post" class="form-soft">
+
+    <label>Fecha</label>
+    <input
+      type="date"
+      name="fecha"
+      value="{{ pref_fecha or '' }}"
+      required
+    >
+
+    <label>Vehículo</label>
+    <select name="patente" required>
+      {% for v in vehiculos %}
+        <option value="{{ v.patente }}"
+                {% if v.patente == pref_patente %}selected{% endif %}>
+          {{ v.codigo_interno }} — {{ v.patente }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <label>Chofer</label>
+    <select name="chofer_id">
+      <option value="">(sin chofer)</option>
+      {% for c in choferes %}
+        <option value="{{ c.id }}"
+                {% if pref_chofer_id and (c.id|string) == (pref_chofer_id|string) %}selected{% endif %}>
+          {{ c.agente }}
+        </option>
+      {% endfor %}
+    </select>
+
+    <!-- Remito manual (texto) -->
+    <label>N° Remito / ticket (texto)</label>
+    <input name="remito" placeholder="Ej: 000123 / YPF-456">
+
+    <!-- Remito (Drive) -->
+    <label>Link remito (Drive)</label>
+    <input type="url" name="remito_url" placeholder="https://drive.google.com/...">
+
+    <label>Km actual</label>
+    <input
+      name="km_actual"
+      type="number"
+      step="1"
+      value="{{ pref_km_actual or '' }}"
+    >
+
+    <label>Litros</label>
+    <input name="litros" type="number" step="0.01" required>
+
+    <label>Precio por litro</label>
+    <input name="precio_litro" type="number" step="0.01" required>
+
+    <label>Notas</label>
+    <textarea name="notas" rows="3"></textarea>
+
+    <div style="margin-top:10px;display:flex;gap:8px">
+      <button class="btn primary" type="submit">Guardar</button>
+      <a class="btn ghost" href="{{ url_for('vehiculos_combustible') }}">Cancelar</a>
+    </div>
+
+  </form>
+</section>
+
+{% endblock %}

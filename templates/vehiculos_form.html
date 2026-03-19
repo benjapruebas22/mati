@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="sedes-section" style="max-width:900px;margin:auto">
+  <h2 style="margin-top:0">
+    {% if modo=="nuevo" %}Nuevo vehículo{% else %}Editar vehículo{% endif %}
+  </h2>
+
+  <form method="POST" class="veh-form">
+    <div class="veh-form-grid">
+      <!-- ====== DATOS BASE VEHICULO ====== -->
+      <label>Patente
+        <input name="patente" required value="{{ v.patente if v else '' }}" {% if modo=="editar" %}readonly{% endif %}>
+      </label>
+
+      <label>Código interno (G-01 / N-01)
+        <input name="codigo_interno" required value="{{ v.codigo_interno if v else '' }}">
+      </label>
+
+      <label>Tipo
+        <select name="tipo" required>
+          <option value="G" {% if v and v.tipo=="G" %}selected{% endif %}>G (Gasoil)</option>
+          <option value="N" {% if v and v.tipo=="N" %}selected{% endif %}>N (Nafta)</option>
+        </select>
+      </label>
+
+      <label>Modelo
+        <input name="modelo" value="{{ v.modelo if v else '' }}">
+      </label>
+
+      <label>Combustible
+        <select name="combustible" required>
+          <option value="gasoil" {% if v and v.combustible=="gasoil" %}selected{% endif %}>Gasoil</option>
+          <option value="nafta" {% if v and v.combustible=="nafta" %}selected{% endif %}>Nafta</option>
+        </select>
+      </label>
+
+      <label>Base ciudad
+        <input name="base_ciudad" value="{{ v.base_ciudad if v else 'San Salvador de Jujuy' }}">
+      </label>
+
+      <label>Lugar reservado
+        <select name="lugar_reservado">
+          <option value="" {% if not v or not v.lugar_reservado %}selected{% endif %}>(sin asignar)</option>
+
+          <!-- Bloque lavadero / servicio / vigilancia / ambulancia -->
+          <option value="LAV_R1" {% if v and v.lugar_reservado=='LAV_R1' %}selected{% endif %}>Lavadero</option>
+          <option value="SERV_R1" {% if v and v.lugar_reservado=='SERV_R1' %}selected{% endif %}>Servicio</option>
+          <option value="VIG_R1" {% if v and v.lugar_reservado=='VIG_R1' %}selected{% endif %}>Vigilancia</option>
+          <option value="AMB_R1" {% if v and v.lugar_reservado=='AMB_R1' %}selected{% endif %}>Ambulancia</option>
+
+          <!-- Independencia -->
+          <option value="INDEP202_R1" {% if v and v.lugar_reservado=='INDEP202_R1' %}selected{% endif %}>Independencia
+            202 (R5)</option>
+
+          <!-- Cochera SM 148 (4 lugares) -->
+          <option value="SM148_R1" {% if v and v.lugar_reservado=='SM148_R1' %}selected{% endif %}>San Martín 148
+            Cochera R1</option>
+          <option value="SM148_R2" {% if v and v.lugar_reservado=='SM148_R2' %}selected{% endif %}>San Martín 148
+            Cochera R2</option>
+          <option value="SM148_R3" {% if v and v.lugar_reservado=='SM148_R3' %}selected{% endif %}>San Martín 148
+            Cochera R3</option>
+          <option value="SM148_R4" {% if v and v.lugar_reservado=='SM148_R4' %}selected{% endif %}>San Martín 148
+            Cochera R4</option>
+
+          <!-- SM 137 (3 lugares) -->
+          <option value="SM137_R1" {% if v and v.lugar_reservado=='SM137_R1' %}selected{% endif %}>San Martín 137 R1
+          </option>
+          <option value="SM137_R2" {% if v and v.lugar_reservado=='SM137_R2' %}selected{% endif %}>San Martín 137 R2
+          </option>
+          <option value="SM137_R3" {% if v and v.lugar_reservado=='SM137_R3' %}selected{% endif %}>San Martín 137 R3
+          </option>
+
+          <!-- SM 271 (1 lugar) -->
+          <option value="SM271_R1" {% if v and v.lugar_reservado=='SM271_R1' %}selected{% endif %}>San Martín 271 R1
+          </option>
+        </select>
+      </label>
+
+      <label>Color tag
+        <input type="color" name="color_tag" value="{{ v.color_tag if v else '#5B5BEA' }}">
+      </label>
+    </div>
+
+    <hr style="margin:14px 0;border-color:var(--line)">
+
+    <!-- ====== ESTADO (TABLA GRANDE) ====== -->
+    <h3 style="margin:0 0 8px 0">Service / Lavado / Seguro / RTV</h3>
+
+    <div class="veh-form-grid">
+      <label>Último service
+        <input type="date" name="ultimo_service" value="{{ v.ultimo_service if v and v.ultimo_service else '' }}">
+      </label>
+
+      <label>Próximo service
+        <input type="date" name="proximo_service" value="{{ v.proximo_service if v and v.proximo_service else '' }}">
+      </label>
+
+      <label>Último lavado
+        <input type="date" name="ultimo_lavado" value="{{ v.ultimo_lavado if v and v.ultimo_lavado else '' }}">
+      </label>
+
+      <label>Próximo lavado
+        <input type="date" name="proximo_lavado" value="{{ v.proximo_lavado if v and v.proximo_lavado else '' }}">
+      </label>
+
+      <label>Seguro inicio
+        <input type="date" name="seguro_inicio" value="{{ v.seguro_inicio if v and v.seguro_inicio else '' }}">
+      </label>
+
+      <label>Seguro vence
+        <input type="date" name="seguro_vencimiento"
+          value="{{ v.seguro_vencimiento if v and v.seguro_vencimiento else '' }}">
+      </label>
+
+      <label>RTV inicio
+        <input type="date" name="rtv_inicio" value="{{ v.rtv_inicio if v and v.rtv_inicio else '' }}">
+      </label>
+
+      <label>RTV vence
+        <input type="date" name="rtv_vencimiento" value="{{ v.rtv_vencimiento if v and v.rtv_vencimiento else '' }}">
+      </label>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn primary" type="submit">Guardar</button>
+      <a class="btn outline" href="{{ url_for('calendario') }}">
+        Calendario
+      </a>
+
+  </form>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="sedes-section depositos-edit">
+
+  <header class="section-header">
+    <div>
+      <h2>Editar ítem de depósito</h2>
+      <p class="section-sub">
+        Modificá los datos del stock guardado en Taller / Depósitos.
+      </p>
+    </div>
+  </header>
+
+  <section class="card-soft dep-card">
+    <form method="post" class="dep-form">
+      <div class="dep-form-row">
+
+        <!-- Depósito -->
+        <div class="dep-group dep-deposito">
+          <label>Depósito</label>
+          <select name="deposito_codigo" required>
+            {% for d in sedes_deps %}
+              <option value="{{ d.codigo }}"
+                      {% if d.codigo == reg.deposito_codigo %}selected{% endif %}>
+                {{ d.descripcion }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Categoria -->
+        <div class="dep-group dep-cat">
+          <label>Categoria</label>
+          {% set cat = (reg.categoria or '').lower() %}
+          <select name="categoria">
+            <option value="Herramientas" {% if cat == 'herramientas' %}selected{% endif %}>Herramientas</option>
+            <option value="Mobiliario" {% if cat == 'mobiliario' %}selected{% endif %}>Mobiliario</option>
+          </select>
+        </div>
+
+        <!-- Ítem -->
+        <div class="dep-group dep-item">
+          <label>Ítem</label>
+          <input type="text" name="item" value="{{ reg.item }}" required>
+        </div>
+
+        <!-- Cantidad -->
+        <div class="dep-group dep-cant">
+          <label>Cant.</label>
+          <input type="number" name="cantidad"
+                 min="0" step="1" value="{{ reg.cantidad }}">
+        </div>
+
+        <!-- Estado -->
+        <div class="dep-group dep-estado">
+          <label>Estado</label>
+          <select name="estado">
+            {% set est = (reg.estado or '').lower() %}
+            <option value="Bueno"       {% if est == 'bueno' %}selected{% endif %}>Bueno</option>
+            <option value="Regular"     {% if est == 'regular' %}selected{% endif %}>Regular</option>
+            <option value="Para reparar"{% if est == 'para reparar' %}selected{% endif %}>Para reparar</option>
+            <option value="Baja"        {% if est == 'baja' %}selected{% endif %}>Baja</option>
+          </select>
+        </div>
+
+        <!-- Observaciones -->
+        <div class="dep-group dep-obs">
+          <label>Observaciones</label>
+          <input type="text" name="observaciones"
+                 value="{{ reg.observaciones or '' }}">
+        </div>
+
+      </div>
+
+      <div style="margin-top:10px;display:flex;justify-content:flex-end;gap:8px;">
+        <a href="{{ url_for('depositos_home') }}" class="btn outline-slate">
+          Cancelar
+        </a>
+        <button type="submit" class="btn primary">
+          💾 Guardar cambios
+        </button>
+      </div>
+    </form>
+  </section>
+
+</section>
+
+<style>
+  .depositos-edit{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .card-soft{
+    border-radius:16px;
+    border:1px solid #e2e8f0;
+    background:#ffffff;
+    padding:12px 14px;
+  }
+  .dep-form{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .dep-form-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .dep-group{
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    font-size:12px;
+  }
+  .dep-group label{
+    color:#64748b;
+  }
+  .dep-group select,
+  .dep-group input{
+    font-size:13px;
+    padding:4px 8px;
+    border-radius:8px;
+    border:1px solid #e2e8f0;
+    min-width:0;
+  }
+  .dep-deposito{ flex:1 1 220px; }
+  .dep-cat     { flex:0 0 160px; }
+  .dep-item    { flex:2 1 260px; }
+  .dep-cant    { flex:0 0 80px; max-width:90px; }
+  .dep-estado  { flex:0 0 140px; }
+  .dep-obs     { flex:2 1 240px; }
+</style>
+
+{% endblock %}

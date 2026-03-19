@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="grid-main">
+
+  <!-- PANEL IZQUIERDO -->
+  <div class="left-panel">
+    <div class="hero">
+      <div class="map-card">
+        <h3>
+          {% if modo == 'editar' %}Editar desinfección{% else %}Nueva desinfección{% endif %}
+        </h3>
+
+        <div style="display:flex;align-items:flex-start;gap:16px">
+          <div style="
+              min-width:70px;
+              padding:10px;
+              border-radius:14px;
+              background:#dbeafe;
+              text-align:center;">
+            <div style="font-size:11px;color:#1d4ed8;">Código</div>
+            <div style="font-weight:700;font-size:16px;">
+              {{ sede.codigo }}
+            </div>
+          </div>
+
+          <div style="flex:1 1 auto">
+            <h4 style="margin:0 0 4px 0;">{{ sede.nombre }}</h4>
+            <div style="font-size:13px;color:#64748b;">
+              {{ sede.ciudad }} · {{ sede.departamento }}
+            </div>
+            <div style="font-size:12px;color:#94a3b8;margin-top:4px;">
+              Registro de desinfecciones de esta sede.
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:16px;">
+          <a href="{{ url_for('sede_seguridad', codigo=sede.codigo) }}"
+             class="btn xs outline-slate">⬅ Volver a Seguridad</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL DERECHO: FORMULARIO -->
+  <div class="right-panel">
+
+    <h3 style="margin-top:0;margin-bottom:12px;">
+      {% if modo == 'editar' %}Editar desinfección{% else %}Nueva desinfección{% endif %}
+    </h3>
+
+    <form method="post" style="max-width:520px;display:flex;flex-direction:column;gap:12px;">
+
+      <div>
+        <label for="fecha" style="font-size:13px;">Fecha</label>
+        <input type="date" id="fecha" name="fecha"
+               value="{{ desinfeccion.fecha if desinfeccion else '' }}"
+               style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;">
+      </div>
+
+      <div>
+        <label for="empresa" style="font-size:13px;">Empresa</label>
+        <input type="text" id="empresa" name="empresa"
+               value="{{ desinfeccion.empresa if desinfeccion else '' }}"
+               style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;">
+      </div>
+
+      <div>
+        <label for="observaciones" style="font-size:13px;">Observaciones</label>
+        <textarea id="observaciones" name="observaciones" rows="3"
+                  style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;resize:vertical;">{{ desinfeccion.observaciones if desinfeccion else '' }}</textarea>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <button type="submit" class="btn solid-blue">
+          💾 Guardar
+        </button>
+        <a href="{{ url_for('sede_seguridad', codigo=sede.codigo) }}"
+           class="btn ghost">
+          Cancelar
+        </a>
+      </div>
+
+    </form>
+
+  </div>
+
+</section>
+
+{% endblock %}

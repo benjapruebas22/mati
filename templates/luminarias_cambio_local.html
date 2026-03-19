@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block content %}
+<section style="padding:16px;">
+    <h2 style="margin:0 0 6px;">Cambio de luminaria</h2>
+    <div style="color:#6b7280;margin-bottom:12px;">
+        Sede: <b>{{ sede.codigo }}</b> — {{ sede.nombre }} | Piso: <b>{{ piso }}</b> | Local: <b>{{ local }}</b>
+    </div>
+
+    <div style="display:grid;grid-template-columns:360px 1fr;gap:16px;align-items:start;">
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:12px;">
+            <h3 style="margin:0 0 8px;font-size:14px;">Registrar cambio</h3>
+            <form method="post">
+                <label>Fecha</label>
+                <input type="date" name="fecha" value="{{ hoy }}"
+                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:10px;margin-bottom:8px;">
+
+                <label>Tipo</label>
+                <select name="tipo" required
+                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:10px;margin-bottom:8px;">
+                    <option value="">-- elegir --</option>
+                    <option value="tubo_led">Tubo LED</option>
+                    <option value="panel_led">Panel LED</option>
+                    <option value="foco_comun">Foco común</option>
+                    <option value="otro">Otro</option>
+                </select>
+
+                <label>Color</label>
+                <select name="color_luz"
+                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:10px;margin-bottom:8px;">
+                    <option value="">--</option>
+                    <option value="fria">Fría</option>
+                    <option value="calida">Cálida</option>
+                </select>
+
+                <label>Potencia / modelo</label>
+                <input name="potencia" placeholder="Ej: 18W / 60x60"
+                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:10px;margin-bottom:8px;">
+
+                <label>Cantidad</label>
+                <input type="number" name="cantidad" min="1" value="1"
+                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:10px;margin-bottom:8px;">
+
+                <label>Instalado por</label>
+                <input name="instalado_por" placeholder="Nombre"
+                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:10px;margin-bottom:8px;">
+
+                <label>Observaciones</label>
+                <input name="observaciones" placeholder="Detalle corto"
+                    style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:10px;margin-bottom:10px;">
+
+                <button
+                    style="width:100%;padding:9px;border-radius:999px;border:1px solid #2563eb;background:#2563eb;color:#fff;cursor:pointer;">
+                    Guardar cambio
+                </button>
+            </form>
+        </div>
+
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:12px;">
+            <h3 style="margin:0 0 10px;font-size:14px;">Historial del local</h3>
+
+            <div style="border:1px solid #e5e7eb;border-radius:12px;overflow:auto;max-height:420px;">
+                <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                    <thead style="background:#f3f4f6;position:sticky;top:0;">
+                        <tr>
+                            <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Fecha</th>
+                            <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Tipo</th>
+                            <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Color</th>
+                            <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Potencia</th>
+                            <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Cant</th>
+                            <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Instaló</th>
+                            <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Obs</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if historial %}
+                        {% for h in historial %}
+                        <tr>
+                            <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ h.fecha }}</td>
+                            <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ h.tipo }}</td>
+                            <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ h.color_luz or '-' }}</td>
+                            <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ h.potencia or '-' }}</td>
+                            <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ h.cantidad }}</td>
+                            <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ h.instalado_por or '-' }}</td>
+                            <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ h.observaciones or '-' }}</td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="7" style="padding:10px;color:#6b7280;">Sin cambios cargados todavía.</td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

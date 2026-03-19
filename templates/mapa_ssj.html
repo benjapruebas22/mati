@@ -1,0 +1,2269 @@
+﻿{% extends "base.html" %}
+{% block content %}
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+
+<style>
+  .msj-wrap{display:flex;gap:16px;align-items:flex-start;padding:14px 0;}
+  .msj-left{width:440px;min-width:360px;}
+  .msj-right{flex:1;min-width:520px;}
+  .mode-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 10px;}
+  .mode-panel{display:none;}
+  .mode-panel.active{display:block;}
+  .list-kpis{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+
+  .msj-card{
+    background:#fff;border:1px solid #e5e7eb;border-radius:14px;
+    box-shadow:0 8px 22px rgba(15,23,42,.06);overflow:hidden;
+  }
+  .msj-hd{
+    padding:14px 16px;border-bottom:1px solid #eef2f7;
+    display:flex;justify-content:space-between;gap:10px;align-items:flex-start;
+  }
+  .msj-title{margin:0;font-size:18px;font-weight:800;}
+  .msj-sub{margin:4px 0 0;font-size:12px;color:#64748b;}
+  .msj-bd{padding:14px 16px;}
+
+  #map{height:72vh;min-height:520px;border:1px solid #e5e7eb;border-radius:14px;}
+
+  .block{padding:12px;border:1px solid #eef2f7;border-radius:12px;background:#f8fafc;}
+  .block + .block{margin-top:12px;}
+  .block-title{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#64748b;margin:0 0 10px;font-weight:800;}
+
+  .lbl{font-size:12px;color:#64748b;margin:0 0 4px}
+  .in{width:100%;padding:9px 10px;border:1px solid #e5e7eb;border-radius:10px;outline:none;font-size:13px;background:#fff;}
+  .in.sel-focus-sede_mpd{border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,.15);background:#ecfdf5;}
+  .in.sel-focus-sede_mpa{border-color:#f97316;box-shadow:0 0 0 3px rgba(249,115,22,.16);background:#fff7ed;}
+  .in.sel-focus-sede_pj{border-color:#0ea5e9;box-shadow:0 0 0 3px rgba(14,165,233,.16);background:#f0f9ff;}
+  .in.sel-focus-proveedor{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.14);background:#eff6ff;}
+  .in.sel-focus-institucion{border-color:#7c3aed;box-shadow:0 0 0 3px rgba(124,58,237,.14);background:#f5f3ff;}
+  .in.sel-focus-comisaria{border-color:#1e40af;box-shadow:0 0 0 3px rgba(30,64,175,.14);background:#eff6ff;}
+  .in.sel-focus-servicio_penitenciario{border-color:#0f766e;box-shadow:0 0 0 3px rgba(15,118,110,.16);background:#ecfeff;}
+  .in.sel-focus-registro_civil{border-color:#0ea5a4;box-shadow:0 0 0 3px rgba(14,165,164,.16);background:#f0fdfa;}
+  .in.sel-focus-pericia{border-color:#f97316;box-shadow:0 0 0 3px rgba(249,115,22,.16);background:#fff7ed;}
+  .in.sel-focus-evacuacion{border-color:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.14);background:#f0fdf4;}
+  .in.sel-focus-asistido{border-color:#06b6d4;box-shadow:0 0 0 3px rgba(6,182,212,.14);background:#ecfeff;}
+  .in.sel-focus-procuracion{border-color:#f43f5e;box-shadow:0 0 0 3px rgba(244,63,94,.14);background:#fff1f2;}
+  .in.sel-focus-otro{border-color:#64748b;box-shadow:0 0 0 3px rgba(100,116,139,.12);background:#f8fafc;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .btn{width:100%;padding:10px 12px;border-radius:12px;border:1px solid #1d4ed8;background:#1d4ed8;color:#fff;font-weight:700;cursor:pointer;}
+  .btn2{padding:8px 10px;border-radius:10px;border:1px solid #e5e7eb;background:#fff;cursor:pointer;font-size:12px;}
+  .btn-danger{border-color:#b91c1c;background:#b91c1c;color:#fff;}
+  .btn-ok{border-color:#16a34a;background:#16a34a;color:#fff;}
+  .btn-warn{border-color:#f59e0b;background:#f59e0b;color:#111827;}
+
+  .tag{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;border:1px solid #e5e7eb;font-weight:700;}
+  .tag.pendiente{background:#fff7ed;color:#9a3412;border-color:#fed7aa}
+  .tag.curso{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}
+  .tag.cerrado{background:#ecfdf5;color:#065f46;border-color:#a7f3d0}
+  .tag.res{background:#f1f5f9;color:#0f172a;border-color:#e2e8f0}
+  .tag.tipo{font-weight:800}
+  .tag.tipo-proveedor{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}
+  .tag.tipo-sede_pj{background:#e0f2fe;color:#0c4a6e;border-color:#bae6fd}
+  .tag.tipo-sede_mpd{background:#ecfdf5;color:#065f46;border-color:#a7f3d0}
+  .tag.tipo-sede_mpa{background:#fff7ed;color:#9a3412;border-color:#fed7aa}
+  .tag.tipo-sede{background:#eef2ff;color:#3730a3;border-color:#c7d2fe}
+  .tag.tipo-comisaria{background:#dbeafe;color:#1e3a8a;border-color:#93c5fd}
+  .tag.tipo-servicio_penitenciario{background:#ecfeff;color:#0f766e;border-color:#99f6e4}
+  .tag.tipo-registro_civil{background:#f0fdfa;color:#0f766e;border-color:#99f6e4}
+  .tag.tipo-otro{background:#f1f5f9;color:#334155;border-color:#e2e8f0}
+  .estado-select{border:1px solid #e5e7eb;border-radius:999px;padding:6px 12px;font-weight:800;font-size:12px;cursor:pointer;appearance:none}
+  .estado-pendiente{background:#fff7ed;color:#9a3412;border-color:#fed7aa}
+  .estado-curso{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}
+  .estado-cerrado{background:#ecfdf5;color:#065f46;border-color:#a7f3d0}
+
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:10px 10px;border-bottom:1px solid #eef2f7;vertical-align:top;font-size:13px}
+  th{font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.06em}
+  .row-focus{background:#f8fafc}
+  .list-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+  .group-hd{background:#f8fafc;font-weight:800;color:#334155}
+  .group-toggle{cursor:pointer;user-select:none}
+
+  .hint{
+    display:none;margin:8px 0 10px;padding:8px 10px;border-radius:10px;
+    border:1px solid #e5e7eb;background:#f1f5f9;color:#0f172a;font-size:12px;
+  }
+
+  .legend{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+  .leg-item{display:flex;align-items:center;gap:8px;font-size:12px;color:#334155}
+  .dot{width:10px;height:10px;border-radius:50%;}
+  .ring{width:10px;height:10px;border-radius:50%;border:2px solid #f59e0b;background:transparent}
+
+  .leaflet-tooltip.msj-tip{
+    background:#0f172a;color:#fff;border:0;padding:4px 8px;border-radius:8px;
+    font-size:11px;font-weight:700;box-shadow:0 6px 16px rgba(15,23,42,.22);
+  }
+  .leaflet-tooltip-top.msj-tip:before{border-top-color:#0f172a;}
+
+  .left-accordion{padding:0;overflow:hidden;background:#fff;}
+  .left-accordion > summary{
+    list-style:none;cursor:pointer;padding:10px 12px;font-size:12px;font-weight:800;
+    text-transform:uppercase;letter-spacing:.06em;color:#475569;display:flex;justify-content:space-between;align-items:center;
+  }
+  .left-accordion > summary::-webkit-details-marker{display:none;}
+  .left-accordion > summary::after{content:'+';font-size:16px;line-height:1;color:#64748b;}
+  .left-accordion[open] > summary::after{content:'-';}
+  .left-body{padding:10px 12px;border-top:1px solid #eef2f7;background:#f8fafc;}
+  .form-sec-title{margin:10px 0 6px;font-size:11px;font-weight:900;color:#334155;text-transform:uppercase;letter-spacing:.05em;}
+  .coord-tech{display:none;}
+  .coord-status{display:flex;align-items:center;justify-content:center;border:1px dashed #cbd5e1;border-radius:10px;padding:8px 10px;font-size:12px;color:#64748b;background:#fff;}
+  .coord-status.ok{border-color:#86efac;background:#ecfdf5;color:#166534;font-weight:700;}
+
+  @media (max-width: 1100px){
+    .msj-wrap{flex-direction:column}
+    .msj-left{width:100%}
+    .msj-right{width:100%;min-width:0}
+    #map{min-height:460px}
+  }
+</style>
+
+<section class="msj-wrap">
+
+  <div class="msj-left">
+    <div class="msj-card">
+      <div class="msj-hd">
+        <div>
+          <h1 class="msj-title">Mapa SSJ - Jujuy</h1>
+          <p class="msj-sub">Toca el mapa para fijar lat/lng. Carga organizada por tipo.</p>
+        </div>
+      </div>
+
+      <div class="msj-bd">
+
+        <details class="block left-accordion" id="panel-buscar" open>
+          <summary>Buscar y filtrar</summary>
+          <div class="left-body">
+            <p class="msj-sub" style="margin:0 0 10px">Encontra sedes, organismos o puntos cargados.</p>
+            <div class="row2">
+              <div>
+                <div class="lbl">Tipo</div>
+                <select id="f-tipo" class="in">
+                  <option value="">Todos</option>
+                  <option value="sede_mpd">Sedes MPD</option>
+                  <option value="sede_mpa">Sedes MPA</option>
+                  <option value="sede_pj">Sedes Poder Judicial</option>
+                  <option value="proveedor">Proveedor</option>
+                  <option value="institucion">Instituciones de la Salud</option>
+                  <option value="comisaria">Comisarias</option>
+                  <option value="servicio_penitenciario">Servicios Penitenciarios</option>
+                  <option value="registro_civil">Registro Civil</option>
+                  <option value="pericia">Pericia</option>
+                  <option value="otro">Otro</option>
+                </select>
+              </div>
+              <div>
+                <div class="lbl">Buscador</div>
+                <input id="f-buscar" class="in" placeholder="Ej: Camara Gesell / Vocalias / Hospital">
+              </div>
+            </div>
+            <div class="row2" style="margin-top:10px">
+              <button id="btn-aplicar" class="btn">Aplicar filtros</button>
+              <button id="btn-limpiar" class="btn2" type="button">Limpiar</button>
+            </div>
+          </div>
+        </details>
+
+        <details class="block left-accordion" id="panel-carga-left">
+          <summary>+ Nuevo punto</summary>
+          <div class="left-body">
+
+          <div id="msjHint" class="hint">
+            Lat/Lng cargadas. Completa los datos y toca "Crear punto".
+          </div>
+
+          <div class="form-sec-title">Datos basicos</div>
+          <div class="row2">
+            <div>
+              <div class="lbl">Tipo</div>
+              <select id="n-tipo" class="in">
+                <option value="sede_mpd">Sedes MPD</option>
+                <option value="sede_mpa">Sedes MPA</option>
+                <option value="sede_pj">Sedes Poder Judicial</option>
+                <option value="proveedor">Proveedor</option>
+                <option value="institucion">Instituciones de la Salud</option>
+                <option value="comisaria">Comisarias</option>
+                <option value="servicio_penitenciario">Servicios Penitenciarios</option>
+                <option value="registro_civil">Registro Civil</option>
+                <option value="pericia">Pericia</option>
+                <option value="otro">Otro</option>
+              </select>
+            </div>
+            <div id="grp-estado">
+              <div class="lbl">Estado</div>
+              <select id="n-estado" class="in">
+                <option value="pendiente">Pendiente</option>
+                <option value="en_curso">En curso</option>
+                <option value="cerrado">Cerrado</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="grp-fechas" class="row2" style="margin-top:10px">
+            <div>
+              <div class="lbl">Fecha alta</div>
+              <input id="n-fecha" class="in" type="date">
+            </div>
+            <div>
+              <div class="lbl">Fecha objetivo</div>
+              <input id="n-fecha-obj" class="in" type="date">
+            </div>
+          </div>
+
+          <div id="grp-catalogo" class="row2" style="margin-top:10px;display:none">
+            <div>
+              <div class="lbl">Lugar / Sede</div>
+              <select id="n-sede-lugar" class="in">
+                <option value="">Seleccionar...</option>
+              </select>
+            </div>
+            <div>
+              <div class="lbl">Area / Dependencia</div>
+              <select id="n-sede-area" class="in">
+                <option value="">Seleccionar...</option>
+              </select>
+            </div>
+          </div>
+          <div id="sede-info" style="display:none;margin-top:8px;padding:8px 10px;border:1px solid #dbeafe;background:#eff6ff;border-radius:10px;font-size:12px;color:#1e3a8a">
+            <div id="sede-info-dir" style="font-weight:700"></div>
+            <div id="sede-info-areas" style="margin-top:4px"></div>
+          </div>
+
+          <div class="form-sec-title">Identificacion</div>
+          <div style="margin-top:10px">
+            <div class="lbl">Titulo</div>
+            <input id="n-titulo" class="in" placeholder="Ej: Proveedor / Institucion / Pericia">
+          </div>
+
+          <div class="row2" style="margin-top:10px">
+            <div>
+              <div class="lbl">Categoria / Rubro</div>
+              <input id="n-categoria" class="in" placeholder="Ej: Hospital / Gas / Electricidad / Seguridad">
+            </div>
+            <div>
+              <div class="lbl">Responsable</div>
+              <input id="n-responsable" class="in" placeholder="Nombre">
+            </div>
+          </div>
+
+          <div id="grp-asistido" class="row2" style="margin-top:10px">
+            <div>
+              <div class="lbl">Expediente</div>
+              <input id="n-expediente" class="in" placeholder="N de expediente">
+            </div>
+            <div>
+              <div class="lbl">Asistido</div>
+              <input id="n-asistido" class="in" placeholder="Nombre del asistido">
+            </div>
+          </div>
+
+          <div id="grp-etapa" class="row2" style="margin-top:10px">
+            <div>
+              <div class="lbl">Etapa</div>
+              <input id="n-etapa" class="in" placeholder="1">
+            </div>
+            <div>
+              <div class="lbl">Total etapas</div>
+              <input id="n-etapa-total" class="in" placeholder="3">
+            </div>
+          </div>
+
+          <div id="grp-resultado" class="row2" style="margin-top:10px">
+            <div>
+              <div class="lbl">Resultado</div>
+              <select id="n-resultado" class="in">
+                <option value="">(sin resultado)</option>
+                <option value="ok">Realizado</option>
+                <option value="no_habia_nadie">No habia nadie</option>
+                <option value="domicilio_no_encontrado">Domicilio no encontrado</option>
+                <option value="domicilio_inexistente">Domicilio inexistente</option>
+                <option value="no_se_hizo_pericia">No se hizo pericia</option>
+                <option value="reprogramar">Reprogramar</option>
+                <option value="otro">Otro</option>
+              </select>
+            </div>
+            <div>
+              <div class="lbl">Motivo / Detalle</div>
+              <input id="n-resultado-detalle" class="in" placeholder="Detalle breve">
+            </div>
+          </div>
+
+          <div class="form-sec-title">Ubicacion</div>
+          <div class="row2" style="margin-top:10px">
+            <div>
+              <div class="lbl">Direccion</div>
+              <input id="n-direccion" class="in" placeholder="Calle y nro">
+            </div>
+            <div>
+              <div class="lbl">Direccion alternativa</div>
+              <input id="n-direccion-extra" class="in" placeholder="Para otra etapa/chofer">
+            </div>
+          </div>
+
+          <div class="row2" style="margin-top:10px">
+            <div>
+              <div class="lbl">Barrio</div>
+              <input id="n-barrio" class="in" placeholder="Barrio">
+            </div>
+            <div>
+              <div class="lbl">Localidad</div>
+              <input id="n-localidad" class="in" placeholder="Localidad">
+            </div>
+          </div>
+
+          <div class="form-sec-title">Detalle opcional</div>
+          <div style="margin-top:10px">
+            <div class="lbl">Descripcion</div>
+            <textarea id="n-descripcion" class="in" rows="3" placeholder="Detalle / observaciones"></textarea>
+          </div>
+
+          <div class="row2" style="margin-top:10px">
+            <div>
+              <div class="lbl">Contacto</div>
+              <input id="n-contacto" class="in" placeholder="Tel / mail">
+            </div>
+            <div>
+              <div class="lbl">Referencia</div>
+              <input id="n-ref" class="in" placeholder="Pedido / orden / nota">
+            </div>
+          </div>
+
+          <div class="form-sec-title">Coordenadas</div>
+          <div class="row2" style="margin-top:10px">
+            <button id="btn-select-map" class="btn2" type="button">Seleccionar en mapa</button>
+            <div id="map-pick-status" class="coord-status">Pendiente de seleccion</div>
+          </div>
+
+          <div class="row2 coord-tech" style="margin-top:8px">
+            <div>
+              <div class="lbl">Lat</div>
+              <input id="n-lat" class="in" placeholder="Toca el mapa" readonly>
+            </div>
+            <div>
+              <div class="lbl">Lng</div>
+              <input id="n-lng" class="in" placeholder="Toca el mapa" readonly>
+            </div>
+          </div>
+
+          <div style="margin-top:10px">
+            <div id="edit-bar" style="display:none;margin-bottom:8px;font-size:12px;color:#64748b">
+              Editando ID <b id="edit-id"></b> Â· <button id="btn-cancelar" class="btn2" type="button">Cancelar edicion</button>
+            </div>
+            <div class="row2">
+              <button id="btn-crear" class="btn">Crear punto</button>
+              <button id="btn-cerrar-carga" class="btn2" type="button">Cancelar</button>
+            </div>
+          </div>
+        </div>
+
+        </details>
+
+        <details class="block left-accordion" id="panel-leyenda-left">
+          <summary>Leyenda</summary>
+          <div class="left-body">
+          <div class="legend">
+            <div class="leg-item"><span class="dot" style="background:#10b981"></span> Sedes MPD</div>
+            <div class="leg-item"><span class="dot" style="background:#f97316"></span> Sedes MPA</div>
+            <div class="leg-item"><span class="dot" style="background:#0ea5e9"></span> Sedes Poder Judicial</div>
+            <div class="leg-item"><span class="dot" style="background:#2563eb"></span> Proveedor</div>
+            <div class="leg-item"><span class="dot" style="background:#7c3aed"></span> Instituciones de la Salud</div>
+            <div class="leg-item"><span class="dot" style="background:#1e40af"></span> Comisarias</div>
+            <div class="leg-item"><span class="dot" style="background:#0f766e"></span> Servicios Penitenciarios</div>
+            <div class="leg-item"><span class="dot" style="background:#0ea5a4"></span> Registro Civil</div>
+            <div class="leg-item"><span class="dot" style="background:#f97316"></span> Pericia</div>
+            <div class="leg-item"><span class="dot" style="background:#f43f5e"></span> Procuracion</div>
+            <div class="leg-item"><span class="dot" style="background:#6366f1"></span> Sede (legacy)</div>
+            <div class="leg-item"><span class="dot" style="background:#64748b"></span> Otro</div>
+
+            <div class="leg-item"><span class="ring" style="border-color:#f59e0b"></span> Pendiente</div>
+            <div class="leg-item"><span class="ring" style="border-color:#2563eb"></span> En curso</div>
+            <div class="leg-item"><span class="ring" style="border-color:#16a34a"></span> Cerrado</div>
+          </div>
+          </div>
+        </details>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="msj-right">
+
+    <div class="mode-bar">
+      <button id="btn-modo-operativo" class="btn2 btn-ok" type="button">Modo operativo</button>
+      <button id="btn-modo-listado" class="btn2" type="button">Ver listado / gestion</button>
+    </div>
+
+    <section id="panel-operativo" class="mode-panel active">
+      <div class="msj-card">
+        <div class="msj-hd">
+          <div>
+            <h3 style="margin:0;font-size:14px">Mapa operativo</h3>
+            <div class="msj-sub">Vista principal para lectura rapida de ubicaciones y estado.</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <span id="medir-info" class="msj-sub" style="display:none"></span>
+            <button id="btn-medir" class="btn2" type="button">Medir</button>
+            <button id="btn-refresh" class="btn2" type="button">Actualizar</button>
+            <button id="btn-go-listado" class="btn2" type="button">Listado</button>
+            <button id="btn-area" class="btn2" type="button">Trabajar esta area</button>
+          </div>
+        </div>
+        <div class="msj-bd">
+          <div id="map"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="panel-listado" class="mode-panel">
+      <div class="msj-card">
+        <div class="msj-hd">
+          <div>
+            <h3 style="margin:0;font-size:14px">Listado / gestion</h3>
+            <div class="msj-sub">Guardado en base: <b>mapa_ssj_puntos</b></div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <button id="btn-back-operativo" class="btn2" type="button">Volver al mapa</button>
+          </div>
+        </div>
+
+        <div class="msj-bd" style="overflow:auto">
+          <div id="list-kpis" class="list-kpis">
+            <span class="tag" id="kpi-total">Total: 0</span>
+            <span class="tag" id="kpi-policia">Comisarias: 0</span>
+            <span class="tag pendiente" id="kpi-pendientes">Pendientes: 0</span>
+            <span class="tag cerrado" id="kpi-cerrados">Cerrados: 0</span>
+          </div>
+          <div class="list-controls">
+            <select id="l-tipo" class="in" style="max-width:160px">
+              <option value="">Todos los tipos</option>
+              <option value="sede_mpd">Sedes MPD</option>
+              <option value="sede_mpa">Sedes MPA</option>
+              <option value="sede_pj">Sedes Poder Judicial</option>
+              <option value="proveedor">Proveedor</option>
+              <option value="institucion">Instituciones de la Salud</option>
+              <option value="comisaria">Comisarias</option>
+              <option value="servicio_penitenciario">Servicios Penitenciarios</option>
+              <option value="registro_civil">Registro Civil</option>
+              <option value="pericia">Pericia</option>
+              <option value="otro">Otro</option>
+            </select>
+            <select id="l-estado" class="in" style="max-width:140px">
+              <option value="">Todos los estados</option>
+              <option value="pendiente">Pendiente</option>
+              <option value="en_curso">En curso</option>
+              <option value="cerrado">Cerrado</option>
+            </select>
+            <select id="l-barrio" class="in" style="max-width:160px">
+              <option value="">Barrio</option>
+            </select>
+            <select id="l-localidad" class="in" style="max-width:160px">
+              <option value="">Localidad</option>
+            </select>
+            <button id="l-solo-policia" class="btn2" type="button" style="max-width:180px">Solo Policia: OFF</button>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Tipo</th>
+                <th>Titulo</th>
+                <th>Estado</th>
+                <th>Resultado</th>
+                <th>Direccion</th>
+                <th>Expediente</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tb"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+</section>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+<script>
+(function(){
+  const map = L.map('map').setView([-24.185, -65.299], 13);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: 'Â© OpenStreetMap'
+  }).addTo(map);
+
+  const fTipo = document.getElementById('f-tipo');
+  const fBuscar = document.getElementById('f-buscar');
+  const btnAplicar = document.getElementById('btn-aplicar');
+  const btnRefresh = document.getElementById('btn-refresh');
+  const btnMedir = document.getElementById('btn-medir');
+  const medirInfo = document.getElementById('medir-info');
+
+  const btnLimpiar = document.getElementById('btn-limpiar');
+  const btnSelectMap = document.getElementById('btn-select-map');
+  const mapPickStatus = document.getElementById('map-pick-status');
+  const panelCargaLeft = document.getElementById('panel-carga-left');
+  const btnCerrarCarga = document.getElementById('btn-cerrar-carga');
+
+  const nTipo = document.getElementById('n-tipo');
+  const nEstado = document.getElementById('n-estado');
+  const nFecha = document.getElementById('n-fecha');
+  const nFechaObj = document.getElementById('n-fecha-obj');
+  const nSedeLugar = document.getElementById('n-sede-lugar');
+  const nSedeArea = document.getElementById('n-sede-area');
+  const sedeInfo = document.getElementById('sede-info');
+  const sedeInfoDir = document.getElementById('sede-info-dir');
+  const sedeInfoAreas = document.getElementById('sede-info-areas');
+  const nTitulo = document.getElementById('n-titulo');
+  const nCategoria = document.getElementById('n-categoria');
+  const nResponsable = document.getElementById('n-responsable');
+  const nExpediente = document.getElementById('n-expediente');
+  const nAsistido = document.getElementById('n-asistido');
+  const nEtapa = document.getElementById('n-etapa');
+  const nEtapaTotal = document.getElementById('n-etapa-total');
+  const nResultado = document.getElementById('n-resultado');
+  const nResultadoDetalle = document.getElementById('n-resultado-detalle');
+  const nDireccion = document.getElementById('n-direccion');
+  const nDireccionExtra = document.getElementById('n-direccion-extra');
+  const nBarrio = document.getElementById('n-barrio');
+  const nLocalidad = document.getElementById('n-localidad');
+  const nDescripcion = document.getElementById('n-descripcion');
+  const nContacto = document.getElementById('n-contacto');
+  const nRef = document.getElementById('n-ref');
+  const nLat = document.getElementById('n-lat');
+  const nLng = document.getElementById('n-lng');
+  const btnCrear = document.getElementById('btn-crear');
+  const tb = document.getElementById('tb');
+  const hint = document.getElementById('msjHint');
+  const editBar = document.getElementById('edit-bar');
+  const editId = document.getElementById('edit-id');
+  const btnCancelar = document.getElementById('btn-cancelar');
+  const lTipo = document.getElementById('l-tipo');
+  const lEstado = document.getElementById('l-estado');
+  const lBarrio = document.getElementById('l-barrio');
+  const lLocalidad = document.getElementById('l-localidad');
+  const lSoloPolicia = document.getElementById('l-solo-policia');
+  const kpiTotal = document.getElementById('kpi-total');
+  const kpiPolicia = document.getElementById('kpi-policia');
+  const kpiPendientes = document.getElementById('kpi-pendientes');
+  const kpiCerrados = document.getElementById('kpi-cerrados');
+
+  const panelOperativo = document.getElementById('panel-operativo');
+  const panelListado = document.getElementById('panel-listado');
+  const btnModoOperativo = document.getElementById('btn-modo-operativo');
+  const btnModoListado = document.getElementById('btn-modo-listado');
+  const btnGoListado = document.getElementById('btn-go-listado');
+  const btnArea = document.getElementById('btn-area');
+  const btnBackOperativo = document.getElementById('btn-back-operativo');
+
+  function setModo(modo){
+    const esListado = modo === 'listado';
+    if (panelOperativo) panelOperativo.classList.toggle('active', !esListado);
+    if (panelListado) panelListado.classList.toggle('active', esListado);
+    if (btnModoOperativo) btnModoOperativo.classList.toggle('btn-ok', !esListado);
+    if (btnModoListado) btnModoListado.classList.toggle('btn-ok', esListado);
+  }
+
+  const grpAsistido = document.getElementById('grp-asistido');
+  const grpEtapa = document.getElementById('grp-etapa');
+  const grpResultado = document.getElementById('grp-resultado');
+  const grpEstado = document.getElementById('grp-estado');
+  const grpFechas = document.getElementById('grp-fechas');
+  const grpCatalogo = document.getElementById('grp-catalogo');
+
+  const TYPE_COLORS = {
+    proveedor: "#2563eb",
+    asistido: "#06b6d4",
+    pericia: "#f97316",
+    evacuacion: "#22c55e",
+    institucion: "#7c3aed",
+    comisaria: "#1e40af",
+    servicio_penitenciario: "#0f766e",
+    registro_civil: "#0ea5a4",
+    procuracion: "#f43f5e",
+    sede_pj: "#0ea5e9",
+    sede_mpd: "#10b981",
+    sede_mpa: "#f97316",
+    sede: "#6366f1",
+    otro: "#64748b"
+  };
+
+  const TYPE_LABELS = {
+    sede_mpd: "Sedes MPD",
+    sede_mpa: "Sedes MPA",
+    sede_pj: "Sedes Poder Judicial",
+    proveedor: "Proveedor",
+    institucion: "Instituciones de la Salud",
+    comisaria: "Comisarias",
+    servicio_penitenciario: "Servicios Penitenciarios",
+    registro_civil: "Registro Civil",
+    pericia: "Pericia",
+    evacuacion: "Evacuacion",
+    asistido: "Asistido",
+    procuracion: "Procuracion",
+    sede: "Sedes MPD",
+    otro: "Otro"
+  };
+
+  const RESULT_LABELS = {
+    ok: "Realizado",
+    no_habia_nadie: "No habia nadie",
+    domicilio_no_encontrado: "Domicilio no encontrado",
+    domicilio_inexistente: "Domicilio inexistente",
+    no_se_hizo_pericia: "No se hizo pericia",
+    reprogramar: "Reprogramar",
+    otro: "Otro"
+  };
+
+  const SEDE_CATALOG = {
+    sede_mpd: [
+      { id: "mpd_s01", label: "S01 - Independencia 202", direccion: "Independencia 202", localidad: "San Salvador de Jujuy", barrio: "Centro", areas: ["Penal"] },
+      { id: "mpd_s02", label: "S02 - Gral. San Martin 137", direccion: "Gral. San Martin 137", localidad: "San Salvador de Jujuy", barrio: "Centro", areas: ["Administracion", "Violencia Institucional"] },
+      { id: "mpd_s03", label: "S03 - Gorriti 971", direccion: "Gorriti 971", localidad: "San Salvador de Jujuy", barrio: "Centro", areas: ["Juridico Social"] },
+      { id: "mpd_s04", label: "S04 - Belgrano 284", direccion: "Belgrano 284", localidad: "San Salvador de Jujuy", barrio: "Centro", areas: ["Equipo Interdisciplinario", "Ejecucion Penal"] },
+      { id: "mpd_s05", label: "S05 - San Martin 271", direccion: "San Martin 271", localidad: "San Salvador de Jujuy", barrio: "Centro", areas: ["Central Menores e Incapaces"] },
+      { id: "mpd_s06", label: "San Pedro - Av. Peron 11 (Centro Judicial)", direccion: "Av. Peron 11, Centro Judicial", localidad: "San Pedro", barrio: "Centro", areas: ["Juridico Social", "Penal", "Menores e Incapaces"] },
+      { id: "mpd_s07", label: "Perico Penal - Lavalle 90", direccion: "Lavalle 90", localidad: "Perico", barrio: "", areas: ["Penal"] },
+      { id: "mpd_s08", label: "Alto Comedero Penal - Isla de los Estados 308", direccion: "Isla de los Estados 308, Viviendas Local 3 y 4", localidad: "San Salvador de Jujuy", barrio: "Alto Comedero", areas: ["Penal"] },
+      { id: "mpd_s09", label: "Humahuaca Penal - Jujuy 339", direccion: "Jujuy 339", localidad: "Humahuaca", barrio: "", areas: ["Penal"] },
+      { id: "mpd_s10", label: "Ledesma Penal - Jujuy 491", direccion: "Jujuy 491", localidad: "Libertador General San Martin", barrio: "", areas: ["Penal", "Menores e Incapaces"] },
+      { id: "mpd_s11", label: "Palpala Penal - Av. Gral. San Martin 7", direccion: "Av. Gral. San Martin 7", localidad: "Palpala", barrio: "", areas: ["Penal"] },
+      { id: "mpd_s12", label: "El Carmen - Plazoleta 25 Viviendas", direccion: "Plazoleta 25 Viviendas (Belgrano esq. Gral. Paz)", localidad: "El Carmen", barrio: "", areas: ["Juridico Social", "Penal", "Menores e Incapaces"] },
+      { id: "mpd_s13", label: "Tilcara - Lavalle s/n", direccion: "Lavalle s/n, entre Villafane y Bolivar", localidad: "Tilcara", barrio: "", areas: ["Juridico Social", "Menores e Incapaces"] },
+      { id: "mpd_s14", label: "Abra Pampa - Doncellas 218", direccion: "Doncellas 218", localidad: "Abra Pampa", barrio: "", areas: ["Juridico Social", "Menores e Incapaces"] }
+    ],
+    sede_mpa: [
+      { id: "mpa_1", label: "Fiscalias Especializadas", direccion: "Gral. Justo Jose de Urquiza N 462", localidad: "San Salvador de Jujuy", barrio: "Centro", areas: ["Fiscalias Especializadas"] },
+      { id: "mpa_2", label: "Centro de Asistencia a la Victima", direccion: "Cnel. Otero 232", localidad: "San Salvador de Jujuy", barrio: "Centro", areas: ["Centro de Asistencia a la Victima"] },
+      { id: "mpa_3", label: "Fiscalias Especializadas en Genero", direccion: "Cnel. Otero 232", localidad: "San Salvador de Jujuy", barrio: "Centro", areas: ["Genero", "Delitos Sexuales", "Violencia Intrafamiliar"] },
+      { id: "mpa_4", label: "ORAC + CAV Alto Comedero", direccion: "Martires de Yavi casi esq. Tte. Farfan", localidad: "San Salvador de Jujuy", barrio: "Alto Comedero", areas: ["ORAC", "Centro de Asistencia a la Victima"] },
+      { id: "mpa_5", label: "Fiscalia San Martin", direccion: "Av. 9 de Julio", localidad: "Perico", barrio: "", areas: ["Fiscalia"] },
+      { id: "mpa_6", label: "Fiscalias San Pedro", direccion: "Av. Presidente Peron N 11", localidad: "San Pedro", barrio: "", areas: ["Fiscalia"] },
+      { id: "mpa_7", label: "ORAC San Salvador", direccion: "Pasaje Ernesto Claros N 28", localidad: "San Salvador de Jujuy", barrio: "Centro", areas: ["ORAC"] },
+      { id: "mpa_8", label: "ORAC + CAV San Pedro", direccion: "Av. Aristobulo del Valle N 178", localidad: "San Pedro", barrio: "", areas: ["ORAC", "Centro de Asistencia a la Victima"] },
+      { id: "mpa_9", label: "Fiscalia Humahuaca", direccion: "Jose Hernandez s/n", localidad: "Humahuaca", barrio: "Centro", areas: ["Fiscalia"] },
+      { id: "mpa_10", label: "Fiscalia L.G.S.M.", direccion: "Entre Rios 400", localidad: "Libertador General San Martin", barrio: "Centro", areas: ["Fiscalia"] },
+      { id: "mpa_11", label: "Fiscalia Palpala", direccion: "Av. General Martijena 30", localidad: "Palpala", barrio: "Belgrano", areas: ["Fiscalia"] },
+      { id: "mpa_12", label: "Organismo de Investigacion", direccion: "Ituzaingo N 590", localidad: "San Salvador de Jujuy", barrio: "", areas: ["Investigacion"] },
+      { id: "mpa_13", label: "OCCPEP", direccion: "Sarmiento 427", localidad: "San Salvador de Jujuy", barrio: "Centro", areas: ["Control de Coercion", "Probation", "Ejecucion Penal"] },
+      { id: "mpa_14", label: "FIPP + Narcomenudeo Alto Comedero", direccion: "Martires de Yavi casi esq. Tte. Farfan", localidad: "San Salvador de Jujuy", barrio: "Alto Comedero", areas: ["Investigacion Penal Preparatoria", "Narcomenudeo"] },
+      { id: "mpa_15", label: "FIPP + ORAC + CAV El Carmen", direccion: "Rolando Borgez Mza. 12B L. 19", localidad: "El Carmen", barrio: "Los Soles", areas: ["Investigacion Penal Preparatoria", "ORAC", "Centro de Asistencia a la Victima"] }
+    ],
+    sede_pj: [
+      {
+        id: "pj_tribunales_indep",
+        label: "Independencia y Arganaraz - Edificio Tribunales",
+        direccion: "Independencia y Arganaraz",
+        localidad: "San Salvador de Jujuy",
+        barrio: "Centro",
+        areas: [
+          "Suprema Corte de Justicia", "Camara en lo Civil y Comercial", "Fiscalia General",
+          "Juzgado Ambiental", "Tribunales en lo Criminal N 2 y 3", "Biblioteca del Poder Judicial",
+          "Casillero de Notificaciones", "Contaduria del Poder Judicial", "Departamento Archivo",
+          "Departamento de Jurisprudencia, Publicaciones e Informatica", "Departamento de Prensa y Relaciones Publicas",
+          "Departamento de Sistemas y Tecnologia de la Informacion", "Departamento Tecnico", "Escuela de Capacitacion",
+          "Intendencia", "Mesa Gral. de Entradas, Estadisticas y Registro", "Oficialia de Justicia",
+          "Registro Unico de Adopcion", "Registro Nacional de Reincidencia",
+          "Tribunal de Evaluacion de Concursos para Jueces, Defensores y Fiscales"
+        ]
+      },
+      {
+        id: "pj_indep_987",
+        label: "Independencia 987 - Ex Correo Central",
+        direccion: "Independencia 987",
+        localidad: "San Salvador de Jujuy",
+        barrio: "Centro",
+        areas: [
+          "Camaras de Apelaciones en lo Civil y Comercial", "Juzgados de Primera Instancia en lo Civil y Comercial",
+          "Deposito de Secuestro", "Imprenta", "Tribunal Electoral"
+        ]
+      },
+      {
+        id: "pj_senador_319",
+        label: "Senador Perez 319",
+        direccion: "Senador Perez 319",
+        localidad: "San Salvador de Jujuy",
+        barrio: "Centro",
+        areas: [
+          "Camara de Apelaciones y de Control", "Juzgado de Ejecucion de la Pena", "Tribunales en lo Contencioso Administrativo"
+        ]
+      },
+      {
+        id: "pj_gpaz_625",
+        label: "General Paz 625/31",
+        direccion: "General Paz 625/31",
+        localidad: "San Salvador de Jujuy",
+        barrio: "Centro",
+        areas: ["Tribunales de Familia - Sala I (Vocalias 1, 2 y 3)"]
+      },
+      {
+        id: "pj_puch_625",
+        label: "Coronel Puch 625",
+        direccion: "Coronel Puch 625",
+        localidad: "San Salvador de Jujuy",
+        barrio: "Centro",
+        areas: ["Tribunales de Familia - Sala II (Vocalias 4, 5 y 6)"]
+      },
+      {
+        id: "pj_belgrano_289",
+        label: "Belgrano 289",
+        direccion: "Belgrano 289",
+        localidad: "San Salvador de Jujuy",
+        barrio: "Centro",
+        areas: ["Contaduria - Seccion Sueldos", "Departamento de Personal", "Departamento Medico"]
+      },
+      {
+        id: "pj_belgrano_1295",
+        label: "Belgrano 1295 - Ex Hotel Panorama",
+        direccion: "Belgrano 1295",
+        localidad: "San Salvador de Jujuy",
+        barrio: "Centro",
+        areas: [
+          "Camara de Apelaciones del Trabajo", "Juzgado de Instruccion de Causas Ley 3584",
+          "Mediacion y Resolucion Alternativa de Disputas", "Tribunal del Trabajo - Sala I",
+          "Tribunal del Trabajo - Sala II", "Tribunal del Trabajo - Sala III", "Oficina de Gestion Judicial Laboral"
+        ]
+      },
+      {
+        id: "pj_bustamante_84",
+        label: "Bustamante 84",
+        direccion: "Bustamante 84",
+        localidad: "San Salvador de Jujuy",
+        barrio: "Centro",
+        areas: ["Juzgados de Control N 1 al 4"]
+      },
+      {
+        id: "pj_gorriti_360",
+        label: "Gorriti 360",
+        direccion: "Gorriti 360",
+        localidad: "San Salvador de Jujuy",
+        barrio: "Centro",
+        areas: [
+          "Camara de Casacion Penal", "Juzgado de Violencia de Genero N 1",
+          "Juzgado de Control en lo Penal y Delitos contra la Administracion Publica",
+          "Coordinacion Tecnica Interdisciplinaria"
+        ]
+      },
+      {
+        id: "pj_sanmartin_1158",
+        label: "San Martin 1158",
+        direccion: "San Martin 1158",
+        localidad: "San Salvador de Jujuy",
+        barrio: "Centro",
+        areas: ["Coordinacion de Juzgados de Paz", "Juzgado de Menores", "Oficina de Gestion Judicial Laboral", "Oficina de la Mujer"]
+      },
+      {
+        id: "pj_santibanez_1108",
+        label: "Av. Cnel. Mariano Santibanez 1108",
+        direccion: "Av. Cnel. Mariano Santibanez 1108",
+        localidad: "San Salvador de Jujuy",
+        barrio: "Centro",
+        areas: ["Camara Gesell", "Registro Unico de Postulantes a Guarda con Fines Adoptivos"]
+      },
+      {
+        id: "pj_bustamante_85",
+        label: "Bustamante 85",
+        direccion: "Bustamante 85",
+        localidad: "San Salvador de Jujuy",
+        barrio: "Centro",
+        areas: ["Oficina de Gestion Judicial"]
+      },
+      {
+        id: "pj_sanmartin_1028",
+        label: "San Martin 1028",
+        direccion: "San Martin 1028",
+        localidad: "San Salvador de Jujuy",
+        barrio: "Centro",
+        areas: [
+          "Camara de Apelaciones en lo Civil Comercial y de Familia",
+          "Oficina de Gestion Judicial Civil, Comercial y Familia",
+          "Tribunal en lo Criminal N 1"
+        ]
+      },
+      {
+        id: "pj_lamadrid_588",
+        label: "Lamadrid 588",
+        direccion: "Lamadrid 588",
+        localidad: "San Salvador de Jujuy",
+        barrio: "Centro",
+        areas: ["Juzgado Ambiental", "Coordinacion Tecnica Interdisciplinaria"]
+      }
+    ],
+    institucion: [
+      {
+        id: "salud_sec_salud_mental",
+        label: "Secretaria de Salud Mental y Adicciones",
+        direccion: "Av. Italia esq. Independencia",
+        localidad: "San Salvador de Jujuy",
+        barrio: "Centro",
+        categoria: "Salud",
+        areas: ["Ministerio de Salud", "Secretaria de Salud Mental y Adicciones"]
+      },
+      {
+        id: "salud_usma_alto_comedero",
+        label: "USMA Alto Comedero",
+        direccion: "",
+        localidad: "San Salvador de Jujuy",
+        barrio: "Alto Comedero",
+        categoria: "Salud",
+        areas: ["USMA"]
+      },
+      {
+        id: "salud_usma_san_pedro",
+        label: "USMA San Pedro",
+        direccion: "Av. 9 de Julio N 1338 - B San Cayetano",
+        localidad: "San Pedro",
+        barrio: "San Cayetano",
+        categoria: "Salud",
+        areas: ["USMA"]
+      },
+      {
+        id: "salud_usma_palpala",
+        label: "USMA Palpala",
+        direccion: "Yerba Buena s/n - B Centro Forestal",
+        localidad: "Palpala",
+        barrio: "Centro Forestal",
+        categoria: "Salud",
+        areas: ["USMA"]
+      },
+      {
+        id: "salud_usma_la_quiaca",
+        label: "USMA La Quiaca",
+        direccion: "Ruta 5 s/n Ex Camping Municipal",
+        localidad: "La Quiaca",
+        barrio: "",
+        categoria: "Salud",
+        areas: ["USMA"]
+      },
+      {
+        id: "salud_usma_perico",
+        label: "USMA Perico",
+        direccion: "Calle 25 de Mayo esq. Alberto Castillo",
+        localidad: "Perico",
+        barrio: "",
+        categoria: "Salud",
+        areas: ["USMA"]
+      },
+      {
+        id: "salud_usma_humahuaca",
+        label: "USMA Humahuaca",
+        direccion: "Puerto Madryn s/n B 2 de Abril",
+        localidad: "Humahuaca",
+        barrio: "2 de Abril",
+        categoria: "Salud",
+        areas: ["USMA"]
+      },
+      {
+        id: "salud_usma_libertador",
+        label: "USMA Libertador Gral. San Martin",
+        direccion: "Jujuy N 1630 esq. Tucuman",
+        localidad: "Libertador General San Martin",
+        barrio: "",
+        categoria: "Salud",
+        areas: ["USMA"]
+      },
+      {
+        id: "salud_usma_tilcara",
+        label: "USMA Tilcara",
+        direccion: "",
+        localidad: "Tilcara",
+        barrio: "",
+        categoria: "Salud",
+        areas: ["USMA"]
+      },
+      {
+        id: "salud_pablo_soria",
+        label: "Hospital Dr. Pablo Soria",
+        direccion: "Av. Santibanez 1515",
+        localidad: "San Salvador de Jujuy",
+        barrio: "",
+        categoria: "Salud",
+        areas: [
+          "Terapia Intensiva Adultos",
+          "Anatomia Patologica",
+          "Cardiologia",
+          "Clinica Medica",
+          "Enfermeria en Cuidados Criticos del Adulto"
+        ]
+      },
+      {
+        id: "salud_materno_infantil",
+        label: "Hospital Materno Infantil Dr. Hector Quintana",
+        direccion: "Av. Santibanez 1390",
+        localidad: "San Salvador de Jujuy",
+        barrio: "",
+        categoria: "Salud",
+        areas: [
+          "Pediatria",
+          "Terapia Intensiva Infantil (Modalidad Post Basica)",
+          "Tocoginecologia",
+          "Neonatologia (Modalidad Basica, Articulada y Post Basica)"
+        ]
+      },
+      {
+        id: "salud_san_roque",
+        label: "Hospital San Roque",
+        direccion: "Av. Libertador Gral. San Martin 3300",
+        localidad: "San Salvador de Jujuy",
+        barrio: "",
+        categoria: "Salud",
+        areas: ["Clinica Medica", "Infectologia", "Medicina General y/o Familiar"]
+      },
+      {
+        id: "salud_nestor_sequeiros",
+        label: "Hospital Dr. Nestor Sequeiros",
+        direccion: "Ecuador 53",
+        localidad: "San Salvador de Jujuy",
+        barrio: "",
+        categoria: "Salud",
+        areas: ["RISAM - Psiquiatria", "RISAM - Terapia Ocupacional", "RISAM - Musicoterapia"]
+      },
+      {
+        id: "salud_sunibrom",
+        label: "Departamento SUNIBROM",
+        direccion: "Calle Alberdi N 219 - 1 piso",
+        localidad: "San Salvador de Jujuy",
+        barrio: "Centro",
+        categoria: "Salud",
+        areas: ["Bioquimica Bromatologica - Bioquimicos"]
+      }
+    ],
+    comisaria: [
+      {
+        id: "policia_zona_capital",
+        label: "Comisarias - Zona Capital (UR1)",
+        direccion: "San Salvador de Jujuy",
+        localidad: "San Salvador de Jujuy",
+        barrio: "",
+        categoria: "Policia",
+        areas: [
+          "Unidad Regional Uno",
+          "Comisaria 1 Centro",
+          "Comisaria 2 Gorriti",
+          "Comisaria 3 Chijra",
+          "Comisaria 4 Cuyaya",
+          "Comisaria 5 Ciudad de Nieva",
+          "Comisaria 6 San Pedrito",
+          "Comisaria 30 Mariano Moreno",
+          "Comisaria 31 General Arias",
+          "Comisaria 32 Malvinas Argentinas",
+          "Comisaria 34 Villa de Reyes",
+          "Comisaria 44 Villa San Martin",
+          "Comisaria 49 Los Huaicos",
+          "Comisaria 55 Los Perales",
+          "Comisaria 59 18 de Noviembre",
+          "Comisaria 60 Campo Verde",
+          "Comisaria 61 El Chingo",
+          "Comisaria 64 Yala",
+          "Sub Comisaria Lozano",
+          "Sub Comisaria San Francisco de Alava",
+          "Centro Violencia FIAR - Genero N 2"
+        ]
+      },
+      {
+        id: "policia_zona_san_pedro",
+        label: "Comisarias - Zona San Pedro (UR2)",
+        direccion: "San Pedro y alrededores",
+        localidad: "San Pedro",
+        barrio: "",
+        categoria: "Policia",
+        areas: [
+          "Unidad Regional Dos",
+          "Comisaria 1 San Pedro",
+          "Comisaria 10 El Piquete",
+          "Comisaria 25 La Esperanza",
+          "Comisaria 26 Eliseo Mones",
+          "Comisaria 27 La Mendieta",
+          "Comisaria 28 El Arenal",
+          "Comisaria 35 San Jose",
+          "Comisaria 36 Palma Sola",
+          "Comisaria 48 Patricios",
+          "Comisaria 53 Rodeito",
+          "Destacamento Santa Clara",
+          "Brigada de Narcotrafico",
+          "Brigada de Investigaciones",
+          "Cuartel de Bomberos",
+          "Centro Violencia FIAR - Genero N 4"
+        ]
+      },
+      {
+        id: "policia_zona_quebrada",
+        label: "Comisarias - Zona Quebrada (UR3)",
+        direccion: "Quebrada de Humahuaca",
+        localidad: "Humahuaca",
+        barrio: "",
+        categoria: "Policia",
+        areas: [
+          "Unidad Regional Tres",
+          "Comisaria 12 Volcan",
+          "Comisaria 14 Tilcara",
+          "Comisaria 15 Humahuaca",
+          "Comisaria 20 Susques",
+          "Comisaria 37 Maimara",
+          "Comisaria 87 El Aguilar",
+          "Comisaria 78 Purmamarca",
+          "Destacamento Tres Cruces",
+          "Destacamento Tumbaya",
+          "Cuartel de Bomberos",
+          "Brigada de Investigaciones",
+          "Centro Violencia FIAR - Genero N 6"
+        ]
+      },
+      {
+        id: "policia_zona_yungas",
+        label: "Comisarias - Zona Yungas (UR4)",
+        direccion: "Libertador, Yuto y zona Yungas",
+        localidad: "Libertador General San Martin",
+        barrio: "",
+        categoria: "Policia",
+        areas: [
+          "Unidad Regional Cuatro",
+          "Comisaria 11 Libertador",
+          "Comisaria 22 Yuto",
+          "Comisaria 24 Ledesma",
+          "Comisaria 39 Hugo S. Guera",
+          "Comisaria 40 Fraile Pintado",
+          "Comisaria 41 Calilegua",
+          "Comisaria 42 Caimancito",
+          "Comisaria 45 El Talar",
+          "Brigada de Investigaciones",
+          "Brigada de Narcotrafico",
+          "Cuartel de Bomberos",
+          "Centro Violencia FIAR - Genero N 5"
+        ]
+      },
+      {
+        id: "policia_zona_puna",
+        label: "Comisarias - Zona Puna (UR5)",
+        direccion: "Abra Pampa, La Quiaca y Puna",
+        localidad: "Abra Pampa",
+        barrio: "",
+        categoria: "Policia",
+        areas: [
+          "Unidad Regional Cinco",
+          "Comisaria 16 Abra Pampa",
+          "Comisaria 17 La Quiaca",
+          "Comisaria 18 Santa Catalina",
+          "Cuartel de Bomberos",
+          "Brigada de Narcotrafico",
+          "Brigada de Investigaciones",
+          "Centro Violencia FIAR - Genero N 3"
+        ]
+      },
+      {
+        id: "policia_zona_los_pericos",
+        label: "Comisarias - Zona Los Pericos (UR6)",
+        direccion: "Perico, El Carmen y alrededores",
+        localidad: "Perico",
+        barrio: "",
+        categoria: "Policia",
+        areas: [
+          "Unidad Regional Seis",
+          "Comisaria 7 San Antonio",
+          "Comisaria 8 El Carmen",
+          "Comisaria 27 Perico",
+          "Comisaria 29 Monterrico",
+          "Comisaria 45 Pampa Blanca",
+          "Comisaria 57 San Pablo",
+          "Comisaria 60 La Paz",
+          "Comisaria 64 Puesto Viejo",
+          "Sub Cria. La Posta",
+          "Sub Cria. Aguas Calientes",
+          "Sub Comisaria Los Lapachos",
+          "Brigada de Investigaciones",
+          "Brigada de Narcotrafico",
+          "Cuartel de Bomberos",
+          "Centro Violencia FIAR - Genero N 7"
+        ]
+      },
+      {
+        id: "policia_zona_alto_comedero",
+        label: "Comisarias - Zona Alto Comedero (UR7)",
+        direccion: "Alto Comedero y alrededores",
+        localidad: "San Salvador de Jujuy",
+        barrio: "Alto Comedero",
+        categoria: "Policia",
+        areas: [
+          "Unidad Regional Siete",
+          "Comisaria 33 Aeroparque",
+          "Comisaria 56 ATA",
+          "Comisaria 63 Sargento Cabral",
+          "Comisaria 68 18 Hectareas",
+          "Sub Cria. 150 Hectareas",
+          "Destacamento Los Alisos",
+          "Destacamento Nueva Terminal",
+          "Destacamento Tupac Amaru",
+          "Cuartel de Bomberos",
+          "Brigada de Investigaciones"
+        ]
+      },
+      {
+        id: "policia_zona_palpala",
+        label: "Comisarias - Zona Palpala (UR8)",
+        direccion: "Palpala y alrededores",
+        localidad: "Palpala",
+        barrio: "",
+        categoria: "Policia",
+        areas: [
+          "Unidad Regional Ocho",
+          "Comisaria 2",
+          "Comisaria 47 Paso de Jama",
+          "Comisaria 51 18 de Noviembre",
+          "Sub Cria. Rio Blanco",
+          "Brigada de Narcotrafico",
+          "Brigada de Investigaciones",
+          "Centro Violencia FIAR - Genero N 8"
+        ]
+      }
+    ],
+    registro_civil: [
+      {
+        id: "rc_san_salvador_centro",
+        label: "Registro Civil - San Salvador (Centro)",
+        direccion: "Oficina N 1181 - Calle Belgrano 1083",
+        localidad: "San Salvador de Jujuy",
+        barrio: "Centro",
+        categoria: "Registro Civil",
+        areas: ["Oficina N 1181 - Central"]
+      },
+      {
+        id: "rc_alto_comedero",
+        label: "Registro Civil - Alto Comedero",
+        direccion: "Oficina N 2945 - Olimpia Barrionuevo esq. Forestal",
+        localidad: "San Salvador de Jujuy",
+        barrio: "Alto Comedero",
+        categoria: "Registro Civil",
+        areas: ["Oficina N 2945"]
+      },
+      {
+        id: "rc_san_pedro",
+        label: "Registro Civil - San Pedro",
+        direccion: "Oficina N 1256 - Bolivia 555",
+        localidad: "San Pedro",
+        barrio: "",
+        categoria: "Registro Civil",
+        areas: ["Oficina N 1256"]
+      },
+      {
+        id: "rc_humahuaca",
+        label: "Registro Civil - Humahuaca",
+        direccion: "Oficina N 1208 - Entre Rios esq. Corrientes",
+        localidad: "Humahuaca",
+        barrio: "",
+        categoria: "Registro Civil",
+        areas: ["Oficina N 1208"]
+      },
+      {
+        id: "rc_palpala",
+        label: "Registro Civil - Palpala",
+        direccion: "Oficina N 1225 - Av. Italia",
+        localidad: "Palpala",
+        barrio: "",
+        categoria: "Registro Civil",
+        areas: ["Oficina N 1225"]
+      },
+      {
+        id: "rc_perico",
+        label: "Registro Civil - Perico",
+        direccion: "Oficina N 1205 - Belgrano s/n",
+        localidad: "Perico",
+        barrio: "",
+        categoria: "Registro Civil",
+        areas: ["Oficina N 1205"]
+      },
+      {
+        id: "rc_ledesma",
+        label: "Registro Civil - Ledesma",
+        direccion: "Oficina N 1213 - Sixto Ovejero s/n",
+        localidad: "Libertador General San Martin",
+        barrio: "",
+        categoria: "Registro Civil",
+        areas: ["Oficina N 1213"]
+      }
+    ],
+    servicio_penitenciario: [
+      {
+        id: "sp_n1",
+        label: "Servicio Penitenciario N 1",
+        direccion: "Calle Leandro Alem 250 (B Gorriti)",
+        localidad: "San Salvador de Jujuy",
+        barrio: "Gorriti",
+        categoria: "Servicio Penitenciario",
+        areas: ["Establecimiento Penitenciario N 1 de internos varones mayores"]
+      },
+      {
+        id: "sp_alto_comedero",
+        label: "Complejo Penitenciario - Alto Comedero",
+        direccion: "Avenida Forestal",
+        localidad: "San Salvador de Jujuy",
+        barrio: "Alto Comedero",
+        categoria: "Servicio Penitenciario",
+        areas: [
+          "Establecimiento Penitenciario N 2 de internos varones menores",
+          "Establecimiento Penitenciario N 3 de internas mujeres",
+          "Establecimiento Penitenciario N 4 de internos varones",
+          "Establecimiento Penitenciario N 7 de internos varones mayores",
+          "Establecimiento Penitenciario N 5 - Centro de Reinsercion Social",
+          "Establecimiento Penitenciario N 6 - Direccion de Area de Ejecucion y Actividades Agropecuarias Penitenciarias"
+        ]
+      },
+      {
+        id: "sp_el_remate_palpala",
+        label: "El Remate - Palpala",
+        direccion: "El Remate - Palpala",
+        localidad: "Palpala",
+        barrio: "",
+        categoria: "Servicio Penitenciario",
+        areas: ["Establecimiento Penitenciario N 6 - Direccion de Area de Ejecucion y Actividades Agropecuarias Penitenciarias"]
+      },
+      {
+        id: "sp_chalican",
+        label: "Complejo Penitenciario en Chalican",
+        direccion: "Localidad de Chalican, sobre Ruta Nacional 34, Departamento Ledesma",
+        localidad: "Chalican",
+        barrio: "",
+        categoria: "Servicio Penitenciario",
+        areas: ["Penitenciario N 8 de Chalican"]
+      }
+    ],
+    proveedor: [
+      { id: "prov_ejesa", label: "SERVICIOS - EJESA", direccion: "Independencia 60", localidad: "San Salvador de Jujuy", barrio: "Centro", categoria: "Proveedor", areas: ["Empresa energia electrica"] },
+      { id: "prov_agua_potable", label: "SERVICIOS - Agua Potable", direccion: "Gral. Alvear 941", localidad: "San Salvador de Jujuy", barrio: "Centro", categoria: "Proveedor", areas: ["Empresa de agua potable"] },
+      { id: "prov_gasnor", label: "SERVICIOS - Gasnor", direccion: "Gral. San Martin 1135", localidad: "San Salvador de Jujuy", barrio: "Centro", categoria: "Proveedor", areas: ["Servicio gas natural"] },
+
+      { id: "prov_corralon_bernardo", label: "MATERIALES - Corralon Bernardo", direccion: "Av. Almirante Brown, El Rastreador 531", localidad: "San Salvador de Jujuy", barrio: "", categoria: "Proveedor", areas: ["Materiales general"] },
+      { id: "prov_kilovat", label: "MATERIALES - Kilovat", direccion: "Av. Almirante Brown 108", localidad: "San Salvador de Jujuy", barrio: "", categoria: "Proveedor", areas: ["Materiales electricos"] },
+      { id: "prov_cyc", label: "MATERIALES - CyC", direccion: "Av. Senador Perez 380", localidad: "San Salvador de Jujuy", barrio: "", categoria: "Proveedor", areas: ["Materiales general"] },
+      { id: "prov_el_exodo", label: "MATERIALES - El Exodo", direccion: "Av. Hipolito Yrigoyen 541", localidad: "San Salvador de Jujuy", barrio: "", categoria: "Proveedor", areas: ["Pintureria"] },
+
+      { id: "prov_san_pablo", label: "LIBRERIA - San Pablo", direccion: "Necochea 361", localidad: "San Salvador de Jujuy", barrio: "", categoria: "Proveedor", areas: ["General"] },
+      { id: "prov_el_campeon", label: "LIBRERIA - El Campeon", direccion: "Gral. Guemes 901", localidad: "San Salvador de Jujuy", barrio: "", categoria: "Proveedor", areas: ["General"] },
+
+      { id: "prov_casa_limpia", label: "LIMPIEZA - Casa Limpia", direccion: "Colectora Sur RN 9 nro 925 Local 1", localidad: "San Salvador de Jujuy", barrio: "", categoria: "Proveedor", areas: ["General"] },
+      { id: "prov_ultra_limpito", label: "LIMPIEZA - Ultra Limpito", direccion: "Av. Almirante Brown 1032", localidad: "San Salvador de Jujuy", barrio: "", categoria: "Proveedor", areas: ["General"] },
+      { id: "prov_maxima_limpieza", label: "LIMPIEZA - Maxima Limpieza", direccion: "Av. Parroco Marshke 510", localidad: "San Salvador de Jujuy", barrio: "", categoria: "Proveedor", areas: ["General"] },
+
+      { id: "prov_nova_mobiliario", label: "MOBILIARIO - Nova", direccion: "Av. Senador Perez 574", localidad: "San Salvador de Jujuy", barrio: "", categoria: "Proveedor", areas: ["Muebles armados"] },
+      { id: "prov_rosario_muebles", label: "MOBILIARIO - Rosario Muebles", direccion: "Gral. Necochea 250", localidad: "San Salvador de Jujuy", barrio: "", categoria: "Proveedor", areas: ["Muebles armados"] },
+      { id: "prov_mundo_placa", label: "MOBILIARIO - Mundo Placa", direccion: "Cnel. Iriarte 269", localidad: "San Salvador de Jujuy", barrio: "", categoria: "Proveedor", areas: ["Placas a medida"] },
+
+      { id: "prov_ova", label: "COMPUTACION - Ova", direccion: "Gral. Balcarce 367", localidad: "San Salvador de Jujuy", barrio: "", categoria: "Proveedor", areas: ["General"] },
+      { id: "prov_nova_comp", label: "COMPUTACION - Nova", direccion: "Av. Senador Perez 574", localidad: "San Salvador de Jujuy", barrio: "", categoria: "Proveedor", areas: ["General"] }
+    ]
+  };
+
+  function currentSedeCatalog(){
+    const t = normalizeTipo(nTipo.value);
+    return SEDE_CATALOG[t] || null;
+  }
+
+  function fillCatalogLugares(){
+    if (!nSedeLugar) return;
+    const catalog = currentSedeCatalog() || [];
+    nSedeLugar.innerHTML = "<option value=''>Seleccionar...</option>";
+    catalog.forEach(it => {
+      const op = document.createElement("option");
+      op.value = it.id;
+      op.textContent = `${it.label} - ${it.direccion || ""}`.trim();
+      nSedeLugar.appendChild(op);
+    });
+  }
+
+  function selectedLugar(){
+    const catalog = currentSedeCatalog() || [];
+    return catalog.find(it => it.id === (nSedeLugar ? nSedeLugar.value : "")) || null;
+  }
+
+  function fillCatalogAreas(){
+    if (!nSedeArea) return;
+    const lug = selectedLugar();
+    nSedeArea.innerHTML = "<option value=''>Seleccionar...</option>";
+    if (!lug) return;
+    (lug.areas || []).forEach(a => {
+      const op = document.createElement("option");
+      op.value = a;
+      op.textContent = a;
+      nSedeArea.appendChild(op);
+    });
+  }
+
+  function applyCatalogSelection(){
+    const lug = selectedLugar();
+    if (!lug) return;
+    const area = (nSedeArea && nSedeArea.value) ? nSedeArea.value : "";
+    nDireccion.value = lug.direccion || "";
+    nLocalidad.value = lug.localidad || "";
+    nBarrio.value = lug.barrio || "";
+    nCategoria.value = lug.categoria || TYPE_LABELS[normalizeTipo(nTipo.value)] || "";
+    nTitulo.value = area || lug.label || "";
+    if (area) {
+      nDescripcion.value = `${lug.label} - ${area}`;
+    }
+  }
+
+  function renderSedeInfo(){
+    if (!sedeInfo || !sedeInfoDir || !sedeInfoAreas) return;
+    const lug = selectedLugar();
+    if (!lug){
+      sedeInfo.style.display = "none";
+      sedeInfoDir.textContent = "";
+      sedeInfoAreas.textContent = "";
+      return;
+    }
+    sedeInfo.style.display = "";
+    const locTxt = lug.localidad ? ` | ${lug.localidad}` : "";
+    const barTxt = lug.barrio ? ` | ${lug.barrio}` : "";
+    sedeInfoDir.textContent = `Direccion: ${lug.direccion || "-"}${locTxt}${barTxt}`;
+    const lista = (lug.areas || []).join(" ; ");
+    sedeInfoAreas.textContent = `Dependencias: ${lista || "-"}`;
+  }
+
+  function syncCatalogFromFields(){
+    const catalog = currentSedeCatalog();
+    if (!catalog || !nSedeLugar || !nSedeArea) return;
+    const dir = (nDireccion.value || "").toLowerCase().trim();
+    const loc = (nLocalidad.value || "").toLowerCase().trim();
+    const lug = catalog.find(it => {
+      const hitDir = dir && (it.direccion || "").toLowerCase().includes(dir);
+      const hitLoc = !loc || ((it.localidad || "").toLowerCase().includes(loc));
+      return hitDir && hitLoc;
+    });
+    if (!lug) return;
+    nSedeLugar.value = lug.id;
+    fillCatalogAreas();
+    const tt = (nTitulo.value || "").toLowerCase().trim();
+    if (tt){
+      const area = (lug.areas || []).find(a => a.toLowerCase() === tt);
+      if (area) nSedeArea.value = area;
+    }
+  }
+
+  function normalizeTipo(t){
+    t = (t || "").toLowerCase().trim();
+    if (t === "sede") t = "sede_mpd";
+    return TYPE_COLORS[t] ? t : "otro";
+  }
+  function colorForTipo(tipo){
+    const k = normalizeTipo(tipo);
+    return TYPE_COLORS[k] || TYPE_COLORS.otro;
+  }
+  function colorForEstado(estado){
+    const e = (estado || "pendiente").toLowerCase();
+    if (e === "cerrado") return "#16a34a";
+    if (e === "en_curso") return "#2563eb";
+    return "#f59e0b";
+  }
+  function labelEstado(estado){
+    const e = (estado || "pendiente").toLowerCase();
+    if (e === "cerrado") return "Cerrado";
+    if (e === "en_curso") return "En curso";
+    return "Pendiente";
+  }
+  function iconForPoint(tipo, estado){
+    const estadoFill = colorForEstado(estado);
+    const tipoDot = colorForTipo(tipo);
+    const svg = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24">
+        <path fill="${estadoFill}" d="M12 2c-4.97 0-9 4.03-9 9c0 7 9 11 9 11s9-4 9-11c0-4.97-4.03-9-9-9m0 12.75a3.75 3.75 0 1 1 0-7.5a3.75 3.75 0 0 1 0 7.5Z"/>
+        <circle cx="12" cy="11" r="2.8" fill="${tipoDot}" stroke="#ffffff" stroke-width="1.2"/>
+      </svg>`;
+    return L.divIcon({
+      className: "pin",
+      html: svg,
+      iconSize: [34, 34],
+      iconAnchor: [17, 30],
+      popupAnchor: [0, -28]
+    });
+  }
+
+  let markers = [];
+  let markerLayer = null;
+  let markerIndexById = new Map();
+  let clusterEnabled = false;
+  let activePopupMarker = null;
+  let pickMarker = null;
+  let lastData = [];
+  let editingId = null;
+  const collapsed = {};
+  let filtroSoloPolicia = false;
+  let medirActivo = false;
+  let medirPuntos = [];
+  let medirLinea = null;
+  let medirMarcas = [];
+  let pickMode = false;
+  let filtroZonaActiva = false;
+  const FILTERS_STORAGE_KEY = "mapa_ssj_filters_v1";
+
+  function initMarkerLayer(){
+    if (markerLayer && map.hasLayer(markerLayer)) map.removeLayer(markerLayer);
+    if (typeof L.markerClusterGroup === "function"){
+      markerLayer = L.markerClusterGroup({
+        showCoverageOnHover: false,
+        removeOutsideVisibleBounds: true,
+        maxClusterRadius: 48,
+        spiderfyOnMaxZoom: true,
+        chunkedLoading: true
+      });
+      clusterEnabled = true;
+      markerLayer.on("clustermouseover", (ev) => {
+        const cluster = ev.layer;
+        if (!cluster || !cluster.getChildCount) return;
+        const total = cluster.getChildCount();
+        cluster.bindTooltip(`${total} puntos en esta zona`, {
+          direction: "top",
+          offset: [0, -12],
+          className: "msj-tip"
+        }).openTooltip();
+      });
+      markerLayer.on("clustermouseout", (ev) => {
+        const cluster = ev.layer;
+        if (cluster && cluster.closeTooltip) cluster.closeTooltip();
+      });
+    } else {
+      markerLayer = L.layerGroup();
+      clusterEnabled = false;
+    }
+    markerLayer.addTo(map);
+  }
+  initMarkerLayer();
+
+  function limpiarMedicion(){
+    if (medirLinea){
+      map.removeLayer(medirLinea);
+      medirLinea = null;
+    }
+    medirMarcas.forEach(m => map.removeLayer(m));
+    medirMarcas = [];
+    medirPuntos = [];
+    if (medirInfo) medirInfo.textContent = "";
+  }
+
+  function fmtDist(m){
+    if (m < 1000) return `${Math.round(m)} m`;
+    return `${(m / 1000).toFixed(2)} km`;
+  }
+
+  function totalDist(points){
+    if (!points || points.length < 2) return 0;
+    let total = 0;
+    for (let i = 1; i < points.length; i++){
+      total += map.distance(points[i - 1], points[i]);
+    }
+    return total;
+  }
+
+  function fmtMinutes(mins){
+    if (mins < 1) return "<1 min";
+    if (mins < 60) return `${Math.round(mins)} min`;
+    const h = Math.floor(mins / 60);
+    const m = Math.round(mins % 60);
+    return `${h} h ${m} min`;
+  }
+
+  function estimarTraslado(distM){
+    const pieMins = distM / 80;      // ~4.8 km/h
+    const vehMins = distM / 416;     // ~25 km/h urbano
+    return { pieMins, vehMins };
+  }
+
+  function recomendacionOperativa(distM){
+    if (distM <= 800) return "Viable a pie";
+    if (distM <= 2000) return "Evaluar segun urgencia";
+    return "Requiere vehiculo";
+  }
+
+  function updateMedirUI(){
+    if (!btnMedir) return;
+    btnMedir.textContent = medirActivo ? "Medir: ON" : "Medir";
+    btnMedir.classList.toggle("btn-ok", medirActivo);
+    if (!medirActivo && medirInfo) medirInfo.style.display = "none";
+  }
+
+  function updatePickUI(msg){
+    if (btnSelectMap){
+      btnSelectMap.textContent = pickMode ? "Seleccion en mapa: ON" : "Seleccionar en mapa";
+      btnSelectMap.classList.toggle("btn-ok", pickMode);
+    }
+    if (mapPickStatus){
+      const hasCoords = !!((nLat.value || '').trim() && (nLng.value || '').trim());
+      mapPickStatus.textContent = msg || (hasCoords ? "Ubicacion seleccionada" : "Pendiente de seleccion");
+      mapPickStatus.classList.toggle("ok", hasCoords);
+    }
+  }
+
+  function updateZonaUI(){
+    if (!btnArea) return;
+    btnArea.textContent = filtroZonaActiva ? "Trabajar esta area: ON" : "Trabajar esta area";
+    btnArea.classList.toggle("btn-ok", filtroZonaActiva);
+  }
+
+  function onMapClickMedir(e){
+    medirPuntos.push(e.latlng);
+
+    const mk = L.circleMarker(e.latlng, {
+      radius: 6,
+      color: "#1d4ed8",
+      fillColor: "#60a5fa",
+      fillOpacity: 0.9,
+      weight: 2
+    }).addTo(map);
+    medirMarcas.push(mk);
+
+    if (!medirInfo) return;
+    medirInfo.style.display = "";
+
+    if (medirPuntos.length === 1){
+      medirInfo.textContent = "Punto A marcado. Marca punto B para estimacion operativa.";
+      return;
+    }
+
+    if (medirLinea) map.removeLayer(medirLinea);
+    medirLinea = L.polyline(medirPuntos, { color: "#1d4ed8", weight: 3, dashArray: "6 6" }).addTo(map);
+
+    const n = medirPuntos.length;
+    const tramo = map.distance(medirPuntos[n - 2], medirPuntos[n - 1]);
+    const total = totalDist(medirPuntos);
+    const { pieMins, vehMins } = estimarTraslado(total);
+    const recomendacion = recomendacionOperativa(total);
+    medirInfo.textContent = `Tramo: ${fmtDist(tramo)} | Total: ${fmtDist(total)} | Pie: ${fmtMinutes(pieMins)} | Vehiculo: ${fmtMinutes(vehMins)} | ${recomendacion}`;
+  }
+
+  function readSavedFilters(){
+    try {
+      return JSON.parse(localStorage.getItem(FILTERS_STORAGE_KEY) || "{}");
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function applySavedFilters(){
+    const saved = readSavedFilters();
+    if (typeof saved.fTipo === "string") fTipo.value = saved.fTipo;
+    if (typeof saved.fBuscar === "string" && fBuscar) fBuscar.value = saved.fBuscar;
+    if (typeof saved.lTipo === "string") lTipo.value = saved.lTipo;
+    if (typeof saved.lEstado === "string") lEstado.value = saved.lEstado;
+    if (typeof saved.lBarrio === "string") lBarrio.value = saved.lBarrio;
+    if (typeof saved.lLocalidad === "string") lLocalidad.value = saved.lLocalidad;
+    filtroSoloPolicia = !!saved.filtroSoloPolicia;
+    if (lSoloPolicia){
+      lSoloPolicia.textContent = filtroSoloPolicia ? "Solo Policia: ON" : "Solo Policia: OFF";
+      lSoloPolicia.classList.toggle("btn-ok", filtroSoloPolicia);
+    }
+  }
+
+  function saveFilters(){
+    const payload = {
+      fTipo: fTipo.value || "",
+      fBuscar: fBuscar ? (fBuscar.value || "") : "",
+      lTipo: lTipo.value || "",
+      lEstado: lEstado.value || "",
+      lBarrio: lBarrio.value || "",
+      lLocalidad: lLocalidad.value || "",
+      filtroSoloPolicia: !!filtroSoloPolicia
+    };
+    try {
+      localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify(payload));
+    } catch (e) {
+      // Ignora errores de storage (modo privado/cuota)
+    }
+  }
+
+  map.on('click', (e) => {
+    if (medirActivo){
+      onMapClickMedir(e);
+      return;
+    }
+
+    if (!pickMode) return;
+
+    const lat = e.latlng.lat.toFixed(6);
+    const lng = e.latlng.lng.toFixed(6);
+
+    nLat.value = lat;
+    nLng.value = lng;
+
+    const tipoActual = (nTipo.value || "otro");
+    const estadoActual = (nEstado.value || "pendiente");
+
+    if (!pickMarker) {
+      pickMarker = L.marker(e.latlng, { icon: iconForPoint(tipoActual, estadoActual) }).addTo(map);
+    } else {
+      pickMarker.setLatLng(e.latlng);
+      pickMarker.setIcon(iconForPoint(tipoActual, estadoActual));
+    }
+
+    pickMarker.bindPopup(`
+      <div style="min-width:220px">
+        <div style="font-weight:800">Punto seleccionado</div>
+        <div style="margin-top:6px;font-size:12px;color:#64748b">Lat: <b>${lat}</b></div>
+        <div style="font-size:12px;color:#64748b">Lng: <b>${lng}</b></div>
+        <div style="margin-top:8px;font-size:12px">
+          Completa titulo y toca Crear punto.
+        </div>
+      </div>
+    `).openPopup();
+
+    map.flyTo(e.latlng, Math.max(map.getZoom(), 16), { animate: true, duration: 0.45 });
+
+    if (hint) hint.style.display = "block";
+
+    pickMode = false;
+    updatePickUI("Ubicacion seleccionada");
+  });
+
+  function clearMarkers(){
+    if (markerLayer && markerLayer.clearLayers) markerLayer.clearLayers();
+    markers = [];
+    markerIndexById = new Map();
+    activePopupMarker = null;
+  }
+
+  function tagEstado(estado){
+    const e = (estado || "pendiente").toLowerCase();
+    if (e === "cerrado") return `<span class="tag cerrado">Cerrado</span>`;
+    if (e === "en_curso") return `<span class="tag curso">En curso</span>`;
+    return `<span class="tag pendiente">Pendiente</span>`;
+  }
+
+  function tagResultado(res){
+    if (!res) return "";
+    const lbl = RESULT_LABELS[res] || res;
+    return `<span class="tag res">${lbl}</span>`;
+  }
+
+  function tagTipo(t){
+    const k = normalizeTipo(t);
+    const lbl = TYPE_LABELS[k] || "Otro";
+    return `<span class="tag tipo tipo-${k}">${lbl}</span>`;
+  }
+
+  function labelTipo(t){
+    t = normalizeTipo(t);
+    return TYPE_LABELS[t] || "Otro";
+  }
+
+  function paintTypeSelect(sel){
+    if (!sel) return;
+    const classes = [
+      "sel-focus-sede_mpd","sel-focus-sede_mpa","sel-focus-sede_pj","sel-focus-proveedor",
+      "sel-focus-institucion","sel-focus-comisaria","sel-focus-registro_civil","sel-focus-servicio_penitenciario","sel-focus-pericia","sel-focus-evacuacion",
+      "sel-focus-asistido","sel-focus-procuracion","sel-focus-otro"
+    ];
+    sel.classList.remove(...classes);
+    const k = normalizeTipo(sel.value);
+    const cls = `sel-focus-${k}`;
+    if (classes.includes(cls)) sel.classList.add(cls);
+  }
+
+  function popupHTML(p){
+    return `
+      <div style="min-width:240px">
+        <div style="font-weight:800">${p.titulo || "Sin titulo"}</div>
+        <div style="margin-top:4px;font-size:12px;color:#334155">Tipo: <b>${labelTipo(p.tipo)}</b></div>
+        <div style="margin-top:2px;font-size:12px;color:#334155">Direccion: <b>${p.direccion || "-"}</b></div>
+        <div style="margin-top:2px;font-size:12px;color:#334155">Estado: <b>${labelEstado(p.estado)}</b></div>
+        ${p.categoria ? `<div style="margin-top:6px;font-size:12px">Categoria: <b>${p.categoria}</b></div>` : ``}
+        ${p.expediente ? `<div style="margin-top:6px;font-size:12px">Expte: <b>${p.expediente}</b></div>` : ``}
+        ${p.asistido_nombre ? `<div style="margin-top:6px;font-size:12px">Asistido: <b>${p.asistido_nombre}</b></div>` : ``}
+        ${p.resultado ? `<div style="margin-top:6px">${tagResultado(p.resultado)}</div>` : ``}
+        ${p.direccion_extra ? `<div style="margin-top:6px;font-size:12px">Alt: ${p.direccion_extra}</div>` : ``}
+        ${p.descripcion ? `<div style="margin-top:6px;font-size:12px">${p.descripcion}</div>` : ``}
+        ${p.link_maps ? `<div style="margin-top:8px"><a target="_blank" href="${p.link_maps}">Abrir en Google Maps</a></div>` : ``}
+      </div>`;
+  }
+
+  function applyTypeUI(){
+    const t = normalizeTipo(nTipo.value);
+    const isPericia = (t === "pericia");
+    const isCatalogType = (t === "sede_mpd" || t === "sede_mpa" || t === "sede_pj" || t === "institucion" || t === "comisaria" || t === "registro_civil" || t === "servicio_penitenciario" || t === "proveedor");
+    const showExp = isPericia;
+    const showRes = isPericia;
+    const showEtapa = isPericia;
+
+    grpAsistido.style.display = showExp ? "grid" : "none";
+    grpResultado.style.display = showRes ? "grid" : "none";
+    grpEtapa.style.display = showEtapa ? "grid" : "none";
+    if (grpEstado) grpEstado.style.display = isPericia ? "block" : "none";
+    if (grpFechas) grpFechas.style.display = isPericia ? "grid" : "none";
+    if (grpCatalogo) grpCatalogo.style.display = isCatalogType ? "grid" : "none";
+    if (isCatalogType){
+      fillCatalogLugares();
+      fillCatalogAreas();
+      renderSedeInfo();
+    } else if (sedeInfo){
+      sedeInfo.style.display = "none";
+    }
+
+    let ph = "Categoria / Rubro";
+    if (t === "proveedor") ph = "Rubro / servicio";
+    if (t === "institucion") ph = "Hospital / USMA / Organismo de salud";
+    if (t === "comisaria") ph = "Zona / Dependencia policial";
+    if (t === "registro_civil") ph = "Oficina / Delegacion de Registro Civil";
+    if (t === "servicio_penitenciario") ph = "Establecimiento / Area penitenciaria";
+    if (t === "procuracion") ph = "Lugar de procuracion";
+    if (t === "sede_pj") ph = "Sedes Poder Judicial";
+    if (t === "sede_mpd") ph = "Sedes MPD";
+    if (t === "sede_mpa") ph = "Sedes MPA";
+    if (t === "pericia") ph = "Tipo de pericia";
+    nCategoria.placeholder = ph;
+
+    if (!isPericia){
+      nEstado.value = "pendiente";
+      nFecha.value = "";
+      nFechaObj.value = "";
+    }
+
+    if (pickMarker){
+      pickMarker.setIcon(iconForPoint(nTipo.value, nEstado.value));
+    }
+    paintTypeSelect(nTipo);
+  }
+
+  function resetForm(){
+    nFecha.value=""; nFechaObj.value="";
+    nTitulo.value=""; nDireccion.value=""; nDescripcion.value="";
+    nContacto.value=""; nRef.value=""; nExpediente.value=""; nAsistido.value="";
+    nResultado.value=""; nResultadoDetalle.value=""; nEtapa.value=""; nEtapaTotal.value="";
+    nCategoria.value=""; nResponsable.value=""; nDireccionExtra.value=""; nBarrio.value=""; nLocalidad.value="";
+    nLat.value=""; nLng.value="";
+    if (nSedeLugar) nSedeLugar.value = "";
+    if (nSedeArea) nSedeArea.value = "";
+    if (sedeInfo){
+      sedeInfo.style.display = "none";
+      if (sedeInfoDir) sedeInfoDir.textContent = "";
+      if (sedeInfoAreas) sedeInfoAreas.textContent = "";
+    }
+    pickMode = false;
+    updatePickUI();
+  }
+
+  function buildListOptions(data){
+    const barrios = new Set();
+    const localidades = new Set();
+    data.forEach(p => {
+      if (p.barrio) barrios.add(p.barrio);
+      if (p.localidad) localidades.add(p.localidad);
+    });
+
+    const setOptions = (sel, items) => {
+      const current = sel.value;
+      sel.innerHTML = sel === lBarrio ? "<option value=''>Barrio</option>" : "<option value=''>Localidad</option>";
+      Array.from(items).sort().forEach(v => {
+        const opt = document.createElement("option");
+        opt.value = v;
+        opt.textContent = v;
+        sel.appendChild(opt);
+      });
+      sel.value = current;
+    };
+
+    setOptions(lBarrio, barrios);
+    setOptions(lLocalidad, localidades);
+  }
+
+  function applyListFilters(data){
+    const qTop = (fBuscar ? (fBuscar.value || "") : "").toLowerCase().trim();
+    const tipo = (lTipo.value || "").trim();
+    const estado = (lEstado.value || "").trim();
+    const barrio = (lBarrio.value || "").trim();
+    const localidad = (lLocalidad.value || "").trim();
+
+    return data.filter(p => {
+      if (filtroSoloPolicia && !isInstitucionPolicial(p)) return false;
+      if (tipo && normalizeTipo(p.tipo) !== normalizeTipo(tipo)) return false;
+      if (estado && (p.estado || "") !== estado) return false;
+      if (barrio && (p.barrio || "") !== barrio) return false;
+      if (localidad && (p.localidad || "") !== localidad) return false;
+      if (qTop){
+        const hayTop = [
+          p.titulo, p.direccion, p.direccion_extra, p.expediente,
+          p.asistido_nombre, p.categoria, p.referencia, p.localidad, p.barrio, p.descripcion
+        ].join(" ").toLowerCase();
+        if (!hayTop.includes(qTop)) return false;
+      }
+      return true;
+    });
+  }
+
+  function isInstitucionPolicial(p){
+    const k = normalizeTipo(p.tipo);
+    if (k === "comisaria") return true;
+    if (k !== "institucion") return false;
+    const txt = [p.titulo, p.categoria, p.descripcion, p.referencia, p.direccion].join(" ").toLowerCase();
+    const keys = [
+      "policia", "policial", "comisaria", "seccional", "brigada",
+      "unidad regional", "departamental", "infanteria", "caballeria"
+    ];
+    return keys.some(k => txt.includes(k));
+  }
+
+  function updateCounters(data){
+    const rows = Array.isArray(data) ? data : [];
+    const total = rows.length;
+    const policia = rows.filter(isInstitucionPolicial).length;
+    const pericias = rows.filter(p => normalizeTipo(p.tipo) === "pericia");
+    const pendientes = pericias.filter(p => (p.estado || "pendiente") === "pendiente").length;
+    const cerrados = pericias.filter(p => (p.estado || "") === "cerrado").length;
+
+    if (kpiTotal) kpiTotal.textContent = `Total: ${total}`;
+    if (kpiPolicia) kpiPolicia.textContent = `Comisarias: ${policia}`;
+    if (kpiPendientes) kpiPendientes.textContent = `Pendientes: ${pendientes}`;
+    if (kpiCerrados) kpiCerrados.textContent = `Cerrados: ${cerrados}`;
+  }
+
+  function parseCoord(v){
+    if (v === null || v === undefined || v === "") return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function applyAreaFilter(rows){
+    if (!filtroZonaActiva) return rows;
+    const bounds = map.getBounds().pad(0.02);
+    return (rows || []).filter(p => {
+      const lat = parseCoord(p.lat);
+      const lng = parseCoord(p.lng);
+      if (lat === null || lng === null) return false;
+      return bounds.contains([lat, lng]);
+    });
+  }
+
+  function fitMapToFiltered(data){
+    const pts = [];
+    (data || []).forEach(p => {
+      const lat = parseCoord(p.lat);
+      const lng = parseCoord(p.lng);
+      if (lat !== null && lng !== null) pts.push([lat, lng]);
+    });
+    if (!pts.length) return;
+
+    if (pts.length === 1){
+      map.flyTo(pts[0], Math.max(map.getZoom(), 16), { animate: true, duration: 0.45 });
+      return;
+    }
+
+    const bounds = L.latLngBounds(pts);
+    map.fitBounds(bounds, { padding: [28, 28], maxZoom: 16, animate: true, duration: 0.45 });
+  }
+
+  function bindMarkerInteractions(m, p){
+    m.bindPopup(popupHTML(p));
+    m.bindTooltip((p.titulo || "Sin titulo"), { permanent: false, direction: "top", offset: [0, -20], className: "msj-tip" });
+    m.on("popupopen", () => {
+      if (activePopupMarker && activePopupMarker !== m && activePopupMarker.closePopup){
+        activePopupMarker.closePopup();
+      }
+      activePopupMarker = m;
+    });
+    m.on("popupclose", () => {
+      if (activePopupMarker === m) activePopupMarker = null;
+    });
+  }
+
+  function renderMarkers(data){
+    clearMarkers();
+    const rows = Array.isArray(data) ? data : [];
+    rows.forEach(p => {
+      const lat = parseCoord(p.lat);
+      const lng = parseCoord(p.lng);
+      if (lat === null || lng === null) return;
+      const m = L.marker([lat, lng], { icon: iconForPoint(p.tipo, p.estado), riseOnHover: true });
+      bindMarkerInteractions(m, p);
+      if (markerLayer && markerLayer.addLayer) markerLayer.addLayer(m);
+      else m.addTo(map);
+      markers.push(m);
+      markerIndexById.set(String(p.id), m);
+    });
+  }
+
+  function focusMarkerById(id, fallbackLat, fallbackLng){
+    const mk = markerIndexById.get(String(id));
+    if (mk){
+      const ll = mk.getLatLng();
+      map.flyTo([ll.lat, ll.lng], 16, { animate: true, duration: 0.45 });
+      if (clusterEnabled && markerLayer && markerLayer.zoomToShowLayer){
+        markerLayer.zoomToShowLayer(mk, () => mk.openPopup());
+      } else {
+        mk.openPopup();
+      }
+      return true;
+    }
+
+    const lat = parseCoord(fallbackLat);
+    const lng = parseCoord(fallbackLng);
+    if (lat !== null && lng !== null){
+      map.flyTo([lat, lng], 16, { animate: true, duration: 0.45 });
+      return true;
+    }
+    return false;
+  }
+
+  function refreshFilteredView(opts = {}){
+    const { recenter = true } = opts;
+    const baseFiltered = applyListFilters(lastData);
+    const filtered = applyAreaFilter(baseFiltered);
+    renderMarkers(filtered);
+    renderList(filtered);
+    if (recenter && !medirActivo && !filtroZonaActiva) fitMapToFiltered(filtered);
+  }
+
+  function renderList(data){
+    tb.innerHTML = "";
+    updateCounters(data);
+    if (!data.length) return;
+
+    const order = ["sede_mpd","sede_mpa","sede_pj","proveedor","institucion","comisaria","registro_civil","servicio_penitenciario","pericia","otro"];
+    const grouped = {};
+    data.forEach(p => {
+      const k = normalizeTipo(p.tipo);
+      if (!grouped[k]) grouped[k] = [];
+      grouped[k].push(p);
+    });
+
+    const renderRows = (items) => {
+      items.forEach(p => {
+        const isPericiaRow = normalizeTipo(p.tipo) === "pericia";
+        const estadoHtml = isPericiaRow ? tagEstado(p.estado) : "";
+        const estadoControlHtml = isPericiaRow
+          ? `<select class="estado-select js-estado ${p.estado === "cerrado" ? "estado-cerrado" : (p.estado === "en_curso" ? "estado-curso" : "estado-pendiente")}" data-id="${p.id}">
+              <option value="pendiente" ${p.estado === "pendiente" ? "selected" : ""}>Pendiente</option>
+              <option value="en_curso" ${p.estado === "en_curso" ? "selected" : ""}>En curso</option>
+              <option value="cerrado" ${p.estado === "cerrado" ? "selected" : ""}>Cerrado</option>
+            </select>`
+          : "";
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${p.id}</td>
+          <td>${tagTipo(p.tipo)}</td>
+          <td><button class="btn2 js-zoom" data-id="${p.id}" style="font-weight:800;color:#1d4ed8;background:#eff6ff;border-color:#bfdbfe">${p.titulo}</button></td>
+          <td>${estadoHtml}</td>
+          <td>${p.resultado ? tagResultado(p.resultado) : ""}</td>
+          <td>${p.direccion || ""}</td>
+          <td>${p.expediente || ""}</td>
+          <td style="white-space:nowrap;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <button class="btn2" data-act="editar" data-id="${p.id}">Editar</button>
+            ${estadoControlHtml}
+            <button class="btn2 btn-danger" data-act="borrar" data-id="${p.id}">Borrar</button>
+          </td>
+        `;
+        tb.appendChild(tr);
+      });
+    };
+
+    const renderGroup = (key, label, items) => {
+      const isClosed = !!collapsed[key];
+      const trg = document.createElement("tr");
+      trg.className = "group-hd";
+      trg.innerHTML = `
+        <td colspan="8">
+          <span class="group-toggle" data-group="${key}">${isClosed ? "▶" : "▼"} ${label} (${items.length})</span>
+        </td>
+      `;
+      tb.appendChild(trg);
+      if (!isClosed) renderRows(items);
+    };
+
+    order.forEach(k => {
+      const items = grouped[k];
+      if (!items || !items.length) return;
+
+      renderGroup(k, TYPE_LABELS[k] || "Otro", items);
+    });
+  }
+  async function load(){
+    const qs = [];
+    if (fTipo.value) qs.push("tipo=" + encodeURIComponent(fTipo.value));
+
+    const r = await fetch("/api/mapa_ssj_puntos" + (qs.length ? "?" + qs.join("&") : ""));
+    const data = await r.json();
+    lastData = data;
+    buildListOptions(data);
+
+    if (!data.length){
+      clearMarkers();
+      const m = L.marker([-24.185, -65.299]).bindPopup("Mapa OK. Sin puntos cargados.");
+      if (markerLayer && markerLayer.addLayer) markerLayer.addLayer(m);
+      else m.addTo(map);
+      markers.push(m);
+      renderList([]);
+      map.flyTo([-24.185, -65.299], 13, { animate: true, duration: 0.45 });
+      return;
+    }
+
+    refreshFilteredView({ recenter: true });
+  }
+
+  tb.addEventListener("click", async (e) => {
+    const b = e.target.closest("button");
+    if (!b) return;
+
+    const id = b.getAttribute("data-id");
+    const act = b.getAttribute("data-act");
+
+    if (b.classList.contains("js-zoom")){
+      const tr = b.closest("tr");
+      if (tr){
+        tb.querySelectorAll("tr").forEach(r => r.classList.remove("row-focus"));
+        tr.classList.add("row-focus");
+      }
+      const p = lastData.find(x => String(x.id) === String(id));
+      if (p && p.lat && p.lng){
+        setModo('operativo');
+        focusMarkerById(p.id, p.lat, p.lng);
+      }
+      return;
+    }
+
+    if (act === "borrar"){
+      if (!confirm("Borrar este punto?")) return;
+      await fetch("/mapa_ssj/borrar/" + id, { method:"POST" });
+      load();
+      return;
+    }
+
+    if (act === "editar"){
+      const p = lastData.find(x => String(x.id) === String(id));
+      if (!p) return;
+      editingId = p.id;
+      if (panelCargaLeft) panelCargaLeft.open = true;
+      editId.textContent = p.id;
+      editBar.style.display = "block";
+      btnCrear.textContent = "Guardar cambios";
+
+      nTipo.value = normalizeTipo(p.tipo);
+      nEstado.value = (p.estado || "pendiente");
+      nFecha.value = (p.fecha_alta || "");
+      nFechaObj.value = (p.fecha_objetivo || "");
+      nTitulo.value = (p.titulo || "");
+      nCategoria.value = (p.categoria || "");
+      nResponsable.value = (p.responsable || "");
+      nExpediente.value = (p.expediente || "");
+      nAsistido.value = (p.asistido_nombre || "");
+      nEtapa.value = (p.etapa || "");
+      nEtapaTotal.value = (p.etapa_total || "");
+      nResultado.value = (p.resultado || "");
+      nResultadoDetalle.value = (p.resultado_detalle || "");
+      nDireccion.value = (p.direccion || "");
+      nDireccionExtra.value = (p.direccion_extra || "");
+      nBarrio.value = (p.barrio || "");
+      nLocalidad.value = (p.localidad || "");
+      nDescripcion.value = (p.descripcion || "");
+      nContacto.value = (p.contacto || "");
+      nRef.value = (p.referencia || "");
+      nLat.value = (p.lat || "");
+      nLng.value = (p.lng || "");
+      applyTypeUI();
+      syncCatalogFromFields();
+      return;
+    }
+
+    await fetch("/mapa_ssj/estado/" + id, {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ estado: act, fecha_visita: new Date().toISOString().slice(0,10) })
+    });
+    load();
+  });
+
+  tb.addEventListener("change", async (e) => {
+    const sel = e.target.closest(".js-estado");
+    if (!sel) return;
+    const id = sel.getAttribute("data-id");
+    const estado = sel.value;
+    sel.classList.remove("estado-pendiente","estado-curso","estado-cerrado");
+    sel.classList.add(estado === "cerrado" ? "estado-cerrado" : (estado === "en_curso" ? "estado-curso" : "estado-pendiente"));
+    await fetch("/mapa_ssj/estado/" + id, {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ estado, fecha_visita: new Date().toISOString().slice(0,10) })
+    });
+    load();
+  });
+
+  tb.addEventListener("click", (e) => {
+    const t = e.target.closest(".group-toggle");
+    if (!t) return;
+    const g = t.getAttribute("data-group");
+    collapsed[g] = !collapsed[g];
+    renderList(applyAreaFilter(applyListFilters(lastData)));
+  });
+
+  btnAplicar.addEventListener("click", load);
+  if (btnLimpiar){
+    btnLimpiar.addEventListener("click", () => {
+      fTipo.value = "";
+      if (fBuscar) fBuscar.value = "";
+      saveFilters();
+      load();
+    });
+  }
+  if (btnSelectMap){
+    btnSelectMap.addEventListener("click", () => {
+      pickMode = !pickMode;
+      updatePickUI(pickMode ? "Click en el mapa para fijar la ubicacion" : undefined);
+    });
+  }
+  if (btnCerrarCarga){
+    btnCerrarCarga.addEventListener("click", () => {
+      editingId = null;
+      editBar.style.display = "none";
+      btnCrear.textContent = "Crear punto";
+      resetForm();
+      if (panelCargaLeft) panelCargaLeft.open = false;
+    });
+  }
+  if (btnModoOperativo) btnModoOperativo.addEventListener('click', () => setModo('operativo'));
+  if (btnModoListado) btnModoListado.addEventListener('click', () => setModo('listado'));
+  if (btnGoListado) btnGoListado.addEventListener('click', () => setModo('listado'));
+  if (btnBackOperativo) btnBackOperativo.addEventListener('click', () => setModo('operativo'));
+
+  btnRefresh.addEventListener("click", load);
+  if (btnArea){
+    btnArea.addEventListener("click", () => {
+      filtroZonaActiva = !filtroZonaActiva;
+      updateZonaUI();
+      refreshFilteredView({ recenter: false });
+    });
+  }
+  map.on("moveend", () => {
+    if (!filtroZonaActiva) return;
+    refreshFilteredView({ recenter: false });
+  });
+  if (btnMedir){
+    btnMedir.addEventListener("click", () => {
+      medirActivo = !medirActivo;
+      if (!medirActivo) limpiarMedicion();
+      else if (medirInfo) {
+        medirInfo.style.display = "";
+        medirInfo.textContent = "Marca punto A y B para distancia + recomendacion operativa.";
+      }
+      updateMedirUI();
+    });
+  }
+  nTipo.addEventListener("change", applyTypeUI);
+  nEstado.addEventListener("change", applyTypeUI);
+  if (nSedeLugar){
+    nSedeLugar.addEventListener("change", () => {
+      fillCatalogAreas();
+      if (nSedeArea && nSedeArea.options.length > 1) nSedeArea.selectedIndex = 1;
+      renderSedeInfo();
+      applyCatalogSelection();
+    });
+  }
+  if (nSedeArea){
+    nSedeArea.addEventListener("change", () => {
+      renderSedeInfo();
+      applyCatalogSelection();
+    });
+  }
+  fTipo.addEventListener("change", () => {
+    saveFilters();
+    paintTypeSelect(fTipo);
+  });
+  lTipo.addEventListener("change", () => {
+    saveFilters();
+    paintTypeSelect(lTipo);
+    refreshFilteredView({ recenter: true });
+  });
+  if (fBuscar){
+    fBuscar.addEventListener("input", () => {
+      saveFilters();
+      refreshFilteredView({ recenter: true });
+    });
+  }
+  lEstado.addEventListener("change", () => {
+    saveFilters();
+    refreshFilteredView({ recenter: true });
+  });
+  lBarrio.addEventListener("change", () => {
+    saveFilters();
+    refreshFilteredView({ recenter: true });
+  });
+  lLocalidad.addEventListener("change", () => {
+    saveFilters();
+    refreshFilteredView({ recenter: true });
+  });
+  if (lSoloPolicia){
+    lSoloPolicia.addEventListener("click", () => {
+      filtroSoloPolicia = !filtroSoloPolicia;
+      lSoloPolicia.textContent = filtroSoloPolicia ? "Solo Policia: ON" : "Solo Policia: OFF";
+      lSoloPolicia.classList.toggle("btn-ok", filtroSoloPolicia);
+      saveFilters();
+      refreshFilteredView({ recenter: true });
+    });
+  }
+  btnCancelar.addEventListener("click", () => {
+    editingId = null;
+    editBar.style.display = "none";
+    btnCrear.textContent = "Crear punto";
+    resetForm();
+  });
+
+  btnCrear.addEventListener("click", async () => {
+    const body = {
+      tipo: (nTipo.value || "otro"),
+      estado: (nEstado.value || "pendiente"),
+      fecha_alta: (nFecha.value || "").trim(),
+      fecha_objetivo: (nFechaObj.value || "").trim(),
+      titulo: (nTitulo.value || "").trim(),
+      categoria: (nCategoria.value || "").trim(),
+      responsable: (nResponsable.value || "").trim(),
+      expediente: (nExpediente.value || "").trim(),
+      asistido_nombre: (nAsistido.value || "").trim(),
+      etapa: (nEtapa.value || "").trim(),
+      etapa_total: (nEtapaTotal.value || "").trim(),
+      resultado: (nResultado.value || "").trim(),
+      resultado_detalle: (nResultadoDetalle.value || "").trim(),
+      direccion: (nDireccion.value || "").trim(),
+      direccion_extra: (nDireccionExtra.value || "").trim(),
+      barrio: (nBarrio.value || "").trim(),
+      localidad: (nLocalidad.value || "").trim(),
+      descripcion: (nDescripcion.value || "").trim(),
+      contacto: (nContacto.value || "").trim(),
+      referencia: (nRef.value || "").trim(),
+      lat: (nLat.value || "").trim(),
+      lng: (nLng.value || "").trim()
+    };
+
+    const url = editingId ? ("/mapa_ssj/editar/" + editingId) : "/mapa_ssj/nuevo";
+    const r = await fetch(url, {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify(body)
+    });
+
+    const j = await r.json();
+    if (!j.ok){
+      alert("Error: " + (j.error || "desconocido"));
+      return;
+    }
+
+    resetForm();
+    editingId = null;
+    editBar.style.display = "none";
+    btnCrear.textContent = "Crear punto";
+    if (panelCargaLeft) panelCargaLeft.open = false;
+    load();
+  });
+
+  applySavedFilters();
+  paintTypeSelect(fTipo);
+  paintTypeSelect(lTipo);
+  applyTypeUI();
+  updateMedirUI();
+  updatePickUI();
+  updateZonaUI();
+  load();
+})();
+</script>
+
+{% endblock %}
+

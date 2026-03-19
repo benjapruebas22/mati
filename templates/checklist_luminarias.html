@@ -1,0 +1,548 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="checklist-main">
+  <style>
+    .checklist-main{
+      padding:16px 6px 24px;
+    }
+    .cl-page-title{
+      font-size:24px;
+      font-weight:700;
+      margin-bottom:4px;
+      color:#0f172a;
+    }
+    .cl-page-sub{
+      font-size:13px;
+      color:#6b7280;
+      margin-bottom:16px;
+    }
+    .cl-grid{
+      display:grid;
+      grid-template-columns:minmax(320px, 420px) minmax(480px, 1fr);
+      gap:16px;
+      align-items:flex-start;
+    }
+    .cl-card{
+      background:#ffffff;
+      border-radius:16px;
+      border:1px solid #e5e7eb;
+      box-shadow:0 8px 16px rgba(15,23,42,0.04);
+      padding:14px 16px 16px;
+    }
+    .cl-card h2{
+      font-size:16px;
+      font-weight:600;
+      margin:0 0 4px;
+      color:#111827;
+    }
+    .cl-muted{
+      font-size:12px;
+      color:#6b7280;
+      margin-bottom:10px;
+    }
+    .cl-form-grid{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:10px;
+      font-size:13px;
+    }
+    .cl-row-2{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+    }
+    .cl-row-3{
+      display:grid;
+      grid-template-columns:1.2fr 1fr 1fr;
+      gap:8px;
+    }
+    label{
+      display:block;
+      font-size:11px;
+      font-weight:600;
+      text-transform:uppercase;
+      letter-spacing:.04em;
+      color:#6b7280;
+      margin-bottom:2px;
+    }
+    .cl-input,
+    .cl-select,
+    .cl-textarea{
+      width:100%;
+      box-sizing:border-box;
+      border-radius:10px;
+      border:1px solid #d1d5db;
+      padding:6px 8px;
+      font-size:13px;
+      background:#f9fafb;
+      color:#111827;
+      outline:none;
+    }
+    .cl-input:focus,
+    .cl-select:focus,
+    .cl-textarea:focus{
+      border-color:#2563eb;
+      background:#ffffff;
+      box-shadow:0 0 0 1px rgba(37,99,235,0.25);
+    }
+    .cl-textarea{
+      min-height:70px;
+      resize:vertical;
+    }
+    .cl-actions{
+      margin-top:6px;
+      display:flex;
+      justify-content:flex-end;
+    }
+    .btn-primary{
+      border-radius:999px;
+      border:1px solid #2563eb;
+      background:#2563eb;
+      color:#ffffff;
+      font-size:13px;
+      padding:6px 14px;
+      font-weight:500;
+      cursor:pointer;
+    }
+    .btn-primary:hover{
+      background:#1d4ed8;
+      border-color:#1d4ed8;
+    }
+
+    /* KPIs */
+    .cl-kpi-row{
+      display:grid;
+      grid-template-columns:repeat(3, minmax(0,1fr));
+      gap:8px;
+      margin-bottom:10px;
+    }
+    .cl-kpi-card{
+      border-radius:12px;
+      border:1px solid #e5e7eb;
+      background:#f9fafb;
+      padding:6px 8px;
+      font-size:11.5px;
+    }
+    .cl-kpi-label{
+      color:#6b7280;
+      text-transform:uppercase;
+      letter-spacing:.05em;
+      font-size:10px;
+      margin-bottom:2px;
+    }
+    .cl-kpi-value{
+      font-weight:700;
+      color:#111827;
+      font-size:14px;
+    }
+    .cl-kpi-extra{
+      font-size:11px;
+      color:#6b7280;
+    }
+
+    /* MINI ESTADÍSTICAS (pasteles) */
+    .cl-stats-row{
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0,1fr));
+      gap:8px;
+      margin:4px 0 10px;
+    }
+    .cl-mini-card{
+      border-radius:12px;
+      border:1px solid #e5e7eb;
+      background:#f9fafb;
+      padding:6px 8px;
+      font-size:11.5px;
+    }
+    .cl-mini-title{
+      font-size:11px;
+      font-weight:600;
+      color:#4b5563;
+      text-transform:uppercase;
+      letter-spacing:.05em;
+      margin-bottom:4px;
+    }
+    .cl-stat-list{
+      display:flex;
+      flex-direction:column;
+      gap:3px;
+    }
+    .cl-stat-item{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:6px;
+    }
+    .cl-stat-label{
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      font-size:11px;
+      color:#4b5563;
+    }
+    .cl-stat-dot{
+      width:8px;
+      height:8px;
+      border-radius:999px;
+      background:#bfdbfe;
+    }
+    .cl-stat-dot.motivo1{ background:#fed7e2; }
+    .cl-stat-dot.motivo2{ background:#fee2b3; }
+    .cl-stat-dot.motivo3{ background:#bbf7d0; }
+    .cl-stat-dot.tipo1{ background:#bfdbfe; }
+    .cl-stat-dot.tipo2{ background:#ddd6fe; }
+    .cl-stat-dot.tipo3{ background:#fef3c7; }
+
+    .cl-stat-pill{
+      padding:1px 7px;
+      border-radius:999px;
+      background:#e5e7eb;
+      font-size:10px;
+      font-weight:600;
+      color:#374151;
+    }
+
+    .cl-table-wrapper{
+      margin-top:8px;
+      max-height:420px;
+      overflow:auto;
+      border-radius:12px;
+      border:1px solid #e5e7eb;
+    }
+    table.cl-table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:12px;
+      background:#f9fafb;
+    }
+    .cl-table thead{
+      background:#e5e7ff;
+      position:sticky;
+      top:0;
+      z-index:1;
+    }
+    .cl-table th,
+    .cl-table td{
+      padding:6px 8px;
+      border-bottom:1px solid #e5e7eb;
+      text-align:left;
+      vertical-align:top;
+      white-space:nowrap;
+    }
+    .cl-table td:nth-child(5),
+    .cl-table td:nth-child(6),
+    .cl-table td:nth-child(7),
+    .cl-table td:nth-child(8){
+      white-space:normal;
+    }
+    .cl-pill-sede{
+      display:inline-flex;
+      align-items:center;
+      padding:2px 8px;
+      border-radius:999px;
+      font-size:11px;
+      border:1px solid #cbd5f5;
+      background:#eef2ff;
+      color:#1d4ed8;
+      font-weight:600;
+    }
+    .cl-tag-motivo{
+      display:inline-flex;
+      padding:2px 8px;
+      border-radius:999px;
+      font-size:11px;
+      border:1px solid #e5e7eb;
+      background:#f9fafb;
+    }
+    .cl-chip-filtro{
+      font-size:11px;
+      padding:2px 8px;
+      border-radius:999px;
+      border:1px solid #e5e7eb;
+      background:#f9fafb;
+    }
+    @media (max-width: 900px){
+      .cl-grid{
+        grid-template-columns:1fr;
+      }
+      .cl-kpi-row{
+        grid-template-columns:1fr;
+      }
+      .cl-stats-row{
+        grid-template-columns:1fr;
+      }
+    }
+  </style>
+
+  <h1 class="cl-page-title">Checklist · Luminarias</h1>
+  <p class="cl-page-sub">
+    Registro de cambios de lámparas por sede y ambiente. Te permite ver cuántas veces se cambió una luminaria,
+    qué tipo se instaló y por qué motivo.
+  </p>
+
+  <div class="cl-grid">
+
+    <!-- PANEL IZQUIERDO: NUEVO REGISTRO -->
+    <div class="cl-card">
+      <h2>Nuevo cambio de luminaria</h2>
+      <p class="cl-muted">
+        Cargá cada cambio que hagas: sede, ambiente, tipo de lámpara, color de luz y motivo.
+      </p>
+
+      <form method="post" class="cl-form-grid">
+        <div class="cl-row-2">
+          <div>
+            <label>Fecha</label>
+            <input type="date" name="fecha" class="cl-input" value="{{ hoy }}">
+          </div>
+          <div>
+            <label>Sede</label>
+            <select name="sede_codigo" class="cl-select" required>
+              <option value="">-- Elegir sede --</option>
+              {% for s in sedes %}
+                <option value="{{ s.codigo }}">
+                  {{ s.codigo }} · {{ s.nombre }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label>Ambiente / local</label>
+          <input type="text" name="ambiente" class="cl-input"
+                 placeholder="Ej: P00-D01 Pasillo, Mesa de entrada, Oficina Dra. X">
+        </div>
+
+        <div class="cl-row-3">
+          <div>
+            <label>Tipo de luminaria</label>
+            <select name="tipo" class="cl-select" required>
+              <option value="tubo_led">Tubo LED</option>
+              <option value="panel_led">Panel LED</option>
+              <option value="foco_comun">Foco común</option>
+              <option value="otra">Otra / especial</option>
+            </select>
+          </div>
+          <div>
+            <label>Color de luz</label>
+            <select name="color_luz" class="cl-select" required>
+              <option value="fria">Fría</option>
+              <option value="calida">Cálida</option>
+            </select>
+          </div>
+          <div>
+            <label>Potencia / modelo</label>
+            <input type="text" name="potencia" class="cl-input"
+                   placeholder="Ej: 18W, 60x60, 12W dicroica">
+          </div>
+        </div>
+
+        <div class="cl-row-2">
+          <div>
+            <label>Cantidad</label>
+            <input type="number" name="cantidad" class="cl-input"
+                   min="1" value="1">
+          </div>
+          <div>
+            <label>Motivo del cambio</label>
+            <select name="motivo" class="cl-select">
+              <option value="quemado">Quemado</option>
+              <option value="upgrade">Upgrade (mejora)</option>
+              <option value="reparacion">Reparación</option>
+              <option value="nuevo">Instalación nueva</option>
+              <option value="otro">Otro</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="cl-row-2">
+          <div>
+            <label>Instalado por</label>
+            <input type="text" name="instalado_por" class="cl-input"
+                   placeholder="Ej: Ignacio Baroni, Mauro, etc.">
+          </div>
+          <div>
+            <label>Observaciones</label>
+            <input type="text" name="observaciones" class="cl-input"
+                   placeholder="Ej: Se cambió por consumo, luminaria anterior era tubo 40W...">
+          </div>
+        </div>
+
+        <div class="cl-actions">
+          <button type="submit" class="btn-primary">
+            💡 Guardar cambio de luminaria
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- PANEL DERECHO: KPIs + HISTORIAL -->
+    <div class="cl-card">
+      <h2>Historial de cambios</h2>
+      <p class="cl-muted">
+        Últimos cambios registrados. Podés filtrar por sede para ver el histórico de cada edificio.
+      </p>
+
+      <!-- KPIs -->
+      <div class="cl-kpi-row">
+        <div class="cl-kpi-card">
+          <div class="cl-kpi-label">Total de cambios</div>
+          <div class="cl-kpi-value">{{ total_cambios }}</div>
+          <div class="cl-kpi-extra">Histórico general en todas las sedes.</div>
+        </div>
+        <div class="cl-kpi-card">
+          <div class="cl-kpi-label">Cambios este mes</div>
+          <div class="cl-kpi-value">{{ cambios_mes }}</div>
+          <div class="cl-kpi-extra">
+            Mes {{ mes_actual[5:7] }}/{{ mes_actual[:4] }}.
+          </div>
+        </div>
+        <div class="cl-kpi-card">
+          <div class="cl-kpi-label">Sede con más cambios</div>
+          {% if top_sedes and top_sedes|length > 0 %}
+            <div class="cl-kpi-value">
+              {{ top_sedes[0].sede_codigo }} ({{ top_sedes[0].total }})
+            </div>
+            <div class="cl-kpi-extra">
+              Top 5 sedes con más intervenciones.
+            </div>
+          {% else %}
+            <div class="cl-kpi-value">—</div>
+            <div class="cl-kpi-extra">Todavía sin datos.</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- MINI ESTADÍSTICAS EN COLORES PASTELES -->
+      <div class="cl-stats-row">
+        <!-- Motivos más frecuentes -->
+        <div class="cl-mini-card">
+          <div class="cl-mini-title">Motivos más frecuentes</div>
+          <div class="cl-stat-list">
+            {% if top_motivos and top_motivos|length > 0 %}
+              {% for m in top_motivos %}
+                <div class="cl-stat-item">
+                  <span class="cl-stat-label">
+                    <span class="cl-stat-dot motivo{{ loop.index }}"></span>
+                    {{ m.motivo|capitalize or 'Sin motivo' }}
+                  </span>
+                  <span class="cl-stat-pill">{{ m.total }}</span>
+                </div>
+              {% endfor %}
+            {% else %}
+              <span style="font-size:11px;color:#9ca3af;">Sin datos suficientes.</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Tipos más usados -->
+        <div class="cl-mini-card">
+          <div class="cl-mini-title">Tipos más usados</div>
+          <div class="cl-stat-list">
+            {% if top_tipos and top_tipos|length > 0 %}
+              {% for t in top_tipos %}
+                <div class="cl-stat-item">
+                  <span class="cl-stat-label">
+                    <span class="cl-stat-dot tipo{{ loop.index }}"></span>
+                    {% if t.tipo == 'tubo_led' %}Tubo LED
+                    {% elif t.tipo == 'panel_led' %}Panel LED
+                    {% elif t.tipo == 'foco_comun' %}Foco común
+                    {% else %}{{ t.tipo|capitalize }}
+                    {% endif %}
+                  </span>
+                  <span class="cl-stat-pill">{{ t.total }}</span>
+                </div>
+              {% endfor %}
+            {% else %}
+              <span style="font-size:11px;color:#9ca3af;">Sin datos suficientes.</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Filtro -->
+      <form method="get" style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <label style="margin:0;">Sede</label>
+        <select name="sede_filtro" class="cl-select" style="max-width:260px;">
+          <option value="">Todas</option>
+          {% for s in sedes %}
+            <option value="{{ s.codigo }}"
+                    {% if sede_filtro == s.codigo %}selected{% endif %}>
+              {{ s.codigo }} · {{ s.nombre }}
+            </option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn-primary" style="padding:4px 10px;font-size:12px;">
+          Filtrar
+        </button>
+
+        {% if sede_filtro %}
+          <span class="cl-chip-filtro">
+            Mostrando solo {{ sede_filtro }}
+          </span>
+        {% endif %}
+      </form>
+
+      <!-- Tabla historial -->
+      <div class="cl-table-wrapper">
+        <table class="cl-table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Sede</th>
+              <th>Ambiente</th>
+              <th>Tipo</th>
+              <th>Color</th>
+              <th>Cant.</th>
+              <th>Motivo</th>
+              <th>Instalado por</th>
+              <th>Obs.</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if registros %}
+              {% for r in registros %}
+                <tr>
+                  <td>{{ r.fecha }}</td>
+                  <td>
+                    <span class="cl-pill-sede">{{ r.sede_codigo }}</span>
+                  </td>
+                  <td>{{ r.ambiente }}</td>
+                  <td>
+                    {% if r.tipo == 'tubo_led' %}Tubo LED
+                    {% elif r.tipo == 'panel_led' %}Panel LED
+                    {% elif r.tipo == 'foco_comun' %}Foco común
+                    {% else %}{{ r.tipo|capitalize }}
+                    {% endif %}
+                  </td>
+                  <td>{{ r.color_luz|capitalize }}</td>
+                  <td>{{ r.cantidad or 1 }}</td>
+                  <td>
+                    {% if r.motivo %}
+                      <span class="cl-tag-motivo">
+                        {{ r.motivo|capitalize }}
+                      </span>
+                    {% endif %}
+                  </td>
+                  <td>{{ r.instalado_por }}</td>
+                  <td>{{ r.observaciones }}</td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="9" style="text-align:center;color:#9ca3af;">
+                  Todavía no hay cambios de luminarias cargados.
+                </td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+{% endblock %}

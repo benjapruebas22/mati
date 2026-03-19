@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="grid-main">
+
+  <!-- PANEL IZQUIERDO: título + texto institucional -->
+  <div class="left-panel">
+
+    <div class="hero">
+      <div class="map-card">
+        <h3>Inventario general de mobiliario</h3>
+
+        <p style="font-size:13px;color:#64748b;margin-bottom:8px;">
+          Resumen de mobiliario por sede del Ministerio Público de la Defensa.
+        </p>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
+          <a href="{{ url_for('dashboard') }}" class="btn xs outline-slate">
+            ⬅ Volver al inicio
+          </a>
+        </div>
+      </div>
+
+      <div class="cal-card">
+        <h3>Uso del tablero</h3>
+        <div class="day-box">
+          <div class="day-title">Lectura rápida</div>
+          <div class="empty">
+            Cada fila resume el mobiliario principal por sede:
+            aires, escritorios, mesas de PC, sillas y armarios.
+            <br>Este tablero sirve como base para decisiones de
+            redistribución y nuevas compras.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PANEL DERECHO: tabla resumen -->
+  <div class="right-panel">
+
+    <div style="background:#ffffff;border-radius:14px;padding:16px;
+                box-shadow:0 1px 3px rgba(15,23,42,.06);">
+
+      <h3 style="margin-top:0;margin-bottom:10px;">Detalle por sede</h3>
+
+      <div class="table-wrapper" style="max-height:420px;overflow:auto;">
+        <table class="table basic small-text">
+          <thead>
+            <tr>
+              <th>Sede</th>
+              <th class="text-end">Aires</th>
+              <th class="text-end">Escritorios prof.</th>
+              <th class="text-end">Mesas PC</th>
+              <th class="text-end">Sillas giratorias</th>
+              <th class="text-end">Sillas fijas</th>
+              <th class="text-end">Armarios altos</th>
+              <th class="text-end">Bibliotecas bajas</th>
+              <th class="text-end">Otros</th>
+              <th class="text-end">Luminarias</th>
+              <th class="text-end">Puestos</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in resumen %}
+              <tr>
+                <td>
+                  <strong>{{ r["sede"] }}</strong>
+                  <div class="muted" style="font-size:11px;">
+                    Código: {{ r["cod_sede"] }}
+                  </div>
+                </td>
+                <td class="text-end">{{ r["aires_total"] }}</td>
+                <td class="text-end">{{ r["escritorio_prof"] }}</td>
+                <td class="text-end">{{ r["mesa_pc"] }}</td>
+                <td class="text-end">{{ r["silla_giratoria"] }}</td>
+                <td class="text-end">{{ r["silla_fija"] }}</td>
+                <td class="text-end">{{ r["armario_alto"] }}</td>
+                <td class="text-end">{{ r["biblioteca_baja"] }}</td>
+                <td class="text-end">{{ r["otros"] }}</td>
+                <td class="text-end">{{ r["luminarias_total"] }}</td>
+                <td class="text-end">{{ r["puestos_trabajo"] }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <p class="muted" style="margin-top:8px;font-size:12px;">
+        Informacion consolidada desde mobiliario, aires y luminarias.
+        En futuras etapas se pueden agregar filtros por fuero, ciudad
+        y descargas en Excel / PDF.
+      </p>
+
+    </div>
+
+  </div>
+
+</section>
+
+{% endblock %}

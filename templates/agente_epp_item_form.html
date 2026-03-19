@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<section class="agentes-main">
+
+  <header class="section-header">
+    <div>
+      <h1>Editar EPP / herramienta del agente</h1>
+      <p class="section-sub">
+        {{ agente.agente }} · Rubro: {{ agente.rubro|upper }}
+      </p>
+    </div>
+
+    <div class="section-actions">
+      <a class="btn outline-slate" href="{{ url_for('agente_epp', id=agente.id) }}">
+        ⬅ Volver a EPP / herramientas
+      </a>
+    </div>
+  </header>
+
+  <div class="grid-main">
+    <div class="left-panel">
+      <div class="agent-detail-card">
+        <div class="agent-detail-header">
+          <div class="agent-photo" style="display:flex;align-items:center;justify-content:center;">
+            🧰
+          </div>
+          <div>
+            <div class="agent-detail-name">{{ agente.agente }}</div>
+            <div class="agent-detail-rubro">Rubro: {{ agente.rubro|upper }}</div>
+          </div>
+        </div>
+
+        <div class="agent-detail-body">
+          <div class="agent-detail-section">
+            <div class="agent-detail-section-title">FORMULARIO</div>
+
+            <form method="post" class="license-form">
+
+              <div class="form-row">
+                <label for="tipo">Elemento</label>
+                <input type="text" id="tipo" name="tipo" required
+                       value="{{ entrega.tipo }}"
+                       placeholder="Ej: Casco, Zapatos dieléctricos, Llave francesa, etc.">
+              </div>
+
+              <div class="form-row-inline">
+                <div>
+                  <label for="categoria">Categoría</label>
+                  {% set cat_sel = entrega.categoria or '' %}
+                  <select id="categoria" name="categoria">
+                    <option value="" {{ 'selected' if cat_sel == '' else '' }}>
+                      (sin especificar)
+                    </option>
+                    <option value="EPP" {{ 'selected' if cat_sel == 'EPP' else '' }}>
+                      EPP
+                    </option>
+                    <option value="HERRAMIENTA" {{ 'selected' if cat_sel == 'HERRAMIENTA' else '' }}>
+                      Herramienta
+                    </option>
+                  </select>
+                </div>
+                <div>
+                  <label for="cantidad">Cantidad</label>
+                  <input type="number" id="cantidad" name="cantidad"
+                         value="{{ entrega.cantidad }}" min="1">
+                </div>
+              </div>
+
+              <div class="form-row-inline">
+                <div>
+                  <label for="fecha_entrega">Fecha de entrega</label>
+                  <input type="date" id="fecha_entrega" name="fecha_entrega"
+                         value="{{ entrega.fecha_entrega }}" required>
+                </div>
+                <div>
+                  <label for="estado">Estado</label>
+                  {% set est_sel = entrega.estado or '' %}
+                  <select id="estado" name="estado">
+                    <option value="" {{ 'selected' if est_sel == '' else '' }}>(sin especificar)</option>
+                    <option value="ENTREGADO" {{ 'selected' if est_sel == 'ENTREGADO' else '' }}>Entregado</option>
+                    <option value="DEVUELTO" {{ 'selected' if est_sel == 'DEVUELTO' else '' }}>Devuelto</option>
+                    <option value="BAJA" {{ 'selected' if est_sel == 'BAJA' else '' }}>Baja</option>
+                    <option value="PERDIDO" {{ 'selected' if est_sel == 'PERDIDO' else '' }}>Perdido</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <label for="observaciones">Observaciones</label>
+                <textarea id="observaciones" name="observaciones" rows="3"
+                          placeholder="Nº de serie, marca, detalle de uso, etc.">{{ entrega.observaciones }}</textarea>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn outline-amber">💾 Guardar cambios</button>
+                <a class="btn outline-slate"
+                   href="{{ url_for('agente_epp', id=agente.id) }}">
+                  Cancelar
+                </a>
+              </div>
+
+            </form>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+</section>
+
+{% endblock %}

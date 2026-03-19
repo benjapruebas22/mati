@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .login-wrap {
+    min-height: calc(100vh - 84px);
+    display: grid;
+    place-items: center;
+    padding: 24px 16px 48px;
+    background: radial-gradient(1200px 420px at 50% -50%, rgba(59, 130, 246, 0.16), transparent 70%);
+  }
+
+  .login-card {
+    width: min(560px, 100%);
+    padding: 28px;
+    border-radius: 18px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    box-shadow: var(--shadow);
+    display: grid;
+    gap: 18px;
+  }
+
+  .login-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .login-logo {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    border-radius: 12px;
+    background: #fff;
+    padding: 6px;
+    border: 1px solid var(--border);
+  }
+
+  .login-title {
+    margin: 0;
+    font-size: 22px;
+  }
+
+  .login-subtitle {
+    margin: 4px 0 0;
+    color: var(--muted);
+  }
+
+  .login-card label {
+    font-size: 14px;
+    font-weight: 700;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .login-card input {
+    font-size: 15px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: color-mix(in srgb, var(--card) 92%, #ffffff 8%);
+    color: var(--text);
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .login-card input:focus {
+    outline: none;
+    border-color: color-mix(in srgb, #3b82f6 55%, var(--border));
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  }
+
+  .login-card .btn.btn-primary {
+    padding: 10px 16px;
+    font-weight: 700;
+  }
+</style>
+
+<div class="login-wrap">
+  <div class="login-card">
+    <div class="login-brand">
+      <img class="login-logo" src="{{ url_for('static', filename='Logo/logo_mpd.png') }}" alt="MPD">
+      <div>
+        <h2 class="login-title">Ingresar</h2>
+        <p class="login-subtitle">Acceso por usuario y clave.</p>
+      </div>
+    </div>
+    <form method="post" style="display: grid; gap: 14px;">
+      <div class="form-row">
+        <label>Usuario</label>
+        <input type="text" name="username" required autocomplete="username">
+      </div>
+      <div class="form-row">
+        <label>Clave</label>
+        <input type="password" name="password" required autocomplete="current-password">
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px;">
+        <button class="btn btn-primary" type="submit">Entrar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

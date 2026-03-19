@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+  .license-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .license-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .license-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
+    padding: 14px 16px;
+  }
+
+  .actions-cell {
+    white-space: nowrap;
+    text-align: right;
+  }
+
+  .icon-btn {
+    border: none;
+    background: transparent;
+    padding: 0 4px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .icon-btn.danger {
+    color: #b91c1c;
+  }
+</style>
+
+<section class="agentes-main license-shell">
+
+  <header class="section-header license-head">
+    <div>
+      <h1>Desempeno del agente</h1>
+      <p class="section-sub">
+        {{ agente.agente }} - Rubro: {{ agente.rubro|upper }}
+      </p>
+    </div>
+
+    <div class="section-actions">
+      <a class="btn outline-slate" href="{{ url_for('agentes_home', id=agente.id) }}">
+        Volver a la ficha del agente
+      </a>
+    </div>
+  </header>
+
+  <div class="grid-main">
+    <div class="left-panel">
+      <div class="license-card">
+        <div class="agent-detail-header">
+          <div class="agent-photo" style="display:flex;align-items:center;justify-content:center;">
+            AG
+          </div>
+          <div>
+            <div class="agent-detail-name">{{ agente.agente }}</div>
+            <div class="agent-detail-rubro">Rubro: {{ agente.rubro|upper }}</div>
+          </div>
+        </div>
+
+        <div class="agent-detail-body">
+          <div class="agent-detail-section">
+            <div class="agent-detail-section-title">
+              {% if des_editar %}EDITAR REGISTRO{% else %}NUEVO REGISTRO DE DESEMPENO{% endif %}
+            </div>
+
+            <form method="post"
+                  class="license-form"
+                  action="{% if des_editar %}
+                             {{ url_for('agente_desempeno_editar',
+                                        agente_id=agente.id,
+                                        des_id=des_editar.id) }}
+                          {% else %}
+                             {{ url_for('agente_desempeno', id=agente.id) }}
+                          {% endif %}">
+
+              <div class="license-grid">
+                <div class="license-field">
+                  <label for="fecha">Fecha</label>
+                  <input type="date" id="fecha" name="fecha" required
+                         value="{{ des_editar.fecha if des_editar else '' }}">
+                </div>
+                <div class="license-field">
+                  <label for="tipo">Tipo</label>
+                  <select id="tipo" name="tipo" required>
+                    <option value="">Seleccionar...</option>
+                    {% set t = des_editar.tipo if des_editar else '' %}
+                    <option value="evaluacion" {% if t=='evaluacion' %}selected{% endif %}>Evaluacion</option>
+                    <option value="observacion" {% if t=='observacion' %}selected{% endif %}>Observacion</option>
+                    <option value="reconocimiento" {% if t=='reconocimiento' %}selected{% endif %}>Reconocimiento</option>
+                    <option value="apercibimiento" {% if t=='apercibimiento' %}selected{% endif %}>Apercibimiento</option>
+                    <option value="otro" {% if t=='otro' %}selected{% endif %}>Otro</option>
+                  </select>
+                </div>
+
+                <div class="license-field">
+                  <label for="periodo">Periodo</label>
+                  <input type="text" id="periodo" name="periodo"
+                         value="{{ des_editar.periodo if des_editar else '' }}"
+                         placeholder="Ej: 2025 - 1er semestre">
+                </div>
+                <div class="license-field">
+                  <label for="calificacion">Calificacion (1-5)</label>
+                  <select id="calificacion" name="calificacion">
+                    {% set c = des_editar.calificacion if des_editar else '' %}
+                    <option value="" {% if not c %}selected{% endif %}>(sin calificar)</option>
+                    <option value="1" {% if c==1 %}selected{% endif %}>1 - Muy deficiente</option>
+                    <option value="2" {% if c==2 %}selected{% endif %}>2 - Deficiente</option>
+                    <option value="3" {% if c==3 %}selected{% endif %}>3 - Aceptable</option>
+                    <option value="4" {% if c==4 %}selected{% endif %}>4 - Bueno</option>
+                    <option value="5" {% if c==5 %}selected{% endif %}>5 - Muy bueno</option>
+                  </select>
+                </div>
+
+                <div class="license-field full">
+                  <label for="observaciones">Descripcion / observaciones</label>
+                  <textarea id="observaciones" name="observaciones" rows="4"
+                            placeholder="Detalle de la evaluacion u observacion.">{{ des_editar.observaciones if des_editar else '' }}</textarea>
+                </div>
+
+                <div class="license-field full">
+                  <label for="estado">Estado</label>
+                  {% set e = des_editar.estado if des_editar else '' %}
+                  <select id="estado" name="estado">
+                    <option value="" {% if not e %}selected{% endif %}>(sin especificar)</option>
+                    <option value="ABIERTO" {% if e=='ABIERTO' %}selected{% endif %}>Abierto</option>
+                    <option value="CERRADO" {% if e=='CERRADO' %}selected{% endif %}>Cerrado</option>
+                    <option value="HISTORICO" {% if e=='HISTORICO' %}selected{% endif %}>Historico</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="license-actions">
+                <button type="submit" class="btn outline-amber">
+                  Guardar {% if des_editar %}cambios{% else %}registro{% endif %}
+                </button>
+                <a class="btn outline-slate"
+                   href="{{ url_for('agentes_home', id=agente.id) }}">
+                  Cancelar
+                </a>
+              </div>
+
+            </form>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="right-panel">
+      <div class="agent-licenses-card license-card">
+        <div class="agent-licenses-header">
+          <h3>Historial de desempeno</h3>
+        </div>
+
+        {% if desempenos and desempenos|length > 0 %}
+          <div class="agent-licenses-table-wrapper">
+            <table class="agent-licenses-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Tipo</th>
+                  <th>Periodo</th>
+                  <th>Calif.</th>
+                  <th>Estado</th>
+                  <th>Observaciones</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for d in desempenos %}
+                  <tr>
+                    <td>{{ d.fecha }}</td>
+                    <td>{{ d.tipo|replace('_',' ')|capitalize }}</td>
+                    <td>{{ d.periodo }}</td>
+                    <td>{{ d.calificacion }}</td>
+                    <td>{{ d.estado }}</td>
+                    <td>{{ d.observaciones }}</td>
+                    <td class="actions-cell">
+                      <a class="btn xs outline-amber"
+                         href="{{ url_for('agente_desempeno_editar',
+                                          agente_id=agente.id,
+                                          des_id=d.id) }}">
+                        Editar
+                      </a>
+                      <form method="post"
+                            action="{{ url_for('agente_desempeno_eliminar',
+                                               agente_id=agente.id,
+                                               des_id=d.id) }}"
+                            style="display:inline;"
+                            onsubmit="return confirm('Eliminar este registro de desempeno?');">
+                        <button type="submit" class="icon-btn danger">X</button>
+                      </form>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="panel-note">
+            No hay registros de desempeno para este agente.
+          </p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</section>
+
+{% endblock %}

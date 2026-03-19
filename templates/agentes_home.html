@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="agentes-main">
+
+  <header class="section-header">
+    <div>
+      <h1>Agentes Intendencia</h1>
+      <p class="section-sub">Agentes activos de intendencia. Licencias y documentacion.</p>
+    </div>
+    <div class="section-actions">
+      <a class="btn outline-slate" href="{{ url_for('dashboard') }}">Volver al inicio</a>
+    </div>
+  </header>
+
+  <div style="display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:flex-start;">
+    <!-- LISTA -->
+    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:10px;max-height:75vh;overflow:auto;">
+      {% for rubro, agentes in grupos.items() %}
+        <div style="margin-bottom:12px;">
+          <div style="font-size:12px;font-weight:700;color:#6b7280;margin:6px 0;">{{ rubro|upper }}</div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            {% for a in agentes %}
+              <a href="{{ url_for('agentes_home', id=a.id) }}" style="text-decoration:none;">
+                <div style="border:1px solid #e5e7eb;border-radius:10px;padding:8px;background:#f9fafb;">
+                  <div style="font-weight:700;color:#0f172a;font-size:13px;">{{ a.agente }}</div>
+                  <div style="font-size:11px;color:#6b7280;">Feria: {{ a.dias_feria }} dias - Rubro: {{ a.rubro }}</div>
+                </div>
+              </a>
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- DETALLE -->
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      {% if agente_destacado %}
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:12px;">
+          <div style="font-size:18px;font-weight:800;color:#0f172a;">{{ agente_destacado.agente }}</div>
+          <div style="font-size:12px;font-weight:700;color:#6b7280;margin-top:2px;">
+            RUBRO: {{ agente_destacado.rubro|upper }} - Feria: {{ agente_destacado.dias_feria }} dias
+          </div>
+        </div>
+
+        <!-- COMPENSATORIOS -->
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+            <div style="font-weight:800;">Compensatorios</div>
+            <a class="btn xs outline-amber" href="{{ url_for('agente_compensatorios', id=agente_destacado.id) }}">Gestionar</a>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:8px;">
+            <div style="border:1px solid #e5e7eb;border-radius:14px;background:#f8fafc;padding:8px 10px;">
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;">Saldo total</div>
+              <div style="font-size:16px;font-weight:900;margin-top:4px;">{{ comp_saldo.dias|round(1) }} dias</div>
+              <div style="font-size:11px;color:#6b7280;">+ {{ comp_saldo.horas|round(1) }} horas</div>
+            </div>
+            <div style="border:1px solid #a5f3fc;border-radius:14px;background:#ecfeff;padding:8px 10px;">
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;">Generados</div>
+              <div style="font-size:16px;font-weight:900;margin-top:4px;">{{ comp_saldo.dias_generados|round(1) }}</div>
+              <div style="font-size:11px;color:#6b7280;">dias acumulados</div>
+            </div>
+            <div style="border:1px solid #fcd34d;border-radius:14px;background:#fef3c7;padding:8px 10px;">
+              <div style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#6b7280;">Tomados</div>
+              <div style="font-size:16px;font-weight:900;margin-top:4px;">{{ comp_saldo.dias_tomados|round(1) }}</div>
+              <div style="font-size:11px;color:#6b7280;">dias usados</div>
+            </div>
+          </div>
+
+          <div style="margin-top:8px;font-size:12px;color:#475569;">
+            <strong>Saldo:</strong>
+            {{ comp_saldo.dias|round(1) }} dias + {{ comp_saldo.horas|round(1) }} horas
+            <span style="color:#94a3b8;">(Generados: {{ comp_saldo.dias_generados|round(1) }} / Tomados: {{ comp_saldo.dias_tomados|round(1) }})</span>
+          </div>
+
+          {% if comp_movs and comp_movs|length > 0 %}
+            <div style="margin-top:8px;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;">
+              <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                <thead style="background:#e5edff;">
+                  <tr>
+                    <th style="text-align:left;padding:6px;">Fecha</th>
+                    <th style="text-align:left;padding:6px;">Tipo</th>
+                    <th style="text-align:left;padding:6px;">Periodo / Rango</th>
+                    <th style="text-align:left;padding:6px;">Dias</th>
+                    <th style="text-align:left;padding:6px;">Horas</th>
+                    <th style="text-align:left;padding:6px;">Obs.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for m in comp_movs[:10] %}
+                    <tr>
+                      <td style="padding:6px;border-top:1px solid #e5e7eb;">{{ m.fecha }}</td>
+                      <td style="padding:6px;border-top:1px solid #e5e7eb;">{{ m.tipo }}</td>
+                      <td style="padding:6px;border-top:1px solid #e5e7eb;">
+                        {% if m.desde or m.hasta %}
+                          {{ m.desde or '-' }} → {{ m.hasta or '-' }}
+                        {% else %}
+                          {{ m.periodo or '-' }}
+                        {% endif %}
+                      </td>
+                      <td style="padding:6px;border-top:1px solid #e5e7eb;">{{ m.dias or 0 }}</td>
+                      <td style="padding:6px;border-top:1px solid #e5e7eb;">{{ m.horas or 0 }}</td>
+                      <td style="padding:6px;border-top:1px solid #e5e7eb;">{{ m.observaciones or '' }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p style="margin-top:8px;color:#6b7280;">No hay compensatorios cargados.</p>
+          {% endif %}
+        </div>
+
+        <!-- DOCUMENTACION -->
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-weight:800;">Documentacion</div>
+            <a class="btn xs outline-amber" href="{{ url_for('agente_documentacion', id=agente_destacado.id) }}">Gestionar</a>
+          </div>
+
+          {% if documentos and documentos|length > 0 %}
+            <div style="margin-top:8px;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;">
+              <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                <thead style="background:#e5edff;">
+                  <tr>
+                    <th style="text-align:left;padding:6px;">Tipo</th>
+                    <th style="text-align:left;padding:6px;">Vence</th>
+                    <th style="text-align:left;padding:6px;">Estado</th>
+                    <th style="text-align:left;padding:6px;">Obs.</th>
+                    <th style="text-align:right;padding:6px;">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for d in documentos %}
+                    <tr>
+                      <td style="padding:6px;border-top:1px solid #e5e7eb;">{{ d.tipo|replace('_',' ')|capitalize }}</td>
+                      <td style="padding:6px;border-top:1px solid #e5e7eb;">{{ d.fecha_vencimiento }}</td>
+                      <td style="padding:6px;border-top:1px solid #e5e7eb;">{{ d.estado }}</td>
+                      <td style="padding:6px;border-top:1px solid #e5e7eb;">{{ d.observaciones }}</td>
+                      <td style="padding:6px;border-top:1px solid #e5e7eb;text-align:right;white-space:nowrap;">
+                        <a class="btn xs outline-amber"
+                           href="{{ url_for('agente_documento_editar', agente_id=agente_destacado.id, doc_id=d.id) }}">Editar</a>
+                        <form method="post"
+                              action="{{ url_for('agente_documento_eliminar', agente_id=agente_destacado.id, doc_id=d.id) }}"
+                              style="display:inline;"
+                              onsubmit="return confirm('Eliminar este documento?');">
+                          <button type="submit" class="btn xs outline-amber">Eliminar</button>
+                        </form>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p style="margin-top:8px;color:#6b7280;">No hay documentacion cargada.</p>
+          {% endif %}
+        </div>
+
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+            <div style="font-weight:800;">Documentos vinculados SGI</div>
+            <a class="btn xs outline-amber" href="{{ url_for('sgi_documentacion_informes', agente=agente_destacado.id) }}">Ver en Informes</a>
+          </div>
+
+          {% if documentos_vinculados_agente and documentos_vinculados_agente|length > 0 %}
+            <div style="margin-top:8px;display:grid;gap:6px;">
+              {% for d in documentos_vinculados_agente[:12] %}
+                <div style="border:1px solid #e5e7eb;border-radius:10px;background:#f8fbff;padding:8px;display:grid;gap:3px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <strong style="font-size:12px;color:#0f172a;">{{ d.titulo }}</strong>
+                    <span style="font-size:10px;font-weight:800;color:#4b6890;border:1px solid #c7d6ee;border-radius:999px;padding:2px 8px;background:#eef4ff;">{{ d.tipo_documento }}</span>
+                  </div>
+                  <div style="font-size:11px;color:#6b7280;">
+                    {% if d.fecha %}<span><b>Fecha:</b> {{ d.fecha }}</span>{% endif %}
+                    {% if d.estado %} ? <span><b>Estado:</b> {{ d.estado }}</span>{% endif %}
+                    {% if d.tags_txt %} ? <span><b>Tags:</b> {{ d.tags_txt }}</span>{% endif %}
+                  </div>
+                  {% if d.archivo_url %}
+                    <div><a href="{{ d.archivo_url }}" target="_blank" rel="noopener" style="font-size:11px;font-weight:800;color:#1d4ed8;text-decoration:none;">Abrir documento</a></div>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p style="margin-top:8px;color:#6b7280;">No hay documentos SGI vinculados para este agente.</p>
+          {% endif %}
+        </div>
+
+        <!-- EPP + INCIDENTES AHORA EN SST -->
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+            <div>
+              <div style="font-weight:800;">EPP e Incidentes</div>
+              <div style="font-size:12px;color:#6b7280;">Este bloque ahora se gestiona desde SST.</div>
+            </div>
+            <a class="btn xs outline-amber" href="{{ url_for('sst_general', agente_id=agente_destacado.id) }}">Ir a SST</a>
+          </div>
+        </div>
+
+        <!-- DESEMPENO -->
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-weight:800;">Desempeno</div>
+            <a class="btn xs outline-amber" href="{{ url_for('agente_desempeno', id=agente_destacado.id) }}">Gestionar</a>
+          </div>
+
+          {% if desempenos and desempenos|length > 0 %}
+            <div style="margin-top:8px;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;">
+              <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                <thead style="background:#e5edff;">
+                  <tr>
+                    <th style="text-align:left;padding:6px;">Fecha</th>
+                    <th style="text-align:left;padding:6px;">Tipo</th>
+                    <th style="text-align:left;padding:6px;">Periodo</th>
+                    <th style="text-align:left;padding:6px;">Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for d in desempenos[:10] %}
+                    <tr>
+                      <td style="padding:6px;border-top:1px solid #e5e7eb;">{{ d.fecha }}</td>
+                      <td style="padding:6px;border-top:1px solid #e5e7eb;">{{ d.tipo }}</td>
+                      <td style="padding:6px;border-top:1px solid #e5e7eb;">{{ d.periodo or '-' }}</td>
+                      <td style="padding:6px;border-top:1px solid #e5e7eb;">{{ d.estado or '-' }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p style="margin-top:8px;color:#6b7280;">No hay registros de desempeno.</p>
+          {% endif %}
+        </div>
+
+      {% else %}
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:12px;">
+          <p style="color:#6b7280;">No hay agentes activos.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+</section>
+
+{% endblock %}

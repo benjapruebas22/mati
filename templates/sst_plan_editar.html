@@ -1,0 +1,77 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+{% set return_to = request.args.get('next') %}
+<section class="agentes-main">
+  <div class="license-card" style="padding:16px;">
+    <h2 style="margin:0 0 8px;">Editar objetivo SST</h2>
+    <form method="post" class="license-form">
+      {% if return_to == 'cargar' %}
+        <input type="hidden" name="return_to" value="cargar">
+      {% endif %}
+      <div class="license-grid">
+        <div class="license-field">
+          <label>Sede</label>
+          <select name="sede_codigo">
+            <option value="">(todas / general)</option>
+            {% for s in sedes %}
+              <option value="{{ s.codigo }}" {% if obj.sede_codigo==s.codigo %}selected{% endif %}>{{ s.codigo }} - {{ s.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="license-field">
+          <label>Codigo</label>
+          <input type="text" name="codigo" value="{{ obj.codigo or '' }}">
+        </div>
+        <div class="license-field full">
+          <label>Titulo</label>
+          <input type="text" name="titulo" value="{{ obj.titulo }}">
+        </div>
+        <div class="license-field">
+          <label>Horizonte</label>
+          <select name="horizonte_meses">
+            <option value="" {% if not obj.horizonte_meses %}selected{% endif %}>(sin definir)</option>
+            <option value="3" {% if obj.horizonte_meses==3 %}selected{% endif %}>3 meses</option>
+            <option value="6" {% if obj.horizonte_meses==6 %}selected{% endif %}>6 meses</option>
+            <option value="12" {% if obj.horizonte_meses==12 %}selected{% endif %}>12 meses</option>
+          </select>
+        </div>
+        <div class="license-field">
+          <label>Prioridad</label>
+          <select name="prioridad">
+            <option value="" {% if not obj.prioridad %}selected{% endif %}>(sin especificar)</option>
+            <option value="Alta" {% if obj.prioridad=='Alta' %}selected{% endif %}>Alta</option>
+            <option value="Media" {% if obj.prioridad=='Media' %}selected{% endif %}>Media</option>
+            <option value="Baja" {% if obj.prioridad=='Baja' %}selected{% endif %}>Baja</option>
+          </select>
+        </div>
+        <div class="license-field">
+          <label>Fecha inicio</label>
+          <input type="date" name="fecha_inicio" value="{{ obj.fecha_inicio or '' }}">
+        </div>
+        <div class="license-field">
+          <label>Fecha fin</label>
+          <input type="date" name="fecha_fin" value="{{ obj.fecha_fin or '' }}">
+        </div>
+        <div class="license-field">
+          <label>Estado</label>
+          <select name="estado">
+            <option value="" {% if not obj.estado %}selected{% endif %}>(sin especificar)</option>
+            <option value="EN_CURSO" {% if obj.estado=='EN_CURSO' %}selected{% endif %}>En curso</option>
+            <option value="CUMPLIDO" {% if obj.estado=='CUMPLIDO' %}selected{% endif %}>Cumplido</option>
+            <option value="EN_RIESGO" {% if obj.estado=='EN_RIESGO' %}selected{% endif %}>En riesgo</option>
+          </select>
+        </div>
+        <div class="license-field full">
+          <label>Descripcion</label>
+          <textarea name="descripcion" rows="3">{{ obj.descripcion or '' }}</textarea>
+        </div>
+      </div>
+      <div class="license-actions">
+        <button class="btn outline-amber" type="submit">Guardar cambios</button>
+        <a class="btn outline-slate" href="{{ url_for('sst_plan_cargar') if return_to == 'cargar' else url_for('sst_plan') }}">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

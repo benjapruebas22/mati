@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section style="max-width:1100px;margin:auto">
+    <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:14px">
+        <div>
+            <h2 style="margin:0 0 6px 0">Editar viaje #{{ viaje.id }}</h2>
+            <p style="margin:0;color:#64748b;font-size:13px">Modificar datos del viaje y guardar.</p>
+        </div>
+        <div>
+            <a class="btn btn-mpd" href="{{ url_for('vehiculos_control_diario', fecha=viaje.fecha) }}">Volver</a>
+        </div>
+    </header>
+
+    <form method="post" style="display:grid;grid-template-columns: 320px 320px 1fr;gap:14px;align-items:start">
+
+        <div>
+            <label style="font-size:12px;color:#64748b">Fecha</label>
+            <input type="date" name="fecha" value="{{ viaje.fecha }}"
+                style="width:100%;padding:10px;border-radius:10px;border:1px solid #e5e7eb">
+        </div>
+
+        <div>
+            <label style="font-size:12px;color:#64748b">Vehículo</label>
+            <select name="patente" required style="width:100%;padding:10px;border-radius:10px;border:1px solid #e5e7eb">
+                {% for v in vehiculos %}
+                <option value="{{ v.patente }}" {% if v.patente==viaje.patente %}selected{% endif %}>
+                    {{ v.codigo_interno }} — {{ v.patente }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label style="font-size:12px;color:#64748b">Observaciones</label>
+            <textarea name="observaciones" rows="2"
+                style="width:100%;padding:10px;border-radius:10px;border:1px solid #e5e7eb">{{ viaje.observaciones or "" }}</textarea>
+        </div>
+
+        <div>
+            <label style="font-size:12px;color:#64748b">Chofer</label>
+            <select name="chofer_id" style="width:100%;padding:10px;border-radius:10px;border:1px solid #e5e7eb">
+                <option value="">-- seleccionar --</option>
+                {% for c in choferes %}
+                <option value="{{ c.id }}" {% if c.id==viaje.chofer_id %}selected{% endif %}>{{ c.agente }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label style="font-size:12px;color:#64748b">KM inicial tramo</label>
+            <input type="number" step="0.1" name="km_ini" value="{{ viaje.km_ini or 0 }}"
+                style="width:100%;padding:10px;border-radius:10px;border:1px solid #e5e7eb">
+        </div>
+
+        <div>
+            <label style="font-size:12px;color:#64748b">KM final tramo</label>
+            <input type="number" step="0.1" name="km_fin" value="{{ viaje.km_fin or 0 }}"
+                style="width:100%;padding:10px;border-radius:10px;border:1px solid #e5e7eb">
+        </div>
+
+        <div>
+            <label style="font-size:12px;color:#64748b">Agente del traslado (Personal)</label>
+            <select name="personal_id" style="width:100%;padding:10px;border-radius:10px;border:1px solid #e5e7eb">
+                <option value="">-- seleccionar --</option>
+                {% for p in personal %}
+                <option value="{{ p.id }}" {% if p.id==viaje.personal_id %}selected{% endif %}>
+                    {{ p.nombre_apellido }} — {{ p.dependencia }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label style="font-size:12px;color:#64748b">Destino</label>
+            <select name="destino_id" style="width:100%;padding:10px;border-radius:10px;border:1px solid #e5e7eb">
+                <option value="">-- seleccionar --</option>
+                {% for d in destinos %}
+                <option value="{{ d.id }}" {% if d.id==viaje.destino_id %}selected{% endif %}>{{ d.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div style="display:flex;align-items:end;gap:10px">
+            <button type="submit"
+                style="padding:10px 16px;border-radius:999px;border:1px solid #e5e7eb;background:#fff;font-weight:700;cursor:pointer">
+                Guardar cambios
+            </button>
+            <a class="btn btn-mpd" href="{{ url_for('vehiculos_control_diario', fecha=viaje.fecha) }}">Cancelar</a>
+        </div>
+
+    </form>
+</section>
+
+{% endblock %}

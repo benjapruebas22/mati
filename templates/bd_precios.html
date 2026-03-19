@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="sedes-section">
+  <h2>Precios fijos de combustible</h2>
+
+  <form method="post" class="form-soft" style="max-width:420px">
+    <label>Nafta ($/litro)</label>
+    <input type="number" step="0.01" name="nafta" value="{{ precios.get('nafta',0) }}">
+
+    <label>Gasoil ($/litro)</label>
+    <input type="number" step="0.01" name="gasoil" value="{{ precios.get('gasoil',0) }}">
+
+    <button class="btn primary" type="submit">Guardar precios</button>
+  </form>
+
+
+</section>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="sedes-section">
+  <h2>Choferes autorizados por vehículo</h2>
+
+  <form method="post" class="form-soft" style="max-width:520px">
+    <label>Vehículo</label>
+    <select name="patente" required>
+      {% for v in vehiculos %}
+        <option value="{{ v.patente }}">{{ v.codigo_interno }} — {{ v.patente }}</option>
+      {% endfor %}
+    </select>
+
+    <label>Chofer</label>
+    <select name="chofer_id" required>
+      {% for c in choferes %}
+        <option value="{{ c.id }}">{{ c.agente }}</option>
+      {% endfor %}
+    </select>
+
+    <button class="btn primary" type="submit">Autorizar</button>
+  </form>
+
+  <hr style="margin:12px 0">
+
+  <table class="table-soft">
+    <thead><tr><th>Vehículo</th><th>Chofer</th><th></th></tr></thead>
+    <tbody>
+      {% for a in autorizados %}
+      <tr>
+        <td>{{ a.codigo_interno }} — {{ a.patente }}</td>
+        <td>{{ a.agente }}</td>
+        <td>
+          <form method="post" action="{{ url_for('bd_choferes_aut_delete', cid=a.id) }}">
+            <button class="btn xs outline-red">Eliminar</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  
+</section>
+{% endblock %}

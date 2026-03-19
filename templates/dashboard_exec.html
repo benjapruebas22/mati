@@ -1,0 +1,1545 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  :root {
+    --ctl-bg: #f7f9fc;
+    --ctl-card: #ffffff;
+    --ctl-line: #dfe7f3;
+    --ctl-text: #20344f;
+    --ctl-soft: #6480a1;
+    --ok-bg: #eef9f2;
+    --ok-bd: #d7ecdf;
+    --ok-tx: #2d7a51;
+    --warn-bg: #fff8ee;
+    --warn-bd: #f2e2c6;
+    --warn-tx: #9a6a2f;
+    --run-bg: #eef4ff;
+    --run-bd: #d7e3fb;
+    --run-tx: #2f5ea4;
+    --danger-bg: #fff2f5;
+    --danger-bd: #f1d9df;
+    --danger-tx: #9e4459;
+    --nvd-accent: #3b82f6;
+    --veh-accent: #22c55e;
+    --alt-accent: #f59e0b;
+  }
+
+  .control-shell {
+    background:
+      radial-gradient(1200px 220px at 0% -80px, #e9f1ff 0%, transparent 55%),
+      radial-gradient(1000px 200px at 100% -60px, #eafaf1 0%, transparent 52%),
+      var(--ctl-bg);
+    border: 1px solid var(--ctl-line);
+    border-radius: 16px;
+    padding: 14px;
+    display: grid;
+    gap: 12px;
+  }
+
+  .control-header h1 {
+    margin: 0;
+    font-size: 21px;
+    line-height: 1.08;
+    font-weight: 900;
+    color: #183257;
+  }
+  .control-header-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .control-header p {
+    margin: 6px 0 0;
+    color: #5f7898;
+    font-size: 14px;
+  }
+
+  .control-card {
+    background: var(--ctl-card);
+    border: 1px solid var(--ctl-line);
+    border-radius: 14px;
+    padding: 12px;
+    display: grid;
+    gap: 10px;
+    box-shadow: 0 8px 18px rgba(23, 53, 92, 0.04);
+    position: relative;
+    overflow: hidden;
+  }
+  .control-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: #c9d8ef;
+  }
+  .control-card.card-resumen::before { background: var(--nvd-accent); }
+  .control-card.card-operativa::before { background: #f59e0b; }
+  .control-card.card-alertas::before { background: var(--alt-accent); }
+  .control-card.card-vehiculos::before { background: var(--veh-accent); }
+  .control-card.card-registro::before { background: #64748b; }
+  .control-card.card-historial::before { background: #6366f1; }
+
+  .control-card.card-resumen {
+    background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+  }
+  .control-card.card-operativa {
+    background: linear-gradient(180deg, #ffffff 0%, #fffdf8 100%);
+  }
+  .control-card.card-alertas {
+    background: linear-gradient(180deg, #ffffff 0%, #fffdf8 100%);
+    border-color: #f2e2c6;
+  }
+  .control-card.card-alertas.no-alertas {
+    border-color: #e5eaf4;
+    background: linear-gradient(180deg, #ffffff 0%, #fcfdff 100%);
+  }
+  .control-card.card-alertas.has-alertas {
+    border-color: #f2b8c2;
+    background: linear-gradient(180deg, #fff7f8 0%, #fff0f2 100%);
+    box-shadow: 0 10px 22px rgba(181, 59, 79, 0.12);
+  }
+  .control-card.card-vehiculos {
+    background: linear-gradient(180deg, #ffffff 0%, #f9fcfa 100%);
+    box-shadow: 0 5px 12px rgba(23, 53, 92, 0.03);
+  }
+  .control-card.card-registro {
+    background: linear-gradient(180deg, #ffffff 0%, #fafcff 100%);
+  }
+  .control-card.card-historial {
+    background: linear-gradient(180deg, #ffffff 0%, #f8f9ff 100%);
+  }
+
+  .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .card-head-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .card-head h2 {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.2;
+    font-weight: 900;
+    color: #1d3a61;
+    letter-spacing: -0.01em;
+  }
+
+  .btn-soft {
+    border: 1px solid #cfdcf0;
+    background: linear-gradient(180deg, #f5f9ff 0%, #eaf2fd 100%);
+    color: #2f557f;
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+  }
+
+  .btn-dark {
+    border: 1px solid #112445;
+    background: linear-gradient(180deg, #1a3765 0%, #112445 100%);
+    color: #fff;
+    border-radius: 999px;
+    padding: 7px 14px;
+    font-size: 13px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .kpi {
+    border: 1px solid var(--ctl-line);
+    border-radius: 10px;
+    padding: 8px;
+    background: linear-gradient(180deg, #ffffff 0%, #f9fcff 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+  }
+  .kpi .k-label {
+    font-size: 12px;
+    color: var(--ctl-soft);
+  }
+  .kpi .k-val {
+    margin-top: 2px;
+    font-size: 24px;
+    line-height: 1;
+    font-weight: 900;
+    color: #1c3453;
+  }
+  .kpi.total { background: linear-gradient(180deg, #f6f9ff 0%, #edf3fb 100%); border-color: #dfe8f5; }
+  .kpi.total .k-val { color: #2e4f79; }
+  .kpi.info { background: linear-gradient(180deg, #eef4ff 0%, #e6efff 100%); border-color: #d7e3fb; }
+  .kpi.info .k-val { color: #2f5ea4; }
+  .kpi.proc { background: linear-gradient(180deg, #fff1f5 0%, #ffe7ee 100%); border-color: #f4d8e3; }
+  .kpi.proc .k-val { color: #9d4e68; }
+  .kpi.ok { background: linear-gradient(180deg, #eef9f2 0%, #e5f5ed 100%); border-color: #d7ecdf; }
+  .kpi.ok .k-val { color: #20704e; }
+  .card-resumen .kpi .k-val { font-size: 30px; }
+
+  .nvd-form-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    align-items: end;
+  }
+  .nvd-form-grid #nvdGuardar,
+  .nvd-form-grid #nvdCancelarEdit {
+    align-self: end;
+    justify-self: start;
+  }
+  .nvd-obs-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 3px;
+    margin-top: 2px;
+  }
+  .f-group {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+  }
+  .label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  .f-group label {
+    font-size: 11px;
+    color: #59799e;
+    font-weight: 700;
+  }
+  .btn-mini {
+    border: 1px solid #cfdcf0;
+    background: #f3f7ff;
+    color: #2f557f;
+    border-radius: 999px;
+    padding: 1px 7px;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1.5;
+    cursor: pointer;
+  }
+  .btn-mini:hover {
+    background: #eaf2ff;
+  }
+  .ctl-inp,
+  .ctl-sel {
+    width: 100%;
+    border: 1px solid #cfdbed;
+    border-radius: 8px;
+    background: #fff;
+    color: #1f3554;
+    font-size: 13px;
+    padding: 7px 8px;
+    min-width: 0;
+  }
+
+  .ctl-sel.sel-estado-informado {
+    background: #eef4ff;
+    border-color: #cfdcf4;
+    color: #2f5ea4;
+    font-weight: 800;
+  }
+  .ctl-sel.sel-estado-proceso {
+    background: #fff1f5;
+    border-color: #f2d5e1;
+    color: #9d4e68;
+    font-weight: 800;
+  }
+  .ctl-sel.sel-estado-resuelto {
+    background: #eef9f2;
+    border-color: #d7ecdf;
+    color: #20704e;
+    font-weight: 800;
+  }
+  .ctl-inp:focus,
+  .ctl-sel:focus {
+    outline: none;
+    border-color: #9fbce6;
+    box-shadow: 0 0 0 3px rgba(91, 131, 190, 0.12);
+  }
+
+  .table-wrap {
+    border: 1px solid #e2e9f4;
+    border-radius: 10px;
+    overflow: auto;
+    max-height: 340px;
+    background: #fff;
+  }
+  .tbl {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    min-width: 920px;
+  }
+  .tbl th,
+  .tbl td {
+    border-bottom: 1px solid #edf2f9;
+    padding: 7px 8px;
+    text-align: left;
+    vertical-align: middle;
+  }
+  .tbl th {
+    background: linear-gradient(180deg, #f4f8ff 0%, #edf4ff 100%);
+    color: #4b6384;
+    font-weight: 900;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  .tbl tbody tr:hover {
+    background: #f7fbff;
+  }
+  .nvd-split-grid {
+    display: grid;
+    gap: 10px;
+  }
+  .nvd-split-block {
+    border: 1px solid #e2e9f4;
+    border-radius: 10px;
+    background: #ffffff;
+    padding: 8px;
+    display: grid;
+    gap: 6px;
+  }
+  .nvd-split-head {
+    font-size: 12px;
+    font-weight: 900;
+    color: #2f4f77;
+    letter-spacing: 0.01em;
+  }
+  .nvd-split-head.dia { color: #2f5ea4; }
+  .nvd-split-head.pend { color: #9a6a2f; }
+  .nvd-split-head.res { color: #2d7a51; }
+
+  .state-chip {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    border: 1px solid #f2dfbd;
+    background: #fff7ea;
+    color: #976225;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 900;
+  }
+  .state-chip.soft {
+    border-color: #dbe3f2;
+    background: #f3f6fb;
+    color: #4b6384;
+  }
+
+  .nvd-split-block.split-dia {
+    border-color: #d9e4f8;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  }
+  .nvd-split-block.split-pend {
+    border-color: #f1e2c6;
+    background: linear-gradient(180deg, #ffffff 0%, #fffaf2 100%);
+  }
+  .nvd-footnote {
+    font-size: 12px;
+    color: #5f7ea4;
+    font-weight: 700;
+  }
+
+  .registro-box {
+    border: 1px dashed #cfdced;
+    border-radius: 12px;
+    background: #fbfdff;
+    overflow: hidden;
+  }
+  .registro-summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 10px 12px;
+    font-size: 13px;
+    font-weight: 900;
+    color: #20406b;
+    background: linear-gradient(180deg, #f5f8fd 0%, #eef4fb 100%);
+    border-bottom: 1px solid #dce6f5;
+  }
+  .registro-summary::-webkit-details-marker { display: none; }
+  .registro-box[open] .registro-summary {
+    background: linear-gradient(180deg, #eef4fb 0%, #e5effa 100%);
+  }
+  .registro-body {
+    padding: 10px;
+    display: grid;
+    gap: 8px;
+  }
+
+  .estado-pill {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 900;
+    white-space: nowrap;
+  }
+  .estado-informado { background: #eef4ff; border-color: #d6e1f8; color: #315b94; }
+  .estado-en-revision { background: #fff1f5; border-color: #f4d8e3; color: #9d4e68; }
+  .estado-en-proceso { background: #fff1f5; border-color: #f4d8e3; color: #9d4e68; }
+  .estado-resuelto { background: var(--ok-bg); border-color: var(--ok-bd); color: var(--ok-tx); }
+
+  .agente-pill {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    border: 1px solid var(--ag-bd, #d8e3f6);
+    background: var(--ag-bg, #f3f7ff);
+    color: var(--ag-tx, #355a89);
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 800;
+    max-width: 220px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+  }
+
+  .btn-inline {
+    border: 1px solid #cfdcf0;
+    background: #f3f7ff;
+    color: #2f557f;
+    border-radius: 999px;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .aux-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .aux-row-top {
+    align-items: center;
+  }
+  .agente-filtro-box {
+    min-width: 0;
+    flex: 0 1 auto;
+    max-width: 100%;
+    display: grid;
+    gap: 3px;
+  }
+  .agente-filtro-label {
+    font-size: 10px;
+    font-weight: 800;
+    color: #5b789f;
+    letter-spacing: 0.02em;
+  }
+  .agente-filtro-scroll {
+    border: 1px solid #d9e4f4;
+    border-radius: 8px;
+    background: linear-gradient(180deg, #f9fcff 0%, #f1f6ff 100%);
+    padding: 3px 4px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    width: fit-content;
+    max-width: min(100%, 1040px);
+  }
+  .agente-filtro-list {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-width: max-content;
+  }
+  .agente-chip {
+    border: 1px solid var(--chip-bd, #cad8ef);
+    border-radius: 999px;
+    padding: 2px 9px;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--chip-tx, #355a89);
+    background: var(--chip-bg, #fff);
+    cursor: pointer;
+    line-height: 1.25;
+    transition: background .12s ease, border-color .12s ease, color .12s ease, transform .08s ease;
+  }
+  .agente-chip:hover {
+    transform: translateY(-1px);
+    filter: brightness(0.98);
+  }
+  .agente-chip.active {
+    border-color: var(--chip-active-bd, #2f5ea4);
+    background: var(--chip-active-bg, #2f5ea4);
+    color: #ffffff;
+  }
+  .aux-msg {
+    min-height: 18px;
+    font-size: 12px;
+    color: #5c789c;
+  }
+
+  .veh-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .veh-card {
+    border: 1px solid #e3eaf5;
+    border-radius: 10px;
+    padding: 6px 7px;
+    background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+    display: grid;
+    gap: 3px;
+    box-shadow: 0 5px 12px rgba(21, 49, 84, 0.04);
+  }
+  .veh-code {
+    font-size: 14px;
+    line-height: 1.1;
+    font-weight: 900;
+    color: #1c3555;
+  }
+  .veh-pat {
+    font-size: 10px;
+    color: #5f7a9b;
+  }
+  .veh-est {
+    font-size: 10px;
+    font-weight: 900;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    padding: 1px 7px;
+    width: fit-content;
+  }
+  .veh-est.ok { color: #2c7a50; background: #eef9f2; border-color: #d7ecdf; }
+  .veh-est.use { color: #9e4459; background: #fff2f5; border-color: #f1d9df; }
+
+  .alert-list {
+    margin: 0;
+    padding-left: 18px;
+    display: grid;
+    gap: 6px;
+    color: #344f72;
+    font-size: 13px;
+  }
+  .alert-list li {
+    border: 1px solid #f0e1bf;
+    background: #fff9ee;
+    color: #7f5f2b;
+    border-radius: 8px;
+    padding: 5px 8px;
+  }
+  .alert-list li.alert-default { border-color: #f0e1bf; background: #fff9ee; color: #7f5f2b; }
+  .alert-list li.alert-viajes { border-color: #bfe8f7; background: #f0fbff; color: #1d79a2; }
+  .alert-list li.alert-uso-salon { border-color: #cfece6; background: #effaf7; color: #0f6d60; }
+  .alert-list li.alert-licencias { border-color: #f6dfc3; background: #fff7ee; color: #b56a1f; }
+  .alert-list li.alert-documentacion { border-color: #ddd8fb; background: #f5f3ff; color: #5d54c7; }
+  .alert-list li.alert-incidentes { border-color: #f3d4d8; background: #fff2f4; color: #b53b4f; }
+  .alert-list li.alert-obra-solicitada { border-color: #f5ddc9; background: #fff7f1; color: #b86b22; }
+  .alert-list li.alert-obra-curso { border-color: #f0e5b7; background: #fffbe9; color: #8a6b17; }
+  .alert-list li.alert-obra-finalizada { border-color: #d5efd9; background: #eefaf1; color: #2b7f4e; }
+  .alert-list li.alert-vencimientos { border-color: #f1dfbd; background: #fff8ec; color: #946228; }
+  .alert-list li.alert-sst { border-color: #c7e9fb; background: #f0faff; color: #1f7faf; }
+
+  #alertasCard.has-alertas .card-head h2 { color: #9f1239; }
+  #alertasCard.has-alertas .alert-list li {
+    border-color: #f3d4d8;
+    background: #fff2f4;
+    color: #9f1239;
+  }
+  #alertasCard.no-alertas .alert-list li {
+    border-color: #dfe7f3;
+    background: #f7f9fd;
+    color: #516b8d;
+  }
+
+  .hist-box {
+    border: 1px dashed #cfdbed;
+    border-radius: 10px;
+    padding: 8px;
+    background: #fbfdff;
+    display: none;
+    gap: 8px;
+  }
+  .hist-box.open { display: grid; }
+
+  @media (max-width: 1220px) {
+    .nvd-form-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 980px) {
+    .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .veh-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .card-head { flex-wrap: wrap; align-items: flex-start; }
+    .nvd-form-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 640px) {
+    .veh-grid { grid-template-columns: 1fr; }
+    .nvd-form-grid { grid-template-columns: 1fr; }
+    .control-header h1 { font-size: 19px; }
+  }
+</style>
+
+<section class="control-shell">
+  <header class="control-header">
+    <div class="control-header-top">
+      <h1>Centro de control operativo - Intendencia</h1>
+      <a class="btn-soft" href="{{ url_for('dashboard_sede_estado_manual') }}">Progreso sedes</a>
+    </div>
+    <p>Registro de novedades diarias, alertas automaticas y estado operativo de recursos.</p>
+  </header>
+
+  <article class="control-card card-resumen">
+    <div class="card-head">
+      <h2>1. Resumen del dia</h2>
+      <div class="card-head-actions">
+        <a class="btn-soft" href="{{ url_for('vehiculos_bd_home') }}">Base de datos</a>
+      </div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi total">
+        <div class="k-label">Total del dia</div>
+        <div class="k-val" id="kpiTotal">0</div>
+      </div>
+      <div class="kpi info">
+        <div class="k-label">Informados</div>
+        <div class="k-val" id="kpiInfo">0</div>
+      </div>
+      <div class="kpi proc">
+        <div class="k-label">En proceso</div>
+        <div class="k-val" id="kpiProc">0</div>
+      </div>
+      <div class="kpi ok">
+        <div class="k-label">Resueltos</div>
+        <div class="k-val" id="kpiOk">0</div>
+      </div>
+    </div>
+  </article>
+
+  <article class="control-card card-operativa">
+    <div class="card-head">
+      <h2>2. Pendientes activos</h2>
+      <div class="card-head-actions">
+        <span class="state-chip">Situacion operativa actual</span>
+      </div>
+    </div>
+
+    <div class="aux-row aux-row-top">
+      <div class="agente-filtro-box">
+        <div class="agente-filtro-label">Filtro rapido por agente</div>
+        <div class="agente-filtro-scroll">
+          <div id="agenteFiltroList" class="agente-filtro-list"></div>
+        </div>
+      </div>
+      <button id="btnRecargarDia" type="button" class="btn-soft">Recargar dia</button>
+    </div>
+
+    <div id="nvdSplitWrap" class="nvd-split-grid">
+      <div class="nvd-split-block split-dia">
+        <div class="nvd-split-head dia">Pendientes del dia</div>
+        <div class="table-wrap" style="max-height:220px;">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Hora</th>
+                <th>Agente</th>
+                <th>Sede</th>
+                <th>Tipo</th>
+                <th>Subtipo</th>
+                <th>Observacion</th>
+                <th>Estado</th>
+                <th>Accion</th>
+              </tr>
+            </thead>
+            <tbody id="nvdBodyDia">
+              <tr><td colspan="8" style="color:#6f86a5;">Sin pendientes del dia.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="nvd-split-block split-pend">
+        <div class="nvd-split-head pend">Pendientes no cerrados</div>
+        <div class="table-wrap" style="max-height:220px;">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>Agente</th>
+                <th>Sede</th>
+                <th>Tipo</th>
+                <th>Subtipo</th>
+                <th>Observacion</th>
+                <th>Estado</th>
+                <th>Accion</th>
+              </tr>
+            </thead>
+            <tbody id="nvdBodyPend">
+              <tr><td colspan="9" style="color:#6f86a5;">Sin pendientes acumulados.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="nvd-footnote">Resueltos e informados se muestran solo en Historial.</div>
+  </article>
+
+  <article id="alertasCard" class="control-card card-alertas no-alertas">
+    <div class="card-head">
+      <h2>3. Alertas criticas</h2>
+    </div>
+    <ul id="alertasList" class="alert-list">
+      <li>Sin alertas criticas hoy.</li>
+    </ul>
+  </article>
+
+  <article class="control-card card-vehiculos">
+    <div class="card-head">
+      <h2>4. Estado de vehiculos</h2>
+      <a class="btn-soft" href="{{ url_for('vehiculos_control_diario') }}">Ir a modulo vehiculos</a>
+    </div>
+    <div id="vehiculosWrap" class="veh-grid">
+      <div class="veh-card"><div class="veh-code">-</div><div class="veh-pat">-</div><div class="veh-est">Sin datos</div></div>
+    </div>
+  </article>
+
+  <article class="control-card card-registro">
+    <div class="card-head">
+      <h2>5. Registrar novedad</h2>
+      <div class="card-head-actions">
+        <span class="state-chip soft">Carga manual</span>
+      </div>
+    </div>
+
+    <details id="registroNvdBox" class="registro-box">
+      <summary class="registro-summary">+ Registrar novedad</summary>
+
+      <div class="registro-body">
+        <input id="nvdId" type="hidden" value="0">
+        <div class="nvd-form-grid">
+          <div class="f-group">
+            <label for="nvdFecha">Fecha</label>
+            <input id="nvdFecha" class="ctl-inp" type="date">
+          </div>
+          <div class="f-group">
+            <label for="nvdAgente">Agente que carga</label>
+            <select id="nvdAgente" class="ctl-sel"></select>
+          </div>
+          <div class="f-group">
+            <div class="label-row">
+              <label for="nvdSede">Sede</label>
+              <button id="btnAddSede" type="button" class="btn-mini">+ Cargar</button>
+            </div>
+            <select id="nvdSede" class="ctl-sel"></select>
+          </div>
+          <div class="f-group">
+            <div class="label-row">
+              <label for="nvdTipo">Tipo</label>
+              <button id="btnAddTipo" type="button" class="btn-mini">+ Cargar</button>
+            </div>
+            <select id="nvdTipo" class="ctl-sel"></select>
+          </div>
+          <div class="f-group">
+            <div class="label-row">
+              <label for="nvdSubtipo">Subtipo / motivo</label>
+              <button id="btnAddSubtipo" type="button" class="btn-mini">+ Cargar</button>
+            </div>
+            <select id="nvdSubtipo" class="ctl-sel"></select>
+          </div>
+          <div class="f-group">
+            <label for="nvdEstado">Estado</label>
+            <select id="nvdEstado" class="ctl-sel"></select>
+          </div>
+          <button id="nvdGuardar" type="button" class="btn-dark">Guardar</button>
+          <button id="nvdCancelarEdit" type="button" class="btn-soft" style="display:none;">Cancelar</button>
+        </div>
+
+        <div class="nvd-obs-row">
+          <label for="nvdObs" style="font-size:11px;color:#59799e;font-weight:700;">Observacion (quien solicita / detalle / patente)</label>
+          <input id="nvdObs" class="ctl-inp" type="text" maxlength="240" placeholder="Ej: Mauro solicita horario especial / AB946VK al mecanico">
+        </div>
+
+        <div id="nvdMsgRow" class="aux-row" style="display:none;">
+          <div id="nvdMsg" class="aux-msg"></div>
+        </div>
+      </div>
+    </details>
+  </article>
+
+  <article class="control-card card-historial">
+    <div class="card-head">
+      <h2>6. Historial operativo</h2>
+      <div class="card-head-actions">
+        <button id="btnHistorialTop" type="button" class="btn-soft">Historial</button>
+      </div>
+    </div>
+
+    <div id="histBox" class="hist-box">
+      <div class="aux-row">
+        <strong style="color:#1f7a55;">Finalizados (historial)</strong>
+        <button id="btnCerrarHist" type="button" class="btn-soft">Ocultar</button>
+      </div>
+      <div class="aux-row">
+        <div class="f-group" style="max-width:180px;">
+          <label for="histDesde">Desde</label>
+          <input id="histDesde" class="ctl-inp" type="date">
+        </div>
+        <div class="f-group" style="max-width:180px;">
+          <label for="histHasta">Hasta</label>
+          <input id="histHasta" class="ctl-inp" type="date">
+        </div>
+        <button id="btnHistBuscar" type="button" class="btn-soft">Buscar</button>
+      </div>
+      <div class="table-wrap" style="max-height:220px;">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Hora</th>
+              <th>Agente</th>
+              <th>Sede</th>
+              <th>Tipo</th>
+              <th>Subtipo</th>
+              <th>Observacion</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="histBody">
+            <tr><td colspan="8" style="color:#6f86a5;">Sin historial (resueltos).</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </article>
+</section>
+
+<script>
+  (function () {
+    var SUBTIPOS = {};
+    var ESTADOS = ["Informado", "En proceso", "Resuelto"];
+    var ITEM_INDEX = {};
+    var AGENTE_FILTRO_ACTIVO = "";
+    var RAW_DIA = [];
+    var RAW_PEND = [];
+    var RAW_FINAL = [];
+    var RESUMEN_BASE = { total: 0, informado: 0, en_proceso: 0, resuelto: 0 };
+    var AGENTES_PERMITIDOS = [
+      "Matias Calderari",
+      "Marcos Duran",
+      "Nestor Guerrero",
+      "Manuel Flores",
+      "Francisco Savio",
+      "Carlos Vidaurre",
+      "Ignacio Baroni",
+      "Mauro Vea Murguia",
+      "Emilino P de la Puente",
+      "Luis Cardozo",
+    ];
+    var AGENTES_ALIAS = {
+      "emiliano p de la puente": "Emilino P de la Puente",
+      "emiliano perez de la puente": "Emilino P de la Puente",
+      "matias calderari": "Matias Calderari",
+      "marcos duran": "Marcos Duran",
+      "nestor guerrero": "Nestor Guerrero",
+      "manuel flores": "Manuel Flores",
+      "francisco savio": "Francisco Savio",
+      "carlos vidaurre": "Carlos Vidaurre",
+      "carlos vidaurrre": "Carlos Vidaurre",
+      "ignacio baroni": "Ignacio Baroni",
+      "mauro vea murguia": "Mauro Vea Murguia",
+      "emilino p de la puente": "Emilino P de la Puente",
+      "luis cardozo": "Luis Cardozo",
+    };
+    var AGENTE_COLORS = {
+      "matias calderari": { bg: "#e8f1ff", bd: "#c8d9f6", tx: "#2f5ea4", abg: "#2f5ea4", abd: "#2f5ea4" },
+      "marcos duran": { bg: "#ecf8f0", bd: "#cce9d6", tx: "#2f7b54", abg: "#2f7b54", abd: "#2f7b54" },
+      "nestor guerrero": { bg: "#fff2f7", bd: "#f2d3e0", tx: "#a14669", abg: "#a14669", abd: "#a14669" },
+      "manuel flores": { bg: "#fff8ea", bd: "#f2e3bf", tx: "#9a6a2f", abg: "#9a6a2f", abd: "#9a6a2f" },
+      "francisco savio": { bg: "#eef1ff", bd: "#d6dcfa", tx: "#4f5eb8", abg: "#4f5eb8", abd: "#4f5eb8" },
+      "carlos vidaurre": { bg: "#ffeef0", bd: "#f4d0d6", tx: "#a3434f", abg: "#a3434f", abd: "#a3434f" },
+      "ignacio baroni": { bg: "#fff3e8", bd: "#f4ddc5", tx: "#b36928", abg: "#b36928", abd: "#b36928" },
+      "mauro vea murguia": { bg: "#f1ecff", bd: "#ddd0fb", tx: "#6a4fb8", abg: "#6a4fb8", abd: "#6a4fb8" },
+      "emilino p de la puente": { bg: "#eaf7f6", bd: "#cdeae7", tx: "#1e7d79", abg: "#1e7d79", abd: "#1e7d79" },
+      "emiliano p de la puente": { bg: "#eaf7f6", bd: "#cdeae7", tx: "#1e7d79", abg: "#1e7d79", abd: "#1e7d79" },
+      "emiliano perez de la puente": { bg: "#eaf7f6", bd: "#cdeae7", tx: "#1e7d79", abg: "#1e7d79", abd: "#1e7d79" },
+      "luis cardozo": { bg: "#edf7ec", bd: "#d4e9d2", tx: "#2f7a43", abg: "#2f7a43", abd: "#2f7a43" },
+    };
+
+    var el = {
+      id: document.getElementById("nvdId"),
+      fecha: document.getElementById("nvdFecha"),
+      agente: document.getElementById("nvdAgente"),
+      sede: document.getElementById("nvdSede"),
+      tipo: document.getElementById("nvdTipo"),
+      subtipo: document.getElementById("nvdSubtipo"),
+      addSede: document.getElementById("btnAddSede"),
+      addTipo: document.getElementById("btnAddTipo"),
+      addSubtipo: document.getElementById("btnAddSubtipo"),
+      obs: document.getElementById("nvdObs"),
+      estado: document.getElementById("nvdEstado"),
+      guardar: document.getElementById("nvdGuardar"),
+      cancelar: document.getElementById("nvdCancelarEdit"),
+      msg: document.getElementById("nvdMsg"),
+      msgRow: document.getElementById("nvdMsgRow"),
+      agenteFiltroList: document.getElementById("agenteFiltroList"),
+      recargar: document.getElementById("btnRecargarDia"),
+      splitWrap: document.getElementById("nvdSplitWrap"),
+      bodyDia: document.getElementById("nvdBodyDia"),
+      bodyPend: document.getElementById("nvdBodyPend"),
+      kTotal: document.getElementById("kpiTotal"),
+      kInfo: document.getElementById("kpiInfo"),
+      kProc: document.getElementById("kpiProc"),
+      kOk: document.getElementById("kpiOk"),
+      vehWrap: document.getElementById("vehiculosWrap"),
+      alertas: document.getElementById("alertasList"),
+      alertasCard: document.getElementById("alertasCard"),
+      registroBox: document.getElementById("registroNvdBox"),
+      histTop: document.getElementById("btnHistorialTop"),
+      histBox: document.getElementById("histBox"),
+      histClose: document.getElementById("btnCerrarHist"),
+      histDesde: document.getElementById("histDesde"),
+      histHasta: document.getElementById("histHasta"),
+      histBuscar: document.getElementById("btnHistBuscar"),
+      histBody: document.getElementById("histBody"),
+    };
+
+    function setMsg(txt, isErr) {
+      el.msg.textContent = txt || "";
+      el.msg.style.color = isErr ? "#9e4459" : "#5c789c";
+      if (el.msgRow) {
+        el.msgRow.style.display = txt ? "flex" : "none";
+      }
+    }
+
+    function estadoClass(v) {
+      var s = String(v || "").toLowerCase();
+      if (s === "informado") return "estado-informado";
+      if (s === "en revision") return "estado-en-proceso";
+      if (s === "en proceso") return "estado-en-proceso";
+      return "estado-resuelto";
+    }
+
+    function estadoSelectClass(v) {
+      var s = normTxt(v);
+      if (s === "informado") return "sel-estado-informado";
+      if (s === "en proceso" || s === "en revision") return "sel-estado-proceso";
+      if (s === "resuelto" || s === "cerrado") return "sel-estado-resuelto";
+      return "sel-estado-informado";
+    }
+
+    function aplicarEstiloEstadoSelect(selectEl) {
+      if (!selectEl) return;
+      selectEl.classList.remove("sel-estado-informado", "sel-estado-proceso", "sel-estado-resuelto");
+      selectEl.classList.add(estadoSelectClass(selectEl.value || ""));
+    }
+
+    function fillSelect(target, opts, withAll, allLabel) {
+      if (!target) return;
+      var html = "";
+      if (withAll) html += '<option value="">' + (allLabel || "Todos") + "</option>";
+      target.innerHTML = html + opts.map(function (o) {
+        var v = String((o && o.value != null) ? o.value : o).trim();
+        var l = String((o && o.label != null) ? o.label : v).trim();
+        return '<option value="' + v.replace(/"/g, "&quot;") + '">' + l + "</option>";
+      }).join("");
+    }
+
+    function normTxt(v) {
+      try {
+        return String(v || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+      } catch (_e) {
+        return String(v || "").toLowerCase().trim();
+      }
+    }
+
+    function normalizarAgente(v) {
+      var n = normTxt(v);
+      return AGENTES_ALIAS[n] || String(v || "").trim();
+    }
+
+    function agentesVisibles(listaApi) {
+      var src = Array.isArray(listaApi) ? listaApi : [];
+      var byNorm = {};
+      src.forEach(function (a) {
+        var raw = String(a || "").trim();
+        if (!raw) return;
+        var norm = normTxt(raw);
+        byNorm[norm] = raw;
+      });
+      var out = [];
+      AGENTES_PERMITIDOS.forEach(function (nom) {
+        var key = normTxt(nom);
+        var aliasMatch = byNorm[key];
+        if (!aliasMatch && nom === "Emilino P de la Puente") {
+          aliasMatch = byNorm["emiliano p de la puente"] || byNorm["emiliano perez de la puente"];
+        }
+        out.push(aliasMatch || nom);
+      });
+      return out;
+    }
+
+    function nombreCortoAgente(v) {
+      var txt = String(v || "").trim();
+      if (!txt) return "-";
+      var clean = txt.replace(/\s+/g, " ");
+      var parts = clean.split(" ");
+      var first = parts[0] || clean;
+      if (first.length <= 2 && parts[1]) first = parts[1];
+      return first.toLowerCase();
+    }
+
+    function colorAgente(nombre) {
+      var key = normTxt(nombre);
+      return AGENTE_COLORS[key] || { bg: "#f3f7ff", bd: "#d8e3f6", tx: "#3d5f8f", abg: "#3d5f8f", abd: "#3d5f8f" };
+    }
+
+    function agenteCell(nombre) {
+      var n = String(nombre || "").trim();
+      if (!n) return "-";
+      var c = colorAgente(n);
+      var t = n.replace(/"/g, "&quot;");
+      return '<span class="agente-pill" style="--ag-bg:' + c.bg + ';--ag-bd:' + c.bd + ';--ag-tx:' + c.tx + ';" title="' + t + '">' + n + "</span>";
+    }
+
+    function renderAgenteFiltros(agentes) {
+      if (!el.agenteFiltroList) return;
+      var arr = Array.isArray(agentes) ? agentes.filter(Boolean) : [];
+      if (!arr.length) {
+        el.agenteFiltroList.innerHTML = '<button type="button" class="agente-chip active" data-agente="" style="--chip-bg:#f3f7ff;--chip-bd:#d8e3f6;--chip-tx:#3d5f8f;--chip-active-bg:#2f5ea4;--chip-active-bd:#2f5ea4;">todos</button>';
+        AGENTE_FILTRO_ACTIVO = "";
+        return;
+      }
+      if (AGENTE_FILTRO_ACTIVO && arr.indexOf(AGENTE_FILTRO_ACTIVO) < 0) {
+        AGENTE_FILTRO_ACTIVO = "";
+      }
+      var html = '<button type="button" class="agente-chip' + (AGENTE_FILTRO_ACTIVO ? "" : " active") + '" data-agente="" style="--chip-bg:#f3f7ff;--chip-bd:#d8e3f6;--chip-tx:#3d5f8f;--chip-active-bg:#2f5ea4;--chip-active-bd:#2f5ea4;">todos</button>';
+      html += arr.map(function (nombre) {
+        var active = (AGENTE_FILTRO_ACTIVO === nombre) ? " active" : "";
+        var c = colorAgente(nombre);
+        return '<button type="button" class="agente-chip' + active + '" data-agente="' +
+          String(nombre).replace(/"/g, "&quot;") + '" title="' + String(nombre).replace(/"/g, "&quot;") + '" ' +
+          'style="--chip-bg:' + c.bg + ';--chip-bd:' + c.bd + ';--chip-tx:' + c.tx + ';--chip-active-bg:' + c.abg + ';--chip-active-bd:' + c.abd + ';">' +
+          nombreCortoAgente(nombre) + "</button>";
+      }).join("");
+      el.agenteFiltroList.innerHTML = html;
+    }
+
+    function aplicarFiltroAgente(rows) {
+      var arr = Array.isArray(rows) ? rows : [];
+      if (!AGENTE_FILTRO_ACTIVO) return arr;
+      var target = normTxt(AGENTE_FILTRO_ACTIVO);
+      return arr.filter(function (r) {
+        return normTxt(r && r.agente) === target;
+      });
+    }
+
+    function loadSubtipos(pref) {
+      var tipo = String(el.tipo.value || "");
+      var arr = SUBTIPOS[tipo] || ["General"];
+      fillSelect(el.subtipo, arr, false);
+      if (pref && arr.indexOf(pref) >= 0) el.subtipo.value = pref;
+    }
+
+    function addCatalogo(campo, valor, tipoRef) {
+      return fetch("/api/dashboard/novedades_catalogo_add", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          campo: String(campo || ""),
+          valor: String(valor || ""),
+          tipo_ref: String(tipoRef || ""),
+        }),
+      })
+        .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, b: b || {} }; }); })
+        .then(function (x) {
+          if (!x.ok || !x.b.ok) throw new Error(x.b.error || "No se pudo agregar");
+          return x.b || {};
+        });
+    }
+
+    function renderResumen(r) {
+      var x = r || {};
+      el.kTotal.textContent = String(x.total || 0);
+      el.kInfo.textContent = String(x.informado || 0);
+      el.kProc.textContent = String(x.en_proceso || 0);
+      el.kOk.textContent = String(x.resuelto || 0);
+    }
+
+    function resumenEstadoInc(out, estadoRaw) {
+      var est = normTxt(estadoRaw);
+      if (est === "informado") out.informado += 1;
+      else if (est === "en proceso" || est === "en revision") out.en_proceso += 1;
+      else if (est === "resuelto" || est === "cerrado") out.resuelto += 1;
+    }
+
+    function renderResumenSegunFiltro() {
+      if (!AGENTE_FILTRO_ACTIVO) {
+        renderResumen(RESUMEN_BASE);
+        return;
+      }
+      var fechaSel = String(el.fecha.value || "");
+      var target = normTxt(AGENTE_FILTRO_ACTIVO);
+      var out = { total: 0, informado: 0, en_proceso: 0, resuelto: 0 };
+      RAW_DIA.forEach(function (r) {
+        if (normTxt(r && r.agente) !== target) return;
+        resumenEstadoInc(out, (r && r.estado) || "");
+      });
+      RAW_FINAL.forEach(function (r) {
+        if ((String((r && r.fecha) || "") !== fechaSel)) return;
+        if (normTxt(r && r.agente) !== target) return;
+        resumenEstadoInc(out, (r && r.estado) || "");
+      });
+      out.total = out.informado + out.en_proceso + out.resuelto;
+      renderResumen(out);
+    }
+
+    function renderVehiculos(items) {
+      var rows = Array.isArray(items) ? items : [];
+      if (!rows.length) {
+        el.vehWrap.innerHTML = '<div class="veh-card"><div class="veh-code">-</div><div class="veh-pat">-</div><div class="veh-est">Sin datos</div></div>';
+        return;
+      }
+      el.vehWrap.innerHTML = rows.map(function (r) {
+        var est = String(r.estado || "Disponible");
+        var cls = (est === "Disponible") ? "ok" : "use";
+        var dot = (est === "Disponible") ? "🟢" : "🔴";
+        return (
+          '<div class="veh-card">' +
+            '<div class="veh-code">' + (r.codigo || r.patente || "-") + "</div>" +
+            '<div class="veh-pat">' + (r.patente || "-") + "</div>" +
+            '<div class="veh-est ' + cls + '">' + dot + " " + est + "</div>" +
+          "</div>"
+        );
+      }).join("");
+    }
+
+    function renderAlertas(items) {
+      function norm(s) {
+        try { return String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); }
+        catch (_e) { return String(s || "").toLowerCase(); }
+      }
+      function alertClass(r) {
+        var txt = norm((r && r.texto) || "");
+        var src = norm((r && r.fuente) || "");
+        if (txt.indexOf("uso de salon") >= 0 || txt.indexOf("uso salon") >= 0) return "alert-uso-salon";
+        if (txt.indexOf("licencia") >= 0) return "alert-licencias";
+        if (txt.indexOf("documentacion") >= 0) return "alert-documentacion";
+        if (txt.indexOf("incidente") >= 0) return "alert-incidentes";
+        if (txt.indexOf("obra solicitada") >= 0) return "alert-obra-solicitada";
+        if (txt.indexOf("obra en curso") >= 0) return "alert-obra-curso";
+        if (txt.indexOf("obra finalizada") >= 0) return "alert-obra-finalizada";
+        if (txt.indexOf("venc") >= 0 || txt.indexOf("vtv") >= 0 || txt.indexOf("rtv") >= 0 || txt.indexOf("seguro") >= 0 || txt.indexOf("carnet") >= 0 || txt.indexOf("matafuego") >= 0) return "alert-vencimientos";
+        if (txt.indexOf("sst") >= 0) return "alert-sst";
+        if (txt.indexOf("viaje") >= 0 || src.indexOf("vehiculos") >= 0) return "alert-viajes";
+        return "alert-default";
+      }
+      var rows = Array.isArray(items) ? items : [];
+      if (!rows.length) {
+        el.alertas.innerHTML = '<li class="alert-default">Sin alertas criticas hoy.</li>';
+        if (el.alertasCard) {
+          el.alertasCard.classList.add("no-alertas");
+          el.alertasCard.classList.remove("has-alertas");
+        }
+        return;
+      }
+      if (el.alertasCard) {
+        el.alertasCard.classList.remove("no-alertas");
+        el.alertasCard.classList.add("has-alertas");
+      }
+      el.alertas.innerHTML = rows.slice(0, 6).map(function (r) {
+        var src = r.fuente ? ("<strong>" + r.fuente + ":</strong> ") : "";
+        return '<li class="' + alertClass(r) + '">' + src + (r.texto || "-") + "</li>";
+      }).join("");
+    }
+
+    function makeRowActions(r) {
+      var stSel = ESTADOS.map(function (s) {
+        var sel = (s === r.estado) ? " selected" : "";
+        return '<option value="' + s + '"' + sel + ">" + s + "</option>";
+      }).join("");
+      return (
+        '<button type="button" class="btn-inline row-edit" data-id="' + r.id + '">Editar</button> ' +
+        '<select class="ctl-sel row-estado" data-id="' + r.id + '" style="display:inline-block;width:auto;min-width:120px;padding:4px 6px;">' + stSel + "</select> " +
+        '<button type="button" class="btn-inline row-save-est" data-id="' + r.id + '">Cambiar estado</button> ' +
+        '<button type="button" class="btn-inline row-hist">Ver historial</button>'
+      );
+    }
+
+    function renderPendientesRows(target, items, includeFecha, emptyText) {
+      var rows = Array.isArray(items) ? items : [];
+      if (!rows.length) {
+        target.innerHTML = '<tr><td colspan="' + (includeFecha ? 9 : 8) + '" style="color:#6f86a5;">' + emptyText + "</td></tr>";
+        return;
+      }
+      target.innerHTML = rows.map(function (r) {
+        return (
+          "<tr>" +
+            (includeFecha ? ("<td>" + (r.fecha || "-") + "</td>") : "") +
+            "<td>" + (r.hora || "-") + "</td>" +
+            "<td>" + agenteCell(r.agente) + "</td>" +
+            "<td>" + (r.sede_codigo || "-") + "</td>" +
+            "<td>" + (r.tipo || "-") + "</td>" +
+            "<td>" + (r.subtipo || "-") + "</td>" +
+            "<td>" + (r.observacion || "-") + "</td>" +
+            '<td><span class="estado-pill ' + estadoClass(r.estado) + '">' + (r.estado || "Informado") + "</span></td>" +
+            '<td style="white-space:nowrap;">' + makeRowActions(r) + "</td>" +
+          "</tr>"
+        );
+      }).join("");
+    }
+
+    function renderSplitRows(payload) {
+      var p = payload || {};
+      RAW_DIA = Array.isArray(p.pendientes_dia) ? p.pendientes_dia.slice() : [];
+      RAW_PEND = Array.isArray(p.pendientes_acumulados) ? p.pendientes_acumulados.slice() : [];
+      RAW_FINAL = Array.isArray(p.resueltos_informados) ? p.resueltos_informados.slice() : RAW_FINAL;
+      if (p.resumen) RESUMEN_BASE = p.resumen;
+      var dia = aplicarFiltroAgente(RAW_DIA);
+      var pendientes = aplicarFiltroAgente(RAW_PEND);
+      ITEM_INDEX = {};
+      RAW_DIA.concat(RAW_PEND).forEach(function (r) {
+        ITEM_INDEX[String(r.id || "")] = r;
+      });
+      renderPendientesRows(el.bodyDia, dia, false, "Sin pendientes del dia.");
+      renderPendientesRows(el.bodyPend, pendientes, true, "Sin pendientes acumulados.");
+      el.splitWrap.querySelectorAll(".row-estado").forEach(aplicarEstiloEstadoSelect);
+      renderResumenSegunFiltro();
+    }
+
+    function resetForm() {
+      el.id.value = "0";
+      el.guardar.textContent = "Guardar";
+      el.cancelar.style.display = "none";
+      el.estado.value = "Informado";
+      aplicarEstiloEstadoSelect(el.estado);
+      if (el.obs) el.obs.value = "";
+      loadSubtipos();
+    }
+
+    function loadDay() {
+      var f = String(el.fecha.value || "");
+      if (!f) return Promise.resolve();
+      return fetch("/api/dashboard/novedades_diarias_list?fecha=" + encodeURIComponent(f))
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d || !d.ok) throw new Error((d && d.error) || "No se pudo cargar novedades");
+          renderSplitRows(d || {});
+        })
+        .catch(function (e) {
+          setMsg(e.message || "Error al cargar novedades", true);
+        });
+    }
+
+    function saveNovedad() {
+      var payload = {
+        id: Number(el.id.value || 0),
+        fecha: String(el.fecha.value || ""),
+        agente: String(el.agente.value || ""),
+        sede_codigo: String(el.sede.value || ""),
+        tipo: String(el.tipo.value || ""),
+        subtipo: String(el.subtipo.value || ""),
+        observacion: String((el.obs && el.obs.value) || ""),
+        estado: String(el.estado.value || "Informado"),
+      };
+      if (!payload.fecha || !payload.agente || !payload.tipo) {
+        setMsg("Completa fecha, agente y tipo.", true);
+        return;
+      }
+      el.guardar.disabled = true;
+      setMsg("Guardando...", false);
+      fetch("/api/dashboard/novedades_diarias_save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+        .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, b: b || {} }; }); })
+        .then(function (x) {
+          if (!x.ok || !x.b.ok) throw new Error(x.b.error || "No se pudo guardar");
+          setMsg(payload.id > 0 ? "Novedad actualizada." : "Novedad registrada.", false);
+          resetForm();
+          return loadDay();
+        })
+        .catch(function (e) {
+          setMsg(e.message || "No se pudo guardar", true);
+        })
+        .finally(function () {
+          el.guardar.disabled = false;
+        });
+    }
+
+    function updateEstado(id, estado) {
+      fetch("/api/dashboard/novedades_diarias_estado", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id, estado: estado }),
+      })
+        .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, b: b || {} }; }); })
+        .then(function (x) {
+          if (!x.ok || !x.b.ok) throw new Error(x.b.error || "No se pudo actualizar estado");
+          return loadDay();
+        })
+        .catch(function (e) {
+          setMsg(e.message || "No se pudo actualizar estado", true);
+        });
+    }
+
+    function openHistorial() {
+      el.histBox.classList.add("open");
+      loadHistorial();
+      if (el.histBox && el.histBox.scrollIntoView) {
+        el.histBox.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+
+    function loadHistorial() {
+      var q = [];
+      if (el.histDesde.value) q.push("desde=" + encodeURIComponent(el.histDesde.value));
+      if (el.histHasta.value) q.push("hasta=" + encodeURIComponent(el.histHasta.value));
+      q.push("limit=200");
+      var url = "/api/dashboard/novedades_diarias_historial" + (q.length ? ("?" + q.join("&")) : "");
+      fetch(url)
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d || !d.ok) throw new Error((d && d.error) || "No se pudo cargar historial");
+          var rows = d.items || [];
+          if (!rows.length) {
+            el.histBody.innerHTML = '<tr><td colspan="8" style="color:#6f86a5;">Sin historial (resueltos).</td></tr>';
+            return;
+          }
+          el.histBody.innerHTML = rows.map(function (r) {
+            return (
+              "<tr>" +
+                "<td>" + (r.fecha || "-") + "</td>" +
+                "<td>" + (r.hora || "-") + "</td>" +
+                "<td>" + agenteCell(r.agente) + "</td>" +
+                "<td>" + (r.sede_codigo || "-") + "</td>" +
+                "<td>" + (r.tipo || "-") + "</td>" +
+                "<td>" + (r.subtipo || "-") + "</td>" +
+                "<td>" + (r.observacion || "-") + "</td>" +
+                '<td><span class="estado-pill ' + estadoClass(r.estado) + '">' + (r.estado || "Resuelto") + "</span></td>" +
+              "</tr>"
+            );
+          }).join("");
+        })
+        .catch(function (e) {
+          setMsg(e.message || "No se pudo cargar historial", true);
+        });
+    }
+
+    function loadControl(pref) {
+      pref = pref || {};
+      fetch("/api/dashboard/control_home")
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d || !d.ok) throw new Error((d && d.error) || "No se pudo cargar panel");
+
+          SUBTIPOS = d.tipos_subtipos || {};
+          ESTADOS = (d.estados && d.estados.length) ? d.estados : ESTADOS;
+
+          var tipoOrden = [
+            "Pedido de materiales",
+            "Gestion operativa",
+            "Vehiculos",
+            "Vehiculo",
+            "Reclamo / mantenimiento",
+            "Uso de salon",
+            "Aviso general",
+            "Licencia",
+            "Otro"
+          ];
+          var tiposExistentes = Object.keys(SUBTIPOS || {});
+          var tipos = tipoOrden.filter(function (t) { return tiposExistentes.indexOf(t) >= 0; })
+            .concat(tiposExistentes.filter(function (t) { return tipoOrden.indexOf(t) < 0; }));
+          fillSelect(el.tipo, tipos, false);
+          fillSelect(el.estado, ESTADOS, false);
+          aplicarEstiloEstadoSelect(el.estado);
+
+          var sedes = (d.sedes || []).map(function (s) {
+            var c = String(s.codigo || "").trim();
+            var n = String(s.nombre || c).trim();
+            return { value: c, label: c + (n && n !== c ? (" - " + n) : "") };
+          });
+          fillSelect(el.sede, sedes, true, "Sede");
+
+          var agentes = agentesVisibles(d.agentes || []);
+          fillSelect(el.agente, agentes, true, "Agente que carga");
+          renderAgenteFiltros(agentes);
+          if (d.agente_actual) {
+            var actualNorm = normalizarAgente(d.agente_actual);
+            if (agentes.indexOf(actualNorm) >= 0) el.agente.value = actualNorm;
+          }
+          if (pref.agente) el.agente.value = pref.agente;
+          if (!el.fecha.value) el.fecha.value = d.fecha || "";
+          if (pref.sede) el.sede.value = pref.sede;
+          if (pref.tipo) el.tipo.value = pref.tipo;
+          renderVehiculos(d.vehiculos || []);
+          renderAlertas(d.alertas || []);
+          renderResumen(d.resumen_novedades || {});
+          loadSubtipos(pref.subtipo || "");
+          return loadDay();
+        })
+        .catch(function (e) {
+          setMsg(e.message || "No se pudo cargar panel", true);
+        });
+    }
+
+    el.tipo.addEventListener("change", function () { loadSubtipos(); });
+    el.addSede.addEventListener("click", function () {
+      var val = window.prompt("Nueva sede (ej: TALLER / DEPOSITO / FUERA DE SEDE):", "");
+      if (!val) return;
+      val = String(val || "").trim();
+      if (!val) return;
+      addCatalogo("sede", val, "")
+        .then(function () {
+          setMsg("Sede agregada.", false);
+          return loadControl({
+            sede: val.toUpperCase(),
+            tipo: el.tipo.value,
+            subtipo: el.subtipo.value,
+            agente: el.agente.value,
+          });
+        })
+        .catch(function (e) { setMsg(e.message || "No se pudo agregar sede", true); });
+    });
+    el.addTipo.addEventListener("click", function () {
+      var val = window.prompt("Nuevo tipo de novedad:", "");
+      if (!val) return;
+      val = String(val || "").trim();
+      if (!val) return;
+      addCatalogo("tipo", val, "")
+        .then(function () {
+          setMsg("Tipo agregado.", false);
+          return loadControl({
+            sede: el.sede.value,
+            tipo: val,
+            agente: el.agente.value,
+          });
+        })
+        .catch(function (e) { setMsg(e.message || "No se pudo agregar tipo", true); });
+    });
+    el.addSubtipo.addEventListener("click", function () {
+      var tipoSel = String(el.tipo.value || "").trim();
+      if (!tipoSel) {
+        setMsg("Primero selecciona un tipo.", true);
+        return;
+      }
+      var val = window.prompt("Nuevo subtipo para '" + tipoSel + "':", "");
+      if (!val) return;
+      val = String(val || "").trim();
+      if (!val) return;
+      addCatalogo("subtipo", val, tipoSel)
+        .then(function () {
+          setMsg("Subtipo agregado.", false);
+          return loadControl({
+            sede: el.sede.value,
+            tipo: tipoSel,
+            subtipo: val,
+            agente: el.agente.value,
+          });
+        })
+        .catch(function (e) { setMsg(e.message || "No se pudo agregar subtipo", true); });
+    });
+    el.guardar.addEventListener("click", saveNovedad);
+    el.estado.addEventListener("change", function () {
+      aplicarEstiloEstadoSelect(el.estado);
+    });
+    el.cancelar.addEventListener("click", function () {
+      resetForm();
+      setMsg("", false);
+    });
+    el.recargar.addEventListener("click", loadDay);
+    el.fecha.addEventListener("change", function () {
+      resetForm();
+      loadDay();
+    });
+    el.histTop.addEventListener("click", openHistorial);
+    el.histClose.addEventListener("click", function () { el.histBox.classList.remove("open"); });
+    el.histBuscar.addEventListener("click", loadHistorial);
+    if (el.agenteFiltroList) {
+      el.agenteFiltroList.addEventListener("click", function (ev) {
+        var tgt = ev.target;
+        if (!tgt || !tgt.classList || !tgt.classList.contains("agente-chip")) return;
+        AGENTE_FILTRO_ACTIVO = String(tgt.getAttribute("data-agente") || "");
+        var chips = el.agenteFiltroList.querySelectorAll(".agente-chip");
+        chips.forEach(function (c) {
+          if (String(c.getAttribute("data-agente") || "") === AGENTE_FILTRO_ACTIVO) c.classList.add("active");
+          else c.classList.remove("active");
+        });
+        renderSplitRows({
+          pendientes_dia: RAW_DIA,
+          pendientes_acumulados: RAW_PEND,
+        });
+      });
+    }
+
+    el.splitWrap.addEventListener("click", function (ev) {
+      var tgt = ev.target;
+      if (!tgt) return;
+      if (tgt.classList.contains("row-edit")) {
+        var id = Number(tgt.getAttribute("data-id") || 0);
+        var row = ITEM_INDEX[String(id)] || null;
+        if (!row) return;
+        el.id.value = String(row.id);
+        el.fecha.value = row.fecha || el.fecha.value;
+        el.agente.value = row.agente || el.agente.value;
+        el.sede.value = row.sede_codigo || "";
+        el.tipo.value = row.tipo || el.tipo.value;
+        loadSubtipos(row.subtipo || "");
+        if (el.obs) el.obs.value = row.observacion || "";
+        el.estado.value = row.estado || "Informado";
+        aplicarEstiloEstadoSelect(el.estado);
+        el.guardar.textContent = "Actualizar";
+        el.cancelar.style.display = "inline-flex";
+        if (el.registroBox && !el.registroBox.open) {
+          el.registroBox.open = true;
+        }
+        if (el.registroBox && el.registroBox.scrollIntoView) {
+          el.registroBox.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+        setMsg("Editando novedad #" + row.id, false);
+      } else if (tgt.classList.contains("row-save-est")) {
+        var rid = Number(tgt.getAttribute("data-id") || 0);
+        if (rid <= 0) return;
+        var sel = el.splitWrap.querySelector('.row-estado[data-id="' + rid + '"]');
+        var st = sel ? String(sel.value || "Informado") : "Informado";
+        updateEstado(rid, st);
+      } else if (tgt.classList.contains("row-hist")) {
+        openHistorial();
+      }
+    });
+    el.splitWrap.addEventListener("change", function (ev) {
+      var tgt = ev.target;
+      if (!tgt || !tgt.classList || !tgt.classList.contains("row-estado")) return;
+      aplicarEstiloEstadoSelect(tgt);
+    });
+
+    loadControl();
+  })();
+</script>
+{% endblock %}

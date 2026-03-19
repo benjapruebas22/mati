@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="sedes-section calendario-page">
+  <!-- CABECERA: año + meses -->
+  <div class="cal-header">
+    <div>
+      {% if modo_carga %}
+      <h2>Carga de materiales</h2>
+      {% else %}
+      <h2>Calendario {{ fecha_sel.year }}</h2>
+      {% endif %}
+      <p style="margin:4px 0;color:#64748b">
+        Día seleccionado:
+        <strong>{{ fecha_sel.strftime('%d/%m/%Y') }}</strong>
+      </p>
+    </div>
+
+    {% if not modo_carga %}
+    <div class="cal-months">
+      {% set meses = [
+        'Enero','Febrero','Marzo','Abril','Mayo','Junio',
+        'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'
+      ] %}
+      {% for nombre in meses %}
+        <a
+          class="pill-month {% if loop.index == fecha_sel.month %}active{% endif %}"
+          href="{{ url_for('calendario',
+                           fecha=fecha_sel.replace(month=loop.index, day=1).isoformat()) }}"
+        >
+          {{ nombre }}
+        </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="cal-layout {% if modo_carga %}carga-directa{% endif %}">
+    <!-- IZQUIERDA: semana -->
+    <div class="cal-week card-soft">
+      <div class="cal-week-header">
+        Semana de {{ semana[0].strftime('%d/%m') }} a {{ semana[6].strftime('%d/%m') }}
+      </div>
+      <div class="cal-week-grid">
+        {% for d in semana %}
+        <a
+          href="{{ url_for('calendario', fecha=d.isoformat()) }}"
+          class="cal-day-card {% if d == fecha_sel %}active{% endif %}"
+        >
+          <div class="day-name">{{ d.strftime('%a')|upper }}</div>
+          <div class="day-date">{{ d.strftime('%d/%m') }}</div>
+          <div class="day-dot"></div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- DERECHA: novedades del día + formulario -->
+    <div class="cal-side card-soft">
+      <h3>Novedades del {{ fecha_sel.strftime('%d/%m/%Y') }}</h3>
+
+      {% if pedidos %}
+        <ul class="pedido-list">
+          {% for p in pedidos %}
+          <li>
+            <div class="pedido-top">
+              <span class="badge-prio {{ (p['prioridad'] or 'Media')|lower }}">
+                {{ p['prioridad'] or 'Media' }}
+              </span>
+              <span class="pedido-estado">
+                {{ p['estado'] or 'PENDIENTE' }}
+              </span>
+            </div>
+            <div class="pedido-detalle">
+              <strong>{{ p['sede'] or 'Sin sede' }}</strong>
+              {% if p['solicitante'] %}
+                · {{ p['solicitante'] }}
+              {% endif %}
+            </div>
+            <div class="pedido-nota">
+              {{ p['detalle'] }}
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p style="color:#94a3b8;margin-top:4px">
+          Sin pedidos cargados para este día.
+        </p>
+      {% endif %}
+
+      <!-- ================== EVENTOS DE VEHÍCULOS ================== -->
+      <hr style="margin:18px 0">
+
+      <h3>Eventos de vehículos del día</h3>
+
+      {% if eventos_dia %}
+        <ul class="veh-ev-list">
+          {% for ev in eventos_dia %}
+          <li>
+            <div class="veh-ev-color" style="background: {{ ev['color'] or '#e5e7eb' }};"></div>
+            <div class="veh-ev-body">
+              <div class="veh-ev-title">{{ ev['titulo'] }}</div>
+              {% if ev['detalle'] %}
+                <div class="veh-ev-detalle">{{ ev['detalle'] }}</div>
+              {% endif %}
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="veh-ev-empty">
+          Sin eventos de vehículos para este día.
+        </p>
+      {% endif %}
+
+      <!-- ================== FORMULARIO NUEVO PEDIDO ================== -->
+      <hr style="margin:18px 0">
+
+      <h3 id="nuevo-pedido">Nuevo pedido / novedad</h3>
+
+      <form method="post" class="form-soft" style="padding:0;margin-top:8px" id="formNuevoPedido">
+        <div class="form-grid-2">
+          <div>
+            <label>Fecha</label>
+            <input type="date" name="fecha" value="{{ fecha_sel.isoformat() }}">
+          </div>
+          <div>
+            <label>Sede / lugar</label>
+            <input type="text" name="sede" placeholder="Ej: Penal, Depósito, Taller">
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div>
+            <label>Solicitante</label>
+            <input type="text" name="solicitante" placeholder="Nombre del agente">
+          </div>
+          <div>
+            <label>Prioridad</label>
+            <select name="prioridad">
+              <option value="Baja">Baja</option>
+              <option value="Media" selected>Media</option>
+              <option value="Alta">Alta</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div>
+            <label>Estado</label>
+            <select name="estado">
+              <option value="Pedir" selected>Pedir</option>
+              <option value="Pedido">Pedido</option>
+              <option value="Entregado">Entregado</option>
+            </select>
+          </div>
+          <div></div>
+        </div>
+
+        <label>Detalle</label>
+        <textarea name="detalle" rows="3"
+                  placeholder="Descripción de la novedad / pedido..."></textarea>
+
+        <button class="btn primary" type="submit" style="margin-top:10px">
+          Guardar
+        </button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<style>
+  .card-soft {
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    padding: 12px 16px;
+  }
+  .calendario-page { display:flex; flex-direction:column; gap:16px; }
+  .cal-header {
+    display:flex; justify-content:space-between; align-items:flex-end;
+    gap:16px; flex-wrap:wrap;
+  }
+  .cal-months {
+    display:flex; flex-wrap:wrap; gap:4px; justify-content:flex-end;
+  }
+  .pill-month {
+    padding:4px 10px; border-radius:999px; font-size:11px;
+    border:1px solid #e2e8f0; color:#475569; text-decoration:none; background:#fff;
+  }
+  .pill-month.active { background:#2563eb; color:#fff; border-color:#2563eb; }
+  .cal-layout {
+    display:grid; grid-template-columns:1.2fr 1fr; gap:20px;
+  }
+  .cal-week-header { font-size:13px; color:#64748b; margin-bottom:8px; }
+  .cal-week-grid {
+    display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:6px;
+  }
+  .cal-day-card {
+    border-radius:12px; border:1px solid #e2e8f0; padding:8px 6px;
+    text-align:center; text-decoration:none; color:#0f172a;
+    background:#f8fafc; display:flex; flex-direction:column; gap:4px;
+  }
+  .cal-day-card.active { border-color:#2563eb; background:#eff6ff; }
+  .day-name { font-size:11px; color:#64748b; }
+  .day-date { font-size:14px; font-weight:600; }
+  .day-dot { width:6px;height:6px;border-radius:999px;background:#cbd5f5;margin:0 auto; }
+
+  .pedido-list {
+    list-style:none; padding:0; margin:10px 0 0 0;
+    display:flex; flex-direction:column; gap:8px; font-size:11px;
+  }
+  .pedido-list li {
+    border-radius:12px; border:1px solid #e2e8f0; padding:6px 8px; background:#f8fafc;
+  }
+  .pedido-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:2px; }
+  .badge-prio {
+    padding:1px 6px; border-radius:999px; font-size:10px; font-weight:600;
+  }
+  .badge-prio.baja { background:#ecfeff; color:#0e7490; }
+  .badge-prio.media { background:#fef9c3; color:#854d0e; }
+  .badge-prio.alta { background:#fee2e2; color:#b91c1c; }
+  .pedido-estado { font-size:10px; color:#64748b; }
+  .pedido-detalle { font-weight:600; color:#0f172a; }
+  .pedido-nota { color:#475569; white-space:pre-wrap; }
+
+  .form-grid-2 {
+    display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:6px;
+  }
+
+  /* ====== LISTA EVENTOS VEHÍCULOS ====== */
+  .veh-ev-list {
+    list-style:none;
+    padding:0;
+    margin:8px 0 0 0;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    font-size:11px;
+  }
+  .veh-ev-list li {
+    display:flex;
+    align-items:flex-start;
+    gap:6px;
+    border-radius:10px;
+    border:1px solid #e2e8f0;
+    background:#f8fafc;
+    padding:6px 8px;
+  }
+  .veh-ev-color {
+    width:6px;
+    border-radius:999px;
+    flex-shrink:0;
+  }
+  .veh-ev-body {
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+  }
+  .veh-ev-title {
+    font-weight:600;
+    color:#0f172a;
+  }
+  .veh-ev-detalle {
+    color:#475569;
+    white-space:pre-wrap;
+  }
+  .veh-ev-empty {
+    font-size:12px;
+    color:#94a3b8;
+    margin-top:4px;
+  }
+
+  @media (max-width: 900px) {
+    .cal-layout { grid-template-columns:1fr; }
+  }
+</style>
+
+<script>
+  (function () {
+    try {
+      var p = new URLSearchParams(window.location.search || "");
+      if (p.get("cargar") === "1") {
+        var form = document.getElementById("formNuevoPedido");
+        var h = document.getElementById("nuevo-pedido");
+        if (h) h.scrollIntoView({ behavior: "smooth", block: "start" });
+        if (form) {
+          var fields = form.querySelectorAll("input,select,textarea");
+          if (fields.length) fields[0].focus();
+        }
+      }
+    } catch (e) {}
+  })();
+</script>
+
+{% endblock %}

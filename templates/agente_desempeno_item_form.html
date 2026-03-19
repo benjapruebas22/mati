@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<section class="agentes-main">
+
+  <header class="section-header">
+    <div>
+      <h1>Editar desempeño del agente</h1>
+      <p class="section-sub">
+        {{ agente.agente }} · Rubro: {{ agente.rubro|upper }}
+      </p>
+    </div>
+
+    <div class="section-actions">
+      <a class="btn outline-slate" href="{{ url_for('agente_desempeno', id=agente.id) }}">
+        ⬅ Volver a desempeño
+      </a>
+    </div>
+  </header>
+
+  <div class="grid-main">
+    <div class="left-panel">
+      <div class="agent-detail-card">
+        <div class="agent-detail-header">
+          <div class="agent-photo" style="display:flex;align-items:center;justify-content:center;">
+            📊
+          </div>
+          <div>
+            <div class="agent-detail-name">{{ agente.agente }}</div>
+            <div class="agent-detail-rubro">Rubro: {{ agente.rubro|upper }}</div>
+          </div>
+        </div>
+
+        <div class="agent-detail-body">
+          <div class="agent-detail-section">
+            <div class="agent-detail-section-title">FORMULARIO</div>
+
+            <form method="post" class="license-form">
+
+              <div class="form-row-inline">
+                <div>
+                  <label for="fecha">Fecha</label>
+                  <input type="date" id="fecha" name="fecha"
+                         value="{{ registro.fecha }}" required>
+                </div>
+                <div>
+                  <label for="tipo">Tipo</label>
+                  {% set tipo_sel = registro.tipo or '' %}
+                  <select id="tipo" name="tipo" required>
+                    <option value="">Seleccionar…</option>
+                    <option value="evaluacion" {{ 'selected' if tipo_sel == 'evaluacion' else '' }}>Evaluación</option>
+                    <option value="observacion" {{ 'selected' if tipo_sel == 'observacion' else '' }}>Observación</option>
+                    <option value="reconocimiento" {{ 'selected' if tipo_sel == 'reconocimiento' else '' }}>Reconocimiento</option>
+                    <option value="apercibimiento" {{ 'selected' if tipo_sel == 'apercibimiento' else '' }}>Apercibimiento</option>
+                    <option value="otro" {{ 'selected' if tipo_sel == 'otro' else '' }}>Otro</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row-inline">
+                <div>
+                  <label for="periodo">Período</label>
+                  <input type="text" id="periodo" name="periodo"
+                         value="{{ registro.periodo }}"
+                         placeholder="Ej: 2025 - 1er semestre">
+                </div>
+                <div>
+                  <label for="calificacion">Calificación (1–5)</label>
+                  {% set cal_sel = registro.calificacion %}
+                  <select id="calificacion" name="calificacion">
+                    <option value="" {{ 'selected' if not cal_sel else '' }}>(sin calificar)</option>
+                    <option value="1" {{ 'selected' if cal_sel == 1 else '' }}>1 - Muy deficiente</option>
+                    <option value="2" {{ 'selected' if cal_sel == 2 else '' }}>2 - Deficiente</option>
+                    <option value="3" {{ 'selected' if cal_sel == 3 else '' }}>3 - Aceptable</option>
+                    <option value="4" {{ 'selected' if cal_sel == 4 else '' }}>4 - Bueno</option>
+                    <option value="5" {{ 'selected' if cal_sel == 5 else '' }}>5 - Muy bueno</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <label for="observaciones">Descripción / observaciones</label>
+                <textarea id="observaciones" name="observaciones" rows="4"
+                          placeholder="Detalle de la evaluación u observación.">{{ registro.observaciones }}</textarea>
+              </div>
+
+              <div class="form-row">
+                <label for="estado">Estado</label>
+                {% set est_sel = registro.estado or '' %}
+                <select id="estado" name="estado">
+                  <option value="" {{ 'selected' if est_sel == '' else '' }}>(sin especificar)</option>
+                  <option value="ABIERTO" {{ 'selected' if est_sel == 'ABIERTO' else '' }}>Abierto</option>
+                  <option value="CERRADO" {{ 'selected' if est_sel == 'CERRADO' else '' }}>Cerrado</option>
+                  <option value="HISTORICO" {{ 'selected' if est_sel == 'HISTORICO' else '' }}>Histórico</option>
+                </select>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn outline-amber">💾 Guardar cambios</button>
+                <a class="btn outline-slate"
+                   href="{{ url_for('agente_desempeno', id=agente.id) }}">
+                  Cancelar
+                </a>
+              </div>
+
+            </form>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+</section>
+
+{% endblock %}

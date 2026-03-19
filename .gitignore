@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.env
+
+# Base de Datos y Temporales
+mpd.db
+mpd.db-journal
+_obsoleto/
+tmp/
+*.log
+
+# Archivos subidos por usuarios (uploads)
+uploads/
+static/agentes_documentacion/
+static/planos_sedes/
+static/remitos/
+
+# Entorno de Desarrollo / Editores
+.vscode/
+.idea/
+*.swp
+.DS_Store

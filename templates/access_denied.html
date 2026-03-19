@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container" style="max-width: 560px;">
+  <div class="card" style="padding: 24px;">
+    <h2 style="margin: 0 0 8px;">Acceso denegado</h2>
+    <p class="muted" style="margin: 0 0 16px;">No tenes permisos para ver esta seccion.</p>
+    <div style="display: flex; justify-content: flex-end; gap: 8px;">
+      <a class="btn btn-mpd" href="{{ url_for('dashboard') }}">Volver</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

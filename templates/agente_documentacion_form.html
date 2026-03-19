@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+  .license-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .license-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .license-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
+    padding: 14px 16px;
+  }
+
+  .license-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .license-grid .full {
+    grid-column: 1 / -1;
+  }
+
+  .license-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .license-field label {
+    font-size: 12px;
+    color: #64748b;
+  }
+
+  .license-field input,
+  .license-field select,
+  .license-field textarea {
+    font-size: 13px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+  }
+
+  .license-hint {
+    font-size: 12px;
+    color: #64748b;
+  }
+
+  .license-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 6px;
+  }
+  .agent-licenses-table td {
+    vertical-align: middle;
+  }
+  .doc-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+  }
+  .doc-actions .btn {
+    min-width: 92px;
+    justify-content: center;
+  }
+
+  @media (max-width: 900px) {
+    .license-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<section class="agentes-main license-shell">
+
+  <header class="section-header license-head">
+    <div>
+      <h1>Documentacion del agente</h1>
+      <p class="section-sub">
+        {{ agente.agente }} - Rubro: {{ agente.rubro|upper }}
+      </p>
+    </div>
+
+    <div class="section-actions">
+      <a class="btn outline-slate" href="{{ url_for('agentes_home', id=agente.id) }}">
+        Volver a la ficha del agente
+      </a>
+    </div>
+  </header>
+
+  <div class="grid-main">
+    <div class="left-panel">
+      <div class="license-card">
+        <div class="agent-detail-header">
+          <div class="agent-photo" style="display:flex;align-items:center;justify-content:center;">
+            AG
+          </div>
+          <div>
+            <div class="agent-detail-name">{{ agente.agente }}</div>
+            <div class="agent-detail-rubro">Rubro: {{ agente.rubro|upper }}</div>
+          </div>
+        </div>
+
+        <form method="post" class="license-form" enctype="multipart/form-data">
+          <div class="license-grid">
+            <div class="license-field full">
+              <label for="tipo">Tipo de documento</label>
+              <select id="tipo" name="tipo" required>
+                <option value="">Seleccionar...</option>
+                <option value="carnet_conducir">Carnet de conducir</option>
+                <option value="dni">DNI</option>
+                <option value="art">ART / Aseguradora</option>
+                <option value="examen_medico">Examen medico</option>
+                <option value="otros">Otros</option>
+              </select>
+            </div>
+
+            <div class="license-field">
+              <label for="fecha_vencimiento">Fecha de vencimiento</label>
+              <input type="date" id="fecha_vencimiento" name="fecha_vencimiento" required>
+            </div>
+            <div class="license-field">
+              <label for="estado">Estado</label>
+              <select id="estado" name="estado">
+                <option value="">(sin especificar)</option>
+                <option value="VIGENTE">Vigente</option>
+                <option value="PROXIMO A VENCER">Proximo a vencer</option>
+                <option value="VENCIDO">Vencido</option>
+                <option value="EN TRAMITE">En tramite</option>
+              </select>
+            </div>
+
+            <div class="license-field full">
+              <label for="archivo">Archivo (carnet, DNI, etc.)</label>
+              <input type="file" id="archivo" name="archivo" accept=".pdf,.jpg,.jpeg,.png">
+              <span class="license-hint">Formatos: PDF, JPG o PNG.</span>
+            </div>
+
+            <div class="license-field full">
+              <label for="archivo_url">Link (Drive u otro)</label>
+              <input type="url" id="archivo_url" name="archivo_url"
+                     placeholder="https://drive.google.com/...">
+            </div>
+
+            <div class="license-field full">
+              <label for="observaciones">Observaciones</label>
+              <textarea id="observaciones" name="observaciones" rows="3"
+                        placeholder="Numero de poliza, detalle de examen, etc."></textarea>
+            </div>
+          </div>
+
+          <div class="license-actions">
+            <button type="submit" class="btn outline-amber">Guardar</button>
+            <a class="btn outline-slate" href="{{ url_for('agentes_home', id=agente.id) }}">
+              Cancelar
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="right-panel">
+      <div class="agent-licenses-card license-card">
+        <div class="agent-licenses-header">
+          <h3>Documentacion cargada</h3>
+          {% if documentos and documentos|length > 0 %}
+            <div class="agent-licenses-count">{{ documentos|length }} items</div>
+          {% endif %}
+        </div>
+
+        {% if documentos and documentos|length > 0 %}
+          <div class="agent-licenses-table-wrapper">
+            <table class="agent-licenses-table">
+              <thead>
+                <tr>
+                  <th>Tipo</th>
+                  <th>Vence</th>
+                  <th>Estado</th>
+                  <th>Observaciones</th>
+                  <th>Archivo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for d in documentos %}
+                  <tr>
+                    <td>{{ d.tipo|replace('_',' ')|capitalize }}</td>
+                    <td>{{ d.fecha_vencimiento }}</td>
+                    <td>{{ d.estado }}</td>
+                    <td>{{ d.observaciones }}</td>
+                    <td>
+                      <div class="doc-actions">
+                        {% if d.archivo %}
+                          <a class="btn xs outline-slate"
+                             href="{{ url_for('agente_documentacion_archivo', filename=d.archivo) }}"
+                             target="_blank" rel="noopener" title="Archivo">Ver</a>
+                        {% endif %}
+                        {% if d.archivo_url %}
+                          <a class="btn xs outline-slate"
+                             href="{{ d.archivo_url }}" target="_blank" rel="noopener" title="Link">Ver</a>
+                        {% endif %}
+                      </div>
+                      {% if not d.archivo and not d.archivo_url %}
+                        -
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="panel-note">
+            No hay documentacion cargada para este agente.
+          </p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</section>
+
+{% endblock %}

@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  .sst-edit-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
+    padding: 16px;
+  }
+</style>
+
+<section class="agentes-main">
+  <div class="sst-edit-card">
+    <h2 style="margin:0 0 8px;">Editar registro SST</h2>
+    <form method="post" class="license-form">
+      <div class="license-grid">
+        <div class="license-field">
+          <label for="fecha">Fecha</label>
+          <input type="date" id="fecha" name="fecha" value="{{ r.fecha }}" required>
+        </div>
+        <div class="license-field">
+          <label for="fecha_objetivo">Fecha objetivo</label>
+          <input type="date" id="fecha_objetivo" name="fecha_objetivo" value="{{ r.fecha_objetivo or '' }}">
+        </div>
+        <div class="license-field">
+          <label for="sede_codigo">Sede</label>
+          <select id="sede_codigo" name="sede_codigo">
+            <option value="">(todas / general)</option>
+            {% for s in sedes %}
+              <option value="{{ s.codigo }}" {% if r.sede_codigo==s.codigo %}selected{% endif %}>{{ s.codigo }} - {{ s.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="license-field">
+          <label for="tipo">Tipo</label>
+          <select id="tipo" name="tipo" required>
+            <option value="">Seleccionar...</option>
+            <option value="prevencion" {% if r.tipo=='prevencion' %}selected{% endif %}>Prevencion</option>
+            <option value="no_conformidad" {% if r.tipo=='no_conformidad' %}selected{% endif %}>No conformidad</option>
+            <option value="informe" {% if r.tipo=='informe' %}selected{% endif %}>Informe</option>
+          </select>
+        </div>
+        <div class="license-field">
+          <label for="categoria">Categoria</label>
+          <select id="categoria" name="categoria">
+            <option value="">Seleccionar...</option>
+            {% for c in [
+              'Matafuego mal ubicado', 'Sin luz de emergencia', 'Sin carteleria', 'Sin plano de evacuacion',
+              'Plan de evacuacion', 'Riesgo electrico', 'Iluminacion', 'Orden y limpieza', 'EPP', 'Otro'
+            ] %}
+              <option value="{{ c }}" {% if r.categoria==c %}selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="license-field">
+          <label for="area">Area / Sector</label>
+          <input type="text" id="area" name="area" value="{{ r.area or '' }}">
+        </div>
+
+        <div class="license-field full">
+          <label for="titulo">Titulo</label>
+          <input type="text" id="titulo" name="titulo" value="{{ r.titulo or '' }}">
+        </div>
+
+        <div class="license-field full">
+          <label for="detalle">Detalle</label>
+          <textarea id="detalle" name="detalle" rows="3">{{ r.detalle or '' }}</textarea>
+        </div>
+
+        <div class="license-field">
+          <label for="responsable">Responsable</label>
+          <input type="text" id="responsable" name="responsable" value="{{ r.responsable or '' }}">
+        </div>
+        <div class="license-field">
+          <label for="prioridad">Prioridad</label>
+          <select id="prioridad" name="prioridad">
+            <option value="" {% if not r.prioridad %}selected{% endif %}>(sin especificar)</option>
+            <option value="Alta" {% if r.prioridad=='Alta' %}selected{% endif %}>Alta</option>
+            <option value="Media" {% if r.prioridad=='Media' %}selected{% endif %}>Media</option>
+            <option value="Baja" {% if r.prioridad=='Baja' %}selected{% endif %}>Baja</option>
+          </select>
+        </div>
+        <div class="license-field">
+          <label for="estado">Estado</label>
+          <select id="estado" name="estado">
+            <option value="" {% if not r.estado %}selected{% endif %}>(sin especificar)</option>
+            <option value="ABIERTO" {% if r.estado=='ABIERTO' %}selected{% endif %}>Abierto</option>
+            <option value="EN_PROGRESO" {% if r.estado=='EN_PROGRESO' %}selected{% endif %}>En progreso</option>
+            <option value="CERRADO" {% if r.estado=='CERRADO' %}selected{% endif %}>Cerrado</option>
+          </select>
+        </div>
+        <div class="license-field">
+          <label for="fecha_cierre">Fecha cierre</label>
+          <input type="date" id="fecha_cierre" name="fecha_cierre" value="{{ r.fecha_cierre or '' }}">
+        </div>
+
+        <div class="license-field full">
+          <label for="accion_correctiva">Accion correctiva</label>
+          <textarea id="accion_correctiva" name="accion_correctiva" rows="2">{{ r.accion_correctiva or '' }}</textarea>
+        </div>
+
+        <div class="license-field full">
+          <label for="evidencia_url">Evidencia (link/foto)</label>
+          <input type="url" id="evidencia_url" name="evidencia_url" value="{{ r.evidencia_url or '' }}">
+        </div>
+      </div>
+
+      <div class="license-actions">
+        <button type="submit" class="btn outline-amber">Guardar cambios</button>
+        <a class="btn outline-slate" href="{{ url_for('sst_general') }}">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

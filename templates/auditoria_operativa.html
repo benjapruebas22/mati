@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="op-shell">
+  <header class="op-top">
+    <div>
+      <h2 class="op-h2">Auditoria operativa general</h2>
+      <p class="op-sub">Checklist simple para materiales, mobiliario, herramientas y vehiculos.</p>
+    </div>
+    <div class="op-actions">
+      <a class="btn outline-green btn-sm" href="{{ url_for('auditoria_mobiliario') }}">Auditoria mobiliario</a>
+      <a class="btn outline-green btn-sm" href="{{ url_for('auditoria_herramientas') }}">Auditoria herramientas</a>
+      <a class="btn outline-blue btn-sm" href="{{ url_for('materiales_home') }}">Volver a Materiales</a>
+    </div>
+  </header>
+
+  <div class="op-grid">
+    <section class="cardx">
+      <div class="cardx-head">
+        <div>
+          <h3>Nueva auditoria</h3>
+          <p>Resultado por item: 2 OK, 1 Observacion, 0 No conforme.</p>
+        </div>
+        <span class="pill-soft">Carga</span>
+      </div>
+
+      <form method="post" class="formx">
+        <div class="gridx op-form">
+          <div class="fg">
+            <label>Rubro</label>
+            <select id="op_rubro" name="rubro" required>
+              {% for code, lbl in rubros %}
+                <option value="{{ code }}" {% if q_rubro == code %}selected{% endif %}>{{ lbl }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="fg">
+            <label>Fecha</label>
+            <input type="date" name="fecha" value="{{ today }}" required>
+          </div>
+          <div class="fg">
+            <label>Sede</label>
+            <select id="op_sede" name="sede_codigo" required>
+              <option value="">-- elegir sede --</option>
+              {% for s in sedes %}
+                <option value="{{ s.codigo }}">{{ s.codigo }} - {{ s.nombre }} ({{ s.ciudad }})</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="fg">
+            <label>Local / Oficina</label>
+            <select id="op_local" name="local_codigo">
+              <option value="">-- sin local --</option>
+              {% for l in locales %}
+                <option value="{{ (l.codigo_local or '')|upper }}" data-sede="{{ (l.codigo_sede or '')|upper }}">
+                  {{ l.codigo_sede }} - {{ l.codigo_local }}{% if l.descripcion %} · {{ l.descripcion }}{% endif %}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="fg">
+            <label>Activo (codigo/patente)</label>
+            <input type="text" name="activo_codigo" placeholder="Ej: AB123CD o cod interno">
+          </div>
+          <div class="fg">
+            <label>Auditor</label>
+            <input type="text" name="auditor_nombre" placeholder="Nombre y apellido">
+          </div>
+          <div class="fg">
+            <label>Responsable area</label>
+            <input type="text" name="responsable_area" placeholder="Encargado / jefe">
+          </div>
+        </div>
+
+        <div class="table-wrap op-table-wrap">
+          <table class="table-soft op-table">
+            <thead>
+              <tr>
+                <th>Item auditable</th>
+                <th>Resultado</th>
+                <th>Hallazgo</th>
+                <th>Severidad</th>
+                <th>Accion / Responsable / Compromiso</th>
+                <th>Evidencia</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for code, lbl, is_critical in item_defs %}
+                <tr>
+                  <td>
+                    <div class="item-lbl">
+                      {{ lbl }}
+                      {% if is_critical %}
+                        <span class="chip crit">critico</span>
+                      {% endif %}
+                    </div>
+                  </td>
+                  <td>
+                    <select name="resultado__{{ code }}" required>
+                      <option value="">--</option>
+                      <option value="2">2 - OK</option>
+                      <option value="1">1 - Observacion</option>
+                      <option value="0">0 - No conforme</option>
+                    </select>
+                  </td>
+                  <td>
+                    <input type="text" name="hallazgo__{{ code }}" placeholder="Detalle breve">
+                  </td>
+                  <td>
+                    <select name="severidad__{{ code }}">
+                      <option value="">--</option>
+                      <option value="baja">baja</option>
+                      <option value="media">media</option>
+                      <option value="alta">alta</option>
+                      <option value="critica">critica</option>
+                    </select>
+                  </td>
+                  <td>
+                    <div class="in-col">
+                      <input type="text" name="accion__{{ code }}" placeholder="Accion correctiva">
+                      <input type="text" name="resp_accion__{{ code }}" placeholder="Responsable accion">
+                      <div class="in-row">
+                        <input type="date" name="fecha_comp__{{ code }}" title="Fecha compromiso">
+                        <select name="estado_accion__{{ code }}">
+                          <option value="">estado</option>
+                          <option value="abierto">abierto</option>
+                          <option value="en_proceso">en_proceso</option>
+                          <option value="cerrado">cerrado</option>
+                          <option value="verificado">verificado</option>
+                        </select>
+                        <input type="date" name="fecha_cierre__{{ code }}" title="Fecha cierre">
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <input type="text" name="evidencia__{{ code }}" placeholder="URL/ruta evidencia">
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="fg full">
+          <label>Observaciones generales</label>
+          <input type="text" name="observaciones_generales" placeholder="Resumen general de la auditoria">
+        </div>
+
+        <div class="formx-actions">
+          <button type="submit" class="btn primary btn-wide">Guardar auditoria operativa</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="cardx">
+      <div class="cardx-head">
+        <div>
+          <h3>Ultimas auditorias</h3>
+          <p>Estado general y cantidad de hallazgos.</p>
+        </div>
+        <span class="pill-soft">Historial</span>
+      </div>
+      <div class="table-wrap">
+        <table class="table-soft op-history">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Sede</th>
+              <th>Local</th>
+              <th>Rubro</th>
+              <th>Activo</th>
+              <th>Auditor</th>
+              <th>Estado</th>
+              <th>Obs</th>
+              <th>NC</th>
+              <th>Bloqueos</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for a in auditorias %}
+              <tr>
+                <td>{{ a.fecha }}</td>
+                <td>{{ a.sede_codigo }}</td>
+                <td>{{ a.local_codigo or '-' }}</td>
+                <td>{{ a.rubro }}</td>
+                <td>{{ a.activo_codigo or '-' }}</td>
+                <td>{{ a.auditor_nombre or '-' }}</td>
+                <td>
+                  {% if a.estado_general == 'rojo' %}
+                    <span class="chip bad">rojo</span>
+                  {% elif a.estado_general == 'amarillo' %}
+                    <span class="chip warn">amarillo</span>
+                  {% else %}
+                    <span class="chip ok">verde</span>
+                  {% endif %}
+                </td>
+                <td>{{ a.obs_count }}</td>
+                <td>{{ a.nc_count }}</td>
+                <td>{{ a.bloqueo_count }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</section>
+
+<style>
+  .op-shell{display:flex;flex-direction:column;gap:12px;max-width:100%;margin:0 auto;padding:4px 10px 16px}
+  .op-top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+  .op-h2{margin:0;font-size:20px;font-weight:900;color:#0f172a}
+  .op-sub{margin:2px 0 0;font-size:13px;color:#64748b}
+  .op-grid{display:grid;grid-template-columns:minmax(0,1220px);gap:14px;align-items:start;justify-content:center}
+  .op-shell .cardx{border:1px solid #e5e7eb;box-shadow:0 10px 22px rgba(15,23,42,.06)}
+  .op-shell label{font-size:12px;font-weight:800;color:#0f172a}
+  .op-shell input,.op-shell select{border-radius:10px;padding:7px 10px;font-size:12px}
+  .op-form .fg{display:flex;flex-direction:column;gap:6px}
+  .op-shell .fg.full{margin-top:12px}
+  .op-table-wrap{margin-top:10px;overflow:auto}
+  .op-table{min-width:1200px}
+  .op-table th,.op-table td{vertical-align:top}
+  .item-lbl{display:flex;gap:8px;align-items:center;font-weight:700}
+  .chip{display:inline-block;padding:2px 8px;border-radius:999px;font-weight:800;font-size:11px}
+  .chip.ok{background:#dcfce7;color:#166534}
+  .chip.warn{background:#fef3c7;color:#92400e}
+  .chip.bad{background:#fee2e2;color:#991b1b}
+  .chip.crit{background:#ffe4e6;color:#9f1239}
+  .in-col{display:flex;flex-direction:column;gap:6px}
+  .in-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+  .op-history{width:100%;min-width:0;table-layout:fixed}
+  .op-history th,.op-history td{white-space:normal;word-break:break-word}
+  @media (max-width:1100px){.op-grid{grid-template-columns:1fr}}
+</style>
+
+<script>
+  (function(){
+    const rubroSel = document.getElementById("op_rubro");
+    const sedeSel = document.getElementById("op_sede");
+    const localSel = document.getElementById("op_local");
+    if (rubroSel) {
+      rubroSel.addEventListener("change", function(){
+        const v = (rubroSel.value || "").trim();
+        if (!v) return;
+        window.location.href = "{{ url_for('auditoria_operativa') }}?rubro=" + encodeURIComponent(v);
+      });
+    }
+    if (!sedeSel || !localSel) return;
+    const allOptions = Array.from(localSel.querySelectorAll("option")).map(o => ({
+      value: o.value,
+      text: o.textContent,
+      sede: (o.getAttribute("data-sede") || "").toUpperCase()
+    }));
+    function repoblarLocales() {
+      const sede = (sedeSel.value || "").toUpperCase();
+      const actual = localSel.value;
+      localSel.innerHTML = "";
+      const base = document.createElement("option");
+      base.value = "";
+      base.textContent = "-- sin local --";
+      localSel.appendChild(base);
+      allOptions.forEach(o => {
+        if (!o.value) return;
+        if (!sede || o.sede === sede) {
+          const opt = document.createElement("option");
+          opt.value = o.value;
+          opt.textContent = o.text;
+          opt.setAttribute("data-sede", o.sede);
+          if (o.value === actual) opt.selected = true;
+          localSel.appendChild(opt);
+        }
+      });
+    }
+    sedeSel.addEventListener("change", repoblarLocales);
+    repoblarLocales();
+  })();
+</script>
+
+{% endblock %}

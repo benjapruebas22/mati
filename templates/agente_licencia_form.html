@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  .license-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .license-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .license-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
+    padding: 14px 16px;
+    max-width: 860px;
+  }
+
+  .license-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .license-grid .full {
+    grid-column: 1 / -1;
+  }
+
+  .license-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .license-field label {
+    font-size: 12px;
+    color: #64748b;
+  }
+
+  .license-field input,
+  .license-field select,
+  .license-field textarea {
+    font-size: 13px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+  }
+
+  .license-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 6px;
+  }
+
+  @media (max-width: 900px) {
+    .license-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<section class="agentes-main license-shell">
+
+  <header class="section-header license-head">
+    <div>
+      <h1>Nueva licencia</h1>
+      <p class="section-sub">
+        Agente: <strong>{{ agente.agente }}</strong> - Rubro: {{ agente.rubro|upper }}
+      </p>
+    </div>
+
+    <div class="section-actions">
+      <a class="btn outline-slate" href="{{ url_for('agentes_home', id=agente.id) }}">
+        Volver al agente
+      </a>
+    </div>
+  </header>
+
+  <div class="license-card">
+    <form method="post">
+      <div class="license-grid">
+        <div class="license-field full">
+          <label for="tipo">Tipo de licencia</label>
+          <select id="tipo" name="tipo" required>
+            <option value="">Seleccionar...</option>
+            <option value="vacaciones">Vacaciones</option>
+            <option value="enfermedad">Enfermedad</option>
+            <option value="estudio">Estudio</option>
+            <option value="especial">Especial</option>
+            <option value="otros">Otros</option>
+          </select>
+        </div>
+
+        <div class="license-field">
+          <label for="fecha_desde">Desde</label>
+          <input type="date" id="fecha_desde" name="fecha_desde" required>
+        </div>
+        <div class="license-field">
+          <label for="fecha_hasta">Hasta</label>
+          <input type="date" id="fecha_hasta" name="fecha_hasta" required>
+        </div>
+
+        <div class="license-field full">
+          <label for="estado">Estado</label>
+          <select id="estado" name="estado">
+            <option value="PENDIENTE">Pendiente</option>
+            <option value="APROBADA" selected>Aprobada</option>
+            <option value="RECHAZADA">Rechazada</option>
+            <option value="FINALIZADA">Finalizada</option>
+          </select>
+        </div>
+
+        <div class="license-field full">
+          <label for="observaciones">Observaciones</label>
+          <textarea id="observaciones" name="observaciones" rows="3"
+                    placeholder="Motivo, notas internas, etc."></textarea>
+        </div>
+      </div>
+
+      <div class="license-actions">
+        <button type="submit" class="btn outline-amber">Guardar licencia</button>
+        <a class="btn outline-slate" href="{{ url_for('agentes_home', id=agente.id) }}">Cancelar</a>
+      </div>
+    </form>
+  </div>
+
+</section>
+
+{% endblock %}

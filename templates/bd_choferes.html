@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="sedes-section">
+    <h2>Choferes (lista general)</h2>
+
+    <p style="margin-top:6px;color:#94a3b8">
+        Esta lista alimenta el desplegable <b>Chofer</b> del Control Diario.
+        No depende de “Choferes autorizados”.
+    </p>
+
+    <form method="post" style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:end">
+        <div style="min-width:320px">
+            <label style="font-size:12px;color:#64748b">Nombre y apellido</label>
+            <input name="agente" type="text" placeholder="Ej: Juan Pérez"
+                style="width:100%;padding:10px;border-radius:10px;border:1px solid #e5e7eb">
+        </div>
+
+        <button class="btn btn-mpd" type="submit" style="padding:10px 16px;border-radius:999px">
+            Agregar
+        </button>
+
+        <a class="btn btn-mpd" href="{{ url_for('vehiculos_bd_home') }}" style="padding:10px 16px;border-radius:999px">
+            Volver
+        </a>
+    </form>
+
+    <hr style="margin:16px 0;border:none;border-top:1px solid #e5e7eb">
+
+    <div style="overflow:auto;border:1px solid #e5e7eb;border-radius:12px;background:#fff">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead>
+                <tr style="background:#f8fafc;text-align:left">
+                    <th style="padding:10px;border-bottom:1px solid #e5e7eb">ID</th>
+                    <th style="padding:10px;border-bottom:1px solid #e5e7eb">Chofer</th>
+                    <th style="padding:10px;border-bottom:1px solid #e5e7eb">Activo</th>
+                    <th style="padding:10px;border-bottom:1px solid #e5e7eb">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in choferes %}
+                <tr>
+                    <td style="padding:10px;border-bottom:1px solid #eef2f7">{{ c.id }}</td>
+                    <td style="padding:10px;border-bottom:1px solid #eef2f7">{{ c.agente }}</td>
+                    <td style="padding:10px;border-bottom:1px solid #eef2f7">{{ c.activo }}</td>
+                    <td style="padding:10px;border-bottom:1px solid #eef2f7;white-space:nowrap">
+
+                        <a class="btn btn-mpd" href="{{ url_for('bd_choferes_editar', cid=c.id) }}"
+                            style="padding:6px 10px;font-size:12px">
+                            Editar
+                        </a>
+
+                        {% if c.activo|int == 1 %}
+                        <form method="post" action="{{ url_for('bd_choferes_baja', cid=c.id) }}" style="display:inline"
+                            onsubmit="return confirm('¿Dar de baja a {{ c.agente }}?');">
+                            <button class="btn btn-mpd" type="submit"
+                                style="padding:6px 10px;font-size:12px;border-color:#fecaca">
+                                Dar de baja
+                            </button>
+                        </form>
+                        {% else %}
+                        <form method="post" action="{{ url_for('bd_choferes_alta', cid=c.id) }}" style="display:inline"
+                            onsubmit="return confirm('¿Reactivar a {{ c.agente }}?');">
+                            <button class="btn btn-mpd" type="submit"
+                                style="padding:6px 10px;font-size:12px;border-color:#bbf7d0">
+                                Reactivar
+                            </button>
+                        </form>
+                        {% endif %}
+
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" style="padding:14px;text-align:center;color:#94a3b8">Sin choferes cargados.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</section>
+
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="grid-main">
+
+  <div class="left-panel">
+    <div class="hero">
+      <div class="map-card">
+        <h3>Checklist de Seguridad</h3>
+
+        <p style="font-size:13px;color:#64748b;margin-top:4px;">
+          Sede {{ sede.codigo }} — {{ sede.nombre }}
+        </p>
+
+        <a href="{{ url_for('sede_seguridad', codigo=sede.codigo) }}"
+           class="btn xs outline-slate" style="margin-top:10px;">
+          ⬅ Volver a Seguridad
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <h3>Registrar checklist</h3>
+
+    <form method="post" style="max-width:520px;display:flex;flex-direction:column;gap:14px;">
+
+      <label>
+        <input type="checkbox" name="matafuegos_ok" value="1">
+        Matafuegos presentes y visibles
+      </label>
+
+      <label>
+        <input type="checkbox" name="senaletica_ok" value="1">
+        Señalética de emergencia instalada
+      </label>
+
+      <label>
+        <input type="checkbox" name="luces_ok" value="1">
+        Luces de emergencia funcionando
+      </label>
+
+      <label>
+        <input type="checkbox" name="botiquin_ok" value="1">
+        Botiquín completo
+      </label>
+
+      <label>
+        <input type="checkbox" name="evacuacion_ok" value="1">
+        Plano de evacuación actualizado
+      </label>
+
+      <label>
+        <input type="checkbox" name="orden_ok" value="1">
+        Orden y limpieza general adecuados
+      </label>
+
+      <div>
+        <label>Observaciones</label>
+        <textarea name="observaciones" rows="3"
+                  style="width:100%;padding:6px;border-radius:8px;border:1px solid #cbd5e1;"></textarea>
+      </div>
+
+      <button class="btn solid-blue">💾 Guardar checklist</button>
+
+    </form>
+
+  </div>
+
+</section>
+
+{% endblock %}

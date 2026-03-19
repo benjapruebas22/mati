@@ -1,0 +1,80 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+{% set return_to = request.args.get('next') %}
+<section class="agentes-main">
+  <div class="license-card" style="padding:16px;">
+    <h2 style="margin:0 0 6px;">Editar accion</h2>
+    <p class="section-sub" style="margin-top:0;">{{ acc.objetivo_titulo }}</p>
+    <form method="post" class="license-form">
+      {% if return_to == 'cargar' %}
+        <input type="hidden" name="return_to" value="cargar">
+      {% endif %}
+      <div class="license-grid">
+        <div class="license-field full">
+          <label>Accion</label>
+          <input type="text" name="nombre" value="{{ acc.nombre }}">
+        </div>
+        <div class="license-field">
+          <label>Fase</label>
+          <select name="fase">
+            <option value="" {% if not acc.fase %}selected{% endif %}>(sin especificar)</option>
+            <option value="Planificacion" {% if acc.fase=='Planificacion' %}selected{% endif %}>Planificacion</option>
+            <option value="Implementacion" {% if acc.fase=='Implementacion' %}selected{% endif %}>Implementacion</option>
+            <option value="Evaluacion" {% if acc.fase=='Evaluacion' %}selected{% endif %}>Evaluacion</option>
+          </select>
+        </div>
+        <div class="license-field">
+          <label>Area responsable</label>
+          <input type="text" name="responsable_area" value="{{ acc.responsable_area or '' }}">
+        </div>
+        <div class="license-field">
+          <label>Estado</label>
+          <select name="estado">
+            <option value="" {% if not acc.estado %}selected{% endif %}>(sin especificar)</option>
+            <option value="PENDIENTE" {% if acc.estado=='PENDIENTE' %}selected{% endif %}>Pendiente</option>
+            <option value="EN_CURSO" {% if acc.estado=='EN_CURSO' %}selected{% endif %}>En curso</option>
+            <option value="COMPLETADO" {% if acc.estado=='COMPLETADO' %}selected{% endif %}>Completado</option>
+          </select>
+        </div>
+        <div class="license-field">
+          <label>Inicio</label>
+          <input type="date" name="fecha_inicio" value="{{ acc.fecha_inicio or '' }}">
+        </div>
+        <div class="license-field">
+          <label>Fin</label>
+          <input type="date" name="fecha_fin" value="{{ acc.fecha_fin or '' }}">
+        </div>
+        <div class="license-field">
+          <label>Avance %</label>
+          <input type="number" name="avance_pct" min="0" max="100" value="{{ acc.avance_pct or '' }}">
+        </div>
+        <div class="license-field full">
+          <label>Indicador de cumplimiento</label>
+          <input type="text" name="indicador" value="{{ acc.indicador or '' }}">
+        </div>
+        <div class="license-field">
+          <label>Clasificacion</label>
+          <input type="text" name="clasificacion" value="{{ acc.clasificacion or '' }}">
+        </div>
+        <div class="license-field">
+          <label>Justificacion</label>
+          <input type="text" name="justificacion" value="{{ acc.justificacion or '' }}">
+        </div>
+        <div class="license-field full">
+          <label>Evidencia (link)</label>
+          <input type="url" name="evidencia_url" value="{{ acc.evidencia_url or '' }}">
+        </div>
+        <div class="license-field full">
+          <label>Notas</label>
+          <textarea name="notas" rows="3">{{ acc.notas or '' }}</textarea>
+        </div>
+      </div>
+      <div class="license-actions">
+        <button class="btn outline-amber" type="submit">Guardar cambios</button>
+        <a class="btn outline-slate" href="{{ url_for('sst_plan_cargar') if return_to == 'cargar' else url_for('sst_plan') }}">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

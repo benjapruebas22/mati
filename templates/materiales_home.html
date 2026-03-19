@@ -1,0 +1,670 @@
+{% extends "base.html" %}
+{% block content %}
+
+{% set ns = namespace(total=0, bajo=0, sin_obj=0) %}
+{% for m in materiales %}
+  {% set ns.total = ns.total + 1 %}
+  {% if not m.objetivo or m.objetivo <= 0 %}
+    {% set ns.sin_obj = ns.sin_obj + 1 %}
+  {% elif m.cantidad < m.objetivo %}
+    {% set ns.bajo = ns.bajo + 1 %}
+  {% endif %}
+{% endfor %}
+
+<section class="mat-shell">
+  <header class="mat-head card">
+    <div>
+      <p class="mat-kicker">Control interno</p>
+      <h1>Materiales en stock</h1>
+      <p class="mat-sub">Alta, ajuste rapido y control de objetivos de reposicion.</p>
+    </div>
+    <div class="mat-actions">
+      <a class="btn outline-green btn-sm" href="{{ url_for('auditoria_mobiliario') }}">Auditoria mobiliario</a>
+      <a class="btn outline-green btn-sm" href="{{ url_for('auditoria_herramientas') }}">Auditoria herramientas</a>
+      <a class="btn outline-green btn-sm" href="{{ url_for('auditoria_operativa', rubro='vehiculos_estado') }}">Auditoria vehiculos</a>
+      <a class="btn outline-blue btn-sm" href="{{ url_for('obras_home') }}">Volver a Obras</a>
+    </div>
+  </header>
+
+  <div class="mat-kpis">
+    <article class="kpi card">
+      <span>Total items</span>
+      <strong>{{ ns.total }}</strong>
+    </article>
+    <article class="kpi card warn">
+      <span>Debajo objetivo</span>
+      <strong>{{ ns.bajo }}</strong>
+    </article>
+    <article class="kpi card soft">
+      <span>Sin objetivo</span>
+      <strong>{{ ns.sin_obj }}</strong>
+    </article>
+  </div>
+
+  <div class="mat-grid">
+    <section class="card mat-form-card">
+      <div class="card-top">
+        <h2>Agregar material</h2>
+        <span class="tag">Alta</span>
+      </div>
+
+      <form method="post" class="mat-form">
+        <label>Categoria</label>
+        <select name="categoria" required>
+          <option value="">-- elegir --</option>
+          <option value="Gas">Gas refrigerante</option>
+          <option value="Iluminacion">Iluminacion</option>
+          <option value="Mechas">Mechas / Punteras</option>
+          <option value="Pintura">Pintura</option>
+          <option value="Aire">Materiales de aire</option>
+          <option value="Tornilleria">Tornilleria</option>
+          <option value="Otros">Otros</option>
+        </select>
+
+        <label>Item</label>
+        <input type="text" name="item" required placeholder="Ej: R410A, Tubo LED 18W, Tornillos varios">
+
+        <div class="two">
+          <div>
+            <label>Unidad</label>
+            <input type="text" name="unidad" required placeholder="kg / u / mts / caja">
+          </div>
+          <div>
+            <label>Cantidad</label>
+            <input type="number" step="0.1" name="cantidad" value="0">
+          </div>
+        </div>
+
+        <div class="two">
+          <div>
+            <label>Objetivo</label>
+            <input type="number" step="0.1" name="objetivo" placeholder="Ej: 11">
+          </div>
+          <div>
+            <label>Observaciones</label>
+            <input type="text" name="observaciones" placeholder="Marca, color, detalle">
+          </div>
+        </div>
+
+        <button type="submit" class="btn primary btn-wide">Agregar material</button>
+      </form>
+    </section>
+
+    <section class="card mat-table-card">
+      <div class="card-top">
+        <h2>Stock actual</h2>
+        <span class="tag">Movimientos</span>
+      </div>
+
+      <div class="mat-toolbar">
+        <div class="toolbar-field">
+          <label for="mat-filter-q">Buscar</label>
+          <input id="mat-filter-q" type="text" placeholder="Categoria o item">
+        </div>
+        <div class="toolbar-field">
+          <label for="mat-filter-cat">Categoria</label>
+          <select id="mat-filter-cat">
+            <option value="">Todas</option>
+          </select>
+        </div>
+        <div class="toolbar-field">
+          <label for="mat-sort">Orden</label>
+          <select id="mat-sort">
+            <option value="default">Default</option>
+            <option value="faltantes">Faltantes primero</option>
+            <option value="cantidad_desc">Mayor cantidad</option>
+            <option value="cantidad_asc">Menor cantidad</option>
+            <option value="item_az">Item A-Z</option>
+          </select>
+        </div>
+        <div class="toolbar-meta" id="mat-visible-count"></div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="mat-table">
+          <thead>
+            <tr>
+              <th>Categoria</th>
+              <th>Item</th>
+              <th>Unidad</th>
+              <th>Cantidad</th>
+              <th>Progreso</th>
+              <th>Ajuste</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="mat-tbody">
+            {% for m in materiales %}
+            {% set objetivo_val = (m.objetivo if m.objetivo and m.objetivo > 0 else 0) %}
+            {% set faltante_val = (objetivo_val - m.cantidad if objetivo_val > m.cantidad else 0) %}
+            <tr class="mat-row"
+                data-default="{{ loop.index0 }}"
+                data-categoria="{{ (m.categoria or '')|lower }}"
+                data-item="{{ (m.item or '')|lower }}"
+                data-cantidad="{{ m.cantidad or 0 }}"
+                data-objetivo="{{ objetivo_val }}"
+                data-faltante="{{ faltante_val }}">
+              <td>{{ m.categoria }}</td>
+              <td>{{ m.item }}</td>
+              <td>{{ m.unidad }}</td>
+              <td><strong class="qty">{{ m.cantidad }}</strong></td>
+              <td>
+                {% if m.objetivo and m.objetivo > 0 %}
+                  {% set pct = (m.cantidad / m.objetivo * 100) %}
+                  {% if pct < 0 %}{% set pct = 0 %}{% endif %}
+                  {% if pct > 100 %}{% set pct = 100 %}{% endif %}
+                  <div class="bar"><span style="width:{{ pct|round(0) }}%"></span></div>
+                  <small>{{ pct|round(0) }}% - Obj {{ m.objetivo }}</small>
+                {% else %}
+                  <small class="muted">Sin objetivo</small>
+                {% endif %}
+              </td>
+              <td>
+                <form method="post" action="{{ url_for('materiales_ajustar', mid=m.id) }}" class="ajuste">
+                  <input type="number" step="0.1" name="delta" placeholder="+/-">
+                  <button class="btn xs primary" type="submit">Aplicar</button>
+                </form>
+              </td>
+              <td>
+                <details class="edit-block">
+                  <summary class="btn xs outline">Editar</summary>
+                  <form method="post" action="{{ url_for('materiales_editar', mid=m.id) }}" class="edit-form">
+                    <input type="text" name="categoria" value="{{ m.categoria }}">
+                    <input type="text" name="item" value="{{ m.item }}">
+                    <input type="text" name="unidad" value="{{ m.unidad }}">
+                    <input type="number" step="0.1" name="cantidad" value="{{ m.cantidad }}">
+                    <input type="number" step="0.1" name="objetivo" value="{{ m.objetivo or '' }}" placeholder="Objetivo">
+                    <input type="text" name="observaciones" value="{{ m.observaciones or '' }}">
+                    <div class="edit-actions">
+                      <button class="btn xs primary" type="submit">Guardar</button>
+                      <button class="btn xs danger" type="submit"
+                              formaction="{{ url_for('materiales_eliminar', mid=m.id) }}"
+                              formmethod="post"
+                              onclick="return confirm('Eliminar material?');">
+                        Eliminar
+                      </button>
+                    </div>
+                  </form>
+                </details>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="7" class="empty">No hay materiales cargados todavia.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</section>
+
+<style>
+  .mat-shell {
+    --ink: #0f172a;
+    --muted: #64748b;
+    --line: #dbe3ef;
+    --bg-soft: #f5f8ff;
+    --bg: #ffffff;
+    --accent: #2563eb;
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 10px 12px 22px;
+    display: grid;
+    gap: 14px;
+  }
+
+  .card {
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+  }
+
+  .mat-head {
+    padding: 16px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .mat-kicker {
+    margin: 0;
+    color: #1d4ed8;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+
+  .mat-head h1 {
+    margin: 2px 0 0;
+    color: var(--ink);
+    font-size: 30px;
+    line-height: 1.1;
+    font-weight: 900;
+  }
+
+  .mat-sub {
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  .mat-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .mat-actions .btn {
+    border-radius: 999px;
+  }
+
+  .mat-kpis {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .kpi {
+    padding: 12px 14px;
+    border-left: 5px solid #c7d2fe;
+    display: grid;
+    gap: 2px;
+  }
+
+  .kpi.warn {
+    border-left-color: #f59e0b;
+  }
+
+  .kpi.soft {
+    border-left-color: #94a3b8;
+  }
+
+  .kpi span {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .kpi strong {
+    color: var(--ink);
+    font-size: 28px;
+    line-height: 1;
+  }
+
+  .mat-grid {
+    display: grid;
+    gap: 14px;
+    grid-template-columns: minmax(0, 1220px);
+    align-items: start;
+    justify-content: center;
+  }
+
+  .mat-form-card {
+    padding: 14px;
+    width: 100%;
+  }
+
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .card-top h2 {
+    margin: 0;
+    font-size: 24px;
+    line-height: 1.1;
+    color: var(--ink);
+  }
+
+  .tag {
+    background: var(--bg-soft);
+    color: #1e3a8a;
+    border: 1px solid #bfdbfe;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+  }
+
+  .mat-form {
+    display: grid;
+    gap: 8px;
+  }
+
+  .mat-form label {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--ink);
+  }
+
+  .mat-form input,
+  .mat-form select {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: #fff;
+    color: var(--ink);
+    font-size: 13px;
+    padding: 9px 10px;
+  }
+
+  .mat-form input:focus,
+  .mat-form select:focus {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+    outline: none;
+  }
+
+  .mat-form .two {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .mat-table-card {
+    padding: 14px;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .table-wrap {
+    width: 100%;
+    overflow: visible;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #fff;
+  }
+
+  .mat-toolbar {
+    display: grid;
+    grid-template-columns: 1.2fr 0.9fr 0.9fr;
+    gap: 8px;
+    align-items: end;
+    margin: 0 0 10px;
+  }
+
+  .toolbar-field {
+    display: grid;
+    gap: 4px;
+  }
+
+  .toolbar-field label {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .03em;
+  }
+
+  .mat-toolbar input,
+  .mat-toolbar select {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-size: 12px;
+    background: #fff;
+  }
+
+  .toolbar-meta {
+    grid-column: 1 / -1;
+    justify-self: start;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+    padding-bottom: 0;
+    white-space: nowrap;
+  }
+
+  .mat-table {
+    width: 100%;
+    min-width: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
+  }
+
+  .mat-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #eef4ff;
+    color: #0b2a57;
+    font-size: 12px;
+    text-align: left;
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--line);
+    white-space: normal;
+  }
+
+  .mat-table tbody td {
+    border-top: 1px solid #eef2f7;
+    padding: 9px 10px;
+    font-size: 13px;
+    vertical-align: top;
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .mat-table th:nth-child(1) { width: 12%; }
+  .mat-table th:nth-child(2) { width: 18%; }
+  .mat-table th:nth-child(3) { width: 9%; }
+  .mat-table th:nth-child(4) { width: 10%; }
+  .mat-table th:nth-child(5) { width: 24%; }
+  .mat-table th:nth-child(6) { width: 16%; }
+  .mat-table th:nth-child(7) { width: 11%; }
+
+  .mat-table tbody tr:hover td {
+    background: #f8fbff;
+  }
+
+  .qty {
+    color: #0b3a88;
+    font-size: 15px;
+  }
+
+  .bar {
+    width: 150px;
+    height: 8px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
+
+  .bar span {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, #4f46e5, #0ea5e9 55%, #16a34a);
+  }
+
+  .mat-table small {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .muted {
+    color: #94a3b8;
+  }
+
+  .ajuste {
+    display: grid;
+    grid-template-columns: minmax(64px, 1fr) auto;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .ajuste input {
+    width: 100%;
+    min-width: 68px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 7px 8px;
+  }
+
+  .ajuste .btn {
+    white-space: nowrap;
+    min-width: 76px;
+    text-align: center;
+  }
+
+  .edit-block summary {
+    cursor: pointer;
+    width: fit-content;
+    list-style: none;
+  }
+
+  .edit-block summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .edit-form {
+    margin-top: 8px;
+    display: grid;
+    gap: 6px;
+  }
+
+  .edit-form input {
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 7px 8px;
+    font-size: 12px;
+  }
+
+  .edit-actions {
+    display: flex;
+    gap: 6px;
+  }
+
+  .empty {
+    text-align: center;
+    color: var(--muted);
+    padding: 16px !important;
+  }
+
+  @media (max-width: 1180px) {
+    .mat-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 780px) {
+    .mat-head h1 {
+      font-size: 25px;
+    }
+
+    .mat-kpis {
+      grid-template-columns: 1fr;
+    }
+
+    .mat-form .two {
+      grid-template-columns: 1fr;
+    }
+
+    .mat-toolbar {
+      grid-template-columns: 1fr;
+    }
+
+    .toolbar-meta {
+      justify-self: start;
+      padding-bottom: 0;
+    }
+  }
+</style>
+
+<script>
+  (function () {
+    const qInput = document.getElementById("mat-filter-q");
+    const catSelect = document.getElementById("mat-filter-cat");
+    const sortSelect = document.getElementById("mat-sort");
+    const tbody = document.getElementById("mat-tbody");
+    const countBox = document.getElementById("mat-visible-count");
+    const tableWrap = document.querySelector(".table-wrap");
+    if (!qInput || !catSelect || !sortSelect || !tbody || !countBox) return;
+
+    const rows = Array.from(tbody.querySelectorAll("tr.mat-row"));
+    const categories = [...new Set(rows.map(r => r.dataset.categoria).filter(Boolean))].sort();
+    categories.forEach(cat => {
+      const op = document.createElement("option");
+      op.value = cat;
+      op.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
+      catSelect.appendChild(op);
+    });
+
+    const toNum = (v) => Number(v || 0);
+
+    function matchRow(row) {
+      const q = qInput.value.trim().toLowerCase();
+      const cat = catSelect.value;
+      const hay = (row.dataset.categoria + " " + row.dataset.item);
+      const okText = !q || hay.includes(q);
+      const okCat = !cat || row.dataset.categoria === cat;
+      return okText && okCat;
+    }
+
+    function sortRows(visibleRows) {
+      const mode = sortSelect.value;
+      const cmpNumDesc = (a, b, key) => toNum(b.dataset[key]) - toNum(a.dataset[key]);
+      const cmpNumAsc = (a, b, key) => toNum(a.dataset[key]) - toNum(b.dataset[key]);
+
+      if (mode === "faltantes") {
+        visibleRows.sort((a, b) => {
+          const d = cmpNumDesc(a, b, "faltante");
+          if (d !== 0) return d;
+          return cmpNumAsc(a, b, "default");
+        });
+        return;
+      }
+      if (mode === "cantidad_desc") {
+        visibleRows.sort((a, b) => cmpNumDesc(a, b, "cantidad"));
+        return;
+      }
+      if (mode === "cantidad_asc") {
+        visibleRows.sort((a, b) => cmpNumAsc(a, b, "cantidad"));
+        return;
+      }
+      if (mode === "item_az") {
+        visibleRows.sort((a, b) => (a.dataset.item || "").localeCompare(b.dataset.item || ""));
+        return;
+      }
+      visibleRows.sort((a, b) => cmpNumAsc(a, b, "default"));
+    }
+
+    function applyFilters() {
+      const visible = [];
+      rows.forEach(row => {
+        const show = matchRow(row);
+        row.style.display = show ? "" : "none";
+        if (show) visible.push(row);
+      });
+
+      sortRows(visible);
+      visible.forEach(row => tbody.appendChild(row));
+      countBox.textContent = `${visible.length} visibles / ${rows.length} total`;
+    }
+
+    qInput.addEventListener("input", applyFilters);
+    catSelect.addEventListener("change", applyFilters);
+    sortSelect.addEventListener("change", applyFilters);
+    applyFilters();
+    if (tableWrap) {
+      tableWrap.scrollLeft = 0;
+      tableWrap.scrollTop = 0;
+    }
+    window.scrollTo(0, 0);
+  })();
+</script>
+
+{% endblock %}

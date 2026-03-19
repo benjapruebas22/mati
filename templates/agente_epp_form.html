@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+  .license-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .license-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .license-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
+    padding: 14px 16px;
+  }
+
+  .actions-cell {
+    white-space: nowrap;
+    text-align: right;
+  }
+
+  .icon-btn {
+    border: none;
+    background: transparent;
+    padding: 0 4px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .icon-btn.danger {
+    color: #b91c1c;
+  }
+</style>
+
+<section class="agentes-main license-shell">
+
+  <header class="section-header license-head">
+    <div>
+      <h1>EPP / Herramientas del agente</h1>
+      <p class="section-sub">
+        {{ agente.agente }} - Rubro: {{ agente.rubro|upper }}
+      </p>
+    </div>
+
+    <div class="section-actions">
+      <a class="btn outline-slate" href="{{ url_for('agentes_home', id=agente.id) }}">
+        Volver a la ficha del agente
+      </a>
+    </div>
+  </header>
+
+  <div class="grid-main">
+    <div class="left-panel">
+      <div class="license-card">
+        <div class="agent-detail-header">
+          <div class="agent-photo" style="display:flex;align-items:center;justify-content:center;">
+            AG
+          </div>
+          <div>
+            <div class="agent-detail-name">{{ agente.agente }}</div>
+            <div class="agent-detail-rubro">Rubro: {{ agente.rubro|upper }}</div>
+          </div>
+        </div>
+
+        <div class="agent-detail-body">
+          <div class="agent-detail-section">
+            <div class="agent-detail-section-title">
+              {% if epp_editar %}EDITAR ENTREGA{% else %}NUEVA ENTREGA{% endif %}
+            </div>
+
+            <form method="post"
+                  class="license-form"
+                  action="{% if epp_editar %}
+                             {{ url_for('agente_epp_editar',
+                                        agente_id=agente.id,
+                                        epp_id=epp_editar.id) }}
+                          {% else %}
+                             {{ url_for('agente_epp', id=agente.id) }}
+                          {% endif %}">
+
+              <div class="license-grid">
+                <div class="license-field full">
+                  <label for="tipo">Elemento</label>
+                  <input type="text" id="tipo" name="tipo" required
+                         value="{{ epp_editar.tipo if epp_editar else '' }}"
+                         placeholder="Ej: Casco, Zapatos dielectricos, Llave francesa, etc.">
+                </div>
+
+                <div class="license-field">
+                  <label for="categoria">Categoria</label>
+                  <select id="categoria" name="categoria">
+                    <option value="" {% if not epp_editar or not epp_editar.categoria %}selected{% endif %}>(sin especificar)</option>
+                    <option value="EPP" {% if epp_editar and epp_editar.categoria == 'EPP' %}selected{% endif %}>EPP</option>
+                    <option value="HERRAMIENTA" {% if epp_editar and epp_editar.categoria == 'HERRAMIENTA' %}selected{% endif %}>Herramienta</option>
+                  </select>
+                </div>
+                <div class="license-field">
+                  <label for="cantidad">Cantidad</label>
+                  <input type="number" id="cantidad" name="cantidad" min="1"
+                         value="{{ epp_editar.cantidad if epp_editar else 1 }}">
+                </div>
+
+                <div class="license-field">
+                  <label for="fecha_entrega">Fecha de entrega</label>
+                  <input type="date" id="fecha_entrega" name="fecha_entrega" required
+                         value="{{ epp_editar.fecha_entrega if epp_editar else '' }}">
+                </div>
+                <div class="license-field">
+                  <label for="estado">Estado</label>
+                  <select id="estado" name="estado">
+                    <option value="" {% if not epp_editar or not epp_editar.estado %}selected{% endif %}>(sin especificar)</option>
+                    <option value="ENTREGADO" {% if epp_editar and epp_editar.estado == 'ENTREGADO' %}selected{% endif %}>Entregado</option>
+                    <option value="DEVUELTO" {% if epp_editar and epp_editar.estado == 'DEVUELTO' %}selected{% endif %}>Devuelto</option>
+                    <option value="BAJA" {% if epp_editar and epp_editar.estado == 'BAJA' %}selected{% endif %}>Baja</option>
+                    <option value="PERDIDO" {% if epp_editar and epp_editar.estado == 'PERDIDO' %}selected{% endif %}>Perdido</option>
+                  </select>
+                </div>
+
+                <div class="license-field full">
+                  <label for="observaciones">Observaciones</label>
+                  <textarea id="observaciones" name="observaciones" rows="3"
+                            placeholder="Numero de serie, marca, detalle de uso, etc.">{{ epp_editar.observaciones if epp_editar else '' }}</textarea>
+                </div>
+              </div>
+
+              <div class="license-actions">
+                <button type="submit" class="btn outline-amber">
+                  Guardar {% if epp_editar %}cambios{% else %}entrega{% endif %}
+                </button>
+                <a class="btn outline-slate"
+                   href="{{ url_for('agentes_home', id=agente.id) }}">
+                  Cancelar
+                </a>
+              </div>
+            </form>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="right-panel">
+      <div class="agent-licenses-card license-card">
+        <div class="agent-licenses-header">
+          <h3>Historial de EPP / Herramientas</h3>
+        </div>
+
+        {% if entregas and entregas|length > 0 %}
+          <div class="agent-licenses-table-wrapper">
+            <table class="agent-licenses-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Elemento</th>
+                  <th>Categoria</th>
+                  <th>Cant.</th>
+                  <th>Estado</th>
+                  <th>Observaciones</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for e in entregas %}
+                  <tr>
+                    <td>{{ e.fecha_entrega }}</td>
+                    <td>{{ e.tipo }}</td>
+                    <td>{{ e.categoria }}</td>
+                    <td>{{ e.cantidad }}</td>
+                    <td>{{ e.estado }}</td>
+                    <td>{{ e.observaciones }}</td>
+                    <td class="actions-cell">
+                      <a class="btn xs outline-amber"
+                         href="{{ url_for('agente_epp_editar',
+                                          agente_id=agente.id,
+                                          epp_id=e.id) }}">
+                        Editar
+                      </a>
+                      <form method="post"
+                            action="{{ url_for('agente_epp_eliminar',
+                                               agente_id=agente.id,
+                                               epp_id=e.id) }}"
+                            style="display:inline;"
+                            onsubmit="return confirm('Eliminar esta entrega?');">
+                        <button type="submit" class="icon-btn danger">X</button>
+                      </form>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="panel-note">
+            No hay entregas registradas para este agente.
+          </p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</section>
+
+{% endblock %}

@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  .license-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .license-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .license-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
+    padding: 14px 16px;
+  }
+
+  .license-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .license-grid .full {
+    grid-column: 1 / -1;
+  }
+
+  .license-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .license-field label {
+    font-size: 12px;
+    color: #64748b;
+  }
+
+  .license-field input,
+  .license-field select,
+  .license-field textarea {
+    font-size: 13px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+  }
+
+  .license-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 6px;
+  }
+
+  @media (max-width: 900px) {
+    .license-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<section class="agentes-main license-shell">
+
+  <header class="section-header license-head">
+    <div>
+      <h1>Editar compensatorio</h1>
+      <p class="section-sub">
+        Agente: <strong>{{ agente.agente }}</strong> - Rubro: {{ agente.rubro|upper }}
+      </p>
+    </div>
+
+    <div class="section-actions">
+      <a class="btn outline-slate" href="{{ url_for('agente_compensatorios', id=agente.id) }}">
+        Volver
+      </a>
+    </div>
+  </header>
+
+  <div class="license-card">
+    <form method="post">
+      <div class="license-grid">
+        <div class="license-field">
+          <label for="tipo">Tipo</label>
+          <select id="tipo" name="tipo" required>
+            <option value="">Seleccionar...</option>
+            <option value="INICIAL" {% if mov.tipo == 'INICIAL' %}selected{% endif %}>Saldo inicial</option>
+            <option value="FERIA" {% if mov.tipo == 'FERIA' %}selected{% endif %}>Feria (dias)</option>
+            <option value="HORAS" {% if mov.tipo == 'HORAS' %}selected{% endif %}>Horas especiales</option>
+            <option value="TOMA" {% if mov.tipo == 'TOMA' %}selected{% endif %}>Toma de compensatorio</option>
+          </select>
+        </div>
+
+        <div class="license-field">
+          <label for="fecha">Fecha</label>
+          <input type="date" id="fecha" name="fecha" value="{{ mov.fecha or '' }}">
+        </div>
+
+        <div class="license-field">
+          <label for="periodo">Periodo (mes)</label>
+          <input type="text" id="periodo" name="periodo" value="{{ mov.periodo or '' }}">
+        </div>
+
+        <div class="license-field">
+          <label for="dias">Dias</label>
+          <input type="number" id="dias" name="dias" step="0.5" min="0" value="{{ mov.dias or 0 }}">
+        </div>
+
+        <div class="license-field">
+          <label for="horas">Horas</label>
+          <input type="number" id="horas" name="horas" step="0.5" min="0" value="{{ mov.horas or 0 }}">
+        </div>
+
+        <div class="license-field">
+          <label for="desde">Desde (toma)</label>
+          <input type="date" id="desde" name="desde" value="{{ mov.desde or '' }}">
+        </div>
+
+        <div class="license-field">
+          <label for="hasta">Hasta (toma)</label>
+          <input type="date" id="hasta" name="hasta" value="{{ mov.hasta or '' }}">
+        </div>
+
+        <div class="license-field full">
+          <label for="observaciones">Observaciones</label>
+          <textarea id="observaciones" name="observaciones" rows="2">{{ mov.observaciones or '' }}</textarea>
+        </div>
+      </div>
+
+      <div class="license-actions">
+        <button type="submit" class="btn outline-amber">Guardar cambios</button>
+        <a class="btn outline-slate" href="{{ url_for('agente_compensatorios', id=agente.id) }}">Cancelar</a>
+      </div>
+    </form>
+  </div>
+
+</section>
+
+<script>
+  (function () {
+    const tipo = document.getElementById("tipo");
+    const dias = document.getElementById("dias");
+    const horas = document.getElementById("horas");
+    const desde = document.getElementById("desde");
+    const hasta = document.getElementById("hasta");
+
+    function toggleFields() {
+      const t = (tipo.value || "").toUpperCase();
+      dias.required = (t === "INICIAL" || t === "FERIA");
+      horas.required = (t === "HORAS");
+      desde.required = (t === "TOMA");
+      hasta.required = (t === "TOMA");
+    }
+
+    tipo.addEventListener("change", toggleFields);
+    toggleFields();
+  })();
+</script>
+
+{% endblock %}

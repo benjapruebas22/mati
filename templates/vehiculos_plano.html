@@ -1,0 +1,447 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="sedes-section vehiculos-home">
+
+  <!-- CABECERA + BOTONES A CONTROL DIARIO / COMBUSTIBLE -->
+  <header class="vh-header">
+    <div>
+      <h2>Vehículos · Plano y estadísticas</h2>
+      <p class="vh-sub">
+        Vista general de lugares reservados y estado de la flota.
+      </p>
+    </div>
+
+    <div class="vh-actions">
+      <a class="btn sm outline" href="{{ url_for('vehiculos_control_diario') }}">
+        Control diario
+      </a>
+      <a class="btn sm outline" href="{{ url_for('vehiculos_combustible') }}">
+        Combustible
+      </a>
+    </div>
+
+    <div class="vh-kpis">
+      <div class="kpi-card">
+        <span class="kpi-label">Total vehículos</span>
+        <span class="kpi-value">{{ total_vehiculos }}</span>
+      </div>
+      <div class="kpi-card kpi-reservados">
+        <span class="kpi-label">Con lugar reservado</span>
+        <span class="kpi-value">{{ reservados }}</span>
+      </div>
+      <div class="kpi-card kpi-libres">
+        <span class="kpi-label">Sin lugar asignado</span>
+        <span class="kpi-value">{{ libres }}</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="vh-layout">
+    <!-- IZQUIERDA: PLANO DE LUGARES (CON ASIGNACIÓN) -->
+    <section class="vh-plano">
+      <div class="vh-plano-header">
+        <h3>Plano de lugares reservados</h3>
+        <p>Estado actual de cocheras, lavadero, autorizadas, etc.</p>
+      </div>
+
+      <!-- FORMULARIO PARA ASIGNAR LUGAR (similar a como lo tenías) -->
+      <form method="post" class="plano-form">
+        <div class="plano-form-row">
+          <div>
+            <label>Lugar</label>
+            <select name="lugar" required>
+              <option value="">Lugar...</option>
+              {% for codigo, nombre in lugares %}
+                <option value="{{ codigo }}">{{ nombre }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div>
+            <label>Vehículo</label>
+            <select name="patente" required>
+              <option value="">Vehículo...</option>
+              {% for v in vehiculos %}
+                <option value="{{ v['patente'] }}">
+                  {{ v['codigo_interno'] }} — {{ v['patente'] }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="plano-form-btn">
+            <button class="btn primary" type="submit">Asignar</button>
+          </div>
+        </div>
+      </form>
+
+      <!-- PLANO VISUAL -->
+      <div class="plano-grid">
+        {% for slot in plano %}
+          {% set v = slot.vehiculo %}
+          <div class="slot-card {% if v %}ocupado{% else %}libre{% endif %}">
+            <div class="slot-title">{{ slot.nombre }}</div>
+
+            {% if v %}
+              <div class="slot-body">
+                <div class="slot-veh">
+                  <span class="slot-placa">{{ v["codigo_interno"] }}</span>
+                  <span class="slot-patente">{{ v["patente"] }}</span>
+                </div>
+                <div class="slot-estado ocupado-badge">
+                  Reservado
+                </div>
+              </div>
+            {% else %}
+              <div class="slot-body libre-text">
+                Libre
+              </div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- DERECHA: ESTADÍSTICAS + MINI CALENDARIO -->
+    <section class="vh-stats">
+      <h3>Estadísticas y filtros</h3>
+      <p class="vh-sub">
+        Filtrá por fechas, vehículo, chofer y agente trasladado.
+        Abajo se ve cuántos viajes, KM y combustible se usó.
+      </p>
+
+      <!-- FILTROS -->
+      <form method="get" class="vh-filtros km-filtros">
+        <div>
+          <label>Desde</label>
+          <input type="date" name="desde" value="{{ f_desde }}">
+        </div>
+
+        <div>
+          <label>Hasta</label>
+          <input type="date" name="hasta" value="{{ f_hasta }}">
+        </div>
+
+        <div>
+          <label>Vehículo</label>
+          <select name="f_patente">
+            <option value="">(Todos)</option>
+            {% for v in vehiculos %}
+              <option value="{{ v['patente'] }}"
+                      {% if f_patente == v['patente'] %}selected{% endif %}>
+                {{ v['codigo_interno'] }} — {{ v['patente'] }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label>Chofer</label>
+          <select name="f_chofer_id">
+            <option value="">(Todos)</option>
+            {% for c in choferes %}
+              <option value="{{ c['id'] }}"
+                      {% if f_chofer_id == c['id']|string %}selected{% endif %}>
+                {{ c['agente'] }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div>
+          <label>Agente trasladado</label>
+          <select name="f_agente">
+            <option value="">(Todos)</option>
+            {% for a in agentes_tras %}
+              <option value="{{ a['agente_trasladado'] }}"
+                      {% if f_agente == a['agente_trasladado'] %}selected{% endif %}>
+                {{ a['agente_trasladado'] }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="km-filtros-boton">
+          <button class="btn primary sm" type="submit">Filtrar</button>
+        </div>
+      </form>
+
+      <!-- TABLA DE RESULTADOS -->
+      <table class="table-soft vh-table">
+        <thead>
+          <tr>
+            <th>Vehículo</th>
+            <th>Chofer</th>
+            <th>Agente</th>
+            <th>Viajes</th>
+            <th>KM</th>
+            <th>Litros</th>
+            <th>$ combustible</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in stats %}
+          <tr>
+            <td>{{ s.codigo_interno }} — {{ s.patente }}</td>
+            <td>{{ s.chofer_nombre }}</td>
+            <td>{{ s.agente_nombre }}</td>
+            <td>{{ s.cant_viajes }}</td>
+            <td>{{ '%.1f'|format(s.km_totales) }}</td>
+            <td>{{ '%.1f'|format(s.litros) }}</td>
+            <td>{{ '%.2f'|format(s.importe) }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" style="text-align:center;color:#94a3b8">
+              Sin datos para este filtro.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- MINI CALENDARIO (queda igual que antes) -->
+      <div class="vh-mini-cal">
+        <h4>Calendario {{ hoy.year }}</h4>
+
+        {% set meses = [
+          'Enero','Febrero','Marzo','Abril','Mayo','Junio',
+          'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'
+        ] %}
+
+        <div class="mini-cal-months">
+          {% for nombre in meses %}
+            <a
+              class="mini-pill-month {% if loop.index == hoy.month %}active{% endif %}"
+              href="{{ url_for('calendario', fecha=hoy.replace(month=loop.index, day=1).isoformat()) }}"
+            >
+              {{ nombre }}
+            </a>
+          {% endfor %}
+        </div>
+
+        <div class="mini-cal-day">
+          <p class="mini-cal-title">
+            Novedades del día {{ hoy.isoformat() }}
+          </p>
+          <p class="mini-cal-sub">
+            Sincronizado con el módulo Calendario.
+            <a href="{{ url_for('calendario', fecha=hoy.isoformat()) }}">
+              Ver detalles
+            </a>
+          </p>
+        </div>
+      </div>
+    </section>
+
+
+<style>
+  .vehiculos-home {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .vh-header {
+    display: grid;
+    grid-template-columns: minmax(0,1.4fr) auto auto;
+    gap: 12px;
+    align-items: flex-end;
+  }
+
+  .vh-sub {
+    margin: 2px 0 0;
+    font-size: 13px;
+    color: #64748b;
+  }
+
+  .vh-actions {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+  }
+
+  .vh-kpis {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  .kpi-card {
+    min-width: 120px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .kpi-label {
+    font-size: 11px;
+    color: #64748b;
+  }
+  .kpi-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+  .kpi-reservados {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+  }
+  .kpi-libres {
+    background: #ecfdf3;
+    border-color: #bbf7d0;
+  }
+
+  .vh-layout {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 18px;
+  }
+
+  .vh-plano,
+  .vh-stats {
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    padding: 12px 14px;
+  }
+
+  .vh-plano-header h3,
+  .vh-stats h3 {
+    margin: 0 0 2px;
+    font-size: 15px;
+  }
+
+  .vh-plano-header p {
+    margin: 0;
+    font-size: 12px;
+    color: #64748b;
+  }
+
+  /* formulario asignar lugar */
+  .plano-form {
+    margin-top: 8px;
+    margin-bottom: 8px;
+  }
+  .plano-form-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: flex-end;
+  }
+  .plano-form-row label {
+    display: block;
+    font-size: 11px;
+    margin-bottom: 2px;
+    color: #64748b;
+  }
+  .plano-form-row select {
+    min-width: 140px;
+    padding: 4px 6px;
+    font-size: 12px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+  }
+  .plano-form-btn {
+    padding-top: 16px;
+  }
+
+  .plano-grid {
+    margin-top: 6px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 8px;
+  }
+
+  .slot-card {
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 8px;
+    font-size: 11px;
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .slot-card.ocupado {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+  }
+  .slot-card.libre {
+    background: #f9fafb;
+  }
+  .slot-title {
+    font-weight: 600;
+    color: #0f172a;
+  }
+  .slot-body {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 4px;
+  }
+  .slot-veh {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .slot-placa {
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .slot-patente {
+    font-size: 11px;
+    color: #64748b;
+  }
+  .slot-estado {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 999px;
+  }
+  .ocupado-badge {
+    background: #1d4ed8;
+    color: #ffffff;
+  }
+  .libre-text {
+    font-size: 12px;
+    color: #64748b;
+  }
+
+  .vh-filtros {
+    margin: 10px 0;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .vh-filtros input,
+  .vh-filtros select {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+  }
+
+  .vh-table th,
+  .vh-table td {
+    font-size: 12px;
+  }
+
+  @media (max-width: 900px) {
+    .vh-header {
+      grid-template-columns: 1fr;
+    }
+    .vh-layout {
+      grid-template-columns: 1fr;
+    }
+    .vh-kpis {
+      justify-content: flex-start;
+    }
+  }
+</style>
+
+{% endblock %}

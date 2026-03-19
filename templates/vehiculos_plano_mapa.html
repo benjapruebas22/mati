@@ -1,0 +1,564 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="sedes-section vehiculos-page">
+
+  <h2>Vehículos · Plano y estadísticas</h2>
+  <p class="page-sub">
+    Plano de lugares reservados, estado de la flota y pedidos de materiales vinculados al calendario general.
+  </p>
+
+  <div class="veh-layout">
+
+    <!-- ==================== COLUMNA IZQUIERDA: PLANO ==================== -->
+    <div class="veh-col-left">
+      <div class="card-soft">
+        <div class="card-header">
+          <div>
+            <h3>Plano de lugares reservados</h3>
+            <p class="card-sub">
+              Estado actual de cocheras, lavadero, autorizadas, etc.
+            </p>
+          </div>
+        </div>
+
+        <!-- Bloque servicios superiores -->
+        <div class="plano-sector">
+          <div class="plano-row">
+            {% set box = lugares['LAV_R1'] %}
+            <div class="plano-box {% if box %}ocupado{% endif %}">
+              <div class="pb-title">Lavadero</div>
+              {% if box %}
+                <div class="pb-veh">{{ box['codigo_interno'] }} — {{ box['patente'] }}</div>
+                <span class="pb-tag">Reservado</span>
+              {% else %}
+                <div class="pb-veh pb-libre">Libre</div>
+              {% endif %}
+            </div>
+
+            {% set box = lugares['SERV_R1'] %}
+            <div class="plano-box {% if box %}ocupado{% endif %}">
+              <div class="pb-title">Service</div>
+              {% if box %}
+                <div class="pb-veh">{{ box['codigo_interno'] }} — {{ box['patente'] }}</div>
+                <span class="pb-tag">Reservado</span>
+              {% else %}
+                <div class="pb-veh pb-libre">Libre</div>
+              {% endif %}
+            </div>
+
+            {% set box = lugares['VIG_R1'] %}
+            <div class="plano-box {% if box %}ocupado{% endif %}">
+              <div class="pb-title">Autorizada</div>
+              {% if box %}
+                <div class="pb-veh">{{ box['codigo_interno'] }} — {{ box['patente'] }}</div>
+                <span class="pb-tag">Reservado</span>
+              {% else %}
+                <div class="pb-veh pb-libre">Libre</div>
+              {% endif %}
+            </div>
+
+            {% set box = lugares['INDEP202_R1'] %}
+            <div class="plano-box {% if box %}ocupado{% endif %}">
+              <div class="pb-title">Indep 202 R05</div>
+              {% if box %}
+                <div class="pb-veh">{{ box['codigo_interno'] }} — {{ box['patente'] }}</div>
+                <span class="pb-tag">Reservado</span>
+              {% else %}
+                <div class="pb-veh pb-libre">Libre</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Independencia al 100 -->
+        <div class="plano-sector">
+          <div class="plano-sector-title">Independencia al 100</div>
+          <div class="plano-row">
+            {% set box = lugares['SM148_R1'] %}
+            <div class="plano-box {% if box %}ocupado{% endif %}">
+              <div class="pb-title">Coch1</div>
+              {% if box %}
+                <div class="pb-veh">{{ box['codigo_interno'] }} — {{ box['patente'] }}</div>
+                <span class="pb-tag">Reservado</span>
+              {% else %}
+                <div class="pb-veh pb-libre">Libre</div>
+              {% endif %}
+            </div>
+
+            {% set box = lugares['SM148_R2'] %}
+            <div class="plano-box {% if box %}ocupado{% endif %}">
+              <div class="pb-title">Coch2</div>
+              {% if box %}
+                <div class="pb-veh">{{ box['codigo_interno'] }} — {{ box['patente'] }}</div>
+                <span class="pb-tag">Reservado</span>
+              {% else %}
+                <div class="pb-veh pb-libre">Libre</div>
+              {% endif %}
+            </div>
+
+            {% set box = lugares['SM148_R3'] %}
+            <div class="plano-box {% if box %}ocupado{% endif %}">
+              <div class="pb-title">Coch3</div>
+              {% if box %}
+                <div class="pb-veh">{{ box['codigo_interno'] }} — {{ box['patente'] }}</div>
+                <span class="pb-tag">Reservado</span>
+              {% else %}
+                <div class="pb-veh pb-libre">Libre</div>
+              {% endif %}
+            </div>
+
+            {% set box = lugares['SM148_R4'] %}
+            <div class="plano-box {% if box %}ocupado{% endif %}">
+              <div class="pb-title">Coch4</div>
+              {% if box %}
+                <div class="pb-veh">{{ box['codigo_interno'] }} — {{ box['patente'] }}</div>
+                <span class="pb-tag">Reservado</span>
+              {% else %}
+                <div class="pb-veh pb-libre">Libre</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- SM 137 -->
+        <div class="plano-sector">
+          <div class="plano-sector-title">SM 137</div>
+          <div class="plano-row">
+            {% set box = lugares['SM137_R1'] %}
+            <div class="plano-box {% if box %}ocupado{% endif %}">
+              <div class="pb-title">R01</div>
+              {% if box %}
+                <div class="pb-veh">{{ box['codigo_interno'] }} — {{ box['patente'] }}</div>
+                <span class="pb-tag">Reservado</span>
+              {% else %}
+                <div class="pb-veh pb-libre">Libre</div>
+              {% endif %}
+            </div>
+
+            {% set box = lugares['SM137_R2'] %}
+            <div class="plano-box {% if box %}ocupado{% endif %}">
+              <div class="pb-title">R02</div>
+              {% if box %}
+                <div class="pb-veh">{{ box['codigo_interno'] }} — {{ box['patente'] }}</div>
+                <span class="pb-tag">Reservado</span>
+              {% else %}
+                <div class="pb-veh pb-libre">Libre</div>
+              {% endif %}
+            </div>
+
+            {% set box = lugares['SM137_R3'] %}
+            <div class="plano-box {% if box %}ocupado{% endif %}">
+              <div class="pb-title">R03</div>
+              {% if box %}
+                <div class="pb-veh">{{ box['codigo_interno'] }} — {{ box['patente'] }}</div>
+                <span class="pb-tag">Reservado</span>
+              {% else %}
+                <div class="pb-veh pb-libre">Libre</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- SM 271 -->
+        <div class="plano-sector">
+          <div class="plano-sector-title">SM 271</div>
+          <div class="plano-row">
+            {% set box = lugares['SM271_R1'] %}
+            <div class="plano-box {% if box %}ocupado{% endif %}">
+              <div class="pb-title">R04</div>
+              {% if box %}
+                <div class="pb-veh">{{ box['codigo_interno'] }} — {{ box['patente'] }}</div>
+                <span class="pb-tag">Reservado</span>
+              {% else %}
+                <div class="pb-veh pb-libre">Libre</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ==================== COLUMNA DERECHA: STATS + CALENDARIO ==================== -->
+    <div class="veh-col-right">
+
+      <!-- Totales -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-label">Total vehículos</div>
+          <div class="stat-value">{{ total_vehiculos }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Con lugar reservado</div>
+          <div class="stat-value">{{ reservados }}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Sin lugar asignado</div>
+          <div class="stat-value">{{ libres }}</div>
+        </div>
+      </div>
+
+      <!-- Calendario + pedidos del día -->
+      <div class="card-soft calendar-card">
+
+        <div class="cal-header-inline">
+          <div>
+            <h3>Calendario {{ fecha_sel.year }}</h3>
+            <p class="card-sub">
+              Novedades y pedidos vinculados a vehículos / sedes.
+            </p>
+          </div>
+
+          <div class="cal-months-inline">
+            {% set meses = [
+              'Enero','Febrero','Marzo','Abril','Mayo','Junio',
+              'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'
+            ] %}
+            {% for nombre in meses %}
+              <a
+                class="pill-month {% if loop.index == fecha_sel.month %}active{% endif %}"
+                href="{{ url_for('vehiculos_control_diario',
+                                 fecha=fecha_sel.replace(month=loop.index, day=1).isoformat()) }}"
+              >
+                {{ nombre }}
+              </a>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Novedades del día -->
+        <div class="day-novedades">
+          <div class="day-title">
+            Novedades del {{ fecha_sel.strftime('%d/%m/%Y') }}
+          </div>
+
+          {% if pedidos %}
+            <ul class="pedido-list">
+              {% for p in pedidos %}
+              <li>
+                <div class="pedido-top">
+                  <span class="badge-prio {{ (p['prioridad'] or 'Media')|lower }}">
+                    {{ p['prioridad'] or 'Media' }}
+                  </span>
+                  <span class="pedido-estado">
+                    {{ p['estado'] or 'PENDIENTE' }}
+                  </span>
+                </div>
+                <div class="pedido-detalle">
+                  <strong>{{ p['sede'] or 'Sin sede' }}</strong>
+                  {% if p['solicitante'] %}
+                    · {{ p['solicitante'] }}
+                  {% endif %}
+                </div>
+                <div class="pedido-nota">
+                  {{ p['detalle'] }}
+                </div>
+              </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="no-novedades">
+              Sin pedidos cargados para este día.
+            </p>
+          {% endif %}
+        </div>
+
+        <hr class="divider">
+
+        <!-- Nuevo pedido de materiales -->
+        <div class="nuevo-pedido">
+          <h4>Nuevo pedido de materiales</h4>
+
+          <form method="post" class="form-soft-inline">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Fecha</label>
+                <input type="date" name="fecha" value="{{ fecha_sel.isoformat() }}">
+              </div>
+
+              <div class="form-group">
+                <label>Sede / lugar</label>
+                <input type="text" name="sede"
+                       placeholder="Ej: Penal, Depósito, Taller">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Solicitante</label>
+                <input type="text" name="solicitante"
+                       placeholder="Nombre del agente">
+              </div>
+
+              <div class="form-group">
+                <label>Detalle del pedido</label>
+                <textarea name="detalle" rows="2"
+                          placeholder="Ej: 2 cajas guantes, 5 barbijos, 3 trapos..."></textarea>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Prioridad</label>
+                <select name="prioridad">
+                  <option value="Baja">Baja</option>
+                  <option value="Media" selected>Media</option>
+                  <option value="Alta">Alta</option>
+                </select>
+              </div>
+
+              <div class="form-group form-group-btn">
+                <label>&nbsp;</label>
+                <button class="btn primary" type="submit">
+                  Guardar pedido
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<style>
+  .vehiculos-page {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .page-sub {
+    margin: 0 0 8px 0;
+    color: #64748b;
+    font-size: 13px;
+  }
+  .veh-layout {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 20px;
+  }
+  .veh-col-left, .veh-col-right {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .card-soft {
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    padding: 12px 16px;
+  }
+  .card-header h3 {
+    margin: 0;
+    font-size: 15px;
+  }
+  .card-sub {
+    margin: 2px 0 0 0;
+    font-size: 12px;
+    color: #64748b;
+  }
+
+  /* Plano */
+  .plano-sector {
+    margin-top: 10px;
+  }
+  .plano-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .plano-sector-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #94a3b8;
+    margin-bottom: 4px;
+  }
+  .plano-box {
+    flex: 1 1 120px;
+    min-width: 120px;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 8px;
+    background: #f8fafc;
+  }
+  .plano-box.ocupado {
+    background: #ecfdf5;
+    border-color: #4ade80;
+  }
+  .pb-title {
+    font-size: 11px;
+    color: #64748b;
+  }
+  .pb-veh {
+    font-size: 12px;
+    font-weight: 600;
+    color: #0f172a;
+  }
+  .pb-veh.pb-libre {
+    color: #94a3b8;
+    font-weight: 400;
+  }
+  .pb-tag {
+    display: inline-block;
+    margin-top: 2px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    font-size: 10px;
+    background: #bbf7d0;
+    color: #166534;
+  }
+
+  /* Stats */
+  .stats-row {
+    display: flex;
+    gap: 8px;
+  }
+  .stat-card {
+    flex: 1;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    padding: 6px 10px;
+  }
+  .stat-label {
+    font-size: 11px;
+    color: #64748b;
+  }
+  .stat-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  /* Calendario / pedidos */
+  .calendar-card { margin-top: 8px; }
+  .cal-header-inline {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-end;
+    margin-bottom: 8px;
+  }
+  .cal-months-inline {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: flex-end;
+  }
+  .pill-month {
+    padding: 3px 9px;
+    border-radius: 999px;
+    border: 1px solid #e2e8f0;
+    font-size: 11px;
+    text-decoration: none;
+    color: #475569;
+    background: #ffffff;
+  }
+  .pill-month.active {
+    background: #2563eb;
+    color: #ffffff;
+    border-color: #2563eb;
+  }
+  .day-novedades {
+    margin-top: 6px;
+  }
+  .day-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .no-novedades {
+    font-size: 12px;
+    color: #94a3b8;
+  }
+  .pedido-list {
+    list-style: none;
+    padding: 0;
+    margin: 6px 0 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .pedido-list li {
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    padding: 6px 8px;
+    background: #f8fafc;
+    font-size: 11px;
+  }
+  .pedido-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2px;
+  }
+  .badge-prio {
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .badge-prio.baja { background:#ecfeff; color:#0e7490; }
+  .badge-prio.media { background:#fef9c3; color:#854d0e; }
+  .badge-prio.alta { background:#fee2e2; color:#b91c1c; }
+  .pedido-estado {
+    font-size: 10px;
+    color: #64748b;
+  }
+  .pedido-detalle {
+    font-size: 11px;
+    font-weight: 600;
+    color: #0f172a;
+  }
+  .pedido-nota {
+    font-size: 11px;
+    color: #475569;
+    margin-top: 2px;
+    white-space: pre-wrap;
+  }
+  .divider {
+    margin: 12px 0;
+    border: none;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  .nuevo-pedido h4 {
+    margin: 0 0 6px 0;
+    font-size: 13px;
+  }
+  .form-soft-inline {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .form-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .form-group {
+    flex: 1;
+    min-width: 140px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .form-group label {
+    font-size: 11px;
+    color: #64748b;
+  }
+  .form-group-btn {
+    justify-content: flex-end;
+  }
+
+  @media (max-width: 1000px) {
+    .veh-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+{% endblock %}

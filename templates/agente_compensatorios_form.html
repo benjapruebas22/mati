@@ -1,0 +1,273 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+  .license-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .license-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .license-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
+    padding: 14px 16px;
+  }
+
+  .license-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .license-grid .full {
+    grid-column: 1 / -1;
+  }
+
+  .license-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .license-field label {
+    font-size: 12px;
+    color: #64748b;
+  }
+
+  .license-field input,
+  .license-field select,
+  .license-field textarea {
+    font-size: 13px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+  }
+
+  .license-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 6px;
+  }
+
+  .license-hint {
+    font-size: 11px;
+    color: #94a3b8;
+  }
+  .card-stat {
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    background: #f8fafc;
+    padding: 10px 12px;
+  }
+  .card-stat .label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #6b7280;
+  }
+  .card-stat .value {
+    font-size: 18px;
+    font-weight: 900;
+    margin-top: 4px;
+  }
+  .card-stat .hint {
+    font-size: 11px;
+    color: #6b7280;
+    margin-top: 2px;
+  }
+  .card-stat.tone-ok {
+    background: #ecfeff;
+    border-color: #a5f3fc;
+  }
+  .card-stat.tone-warn {
+    background: #fef3c7;
+    border-color: #fcd34d;
+  }
+
+  @media (max-width: 900px) {
+    .license-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<section class="agentes-main license-shell">
+
+  <header class="section-header license-head">
+    <div>
+      <h1>Compensatorios</h1>
+      <p class="section-sub">
+        Agente: <strong>{{ agente.agente }}</strong> - Rubro: {{ agente.rubro|upper }}
+      </p>
+    </div>
+
+    <div class="section-actions">
+      <a class="btn outline-slate" href="{{ url_for('agentes_home', id=agente.id) }}">
+        Volver al agente
+      </a>
+    </div>
+  </header>
+
+  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;">
+    <div class="card-stat">
+      <div class="label">Saldo total</div>
+      <div class="value">{{ saldo.dias|round(1) }} dias</div>
+      <div class="hint">+ {{ saldo.horas|round(1) }} horas</div>
+    </div>
+    <div class="card-stat tone-ok">
+      <div class="label">Generados</div>
+      <div class="value">{{ saldo.dias_generados|round(1) }}</div>
+      <div class="hint">dias acumulados</div>
+    </div>
+    <div class="card-stat tone-warn">
+      <div class="label">Tomados</div>
+      <div class="value">{{ saldo.dias_tomados|round(1) }}</div>
+      <div class="hint">dias usados</div>
+    </div>
+  </div>
+
+  <div class="license-card">
+    <form method="post">
+      <div class="license-grid">
+        <div class="license-field">
+          <label for="tipo">Tipo</label>
+          <select id="tipo" name="tipo" required>
+            <option value="">Seleccionar...</option>
+            <option value="INICIAL">Saldo inicial</option>
+            <option value="FERIA">Feria (dias)</option>
+            <option value="HORAS">Horas especiales</option>
+            <option value="TOMA">Toma de compensatorio</option>
+          </select>
+        </div>
+
+        <div class="license-field">
+          <label for="fecha">Fecha</label>
+          <input type="date" id="fecha" name="fecha" value="{{ hoy if hoy is defined else '' }}">
+        </div>
+
+        <div class="license-field">
+          <label for="periodo">Periodo (mes)</label>
+          <input type="text" id="periodo" name="periodo" placeholder="Enero 2026">
+        </div>
+
+        <div class="license-field">
+          <label for="dias">Dias</label>
+          <input type="number" id="dias" name="dias" step="0.5" min="0">
+        </div>
+
+        <div class="license-field">
+          <label for="horas">Horas</label>
+          <input type="number" id="horas" name="horas" step="0.5" min="0">
+        </div>
+
+        <div class="license-field">
+          <label for="desde">Desde (toma)</label>
+          <input type="date" id="desde" name="desde">
+        </div>
+
+        <div class="license-field">
+          <label for="hasta">Hasta (toma)</label>
+          <input type="date" id="hasta" name="hasta">
+        </div>
+
+        <div class="license-field full">
+          <label for="observaciones">Observaciones</label>
+          <textarea id="observaciones" name="observaciones" rows="2"
+                    placeholder="Notas internas, detalle del listado, etc."></textarea>
+        </div>
+      </div>
+
+      <div class="license-actions">
+        <button type="submit" class="btn outline-amber">Guardar</button>
+        <a class="btn outline-slate" href="{{ url_for('agentes_home', id=agente.id) }}">Cancelar</a>
+      </div>
+    </form>
+  </div>
+
+  <div class="license-card">
+    <h3 style="margin:0 0 8px 0;">Movimientos</h3>
+    {% if comp_movs and comp_movs|length > 0 %}
+      <div style="border:1px solid #e5e7eb;border-radius:10px;overflow:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead style="background:#e5edff;">
+            <tr>
+              <th style="text-align:left;padding:6px;">Fecha</th>
+              <th style="text-align:left;padding:6px;">Tipo</th>
+              <th style="text-align:left;padding:6px;">Periodo / Rango</th>
+              <th style="text-align:left;padding:6px;">Dias</th>
+              <th style="text-align:left;padding:6px;">Horas</th>
+              <th style="text-align:left;padding:6px;">Obs.</th>
+              <th style="text-align:right;padding:6px;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in comp_movs %}
+              <tr>
+                <td style="padding:6px;border-top:1px solid #e5e7eb;">{{ m.fecha }}</td>
+                <td style="padding:6px;border-top:1px solid #e5e7eb;">{{ m.tipo }}</td>
+                <td style="padding:6px;border-top:1px solid #e5e7eb;">
+                  {% if m.desde or m.hasta %}
+                    {{ m.desde or '-' }} → {{ m.hasta or '-' }}
+                  {% else %}
+                    {{ m.periodo or '-' }}
+                  {% endif %}
+                </td>
+                <td style="padding:6px;border-top:1px solid #e5e7eb;">{{ m.dias or 0 }}</td>
+                <td style="padding:6px;border-top:1px solid #e5e7eb;">{{ m.horas or 0 }}</td>
+                <td style="padding:6px;border-top:1px solid #e5e7eb;">{{ m.observaciones or '' }}</td>
+                <td style="padding:6px;border-top:1px solid #e5e7eb;text-align:right;">
+                  <a class="btn xs outline-slate"
+                     href="{{ url_for('agente_compensatorio_editar', agente_id=agente.id, mov_id=m.id) }}">Editar</a>
+                  <form method="post"
+                        action="{{ url_for('agente_compensatorio_eliminar', agente_id=agente.id, mov_id=m.id) }}"
+                        onsubmit="return confirm('Eliminar este movimiento?');">
+                    <button type="submit" class="btn xs outline-amber">Eliminar</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p style="color:#6b7280;">No hay movimientos cargados.</p>
+    {% endif %}
+  </div>
+
+</section>
+
+<script>
+  (function () {
+    const tipo = document.getElementById("tipo");
+    const dias = document.getElementById("dias");
+    const horas = document.getElementById("horas");
+    const desde = document.getElementById("desde");
+    const hasta = document.getElementById("hasta");
+
+    function toggleFields() {
+      const t = (tipo.value || "").toUpperCase();
+      dias.required = (t === "INICIAL" || t === "FERIA");
+      horas.required = (t === "HORAS");
+      desde.required = (t === "TOMA");
+      hasta.required = (t === "TOMA");
+    }
+
+    tipo.addEventListener("change", toggleFields);
+    toggleFields();
+  })();
+</script>
+
+{% endblock %}

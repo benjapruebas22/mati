@@ -1,0 +1,2826 @@
+﻿{% extends "base.html" %}
+
+{% block content %}
+<style>
+  .plan-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 2.2fr;
+    gap: 14px;
+  }
+
+  .plan-root.no-carga .plan-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .plan-root.no-carga .gantt-card {
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    background: transparent;
+  }
+
+  .plan-root.no-carga .gantt-annual,
+  .plan-root.no-carga .gantt-panel {
+    margin-left: -16px;
+    margin-right: -16px;
+    border-radius: 10px;
+  }
+
+  .plan-root.no-carga .gantt-annual {
+    border-left: none;
+    border-right: none;
+  }
+
+  .control-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
+    padding: 14px 16px;
+    margin-bottom: 14px;
+  }
+
+  .sst-cuadro-card {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    border-color: #d8e4f7;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, .07);
+  }
+
+  .sst-cuadro-card .plan-head {
+    margin-bottom: 8px;
+    padding: 2px 4px 10px;
+    border-bottom: 1px dashed #d6e3f5;
+  }
+
+  .sst-cuadro-card .plan-head h1 {
+    margin: 0;
+    font-size: 28px;
+    color: #102f56;
+    letter-spacing: 0.2px;
+  }
+
+  .sst-cuadro-sub {
+    margin-top: 6px;
+    font-size: 13px;
+    color: #546f92;
+    max-width: 760px;
+  }
+
+  .sst-cuadro-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 8px 0 12px;
+  }
+
+  .sst-cuadro-pill {
+    border: 1px solid #c8d8f1;
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.1;
+    background: #eef5ff;
+    color: #274d7d;
+  }
+
+  .sst-cuadro-pill.ok {
+    background: #ecfbf2;
+    border-color: #bdeccd;
+    color: #166534;
+  }
+
+  .sst-cuadro-pill.warn {
+    background: #fff7ed;
+    border-color: #fed7aa;
+    color: #9a4f00;
+  }
+
+  .sst-cuadro-pill.risk {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #991b1b;
+  }
+
+  .sst-cuadro-card .plan-kpis.kpis-cuadro .plan-kpi {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7);
+  }
+
+  .sst-cuadro-card .control-table {
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .sst-cuadro-card .control-table th {
+    background: #eef4ff;
+    color: #1f3c68;
+    font-weight: 800;
+    border-bottom-color: #d6e3f5;
+  }
+
+  .sst-cuadro-card .control-table td {
+    padding-top: 8px;
+    padding-bottom: 8px;
+    border-bottom-color: #e0e8f5;
+  }
+
+  .sst-cuadro-card .control-table tbody tr:hover td {
+    background: #f7fbff;
+  }
+
+  .sst-cuadro-card .pct-bar {
+    height: 9px;
+    background: #e7edf7;
+  }
+
+  .sst-col-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 800;
+  }
+
+  .sst-col-icon .dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    border: 1px solid #c8d8f1;
+    background: #eef5ff;
+    color: #2f4f7a;
+  }
+
+  .sst-col-icon.av .dot {
+    background: #eef4ff;
+    border-color: #bfd6f4;
+    color: #1f4e8a;
+  }
+
+  .sst-col-icon.impl .dot {
+    background: #fff5e8;
+    border-color: #f3d4a3;
+    color: #9a5a00;
+  }
+
+  .sst-col-icon.eval .dot {
+    background: #ecfbf2;
+    border-color: #bdeccd;
+    color: #166534;
+  }
+
+  .sst-phase-head {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #35567f;
+  }
+
+
+  .sst-progress-stack {
+    display: grid;
+    gap: 5px;
+  }
+
+  .sst-progress-row {
+    display: grid;
+    grid-template-columns: 58px 1fr 38px;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .sst-mini-tag {
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1;
+    border: 1px solid #c8d8f1;
+    border-radius: 999px;
+    padding: 3px 6px;
+    text-align: center;
+    color: #35567f;
+    background: #eef5ff;
+    white-space: nowrap;
+  }
+
+  .sst-mini-tag.plan {
+    background: #eef4ff;
+    border-color: #bfd6f4;
+    color: #1f4e8a;
+  }
+
+  .sst-mini-tag.impl {
+    background: #fff5e8;
+    border-color: #f3d4a3;
+    color: #9a5a00;
+  }
+
+  .sst-mini-tag.eval {
+    background: #ecfbf2;
+    border-color: #bdeccd;
+    color: #166534;
+  }
+
+  .sst-mini-val {
+    font-size: 10px;
+    font-weight: 800;
+    color: #64748b;
+    text-align: right;
+  }
+
+  .control-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .control-table th,
+  .control-table td {
+    border-bottom: 1px solid #e5e7eb;
+    padding: 6px 8px;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .control-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .chip-sede {
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+  }
+
+  .chip-sede.ok { background: #dcfce7; border-color: #bbf7d0; color: #166534; }
+  .chip-sede.miss { background: #fee2e2; border-color: #fecaca; color: #991b1b; }
+
+  .chip-sede[data-fuero="Administración"] { background: #fde8dd; border-color: #f5b089; color: #6b3c1f; }
+  .chip-sede[data-fuero="Administración / Violencia Inst."] { background: #fde8dd; border-color: #f5b089; color: #6b3c1f; }
+  .chip-sede[data-fuero="Penal"] { background: #efe9ff; border-color: #c9bfff; color: #3f2f7a; }
+  .chip-sede[data-fuero="Civil"] { background: #e6f4ff; border-color: #9fd7ff; color: #1c4c77; }
+  .chip-sede[data-fuero="Central Menores e Incapaces"] { background: #e6f4ff; border-color: #9fd7ff; color: #1c4c77; }
+  .chip-sede[data-fuero="Juridico Social"] { background: #ffe6f1; border-color: #f7a7c8; color: #7a2a4b; }
+  .chip-sede[data-code="S13"] { background: #e6f4ff; border-color: #9fd7ff; color: #1c4c77; }
+  .chip-sede[data-code="S14"] { background: #ffe6f1; border-color: #f7a7c8; color: #7a2a4b; }
+  .chip-sede[data-code="S11"] { background: #ffe6f1; border-color: #f7a7c8; color: #7a2a4b; }
+  .chip-sede[data-code="S12"] { background: #fde8dd; border-color: #f5b089; color: #6b3c1f; }
+  .chip-sede[data-code="S15"],
+  .chip-sede[data-code="S16"],
+  .chip-sede[data-code="S17"],
+  .chip-sede[data-code="S18"],
+  .chip-sede[data-code="S19"],
+  .chip-sede[data-code="S20"] { background: #ffe6f1; border-color: #f7a7c8; color: #7a2a4b; }
+
+  .control-card .planif-toggle {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    padding: 4px 8px;
+    cursor: pointer;
+  }
+
+  .control-table .planif-col {
+    display: none;
+  }
+
+  .control-card.show-planif .control-table .planif-col {
+    display: table-cell;
+  }
+
+  .pct-bar {
+    height: 8px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    overflow: hidden;
+  }
+
+  .pct-bar span {
+    display: block;
+    height: 100%;
+  }
+
+  .pct-low span { background: #ef4444; }
+  .pct-mid span { background: #f59e0b; }
+  .pct-high span { background: #22c55e; }
+  .pct-risk span { background: #ef4444; }
+  .pct-warn span { background: #f59e0b; }
+  .pct-ok span { background: #22c55e; }
+  .pct-impl span { background: #0ea5e9; }
+
+  .control-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .control-actions .btn {
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .control-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .control-grid label {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 700;
+  }
+
+  .control-grid select {
+    width: 100%;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+  }
+
+  .control-compra-hidden {
+    display: none;
+  }
+
+  .control-phase {
+    display: grid;
+    gap: 8px;
+  }
+
+  .control-title {
+    font-size: 14px;
+    font-weight: 800;
+  }
+
+  .control-blocked {
+    opacity: 0.45;
+    filter: grayscale(0.4);
+  }
+
+  .auto-tag {
+    display: inline-block;
+    margin-left: 6px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: #0f766e;
+    background: #ecfeff;
+    border: 1px solid #a5f3fc;
+    border-radius: 999px;
+    padding: 1px 6px;
+  }
+
+  .planif-tag {
+    display: inline-block;
+    margin-left: 6px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: #1d4ed8;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 999px;
+    padding: 1px 6px;
+  }
+
+  .impl-date {
+    display: block;
+    font-size: 10px;
+    color: #94a3b8;
+    margin-top: 2px;
+  }
+
+  .impl-check {
+    color: #16a34a;
+    font-weight: 800;
+    margin-right: 4px;
+  }
+  .control-gantt {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+
+  .control-gantt th,
+  .control-gantt td {
+    border: 1px solid #e5e7eb;
+    padding: 4px 6px;
+    text-align: center;
+  }
+
+  .control-gantt th {
+    background: #f8fafc;
+    font-weight: 700;
+  }
+
+  .phase-planif { background: #dbeafe; }
+  .phase-impl { background: #ffedd5; }
+  .phase-eval { background: #dcfce7; }
+  .phase-blocked { background: #f1f5f9; }
+
+  .plan-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
+    padding: 14px 16px;
+  }
+
+  .plan-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .plan-kpis.kpis-cuadro {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    margin: 8px 0 10px;
+  }
+
+  .plan-kpis.kpis-cuadro .plan-kpi {
+    background: #f8fbff;
+  }
+
+  .plan-kpis.kpis-cuadro .plan-kpi .value {
+    font-size: 20px;
+  }
+
+  .plan-kpi {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 10px 12px;
+    background: #f8fafc;
+  }
+
+  .plan-kpi.kpi-total { background: #eef2ff; border-color: #c7d2fe; }
+  .plan-kpi.kpi-ok { background: #ecfdf3; border-color: #bbf7d0; }
+  .plan-kpi.kpi-warn { background: #fff7ed; border-color: #fed7aa; }
+  .plan-kpi.kpi-risk { background: #fef2f2; border-color: #fecaca; }
+
+  .plan-kpi .label {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 700;
+  }
+
+  .plan-kpi .value {
+    font-size: 18px;
+    font-weight: 800;
+  }
+
+  .plan-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .plan-title {
+    font-size: 16px;
+    font-weight: 800;
+  }
+
+  .plan-meta {
+    font-size: 12px;
+    color: #64748b;
+  }
+
+  .plan-state {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+  }
+
+  .plan-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    display: inline-block;
+  }
+
+  .plan-dot.ok { background: #22c55e; }
+  .plan-dot.warn { background: #f59e0b; }
+  .plan-dot.risk { background: #ef4444; }
+
+  .plan-block {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+
+  .obj-accordion summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .obj-accordion summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .obj-accordion .summary-left {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .obj-accordion .summary-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .obj-accordion .summary-pill {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    padding: 4px 8px;
+  }
+
+  .obj-accordion[open] .summary-pill {
+    background: #e0f2fe;
+    border-color: #bae6fd;
+    color: #0369a1;
+  }
+
+  .obj-accordion .content {
+    margin-top: 10px;
+  }
+
+  .plan-block h4 {
+    margin: 0 0 6px;
+    font-size: 14px;
+  }
+
+  .plan-block .sub {
+    font-size: 12px;
+    color: #64748b;
+  }
+
+  .plan-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .plan-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .plan-table th,
+  .plan-table td {
+    border-bottom: 1px solid #e5e7eb;
+    padding: 6px 8px;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .gantt {
+    position: relative;
+    margin-top: 8px;
+    background: #f1f5f9;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 14px 12px;
+    overflow: hidden;
+  }
+
+  .gantt-wide {
+    overflow-x: auto;
+  }
+
+  .gantt-header {
+    position: relative;
+    height: 18px;
+    margin-bottom: 10px;
+  }
+
+  .gantt-bar {
+    position: absolute;
+    top: 3px;
+    height: 10px;
+    border-radius: 999px;
+    background: #60a5fa;
+  }
+
+  .gantt-body {
+    display: grid;
+    gap: 10px;
+  }
+
+  .gantt-row {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .gantt-row .label {
+    font-size: 11px;
+    color: #475569;
+    font-weight: 700;
+  }
+
+  .gantt-tick {
+    position: absolute;
+    top: 0;
+    font-size: 10px;
+    color: #94a3b8;
+  }
+
+  .gantt-grid {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(to right, rgba(15, 23, 42, 0.15) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(15, 23, 42, 0.08) 1px, transparent 1px);
+    background-size: 8.33% 100%, 100% 28px;
+  }
+
+  .progress-wrap {
+    margin-top: 8px;
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 8px;
+    border-radius: 999px;
+    background: #e2e8f0;
+    overflow: hidden;
+  }
+
+  .progress-bar span {
+    display: block;
+    height: 100%;
+    background: #22c55e;
+  }
+
+  .progress-meta {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 4px;
+  }
+
+  .plan-form .license-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .action-form {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .action-form .full {
+    grid-column: 1 / -1;
+  }
+
+  .action-form input,
+  .action-form select,
+  .action-form textarea {
+    width: 100%;
+    font-size: 12px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+  }
+
+  @media (max-width: 1100px) {
+    .plan-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .plan-kpis.kpis-cuadro {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .ergo-kpis {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .gantt-panel {
+    margin-top: 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 12px;
+    background: #ffffff;
+  }
+
+  .gantt-toolbar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .gantt-toolbar .left,
+  .gantt-toolbar .right {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .gantt-toolbar label {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 700;
+  }
+
+  .gantt-toolbar select {
+    font-size: 12px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+  }
+
+  .gantt-bar.phase-plan { background: #2563eb; }
+  .gantt-bar.phase-impl { background: #ea580c; }
+  .gantt-bar.phase-eval { background: #16a34a; }
+
+  .gantt-legend {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 11px;
+    color: #64748b;
+    margin: 6px 0 0;
+  }
+
+  .gantt-legend span::before {
+    content: "";
+    display: inline-block;
+    width: 10px;
+    height: 6px;
+    border-radius: 999px;
+    margin-right: 6px;
+    background: currentColor;
+  }
+
+  .gantt-bar.relevamiento { background: #0ea5e9; }
+  .gantt-bar.pedido { background: #f59e0b; }
+  .gantt-bar.compras { background: #f97316; }
+  .gantt-bar.entrega { background: #10b981; }
+  .gantt-bar.colocacion { background: #8b5cf6; }
+  .gantt-bar.cierre { background: #0f766e; }
+
+  .gantt-annual {
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 12px;
+    background: #fff;
+    margin-bottom: 12px;
+    overflow-x: auto;
+  }
+
+  .gantt-annual-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    min-width: 920px;
+  }
+
+  .gantt-annual-table th,
+  .gantt-annual-table td {
+    border: 1px solid #e5e7eb;
+    padding: 6px;
+    text-align: center;
+  }
+
+  .gantt-annual-table th {
+    background: #f8fafc;
+    font-weight: 700;
+  }
+
+  .gantt-annual-table td:first-child,
+  .gantt-annual-table th:first-child {
+    text-align: left;
+    min-width: 200px;
+  }
+
+  .gantt-annual-cell.planif { background: #dbeafe; }
+  .gantt-annual-cell.impl { background: #ffedd5; }
+  .gantt-annual-cell.eval { background: #dcfce7; }
+  .gantt-annual-cell.blocked { background: #e2e8f0; }
+  .gantt-annual-cell.idle { background: #ffffff; }
+
+  .gantt-annual-legend {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 8px;
+  }
+
+  .gantt-annual-legend span::before {
+    content: "";
+    display: inline-block;
+    width: 10px;
+    height: 6px;
+    border-radius: 999px;
+    margin-right: 6px;
+    background: currentColor;
+  }
+
+  .ergo-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
+    padding: 14px 16px;
+    margin-bottom: 14px;
+  }
+
+  .ergo-kpis {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .ergo-table-wrap {
+    overflow: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+  }
+
+  .ergo-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    min-width: 1100px;
+  }
+
+  .ergo-table th,
+  .ergo-table td {
+    border-bottom: 1px solid #e5e7eb;
+    padding: 6px 8px;
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .ergo-table th {
+    background: #f8fafc;
+    font-weight: 700;
+  }
+
+  .ergo-table td.center {
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .ergo-tools {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .btn-ergo-soft {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #334155;
+  }
+
+  .btn-ergo-soft:hover {
+    background: #e2e8f0;
+    border-color: #94a3b8;
+    color: #0f172a;
+  }
+
+  .ergo-filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .ergo-filters .license-field select {
+    width: 100%;
+  }
+
+  .ergo-quick {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 10px 0 12px;
+  }
+
+  .ergo-quick .main {
+    padding: 10px 14px;
+    border-radius: 999px;
+    border: 1px solid #0f172a;
+    background: #0f172a;
+    color: #fff;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .ergo-quick .sub {
+    padding: 10px 14px;
+    border-radius: 999px;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    color: #0f172a;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .ergo-form {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 10px;
+    background: #f8fafc;
+    margin-bottom: 12px;
+  }
+
+  .ergo-form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .ergo-form-grid .full {
+    grid-column: 1 / -1;
+  }
+
+  .ergo-form input,
+  .ergo-form select,
+  .ergo-form textarea {
+    width: 100%;
+    font-size: 12px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+  }
+
+  .ergo-manual {
+    margin-bottom: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #ffffff;
+    padding: 8px 10px;
+  }
+
+  .ergo-manual summary {
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+    color: #1e3a8a;
+  }
+
+  .ergo-manual ul {
+    margin: 8px 0 0 16px;
+    padding: 0;
+    font-size: 12px;
+    color: #334155;
+  }
+
+  .ergo-save-state {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 999px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+  }
+
+  .ergo-save-state.saving {
+    color: #1d4ed8;
+    border-color: #bfdbfe;
+    background: #eff6ff;
+  }
+
+  .ergo-save-state.saved {
+    color: #166534;
+    border-color: #bbf7d0;
+    background: #ecfdf3;
+  }
+
+  .ergo-save-state.error {
+    color: #991b1b;
+    border-color: #fecaca;
+    background: #fef2f2;
+  }
+
+  .ergo-flow-badge {
+    display: inline-block;
+    border-radius: 999px;
+    border: 1px solid #e5e7eb;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .ergo-flow-badge.pendiente { background: #fef3c7; border-color: #fde68a; color: #92400e; }
+  .ergo-flow-badge.evaluado { background: #ffedd5; border-color: #fdba74; color: #9a3412; }
+  .ergo-flow-badge.impl { background: #dbeafe; border-color: #93c5fd; color: #1e3a8a; }
+  .ergo-flow-badge.cerrado { background: #dcfce7; border-color: #86efac; color: #166534; }
+  .ergo-flow-badge.sem-bajo { background: #dcfce7; border-color: #86efac; color: #166534; }
+  .ergo-flow-badge.sem-medio { background: #fef3c7; border-color: #fde68a; color: #92400e; }
+  .ergo-flow-badge.sem-alto { background: #fee2e2; border-color: #fecaca; color: #991b1b; }
+
+  .ergo-alert {
+    border-radius: 10px;
+    border: 1px solid #fecaca;
+    background: #fef2f2;
+    color: #991b1b;
+    padding: 8px 10px;
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+
+  .ergo-badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 999px;
+    border: 1px solid #e5e7eb;
+    padding: 2px 8px;
+    white-space: nowrap;
+  }
+
+  .ergo-badge.urgente {
+    background: #fee2e2;
+    border-color: #fecaca;
+    color: #991b1b;
+  }
+
+  .ergo-badge.programado {
+    background: #fff7ed;
+    border-color: #fed7aa;
+    color: #9a3412;
+  }
+
+  .ergo-badge.ok {
+    background: #dcfce7;
+    border-color: #bbf7d0;
+    color: #166534;
+  }
+
+  .ergo-badge.otro {
+    background: #e2e8f0;
+    border-color: #cbd5e1;
+    color: #334155;
+  }
+
+  .sst-nav-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
+    padding: 10px 12px;
+    margin-bottom: 12px;
+  }
+
+  .sst-nav-links {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+
+  .sst-nav-link {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    border: 1px solid #e5e7eb;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 800;
+    text-decoration: none;
+  }
+
+  .sst-nav-link.unico { background: #eef2ff; border-color: #c7d2fe; color: #3730a3; }
+  .sst-nav-link.ergo { background: #ecfdf3; border-color: #bbf7d0; color: #166534; }
+  .sst-nav-link.gantt { background: #fff7ed; border-color: #fed7aa; color: #9a3412; }
+
+  .sst-est-gantt {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    overflow: auto;
+  }
+
+  .sst-est-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    min-width: 820px;
+  }
+
+  .sst-est-table th,
+  .sst-est-table td {
+    border: 1px solid #e5e7eb;
+    padding: 5px 6px;
+    text-align: center;
+  }
+
+  .sst-est-table th:first-child,
+  .sst-est-table td:first-child {
+    text-align: left;
+    min-width: 220px;
+    font-weight: 700;
+  }
+
+  .sst-est-plan { background: #dbeafe; }
+  .sst-est-impl { background: #ffedd5; }
+  .sst-est-eval { background: #dcfce7; }
+  .sst-est-ctrl { background: #f1f5f9; }
+
+  @media (max-width: 900px) {
+    .plan-kpis.kpis-cuadro {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .sst-cuadro-card .plan-head h1 {
+      font-size: 24px;
+    }
+
+    .ergo-filters,
+    .ergo-form-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .plan-kpis.kpis-cuadro {
+      grid-template-columns: 1fr;
+    }
+
+    .sst-cuadro-card .plan-head h1 {
+      font-size: 21px;
+    }
+  }
+</style>
+
+<section class="agentes-main plan-root {% if show_carga %}with-carga{% else %}no-carga{% endif %}">
+  {% set vista = sst_view or 'all' %}
+  {% if vista == 'all' %}
+  <div class="sst-nav-card">
+    <div class="sst-nav-links">
+      <a class="sst-nav-link unico" href="#sec-cuadro-unico">Estado general</a>
+      <a class="sst-nav-link ergo" href="#sec-ergonomia">Riesgo prioritario</a>
+      <a class="sst-nav-link gantt" href="#sec-gantt">Cronograma</a>
+    </div>
+    <div class="sst-est-gantt">
+      {% set months_est = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'] %}
+      <table class="sst-est-table">
+        <thead>
+          <tr>
+            <th>Gestion</th>
+            {% for m in months_est %}
+              <th>{{ m }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Estado general y no conformidades activas</td>
+            {% for i in range(1, 13) %}
+              <td class="{% if i <= 2 %}sst-est-plan{% elif i <= 5 %}sst-est-impl{% else %}sst-est-eval{% endif %}"></td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td>Ergonomia: relevamiento y medidas</td>
+            {% for i in range(1, 13) %}
+              <td class="{% if i <= 4 %}sst-est-plan{% elif i <= 8 %}sst-est-impl{% else %}sst-est-ctrl{% endif %}"></td>
+            {% endfor %}
+          </tr>
+          <tr>
+            <td>Seguimiento y verificacion de control</td>
+            {% for i in range(1, 13) %}
+              <td class="{% if i in [4,8,12] %}sst-est-eval{% else %}sst-est-ctrl{% endif %}"></td>
+            {% endfor %}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if vista in ['all', 'cuadro'] %}
+  <div class="control-card sst-cuadro-card" id="sec-cuadro-unico">
+    <div class="plan-head">
+      <div>
+        <h1>Estado general del sistema SST</h1>
+        <p class="section-sub sst-cuadro-sub">Tablero ejecutivo de relevamiento, correccion, implementacion y cierre por sede.</p>
+      </div>
+    </div>
+    <div class="sst-cuadro-legend">
+      <span class="sst-cuadro-pill">Seguimiento por objetivos y sedes</span>
+      <span class="sst-cuadro-pill ok">Semaforo verde: 80-100%</span>
+      <span class="sst-cuadro-pill warn">Semaforo amarillo: 40-79%</span>
+      <span class="sst-cuadro-pill risk">Semaforo rojo: 0-39%</span>
+    </div>
+    {% if control_objetivos and control_objetivos|length > 0 %}
+      {% set k = namespace(total=control_objetivos|length, cerrados=0, en_impl=0, sum_pct=0, sum_impl=0, done_sedes=0, total_sedes=0) %}
+      {% for o in control_objetivos %}
+        {% set k.sum_pct = k.sum_pct + (o.pct or 0) %}
+        {% set k.sum_impl = k.sum_impl + (o.impl_progress_pct or 0) %}
+        {% set k.done_sedes = k.done_sedes + (o.done_count or 0) %}
+        {% set k.total_sedes = k.total_sedes + (o.total_count or 0) %}
+        {% if o.eval_ok_effective %}{% set k.cerrados = k.cerrados + 1 %}{% endif %}
+        {% if o.auto_decision and not o.impl_completed %}{% set k.en_impl = k.en_impl + 1 %}{% endif %}
+      {% endfor %}
+      {% set avg_pct = ((k.sum_pct / k.total) | round(0, 'floor')) if k.total else 0 %}
+      {% set avg_impl = ((k.sum_impl / k.total) | round(0, 'floor')) if k.total else 0 %}
+      {% set avg_pct_class = 'kpi-ok' if avg_pct >= 80 else ('kpi-warn' if avg_pct >= 40 else 'kpi-risk') %}
+      {% set avg_impl_class = 'kpi-ok' if avg_impl >= 80 else ('kpi-warn' if avg_impl >= 40 else 'kpi-risk') %}
+
+      <div class="plan-kpis kpis-cuadro">
+        <div class="plan-kpi kpi-total">
+          <div class="label">Objetivos SST</div>
+          <div class="value">{{ k.total }}</div>
+        </div>
+        <div class="plan-kpi kpi-ok">
+          <div class="label">Relevadas global</div>
+          <div class="value">{{ k.done_sedes }} / {{ k.total_sedes }}</div>
+        </div>
+        <div class="plan-kpi {{ avg_pct_class }}">
+          <div class="label">Avance promedio</div>
+          <div class="value">{{ avg_pct }}%</div>
+        </div>
+        <div class="plan-kpi {{ avg_impl_class }}">
+          <div class="label">Impl promedio</div>
+          <div class="value">{{ avg_impl }}%</div>
+        </div>
+        <div class="plan-kpi kpi-risk">
+          <div class="label">Objetivos cerrados</div>
+          <div class="value">{{ k.cerrados }} / {{ k.total }}</div>
+        </div>
+      </div>
+
+      <div class="plan-actions" style="margin-bottom:6px;">
+        <button type="button" class="planif-toggle" data-toggle-planif>Mostrar planificacion</button>
+      </div>
+      <table class="control-table">
+        <thead>
+          <tr>
+            <th>Objetivo SST</th>
+            <th class="planif-col">Relevadas / 19</th>
+            <th><span class="sst-col-icon av"><span class="dot">&#128200;</span>Avance</span></th>
+            <th><span class="sst-col-icon impl"><span class="dot">&#9881;</span>Implementacion</span></th>
+            <th><span class="sst-col-icon eval"><span class="dot">&#10003;</span>Evaluacion</span></th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for o in control_objetivos %}
+            {% set compra_necesaria_val = (o.impl_compra_necesaria or 'SI') %}
+            {% set impl_pedido_val = o.impl_pedido if o.impl_pedido and o.impl_pedido != '?' else '⏸' %}
+            {% set impl_recibido_val = o.impl_recibido if o.impl_recibido and o.impl_recibido != '?' else '⏸' %}
+            {% set impl_ejecucion_val = o.impl_ejecucion if o.impl_ejecucion and o.impl_ejecucion != '?' else '⏸' %}
+            {% set impl_colocacion_val = o.impl_colocacion if o.impl_colocacion and o.impl_colocacion != '?' else '⏸' %}
+            {% set impl_pedido_fecha_val = o.impl_pedido_fecha or '' %}
+            {% set impl_recibido_fecha_val = o.impl_recibido_fecha or '' %}
+            {% set impl_ejecucion_fecha_val = o.impl_ejecucion_fecha or '' %}
+            {% set impl_colocacion_fecha_val = o.impl_colocacion_fecha or '' %}
+            {% set impl_pedido_fecha_short_val = o.impl_pedido_fecha_short or '' %}
+            {% set impl_recibido_fecha_short_val = o.impl_recibido_fecha_short or '' %}
+            {% set impl_ejecucion_fecha_short_val = o.impl_ejecucion_fecha_short or '' %}
+            {% set impl_colocacion_fecha_short_val = o.impl_colocacion_fecha_short or '' %}
+            {% set eval_verificado_val = o.eval_verificado if o.eval_verificado and o.eval_verificado != '?' else '⏸' %}
+            {% set eval_observaciones_val = o.eval_observaciones if o.eval_observaciones and o.eval_observaciones != '?' else '⏸' %}
+            {% set eval_cerrado_val = o.eval_cerrado if o.eval_cerrado and o.eval_cerrado != '?' else '⏸' %}
+            <tr>
+              <td>
+                <div class="control-title">{{ o.nombre }}</div>
+                {% if o.auto_decision and not o.impl_completed %}
+                  <span class="auto-tag">En implementacion</span>
+                {% elif o.pct < 100 %}
+                  <span class="planif-tag">En planificacion</span>
+                {% endif %}
+              </td>
+              <td class="planif-col">
+                <div>{{ o.done_count }} / {{ o.total_count }}</div>
+                <details>
+                  <summary style="cursor:pointer;font-size:11px;color:#4f46e5;">Ver sedes</summary>
+                  <div style="margin-top:6px;">
+                    <div class="control-chips">
+                      {% for s in o.done_sedes %}
+                        {% set sp = special_sedes.get(s) if special_sedes is defined else None %}
+                        <span class="chip-sede ok" data-fuero="{{ sedes_fueros.get(s) }}" data-code="{{ s }}">{{ s }}{% if sp %} <span title="{{ sp.title }}">{{ sp.icon }}</span>{% endif %}</span>
+                      {% endfor %}
+                    </div>
+                    <div class="control-chips" style="margin-top:6px;">
+                      {% for s in o.missing_sedes %}
+                        {% set sp = special_sedes.get(s) if special_sedes is defined else None %}
+                        <span class="chip-sede miss" data-fuero="{{ sedes_fueros.get(s) }}" data-code="{{ s }}">{{ s }}{% if sp %} <span title="{{ sp.title }}">{{ sp.icon }}</span>{% endif %}</span>
+                      {% endfor %}
+                    </div>
+                  </div>
+                </details>
+              </td>
+              <td>{{ '✔' if o.consolidado_ok else '✖' }}</td>
+              <td style="min-width:220px;">
+                <div class="sst-progress-stack">
+                  <div class="sst-progress-row">
+                    <span class="sst-mini-tag plan">Plan</span>
+                    <div class="pct-bar pct-{{ o.pct_class }}"><span style="width: {{ o.pct }}%;"></span></div>
+                    <span class="sst-mini-val">{{ o.pct }}%</span>
+                  </div>
+                  <div class="sst-progress-row">
+                    <span class="sst-mini-tag impl">Impl</span>
+                    <div class="pct-bar pct-{{ o.impl_progress_class }}"><span style="width: {{ o.impl_progress_pct }}%;"></span></div>
+                    <span class="sst-mini-val">{{ o.impl_progress_pct }}%</span>
+                  </div>
+                  <div class="sst-progress-row">
+                    <span class="sst-mini-tag eval">Eval</span>
+                    <div class="pct-bar pct-{{ o.eval_progress_class }}"><span style="width: {{ o.eval_progress_pct }}%;"></span></div>
+                    <span class="sst-mini-val">{{ o.eval_progress_pct }}%</span>
+                  </div>
+                </div>
+              </td>
+              <td class="{% if not o.decision_ok_effective %}control-blocked{% endif %}">
+                <div class="control-phase">
+                  <div class="sst-phase-head impl"><span class="sst-col-icon impl"><span class="dot">&#9881;</span>Implementacion</span></div>
+                  <div>Compra: {{ compra_necesaria_val }}</div>
+                  {% if compra_necesaria_val not in ['NO', 'N/A'] %}
+                    <div>
+                      Pedido:
+                      {% if impl_pedido_fecha_short_val %}
+                        {% if impl_pedido_val == '✔' %}<span class="impl-check">✔</span>{% endif %}
+                        <span class="impl-date">{{ impl_pedido_fecha_short_val }}</span>
+                      {% else %}
+                        {{ impl_pedido_val }}
+                      {% endif %}
+                    </div>
+                    <div>
+                      Recibido:
+                      {% if impl_recibido_fecha_short_val %}
+                        {% if impl_recibido_val == '✔' %}<span class="impl-check">✔</span>{% endif %}
+                        <span class="impl-date">{{ impl_recibido_fecha_short_val }}</span>
+                      {% else %}
+                        {{ impl_recibido_val }}
+                      {% endif %}
+                    </div>
+                  {% endif %}
+                  <div>
+                    Ejecucion:
+                    {% if impl_ejecucion_fecha_short_val %}
+                      {% if impl_ejecucion_val == '✔' %}<span class="impl-check">✔</span>{% endif %}
+                      <span class="impl-date">{{ impl_ejecucion_fecha_short_val }}</span>
+                    {% else %}
+                      {{ impl_ejecucion_val }}
+                    {% endif %}
+                  </div>
+                  <div>
+                    Colocacion:
+                    {% if impl_colocacion_fecha_short_val %}
+                      {% if impl_colocacion_val == '✔' %}<span class="impl-check">✔</span>{% endif %}
+                      <span class="impl-date">{{ impl_colocacion_fecha_short_val }}</span>
+                    {% else %}
+                      {{ impl_colocacion_val }}
+                    {% endif %}
+                  </div>
+                  {% if not o.decision_ok_effective %}
+                    <div style="font-size:11px;color:#94a3b8;">Bloqueado</div>
+                  {% endif %}
+                </div>
+              </td>
+              <td class="{% if not o.eval_ok_effective %}control-blocked{% endif %}">
+                <div class="control-phase">
+                  <div class="sst-phase-head eval"><span class="sst-col-icon eval"><span class="dot">&#10003;</span>Evaluacion</span></div>
+                  <div>Verificado: {{ eval_verificado_val }}</div>
+                  <div>Obs cerradas: {{ eval_observaciones_val }}</div>
+                  <div>Cerrado: {{ eval_cerrado_val }}</div>
+                  {% if not o.eval_ok_effective %}
+                    <div style="font-size:11px;color:#94a3b8;">Bloqueado</div>
+                  {% endif %}
+                </div>
+              </td>
+              <td>
+                <div class="control-actions">
+                  <details>
+                    <summary style="cursor:pointer;font-size:11px;color:#4f46e5;">Editar</summary>
+                    {% set status_opts = ['⏸','⏳','✔','N/A'] %}
+                    <form method="post" action="/sst/control/estado/{{ o.id }}" class="control-grid" style="margin-top:6px;">
+                      <div>
+                        <label>Consolidado listo</label>
+                        <input type="checkbox" name="consolidado_ok" {% if o.consolidado_ok %}checked{% endif %}>
+                      </div>
+                      {% if o.decision_ok %}
+                        <input type="hidden" name="decision_ok" value="1">
+                      {% endif %}
+                      <div>
+                        <label>Necesita compra</label>
+                        {% if not o.decision_ok_effective %}
+                          <input type="hidden" name="impl_compra_necesaria" value="{{ compra_necesaria_val }}">
+                        {% endif %}
+                        <select name="impl_compra_necesaria" data-compra-toggle {% if not o.decision_ok_effective %}disabled{% endif %}>
+                          {% set compra_opts = ['SI','NO','N/A'] %}
+                          {% for opt in compra_opts %}
+                            <option value="{{ opt }}" {% if compra_necesaria_val == opt %}selected{% endif %}>{{ opt }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                      <div data-compra-fields>
+                        <label>Pedido</label>
+                        {% if not o.decision_ok_effective %}
+                          <input type="hidden" name="impl_pedido" value="{{ impl_pedido_val }}">
+                        {% endif %}
+                        <select name="impl_pedido" {% if not o.decision_ok_effective %}disabled{% endif %}>
+                          {% for opt in status_opts %}
+                            <option value="{{ opt }}" {% if impl_pedido_val == opt %}selected{% endif %}>{{ opt }}</option>
+                          {% endfor %}
+                        </select>
+                        {% if not o.decision_ok_effective %}
+                          <input type="hidden" name="impl_pedido_fecha" value="{{ impl_pedido_fecha_val }}">
+                        {% endif %}
+                        <input type="date" name="impl_pedido_fecha" value="{{ impl_pedido_fecha_val }}" {% if not o.decision_ok_effective %}disabled{% endif %}>
+                      </div>
+                      <div data-compra-fields>
+                        <label>Recibido</label>
+                        {% if not o.decision_ok_effective %}
+                          <input type="hidden" name="impl_recibido" value="{{ impl_recibido_val }}">
+                        {% endif %}
+                        <select name="impl_recibido" {% if not o.decision_ok_effective %}disabled{% endif %}>
+                          {% for opt in status_opts %}
+                            <option value="{{ opt }}" {% if impl_recibido_val == opt %}selected{% endif %}>{{ opt }}</option>
+                          {% endfor %}
+                        </select>
+                        {% if not o.decision_ok_effective %}
+                          <input type="hidden" name="impl_recibido_fecha" value="{{ impl_recibido_fecha_val }}">
+                        {% endif %}
+                        <input type="date" name="impl_recibido_fecha" value="{{ impl_recibido_fecha_val }}" {% if not o.decision_ok_effective %}disabled{% endif %}>
+                      </div>
+                      <div>
+                        <label>Ejecucion</label>
+                        {% if not o.decision_ok_effective %}
+                          <input type="hidden" name="impl_ejecucion" value="{{ impl_ejecucion_val }}">
+                        {% endif %}
+                        <select name="impl_ejecucion" {% if not o.decision_ok_effective %}disabled{% endif %}>
+                          {% for opt in status_opts %}
+                            <option value="{{ opt }}" {% if impl_ejecucion_val == opt %}selected{% endif %}>{{ opt }}</option>
+                          {% endfor %}
+                        </select>
+                        {% if not o.decision_ok_effective %}
+                          <input type="hidden" name="impl_ejecucion_fecha" value="{{ impl_ejecucion_fecha_val }}">
+                        {% endif %}
+                        <input type="date" name="impl_ejecucion_fecha" value="{{ impl_ejecucion_fecha_val }}" {% if not o.decision_ok_effective %}disabled{% endif %}>
+                      </div>
+                      <div>
+                        <label>Colocacion</label>
+                        {% if not o.decision_ok_effective %}
+                          <input type="hidden" name="impl_colocacion" value="{{ impl_colocacion_val }}">
+                        {% endif %}
+                        <select name="impl_colocacion" {% if not o.decision_ok_effective %}disabled{% endif %}>
+                          {% for opt in status_opts %}
+                            <option value="{{ opt }}" {% if impl_colocacion_val == opt %}selected{% endif %}>{{ opt }}</option>
+                          {% endfor %}
+                        </select>
+                        {% if not o.decision_ok_effective %}
+                          <input type="hidden" name="impl_colocacion_fecha" value="{{ impl_colocacion_fecha_val }}">
+                        {% endif %}
+                        <input type="date" name="impl_colocacion_fecha" value="{{ impl_colocacion_fecha_val }}" {% if not o.decision_ok_effective %}disabled{% endif %}>
+                      </div>
+                      <div>
+                        <label>Verificado</label>
+                        {% if not o.eval_ok_effective %}
+                          <input type="hidden" name="eval_verificado" value="{{ eval_verificado_val }}">
+                        {% endif %}
+                        <select name="eval_verificado" {% if not o.eval_ok_effective %}disabled{% endif %}>
+                          {% for opt in status_opts %}
+                            <option value="{{ opt }}" {% if eval_verificado_val == opt %}selected{% endif %}>{{ opt }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                      <div>
+                        <label>Obs cerradas</label>
+                        {% if not o.eval_ok_effective %}
+                          <input type="hidden" name="eval_observaciones" value="{{ eval_observaciones_val }}">
+                        {% endif %}
+                        <select name="eval_observaciones" {% if not o.eval_ok_effective %}disabled{% endif %}>
+                          {% for opt in status_opts %}
+                            <option value="{{ opt }}" {% if eval_observaciones_val == opt %}selected{% endif %}>{{ opt }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                      <div>
+                        <label>Cerrado</label>
+                        {% if not o.eval_ok_effective %}
+                          <input type="hidden" name="eval_cerrado" value="{{ eval_cerrado_val }}">
+                        {% endif %}
+                        <select name="eval_cerrado" {% if not o.eval_ok_effective %}disabled{% endif %}>
+                          {% for opt in status_opts %}
+                            <option value="{{ opt }}" {% if eval_cerrado_val == opt %}selected{% endif %}>{{ opt }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                      <div style="grid-column:1 / -1; display:flex; justify-content:flex-end;">
+                        <button class="btn outline-amber" type="submit">Guardar</button>
+                      </div>
+                    </form>
+                  </details>
+                  <details>
+                    <summary style="cursor:pointer;font-size:11px;color:#4f46e5;">Relevamientos</summary>
+                    <form method="post" action="/sst/control/relevamientos/{{ o.id }}" style="margin-top:6px;">
+                      <div class="control-chips">
+                        {% for s in sedes_control %}
+                          <label class="chip-sede {% if s.codigo in o.done_sedes %}ok{% endif %}" data-fuero="{{ s.fuero }}" data-code="{{ s.codigo }}">
+                            <input type="checkbox" name="sede_{{ s.codigo }}" {% if s.codigo in o.done_sedes %}checked{% endif %}>
+                            {{ s.codigo }}
+                          </label>
+                        {% endfor %}
+                      </div>
+                      <div style="display:flex;justify-content:flex-end;margin-top:6px;">
+                        <button class="btn outline-amber" type="submit">Guardar</button>
+                      </div>
+                    </form>
+                  </details>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="panel-note">No hay objetivos cargados.</p>
+    {% endif %}
+  </div>
+  {% endif %}
+  {% if vista in ['all', 'ergonomia'] %}
+  <section class="ergo-card" id="sec-ergonomia">
+    <div class="plan-head">
+      <div>
+        <h2 style="margin:0;">Riesgo prioritario en gestion: ergonomia</h2>
+        <p class="plan-meta" style="margin-top:4px;">
+          Seguimiento del principal riesgo operativo actual del MPD y sus medidas de control.
+        </p>
+      </div>
+      <div class="ergo-tools">
+        {% if ergo_manual_url %}
+          <a class="btn outline-slate btn-ergo-soft" href="{{ ergo_manual_url }}" target="_blank" rel="noopener">Criterios de evaluacion</a>
+        {% endif %}
+        {% if ergo_gestion_url %}
+          <a class="btn outline-slate btn-ergo-soft" href="{{ ergo_gestion_url }}" target="_blank" rel="noopener">Como gestionamos el riesgo</a>
+        {% endif %}
+        <a class="btn outline-slate btn-ergo-soft" href="{{ url_for('sst_ergonomia_export_csv', ergo_sede=ergo_sede or None) }}">CSV</a>
+      </div>
+    </div>
+    {% if ergonomia_loaded %}
+      <form method="get" action="{{ url_for('sst_plan_cargar') if show_carga else url_for('sst_plan') }}" class="ergo-filters" id="ergo-filtro-form">
+        <div class="license-field">
+          <label>Sede</label>
+          <select name="ergo_sede" data-ergo-filtro>
+            <option value="">(todas)</option>
+            {% for s in ergo_sedes %}
+              <option value="{{ s.codigo }}" {% if ergo_sede == s.codigo %}selected{% endif %}>{{ s.codigo }} - {{ s.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="license-field">
+          <label>Persona</label>
+          <select name="ergo_personal_id" data-ergo-filtro>
+            {% for p in ergonomia_rows %}
+              <option value="{{ p.personal_id }}" {% if ergo_personal_id == p.personal_id %}selected{% endif %}>{{ p.nombre_apellido }} ({{ p.codigo_sede }})</option>
+            {% endfor %}
+          </select>
+        </div>
+      </form>
+
+      <div class="ergo-quick">
+        <button type="button" class="main" onclick="toggleErgoCarga(true)">+ Cargar / editar ficha</button>
+        <button type="button" class="sub" onclick="goErgoCuadro()">Ver cuadro</button>
+      </div>
+
+      <div id="ergo-cuadro">
+        <div class="ergo-kpis">
+          <div class="plan-kpi kpi-total">
+            <div class="label">Personal</div>
+            <div class="value">{{ ergonomia_total }}</div>
+          </div>
+          <div class="plan-kpi kpi-risk">
+            <div class="label">Urgente</div>
+            <div class="value">{{ ergonomia_urgente }}</div>
+          </div>
+          <div class="plan-kpi kpi-warn">
+            <div class="label">Programado</div>
+            <div class="value">{{ ergonomia_programado }}</div>
+          </div>
+          <div class="plan-kpi kpi-ok">
+            <div class="label">Condicion adecuada</div>
+            <div class="value">{{ ergonomia_sin_atencion }}</div>
+          </div>
+          <div class="plan-kpi">
+            <div class="label">Promedio general</div>
+            <div class="value">{{ ergonomia_promedio_general if ergonomia_promedio_general is not none else '-' }}</div>
+          </div>
+        </div>
+        <div class="ergo-table-wrap">
+          <table class="ergo-table">
+            <thead>
+              <tr>
+                <th>Nombre y apellido</th>
+                <th>Edad</th>
+                <th>Punt. edad</th>
+                <th>Correo</th>
+                <th>Descripcion puesto</th>
+                <th>Punt. puesto</th>
+                <th>Descripcion salud</th>
+                <th>Punt. salud</th>
+                <th>NB</th>
+                <th>Horas PC</th>
+                <th>Dias eval.</th>
+                <th>Motivo riesgo</th>
+                <th>Evaluador</th>
+                <th>Promedio</th>
+                <th>Accion</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in ergonomia_rows %}
+                <tr data-ergo-row="{{ r.personal_id }}">
+                  <td>{{ r.nombre }}</td>
+                  <td class="center" data-ergo-edad>{{ r.edad or '-' }}</td>
+                  <td class="center" data-ergo-punt-edad>{{ r.punt_edad or '0' }}</td>
+                  <td>{{ r.correo or '-' }}</td>
+                  <td data-ergo-desc>{{ r.desc_puesto or '-' }}</td>
+                  <td class="center" data-ergo-punt-puesto>{{ r.punt_puesto or '0' }}</td>
+                  <td>{{ r.desc_salud or '-' }}</td>
+                  <td class="center">{{ r.punt_salud or '0' }}</td>
+                  <td class="center">{{ '💻' if (r.uso_notebook and r.uso_notebook.startswith('Si')) else '-' }}</td>
+                  <td class="center" data-ergo-horas>{{ r.horas_pc if r.horas_pc is not none and r.horas_pc != '' else '-' }}</td>
+                  <td class="center">{{ r.dias_desde_eval if r.dias_desde_eval is not none else '-' }}</td>
+                  <td>{{ (r.motivos_riesgo|join(', ')) if r.motivos_riesgo else '-' }}</td>
+                  <td data-ergo-evaluador>{{ r.evaluador or '-' }}</td>
+                  <td class="center" data-ergo-promedio>{{ 'Pendiente' if r.promedio is none else r.promedio }}</td>
+                  <td>
+                    <div class="plan-actions">
+                      {% if r.accion_class == 'urgente' %}
+                        <span class="ergo-badge urgente" data-ergo-accion>{{ r.accion_label }}</span>
+                      {% elif r.accion_class == 'programado' %}
+                        <span class="ergo-badge programado" data-ergo-accion>{{ r.accion_label }}</span>
+                      {% elif r.accion_class == 'ok' %}
+                        <span class="ergo-badge ok" data-ergo-accion>{{ r.accion_label }}</span>
+                      {% else %}
+                        <span class="ergo-badge otro" data-ergo-accion>{{ r.accion_label or '-' }}</span>
+                      {% endif %}
+                      <a class="btn xs outline-amber"
+                         href="{{ url_for('sst_ergonomia_gestion_riesgo',
+                                          personal_id=r.personal_id,
+                                          persona=r.nombre_apellido,
+                                          sede=r.codigo_sede,
+                                          estado_flujo=(r.estado_flujo or ''),
+                                          accion=(r.accion_label or ''),
+                                          intervencion=(r.intervencion_realizada or ''),
+                                          motivos=((r.motivos_riesgo|join(' | ')) if r.motivos_riesgo else '')
+                                          ) }}">
+                        Gestion riesgo
+                      </a>
+                      <a class="btn xs outline-slate"
+                         href="{{ (url_for('sst_plan_cargar') if show_carga else url_for('sst_plan')) ~ '?ergo_sede=' ~ (ergo_sede or '') ~ '&ergo_personal_id=' ~ r.personal_id ~ '#ergo-carga-box' }}">
+                        Editar
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="ergo-form" style="margin-top:10px;background:#f8fafc;">
+        <div class="plan-head" style="margin-bottom:8px;">
+          <div>
+            <div class="plan-title">Matriz IPER complementaria</div>
+            <div class="plan-meta">Marco tecnico de identificacion, probabilidad, consecuencia y prioridad de control.</div>
+          </div>
+          <div class="plan-actions">
+            <button class="btn xs outline-slate" type="button" onclick="alert('Ampliar matriz IPER: bloque reservado para la matriz tecnica completa.');">
+              Ampliar matriz
+            </button>
+          </div>
+        </div>
+        <div class="ergo-form-grid">
+          <div class="license-field">
+            <label>Riesgo principal actual</label>
+            <input type="text" data-iper-riesgo value="Ergonomia en puestos administrativos" readonly>
+          </div>
+          <div class="license-field">
+            <label>Nivel de prioridad</label>
+            {% set sem = (ergo_selected.semaforo if ergo_selected else 'alto') %}
+            <input type="text" data-iper-prioridad value="{{ 'Alto - en gestion activa' if sem == 'alto' else ('Medio - seguimiento tecnico' if sem == 'medio' else 'Bajo - control periodico') }}" readonly>
+          </div>
+          <div class="license-field">
+            <label>Criterio de control</label>
+            {% set intv = ((ergo_selected.intervencion_realizada or '') if ergo_selected else '') %}
+            <input type="text" data-iper-criterio value="{{ 'Control administrativo: capacitacion y seguimiento' if intv in ['Capacitacion', 'Control administrativo'] else 'Primero correccion del puesto, luego seguimiento' }}" readonly>
+          </div>
+          <div class="license-field">
+            <label>Escalon de la piramide</label>
+            <input type="text" data-iper-escalon value="{{ '4. Administrativo' if intv in ['Capacitacion', 'Control administrativo'] else ('3. Ingenieria' if intv in ['Ajuste monitor', 'Cambio silla', 'Reubicacion'] else 'Pendiente definicion de control') }}" readonly>
+          </div>
+          <div class="license-field">
+            <label>Estado del caso</label>
+            <input type="text" data-iper-estado value="{{ (ergo_selected.estado_flujo if ergo_selected and ergo_selected.estado_flujo else 'Programado') }}" readonly>
+          </div>
+          <div class="license-field full">
+            <label>Como se aplica hoy</label>
+            <textarea rows="2" data-iper-aplica readonly>Se toma Ergonomia como riesgo prioritario del MPD. Proceso: relevamiento, evaluacion, seleccion de control por jerarquia, implementacion, verificacion y cierre.</textarea>
+          </div>
+        </div>
+      </div>
+
+      <div id="ergo-carga-box" style="display:none;">
+      <details class="ergo-manual">
+        <summary>Guia rapida de relevamiento ergonomico</summary>
+        <ul>
+          <li>Registrar nombre y descripcion del puesto real.</li>
+          <li>Elegir silla: fija, giratoria o ergonomica.</li>
+          <li>Relevar escritorio: PC, mesa PC o escritorio en L.</li>
+          <li>Verificar altura del monitor: debe quedar a la altura de los ojos.</li>
+          <li>Evaluar espacio para piernas y zona de alcance de trabajo.</li>
+          <li>Si corresponde, indicar ajuste de altura de monitor o escritorio.</li>
+        </ul>
+      </details>
+
+      {% if ergo_selected %}
+      <form method="post" action="{{ url_for('sst_ergonomia_guardar') }}" class="ergo-form" data-autosave="1" id="ergo-ficha">
+        <input type="hidden" name="next" value="{{ 'cargar' if show_carga else 'plan' }}">
+        <input type="hidden" name="ergo_sede" value="{{ ergo_sede or '' }}">
+        <input type="hidden" name="personal_id" value="{{ ergo_selected.personal_id }}">
+        <div class="plan-head" style="margin-bottom:8px;">
+          <div class="plan-meta">Autoguardado activo al cambiar cualquier campo.</div>
+          <div class="plan-actions">
+            {% set flow = (ergo_selected.estado_flujo or 'Programado') %}
+            {% set flow_class = 'pendiente' if flow == 'Programado' else ('evaluado' if flow in ['Relevado', 'Riesgo evaluado', 'Recomendacion emitida'] else ('impl' if flow in ['Implementado', 'Verificado'] else 'cerrado')) %}
+            {% set sem = ergo_selected.semaforo or 'bajo' %}
+            <span class="ergo-flow-badge {{ flow_class }}" data-ergo-flow>{{ flow }}</span>
+            <span class="ergo-flow-badge sem-{{ sem }}" data-ergo-semaforo>{{ 'Bajo' if sem == 'bajo' else ('Medio' if sem == 'medio' else 'Alto') }}</span>
+            <span class="ergo-save-state" data-ergo-save-state>Sin cambios</span>
+          </div>
+        </div>
+        <div class="plan-meta" style="margin:-2px 0 8px;">
+          Ultima evaluacion: {{ ergo_selected.fecha_relevamiento or '-' }} / {{ ergo_selected.evaluador or '-' }}
+          {% if ergo_selected.caso_prioritario %} | <strong>Caso prioritario</strong>{% endif %}
+        </div>
+        {% if ergo_selected.risk_flags %}
+          <div class="ergo-alert" data-ergo-alert>
+            Caso con factor de riesgo. {{ ergo_selected.risk_flags|join(' | ') }}.
+          </div>
+        {% else %}
+          <div class="ergo-alert" data-ergo-alert style="display:none;"></div>
+        {% endif %}
+        <div class="ergo-form-grid">
+          <div class="license-field">
+            <label>Nombre y apellido</label>
+            <input type="text" value="{{ ergo_selected.nombre_apellido }}" readonly>
+          </div>
+          <div class="license-field">
+            <label>Correo</label>
+            <input type="text" value="{{ ergo_selected.correo or '-' }}" readonly>
+          </div>
+          <div class="license-field">
+            <label>Sede</label>
+            <input type="text" value="{{ ergo_selected.codigo_sede }}" readonly>
+          </div>
+
+          <div class="license-field">
+            <label>Descripcion del puesto</label>
+            <select name="descripcion_puesto">
+              {% for op in ergo_desc_options %}
+                <option value="{{ op }}" {% if (ergo_selected.descripcion_puesto or '') == op %}selected{% endif %}>{{ op }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="license-field">
+            <label>Silla</label>
+            <select name="tipo_silla">
+              {% for op in ergo_silla_options %}
+                <option value="{{ op }}" {% if (ergo_selected.tipo_silla or '') == op %}selected{% endif %}>{{ op }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="license-field">
+            <label>Escritorio</label>
+            <select name="tipo_escritorio">
+              {% for op in ergo_escritorio_options %}
+                <option value="{{ op }}" {% if (ergo_selected.tipo_escritorio or '') == op %}selected{% endif %}>{{ op }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="license-field">
+            <label>Soporte monitor</label>
+            <select name="soporte_monitor">
+              {% for op in ergo_soporte_options %}
+                <option value="{{ op }}" {% if (ergo_selected.soporte_monitor or '') == op %}selected{% endif %}>{{ op }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="license-field">
+            <label>Altura del monitor</label>
+            <select name="altura_monitor">
+              {% for op in ergo_altura_monitor_options %}
+                <option value="{{ op }}" {% if (ergo_selected.altura_monitor or '') == op %}selected{% endif %}>{{ op }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="license-field">
+            <label>Espacio para piernas</label>
+            <select name="espacio_piernas">
+              {% for op in ergo_espacio_piernas_options %}
+                <option value="{{ op }}" {% if (ergo_selected.espacio_piernas or '') == op %}selected{% endif %}>{{ op }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="license-field">
+            <label>Ajuste recomendado</label>
+            <select name="ajuste_altura">
+              {% for op in ergo_ajuste_altura_options %}
+                <option value="{{ op }}" {% if (ergo_selected.ajuste_altura or '') == op %}selected{% endif %}>{{ op }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="license-field">
+            <label>Horas diarias en PC</label>
+            <input type="number" name="horas_pc" min="0" max="16" value="{{ ergo_selected.horas_pc or '' }}" placeholder="Ej: 6">
+          </div>
+          <div class="license-field">
+            <label>Uso de notebook</label>
+            <select name="uso_notebook">
+              {% for op in ergo_notebook_options %}
+                <option value="{{ op }}" {% if (ergo_selected.uso_notebook or '') == op %}selected{% endif %}>{{ op }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="license-field">
+            <label>Accion (calculada)</label>
+            <input type="text" name="accion_tomar_calc" value="{{ ergo_selected.accion_label or '-' }}" readonly>
+          </div>
+          <div class="license-field">
+            <label>Intervencion realizada</label>
+            <select name="intervencion_realizada">
+              {% for op in ergo_intervencion_options %}
+                <option value="{{ op }}" {% if (ergo_selected.intervencion_realizada or '') == op %}selected{% endif %}>{{ op }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="license-field">
+            <label>Fecha de relevamiento</label>
+            <input type="date" name="fecha_relevamiento" value="{{ ergo_selected.fecha_relevamiento or '' }}">
+          </div>
+          <div class="license-field">
+            <label>Fecha de nacimiento</label>
+            <input type="date" name="fecha_nacimiento" value="{{ ergo_selected.fecha_nacimiento or '' }}">
+          </div>
+          <div class="license-field">
+            <label>Evaluador</label>
+            <input type="text" name="evaluador" value="{{ ergo_selected.evaluador or '' }}" placeholder="Nombre del evaluador">
+          </div>
+          <div class="license-field full">
+            <label>Observaciones</label>
+            <textarea name="observaciones" rows="2" placeholder="Ej: monitor bajo, falta soporte, mesa baja para persona alta.">{{ ergo_selected.observaciones or '' }}</textarea>
+          </div>
+        </div>
+      </form>
+      <form method="post" action="{{ url_for('sst_ergonomia_salud_guardar') }}" class="ergo-form" style="margin-top:8px;background:#f8fbff;border-color:#dbeafe;">
+        <input type="hidden" name="next" value="{{ 'cargar' if show_carga else 'plan' }}">
+        <input type="hidden" name="ergo_sede" value="{{ ergo_sede or '' }}">
+        <input type="hidden" name="personal_id" value="{{ ergo_selected.personal_id }}">
+        <div class="plan-head" style="margin-bottom:8px;">
+          <div class="plan-meta"><strong>Carga Salud (Dpto. Medico)</strong> - separado del relevamiento ergonomico.</div>
+        </div>
+        <div class="ergo-form-grid">
+          <div class="license-field">
+            <label>Persona</label>
+            <input type="text" value="{{ ergo_selected.nombre_apellido }}" readonly>
+          </div>
+          <div class="license-field">
+            <label>Evaluador medico</label>
+            <input type="text" name="salud_evaluador" value="{{ ergo_selected.salud_evaluador or '' }}" placeholder="Profesional medico">
+          </div>
+          <div class="license-field">
+            <label>Fecha evaluacion salud</label>
+            <input type="date" name="salud_fecha" value="{{ ergo_selected.salud_fecha or '' }}">
+          </div>
+          <div class="license-field full">
+            <label>Resultado de salud</label>
+            <select name="descripcion_salud_med">
+              {% for op in ergo_salud_options %}
+                <option value="{{ op.label }}" {% if (ergo_selected.descripcion_salud or '') == op.label %}selected{% endif %}>
+                  {{ op.label }} (puntaje {{ op.score }})
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="plan-actions" style="margin-top:8px;">
+          <button class="btn xs outline-slate" type="submit">Guardar salud</button>
+        </div>
+      </form>
+      <form method="post" action="{{ url_for('sst_ergonomia_reevaluar') }}" style="margin-top:10px;margin-bottom:12px;">
+        <input type="hidden" name="next" value="{{ 'cargar' if show_carga else 'plan' }}">
+        <input type="hidden" name="ergo_sede" value="{{ ergo_sede or '' }}">
+        <input type="hidden" name="personal_id" value="{{ ergo_selected.personal_id }}">
+        <button class="btn xs outline-amber" type="submit" onclick="return confirm('Iniciar reevaluacion y reiniciar estado del caso?');">Reevaluar</button>
+      </form>
+      <form method="post" action="{{ url_for('sst_ergonomia_cerrar') }}" style="margin-top:-8px;margin-bottom:12px;">
+        <input type="hidden" name="next" value="{{ 'cargar' if show_carga else 'plan' }}">
+        <input type="hidden" name="ergo_sede" value="{{ ergo_sede or '' }}">
+        <input type="hidden" name="personal_id" value="{{ ergo_selected.personal_id }}">
+        <button class="btn xs outline-slate" type="submit" onclick="return confirm('Cerrar este caso?');">Cerrar caso</button>
+      </form>
+      {% endif %}
+      </div>
+    {% endif %}
+  </section>
+  {% endif %}
+
+    {% if vista in ['all', 'gantt'] %}
+    <header class="section-header plan-head" style="margin:16px 0 10px;">
+      <div>
+        <h1>Cronograma de implementacion y seguimiento</h1>
+        <p class="section-sub">Plan anual de acciones, verificacion y cierres del sistema SST.</p>
+      </div>
+      <div class="plan-actions">
+        {% if show_carga %}
+          <a class="btn outline-slate" href="{{ url_for('sst_plan') }}">Ver cronograma</a>
+        {% else %}
+          <a class="btn outline-amber" href="{{ url_for('sst_plan_cargar') }}">Cargar</a>
+        {% endif %}
+        <a class="btn outline-slate" href="{{ url_for('sst_general') }}">Volver a SST</a>
+      </div>
+    </header>
+    {% endif %}
+
+    {% if vista in ['all', 'gantt'] %}
+  <div class="plan-grid">
+    {% if show_carga and edit_obj %}
+      <div class="plan-card">
+        <div class="plan-title">Editar objetivo</div>
+        <form method="post" action="{{ url_for('sst_plan_editar', oid=edit_obj.id, next='cargar') }}" class="plan-form">
+          <input type="hidden" name="return_to" value="cargar">
+          <div class="license-grid">
+            <div class="license-field">
+              <label>Sede</label>
+              <select name="sede_codigo">
+                <option value="">(todas / general)</option>
+                {% for s in sedes %}
+                  <option value="{{ s.codigo }}" {% if edit_obj.sede_codigo==s.codigo %}selected{% endif %}>{{ s.codigo }} - {{ s.nombre }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="license-field">
+              <label>Codigo</label>
+              <input type="text" name="codigo" value="{{ edit_obj.codigo or '' }}">
+            </div>
+            <div class="license-field full">
+              <label>Titulo</label>
+              <input type="text" name="titulo" value="{{ edit_obj.titulo }}">
+            </div>
+            <div class="license-field">
+              <label>Horizonte</label>
+              <select name="horizonte_meses">
+                <option value="" {% if not edit_obj.horizonte_meses %}selected{% endif %}>(sin definir)</option>
+                <option value="3" {% if edit_obj.horizonte_meses==3 %}selected{% endif %}>3 meses</option>
+                <option value="6" {% if edit_obj.horizonte_meses==6 %}selected{% endif %}>6 meses</option>
+                <option value="12" {% if edit_obj.horizonte_meses==12 %}selected{% endif %}>12 meses</option>
+              </select>
+            </div>
+            <div class="license-field">
+              <label>Prioridad</label>
+              <select name="prioridad">
+                <option value="" {% if not edit_obj.prioridad %}selected{% endif %}>(sin especificar)</option>
+                <option value="Alta" {% if edit_obj.prioridad=='Alta' %}selected{% endif %}>Alta</option>
+                <option value="Media" {% if edit_obj.prioridad=='Media' %}selected{% endif %}>Media</option>
+                <option value="Baja" {% if edit_obj.prioridad=='Baja' %}selected{% endif %}>Baja</option>
+              </select>
+            </div>
+            <div class="license-field">
+              <label>Fecha inicio</label>
+              <input type="date" name="fecha_inicio" value="{{ edit_obj.fecha_inicio or '' }}">
+            </div>
+            <div class="license-field">
+              <label>Fecha fin</label>
+              <input type="date" name="fecha_fin" value="{{ edit_obj.fecha_fin or '' }}">
+            </div>
+            <div class="license-field">
+              <label>Estado</label>
+              <select name="estado">
+                <option value="" {% if not edit_obj.estado %}selected{% endif %}>(sin especificar)</option>
+                <option value="EN_CURSO" {% if edit_obj.estado=='EN_CURSO' %}selected{% endif %}>En curso</option>
+                <option value="CUMPLIDO" {% if edit_obj.estado=='CUMPLIDO' %}selected{% endif %}>Cumplido</option>
+                <option value="EN_RIESGO" {% if edit_obj.estado=='EN_RIESGO' %}selected{% endif %}>En riesgo</option>
+              </select>
+            </div>
+            <div class="license-field full">
+              <label>Descripcion</label>
+              <textarea name="descripcion" rows="3">{{ edit_obj.descripcion or '' }}</textarea>
+            </div>
+          </div>
+          <div class="license-actions">
+            <button class="btn outline-amber" type="submit">Guardar cambios</button>
+            <a class="btn outline-slate" href="{{ url_for('sst_plan_cargar') }}">Cancelar</a>
+          </div>
+        </form>
+      </div>
+    {% endif %}
+    {% if show_carga and edit_acc %}
+      <div class="plan-card">
+        <div class="plan-title">Editar accion</div>
+        <div class="plan-meta" style="margin-bottom:6px;">{{ edit_acc.objetivo_titulo }}</div>
+        <form method="post" action="{{ url_for('sst_plan_accion_editar', aid=edit_acc.id, next='cargar') }}" class="plan-form">
+          <input type="hidden" name="return_to" value="cargar">
+          <div class="license-grid">
+            <div class="license-field full">
+              <label>Accion</label>
+              <input type="text" name="nombre" value="{{ edit_acc.nombre }}">
+            </div>
+            <div class="license-field">
+              <label>Fase</label>
+              <select name="fase">
+                <option value="" {% if not edit_acc.fase %}selected{% endif %}>(sin especificar)</option>
+                <option value="Planificacion" {% if edit_acc.fase=='Planificacion' %}selected{% endif %}>Planificacion</option>
+                <option value="Implementacion" {% if edit_acc.fase=='Implementacion' %}selected{% endif %}>Implementacion</option>
+                <option value="Evaluacion" {% if edit_acc.fase=='Evaluacion' %}selected{% endif %}>Evaluacion</option>
+              </select>
+            </div>
+            <div class="license-field">
+              <label>Area responsable</label>
+              <input type="text" name="responsable_area" value="{{ edit_acc.responsable_area or '' }}">
+            </div>
+            <div class="license-field">
+              <label>Estado</label>
+              <select name="estado">
+                <option value="" {% if not edit_acc.estado %}selected{% endif %}>(sin especificar)</option>
+                <option value="PENDIENTE" {% if edit_acc.estado=='PENDIENTE' %}selected{% endif %}>Pendiente</option>
+                <option value="EN_CURSO" {% if edit_acc.estado=='EN_CURSO' %}selected{% endif %}>En curso</option>
+                <option value="COMPLETADO" {% if edit_acc.estado=='COMPLETADO' %}selected{% endif %}>Completado</option>
+              </select>
+            </div>
+            <div class="license-field">
+              <label>Inicio</label>
+              <input type="date" name="fecha_inicio" value="{{ edit_acc.fecha_inicio or '' }}">
+            </div>
+            <div class="license-field">
+              <label>Fin</label>
+              <input type="date" name="fecha_fin" value="{{ edit_acc.fecha_fin or '' }}">
+            </div>
+            <div class="license-field">
+              <label>Avance %</label>
+              <input type="number" name="avance_pct" min="0" max="100" value="{{ edit_acc.avance_pct or '' }}">
+            </div>
+            <div class="license-field full">
+              <label>Indicador de cumplimiento</label>
+              <input type="text" name="indicador" value="{{ edit_acc.indicador or '' }}">
+            </div>
+            <div class="license-field">
+              <label>Clasificacion</label>
+              <input type="text" name="clasificacion" value="{{ edit_acc.clasificacion or '' }}">
+            </div>
+            <div class="license-field">
+              <label>Justificacion</label>
+              <input type="text" name="justificacion" value="{{ edit_acc.justificacion or '' }}">
+            </div>
+            <div class="license-field full">
+              <label>Evidencia (link)</label>
+              <input type="url" name="evidencia_url" value="{{ edit_acc.evidencia_url or '' }}">
+            </div>
+            <div class="license-field full">
+              <label>Notas</label>
+              <textarea name="notas" rows="3">{{ edit_acc.notas or '' }}</textarea>
+            </div>
+          </div>
+          <div class="license-actions">
+            <button class="btn outline-amber" type="submit">Guardar cambios</button>
+            <a class="btn outline-slate" href="{{ url_for('sst_plan_cargar') }}">Cancelar</a>
+          </div>
+        </form>
+      </div>
+    {% endif %}
+    {% if show_carga %}
+      <div class="plan-card">
+        <div class="plan-title">Nuevo objetivo</div>
+        <form method="post" action="{{ url_for('sst_plan') }}" class="plan-form">
+          <input type="hidden" name="return_to" value="cargar">
+          <div class="license-grid">
+            <div class="license-field">
+              <label>Sede</label>
+              <select name="sede_codigo">
+                <option value="">(todas / general)</option>
+                {% for s in sedes %}
+                  <option value="{{ s.codigo }}">{{ s.codigo }} - {{ s.nombre }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="license-field">
+              <label>Codigo</label>
+              <input type="text" name="codigo" placeholder="OBJ 3M-01">
+            </div>
+            <div class="license-field full">
+              <label>Titulo</label>
+              <input type="text" name="titulo" placeholder="Carteleria preventiva">
+            </div>
+            <div class="license-field">
+              <label>Horizonte</label>
+              <select name="horizonte_meses">
+                <option value="">(sin definir)</option>
+                <option value="3">3 meses</option>
+                <option value="6">6 meses</option>
+                <option value="12">12 meses</option>
+              </select>
+            </div>
+            <div class="license-field">
+              <label>Prioridad</label>
+              <select name="prioridad">
+                <option value="">(sin especificar)</option>
+                <option value="Alta">Alta</option>
+                <option value="Media">Media</option>
+                <option value="Baja">Baja</option>
+              </select>
+            </div>
+            <div class="license-field">
+              <label>Fecha inicio</label>
+              <input type="date" name="fecha_inicio">
+            </div>
+            <div class="license-field">
+              <label>Fecha fin</label>
+              <input type="date" name="fecha_fin">
+            </div>
+            <div class="license-field">
+              <label>Estado</label>
+              <select name="estado">
+                <option value="">(sin especificar)</option>
+                <option value="EN_CURSO">En curso</option>
+                <option value="CUMPLIDO">Cumplido</option>
+                <option value="EN_RIESGO">En riesgo</option>
+              </select>
+            </div>
+            <div class="license-field full">
+              <label>Descripcion</label>
+              <textarea name="descripcion" rows="3" placeholder="Objetivo, alcance y resultado esperado."></textarea>
+            </div>
+          </div>
+          <div class="license-actions">
+            <button class="btn outline-amber" type="submit">Crear objetivo</button>
+          </div>
+        </form>
+      </div>
+    {% endif %}
+
+    <div class="plan-card gantt-card" id="sec-gantt">
+      <div class="gantt-annual" style="margin-bottom:10px;">
+        <div class="plan-head" style="margin-bottom:6px;">
+          <div class="plan-title">Gantt estimado integral (SST)</div>
+          <div class="plan-meta">Planificacion 2 meses - Implementacion 3 meses - Evaluacion periodica 3 veces al ano</div>
+        </div>
+        {% set months2 = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'] %}
+        <table class="gantt-annual-table">
+          <thead>
+            <tr>
+              <th>Linea</th>
+              {% for m in months2 %}
+                <th>{{ m }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Cuadro unico: relevamiento no conformidades</td>
+              {% for i in range(1, 13) %}<td class="gantt-annual-cell {% if i <= 2 %}planif{% else %}idle{% endif %}"></td>{% endfor %}
+            </tr>
+            <tr>
+              <td>Cuadro unico: medidas correctivas/prioridades</td>
+              {% for i in range(1, 13) %}<td class="gantt-annual-cell {% if i >= 3 and i <= 5 %}impl{% else %}idle{% endif %}"></td>{% endfor %}
+            </tr>
+            <tr>
+              <td>Cuadro unico: evaluacion periodica (3 veces)</td>
+              {% for i in range(1, 13) %}<td class="gantt-annual-cell {% if i in [6,9,12] %}eval{% else %}idle{% endif %}"></td>{% endfor %}
+            </tr>
+            <tr>
+              <td>Ergonomia: relevamiento puestos de trabajo</td>
+              {% for i in range(1, 13) %}<td class="gantt-annual-cell {% if i <= 4 %}planif{% else %}idle{% endif %}"></td>{% endfor %}
+            </tr>
+            <tr>
+              <td>Ergonomia: medidas preventivas/correctivas urgentes</td>
+              {% for i in range(1, 13) %}<td class="gantt-annual-cell {% if i >= 5 and i <= 6 %}impl{% else %}idle{% endif %}"></td>{% endfor %}
+            </tr>
+            <tr>
+              <td>Ergonomia: medidas preventivas/correctivas medias</td>
+              {% for i in range(1, 13) %}<td class="gantt-annual-cell {% if i >= 7 and i <= 10 %}impl{% else %}idle{% endif %}"></td>{% endfor %}
+            </tr>
+            <tr>
+              <td>Ergonomia: control periodico (condicion adecuada)</td>
+              {% for i in range(1, 13) %}<td class="gantt-annual-cell {% if i >= 11 %}eval{% else %}idle{% endif %}"></td>{% endfor %}
+            </tr>
+            <tr>
+              <td>Gestion de riesgo: seguimiento transversal</td>
+              {% for i in range(1, 13) %}<td class="gantt-annual-cell blocked"></td>{% endfor %}
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="plan-title">Objetivos activos</div>
+      <div class="plan-kpis">
+        <div class="plan-kpi kpi-total">
+          <div class="label">Objetivos</div>
+          <div class="value">{{ total_obj }}</div>
+        </div>
+        <div class="plan-kpi kpi-ok">
+          <div class="label">Cumplidos</div>
+          <div class="value">{{ total_cumplidos }}</div>
+        </div>
+        <div class="plan-kpi kpi-warn">
+          <div class="label">En curso</div>
+          <div class="value">{{ total_en_curso }}</div>
+        </div>
+        <div class="plan-kpi kpi-risk">
+          <div class="label">En riesgo</div>
+          <div class="value">{{ total_riesgo }}</div>
+        </div>
+      </div>
+      <div class="gantt-annual">
+        <div class="plan-head" style="margin-bottom:6px;">
+          <div class="plan-title">Gantt anual (objetivos SST)</div>
+          <div class="plan-meta">Planificacion: Ene-Feb - Implementacion: Mar-May - Evaluacion: Jun - Jul-Dic libre</div>
+        </div>
+        {% set months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'] %}
+        <table class="gantt-annual-table">
+          <thead>
+            <tr>
+              <th>Objetivo</th>
+              {% for m in months %}
+                <th>{{ m }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for o in control_objetivos %}
+              <tr>
+                <td>
+                  <div class="control-title">{{ o.nombre }}</div>
+                  <div style="font-size:11px;color:#64748b;">{{ o.done_count }} / {{ o.total_count }} - {{ o.pct }}%</div>
+                </td>
+                {% for m in months %}
+                  {% set idx = loop.index0 %}
+                  {% if idx <= 1 %}
+                    {% set cell_class = 'planif' %}
+                  {% elif idx <= 4 %}
+                    {% set cell_class = 'impl' %}
+                  {% elif idx == 5 %}
+                    {% set cell_class = 'eval' %}
+                  {% else %}
+                    {% set cell_class = 'idle' %}
+                  {% endif %}
+                  {% if idx >= 2 and idx <= 5 and not o.decision_ok %}
+                    {% set cell_class = 'blocked' %}
+                  {% endif %}
+                  <td class="gantt-annual-cell {{ cell_class }}"></td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <div class="gantt-annual-legend">
+          <span style="color:#2563eb;">Planificacion</span>
+          <span style="color:#ea580c;">Implementacion</span>
+          <span style="color:#16a34a;">Evaluacion</span>
+          <span style="color:#94a3b8;">Bloqueado</span>
+        </div>
+      </div>
+      {% if objetivos and objetivos|length > 0 %}
+        {% for o in objetivos %}
+          <div class="plan-block">
+            <details class="obj-accordion">
+              <summary>
+                <div class="summary-left">
+                  <h4 style="margin:0;">{{ o.codigo or 'Objetivo' }} - {{ o.titulo }}</h4>
+                  <div class="plan-meta">
+                    {% if o.sede_codigo %}Sede {{ o.sede_codigo }}{% else %}General MPD{% endif %}
+                    {% if o.horizonte_meses %} - {{ o.horizonte_meses }} meses{% endif %}
+                  </div>
+                  {% if o.estado %}
+                    {% set estado = o.estado|upper %}
+                    {% if estado == 'CUMPLIDO' %}
+                      <div class="plan-state"><span class="plan-dot ok"></span>Cumplido</div>
+                    {% elif estado == 'EN_RIESGO' %}
+                      <div class="plan-state"><span class="plan-dot risk"></span>En riesgo</div>
+                    {% else %}
+                      <div class="plan-state"><span class="plan-dot warn"></span>En curso</div>
+                    {% endif %}
+                  {% endif %}
+                </div>
+                <div class="summary-right">
+                  <span class="summary-pill">{{ o.completed_actions }} / {{ o.total_actions }} acciones</span>
+                  <span class="summary-pill">{{ o.progress_pct }}%</span>
+                </div>
+              </summary>
+              <div class="content">
+                {% if show_carga %}
+                  <div class="plan-actions" style="justify-content:flex-end;">
+                    <a class="btn xs outline-slate" href="{{ url_for('sst_plan_editar', oid=o.id, next='cargar') }}">Editar</a>
+                    <form method="post" action="{{ url_for('sst_plan_eliminar', oid=o.id, next='cargar') }}" onsubmit="return confirm('Eliminar objetivo?');">
+                      <button class="btn xs outline-amber" type="submit">Eliminar</button>
+                    </form>
+                  </div>
+                {% endif %}
+                {% if o.descripcion %}
+                  <div class="sub" style="margin:8px 0;">{{ o.descripcion }}</div>
+                {% endif %}
+
+            {% if o.acciones and o.acciones|length > 0 %}
+              <table class="plan-table">
+                <thead>
+                  <tr>
+                    <th>Accion</th>
+                    <th>Fase</th>
+                    <th>Area</th>
+                    <th>Inicio</th>
+                    <th>Fin</th>
+                    <th>Estado</th>
+                    <th>Avance</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for a in o.acciones %}
+                    <tr>
+                      <td>{{ a.nombre }}</td>
+                      <td>{{ a.fase or '-' }}</td>
+                      <td>{{ a.responsable_area or '-' }}</td>
+                      <td>{{ a.fecha_inicio or '-' }}</td>
+                      <td>{{ a.fecha_fin or '-' }}</td>
+                      <td>{{ a.estado or '-' }}</td>
+                      <td>{{ a.avance_pct if a.avance_pct is not none else '-' }}</td>
+                      <td>
+                        {% if show_carga %}
+                          <div class="plan-actions">
+                            <a class="btn xs outline-slate" href="{{ url_for('sst_plan_accion_editar', aid=a.id, next='cargar') }}">Editar</a>
+                            <form method="post" action="{{ url_for('sst_plan_accion_eliminar', aid=a.id, next='cargar') }}" onsubmit="return confirm('Eliminar accion?');">
+                              <button class="btn xs outline-amber" type="submit">Eliminar</button>
+                            </form>
+                          </div>
+                        {% else %}
+                          <span class="plan-meta">Gestion en Cargar</span>
+                        {% endif %}
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            {% else %}
+              <div class="sub">Sin acciones cargadas.</div>
+            {% endif %}
+
+            {% if o.range_start and o.range_end %}
+              <div class="gantt-panel">
+                <div class="gantt-toolbar">
+                  <div class="left">
+                    <span class="plan-meta">Gantt del objetivo</span>
+                  </div>
+                  <div class="right">
+                    <label>Color por</label>
+                    <select class="gantt-color-mode" data-scope="obj-{{ o.id }}">
+                      <option value="accion" selected>Accion</option>
+                      <option value="fase">Fase</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="gantt gantt-wide" data-scope="obj-{{ o.id }}">
+                  <div class="gantt-grid"></div>
+                  <div class="gantt-header">
+                    {% for tick in o.month_ticks %}
+                      <span class="gantt-tick" style="left: {{ tick.left }}%;">{{ tick.label }}</span>
+                    {% endfor %}
+                  </div>
+                  <div class="gantt-body">
+                    {% for a in o.acciones %}
+                      <div class="gantt-row">
+                        <div class="label">{{ a.nombre }}</div>
+                        <div style="position:relative;height:16px;">
+                          {% if a.bar_left is not none and a.bar_width is not none %}
+                            {% set lname = a.nombre|lower %}
+                            {% set phase = 'relevamiento' if 'relev' in lname else
+                                           'pedido' if 'pedido' in lname else
+                                           'compras' if 'compra' in lname else
+                                           'entrega' if 'entreg' in lname else
+                                           'colocacion' if 'coloca' in lname else
+                                           'cierre' if 'cierre' in lname else '' %}
+                            {% set f = (a.fase or '')|lower %}
+                            {% set phase_class = 'phase-plan' if 'plan' in f else
+                                                 'phase-impl' if 'imple' in f else
+                                                 'phase-eval' if 'eval' in f else '' %}
+                            <div class="gantt-bar {{ phase }}" data-bar-action="{{ phase }}" data-bar-phase="{{ phase_class }}"
+                                 style="left: {{ a.bar_left }}%; width: {{ a.bar_width }}%;"></div>
+                          {% endif %}
+                        </div>
+                      </div>
+                    {% endfor %}
+                  </div>
+                </div>
+                <div class="gantt-legend gantt-legend-action">
+                  <span style="color:#0ea5e9;">Relevamiento</span>
+                  <span style="color:#f59e0b;">Pedido</span>
+                  <span style="color:#f97316;">Compras</span>
+                  <span style="color:#10b981;">Entrega</span>
+                  <span style="color:#8b5cf6;">Colocacion</span>
+                  <span style="color:#0f766e;">Cierre</span>
+                </div>
+                <div class="gantt-legend gantt-legend-phase" style="display:none;">
+                  <span style="color:#2563eb;">Planificacion</span>
+                  <span style="color:#ea580c;">Implementacion</span>
+                  <span style="color:#16a34a;">Evaluacion</span>
+                </div>
+              </div>
+            {% endif %}
+            <div class="progress-wrap">
+              <div class="progress-bar"><span style="width: {{ o.progress_pct }}%;"></span></div>
+              <div class="progress-meta">{{ o.completed_actions }} / {{ o.total_actions }} acciones completadas ({{ o.progress_pct }}%)</div>
+            </div>
+
+            {% if show_carga %}
+              <form method="post" action="{{ url_for('sst_plan_accion_agregar', oid=o.id, next='cargar') }}" class="action-form">
+                <div class="full">
+                  <label>Agregar accion</label>
+                </div>
+                <div>
+                  <input type="text" name="nombre" placeholder="Accion (ej: Relevamiento)">
+                </div>
+                <div>
+                  <select name="fase">
+                    <option value="">Fase</option>
+                    <option value="Planificacion">Planificacion</option>
+                    <option value="Implementacion">Implementacion</option>
+                    <option value="Evaluacion">Evaluacion</option>
+                  </select>
+                </div>
+                <div>
+                  <input type="text" name="responsable_area" placeholder="Area responsable">
+                </div>
+                <div>
+                  <select name="estado">
+                    <option value="">Estado</option>
+                    <option value="PENDIENTE">Pendiente</option>
+                    <option value="EN_CURSO">En curso</option>
+                    <option value="COMPLETADO">Completado</option>
+                  </select>
+                </div>
+                <div>
+                  <input type="date" name="fecha_inicio">
+                </div>
+                <div>
+                  <input type="date" name="fecha_fin">
+                </div>
+                <div>
+                  <input type="number" name="avance_pct" min="0" max="100" placeholder="Avance %">
+                </div>
+                <div class="full">
+                  <input type="text" name="indicador" placeholder="Indicador de cumplimiento">
+                </div>
+                <div>
+                  <input type="text" name="clasificacion" placeholder="Clasificacion">
+                </div>
+                <div>
+                  <input type="text" name="justificacion" placeholder="Justificacion">
+                </div>
+                <div class="full">
+                  <input type="url" name="evidencia_url" placeholder="Evidencia (link)">
+                </div>
+                <div class="full">
+                  <textarea name="notas" rows="2" placeholder="Notas"></textarea>
+                </div>
+                <div class="full" style="display:flex;justify-content:flex-end;">
+                  <button class="btn outline-amber" type="submit">Agregar accion</button>
+                </div>
+              </form>
+            {% endif %}
+              </div>
+            </details>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="panel-note">No hay objetivos cargados.</p>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</section>
+
+<script>
+  (function () {
+    const filtroForm = document.getElementById("ergo-filtro-form");
+    if (filtroForm) {
+      filtroForm.querySelectorAll("[data-ergo-filtro]").forEach((el) => {
+        el.addEventListener("change", () => filtroForm.submit());
+      });
+    }
+
+    const form = document.querySelector(".ergo-form[data-autosave='1']");
+    if (!form) return;
+    const stateEl = form.querySelector("[data-ergo-save-state]");
+    let timer = null;
+    let inFlight = false;
+    let dirty = false;
+
+    function setState(kind, text) {
+      if (!stateEl) return;
+      stateEl.classList.remove("saving", "saved", "error");
+      if (kind) stateEl.classList.add(kind);
+      stateEl.textContent = text;
+    }
+
+    async function doSave() {
+      if (inFlight) {
+        dirty = true;
+        return;
+      }
+      inFlight = true;
+      setState("saving", "Guardando...");
+      try {
+        const res = await fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: { "X-Requested-With": "XMLHttpRequest" }
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) throw new Error(data.message || "Error al guardar");
+        syncTableRowFromForm(data);
+        setState("saved", "Guardado");
+      } catch (err) {
+        setState("error", "Error al guardar");
+      } finally {
+        inFlight = false;
+        if (dirty) {
+          dirty = false;
+          doSave();
+        }
+      }
+    }
+
+    function scheduleSave() {
+      setState("", "Pendiente...");
+      clearTimeout(timer);
+      timer = setTimeout(doSave, 500);
+    }
+
+    function accionClass(label) {
+      const t = (label || "").toLowerCase().trim();
+      if (t === "urgente") return "urgente";
+      if (t === "programado") return "programado";
+      if (t === "no requiere atencion") return "ok";
+      if (t === "cerrado") return "ok";
+      return "otro";
+    }
+
+    function flowClass(flow) {
+      const t = (flow || "").toLowerCase().trim();
+      if (t === "programado") return "pendiente";
+      if (t === "relevado" || t === "riesgo evaluado" || t === "recomendacion emitida") return "evaluado";
+      if (t === "implementado" || t === "verificado") return "impl";
+      return "cerrado";
+    }
+
+    function syncTableRowFromForm(serverData) {
+      const pid = form.querySelector("input[name='personal_id']")?.value;
+      if (!pid) return;
+      const row = document.querySelector(`tr[data-ergo-row="${pid}"]`);
+      if (!row) return;
+
+      const desc = form.querySelector("select[name='descripcion_puesto']")?.value || "-";
+      const horas = form.querySelector("input[name='horas_pc']")?.value || "-";
+      const evaluador = form.querySelector("input[name='evaluador']")?.value || "-";
+      const accionRaw = (serverData && serverData.accion_raw) ? String(serverData.accion_raw) : "-";
+      const accionActual = form.querySelector("input[name='accion_tomar_calc']")?.value || "-";
+      const edad = (serverData && serverData.edad != null) ? String(serverData.edad) : null;
+      const puntEdad = (serverData && serverData.punt_edad != null) ? String(serverData.punt_edad) : null;
+      const puntPuesto = (serverData && serverData.puntuacion_puesto != null) ? String(serverData.puntuacion_puesto) : null;
+      const promedio = (serverData && serverData.promedio != null && serverData.promedio !== "") ? String(serverData.promedio) : "Pendiente";
+      const accionLabel = (serverData && serverData.accion_label) ? String(serverData.accion_label) : accionActual;
+      const riskFlags = (serverData && Array.isArray(serverData.risk_flags)) ? serverData.risk_flags : [];
+      const flow = (serverData && serverData.estado_flujo) ? String(serverData.estado_flujo) : null;
+      const sem = (serverData && serverData.semaforo) ? String(serverData.semaforo) : null;
+
+      const edadEl = row.querySelector("[data-ergo-edad]");
+      const puntEdadEl = row.querySelector("[data-ergo-punt-edad]");
+      const descEl = row.querySelector("[data-ergo-desc]");
+      const horasEl = row.querySelector("[data-ergo-horas]");
+      const evalEl = row.querySelector("[data-ergo-evaluador]");
+      const accionEl = row.querySelector("[data-ergo-accion]");
+      const puntEl = row.querySelector("[data-ergo-punt-puesto]");
+      const promEl = row.querySelector("[data-ergo-promedio]");
+      const flowEl = form.querySelector("[data-ergo-flow]");
+      const semEl = form.querySelector("[data-ergo-semaforo]");
+      const alertEl = form.querySelector("[data-ergo-alert]");
+
+      if (edadEl && edad !== null) edadEl.textContent = edad;
+      if (puntEdadEl && puntEdad !== null) puntEdadEl.textContent = puntEdad;
+      if (descEl) descEl.textContent = desc;
+      if (horasEl) horasEl.textContent = horas;
+      if (evalEl) evalEl.textContent = evaluador;
+      if (puntEl && puntPuesto !== null) puntEl.textContent = puntPuesto;
+      if (promEl) promEl.textContent = promedio;
+      if (accionEl) {
+        accionEl.textContent = accionLabel;
+        accionEl.classList.remove("urgente", "programado", "ok", "otro");
+        accionEl.classList.add(accionClass(accionRaw));
+      }
+      const accionCalcEl = form.querySelector("input[name='accion_tomar_calc']");
+      if (accionCalcEl) accionCalcEl.value = accionLabel;
+      if (flowEl && flow) {
+        flowEl.textContent = flow;
+        flowEl.classList.remove("pendiente", "evaluado", "impl", "cerrado");
+        flowEl.classList.add(flowClass(flow));
+      }
+      if (semEl && sem) {
+        semEl.textContent = sem === "alto" ? "Alto" : (sem === "medio" ? "Medio" : "Bajo");
+        semEl.classList.remove("sem-bajo", "sem-medio", "sem-alto");
+        semEl.classList.add(`sem-${sem}`);
+      }
+      if (alertEl) {
+        if (riskFlags.length) {
+          alertEl.style.display = "block";
+          alertEl.textContent = `Caso con factor de riesgo. ${riskFlags.join(" | ")}.`;
+          alertEl.style.background = riskFlags.some((x) => String(x).toLowerCase().includes("70")) ? "#fee2e2" : "#fef3c7";
+          alertEl.style.borderColor = riskFlags.some((x) => String(x).toLowerCase().includes("70")) ? "#fecaca" : "#fde68a";
+          alertEl.style.color = riskFlags.some((x) => String(x).toLowerCase().includes("70")) ? "#991b1b" : "#92400e";
+        } else {
+          alertEl.style.display = "none";
+          alertEl.textContent = "";
+        }
+      }
+      syncIperCard(serverData);
+    }
+
+    function mapPyramidByIntervention(intervencionRaw) {
+      const t = (intervencionRaw || "").toLowerCase().trim();
+      if (!t || t === "ninguna") {
+        return {
+          escalon: "Pendiente definicion de control",
+          criterio: "Definir control segun jerarquia de la piramide"
+        };
+      }
+      if (t.includes("administr") || t.includes("capacit")) {
+        return {
+          escalon: "4. Administrativo",
+          criterio: "Control administrativo: capacitacion y seguimiento"
+        };
+      }
+      if (t.includes("ajuste") || t.includes("silla") || t.includes("reubic")) {
+        return {
+          escalon: "3. Ingenieria",
+          criterio: "Correccion tecnica del puesto y seguimiento"
+        };
+      }
+      return {
+        escalon: "3. Ingenieria",
+        criterio: "Control tecnico con verificacion posterior"
+      };
+    }
+
+    function syncIperCard(serverData) {
+      const prioridadEl = document.querySelector("[data-iper-prioridad]");
+      const criterioEl = document.querySelector("[data-iper-criterio]");
+      const escalonEl = document.querySelector("[data-iper-escalon]");
+      const estadoEl = document.querySelector("[data-iper-estado]");
+      const aplicaEl = document.querySelector("[data-iper-aplica]");
+      const intervencion = form.querySelector("select[name='intervencion_realizada']")?.value || "";
+      const map = mapPyramidByIntervention(intervencion);
+
+      if (criterioEl) criterioEl.value = map.criterio;
+      if (escalonEl) escalonEl.value = map.escalon;
+      if (estadoEl && serverData && serverData.estado_flujo) estadoEl.value = String(serverData.estado_flujo);
+
+      const sem = (serverData && serverData.semaforo) ? String(serverData.semaforo) : "";
+      if (prioridadEl && sem) {
+        prioridadEl.value = sem === "alto"
+          ? "Alto - en gestion activa"
+          : (sem === "medio" ? "Medio - seguimiento tecnico" : "Bajo - control periodico");
+      }
+      if (aplicaEl) {
+        aplicaEl.value = `Se toma Ergonomia como riesgo prioritario del MPD. Proceso: relevamiento, evaluacion, ${map.escalon.toLowerCase()}, implementacion, verificacion y cierre.`;
+      }
+    }
+
+    const watchedInputs = form.querySelectorAll("input, select, textarea");
+    watchedInputs.forEach((el) => {
+      const type = (el.getAttribute("type") || "").toLowerCase();
+      if (type === "hidden" || el.readOnly || el.disabled) return;
+      if (el.tagName === "TEXTAREA" || type === "text" || type === "number" || type === "date") {
+        el.addEventListener("input", scheduleSave);
+      }
+      el.addEventListener("change", scheduleSave);
+    });
+
+    const intervencionEl = form.querySelector("select[name='intervencion_realizada']");
+    if (intervencionEl) {
+      intervencionEl.addEventListener("change", () => syncIperCard(null));
+    }
+    syncIperCard(null);
+  })();
+
+  function toggleErgoCarga(show) {
+    const box = document.getElementById("ergo-carga-box");
+    if (!box) return;
+    box.style.display = show ? "block" : "none";
+    if (show) {
+      box.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }
+
+  function goErgoCuadro() {
+    const box = document.getElementById("ergo-cuadro");
+    if (!box) return;
+    box.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  if (window.location.hash === "#ergo-carga-box") {
+    toggleErgoCarga(true);
+  }
+
+  document.querySelectorAll('.gantt-color-mode').forEach((select) => {
+    const applyMode = () => {
+      const scope = select.dataset.scope;
+      const mode = select.value;
+      const panel = document.querySelector(`.gantt[data-scope="${scope}"]`);
+      if (!panel) return;
+      panel.querySelectorAll('.gantt-bar').forEach((bar) => {
+        const actionClass = bar.dataset.barAction || '';
+        const phaseClass = bar.dataset.barPhase || '';
+        bar.className = `gantt-bar ${mode === 'fase' ? phaseClass : actionClass}`.trim();
+      });
+      const legendAction = select.closest('.gantt-panel').querySelector('.gantt-legend-action');
+      const legendPhase = select.closest('.gantt-panel').querySelector('.gantt-legend-phase');
+      if (legendAction && legendPhase) {
+        legendAction.style.display = mode === 'fase' ? 'none' : 'flex';
+        legendPhase.style.display = mode === 'fase' ? 'flex' : 'none';
+      }
+    };
+    select.addEventListener('change', applyMode);
+    applyMode();
+  });
+
+  const planifToggle = document.querySelector('[data-toggle-planif]');
+  if (planifToggle) {
+    const card = planifToggle.closest('.control-card');
+    const applyLabel = () => {
+      const showing = card && card.classList.contains('show-planif');
+      planifToggle.textContent = showing ? 'Ocultar planificacion' : 'Mostrar planificacion';
+    };
+    applyLabel();
+    planifToggle.addEventListener('click', () => {
+      if (!card) return;
+      card.classList.toggle('show-planif');
+      applyLabel();
+    });
+  }
+
+  document.querySelectorAll('[data-compra-toggle]').forEach((select) => {
+    const form = select.closest('form');
+    const fields = form ? form.querySelectorAll('[data-compra-fields]') : [];
+    const dateInputs = form ? form.querySelectorAll('[data-compra-fields] input[type=\"date\"]') : [];
+    const apply = () => {
+      const val = (select.value || '').toUpperCase();
+      const hide = val === 'NO' || val === 'N/A';
+      fields.forEach((el) => el.classList.toggle('control-compra-hidden', hide));
+      dateInputs.forEach((el) => {
+        if (hide) {
+          el.value = "";
+        }
+      });
+    };
+    select.addEventListener('change', apply);
+    apply();
+  });
+</script>
+
+{% endblock %}

@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="obras-shell">
+  <header class="obras-top">
+    <div>
+      <h2 class="obras-h2">Editar obra</h2>
+      <p class="obras-sub">Actualiza fechas y detalle del trabajo.</p>
+    </div>
+    <div class="obras-top-actions">
+      <a class="btn outline-blue btn-sm" href="{{ url_for('obras_home') }}">Volver</a>
+    </div>
+  </header>
+
+  <section class="cardx">
+    <div class="cardx-head">
+      <div>
+        <h3>Datos de la obra</h3>
+        <p>Completa los campos principales y las fechas.</p>
+      </div>
+      <span class="pill-soft">Edicion</span>
+    </div>
+
+    <form method="post" class="formx">
+      <div class="gridx">
+        <div class="fg">
+          <label>Sede</label>
+          <select name="codigo_sede" required>
+            <option value="">-- elegir sede --</option>
+            {% for s in sedes %}
+              <option value="{{ s.codigo }}" {% if obra.codigo_sede == s.codigo %}selected{% endif %}>
+                {{ s.codigo }} - {{ s.nombre }} ({{ s.ciudad }})
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="fg">
+          <label>Estado</label>
+          <select name="estado">
+            <option value="PENDIENTE" {% if obra.estado == 'PENDIENTE' %}selected{% endif %}>Pendiente</option>
+            <option value="EN_CURSO" {% if obra.estado == 'EN_CURSO' %}selected{% endif %}>En curso</option>
+            <option value="FINALIZADA" {% if obra.estado == 'FINALIZADA' %}selected{% endif %}>Finalizada</option>
+          </select>
+        </div>
+
+        <div class="fg full">
+          <label>Titulo / trabajo</label>
+          <input type="text" name="titulo" required value="{{ obra.titulo or '' }}">
+        </div>
+
+        <div class="fg">
+          <label>Tipo</label>
+          <input type="text" name="tipo" required value="{{ obra.tipo or '' }}"
+                 placeholder="Pintura, plomeria, etc.">
+        </div>
+
+        <div class="fg">
+          <label>Prioridad</label>
+          <select name="prioridad">
+            <option value="Alta" {% if obra.prioridad == 'Alta' %}selected{% endif %}>Alta</option>
+            <option value="Media" {% if obra.prioridad == 'Media' or not obra.prioridad %}selected{% endif %}>Media</option>
+            <option value="Baja" {% if obra.prioridad == 'Baja' %}selected{% endif %}>Baja</option>
+          </select>
+        </div>
+
+        <div class="fg">
+          <label>Fecha solicitud</label>
+          <input type="date" name="fecha_solicitud" required value="{{ obra.fecha_solicitud or '' }}">
+        </div>
+
+        <div class="fg">
+          <label>Fecha inicio</label>
+          <input type="date" name="fecha_inicio" value="{{ obra.fecha_inicio or '' }}">
+        </div>
+
+        <div class="fg">
+          <label>Fecha prevista</label>
+          <input type="date" name="fecha_fin_prevista" value="{{ obra.fecha_fin_prevista or '' }}">
+        </div>
+
+        <div class="fg">
+          <label>Fecha fin real</label>
+          <input type="date" name="fecha_fin_real" value="{{ obra.fecha_fin_real or '' }}">
+        </div>
+
+        <div class="fg full">
+          <label>Descripcion</label>
+          <textarea name="descripcion" rows="3">{{ obra.descripcion or '' }}</textarea>
+        </div>
+
+        <div class="fg full">
+          <label>Informe / Link</label>
+          <input type="url" name="informe_url" value="{{ obra.informe_url or '' }}"
+                 placeholder="https://drive.google.com/...">
+        </div>
+
+        <div class="fg full">
+          <label>Observaciones</label>
+          <textarea name="observaciones" rows="2">{{ obra.observaciones or '' }}</textarea>
+        </div>
+      </div>
+
+      <div class="formx-actions">
+        <button type="submit" class="btn primary btn-wide">Guardar cambios</button>
+        <a class="btn ghost btn-wide" href="{{ url_for('obras_home') }}">Cancelar</a>
+      </div>
+    </form>
+  </section>
+</section>
+
+<style>
+  .obras-shell{ display:flex; flex-direction:column; gap:12px; }
+  .obras-top{
+    display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap;
+  }
+  .obras-h2{ margin:0; font-size:20px; }
+  .obras-sub{ margin:2px 0 0; font-size:13px; color:#64748b; }
+  .obras-top-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+
+  .cardx{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:16px;
+    box-shadow:0 8px 22px rgba(15,23,42,.06);
+    overflow:hidden;
+  }
+  .cardx-head{
+    padding:12px 14px;
+    border-bottom:1px solid #eef2f7;
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .cardx-head h3{ margin:0; font-size:14px; }
+  .cardx-head p{ margin:2px 0 0; font-size:12px; color:#64748b; }
+  .pill-soft{
+    font-size:11px;
+    padding:3px 10px;
+    border-radius:999px;
+    background:#f1f5f9;
+    border:1px solid #e2e8f0;
+    color:#475569;
+    white-space:nowrap;
+  }
+
+  .formx{ padding:12px 14px 14px; }
+  .gridx{
+    display:grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap:10px;
+  }
+  .fg{ display:flex; flex-direction:column; gap:4px; }
+  .fg label{ font-size:11px; color:#64748b; }
+  .fg input, .fg select, .fg textarea{
+    font-size:13px;
+    padding:7px 10px;
+    border-radius:12px;
+    border:1px solid #e5e7eb;
+    background:#fff;
+    outline:none;
+  }
+  .fg textarea{ resize:vertical; min-height:62px; }
+  .fg.full{ grid-column:1 / -1; }
+
+  .formx-actions{
+    margin-top:10px;
+    display:flex;
+    justify-content:flex-end;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .btn-wide{ min-width:180px; }
+  .btn-sm{ padding:7px 12px; font-size:12px; border-radius:999px; }
+</style>
+
+{% endblock %}

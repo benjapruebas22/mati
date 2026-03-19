@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="sedes-section" style="max-width:1100px;margin:auto">
+
+  <h2 style="margin:0 0 6px 0">Matafuegos</h2>
+  <p style="margin:0 0 12px 0;font-size:13px;color:#64748b">
+    Alta / edición / baja por Sede, Piso y Local.
+  </p>
+
+  <!-- FILTROS -->
+  <form method="get" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+    <input name="sede" value="{{ sede }}" placeholder="Sede (S01)"
+      style="padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
+    <select name="piso" style="padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
+      {% for p in ['PB','P1','P2','P3','P4'] %}
+      <option value="{{ p }}" {% if piso==p %}selected{% endif %}>{{ p }}</option>
+      {% endfor %}
+    </select>
+    <input name="q" value="{{ q }}" placeholder="Buscar (local, tipo, serie, ubicación)"
+      style="min-width:260px;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
+    <button style="padding:8px 12px;border-radius:10px;border:1px solid #e5e7eb;background:#fff">Filtrar</button>
+
+    <a href="{{ url_for('dashboard') }}"
+      style="padding:8px 12px;border-radius:10px;border:1px solid #e5e7eb;background:#fff;text-decoration:none;color:#111827">
+      Volver
+    </a>
+  </form>
+
+  <!-- KPI -->
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px">
+      <div style="font-size:12px;color:#64748b">Total</div>
+      <div style="font-size:18px;font-weight:900">{{ kpi.total if kpi else 0 }}</div>
+    </div>
+    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px">
+      <div style="font-size:12px;color:#64748b">Vencen (45 días)</div>
+      <div style="font-size:18px;font-weight:900">{{ kpi.vencen_pronto if kpi else 0 }}</div>
+    </div>
+  </div>
+
+  <!-- FORM -->
+  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:14px;margin-bottom:14px">
+    <form method="post"
+      style="display:grid;grid-template-columns:repeat(4, minmax(160px,1fr));gap:10px;align-items:end">
+      <input type="hidden" name="id" value="{{ edit_row.id if edit_row else '' }}">
+
+      <div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:4px">Sede</div>
+        <input name="cod_sede" value="{{ (edit_row.cod_sede if edit_row else sede) }}" placeholder="S01"
+          style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
+      </div>
+
+      <div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:4px">Piso</div>
+        <input name="piso" value="{{ (edit_row.piso if edit_row else piso) }}" placeholder="PB/P1/P2"
+          style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
+      </div>
+
+      <div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:4px">Local</div>
+        <input name="codigo_local" value="{{ (edit_row.codigo_local if edit_row else '') }}" placeholder="D01"
+          style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
+      </div>
+
+      <div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:4px">Estado</div>
+        <select name="estado" style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
+          {% set est = (edit_row.estado if edit_row else 'OK') %}
+          {% for e in ['OK','FALTA','BAJA','A REPARAR'] %}
+          <option value="{{ e }}" {% if est==e %}selected{% endif %}>{{ e }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:4px">Tipo</div>
+        <input name="tipo" value="{{ edit_row.tipo if edit_row else '' }}" placeholder="ABC / CO2"
+          style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
+      </div>
+
+      <div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:4px">Capacidad (kg)</div>
+        <input name="capacidad_kg" value="{{ edit_row.capacidad_kg if edit_row else '' }}" placeholder="5"
+          style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
+      </div>
+
+      <div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:4px">N° Serie</div>
+        <input name="nro_serie" value="{{ edit_row.nro_serie if edit_row else '' }}"
+          style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
+      </div>
+
+      <div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:4px">Ubicación</div>
+        <input name="ubicacion" value="{{ edit_row.ubicacion if edit_row else '' }}" placeholder="Entrada / Pasillo"
+          style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
+      </div>
+
+      <div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:4px">Fecha recarga</div>
+        <input type="date" name="fecha_recarga" value="{{ edit_row.fecha_recarga if edit_row else '' }}"
+          style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
+      </div>
+
+      <div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:4px">Vence</div>
+        <input type="date" name="fecha_vencimiento" value="{{ edit_row.fecha_vencimiento if edit_row else '' }}"
+          style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
+      </div>
+
+      <div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:4px">Prueba hidro</div>
+        <input type="date" name="fecha_prueba_hidro" value="{{ edit_row.fecha_prueba_hidro if edit_row else '' }}"
+          style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
+      </div>
+
+      <div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:4px">Activo</div>
+        {% set act = (edit_row.activo if edit_row else 1) %}
+        <label style="display:flex;gap:8px;align-items:center">
+          <input type="checkbox" name="activo" value="1" {% if act==1 %}checked{% endif %}>
+          <span style="font-size:13px">Sí</span>
+        </label>
+      </div>
+
+      <div style="grid-column:1 / -1">
+        <div style="font-size:12px;color:#64748b;margin-bottom:4px">Observaciones</div>
+        <input name="observaciones" value="{{ edit_row.observaciones if edit_row else '' }}"
+          style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
+      </div>
+
+      <div style="grid-column:1 / -1;display:flex;gap:8px;flex-wrap:wrap">
+        <button name="accion" value="guardar"
+          style="padding:8px 12px;border-radius:10px;border:1px solid #1d4ed8;background:#1d4ed8;color:#fff">
+          Guardar
+        </button>
+
+        {% if edit_row %}
+        <button name="accion" value="eliminar" onclick="return confirm('¿Eliminar (baja lógica)?')"
+          style="padding:8px 12px;border-radius:10px;border:1px solid #ef4444;background:#fff;color:#ef4444">
+          Eliminar
+        </button>
+
+        <a href="{{ url_for('matafuegos_home', sede=sede, piso=piso, q=q) }}"
+          style="padding:8px 12px;border-radius:10px;border:1px solid #e5e7eb;background:#fff;text-decoration:none;color:#111827">
+          Cancelar edición
+        </a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+
+  <!-- TABLA -->
+  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;overflow:hidden">
+    <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead style="background:#f3f4f6">
+        <tr>
+          <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Local</th>
+          <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Tipo</th>
+          <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb">Kg</th>
+          <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Ubicación</th>
+          <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Serie</th>
+          <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Vence</th>
+          <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb">Estado</th>
+          <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb">Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+        <tr>
+          <td style="padding:8px;border-bottom:1px solid #e5e7eb;font-weight:900">{{ r.codigo_local }}</td>
+          <td style="padding:8px;border-bottom:1px solid #e5e7eb">{{ r.tipo or '' }}</td>
+          <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center">{{ r.capacidad_kg or '' }}</td>
+          <td style="padding:8px;border-bottom:1px solid #e5e7eb">{{ r.ubicacion or '' }}</td>
+          <td style="padding:8px;border-bottom:1px solid #e5e7eb">{{ r.nro_serie or '' }}</td>
+          <td style="padding:8px;border-bottom:1px solid #e5e7eb;font-weight:800">{{ r.fecha_vencimiento or '' }}</td>
+          <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;font-weight:800">{{ r.estado or 'OK'
+            }}</td>
+          <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right">
+            <a href="{{ url_for('matafuegos_home', sede=sede, piso=piso, q=q, edit=r.id) }}">Editar</a>
+          </td>
+        </tr>
+        {% endfor %}
+        {% if not rows or rows|length==0 %}
+        <tr>
+          <td colspan="8" style="padding:10px;color:#64748b">Sin registros para el filtro.</td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+</section>
+{% endblock %}

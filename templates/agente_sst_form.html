@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+  .license-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .license-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .license-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
+    padding: 14px 16px;
+  }
+</style>
+
+<section class="agentes-main license-shell">
+  <header class="section-header license-head">
+    <div>
+      <h1>SST - Prevencion / No conformidades / Informes</h1>
+      <p class="section-sub">
+        {{ agente.agente }} · Rubro: {{ agente.rubro|upper }}
+      </p>
+    </div>
+    <div class="section-actions">
+      <a class="btn outline-slate" href="{{ url_for('agentes_home', id=agente.id) }}">
+        Volver a la ficha del agente
+      </a>
+    </div>
+  </header>
+
+  <div class="grid-main">
+    <div class="left-panel">
+      <div class="license-card">
+        <div class="agent-detail-body">
+          <div class="agent-detail-section">
+            <div class="agent-detail-section-title">NUEVO REGISTRO SST</div>
+
+            <form method="post" class="license-form">
+              <div class="license-grid">
+                <div class="license-field">
+                  <label for="fecha">Fecha</label>
+                  <input type="date" id="fecha" name="fecha" required>
+                </div>
+                <div class="license-field">
+                  <label for="tipo">Tipo</label>
+                  <select id="tipo" name="tipo" required>
+                    <option value="">Seleccionar...</option>
+                    <option value="prevencion">Prevencion</option>
+                    <option value="no_conformidad">No conformidad</option>
+                    <option value="informe">Informe</option>
+                  </select>
+                </div>
+
+                <div class="license-field full">
+                  <label for="titulo">Titulo</label>
+                  <input type="text" id="titulo" name="titulo" placeholder="Breve resumen">
+                </div>
+
+                <div class="license-field full">
+                  <label for="detalle">Detalle</label>
+                  <textarea id="detalle" name="detalle" rows="3"
+                            placeholder="Descripcion del caso, acciones, observaciones."></textarea>
+                </div>
+
+                <div class="license-field full">
+                  <label for="estado">Estado</label>
+                  <select id="estado" name="estado">
+                    <option value="">(sin especificar)</option>
+                    <option value="ABIERTO">Abierto</option>
+                    <option value="EN_REVISION">En revision</option>
+                    <option value="CERRADO">Cerrado</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="license-actions">
+                <button type="submit" class="btn outline-amber">Guardar registro</button>
+                <a class="btn outline-slate" href="{{ url_for('agentes_home', id=agente.id) }}">
+                  Cancelar
+                </a>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="right-panel">
+      <div class="agent-licenses-card license-card">
+        <div class="agent-licenses-header">
+          <h3>Historial SST</h3>
+        </div>
+
+        {% if sst_registros and sst_registros|length > 0 %}
+          <div class="agent-licenses-table-wrapper">
+            <table class="agent-licenses-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Tipo</th>
+                  <th>Titulo</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in sst_registros %}
+                  <tr>
+                    <td>{{ r.fecha }}</td>
+                    <td>{{ r.tipo|replace('_',' ')|capitalize }}</td>
+                    <td>{{ r.titulo or '-' }}</td>
+                    <td>{{ r.estado or '-' }}</td>
+                    <td>
+                      <form method="post"
+                            action="{{ url_for('agente_sst_eliminar', agente_id=agente.id, sst_id=r.id) }}"
+                            onsubmit="return confirm('Eliminar este registro?');">
+                        <button type="submit" class="btn xs outline-amber">Eliminar</button>
+                      </form>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p class="panel-note">No hay registros SST para este agente.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

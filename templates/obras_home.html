@@ -1,0 +1,2029 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="obras-shell">
+
+  <!-- ENCABEZADO -->
+  <header class="obras-top">
+    <div>
+      <h2 class="obras-h2">Obras y mantenimiento</h2>
+      <p class="obras-sub">
+        Registrar trabajos por sede y seguir su estado (pendiente, en curso, finalizada).
+      </p>
+    </div>
+
+    <div class="obras-top-actions">
+      <a href="{{ url_for('taller_home') }}" class="btn outline-blue btn-sm">
+        🔧 Taller
+      </a>
+      <a href="{{ url_for('depositos_home') }}" class="btn outline-green btn-sm">
+        🏷️ Depósitos
+      </a>
+    </div>
+  </header>
+
+  <div class="obras-actions">
+    <button class="btn btn-sm action-carga" type="button" data-panel="panel-carga">➕ Cargar obra</button>
+    <button class="btn btn-sm action-interv" type="button" data-panel="panel-intervenciones">+ Registrar intervencion</button>
+    <button class="btn btn-sm action-filtros" type="button" data-panel="panel-filtros">Filtrar</button>
+    <button class="btn btn-sm action-desinf" type="button" data-panel="panel-desinf">🧴 Desinfecciones</button>
+    <a class="btn btn-sm action-hist" href="{{ url_for('obras_home', sede=cod_filtro, estado='FINALIZADA', prioridad=prioridad_filtro) }}">Historial</a>
+    <button class="btn btn-sm action-calculo" type="button" data-panel="panel-calculo">🧮 Calculo materiales</button>
+    <a class="btn btn-sm action-stats" href="{{ url_for('materiales_home') }}">📦 Materiales en stock</a>
+    <button class="btn btn-sm action-stats" type="button" data-panel="panel-stats">📊 Estadisticas por sede</button>
+  </div>
+
+  <!-- CARGA + FILTROS ARRIBA -->
+  <div class="obras-top-grid obras-panels">
+
+    <!-- ALTA RÁPIDA -->
+    <section class="cardx obras-panel" id="panel-carga">
+        <div class="cardx-head">
+          <div>
+            <h3>Nueva obra / trabajo</h3>
+            <p>Carga rápida sin salir de la pantalla.</p>
+          </div>
+          <span class="pill-soft">Carga</span>
+        </div>
+
+        <div class="panel-back">          <button type="button" class="btn ghost btn-sm js-back-list"><- Volver al listado</button>        </div>        <form method="post" class="formx">
+          <div class="gridx">
+            <div class="fg">
+              <label>Sede</label>
+              <select name="codigo_sede" required>
+                <option value="">-- elegir sede --</option>
+                {% for s in sedes %}
+                  <option value="{{ s.codigo }}">{{ s.codigo }} · {{ s.nombre }} ({{ s.ciudad }})</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="fg half">
+              <label>Fecha solicitud</label>
+              <input type="date" name="fecha_solicitud"
+                     value="{{ (fecha_dia if fecha_dia is defined else '') }}">
+            </div>
+
+            <div class="fg half">
+              <label>Fecha inicio</label>
+              <input type="date" name="fecha_inicio">
+            </div>
+
+            <div class="fg half">
+              <label>Fecha prevista</label>
+              <input type="date" name="fecha_fin_prevista">
+            </div>
+
+            <div class="fg full">
+              <label>Título / trabajo (opcional)</label>
+              <input type="text" name="titulo"
+                     placeholder="Opcional: si lo dejás vacío, se usa la descripción">
+            </div>
+
+            <div class="fg">
+              <label>Tipo</label>
+              <select name="tipo" required>
+                <option value="">-- elegir tipo --</option>
+                <option value="Pintura">Pintura</option>
+                <option value="Durlok">Durlok</option>
+                <option value="Plomeria - Baños">Plomeria - Baños</option>
+                <option value="Humedad techos">Humedad techos</option>
+                <option value="Movimiento mobiliario">Movimiento mobiliario</option>
+                <option value="Desinfeccion">Desinfeccion</option>
+                <option value="Albañileria">Albañileria</option>
+                <option value="Cambio tubo led">Cambio tubo led</option>
+                <option value="Cambiar balastro y tubo led">Cambiar balastro y tubo led</option>
+                <option value="Cambio de foco comun">Cambio de foco comun</option>
+                <option value="Electricidad - agregar tomas">Electricidad - agregar tomas</option>
+                <option value="Electricidad - solucionar corto">Electricidad - solucionar corto</option>
+                <option value="Armar puesto de trabajo (electricidad)">Armar puesto de trabajo (electricidad)</option>
+                <option value="Impermeablilizar techos">Impermeabilizar techos</option>
+                <option value="Destrancar cañeria">Destrancar cañería</option>
+                <option value="Limpiar canaleta">Limpiar canaleta</option>
+                <option value="Cortar pasto">Cortar pasto</option>
+                <option value="Colocar esmerilado">Colocar esmerilado</option>
+                <option value="Solucionar cerradura muebles">Solucionar cerradura muebles</option>
+                <option value="Arreglar silla giratoria">Arreglar silla giratoria</option>
+                <option value="Armar mobiliario a medida">Armar mobiliario a medida</option>
+                <option value="Armar mueble durlok">Armar mueble durlok</option>
+                <option value="Colocar repisa">Colocar repisa</option>
+                <option value="Colocar aire acondicionado">Colocar aire acondicionado</option>
+                <option value="Service aire acondicionado">Service aire acondicionado</option>
+                <option value="Sacar aire acondicionado">Sacar aire acondicionado</option>
+                <option value="Armar tablero electrico">Armar tablero eléctrico</option>
+                <option value="Cambio de llave de punto">Cambio de llave de punto</option>
+                <option value="Colocar antihumedad placas">Colocar placas antihumedad</option>
+                <option value="Hacer aleros ventanas">Hacer aleros ventanas</option>
+                <option value="Arreglo de muebles">Arreglo de muebles</option>
+                <option value="Colocacion de cortinas">Colocación de cortinas</option>
+                <option value="Hacer portabandera">Hacer portabandera</option>
+                <option value="Colocar carteles">Colocar carteles</option>
+                <option value="Reparar carpinterias">Reparar carpinterías</option>
+                <option value="Colocar antideslizante">Colocar antideslizante</option>
+                <option value="Limpiar cochera">Limpiar cochera</option>
+                <option value="Hacer soporte de monitores">Hacer soporte de monitores</option>
+                <option value="Colocar percheros">Colocar percheros</option>
+                <option value="Colocar aberturas">Colocar aberturas</option>
+                <option value="Ordenar taller">Ordenar taller</option>
+                <option value="Stock taller">Stock taller</option>
+                <option value="Limpiar taller">Limpiar taller</option>
+                <option value="Otros">Otros</option>
+              </select>
+            </div>
+
+            <div class="fg">
+              <label>Prioridad</label>
+              <select name="prioridad">
+                <option value="Alta">Alta</option>
+                <option value="Media" selected>Media</option>
+                <option value="Baja">Baja</option>
+              </select>
+            </div>
+
+            <div class="fg full">
+              <label>Descripción / detalle</label>
+              <textarea name="descripcion" rows="2"
+                        placeholder="Detalle del problema o trabajo a realizar"></textarea>
+            </div>
+
+            <div class="fg full">
+              <label>Informe / Link</label>
+              <input type="url" name="informe_url"
+                     placeholder="https://drive.google.com/...">
+            </div>
+          </div>
+
+          <div class="formx-actions">
+            <button type="submit" class="btn primary btn-wide">➕ Registrar obra / trabajo</button>
+          </div>
+        </form>
+    </section>
+
+    <!-- CALCULADORA -->
+    <section class="cardx obras-panel" id="panel-calculo">
+        <div class="cardx-head">
+          <div>
+            <h3>Calculadora rápida</h3>
+            <p>Estimación orientativa para pedido de materiales.</p>
+          </div>
+          <span class="pill-soft">Materiales</span>
+        </div>
+
+        <div class="panel-back">          <button type="button" class="btn ghost btn-sm js-back-list"><- Volver al listado</button>        </div>        <div class="formx">
+          <div class="gridx">
+            <div class="fg">
+              <label>Tipo</label>
+              <select id="calc-tipo">
+                <option value="durlock">Durlock – tabique</option>
+                <option value="pintura">Pintura</option>
+                <option value="imperme_liquida">Impermeabilización líquida</option>
+                <option value="membrana_asfaltica">Membrana asfáltica</option>
+                <option value="aire_split">Aire Acondicionado Split (kit instalación)</option>
+                <option value="frio">Cálculo FR (aire acondicionado)</option>
+              </select>
+            </div>
+
+            <div class="fg full" id="calc-durlock-campos">
+              <label>Metros lineales (tabique)</label>
+              <input type="number" step="0.1" id="calc-ml" placeholder="Ej.: 4 (oficina 4 m)">
+              <small class="help">Altura estándar 2,60 m · placas en ambas caras.</small>
+            </div>
+
+            <div class="fg full" id="calc-m2-campos" style="display:none;">
+              <label id="label-m2">Metros cuadrados</label>
+              <input type="number" step="0.1" id="calc-m2" placeholder="Ej.: 16 (oficina 4x4 / techo)">
+              <small class="help" id="help-m2">Considera 2 manos de látex interior.</small>
+            </div>
+
+            <div class="fg full" id="calc-aire-campos" style="display:none;">
+              <label>Cantidad de equipos</label>
+              <input type="number" step="1" id="calc-aire-cant" value="1" min="1">
+              <label style="margin-top:8px;">Metros de cañería por equipo</label>
+              <input type="number" step="0.1" id="calc-aire-ml" value="3">
+              <small class="help">Kit estándar 1/4 + 3/8 x 3 m. Ajustá si hace falta más.</small>
+            </div>
+
+            <div class="fg full" id="calc-frio-campos" style="display:none;">
+              <label>Metros cuadrados (m²)</label>
+              <input type="number" step="0.1" id="calc-frio-m2" placeholder="Ej.: 25">
+              <small class="help">Base: 100 FR por m² (oficina típica).</small>
+
+              <div style="margin-top:10px;font-weight:800;font-size:12px;color:#0f172a;">Factores</div>
+              <div class="gridx" style="margin-top:6px;">
+                <div class="fg">
+                  <label>Altura de techo</label>
+                  <select id="frio-altura">
+                    <option value="0">Hasta 2,6 m (0%)</option>
+                    <option value="10">2,7 – 3,2 m (+10%)</option>
+                    <option value="25">3,3 – 4,0 m (+20–30%)</option>
+                    <option value="40">Más de 4 m (+40%)</option>
+                  </select>
+                </div>
+                <div class="fg">
+                  <label>Personas (n)</label>
+                  <input type="number" step="1" id="frio-personas" value="0" min="0">
+                  <small class="help">+200 FR por persona.</small>
+                </div>
+                <div class="fg">
+                  <label>Iluminación</label>
+                  <select id="frio-iluminacion">
+                    <option value="0">LED común (0%)</option>
+                    <option value="10">Muchas luces / salón (+10%)</option>
+                    <option value="15">Iluminación fuerte (+15%)</option>
+                  </select>
+                </div>
+                <div class="fg">
+                  <label>Paredes / techo</label>
+                  <select id="frio-paredes">
+                    <option value="0">Normal (0%)</option>
+                    <option value="10">Pesada (+10%)</option>
+                    <option value="20">Muy pesada (+20%)</option>
+                  </select>
+                </div>
+                <div class="fg">
+                  <label>Sol directo</label>
+                  <select id="frio-sol">
+                    <option value="0">Poco sol (0%)</option>
+                    <option value="10">Sol fuerte (+10%)</option>
+                    <option value="20">Sol fuerte varias horas (+20%)</option>
+                  </select>
+                </div>
+                <div class="fg">
+                  <label>Uso del ambiente</label>
+                  <select id="frio-uso">
+                    <option value="0">Oficina administrativa (0%)</option>
+                    <option value="20">Salón / público (+20%)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="formx-actions">
+            <button type="button" class="btn primary btn-wide" onclick="calcularMaterialesObra()">
+              🧮 Calcular
+            </button>
+          </div>
+
+          <div id="calc-resultado" class="calc-result"></div>
+        </div>
+    </section>
+
+    <!-- FILTROS -->
+    <section class="cardx obras-panel obras-filtros" id="panel-filtros">
+        <div class="cardx-head">
+          <div>
+            <h3>Filtros</h3>
+            <p>Refinar el listado de la derecha.</p>
+          </div>
+          <span class="pill-soft">Listado</span>
+        </div>
+
+        <form method="get" class="formx">
+          <div class="gridx">
+            <div class="fg">
+              <label>Sede</label>
+              <select name="sede">
+                <option value="">(todas)</option>
+                {% for s in sedes %}
+                  <option value="{{ s.codigo }}" {% if cod_filtro == s.codigo %}selected{% endif %}>
+                    {{ s.codigo }} · {{ s.nombre }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="fg">
+              <label>Estado</label>
+              <select name="estado">
+                <option value="">(todos)</option>
+                <option value="PENDIENTE"  {% if estado_filtro=='PENDIENTE'  %}selected{% endif %}>Pendiente</option>
+                <option value="EN_CURSO"   {% if estado_filtro=='EN_CURSO'   %}selected{% endif %}>En curso</option>
+                <option value="FINALIZADA" {% if estado_filtro=='FINALIZADA' %}selected{% endif %}>Finalizada</option>
+              </select>
+            </div>
+
+            <div class="fg">
+              <label>Prioridad</label>
+              <select name="prioridad">
+                <option value="">(todas)</option>
+                <option value="ALTA"  {% if prioridad_filtro=='ALTA'  %}selected{% endif %}>Alta</option>
+                <option value="MEDIA" {% if prioridad_filtro=='MEDIA' %}selected{% endif %}>Media</option>
+                <option value="BAJA"  {% if prioridad_filtro=='BAJA'  %}selected{% endif %}>Baja</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="formx-actions">
+            <button type="submit" class="btn ghost btn-wide">Filtrar</button>
+          </div>
+        </form>
+    </section>
+
+    <section class="cardx obras-panel" id="panel-intervenciones">
+        <div class="cardx-head">
+          <div>
+            <h3>Intervenciones diarias</h3>
+            <p>Registro operativo diario independiente de las obras formales.</p>
+          </div>
+          <span class="pill-soft">Registro diario</span>
+        </div>
+
+        <div class="panel-back">          <button type="button" class="btn ghost btn-sm js-back-list"><- Volver al listado</button>        </div>
+
+        <div class="formx interv-wrap">
+          <div class="interv-kpis">
+            <span class="interv-chip total">Total: {{ interv_totals.total if interv_totals else 0 }}</span>
+            <span class="interv-chip pend">Pendientes: {{ interv_totals.pendientes if interv_totals else 0 }}</span>
+            <span class="interv-chip res">Resueltos: {{ interv_totals.resueltos if interv_totals else 0 }}</span>
+          </div>
+
+          <div class="interv-mode-switch">
+            <button type="button" class="btn btn-sm iv-mode-btn" data-iv-mode="registro">Registrar intervencion</button>
+            <button type="button" class="btn btn-sm iv-mode-btn" data-iv-mode="listado">Ver listado</button>
+          </div>
+
+          <section class="interv-mode interv-mode-registro">
+            <form method="post"
+                  action="{{ url_for('obra_intervencion_crear', sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro, iv_sede=iv_sede_filtro, iv_estado=iv_estado_filtro, iv_tipo=iv_tipo_filtro, iv_fecha=iv_fecha_filtro, panel='panel-intervenciones') }}"
+                  class="interv-form">
+
+              <div class="interv-group">
+                <h4>Datos basicos</h4>
+                <div class="gridx">
+                  <div class="fg">
+                    <label>Fecha</label>
+                    <input type="date" name="fecha" value="{{ fecha_hoy }}" required>
+                  </div>
+
+                  <div class="fg">
+                    <label>Sede</label>
+                    <select name="codigo_sede" required>
+                      <option value="">-- elegir sede --</option>
+                      {% for s in sedes %}
+                        <option value="{{ s.codigo }}" {% if iv_sede_filtro == s.codigo %}selected{% endif %}>{{ s.codigo }} - {{ s.nombre }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+
+                  <div class="fg">
+                    <label>Tipo de intervencion</label>
+                    <select name="tipo" required>
+                      <option value="">-- elegir tipo --</option>
+                      {% for t in interv_tipos %}
+                        <option value="{{ t[0] }}">{{ t[1] }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+
+                  <div class="fg">
+                    <label>Estado</label>
+                    <select name="estado">
+                      {% for e in interv_estados %}
+                        <option value="{{ e[0] }}" {% if e[0] == 'PENDIENTE' %}selected{% endif %}>{{ e[1] }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="interv-group">
+                <h4>Detalle</h4>
+                <div class="gridx">
+                  <div class="fg full">
+                    <label>Detalle / descripcion</label>
+                    <textarea name="detalle" rows="2" required placeholder="Ej: Se dejo escalera en S11, se colgo cortina, quedaron materiales pendientes de retiro"></textarea>
+                  </div>
+                </div>
+              </div>
+
+              <div class="interv-group">
+                <h4>Control</h4>
+                <div class="gridx">
+                  <div class="fg">
+                    <label>Autorizado por</label>
+                    <input type="text" name="autorizado_por" value="{{ autorizado_por_default }}" placeholder="Nombre o usuario">
+                  </div>
+
+                  <div class="fg">
+                    <label>Observacion</label>
+                    <input type="text" name="observacion" placeholder="Dato adicional">
+                  </div>
+                </div>
+              </div>
+
+              <div class="formx-actions">
+                <button type="submit" class="btn primary btn-wide">Guardar intervencion diaria</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="interv-mode interv-mode-listado">
+            <form method="get" class="interv-filtros">
+              <input type="hidden" name="panel" value="panel-intervenciones">
+              <input type="hidden" name="sede" value="{{ cod_filtro }}">
+              <input type="hidden" name="estado" value="{{ estado_filtro }}">
+              <input type="hidden" name="prioridad" value="{{ prioridad_filtro }}">
+
+              <div class="gridx">
+                <div class="fg">
+                  <label>Filtrar sede</label>
+                  <select name="iv_sede">
+                    <option value="">(todas)</option>
+                    {% for s in sedes %}
+                      <option value="{{ s.codigo }}" {% if iv_sede_filtro == s.codigo %}selected{% endif %}>{{ s.codigo }} - {{ s.nombre }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+
+                <div class="fg">
+                  <label>Filtrar estado</label>
+                  <select name="iv_estado">
+                    <option value="">(todos)</option>
+                    {% for e in interv_estados %}
+                      <option value="{{ e[0] }}" {% if iv_estado_filtro == e[0] %}selected{% endif %}>{{ e[1] }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+
+                <div class="fg">
+                  <label>Filtrar tipo</label>
+                  <select name="iv_tipo">
+                    <option value="">(todos)</option>
+                    {% for t in interv_tipos %}
+                      <option value="{{ t[0] }}" {% if iv_tipo_filtro == t[0] %}selected{% endif %}>{{ t[1] }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+
+                <div class="fg">
+                  <label>Filtrar fecha</label>
+                  <input type="date" name="iv_fecha" value="{{ iv_fecha_filtro }}">
+                </div>
+              </div>
+
+              <div class="formx-actions">
+                <button type="submit" class="btn ghost">Aplicar filtros</button>
+                <a class="btn outline" href="{{ url_for('obras_home', sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro, panel='panel-intervenciones') }}">Limpiar</a>
+              </div>
+            </form>
+
+            <div id="interv-listado" class="table-wrap" style="margin-top:8px;">
+              <table class="table-soft obras-table interv-table">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Sede</th>
+                    <th>Tipo</th>
+                    <th>Detalle</th>
+                    <th>Estado</th>
+                    <th>Autorizado</th>
+                    <th>Observacion</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% if intervenciones %}
+                    {% for r in intervenciones %}
+                      <tr>
+                        <td>{{ (r.fecha[8:10] ~ '/' ~ r.fecha[5:7] ~ '/' ~ r.fecha[2:4]) if r.fecha else '-' }}</td>
+                        <td><strong>{{ r.codigo_sede }}</strong> - {{ r.sede_nombre }}</td>
+                        <td>{{ interv_tipo_labels.get(r.tipo, r.tipo) }}</td>
+                        <td>{{ r.detalle }}</td>
+                        <td>
+                          <span class="pill {{ 'estado-pendiente' if r.estado=='PENDIENTE' else 'estado-finalizada' }}">
+                            {{ interv_estado_labels.get(r.estado, r.estado) }}
+                          </span>
+                        </td>
+                        <td>{{ r.autorizado_por or '-' }}</td>
+                        <td>{{ r.observacion or '-' }}</td>
+                        <td>
+                          <div class="cell-actions">
+                            <form method="post"
+                                  action="{{ url_for('obra_intervencion_cambiar_estado', iid=r.id, sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro, iv_sede=iv_sede_filtro, iv_estado=iv_estado_filtro, iv_tipo=iv_tipo_filtro, iv_fecha=iv_fecha_filtro, panel='panel-intervenciones') }}"
+                                  class="estado-form estado-form-inline">
+                              <select name="estado">
+                                {% for e in interv_estados %}
+                                  <option value="{{ e[0] }}" {% if r.estado==e[0] %}selected{% endif %}>{{ e[1] }}</option>
+                                {% endfor %}
+                              </select>
+                              <button class="btn xs primary" type="submit">Guardar</button>
+                            </form>
+
+                            <a class="btn xs outline"
+                               href="{{ url_for('obra_intervencion_editar', iid=r.id, sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro, iv_sede=iv_sede_filtro, iv_estado=iv_estado_filtro, iv_tipo=iv_tipo_filtro, iv_fecha=iv_fecha_filtro, panel='panel-intervenciones') }}">
+                              Editar
+                            </a>
+
+                            <form method="post"
+                                  action="{{ url_for('obra_intervencion_eliminar', iid=r.id, sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro, iv_sede=iv_sede_filtro, iv_estado=iv_estado_filtro, iv_tipo=iv_tipo_filtro, iv_fecha=iv_fecha_filtro, panel='panel-intervenciones') }}"
+                                  onsubmit="return confirm('Eliminar esta intervencion?');">
+                              <button class="btn xs danger" type="submit">Eliminar</button>
+                            </form>
+                          </div>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  {% else %}
+                    <tr><td colspan="8" class="muted-xs">Sin intervenciones diarias cargadas para este filtro.</td></tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+    </section>
+
+    <section class="cardx obras-panel" id="panel-stats">
+        <div class="cardx-head">
+          <div>
+            <h3>Estadisticas por sede</h3>
+            <p>Resumen 100% estimativo: intervenciones, horas/persona y materiales.</p>
+          </div>
+          <span class="pill-soft">Resumen</span>
+        </div>
+
+        <div class="panel-back">          <button type="button" class="btn ghost btn-sm js-back-list"><- Volver al listado</button>        </div>
+        <div class="formx statsx">
+          <div class="gridx stats-kpi">
+            <div class="fg">
+              <label>Total intervenciones</label>
+              <div class="stat-box">{{ stats_global.intervenciones if stats_global else 0 }}</div>
+            </div>
+            <div class="fg">
+              <label>Pendientes</label>
+              <div class="stat-box">{{ obras_totals.pendientes if obras_totals else 0 }}</div>
+            </div>
+            <div class="fg">
+              <label>En curso</label>
+              <div class="stat-box">{{ obras_totals.en_curso if obras_totals else 0 }}</div>
+            </div>
+            <div class="fg">
+              <label>Finalizadas</label>
+              <div class="stat-box">{{ obras_totals.finalizadas if obras_totals else 0 }}</div>
+            </div>
+            <div class="fg">
+              <label>Sedes con carga</label>
+              <div class="stat-box">{{ stats_global.sedes if stats_global else 0 }}</div>
+            </div>
+            <div class="fg">
+              <label>Horas-persona estimadas</label>
+              <div class="stat-box">{{ '%.1f'|format(stats_global.horas_persona if stats_global else 0) }}</div>
+            </div>
+            <div class="fg">
+              <label>Materiales aprox (u)</label>
+              <div class="stat-box">{{ '%.1f'|format(stats_global.materiales if stats_global else 0) }}</div>
+            </div>
+            <div class="fg">
+              <label>Promedio hs/intervencion</label>
+              <div class="stat-box">{{ '%.1f'|format(stats_global.prom_hs_interv if stats_global else 0) }}</div>
+            </div>
+          </div>
+
+          {% if obras_stats %}
+          <div class="stats-grid-3">
+            <section class="stats-card stats-card-pie">
+              <h4>Torta por sede (% intervenciones)</h4>
+              <p class="muted-xs">Participacion de cada sede sobre el total de intervenciones filtradas.</p>
+              <div class="pie-shell">
+                <div id="stats-pie-chart" class="pie-chart" data-series='{{ obras_stats|tojson }}'>
+                  <div class="pie-hole">
+                    <strong>{{ stats_global.intervenciones if stats_global else 0 }}</strong>
+                    <small>interv.</small>
+                  </div>
+                </div>
+                <div id="stats-pie-legend" class="pie-legend"></div>
+              </div>
+            </section>
+            <section class="stats-card">
+              <h4>Uso 100% por sede (intervenciones)</h4>
+              <p class="muted-xs">Distribucion del volumen de trabajo por sede sobre el total filtrado.</p>
+              <div class="usage-list">
+                {% for s in obras_stats[:10] %}
+                <div class="usage-row">
+                  <div class="usage-head">
+                    <strong>{{ s.codigo_sede }}</strong>
+                    <span>{{ '%.1f'|format(s.uso_interv_pct) }}%</span>
+                  </div>
+                  <div class="usage-track"><span class="usage-fill usage-fill-int" style="width:{{ '%.2f'|format(s.uso_interv_pct) }}%"></span></div>
+                  <div class="usage-meta">{{ s.total }} intervenciones - {{ '%.1f'|format(s.horas_persona_est) }} hs/persona</div>
+                </div>
+                {% endfor %}
+              </div>
+            </section>
+
+            <section class="stats-card">
+              <h4>Estado por sede (barra 100%)</h4>
+              <p class="muted-xs">Composicion de pendientes, en curso y finalizadas por cada sede.</p>
+              <div class="usage-list">
+                {% for s in obras_stats[:10] %}
+                <div class="usage-row">
+                  <div class="usage-head">
+                    <strong>{{ s.codigo_sede }}</strong>
+                    <span>{{ s.total }} totales</span>
+                  </div>
+                  <div class="stack-100">
+                    <span class="stack-seg seg-pend" style="width:{{ '%.2f'|format(s.pendientes_pct) }}%"></span>
+                    <span class="stack-seg seg-curso" style="width:{{ '%.2f'|format(s.en_curso_pct) }}%"></span>
+                    <span class="stack-seg seg-fin" style="width:{{ '%.2f'|format(s.finalizadas_pct) }}%"></span>
+                  </div>
+                  <div class="usage-meta">P {{ s.pendientes }} - C {{ s.en_curso }} - F {{ s.finalizadas }}</div>
+                </div>
+                {% endfor %}
+              </div>
+            </section>
+          </div>
+
+          <details class="stats-details">
+            <summary class="btn ghost btn-sm">Ver tabla completa por sede</summary>
+            <div class="table-wrap stats-table-wrap">
+            <table class="table-soft obras-table stats-table-wide">
+              <thead>
+                <tr>
+                  <th>Sede</th>
+                  <th>Interv.</th>
+                  <th>Uso %</th>
+                  <th>Pend.</th>
+                  <th>Curso</th>
+                  <th>Final.</th>
+                  <th>Hs/persona est.</th>
+                  <th>Hs/interv.</th>
+                  <th>Materiales (u)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for s in obras_stats %}
+                  <tr>
+                    <td><strong>{{ s.codigo_sede }}</strong> - {{ s.sede_nombre }} ({{ s.sede_ciudad }})</td>
+                    <td>{{ s.total }}</td>
+                    <td>{{ '%.1f'|format(s.uso_interv_pct) }}%</td>
+                    <td>{{ s.pendientes }}</td>
+                    <td>{{ s.en_curso }}</td>
+                    <td>{{ s.finalizadas }}</td>
+                    <td>{{ '%.1f'|format(s.horas_persona_est) }}</td>
+                    <td>{{ '%.1f'|format(s.hs_persona_por_interv) }}</td>
+                    <td>{{ '%.1f'|format(s.materiales_est) }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            </div>
+          </details>
+
+          <div class="stats-model">
+            <div class="muted-xs"><strong>Modelo estandar estimativo:</strong> 1 jornada = 8h. La dotacion y materiales se estiman por tipo de trabajo y prioridad.</div>
+            <div class="model-chips">
+              {% for m in estimacion_modelo[:12] %}
+                <span class="model-chip">{{ m.tipo }}: {{ m.rango }}</span>
+              {% endfor %}
+            </div>
+          </div>
+          {% else %}
+          <div class="empty" style="margin-top:8px;">
+            <div class="empty-title">Sin datos para estadisticas en el filtro actual.</div>
+          </div>
+          {% endif %}
+        </div>
+    </section>
+
+    <section class="cardx obras-panel" id="panel-desinf">
+        <div class="cardx-head">
+          <div>
+            <h3>Desinfecciones por sede</h3>
+            <p>Control de desinfecciones cargadas con fechas y estado.</p>
+          </div>
+          <span class="pill-soft">Desinfeccion</span>
+        </div>
+
+        <div class="panel-back">
+          <button type="button" class="btn ghost btn-sm js-back-list"><- Volver al listado</button>
+        </div>
+
+        <div class="formx">
+          <div class="table-wrap" style="margin-top:4px;">
+            <table class="table-soft desinf-table desinf-summary">
+              <thead>
+                <tr>
+                  <th>Sede</th>
+                  <th>Total</th>
+                  <th>Finalizadas</th>
+                  <th>Ultima fecha</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if desinf_stats %}
+                  {% for d in desinf_stats %}
+                    <tr>
+                      <td><strong>{{ d.codigo_sede }}</strong> · {{ d.sede_nombre }} ({{ d.sede_ciudad }})</td>
+                      <td>{{ d.total }}</td>
+                      <td>{{ d.finalizadas }}</td>
+                      <td>{{ (d.ultima_fecha[8:10] ~ '/' ~ d.ultima_fecha[5:7] ~ '/' ~ d.ultima_fecha[2:4]) if d.ultima_fecha else '-' }}</td>
+                    </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr><td colspan="4" class="muted-xs">Sin desinfecciones cargadas para este filtro.</td></tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+
+          <div class="table-wrap" style="margin-top:10px;">
+            <table class="table-soft desinf-table desinf-detail">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Sede</th>
+                  <th>Fecha carga</th>
+                  <th>Inicio</th>
+                  <th>Finalizacion</th>
+                  <th>Estado</th>
+                  <th>Detalle</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% if desinfecciones %}
+                  {% for d in desinfecciones %}
+                    {% set estado_cls = 'estado-pendiente' if d.estado=='PENDIENTE' else ('estado-en_curso' if d.estado=='EN_CURSO' else 'estado-finalizada') %}
+                    {% set estado_txt = 'Pendiente' if d.estado=='PENDIENTE' else ('En curso' if d.estado=='EN_CURSO' else 'Finalizada') %}
+                    <tr>
+                      <td><span class="obra-id">{{ d.id }}</span></td>
+                      <td><strong>{{ d.codigo_sede }}</strong> · {{ d.sede_nombre }}</td>
+                      <td>{{ (d.fecha_solicitud[8:10] ~ '/' ~ d.fecha_solicitud[5:7] ~ '/' ~ d.fecha_solicitud[2:4]) if d.fecha_solicitud else '-' }}</td>
+                      <td>{{ (d.fecha_inicio[8:10] ~ '/' ~ d.fecha_inicio[5:7] ~ '/' ~ d.fecha_inicio[2:4]) if d.fecha_inicio else '-' }}</td>
+                      <td>{{ (d.fecha_fin_real[8:10] ~ '/' ~ d.fecha_fin_real[5:7] ~ '/' ~ d.fecha_fin_real[2:4]) if d.fecha_fin_real else '-' }}</td>
+                      <td><span class="pill {{ estado_cls }}">{{ estado_txt }}</span></td>
+                      <td title="{{ d.descripcion or d.titulo }}">{{ d.descripcion or d.titulo }}</td>
+                    </tr>
+                  {% endfor %}
+                {% else %}
+                  <tr><td colspan="7" class="muted-xs">Sin desinfecciones cargadas para este filtro.</td></tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+    </section>
+  </div>
+
+  <!-- ================= LISTADO FULL ================= -->
+  <section class="obras-right cardx">
+      <div class="cardx-head">
+        <div>
+          <h3>{{ 'Historial de obras finalizadas' if estado_filtro == 'FINALIZADA' else 'Listado de obras / trabajos' }}</h3>
+          <p>
+            {% if estado_filtro == 'FINALIZADA' %}
+              Obras cerradas y retiradas del cuadro principal.
+            {% else %}
+              Toca un estado para filtrar el listado. Cambiar estado, editar o eliminar cada registro.
+            {% endif %}
+          </p>
+        </div>
+
+        <div class="list-badges">
+          <span class="pill-soft">Sede: {{ cod_filtro if cod_filtro else 'Todas' }}</span>
+          <span class="pill-soft">Estado: {{ estado_filtro if estado_filtro else 'Todos' }}</span>
+          <span class="pill-soft">Prioridad: {{ 'Alta' if prioridad_filtro=='ALTA' else ('Media' if prioridad_filtro=='MEDIA' else ('Baja' if prioridad_filtro=='BAJA' else 'Todas')) }}</span>
+        </div>
+      </div>
+
+      <div class="obras-quick">
+        <a class="pill quick pend {% if estado_filtro=='PENDIENTE' and prioridad_filtro!='ALTA' %}active{% endif %}"
+           href="{{ url_for('obras_home', sede=cod_filtro, estado='PENDIENTE', prioridad=prioridad_filtro) }}">
+          <span class="quick-label">Pendiente</span>
+          <span class="quick-count">{{ obras_totals.pendientes if obras_totals else 0 }}</span>
+        </a>
+        <a class="pill quick pend-alta {% if estado_filtro=='PENDIENTE' and prioridad_filtro=='ALTA' %}active{% endif %}"
+           href="{{ url_for('obras_home', sede=cod_filtro, estado='PENDIENTE', prioridad='ALTA') }}">
+          <span class="quick-label">Pendiente alta</span>
+          <span class="quick-count">{{ pendientes_alta_total if pendientes_alta_total is defined else 0 }}</span>
+        </a>
+        <a class="pill quick curso {% if estado_filtro=='EN_CURSO' %}active{% endif %}"
+           href="{{ url_for('obras_home', sede=cod_filtro, estado='EN_CURSO', prioridad=prioridad_filtro) }}">
+          <span class="quick-label">En curso</span>
+          <span class="quick-count">{{ obras_totals.en_curso if obras_totals else 0 }}</span>
+        </a>
+        <a class="pill quick fin {% if estado_filtro=='FINALIZADA' %}active{% endif %}"
+           href="{{ url_for('obras_home', sede=cod_filtro, estado='FINALIZADA', prioridad=prioridad_filtro) }}">
+          <span class="quick-label">Finalizadas</span>
+          <span class="quick-count">{{ obras_totals.finalizadas if obras_totals else 0 }}</span>
+        </a>
+        <a class="pill quick all {% if not estado_filtro %}active{% endif %}"
+           href="{{ url_for('obras_home', sede=cod_filtro, prioridad=prioridad_filtro) }}">
+          <span class="quick-label">Todas</span>
+          <span class="quick-count">{{ obras_totals.total if obras_totals else 0 }}</span>
+        </a>
+      </div>
+
+      {% if obras %}
+        <div class="table-wrap table-wrap-main">
+          <table class="table-soft obras-table obras-list-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Sede</th>
+                <th>Tarea</th>
+                <th>Estado actual</th>
+                <th>Prioridad</th>
+                <th>F. asignacion</th>
+                <th>Inicio</th>
+                <th>F. terminada</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {% for o in obras %}
+                <tr>
+                  <td><span class="obra-id">{{ o.id }}</span></td>
+
+                  <td title="{{ o.codigo_sede }} · {{ o.sede_nombre }} – {{ o.sede_ciudad }}">
+                    <strong class="obra-sede-code">{{ o.codigo_sede }}</strong><br>
+                    <span class="muted-xs">{{ o.sede_nombre }} – {{ o.sede_ciudad }}</span>
+                  </td>
+
+                  <td title="{{ o.descripcion or o.titulo }}"><div class="obra-task">{{ o.descripcion or o.titulo }}</div></td>
+                  {% set estado_cls = 'estado-pendiente' if o.estado=='PENDIENTE' else ('estado-en_curso' if o.estado=='EN_CURSO' else 'estado-finalizada') %}
+                  {% set estado_txt = 'Pendiente' if o.estado=='PENDIENTE' else ('En curso' if o.estado=='EN_CURSO' else 'Finalizada') %}
+                  {% set prio_norm = (o.prioridad or 'Media')|lower %}
+                  {% set prio_cls = 'prio-alta' if 'alta' in prio_norm else ('prio-baja' if 'baja' in prio_norm else 'prio-media') %}
+                  {% set prio_txt = 'Alta' if 'alta' in prio_norm else ('Baja' if 'baja' in prio_norm else 'Media') %}
+                  <td><span class="pill {{ estado_cls }}">{{ estado_txt }}</span></td>
+                  <td>
+                    <div class="prio-cell">
+                      <span class="pill {{ prio_cls }}">{{ prio_txt }}</span>
+                      {% if o.estado != 'FINALIZADA' %}
+                      <div class="prio-mini" title="Cambiar prioridad">
+                        <form method="post" action="{{ url_for('obra_cambiar_prioridad', oid=o.id, sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro) }}">
+                          <input type="hidden" name="prioridad" value="alta">
+                          <button class="prio-dot alta {% if 'alta' in prio_norm %}active{% endif %}" type="submit" title="Alta"></button>
+                        </form>
+                        <form method="post" action="{{ url_for('obra_cambiar_prioridad', oid=o.id, sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro) }}">
+                          <input type="hidden" name="prioridad" value="media">
+                          <button class="prio-dot media {% if 'media' in prio_norm %}active{% endif %}" type="submit" title="Media"></button>
+                        </form>
+                        <form method="post" action="{{ url_for('obra_cambiar_prioridad', oid=o.id, sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro) }}">
+                          <input type="hidden" name="prioridad" value="baja">
+                          <button class="prio-dot baja {% if 'baja' in prio_norm %}active{% endif %}" type="submit" title="Baja"></button>
+                        </form>
+                      </div>
+                      {% endif %}
+                    </div>
+                  </td>
+                  <td title="{{ o.fecha_solicitud or '-' }}">
+                    <span class="obra-date">
+                      {{ (o.fecha_solicitud[8:10] ~ '/' ~ o.fecha_solicitud[5:7] ~ '/' ~ o.fecha_solicitud[2:4]) if o.fecha_solicitud else '-' }}
+                    </span>
+                  </td>
+                  <td title="{{ o.fecha_inicio or '-' }}">
+                    <span class="obra-date">
+                      {{ (o.fecha_inicio[8:10] ~ '/' ~ o.fecha_inicio[5:7] ~ '/' ~ o.fecha_inicio[2:4]) if o.fecha_inicio else '-' }}
+                    </span>
+                  </td>
+                  <td title="{{ o.fecha_fin_real or '-' }}">
+                    <span class="obra-date">
+                      {{ (o.fecha_fin_real[8:10] ~ '/' ~ o.fecha_fin_real[5:7] ~ '/' ~ o.fecha_fin_real[2:4]) if o.fecha_fin_real else '-' }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="cell-actions">
+                      <form method="post"
+                            action="{{ url_for('obra_cambiar_estado', oid=o.id, sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro) }}"
+                            class="estado-form estado-form-inline">
+                        <select name="estado">
+                          {% if estado_filtro == 'FINALIZADA' %}
+                          <option value="EN_CURSO">En curso</option>
+                          <option value="PENDIENTE">Pendiente</option>
+                          {% else %}
+                          <option value="EN_CURSO"   {% if o.estado=='EN_CURSO'   %}selected{% endif %}>En curso</option>
+                          <option value="PENDIENTE"  {% if o.estado=='PENDIENTE'  %}selected{% endif %}>Pendiente</option>
+                          <option value="FINALIZADA" {% if o.estado=='FINALIZADA' %}selected{% endif %}>Finalizada</option>
+                          {% endif %}
+                        </select>
+                        <button class="btn xs primary" type="submit">Guardar</button>
+                      </form>
+
+                      <details class="acciones-menu">
+                        <summary class="btn xs outline">Acciones</summary>
+                        <div class="acciones-dropdown">
+                      <form method="post"
+                            action="{{ url_for('obra_cambiar_estado', oid=o.id, sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro) }}"
+                            class="estado-form estado-form-menu">
+                        <select name="estado">
+                          {% if estado_filtro == 'FINALIZADA' %}
+                          <option value="EN_CURSO">En curso</option>
+                          <option value="PENDIENTE">Pendiente</option>
+                          {% else %}
+                          <option value="EN_CURSO"   {% if o.estado=='EN_CURSO'   %}selected{% endif %}>En curso</option>
+                          <option value="PENDIENTE"  {% if o.estado=='PENDIENTE'  %}selected{% endif %}>Pendiente</option>
+                          <option value="FINALIZADA" {% if o.estado=='FINALIZADA' %}selected{% endif %}>Finalizada</option>
+                          {% endif %}
+                        </select>
+                        <button class="btn xs primary" type="submit">Guardar</button>
+                      </form>
+                      <a class="btn xs outline" href="{{ url_for('obra_editar', oid=o.id) }}">Editar</a>
+
+                      {% if o.informe_url %}
+                      <a class="btn xs info" href="{{ o.informe_url }}" target="_blank" rel="noopener">Informe</a>
+                      {% endif %}
+
+                      <form method="post"
+                            action="{{ url_for('obra_eliminar', oid=o.id, sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro) }}"
+                            onsubmit="return confirm('¿Eliminar esta obra?');">
+                        <button class="btn xs danger" type="submit">Eliminar</button>
+                      </form>
+                        </div>
+                      </details>
+
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty">
+          <div class="empty-title">No hay obras registradas todavía.</div>
+          <div class="empty-sub">Usá el formulario de la izquierda para cargar el primer trabajo.</div>
+        </div>
+      {% endif %}
+  </section>
+</section>
+
+<style>
+  /* ====== BASE ====== */
+  .obras-shell{ display:flex; flex-direction:column; gap:12px; }
+  .obras-top{
+    display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap;
+  }
+  .obras-h2{ margin:0; font-size:20px; }
+  .obras-sub{ margin:2px 0 0; font-size:13px; color:#64748b; }
+  .obras-top-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+  .obras-actions{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .obras-actions .btn{ border-radius:999px; }
+  .btn.action-carga{ background:#eff6ff; border:1px solid #bfdbfe; color:#1d4ed8; }
+  .btn.action-interv{ background:#eef2ff; border:1px solid #c7d2fe; color:#3730a3; }
+  .btn.action-filtros{ background:#f8fafc; border:1px solid #cbd5e1; color:#334155; }
+  .btn.action-desinf{ background:#ecfeff; border:1px solid #a5f3fc; color:#0e7490; }
+  .btn.action-hist{ background:#f5f3ff; border:1px solid #d8b4fe; color:#6b21a8; }
+  .btn.action-calculo{ background:#ecfdf5; border:1px solid #a7f3d0; color:#065f46; }
+  .btn.action-stats{ background:#fff7ed; border:1px solid #fed7aa; color:#9a3412; }
+  .obras-panels{ display:flex; flex-direction:column; gap:12px; }
+  .obras-panel{ display:none; }
+  .obras-panel.active{ display:block; }
+  .obras-filtros{ display:none; }
+  .filtros-inline .gridx{ align-items:end; }
+  .stat-box{ padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;background:#f8fafc;font-weight:800; }
+  #panel-stats .statsx{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    padding:12px;
+    border-radius:14px;
+    border:1px solid #dbeafe;
+    background:linear-gradient(180deg,#f8fbff 0%,#f8fafc 100%);
+  }
+  #panel-stats .stats-kpi{ grid-template-columns: repeat(4, minmax(0, 1fr)); gap:10px; }
+  #panel-stats .stats-kpi .fg label{ font-weight:800; color:#334155; }
+  #panel-stats .stats-kpi .stat-box{
+    border-radius:12px;
+    box-shadow:0 4px 14px rgba(15,23,42,.06);
+    border-width:1px;
+    color:#0f172a;
+    font-size:24px;
+    line-height:1.1;
+  }
+  #panel-stats .stats-kpi .fg:nth-child(1) .stat-box{ background:linear-gradient(135deg,#dbeafe,#eff6ff); border-color:#93c5fd; color:#1d4ed8; }
+  #panel-stats .stats-kpi .fg:nth-child(2) .stat-box{ background:linear-gradient(135deg,#ffedd5,#fff7ed); border-color:#fdba74; color:#c2410c; }
+  #panel-stats .stats-kpi .fg:nth-child(3) .stat-box{ background:linear-gradient(135deg,#cffafe,#ecfeff); border-color:#67e8f9; color:#0e7490; }
+  #panel-stats .stats-kpi .fg:nth-child(4) .stat-box{ background:linear-gradient(135deg,#dcfce7,#f0fdf4); border-color:#86efac; color:#15803d; }
+  #panel-stats .stats-kpi .fg:nth-child(5) .stat-box{ background:linear-gradient(135deg,#e0f2fe,#f0f9ff); border-color:#7dd3fc; color:#0369a1; }
+  #panel-stats .stats-kpi .fg:nth-child(6) .stat-box{ background:linear-gradient(135deg,#ede9fe,#f5f3ff); border-color:#c4b5fd; color:#4338ca; }
+  #panel-stats .stats-kpi .fg:nth-child(7) .stat-box{ background:linear-gradient(135deg,#fef9c3,#fffbeb); border-color:#fcd34d; color:#a16207; }
+  #panel-stats .stats-kpi .fg:nth-child(8) .stat-box{ background:linear-gradient(135deg,#fee2e2,#fff1f2); border-color:#fda4af; color:#be123c; }
+  .stats-grid-3{ display:grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap:12px; align-items:start; }
+  .stats-card{
+    border:1px solid #c7d2fe;
+    border-radius:12px;
+    padding:10px;
+    background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);
+    box-shadow:0 8px 20px rgba(37,99,235,.08);
+  }
+  .stats-card h4{ margin:0; font-size:13px; color:#1e3a8a; }
+  .stats-card-pie{ min-height:218px; border-color:#93c5fd; background:linear-gradient(180deg,#eff6ff 0%,#f8fbff 100%); }
+  .pie-shell{ display:grid; grid-template-columns: 150px 1fr; gap:10px; align-items:center; margin-top:8px; }
+  .pie-chart{ width:150px; height:150px; border-radius:50%; background:#dbeafe; position:relative; box-shadow:inset 0 0 0 1px rgba(37,99,235,.18), 0 8px 16px rgba(37,99,235,.14); }
+  .pie-hole{ position:absolute; inset:26px; border-radius:50%; background:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; border:1px solid #bfdbfe; }
+  .pie-hole strong{ font-size:16px; line-height:1; color:#1e3a8a; }
+  .pie-hole small{ font-size:10px; color:#475569; margin-top:4px; }
+  .pie-legend{ display:flex; flex-direction:column; gap:5px; max-height:170px; overflow:auto; padding-right:4px; }
+  .pie-item{ display:grid; grid-template-columns: 10px 1fr auto; gap:6px; align-items:center; font-size:11px; color:#334155; }
+  .pie-dot{ width:10px; height:10px; border-radius:50%; display:block; box-shadow:0 0 0 2px rgba(255,255,255,.8); }
+  .pie-name{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pie-val{ font-weight:900; color:#0f172a; }
+  .usage-list{ display:flex; flex-direction:column; gap:8px; margin-top:8px; }
+  .usage-row{ display:flex; flex-direction:column; gap:4px; }
+  .usage-head{ display:flex; justify-content:space-between; gap:8px; font-size:12px; color:#334155; font-weight:700; }
+  .usage-track{ height:10px; border-radius:999px; background:#dbeafe; overflow:hidden; }
+  .usage-fill{ display:block; height:100%; border-radius:999px; }
+  .usage-fill-int{ background:linear-gradient(90deg,#06b6d4,#2563eb); }
+  .stack-100{ display:flex; width:100%; height:10px; border-radius:999px; overflow:hidden; background:#e2e8f0; }
+  .stack-seg{ display:block; height:100%; }
+  .seg-pend{ background:#f59e0b; }
+  .seg-curso{ background:#0ea5e9; }
+  .seg-fin{ background:#22c55e; }
+  .usage-meta{ font-size:11px; color:#475569; }
+  .stats-details{ margin-top:8px; border:1px solid #bfdbfe; border-radius:12px; background:#fff; }
+  .stats-details > summary{ list-style:none; cursor:pointer; padding:8px 10px; border-bottom:1px solid transparent; color:#1e3a8a; font-weight:800; background:linear-gradient(180deg,#eff6ff,#dbeafe); border-radius:12px; }
+  .stats-details[open] > summary{ border-bottom-color:#bfdbfe; border-radius:12px 12px 0 0; }
+  .stats-table-wrap{ margin-top:0; max-height:290px; }
+  .stats-table-wide{ table-layout:fixed; min-width:860px; font-size:12px; }
+  .stats-table-wide th, .stats-table-wide td{ white-space:nowrap; }
+  .stats-table-wide thead th{ position:sticky; top:0; z-index:1; background:linear-gradient(180deg,#eff6ff,#dbeafe); color:#1e3a8a; }
+  .stats-table-wide tbody tr:nth-child(even){ background:#f8fbff; }
+  .stats-table-wide th:nth-child(1), .stats-table-wide td:nth-child(1){ width:260px; }
+  .stats-table-wide th:nth-child(2), .stats-table-wide td:nth-child(2){ width:62px; text-align:center; }
+  .stats-table-wide th:nth-child(3), .stats-table-wide td:nth-child(3){ width:72px; text-align:center; }
+  .stats-table-wide td:nth-child(2){ font-weight:900; color:#0e7490; }
+  .stats-table-wide td:nth-child(3){ font-weight:900; color:#1d4ed8; }
+  .stats-table-wide th:nth-child(4), .stats-table-wide td:nth-child(4),
+  .stats-table-wide th:nth-child(5), .stats-table-wide td:nth-child(5),
+  .stats-table-wide th:nth-child(6), .stats-table-wide td:nth-child(6){ width:62px; text-align:center; }
+  .stats-table-wide th:nth-child(7), .stats-table-wide td:nth-child(7),
+  .stats-table-wide th:nth-child(8), .stats-table-wide td:nth-child(8),
+  .stats-table-wide th:nth-child(9), .stats-table-wide td:nth-child(9){ width:92px; text-align:right; }
+  .stats-model{ border:1px dashed #93c5fd; border-radius:12px; padding:10px; background:linear-gradient(180deg,#f8fbff,#eef6ff); }
+  .model-chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .model-chip{ font-size:11px; border:1px solid #93c5fd; border-radius:999px; padding:3px 8px; background:#eff6ff; color:#1e3a8a; font-weight:700; }
+  .interv-wrap{ display:flex; flex-direction:column; gap:10px; }
+  .interv-kpis{ display:flex; gap:8px; flex-wrap:wrap; }
+  .interv-chip{ display:inline-flex; align-items:center; padding:5px 10px; border-radius:999px; font-size:11px; font-weight:800; border:1px solid #cbd5e1; background:#f8fafc; color:#334155; }
+  .interv-chip.total{ background:#e0f2fe; border-color:#7dd3fc; color:#075985; }
+  .interv-chip.pend{ background:#fff7ed; border-color:#fdba74; color:#9a3412; }
+  .interv-chip.res{ background:#ecfdf5; border-color:#86efac; color:#166534; }
+
+  .interv-mode-switch{ display:flex; gap:8px; flex-wrap:wrap; }
+  .iv-mode-btn{ background:#f8fafc; border:1px solid #dbeafe; color:#1e3a8a; }
+  .iv-mode-btn.active{ background:#dbeafe; border-color:#93c5fd; color:#1d4ed8; box-shadow:0 0 0 2px rgba(59,130,246,.15) inset; }
+
+  .interv-mode{ display:none; }
+  .interv-mode.active{ display:block; }
+
+  .interv-group{
+    border:1px dashed #bfdbfe;
+    border-radius:12px;
+    background:#f8fbff;
+    padding:10px;
+    margin-bottom:10px;
+  }
+  .interv-group h4{
+    margin:0 0 8px;
+    font-size:12px;
+    color:#1e3a8a;
+    font-weight:900;
+    text-transform:uppercase;
+    letter-spacing:.02em;
+  }
+
+  #panel-intervenciones{ background:linear-gradient(180deg,#f8fbff 0%,#ffffff 40%); border-color:#dbeafe; }
+  #panel-intervenciones .cardx-head{ background:#eef6ff; border-bottom:1px solid #d7e9ff; }
+  #panel-intervenciones .cardx-head h3{ color:#1d4ed8; }
+  #panel-intervenciones .pill-soft{ background:#e0edff; border-color:#bfdbfe; color:#1e40af; font-weight:800; }
+
+  .interv-form,
+  .interv-filtros{ border:1px solid #dbeafe; border-radius:12px; padding:10px; background:#ffffff; }
+  .interv-table{ table-layout:auto; }
+  .interv-table th,
+  .interv-table td{
+    white-space:normal;
+    overflow:visible;
+    text-overflow:clip;
+    vertical-align:top;
+  }
+  .interv-table th:nth-child(1), .interv-table td:nth-child(1){ width:86px; white-space:nowrap; text-align:center; }
+  .interv-table th:nth-child(2), .interv-table td:nth-child(2){ width:190px; }
+  .interv-table th:nth-child(3), .interv-table td:nth-child(3){ width:150px; }
+  .interv-table th:nth-child(4), .interv-table td:nth-child(4){ min-width:240px; }
+  .interv-table th:nth-child(5), .interv-table td:nth-child(5){ width:104px; white-space:nowrap; text-align:center; }
+  .interv-table th:nth-child(6), .interv-table td:nth-child(6){ width:130px; }
+  .interv-table th:nth-child(7), .interv-table td:nth-child(7){ width:180px; }
+  .interv-table th:nth-child(8), .interv-table td:nth-child(8){ width:176px; }
+  .interv-table .cell-actions{ min-width:160px; }
+  .panel-back{ padding:0 16px 8px; }
+  .obras-quick{ display:flex; gap:10px; flex-wrap:wrap; padding:0 16px 12px; }
+  .pill.quick{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    min-height:34px;
+    padding:7px 14px;
+    border-radius:999px;
+    border:1px solid #dbe3ef;
+    background:#fff;
+    font-weight:900;
+    font-size:12px;
+    line-height:1;
+    color:#334155;
+    text-decoration:none;
+    box-shadow:0 2px 6px rgba(15,23,42,.05);
+    transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+  }
+  .pill.quick:hover{
+    transform:translateY(-1px);
+    box-shadow:0 5px 12px rgba(15,23,42,.08);
+  }
+  .pill.quick.active{
+    box-shadow:0 7px 16px rgba(15,23,42,.12);
+    border-width:2px;
+    padding:6px 13px;
+  }
+  .pill.quick.pend{ background:#fff4e8;border-color:#f7c89a;color:#9a3412; }
+  .pill.quick.pend-alta{ background:#fff1f2;border-color:#fda4af;color:#9f1239; }
+  .pill.quick.curso{ background:#eaf4ff;border-color:#9ec5fe;color:#1d4ed8; }
+  .pill.quick.fin{ background:#eafbf1;border-color:#8ee2b5;color:#166534; }
+  .pill.quick.all{ background:#f5f7fa;border-color:#d8dee8;color:#334155; }
+  .pill.quick .quick-label{
+    font-size:12px;
+    font-weight:900;
+  }
+  .pill.quick .quick-count{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:20px;
+    height:20px;
+    padding:0 6px;
+    border-radius:999px;
+    background:rgba(255,255,255,.72);
+    border:1px solid rgba(255,255,255,.6);
+    font-size:11px;
+    font-weight:900;
+    line-height:1;
+  }
+  .pill.quick.active .quick-count{
+    background:#fff;
+    border-color:rgba(255,255,255,.9);
+  }
+
+  /* ====== LAYOUT ====== */
+  .obras-top-grid{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap:12px;
+    align-items:start;
+    margin-bottom:12px;
+  }
+  .obras-right{ min-width:0; max-width:100%; margin:0 auto; }
+
+  /* ====== CARD ====== */
+  .cardx{
+    background:#fff;
+    border:1px solid #e5e7eb;
+    border-radius:16px;
+    box-shadow:0 8px 22px rgba(15,23,42,.06);
+    overflow:hidden;
+  }
+  .cardx-head{
+    padding:12px 14px;
+    border-bottom:1px solid #eef2f7;
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .cardx-head h3{ margin:0; font-size:14px; }
+  .cardx-head p{ margin:2px 0 0; font-size:12px; color:#64748b; }
+  .pill-soft{
+    font-size:11px;
+    padding:3px 10px;
+    border-radius:999px;
+    background:#f1f5f9;
+    border:1px solid #e2e8f0;
+    color:#475569;
+    white-space:nowrap;
+  }
+  .list-badges{ display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+
+  /* ====== FORM ====== */
+  .formx{ padding:12px 14px 14px; }
+  .gridx{
+    display:grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap:10px;
+  }
+  .fg{ display:flex; flex-direction:column; gap:4px; }
+  .fg label{ font-size:11px; color:#64748b; }
+  .fg input, .fg select, .fg textarea{
+    font-size:13px;
+    padding:7px 10px;
+    border-radius:12px;
+    border:1px solid #e5e7eb;
+    background:#fff;
+    outline:none;
+  }
+  .fg textarea{ resize:vertical; min-height:62px; }
+  .fg.full{ grid-column:1 / -1; }
+  .fg.half{ grid-column:auto; }
+  .help{ font-size:11px; color:#94a3b8; margin-top:2px; }
+
+  .formx-actions{
+    margin-top:10px;
+    display:flex;
+    justify-content:flex-end;
+  }
+  .btn-wide{ min-width:180px; }
+
+  .calc-result{
+    margin-top:10px;
+    font-size:12px;
+    color:#475569;
+    padding:10px 10px;
+    border-radius:12px;
+    background:#f8fafc;
+    border:1px dashed #e2e8f0;
+  }
+
+  /* ====== TABLA PRO ====== */
+  .table-wrap{
+    padding:10px 14px 14px;
+    overflow-x:auto;
+    overflow-y:visible;
+    max-height:none;
+  }
+  .obras-right .table-wrap-main{
+    overflow-x:auto;
+  }
+
+  .obras-table{
+    width:100%;
+    table-layout:fixed;
+    border-collapse:separate;
+    border-spacing:0;
+  }
+  .obras-list-table{
+    width:100%;
+    max-width:100%;
+    margin:0 auto;
+  }
+  .desinf-table{
+    width:100%;
+    border-collapse:separate;
+    border-spacing:0;
+  }
+  .obras-table th,
+  .obras-table td,
+  .desinf-table th,
+  .desinf-table td{
+    font-size:11px;
+    padding:6px 7px;
+    border-bottom:1px solid #eef2f7;
+    vertical-align:middle;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .obras-table thead th{
+    position:sticky;
+    top:0;
+    z-index:3;
+    background:#fff;
+    border-bottom:1px solid #e5e7eb;
+    text-align:center;
+  }
+  .desinf-table thead th{
+    background:#fff;
+    border-bottom:1px solid #e5e7eb;
+    text-align:left;
+  }
+  .desinf-table td:last-child{
+    white-space:normal;
+    line-height:1.2;
+  }
+  /* Desinfecciones: color suave institucional */
+  #panel-desinf{
+    background:linear-gradient(180deg, #f8fdff 0%, #ffffff 42%);
+    border-color:#d7ecf7;
+  }
+  #panel-desinf .cardx-head{
+    background:#f2fbff;
+    border-bottom:1px solid #d9edf8;
+  }
+  #panel-desinf .cardx-head h3{
+    color:#0f5e75;
+  }
+  #panel-desinf .pill-soft{
+    background:#e8f7ff;
+    border-color:#bfe8fb;
+    color:#0b5e75;
+    font-weight:800;
+  }
+  #panel-desinf .panel-back .btn{
+    background:#f0f9ff;
+    border-color:#cde7f7;
+    color:#0f4f66;
+  }
+  .desinf-summary thead th{
+    background:#edf8ff;
+    color:#0f4f66;
+  }
+  .desinf-summary tbody td{
+    background:#fbfeff;
+  }
+  .desinf-summary tbody tr:nth-child(even) td{
+    background:#f5fbff;
+  }
+  .desinf-summary td:nth-child(2),
+  .desinf-summary td:nth-child(3),
+  .desinf-summary td:nth-child(4){
+    text-align:center;
+    font-weight:700;
+    color:#155e75;
+  }
+  .desinf-detail thead th{
+    background:#f4fbff;
+    color:#1e3a5f;
+  }
+  .desinf-detail tbody tr:nth-child(even) td{
+    background:#fafcff;
+  }
+  .desinf-detail tbody tr:hover td{
+    background:#f1f7ff;
+  }
+  .desinf-detail td:nth-child(3),
+  .desinf-detail td:nth-child(4),
+  .desinf-detail td:nth-child(5){
+    color:#334155;
+    font-weight:700;
+  }
+  /* Ajuste del listado principal: sin desborde horizontal y con columnas fluidas */
+  .obras-list-table th,
+  .obras-list-table td{
+    white-space:normal;
+    overflow:visible;
+    text-overflow:clip;
+    overflow-wrap:anywhere;
+    word-break:break-word;
+  }
+  .obras-list-table th:nth-child(1),
+  .obras-list-table td:nth-child(1),
+  .obras-list-table th:nth-child(4),
+  .obras-list-table td:nth-child(4),
+  .obras-list-table th:nth-child(5),
+  .obras-list-table td:nth-child(5),
+  .obras-list-table th:nth-child(6),
+  .obras-list-table td:nth-child(6),
+  .obras-list-table th:nth-child(7),
+  .obras-list-table td:nth-child(7),
+  .obras-list-table th:nth-child(8),
+  .obras-list-table td:nth-child(8),
+  .obras-list-table th:nth-child(9),
+  .obras-list-table td:nth-child(9){
+    white-space:nowrap;
+  }
+  .obras-list-table th:nth-child(1), .obras-list-table td:nth-child(1){ width:4%; text-align:center; }
+  .obras-list-table th:nth-child(2), .obras-list-table td:nth-child(2){ width:20%; }
+  .obras-list-table th:nth-child(3), .obras-list-table td:nth-child(3){ width:29%; }
+  .obras-list-table th:nth-child(4), .obras-list-table td:nth-child(4){ width:9%; text-align:center; }
+  .obras-list-table th:nth-child(5), .obras-list-table td:nth-child(5){ width:11%; text-align:center; }
+  .obras-list-table th:nth-child(6), .obras-list-table td:nth-child(6){ width:6%; text-align:center; }
+  .obras-list-table th:nth-child(7), .obras-list-table td:nth-child(7){ width:6%; text-align:center; }
+  .obras-list-table th:nth-child(8), .obras-list-table td:nth-child(8){ width:6%; text-align:center; }
+  .obras-list-table th:nth-child(9), .obras-list-table td:nth-child(9){ width:10%; text-align:center; }
+  .obras-list-table td:nth-child(9){
+    overflow:visible;
+    text-overflow:clip;
+    white-space:nowrap;
+  }
+  .obras-list-table td:nth-child(2),
+  .obras-list-table td:nth-child(3){
+    white-space:normal;
+    line-height:1.2;
+    vertical-align:top;
+  }
+
+  .muted-xs{ font-size:11px; color:#64748b; }
+  .obra-id{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:22px;
+    height:18px;
+    padding:0 5px;
+    border-radius:999px;
+    background:#f3f6fb;
+    border:1px solid #dbe3ef;
+    color:#334155;
+    font-size:10px;
+    font-weight:800;
+  }
+  .obra-sede-code{
+    display:inline-block;
+    color:#0f172a;
+    font-weight:900;
+    letter-spacing:.01em;
+  }
+  .obra-task{
+    font-weight:700;
+    color:#0f172a;
+    line-height:1.15;
+    font-size:11px;
+  }
+  .obra-date{
+    display:inline-block;
+    padding:0;
+    border-radius:0;
+    background:transparent;
+    border:none;
+    color:#475569;
+    font-size:9px;
+    font-weight:700;
+    letter-spacing:.01em;
+  }
+
+  /* hover */
+  .obras-table tbody tr:hover td{ background:#f8fafc; }
+  .obras-table tbody tr:nth-child(even) td{ background:#fcfdff; }
+
+  /* badges prioridad/estado */
+  .pill{
+    display:inline-block;
+    padding:3px 10px;
+    border-radius:999px;
+    font-size:10px;
+    font-weight:700;
+    border:1px solid transparent;
+  }
+  .prio-alta  { background:#fee2e2; color:#b91c1c; border-color:#fecaca; }
+  .prio-media { background:#fef9c3; color:#854d0e; border-color:#fde68a; }
+  .prio-baja  { background:#ecfeff; color:#0e7490; border-color:#a5f3fc; }
+
+  .prio-cell{ display:grid; justify-items:center; gap:4px; }
+  .prio-mini{ display:inline-flex; gap:4px; align-items:center; }
+  .prio-mini form{ margin:0; }
+  .prio-dot{ width:12px; height:12px; border-radius:999px; border:1px solid #cbd5e1; padding:0; cursor:pointer; }
+  .prio-dot.alta{ background:#fecaca; border-color:#fca5a5; }
+  .prio-dot.media{ background:#fde68a; border-color:#fcd34d; }
+  .prio-dot.baja{ background:#99f6e4; border-color:#5eead4; }
+  .prio-dot.active.alta{ box-shadow:0 0 0 2px #b91c1c inset; }
+  .prio-dot.active.media{ box-shadow:0 0 0 2px #92400e inset; }
+  .prio-dot.active.baja{ box-shadow:0 0 0 2px #0f766e inset; }
+
+  .estado-pendiente  { background:#fff7ed; color:#9a3412; border-color:#fdba74; }
+  .estado-en_curso   { background:#eff6ff; color:#1d4ed8; border-color:#93c5fd; }
+  .estado-finalizada { background:#ecfdf5; color:#15803d; border-color:#86efac; }
+
+  /* Acciones compactas */
+  .cell-actions{
+    display:flex;
+    flex-direction:column;
+    gap:5px;
+    align-items:stretch;
+    justify-content:center;
+    min-width:96px;
+  }
+  .estado-form{
+    display:flex;
+    gap:4px;
+    align-items:center;
+    justify-content:center;
+    flex-wrap:nowrap;
+    width:100%;
+  }
+  .estado-form-inline{
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+    gap:4px;
+  }
+  .estado-form-menu{
+    display:none;
+  }
+  .acciones-menu{
+    position:relative;
+    z-index:20;
+  }
+  .acciones-menu summary{
+    list-style:none;
+    min-width:72px;
+    min-height:24px;
+    padding:2px 8px;
+    text-align:center;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    font-size:10px;
+    font-weight:700;
+  }
+  .acciones-menu summary::-webkit-details-marker{
+    display:none;
+  }
+  .acciones-dropdown{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    position:absolute;
+    right:0;
+    top:auto;
+    bottom:calc(100% + 6px);
+    z-index:40;
+    min-width:90px;
+    padding:6px;
+    border:1px solid #dbe3ef;
+    border-radius:10px;
+    background:#fff;
+    box-shadow:0 10px 20px rgba(15,23,42,.10);
+  }
+  .acciones-menu:not([open]) .acciones-dropdown{
+    display:none;
+  }
+  .acciones-dropdown .btn,
+  .acciones-dropdown form{
+    width:100%;
+  }
+  .acciones-dropdown .estado-form-menu{
+    width:100%;
+    flex-direction:column;
+    align-items:stretch;
+    gap:6px;
+    padding-bottom:2px;
+    border-bottom:1px solid #e5e7eb;
+    margin-bottom:4px;
+  }
+  .acciones-dropdown .estado-form-menu select{
+    width:100%;
+    min-width:0;
+  }
+  .acciones-dropdown .estado-form-menu .btn{
+    width:100%;
+  }
+  .estado-form select{
+    flex:1;
+    width:100%;
+    min-width:0;
+    height:24px;
+    font-size:9px;
+    padding:2px 5px;
+    border-radius:999px;
+    border:1px solid #dbe3ef;
+    background:#f8fafc;
+  }
+
+  /* Botones XS coherentes */
+  .btn.xs{
+    min-height:24px;
+    padding:2px 7px;
+    font-size:9px;
+    border-radius:999px;
+    line-height:1;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .btn.xs.outline{
+    background:#f8fafc;
+    border:1px solid #dbe3ef;
+    color:#334155;
+  }
+  .btn.xs.outline:hover{ background:#eef2f7; }
+  .btn.danger{
+    background:#fee2e2;
+    border:1px solid #fecaca;
+    color:#b91c1c;
+  }
+  .btn.danger:hover{ background:#fecaca; }
+  .btn.info{
+    background:#e0f2fe;
+    border:1px solid #bae6fd;
+    color:#075985;
+  }
+  .btn.info:hover{ background:#bae6fd; }
+
+  .btn-sm{ padding:7px 12px; font-size:12px; border-radius:999px; }
+
+  /* Vacío */
+  .empty{
+    padding:18px 14px 20px;
+    color:#64748b;
+  }
+  .empty-title{ font-weight:900; color:#0f172a; margin-bottom:2px; }
+  .empty-sub{ font-size:13px; }
+
+  /* Responsive */
+  @media (max-width: 1100px){
+    .table-wrap{ max-height:none; }
+    .obras-list-table th:nth-child(1), .obras-list-table td:nth-child(1){ width:5%; }
+    .obras-list-table th:nth-child(2), .obras-list-table td:nth-child(2){ width:20%; }
+    .obras-list-table th:nth-child(3), .obras-list-table td:nth-child(3){ width:24%; }
+    .obras-list-table th:nth-child(4), .obras-list-table td:nth-child(4){ width:10%; }
+    .obras-list-table th:nth-child(5), .obras-list-table td:nth-child(5){ width:13%; }
+    .obras-list-table th:nth-child(6), .obras-list-table td:nth-child(6){ width:7%; }
+    .obras-list-table th:nth-child(7), .obras-list-table td:nth-child(7){ width:7%; }
+    .obras-list-table th:nth-child(8), .obras-list-table td:nth-child(8){ width:6%; }
+    .obras-list-table th:nth-child(9), .obras-list-table td:nth-child(9){ width:10%; }
+    .obras-list-table .cell-actions{ justify-content:center; }
+    .obras-list-table .estado-form{ justify-content:center; }
+    .obras-list-table .estado-form select{ width:84px; min-width:0; }
+    .obras-list-table .estado-form-inline{ display:flex; }
+    .obras-list-table .estado-form-menu{ display:none; }
+    #panel-stats .stats-kpi{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .stats-grid-3{ grid-template-columns: 1fr; }
+    .pie-shell{ grid-template-columns: 1fr; justify-items:center; }
+    .stats-table-wrap{ max-height:240px; }
+  }
+
+  @media (max-width: 1360px) and (min-width: 1101px){
+    .stats-grid-3{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .obras-list-table .estado-form-inline{
+      display:flex;
+    }
+    .obras-list-table .estado-form-menu{
+      display:none;
+    }
+    .obras-list-table .cell-actions{
+      justify-content:center;
+    }
+    .obras-list-table th:nth-child(9), .obras-list-table td:nth-child(9){
+      width:10%;
+    }
+  }
+</style>
+
+<script>
+  (function(){
+    const actions = document.querySelectorAll(".obras-actions [data-panel]");
+    const panels = document.querySelectorAll(".obras-panel");
+    const backBtns = document.querySelectorAll(".js-back-list");
+    const activePanelId = "{{ active_panel|default('') }}";
+
+    function hideAll(){
+      panels.forEach(p => p.classList.remove("active"));
+    }
+
+    if (activePanelId) {
+      const activePanel = document.getElementById(activePanelId);
+      if (activePanel) activePanel.classList.add("active");
+    }
+
+    actions.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id = btn.getAttribute("data-panel");
+        const panel = document.getElementById(id);
+        if (!panel) return;
+        const isActive = panel.classList.contains("active");
+        hideAll();
+        if (!isActive) {
+          panel.classList.add("active");
+          panel.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      });
+    });
+
+    backBtns.forEach(b => {
+      b.addEventListener("click", () => {
+        hideAll();
+        const listado = document.querySelector(".obras-right");
+        if (listado) listado.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+
+    const intervPanel = document.getElementById("panel-intervenciones");
+    if (intervPanel) {
+      const modeBtns = intervPanel.querySelectorAll(".iv-mode-btn");
+      const modoRegistro = intervPanel.querySelector(".interv-mode-registro");
+      const modoListado = intervPanel.querySelector(".interv-mode-listado");
+      const storageKey = "obras_interv_modo";
+      const hasIntervFilters = "{{ '1' if (iv_sede_filtro or iv_estado_filtro or iv_tipo_filtro or iv_fecha_filtro) else '0' }}" === "1";
+
+      const setIntervMode = (mode) => {
+        const normalized = mode === "listado" ? "listado" : "registro";
+        if (modoRegistro) modoRegistro.classList.toggle("active", normalized === "registro");
+        if (modoListado) modoListado.classList.toggle("active", normalized === "listado");
+        modeBtns.forEach(btn => btn.classList.toggle("active", btn.getAttribute("data-iv-mode") === normalized));
+        try { sessionStorage.setItem(storageKey, normalized); } catch (e) {}
+      };
+
+      let initialMode = hasIntervFilters ? "listado" : "registro";
+      if (window.location.hash === "#interv-listado") initialMode = "listado";
+      try {
+        const saved = sessionStorage.getItem(storageKey);
+        if (saved === "registro" || saved === "listado") initialMode = saved;
+      } catch (e) {}
+      setIntervMode(initialMode);
+
+      modeBtns.forEach(btn => {
+        btn.addEventListener("click", () => {
+          const mode = btn.getAttribute("data-iv-mode") || "registro";
+          setIntervMode(mode);
+          if (mode === "listado") {
+            const tbl = document.getElementById("interv-listado");
+            if (tbl) tbl.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+        });
+      });
+
+      const registroForm = intervPanel.querySelector(".interv-form");
+      if (registroForm) {
+        registroForm.addEventListener("submit", () => {
+          try { sessionStorage.setItem(storageKey, "registro"); } catch (e) {}
+        });
+      }
+
+      intervPanel.querySelectorAll(".interv-filtros, #interv-listado form").forEach(f => {
+        f.addEventListener("submit", () => {
+          try { sessionStorage.setItem(storageKey, "listado"); } catch (e) {}
+        });
+      });
+
+      intervPanel.querySelectorAll("#interv-listado a").forEach(a => {
+        a.addEventListener("click", () => {
+          try { sessionStorage.setItem(storageKey, "listado"); } catch (e) {}
+        });
+      });
+    }
+  })();
+</script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const selTipo = document.getElementById("calc-tipo");
+    const camposDurlock = document.getElementById("calc-durlock-campos");
+    const camposM2 = document.getElementById("calc-m2-campos");
+    const camposAire = document.getElementById("calc-aire-campos");
+    const camposFrio = document.getElementById("calc-frio-campos");
+    const labelM2 = document.getElementById("label-m2");
+    const helpM2 = document.getElementById("help-m2");
+
+    renderStatsPie();
+
+    if (window.location.hash === "#interv-listado") {
+      const intervList = document.getElementById("interv-listado");
+      if (intervList) {
+        setTimeout(() => {
+          intervList.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 140);
+      }
+    }
+
+    selTipo.addEventListener("change", function () {
+      const t = this.value;
+
+      if (t === "durlock") {
+        camposDurlock.style.display = "";
+        camposM2.style.display = "none";
+        camposAire.style.display = "none";
+        camposFrio.style.display = "none";
+      } else if (t === "aire_split") {
+        camposDurlock.style.display = "none";
+        camposM2.style.display = "none";
+        camposAire.style.display = "";
+        camposFrio.style.display = "none";
+      } else if (t === "frio") {
+        camposDurlock.style.display = "none";
+        camposM2.style.display = "none";
+        camposAire.style.display = "none";
+        camposFrio.style.display = "";
+      } else {
+        camposDurlock.style.display = "none";
+        camposM2.style.display = "";
+        camposAire.style.display = "none";
+        camposFrio.style.display = "none";
+      }
+
+      if (t === "pintura") {
+        labelM2.textContent = "Metros cuadrados a pintar";
+        helpM2.textContent = "Considera 2 manos de látex interior.";
+      } else if (t === "imperme_liquida") {
+        labelM2.textContent = "Metros cuadrados a impermeabilizar (membrana líquida)";
+        helpM2.textContent = "Consumo orientativo 1,2 kg (o L) por m² en 2 manos.";
+      } else if (t === "membrana_asfaltica") {
+        labelM2.textContent = "Metros cuadrados de techo con membrana asfáltica";
+        helpM2.textContent = "Rollo estándar 10 m². Incluye pintura asfáltica y gas.";
+      }
+
+      document.getElementById("calc-resultado").innerHTML = "";
+    });
+  });
+
+  function renderStatsPie() {
+    const chart = document.getElementById("stats-pie-chart");
+    const legend = document.getElementById("stats-pie-legend");
+    if (!chart || !legend) return;
+
+    let rows = [];
+    try {
+      rows = JSON.parse(chart.dataset.series || "[]");
+    } catch (e) {
+      rows = [];
+    }
+
+    const items = rows
+      .map(r => ({ label: String(r.codigo_sede || "N/A"), value: Number(r.total || 0) }))
+      .filter(r => r.value > 0)
+      .sort((a, b) => b.value - a.value);
+
+    if (!items.length) {
+      chart.style.background = "#e2e8f0";
+      legend.innerHTML = '<div class="muted-xs">Sin datos.</div>';
+      return;
+    }
+
+    const total = items.reduce((acc, item) => acc + item.value, 0);
+    const palette = ["#2563eb", "#06b6d4", "#14b8a6", "#22c55e", "#84cc16", "#f59e0b", "#f97316", "#ef4444", "#0ea5e9", "#3b82f6"];
+    const topLimit = 8;
+    const series = items.slice(0, topLimit).map((item, idx) => ({ ...item, color: palette[idx % palette.length] }));
+    const resto = items.slice(topLimit).reduce((acc, item) => acc + item.value, 0);
+    if (resto > 0) {
+      series.push({ label: "Resto", value: resto, color: "#94a3b8" });
+    }
+
+    let cursor = 0;
+    const stops = [];
+    const legendRows = [];
+
+    series.forEach(item => {
+      const pct = total ? (item.value * 100 / total) : 0;
+      const start = cursor;
+      cursor += pct;
+      stops.push(`${item.color} ${start.toFixed(2)}% ${cursor.toFixed(2)}%`);
+      legendRows.push(
+        `<div class="pie-item"><span class="pie-dot" style="background:${item.color}"></span><span class="pie-name">${item.label}</span><span class="pie-val">${pct.toFixed(1)}%</span></div>`
+      );
+    });
+
+    chart.style.background = `conic-gradient(${stops.join(",")})`;
+    legend.innerHTML = legendRows.join("");
+  }
+
+  function calcularMaterialesObra() {
+    const tipo = document.getElementById("calc-tipo").value;
+    const cont = document.getElementById("calc-resultado");
+
+    if (tipo === "durlock") {
+      const ml = parseFloat(document.getElementById("calc-ml").value || "0");
+      if (!ml || ml <= 0) {
+        alert("Ingresá los metros lineales de tabique.");
+        return;
+      }
+
+      const altura = 2.6;
+      const largoPlaca = 2.4;
+      const anchoPlaca = 1.2;
+      const m2Placa = largoPlaca * anchoPlaca;
+      const pasoMontante = 0.4;
+
+      const m2Muro = ml * altura * 2;
+      const placas = Math.ceil(m2Muro / m2Placa);
+
+      const solerasMl = ml * 2;
+      const barrasSolera = Math.ceil(solerasMl / 2.6);
+
+      const barrasMontante = Math.ceil(ml / pasoMontante) + 1;
+
+      const kgMasilla = (m2Muro / 12).toFixed(1);
+      const rollosCinta = Math.ceil(m2Muro / 25);
+      const cajasTornillos = Math.max(1, Math.round(placas / 10));
+
+      cont.innerHTML = `
+        <strong>Durlock – Tabique ${ml.toFixed(1)} m lineales (h=2,60)</strong>
+        <ul style="margin-top:6px;padding-left:18px;">
+          <li>Placas 12,5 (1,20 x 2,40): <strong>${placas}</strong> u.</li>
+          <li>Montantes 2,60 m: <strong>${barrasMontante}</strong> u.</li>
+          <li>Soleras 2,60 m: <strong>${barrasSolera}</strong> u.</li>
+          <li>Masilla: <strong>${kgMasilla}</strong> kg aprox.</li>
+          <li>Cinta: <strong>${rollosCinta}</strong> rollos aprox.</li>
+          <li>Tornillos: <strong>${cajasTornillos}</strong> caja(s) aprox.</li>
+        </ul>
+        <small style="color:#9ca3af;">Valores orientativos. Ajustar según plano real.</small>
+      `;
+      return;
+    }
+
+    if (tipo === "aire_split") {
+      const cant = Math.max(1, parseInt(document.getElementById("calc-aire-cant").value || "1", 10));
+      const ml = Math.max(0.5, parseFloat(document.getElementById("calc-aire-ml").value || "3"));
+
+      const tubo14 = (ml * cant).toFixed(1);
+      const tubo38 = (ml * cant).toFixed(1);
+      const aisl14 = (ml * cant).toFixed(1);
+      const aisl38 = (ml * cant).toFixed(1);
+      const manguera = (ml * cant).toFixed(1);
+      const cable = (3.5 * cant).toFixed(1);
+
+      cont.innerHTML = `
+        <strong>Aire Acondicionado Split – ${cant} equipo(s)</strong>
+        <ul style="margin-top:6px;padding-left:18px;">
+          <li>Caño 1/4: <strong>${tubo14}</strong> m.</li>
+          <li>Caño 3/8: <strong>${tubo38}</strong> m.</li>
+          <li>Aislante 1/4: <strong>${aisl14}</strong> m.</li>
+          <li>Aislante 3/8: <strong>${aisl38}</strong> m.</li>
+          <li>Manguera cristal: <strong>${manguera}</strong> m.</li>
+          <li>Cable 5 x 1,50 mm: <strong>${cable}</strong> m.</li>
+          <li>Mensulas 42 cm: <strong>${cant}</strong> juego(s).</li>
+          <li>Toma corriente aéreo 20A: <strong>${cant}</strong> u.</li>
+          <li>Kit tornillos fijación: <strong>${cant}</strong> kit(s).</li>
+          <li>Cinta sin pegamento: <strong>${cant}</strong> u.</li>
+        </ul>
+        <small style="color:#9ca3af;">Kit estándar 3 m por equipo. Ajustá los metros si hace falta más.</small>
+      `;
+      return;
+    }
+
+    if (tipo === "frio") {
+      const m2 = parseFloat(document.getElementById("calc-frio-m2").value || "0");
+      if (!m2 || m2 <= 0) {
+        alert("Ingresá los m².");
+        return;
+      }
+      const base = m2 * 100;
+      const altura = parseFloat(document.getElementById("frio-altura").value || "0");
+      const iluminacion = parseFloat(document.getElementById("frio-iluminacion").value || "0");
+      const paredes = parseFloat(document.getElementById("frio-paredes").value || "0");
+      const sol = parseFloat(document.getElementById("frio-sol").value || "0");
+      const uso = parseFloat(document.getElementById("frio-uso").value || "0");
+      const personas = parseInt(document.getElementById("frio-personas").value || "0", 10);
+
+      const pct = altura + iluminacion + paredes + sol + uso;
+      const extraPct = Math.round(base * (pct / 100));
+      const extraPersonas = Math.max(0, personas) * 200;
+      const total = Math.round(base + extraPct + extraPersonas);
+
+      cont.innerHTML = `
+        <strong>Cálculo FR – ${m2.toFixed(1)} m²</strong>
+        <ul style="margin-top:6px;padding-left:18px;">
+          <li>Base: <strong>${Math.round(base)}</strong> FR</li>
+          <li>Ajuste % (altura/iluminación/paredes/sol/uso): <strong>+${extraPct}</strong> FR</li>
+          <li>Personas (${personas}): <strong>+${extraPersonas}</strong> FR</li>
+        </ul>
+        <div style="margin-top:6px;font-weight:800;">Total estimado: <span style="color:#1d4ed8">${total} FR</span></div>
+        <small style="color:#9ca3af;">Orientativo. Verificar etiqueta técnica del equipo.</small>
+      `;
+      return;
+    }
+
+    const m2 = parseFloat(document.getElementById("calc-m2").value || "0");
+    if (!m2 || m2 <= 0) {
+      alert("Ingresá los metros cuadrados.");
+      return;
+    }
+
+    if (tipo === "pintura") {
+      const latexL = (m2 / 5).toFixed(1);
+      const enduidoKg = (m2 / 4).toFixed(1);
+      const lijas = Math.max(1, Math.ceil(m2 / 8));
+      const cintaEnmascarar = Math.max(1, Math.ceil(m2 / 15));
+
+      cont.innerHTML = `
+        <strong>Pintura – ${m2.toFixed(1)} m²</strong>
+        <ul style="margin-top:6px;padding-left:18px;">
+          <li>Latex interior: <strong>${latexL}</strong> L aprox.</li>
+          <li>Enduido: <strong>${enduidoKg}</strong> kg aprox.</li>
+          <li>Lijas: <strong>${lijas}</strong> hojas aprox.</li>
+          <li>Cinta de enmascarar: <strong>${cintaEnmascarar}</strong> rollos aprox.</li>
+        </ul>
+        <small style="color:#9ca3af;">Orientativo (2 manos).</small>
+      `;
+    } else if (tipo === "imperme_liquida") {
+      const consumoKg = (m2 * 1.2).toFixed(1);
+      const baldes = Math.max(1, Math.ceil(consumoKg / 20));
+
+      cont.innerHTML = `
+        <strong>Impermeabilización líquida – ${m2.toFixed(1)} m²</strong>
+        <ul style="margin-top:6px;padding-left:18px;">
+          <li>Membrana líquida: <strong>${consumoKg}</strong> kg (≈ 1,2 kg/m²).</li>
+          <li>Sugerencia: <strong>${baldes}</strong> balde(s) de 20 kg.</li>
+          <li>Banda/venda: <strong>${Math.max(1, Math.ceil(m2 / 20))}</strong> rollo(s) aprox.</li>
+        </ul>
+        <small style="color:#9ca3af;">Orientativo. Ajustar por producto.</small>
+      `;
+    } else if (tipo === "membrana_asfaltica") {
+      const rollos = Math.ceil(m2 / 10);
+      const pinturaL = (m2 * 0.3).toFixed(1);
+      const garrafas = Math.max(1, Math.ceil(m2 / 40));
+
+      cont.innerHTML = `
+        <strong>Membrana asfáltica – ${m2.toFixed(1)} m²</strong>
+        <ul style="margin-top:6px;padding-left:18px;">
+          <li>Membrana (rollo 10 m²): <strong>${rollos}</strong> rollo(s).</li>
+          <li>Pintura asfáltica: <strong>${pinturaL}</strong> L aprox.</li>
+          <li>Garrafa de gas: <strong>${garrafas}</strong> unidad(es) aprox.</li>
+        </ul>
+        <small style="color:#9ca3af;">Orientativo. Considera solapes/desperdicio.</small>
+      `;
+    }
+  }
+</script>
+
+{% endblock %}
+
+
+
+
+
+
+
+
+
+
+
+

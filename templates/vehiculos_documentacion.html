@@ -1,0 +1,550 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="veh-doc">
+  <header class="veh-doc-head">
+    <div>
+      <h2>Documentacion vehiculos</h2>
+      <p>Control de vencimientos y fechas clave. Todo queda en el calendario general.</p>
+    </div>
+    <div class="veh-doc-actions">
+      <a class="btn btn-mpd" href="{{ url_for('vehiculos_control_diario') }}">Control diario</a>
+      <a class="btn btn-mpd" href="{{ url_for('vehiculos_combustible') }}">Combustible</a>
+      <a class="btn btn-mpd" href="{{ url_for('vehiculos_estadisticas') }}">Estadisticas</a>
+      <a class="btn btn-mpd" href="{{ url_for('vehiculos_bd_home') }}">Base de datos</a>
+    </div>
+  </header>
+
+  <div class="vd-quick">
+    <button type="button" class="main" onclick="openDocForPatente('', 'all')">+ Cargar documentacion</button>
+    <button type="button" class="sub" onclick="goDocBlock('tabla-doc')">Ver tabla</button>
+  </div>
+
+  <div class="card" style="padding:10px 14px;">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:12px;">
+      <strong>Alertas</strong>
+      <span class="pill vencido">Vehiculos vencidos: {{ alertas.vehiculos_vencidos }}</span>
+      <span class="pill pronto">Vehiculos por vencer: {{ alertas.vehiculos_pronto }}</span>
+      <span class="pill vencido">Choferes vencidos: {{ alertas.choferes_vencidos }}</span>
+      <span class="pill pronto">Choferes por vencer: {{ alertas.choferes_pronto }}</span>
+    </div>
+  </div>
+
+  <div id="box-doc-carga" class="veh-doc-grid" style="display:none;">
+    <div class="card card-full">
+      <div class="card-head">
+        <h3>Actualizar fechas por vehiculo</h3>
+        <p>Elegi el bloque que queres cargar para ese vehiculo.</p>
+      </div>
+      <form id="form-doc-carga" method="post" class="doc-form">
+        <input type="hidden" name="tipo_form" value="vehiculo_estado">
+        <div class="fg fg-full">
+          <label>Vehiculo</label>
+          <select name="patente" class="in" required>
+            <option value="">Seleccionar...</option>
+            {% for v in vehiculos %}
+            <option value="{{ v.patente }}">{{ v.codigo_interno }} - {{ v.patente }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="doc-form-pills fg-full">
+          <button type="button" class="doc-mini-btn" onclick="setDocSection('all')">Todo</button>
+          <button type="button" class="doc-mini-btn" onclick="setDocSection('service')">Service</button>
+          <button type="button" class="doc-mini-btn" onclick="setDocSection('lavado')">Lavado</button>
+          <button type="button" class="doc-mini-btn" onclick="setDocSection('seguro')">Seguro</button>
+          <button type="button" class="doc-mini-btn" onclick="setDocSection('rtv')">RTV / VTV</button>
+        </div>
+
+        <div class="doc-section" data-doc-section="service">
+          <div class="doc-section-title">Service</div>
+          <div class="doc-section-grid">
+            <div class="fg">
+              <label>Ultimo service</label>
+              <input class="in" type="date" name="ultimo_service">
+            </div>
+            <div class="fg">
+              <label>Proximo service</label>
+              <input class="in" type="date" name="proximo_service">
+            </div>
+          </div>
+        </div>
+
+        <div class="doc-section" data-doc-section="lavado">
+          <div class="doc-section-title">Lavado</div>
+          <div class="doc-section-grid">
+            <div class="fg">
+              <label>Ultimo lavado</label>
+              <input class="in" type="date" name="ultimo_lavado">
+            </div>
+            <div class="fg">
+              <label>Proximo lavado</label>
+              <input class="in" type="date" name="proximo_lavado">
+            </div>
+          </div>
+        </div>
+
+        <div class="doc-section" data-doc-section="seguro">
+          <div class="doc-section-title">Seguro</div>
+          <div class="doc-section-grid">
+            <div class="fg">
+              <label>Seguro inicio</label>
+              <input class="in" type="date" name="seguro_inicio">
+            </div>
+            <div class="fg">
+              <label>Seguro vencimiento</label>
+              <input class="in" type="date" name="seguro_vencimiento">
+            </div>
+          </div>
+        </div>
+
+        <div class="doc-section" data-doc-section="rtv">
+          <div class="doc-section-title">RTV / VTV</div>
+          <div class="doc-section-grid">
+            <div class="fg">
+              <label>RTV/VTV inicio</label>
+              <input class="in" type="date" name="rtv_inicio">
+            </div>
+            <div class="fg">
+              <label>RTV/VTV vencimiento</label>
+              <input class="in" type="date" name="rtv_vencimiento">
+            </div>
+          </div>
+        </div>
+
+        <div class="fg fg-btn fg-full">
+          <button class="btn btn-mpd" type="submit">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card" id="tabla-doc" style="margin-top:12px;">
+    <div class="card-head">
+      <h3>Estado por vehiculo</h3>
+      <p>Vista simple: service y ultimo lavado.</p>
+    </div>
+    <div class="doc-kpi-wrap">
+      <div class="doc-kpi-group">
+        <div class="doc-kpi-title">Seguros</div>
+        <div class="doc-kpi-row">
+          {% for r in estados %}
+          <button type="button" class="doc-kpi-card {{ r.seguro_top.estado }}" onclick="openDocForPatente('{{ r.patente }}', 'seguro')">
+            <strong>{{ r.patente }}</strong>
+            <span class="doc-kpi-sub">{{ r.codigo_interno }}</span>
+            <span>Vigente hasta</span>
+            <b>{{ r.seguro_top.fecha or '-' }}</b>
+          </button>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="doc-kpi-group">
+        <div class="doc-kpi-title">RTV / VTV</div>
+        <div class="doc-kpi-row">
+          {% for r in estados %}
+          <button type="button" class="doc-kpi-card {{ r.rtv_top.estado }}" onclick="openDocForPatente('{{ r.patente }}', 'rtv')">
+            <strong>{{ r.patente }}</strong>
+            <span class="doc-kpi-sub">{{ r.codigo_interno }}</span>
+            <span>Vigente hasta</span>
+            <b>{{ r.rtv_top.fecha or '-' }}</b>
+          </button>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table class="table-soft">
+        <thead>
+          <tr>
+            <th>Vehiculo</th>
+            <th>Ultimo service</th>
+            <th>Proximo service</th>
+            <th>Ultimo lavado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in estados %}
+          <tr>
+            <td><strong>{{ r.codigo_interno }}</strong> - {{ r.patente }}</td>
+            <td>{{ r.ultimo_service or '-' }}</td>
+            <td>
+              <span class="pill {{ r.proximo_service.estado }}">{{ r.proximo_service.fecha or '-' }}</span>
+            </td>
+            <td>{{ r.ultimo_lavado or '-' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:12px;">
+    <div class="card-head">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+        <div>
+          <h3>Choferes</h3>
+          <p>Estado de carnet por chofer.</p>
+        </div>
+        <a class="btn btn-mpd" href="{{ url_for('bd_choferes') }}">Agregar chofer</a>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table class="table-soft">
+        <thead>
+          <tr>
+            <th>Chofer</th>
+            <th>Vencimiento carnet</th>
+            <th>Accion</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in chofer_docs %}
+          <tr>
+            <td>{{ c.agente }}</td>
+            <td><span class="pill {{ c.estado }}">{{ c.fecha_vencimiento or '-' }}</span></td>
+            <td>
+              <a class="btn btn-mpd" href="{{ url_for('agente_documentacion', id=c.id) }}">Editar</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<style>
+  .vd-quick { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 6px 0; }
+  .vd-quick .main { padding:10px 14px; border-radius:999px; border:1px solid #0f172a; background:#0f172a; color:#fff; font-weight:800; cursor:pointer; }
+  .vd-quick .sub { padding:10px 14px; border-radius:999px; border:1px solid #cbd5e1; background:#fff; color:#0f172a; font-weight:700; cursor:pointer; }
+
+  .veh-doc {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .veh-doc-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .veh-doc-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .veh-doc-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .card-full {
+    width: 100%;
+  }
+
+  .card {
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    background: #fff;
+    overflow: hidden;
+  }
+
+  .card-head {
+    padding: 12px 14px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .card-head h3 {
+    margin: 0;
+    font-size: 15px;
+  }
+
+  .card-head p {
+    margin: 2px 0 0;
+    font-size: 12px;
+    color: #6b7280;
+  }
+
+  .doc-form {
+    padding: 12px 14px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .fg-full {
+    grid-column: 1 / -1;
+  }
+
+  .doc-form-pills {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .doc-mini-btn {
+    padding: 7px 10px;
+    border-radius: 999px;
+    border: 1px solid #d5dfed;
+    background: #fff;
+    color: #334a67;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  .doc-mini-btn.is-active {
+    background: #eff6ff;
+    border-color: #93c5fd;
+    color: #1d4ed8;
+  }
+
+  .doc-section {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #f8fafc;
+    padding: 10px;
+  }
+
+  .doc-section-title {
+    font-size: 11px;
+    font-weight: 800;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    margin-bottom: 8px;
+  }
+
+  .doc-section-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .fg {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .fg label {
+    font-size: 11px;
+    color: #64748b;
+  }
+
+  .fg-btn {
+    display: flex;
+    align-items: flex-end;
+  }
+
+  .in {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-size: 13px;
+    background: #fff;
+  }
+
+  .table-wrap {
+    padding: 10px 14px 14px;
+    overflow: auto;
+  }
+
+  .doc-kpi-wrap {
+    padding: 10px 14px;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .doc-kpi-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .doc-kpi-title {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #64748b;
+    letter-spacing: .04em;
+  }
+
+  .doc-kpi-row {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .doc-kpi-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #f8fafc;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .doc-kpi-card strong {
+    font-size: 12px;
+    color: #0f172a;
+  }
+
+  .doc-kpi-card span {
+    font-size: 10px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+
+  .doc-kpi-card .doc-kpi-sub {
+    font-size: 10px;
+    color: #475569;
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 700;
+  }
+
+  .doc-kpi-card b {
+    font-size: 13px;
+    color: #0f172a;
+  }
+
+  .doc-kpi-card.ok {
+    background: #ecfdf5;
+    border-color: #86efac;
+  }
+
+  .doc-kpi-card.vencido {
+    background: #fee2e2;
+    border-color: #fecaca;
+  }
+
+  .table-soft {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  .table-soft th,
+  .table-soft td {
+    padding: 8px;
+    border-bottom: 1px solid #eef2f7;
+    white-space: nowrap;
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+    border: 1px solid #e5e7eb;
+    background: #f8fafc;
+    color: #475569;
+  }
+
+  .pill.ok {
+    background: #dcfce7;
+    border-color: #86efac;
+    color: #166534;
+  }
+
+  .pill.pronto {
+    background: #fef3c7;
+    border-color: #fcd34d;
+    color: #92400e;
+  }
+
+  .pill.vencido {
+    background: #fee2e2;
+    border-color: #fecaca;
+    color: #b91c1c;
+  }
+
+  @media (max-width: 1100px) {
+    .veh-doc-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .doc-form {
+      grid-template-columns: 1fr;
+    }
+
+    .doc-kpi-row {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+</style>
+
+<script>
+  function goDocBlock(targetId) {
+    var boxCarga = document.getElementById('box-doc-carga');
+    var tabla = document.getElementById('tabla-doc');
+    if (boxCarga) boxCarga.style.display = targetId === 'form-doc-carga' ? 'grid' : 'none';
+    var target = document.getElementById(targetId);
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function setDocSection(section) {
+    var groups = document.querySelectorAll('.doc-section');
+    var buttons = document.querySelectorAll('.doc-mini-btn');
+    groups.forEach(function (group) {
+      var key = group.getAttribute('data-doc-section');
+      group.style.display = (section === 'all' || key === section) ? 'block' : 'none';
+    });
+    buttons.forEach(function (btn) {
+      btn.classList.toggle('is-active', btn.textContent.trim().toLowerCase().indexOf(section) >= 0);
+      if (section === 'all' && btn.textContent.trim() === 'Todo') {
+        btn.classList.add('is-active');
+      } else if (section === 'all' && btn.textContent.trim() !== 'Todo') {
+        btn.classList.remove('is-active');
+      }
+    });
+  }
+
+  function openDocForPatente(patente, section) {
+    var boxCarga = document.getElementById('box-doc-carga');
+    if (boxCarga) boxCarga.style.display = 'grid';
+    var form = document.getElementById('form-doc-carga');
+    if (!form) return;
+    setDocSection(section || 'all');
+    var sel = form.querySelector('select[name="patente"]');
+    if (sel) {
+      sel.value = patente || '';
+      sel.focus();
+    }
+    var focusMap = {
+      service: 'proximo_service',
+      lavado: 'ultimo_lavado',
+      seguro: 'seguro_vencimiento',
+      rtv: 'rtv_vencimiento'
+    };
+    var focusName = focusMap[section || ''] || '';
+    if (focusName) {
+      var field = form.querySelector('[name="' + focusName + '"]');
+      if (field) {
+        setTimeout(function () { field.focus(); }, 60);
+      }
+    }
+    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  setDocSection('all');
+</script>
+
+{% endblock %}

@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<section class="agentes-main">
+
+  <header class="section-header">
+    <div>
+      <h1>Editar documento del agente</h1>
+      <p class="section-sub">
+        {{ agente.agente }} · Rubro: {{ agente.rubro|upper }}
+      </p>
+    </div>
+
+    <div class="section-actions">
+      <a class="btn outline-slate" href="{{ url_for('agentes_home', id=agente.id) }}">
+        ⬅ Volver a la ficha del agente
+      </a>
+    </div>
+  </header>
+
+  <div class="grid-main">
+    <div class="left-panel">
+      <div class="agent-detail-card">
+        <div class="agent-detail-header">
+          <div class="agent-photo" style="display:flex;align-items:center;justify-content:center;">
+            📄
+          </div>
+          <div>
+            <div class="agent-detail-name">{{ agente.agente }}</div>
+            <div class="agent-detail-rubro">Rubro: {{ agente.rubro|upper }}</div>
+          </div>
+        </div>
+
+        <div class="agent-detail-body">
+          <div class="agent-detail-section">
+            <div class="agent-detail-section-title">FORMULARIO</div>
+
+            <form method="post" class="license-form" enctype="multipart/form-data">
+
+              <div class="form-row">
+                <label for="tipo">Tipo de documento</label>
+                {% set tipo_sel = documento.tipo %}
+                <select id="tipo" name="tipo" required>
+                  <option value="">Seleccionar…</option>
+                  <option value="carnet_conducir"
+                          {{ 'selected' if tipo_sel == 'carnet_conducir' else '' }}>
+                    Carnet de conducir
+                  </option>
+                  <option value="dni" {{ 'selected' if tipo_sel == 'dni' else '' }}>
+                    DNI
+                  </option>
+                  <option value="art" {{ 'selected' if tipo_sel == 'art' else '' }}>
+                    ART / Aseguradora
+                  </option>
+                  <option value="examen_medico"
+                          {{ 'selected' if tipo_sel == 'examen_medico' else '' }}>
+                    Examen médico
+                  </option>
+                  <option value="otros" {{ 'selected' if tipo_sel == 'otros' else '' }}>
+                    Otros
+                  </option>
+                </select>
+              </div>
+
+              <div class="form-row-inline">
+                <div>
+                  <label for="fecha_vencimiento">Fecha de vencimiento</label>
+                  <input type="date"
+                         id="fecha_vencimiento"
+                         name="fecha_vencimiento"
+                         value="{{ documento.fecha_vencimiento }}"
+                         required>
+                </div>
+                <div>
+                  <label for="estado">Estado</label>
+                  {% set est_sel = documento.estado or '' %}
+                  <select id="estado" name="estado">
+                    <option value="" {{ 'selected' if est_sel == '' else '' }}>
+                      (sin especificar)
+                    </option>
+                    <option value="VIGENTE" {{ 'selected' if est_sel == 'VIGENTE' else '' }}>
+                      Vigente
+                    </option>
+                    <option value="PROXIMO A VENCER"
+                            {{ 'selected' if est_sel == 'PROXIMO A VENCER' else '' }}>
+                      Próximo a vencer
+                    </option>
+                    <option value="VENCIDO" {{ 'selected' if est_sel == 'VENCIDO' else '' }}>
+                      Vencido
+                    </option>
+                    <option value="EN TRÁMITE"
+                            {{ 'selected' if est_sel == 'EN TRÁMITE' else '' }}>
+                      En trámite
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <label for="observaciones">Observaciones</label>
+                <textarea id="observaciones"
+                          name="observaciones"
+                          rows="3"
+                          placeholder="Nº de póliza, detalle de exámen, etc.">{{ documento.observaciones }}</textarea>
+              </div>
+
+              <div class="form-row">
+                <label for="archivo">Archivo (carnet, DNI, etc.)</label>
+                <input type="file" id="archivo" name="archivo" accept=".pdf,.jpg,.jpeg,.png">
+                {% if documento.archivo %}
+                  <small class="muted">
+                    Archivo actual:
+                    <a href="{{ url_for('agente_documentacion_archivo', filename=documento.archivo) }}"
+                       target="_blank" rel="noopener">Ver</a>
+                  </small>
+                {% endif %}
+              </div>
+
+              <div class="form-row">
+                <label for="archivo_url">Link (Drive u otro)</label>
+                <input type="url" id="archivo_url" name="archivo_url"
+                       value="{{ documento.archivo_url }}"
+                       placeholder="https://drive.google.com/...">
+                {% if documento.archivo_url %}
+                  <small class="muted">
+                    Link actual:
+                    <a href="{{ documento.archivo_url }}" target="_blank" rel="noopener">Ver</a>
+                  </small>
+                {% endif %}
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn outline-amber">💾 Guardar cambios</button>
+                <a class="btn outline-slate"
+                   href="{{ url_for('agentes_home', id=agente.id) }}">
+                  Cancelar
+                </a>
+              </div>
+
+            </form>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</section>
+
+{% endblock %}

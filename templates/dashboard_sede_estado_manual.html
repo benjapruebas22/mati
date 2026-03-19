@@ -1,0 +1,389 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  .manual-shell {
+    background: linear-gradient(180deg, #f8fafd 0%, #f3f7fc 100%);
+    border: 1px solid #dfe6f1;
+    border-radius: 16px;
+    box-shadow: 0 8px 20px rgba(24, 39, 63, 0.06);
+    padding: 12px;
+    display: grid;
+    gap: 10px;
+    color: #1f2f44;
+  }
+
+  .manual-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .manual-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 900;
+    color: #1f2f44;
+  }
+
+  .manual-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .manual-link {
+    font-size: 12px;
+    color: #4d6790;
+    text-decoration: none;
+    font-weight: 700;
+  }
+
+  .manual-card {
+    border: 1px solid #d8e4f3;
+    border-radius: 12px;
+    background: #ffffff;
+    padding: 10px;
+    display: grid;
+    gap: 8px;
+  }
+
+  .manual-top {
+    display: grid;
+    grid-template-columns: auto minmax(120px, 200px) auto;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .manual-label {
+    font-size: 12px;
+    font-weight: 800;
+    color: #2d4b71;
+  }
+
+  .manual-select {
+    border: 1px solid #d2e0f5;
+    border-radius: 8px;
+    background: #f8fbff;
+    color: #2b415f;
+    font-size: 13px;
+    padding: 6px 8px;
+  }
+
+  .manual-save {
+    border: 1px solid #c4d7f2;
+    border-radius: 8px;
+    background: #eaf2ff;
+    color: #2f4f77;
+    font-size: 12px;
+    font-weight: 800;
+    padding: 6px 10px;
+    cursor: pointer;
+  }
+
+  .manual-save:hover {
+    background: #dfeafb;
+  }
+
+  .manual-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .manual-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #e5ecf6;
+    border-radius: 9px;
+    background: #fbfdff;
+    padding: 7px 8px;
+    font-size: 12px;
+    color: #476281;
+    min-height: 34px;
+  }
+
+  .manual-check input {
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    accent-color: #6f93d1;
+  }
+
+  .manual-msg {
+    min-height: 16px;
+    font-size: 11px;
+    color: #6a809f;
+  }
+
+  .manual-progress {
+    border: 1px solid #d8e4f3;
+    border-radius: 12px;
+    background: #ffffff;
+    padding: 10px;
+    display: grid;
+    gap: 8px;
+  }
+
+  .manual-progress-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .manual-progress-title {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 900;
+    color: #2d4b71;
+  }
+
+  .manual-progress-resume {
+    font-size: 11px;
+    color: #5f7898;
+    font-weight: 700;
+  }
+
+  .manual-progress-list {
+    display: grid;
+    gap: 6px;
+    max-height: 280px;
+    overflow: auto;
+    padding-right: 2px;
+  }
+
+  .manual-progress-row {
+    border: 1px solid #e5ecf6;
+    border-radius: 9px;
+    background: #fbfdff;
+    padding: 6px 8px;
+    display: grid;
+    gap: 4px;
+  }
+
+  .manual-progress-row.active {
+    border-color: #c8dbf5;
+    background: #f3f8ff;
+  }
+
+  .manual-progress-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 11px;
+  }
+
+  .manual-progress-sede {
+    font-weight: 900;
+    color: #22476f;
+  }
+
+  .manual-progress-pct {
+    font-weight: 900;
+    color: #2f4f77;
+  }
+
+  .manual-progress-bar {
+    height: 8px;
+    border-radius: 999px;
+    border: 1px solid #d6e3f5;
+    background: #eef4fd;
+    overflow: hidden;
+  }
+
+  .manual-progress-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #6f93d1 0%, #67bb8a 100%);
+  }
+
+  @media (max-width: 860px) {
+    .manual-top {
+      grid-template-columns: 1fr;
+    }
+    .manual-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<section class="manual-shell">
+  <header class="manual-head">
+    <h2 class="manual-title">Carga manual estado de sedes</h2>
+    <div class="manual-actions">
+      <a class="manual-link" href="{{ url_for('dashboard_exec') }}">Volver al dashboard</a>
+    </div>
+  </header>
+
+  <article class="manual-card">
+    <div class="manual-top">
+      <span class="manual-label">Sede</span>
+      <select id="manualSedeSelect" class="manual-select"></select>
+      <button type="button" id="manualSave" class="manual-save">Guardar</button>
+    </div>
+    <div class="manual-grid" id="manualVars"></div>
+    <div class="manual-msg" id="manualMsg"></div>
+  </article>
+
+  <article class="manual-progress">
+    <div class="manual-progress-head">
+      <h3 class="manual-progress-title">Barras de progreso por sede</h3>
+      <span class="manual-progress-resume" id="manualProgressResume"></span>
+    </div>
+    <div class="manual-progress-list" id="manualProgressList"></div>
+  </article>
+</section>
+
+<script>
+  (function () {
+    var state = { variables: [], itemsBySede: {} };
+
+    function normLabel(v) {
+      var txt = (v && (v.label || v.key)) || v || "-";
+      txt = String(txt).replace(/_/g, " ").trim();
+      return txt ? txt.charAt(0).toUpperCase() + txt.slice(1) : "-";
+    }
+
+    function setMsg(msg, err) {
+      var el = document.getElementById("manualMsg");
+      if (!el) return;
+      el.textContent = msg || "";
+      el.style.color = err ? "#9a3f57" : "#6a809f";
+    }
+
+    function renderVars(sede) {
+      var wrap = document.getElementById("manualVars");
+      if (!wrap) return;
+      var item = state.itemsBySede[sede] || { values: {} };
+      wrap.innerHTML = (state.variables || []).map(function (v) {
+        var key = typeof v === "string" ? v : (v.key || "");
+        var checked = Number((item.values && item.values[key]) || 0) > 0 ? " checked" : "";
+        return '' +
+          '<label class="manual-check">' +
+            '<input type="checkbox" data-var="' + key + '"' + checked + ">" +
+            "<span>" + normLabel(v) + "</span>" +
+          "</label>";
+      }).join("");
+    }
+
+    function renderProgress(items, currentSede) {
+      var list = document.getElementById("manualProgressList");
+      var resume = document.getElementById("manualProgressResume");
+      if (!list) return;
+
+      var rows = Array.isArray(items) ? items.slice() : [];
+      rows.sort(function (a, b) {
+        var sa = String((a && a.sede) || "");
+        var sb = String((b && b.sede) || "");
+        return sa.localeCompare(sb, "es", { numeric: true, sensitivity: "base" });
+      });
+
+      var totalPct = 0;
+      rows.forEach(function (r) { totalPct += Number(r.pct || 0); });
+      var avg = rows.length ? Math.round(totalPct / rows.length) : 0;
+      if (resume) resume.textContent = "Promedio general: " + avg + "%";
+
+      list.innerHTML = rows.map(function (r) {
+        var sede = String((r && r.sede) || "-");
+        var pct = Math.max(0, Math.min(100, Number(r.pct || 0)));
+        var pts = Number(r.puntos || 0);
+        var active = (sede === String(currentSede || "")) ? " active" : "";
+        return '' +
+          '<div class="manual-progress-row' + active + '">' +
+            '<div class="manual-progress-meta">' +
+              '<span class="manual-progress-sede">' + sede + "</span>" +
+              '<span class="manual-progress-pct">' + pct + "% (" + pts + "/10)</span>" +
+            "</div>" +
+            '<div class="manual-progress-bar"><div class="manual-progress-fill" style="width:' + pct + '%"></div></div>' +
+          "</div>";
+      }).join("");
+    }
+
+    function loadData(preferredSede) {
+      return fetch("/api/dashboard_sede_estado")
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          var select = document.getElementById("manualSedeSelect");
+          if (!select) return;
+          var vars = Array.isArray(d.variables) ? d.variables : [];
+          var items = Array.isArray(d.items) ? d.items : [];
+          var sedes = Array.isArray(d.sedes) ? d.sedes : [];
+          var map = {};
+          items.forEach(function (it) {
+            var s = String(it.sede || "").trim();
+            if (s) map[s] = it;
+          });
+          if (!sedes.length) sedes = Object.keys(map);
+          state.variables = vars;
+          state.itemsBySede = map;
+
+          select.innerHTML = sedes.map(function (s) {
+            var safe = String(s || "").trim();
+            return '<option value="' + safe + '">' + safe + "</option>";
+          }).join("");
+          var chosen = preferredSede || select.value || sedes[0] || "";
+          if (chosen) select.value = chosen;
+          renderVars(select.value);
+          renderProgress(items, select.value);
+        })
+        .catch(function () {
+          setMsg("No se pudo cargar.", true);
+        });
+    }
+
+    var select = document.getElementById("manualSedeSelect");
+    if (select) {
+      select.addEventListener("change", function () {
+        renderVars(select.value);
+        var allItems = Object.keys(state.itemsBySede).map(function (k) { return state.itemsBySede[k]; });
+        renderProgress(allItems, select.value);
+        setMsg("", false);
+      });
+    }
+
+    var save = document.getElementById("manualSave");
+    if (save) {
+      save.addEventListener("click", function () {
+        var sede = select ? String(select.value || "").trim() : "";
+        if (!sede) {
+          setMsg("Selecciona una sede.", true);
+          return;
+        }
+        var payload = { values: {} };
+        var checks = document.querySelectorAll("[data-var]");
+        checks.forEach(function (ck) {
+          var key = ck.getAttribute("data-var");
+          if (key) payload.values[key] = ck.checked ? 1 : 0;
+        });
+
+        save.disabled = true;
+        setMsg("Guardando...", false);
+        fetch("/api/dashboard_sede_estado/" + encodeURIComponent(sede), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (res) {
+            if (!res || !res.ok) throw new Error("save_error");
+            setMsg("Guardado " + sede + ".", false);
+            return loadData(sede);
+          })
+          .catch(function () {
+            setMsg("No se pudo guardar.", true);
+          })
+          .finally(function () {
+            save.disabled = false;
+          });
+      });
+    }
+
+    loadData();
+  })();
+</script>
+{% endblock %}

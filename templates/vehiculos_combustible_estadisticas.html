@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="sedes-section">
+  <style>
+    .sedes-section { margin-top: 0 !important; padding-top: 6px !important; }
+    .c-card { border:1px solid #e5e7eb; border-radius:12px; background:#fff; padding:10px; }
+    .c-filtros { display:grid; grid-template-columns:repeat(4,minmax(150px,1fr)); gap:10px; }
+    .c-filtros label { display:block; font-size:12px; color:#64748b; margin-bottom:4px; }
+    .c-kpis { display:grid; grid-template-columns:repeat(5,minmax(110px,1fr)); gap:8px; margin:10px 0; }
+    .c-kpi { border:1px solid #e5e7eb; border-radius:10px; background:#fff; padding:8px; }
+    .c-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:12px; flex-wrap:nowrap; align-items:center; }
+    .c-actions .btn, .c-actions button { display:inline-flex; align-items:center; justify-content:center; white-space:nowrap; }
+    .c-quick-btn { padding:6px 11px; border-radius:999px; font-size:12px; line-height:1; }
+    @media (max-width:900px){ .c-actions { flex-wrap:wrap; } }
+    .c-kpi small { color:#64748b; font-size:11px; display:block; }
+    .muted { color:#64748b; font-size:12px; }
+    .veh-grid { display:grid; grid-template-columns:repeat(5,minmax(190px,1fr)); gap:10px; margin:10px 0; }
+    .veh-card { border:1px solid #e5e7eb; border-radius:12px; background:#fff; padding:8px; }
+    .veh-grid { align-items:start; }
+    .veh-head { display:grid; grid-template-columns:repeat(3,1fr); gap:4px; font-size:11px; margin-bottom:6px; }
+    .veh-head div { border:1px solid #dbeafe; border-radius:6px; padding:4px; }
+    .veh-head b { display:block; font-size:12px; color:#0f172a; }
+    .veh-chart { height:130px; max-height:130px; position:relative; }
+    .veh-chart canvas { width:100% !important; height:130px !important; max-height:130px !important; display:block; }
+    .veh-code { text-align:center; font-weight:700; font-size:12px; margin-top:6px; }
+    .veh-status { text-align:center; margin-top:6px; font-size:11px; font-weight:700; }
+    @media (max-width:1000px){ .c-filtros,.c-kpis{ grid-template-columns:1fr 1fr; } }
+    @media (max-width:1200px){ .veh-grid { grid-template-columns:repeat(3,minmax(180px,1fr)); } }
+    @media (max-width:800px){ .veh-grid { grid-template-columns:repeat(2,minmax(160px,1fr)); } }
+    @media (max-width:640px){ .c-filtros,.c-kpis,.veh-grid{ grid-template-columns:1fr; } }
+  </style>
+
+    <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+    <div>
+      <h2 style="margin:0">Estadisticas de combustible</h2>
+      <div class="muted">Estimado: litros esperados = km / rendimiento por tipo de combustible (gasoil/nafta).</div>
+    </div>
+    <a class="btn btn-mpd" href="{{ url_for('vehiculos_combustible') }}">Volver</a>
+  </div>
+
+  <div class="c-card">
+    <form method="get" class="form-soft" style="padding:0;border:none;background:transparent;box-shadow:none">
+      <div class="c-filtros" style="grid-template-columns:repeat(5,minmax(130px,1fr));">
+        <div>
+          <label>Desde</label>
+          <input class="in" type="date" name="desde" value="{{ desde }}">
+        </div>
+        <div>
+          <label>Hasta</label>
+          <input class="in" type="date" name="hasta" value="{{ hasta }}">
+        </div>
+        <div>
+          <label>Vehiculo</label>
+          <select class="in" name="patente">
+            <option value="">Todos</option>
+            {% for v in vehiculos %}
+            <option value="{{ v.patente }}" {% if patente==v.patente %}selected{% endif %}>{{ v.codigo_interno }} - {{ v.patente }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label>Rend. gasoil (km/l)</label>
+          <input class="in" name="rendimiento_gasoil" value="{{ rendimiento_gasoil }}">
+        </div>
+        <div>
+          <label>Rend. nafta (km/l)</label>
+          <input class="in" name="rendimiento_nafta" value="{{ rendimiento_nafta }}">
+        </div>
+      </div>
+      <div class="c-actions">
+        <button class="btn btn-mpd c-quick-btn" type="submit">Aplicar</button>
+        <a class="btn outline-slate c-quick-btn" href="{{ url_for('vehiculos_combustible_estadisticas') }}">Limpiar</a>
+        <a class="btn c-quick-btn" href="{{ url_for('vehiculos_combustible_estadisticas', desde=mes_actual_desde, hasta=mes_actual_hasta, patente=patente, rendimiento_gasoil=rendimiento_gasoil, rendimiento_nafta=rendimiento_nafta) }}">Mes actual</a>
+        <a class="btn c-quick-btn" href="{{ url_for('vehiculos_combustible_estadisticas', desde=mes_anterior_desde, hasta=mes_anterior_hasta, patente=patente, rendimiento_gasoil=rendimiento_gasoil, rendimiento_nafta=rendimiento_nafta) }}">Mes anterior</a>
+        <a class="btn c-quick-btn" href="{{ url_for('vehiculos_combustible_estadisticas', desde=mes_cerrado_desde, hasta=mes_cerrado_hasta, patente=patente, rendimiento_gasoil=rendimiento_gasoil, rendimiento_nafta=rendimiento_nafta) }}">Mes cerrado</a>
+      </div>
+    </form>
+  </div>
+
+  <div class="c-card" style="margin:0 auto 10px auto;padding:8px">
+    <h3 style="margin:0 0 6px 0;font-size:14px">Analisis simple mensual (5 vehiculos)</h3>
+    <div class="muted">Analisis simple: se asume tanque lleno al inicio (80 l por vehiculo). Si falta combustible estimado, se marca falta de carga.</div>
+    <div class="veh-grid">
+      {% for v in por_vehiculo[:5] %}
+      <div class="veh-card">
+        <div class="veh-head">
+          <div>km recorridos<b>{{ '%.0f'|format(v.km_recorridos) }}</b></div>
+          <div>lts cargados<b>{{ '%.1f'|format(v.litros_total) }}</b></div>
+          <div>faltante<b style="color:{{ '#dc2626' if v.faltante_litros > 0 else '#16a34a' }}">{{ '%.1f'|format(v.faltante_litros) }} l</b></div>
+        </div>
+        <div class="veh-chart">
+          <canvas id="vehDonut{{ loop.index0 }}"></canvas>
+        </div>
+        <div class="veh-code">{{ v.codigo_interno }} - {{ v.patente }}</div>
+        <div class="muted" style="text-align:center;margin-top:4px">
+          Rend ref: {{ '%.1f'|format(v.rendimiento_ref or 0) }} km/l · Rend real: {{ '%.1f'|format(v.km_litro or 0) }} km/l
+        </div>
+        <div class="muted" style="text-align:center">
+          Saldo ant: {{ '%.1f'|format(v.saldo_anterior or 0) }} l · Cierre: {{ '%.1f'|format(v.saldo_cierre or 0) }} l
+        </div>
+        <div class="veh-status" style="color:{{ '#dc2626' if v.estado != 'Coherente' else '#16a34a' }}">
+          {{ v.estado }}
+        </div>
+      </div>
+      {% else %}
+      <div class="muted">Sin datos por vehiculo para el rango seleccionado.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="c-kpis">
+    <div class="c-kpi"><small>Monto total</small><b>${{ "{:,.2f}".format(resumen.monto_total or 0) }}</b></div>
+    <div class="c-kpi"><small>Litros totales</small><b>{{ '%.2f'|format(resumen.litros_total or 0) }}</b></div>
+    <div class="c-kpi"><small>KM total</small><b>{{ '%.2f'|format(resumen.km_total or 0) }}</b></div>
+    <div class="c-kpi"><small>$ por KM</small><b>${{ '%.2f'|format(resumen.precio_km or 0) }}</b></div>
+    <div class="c-kpi"><small>KM por litro</small><b>{{ '%.2f'|format(resumen.km_litro or 0) }}</b></div>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Asegura que, al recargar o aplicar filtros, la vista quede arriba.
+  if (window && window.scrollTo) {
+    window.scrollTo(0, 0);
+  }
+  const vehiculos = {{ por_vehiculo[:5]|tojson }};
+  vehiculos.forEach((v, i) => {
+    const el = document.getElementById(`vehDonut${i}`);
+    if (!el) return;
+    new Chart(el, {
+      type: 'doughnut',
+      data: {
+        labels: ['Litros esperados', 'Litros cargados'],
+        datasets: [{
+          data: [Number(v.litros_esperados || 0), Number(v.litros_total || 0)],
+          backgroundColor: ['rgba(29,78,216,.55)', 'rgba(245,158,11,.65)'],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9 } } } },
+        cutout: '56%'
+      }
+    });
+  });
+</script>
+
+{% endblock %}
