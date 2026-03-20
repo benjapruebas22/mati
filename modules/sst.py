@@ -4720,7 +4720,145 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 max(_to_int(sgi["sedes"].get("total"), 20), 0),
             )
 
-        return render_template("sgi_home.html", sgi=sgi)
+        # =========================
+        # BLOQUE VEHICULOS OPERATIVOS
+        # =========================
+        vehiculos_cards = []
+        obras_sedes = []
+        obras_total = 0
+        obras_donut = ""
+
+        con = get_db()
+        try:
+            veh_lookup = {}
+            if _table_exists(con, "vehiculos"):
+                rows = con.execute("""
+                    SELECT patente, tipo, combustible, base_ciudad, lugar_reservado, activo
+                    FROM vehiculos
+                """).fetchall()
+                for r in rows:
+                    pat = (_row_value(r, "patente", "") or "").strip()
+                    if not pat:
+                        continue
+                    veh_lookup[pat] = {
+                        "tipo": (_row_value(r, "tipo", "") or "").strip(),
+                        "combustible": (_row_value(r, "combustible", "") or "").strip(),
+                        "base": (_row_value(r, "base_ciudad", "") or "").strip(),
+                        "lugar": (_row_value(r, "lugar_reservado", "") or "").strip(),
+                        "activo": int(_row_value(r, "activo", 1) or 1),
+                    }
+
+            base_items = ((base.get("vehiculos") or {}).get("topAsignacion") or [])
+            if not base_items and veh_lookup:
+                for pat, v in list(veh_lookup.items())[:6]:
+                    base_items.append({
+                        "patente": pat,
+                        "alias": "—",
+                        "ubicacion": v.get("base") or v.get("lugar") or "—",
+                        "kmSemana": "—",
+                        "kmMes": "—",
+                        "estado": "Disponible" if v.get("activo", 1) else "No disponible",
+                    })
+
+            def _bar_pct(estado):
+                if estado == "Disponible":
+                    return 80
+                if estado == "En uso":
+                    return 60
+                if estado == "Pendiente cierre":
+                    return 40
+                if estado == "No disponible":
+                    return 15
+                return 50
+
+            for item in base_items[:8]:
+                pat = (item.get("patente") or "").strip() or "—"
+                v = veh_lookup.get(pat, {})
+                km = item.get("kmSemana")
+                if not isinstance(km, (int, float)):
+                    km = item.get("kmMes")
+                km_txt = f"{km} km" if isinstance(km, (int, float)) else "—"
+                estado = item.get("estado") or "Sin datos"
+                vehiculos_cards.append({
+                    "patente": pat,
+                    "estado": estado,
+                    "combustible": v.get("combustible") or "—",
+                    "km": km_txt,
+                    "sede": item.get("ubicacion") or v.get("base") or v.get("lugar") or "—",
+                    "uso": v.get("tipo") or "—",
+                    "bar": _bar_pct(estado),
+                })
+
+            # =========================
+            # BLOQUE OBRAS POR SEDE
+            # =========================
+            sedes_lookup = {}
+            if _table_exists(con, "sedes_mpd"):
+                rows = con.execute("SELECT codigo, nombre, direccion FROM sedes_mpd").fetchall()
+                for r in rows:
+                    cod = (_row_value(r, "codigo", "") or "").strip().upper()
+                    if not cod:
+                        continue
+                    sedes_lookup[cod] = {
+                        "nombre": (_row_value(r, "nombre", "") or "").strip(),
+                        "direccion": (_row_value(r, "direccion", "") or "").strip(),
+                    }
+
+            if _table_exists(con, "obras_sede"):
+                cols_obras = _table_cols(con, "obras_sede")
+                if "codigo_sede" in cols_obras:
+                    rows = con.execute("""
+                        SELECT UPPER(TRIM(COALESCE(codigo_sede, ''))) AS sede, COUNT(*) AS n
+                        FROM obras_sede
+                        WHERE TRIM(COALESCE(codigo_sede, '')) <> ''
+                        GROUP BY UPPER(TRIM(COALESCE(codigo_sede, '')))
+                        ORDER BY n DESC, sede ASC
+                    """).fetchall()
+
+                    obras_total = sum(int(_row_value(r, "n", 0) or 0) for r in rows)
+                    palette = ["#8ac5ff", "#9fe8b8", "#f5d08a", "#f2b0c3", "#b9b6f5", "#9fd9e7", "#f3c89a", "#c6e6b0"]
+                    acc = 0.0
+                    donut_parts = []
+                    for idx, r in enumerate(rows[:8]):
+                        n = int(_row_value(r, "n", 0) or 0)
+                        if n <= 0 or obras_total <= 0:
+                            continue
+                        sede = (_row_value(r, "sede", "") or "").strip().upper()
+                        meta = sedes_lookup.get(sede, {})
+                        label = meta.get("direccion") or meta.get("nombre") or sede or "Sede"
+                        pct = round((n / obras_total) * 100, 1)
+                        color = palette[idx % len(palette)]
+                        obras_sedes.append({
+                            "codigo": sede,
+                            "label": label,
+                            "pct": pct,
+                            "n": n,
+                            "color": color,
+                        })
+                        start = acc
+                        end = acc + pct
+                        donut_parts.append(f"{color} {start}%, {color} {end}%")
+                        acc = end
+
+                    if obras_total > 0 and acc < 100:
+                        donut_parts.append(f"#e8eef7 {acc}%, #e8eef7 100%")
+                    obras_donut = "conic-gradient(" + ", ".join(donut_parts) + ")" if donut_parts else ""
+        except Exception:
+            pass
+        finally:
+            try:
+                con.close()
+            except Exception:
+                pass
+
+        return render_template(
+            "sgi_home.html",
+            sgi=sgi,
+            vehiculos_cards=vehiculos_cards,
+            obras_sedes=obras_sedes,
+            obras_total=obras_total,
+            obras_donut=obras_donut,
+        )
 
 
     @app.route("/dashboard/sgi/documentacion", endpoint="sgi_documentacion")

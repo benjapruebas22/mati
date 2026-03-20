@@ -4,7 +4,7 @@
 <style>
   .sgi-shell {
     display: grid;
-    gap: 9px;
+    gap: 10px;
     width: min(1280px, 100%);
     margin: 0 auto;
   }
@@ -61,7 +61,7 @@
     border: 1px solid #d9e5f6;
     border-radius: 16px;
     background: linear-gradient(180deg, #f8fbff 0%, #f2f7ff 100%);
-    padding: 6px 8px;
+    padding: 5px 6px;
     display: grid;
     gap: 6px;
   }
@@ -86,7 +86,7 @@
     border: 1px solid #dbe4f6;
     background: #ffffff;
     border-radius: 12px;
-    padding: 6px 8px;
+    padding: 5px 6px;
     display: grid;
     gap: 4px;
   }
@@ -111,7 +111,7 @@
   }
 
   .sgi-menu-group .btn {
-    min-height: 28px;
+    min-height: 26px;
     min-width: 96px;
     border-radius: 999px;
     border: 1px solid #c9d4f7;
@@ -148,11 +148,11 @@
   .sgi-kpi {
     border: 1px solid #d6e5f8;
     border-radius: 12px;
-    background: #f5f9ff;
-    padding: 8px 10px;
+    background: #f7fbff;
+    padding: 7px 9px;
     display: grid;
     gap: 3px;
-    min-height: 88px;
+    min-height: 78px;
     text-align: left;
     align-content: start;
   }
@@ -167,7 +167,7 @@
   }
 
   .sgi-kpi .v {
-    font-size: clamp(18px, 1.1vw, 22px);
+    font-size: clamp(19px, 1.2vw, 24px);
     font-weight: 900;
     line-height: 1.05;
     color: #0e2f57;
@@ -282,7 +282,7 @@
   .sgi-modules {
     border: 1px solid #dbe4f2;
     border-radius: 12px;
-    background: #f8fbff;
+    background: #f9fbfe;
     padding: 7px 8px;
     display: grid;
     gap: 6px;
@@ -298,7 +298,7 @@
 
   .sgi-section-head h2 {
     margin: 0;
-    font-size: 14px;
+    font-size: 13px;
     color: #153a66;
     font-weight: 900;
   }
@@ -323,7 +323,7 @@
   }
 
   .sgi-mod {
-    border: 1px solid #d7e3f5;
+    border: 1px solid #e3ebf7;
     border-radius: 11px;
     background: #ffffff;
     padding: 6px 7px;
@@ -332,12 +332,12 @@
   }
 
 
-  .sgi-mod.mod-flota { background: #eef5ff; border-color: #c6d7f0; }
-  .sgi-mod.mod-obras { background: #fff4ed; border-color: #fec89a; }
-  .sgi-mod.mod-sedes { background: #fff7e9; border-color: #f3d08c; }
-  .sgi-mod.mod-materiales { background: #f4f5f9; border-color: #d8deeb; }
-  .sgi-mod.mod-logistica { background: #e9f8f4; border-color: #9edfcc; }
-  .sgi-mod.mod-registro { background: #eaf8ef; border-color: #9fe8b8; }
+  .sgi-mod.mod-flota { background: #f7f9ff; border-color: #dbe4f6; }
+  .sgi-mod.mod-obras { background: #fff9f4; border-color: #f3dcc3; }
+  .sgi-mod.mod-sedes { background: #fffaf0; border-color: #f2e1c5; }
+  .sgi-mod.mod-materiales { background: #f8f9fc; border-color: #dde3ef; }
+  .sgi-mod.mod-logistica { background: #f1fbf7; border-color: #cfeee1; }
+  .sgi-mod.mod-registro { background: #f3fbf5; border-color: #cfe8d6; }
 
   .sgi-mod-top {
     display: flex;
@@ -348,7 +348,7 @@
 
   .sgi-mod h3 {
     margin: 0;
-    font-size: 13px;
+    font-size: 12px;
     line-height: 1.12;
     color: #163a64;
     font-weight: 900;
@@ -453,7 +453,7 @@
     border: 1px solid #dbe4f2;
     border-radius: 16px;
     background: #f8fbff;
-    padding: 10px;
+    padding: 8px;
     display: grid;
     gap: 8px;
   }
@@ -462,7 +462,7 @@
     list-style: none;
     cursor: pointer;
     margin: 0;
-    font-size: 16px;
+    font-size: 14px;
     color: #153a66;
     font-weight: 900;
     display: flex;
@@ -545,6 +545,203 @@
     font-weight: 700;
   }
 
+  .btn-soft {
+    border: 1px solid #d7e3f4;
+    background: #f6f9ff;
+    color: #2a4c7d;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 10px;
+    font-weight: 900;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 24px;
+  }
+  .btn-soft:hover { background: #eef4ff; }
+
+  .sgi-primary-grid {
+    display: grid;
+    gap: 8px;
+  }
+
+  .sgi-panel {
+    border: 1px solid #dbe4f6;
+    border-radius: 16px;
+    background: #ffffff;
+    padding: 8px 10px;
+    display: grid;
+    gap: 8px;
+  }
+
+  .sgi-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .sgi-panel-head h2 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 900;
+    color: #0f2f57;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+  }
+
+  .sgi-veh-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 6px;
+  }
+
+  .sgi-veh-card {
+    border: 1px solid #e3ebf7;
+    border-radius: 12px;
+    background: #fbfdff;
+    padding: 6px 8px;
+    display: grid;
+    gap: 4px;
+  }
+
+  .sgi-veh-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+  }
+
+  .sgi-veh-pat {
+    font-size: 12px;
+    font-weight: 900;
+    color: #1d355f;
+    letter-spacing: .02em;
+  }
+
+  .sgi-veh-state {
+    font-size: 10px;
+    font-weight: 900;
+    border-radius: 999px;
+    padding: 1px 6px;
+    border: 1px solid transparent;
+    text-transform: uppercase;
+  }
+  .sgi-veh-state.ok { background: #edf9f3; color: #0f6b5a; border-color: #9edfcc; }
+  .sgi-veh-state.use { background: #fff5ef; color: #b45309; border-color: #f5d08a; }
+  .sgi-veh-state.warn { background: #fff7ea; color: #8a6b17; border-color: #f0e1bf; }
+  .sgi-veh-state.off { background: #fff1f1; color: #b42318; border-color: #f7c3c3; }
+
+  .sgi-veh-meta {
+    display: grid;
+    gap: 2px;
+    font-size: 10px;
+    color: #4b6890;
+  }
+
+  .sgi-veh-bar {
+    height: 6px;
+    border-radius: 999px;
+    background: #e8eef7;
+    position: relative;
+    overflow: hidden;
+  }
+  .sgi-veh-bar span {
+    display: block;
+    height: 100%;
+    width: var(--pct, 40%);
+    background: var(--color, #7fb4ff);
+    border-radius: 999px;
+  }
+
+  .sgi-obras-grid {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .sgi-donut-wrap {
+    display: grid;
+    place-items: center;
+    gap: 4px;
+  }
+
+  .sgi-donut {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: var(--donut, conic-gradient(#e8eef7 0 100%));
+    position: relative;
+    display: grid;
+    place-items: center;
+  }
+
+  .sgi-donut::after {
+    content: "";
+    position: absolute;
+    inset: 28px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 1px solid #e3ebf7;
+  }
+
+  .sgi-donut-center {
+    position: relative;
+    z-index: 1;
+    font-size: 14px;
+    font-weight: 900;
+    color: #1d355f;
+  }
+
+  .sgi-obras-list {
+    display: grid;
+    gap: 6px;
+  }
+
+  .sgi-obras-row {
+    display: grid;
+    grid-template-columns: 1fr 46px 30px;
+    gap: 6px;
+    align-items: center;
+    font-size: 11px;
+    color: #335075;
+  }
+
+  .sgi-obras-label {
+    font-weight: 700;
+    color: #2f4568;
+  }
+
+  .sgi-obras-pct {
+    text-align: right;
+    font-weight: 900;
+  }
+
+  .sgi-obras-n {
+    text-align: right;
+    color: #6b7c94;
+    font-weight: 700;
+  }
+
+  .sgi-obras-bar {
+    grid-column: 1 / -1;
+    height: 6px;
+    border-radius: 999px;
+    background: #ecf1f8;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .sgi-obras-bar span {
+    display: block;
+    height: 100%;
+    width: var(--pct, 0%);
+    background: var(--color, #8ac5ff);
+    border-radius: 999px;
+  }
+
   @media (max-width: 1300px) {
     .sgi-kpi-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .sgi-mod-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -559,6 +756,7 @@
     .sgi-menu-groups { grid-template-columns: 1fr; }
     .sgi-kpi-grid { grid-template-columns: 1fr 1fr; }
     .sgi-mod-grid { grid-template-columns: 1fr; }
+    .sgi-obras-grid { grid-template-columns: 1fr; }
     .sgi-drive-wrap { grid-template-columns: 1fr 1fr; }
     .sgi-drive-wrap .sgi-drive-input { grid-column: 1 / -1; }
   }
@@ -678,6 +876,90 @@
       <div>
         <p class="l">Cobertura operativa</p>
         <p class="s">MPD activo</p>
+      </div>
+    </article>
+  </section>
+
+  <section class="sgi-primary-grid">
+    <article class="sgi-panel sgi-panel-vehiculos">
+      <div class="sgi-panel-head">
+        <h2>Vehiculos operativos</h2>
+        <a class="btn-soft" href="{{ url_for('vehiculos_control_diario') }}">Ver modulo</a>
+      </div>
+      <div class="sgi-veh-grid">
+        {% if vehiculos_cards %}
+          {% for v in vehiculos_cards %}
+            {% set state_class = 'ok' %}
+            {% set bar_color = '#7fb4ff' %}
+            {% if v.estado == 'En uso' %}
+              {% set state_class = 'use' %}
+              {% set bar_color = '#f5b46b' %}
+            {% elif v.estado == 'Pendiente cierre' %}
+              {% set state_class = 'warn' %}
+              {% set bar_color = '#f0c76a' %}
+            {% elif v.estado == 'No disponible' %}
+              {% set state_class = 'off' %}
+              {% set bar_color = '#f5a5a5' %}
+            {% endif %}
+            <div class="sgi-veh-card">
+              <div class="sgi-veh-top">
+                <span class="sgi-veh-pat">{{ v.patente }}</span>
+                <span class="sgi-veh-state {{ state_class }}">{{ v.estado }}</span>
+              </div>
+              <div class="sgi-veh-meta">
+                <span>Combustible: {{ v.combustible }}</span>
+                <span>Km: {{ v.km }}</span>
+                <span>Sede: {{ v.sede }}</span>
+                <span>Uso: {{ v.uso }}</span>
+              </div>
+              <div class="sgi-veh-bar" style="--pct: {{ v.bar }}%; --color: {{ bar_color }};">
+                <span></span>
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="sgi-veh-card">
+            <div class="sgi-veh-top">
+              <span class="sgi-veh-pat">Sin datos</span>
+              <span class="sgi-veh-state warn">Sin datos</span>
+            </div>
+            <div class="sgi-veh-meta">No hay vehiculos operativos registrados.</div>
+            <div class="sgi-veh-bar"><span></span></div>
+          </div>
+        {% endif %}
+      </div>
+    </article>
+
+    <article class="sgi-panel sgi-panel-obras">
+      <div class="sgi-panel-head">
+        <h2>Obras por sede</h2>
+        <a class="btn-soft" href="{{ url_for('obras_home') }}">Ver modulo</a>
+      </div>
+      <div class="sgi-obras-grid">
+        <div class="sgi-donut-wrap">
+          <div class="sgi-donut" style="--donut: {{ obras_donut }};">
+            <div class="sgi-donut-center">{{ obras_total }}</div>
+          </div>
+        </div>
+        <div class="sgi-obras-list">
+          {% if obras_sedes %}
+            {% for o in obras_sedes %}
+              <div class="sgi-obras-row" style="--pct: {{ o.pct }}%; --color: {{ o.color }};">
+                <span class="sgi-obras-label">{{ o.codigo }} - {{ o.label }}</span>
+                <span class="sgi-obras-pct">{{ o.pct }}%</span>
+                <span class="sgi-obras-n">{{ o.n }}</span>
+                <div class="sgi-obras-bar"><span></span></div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="sgi-obras-row">
+              <span class="sgi-obras-label">Sin datos de obras</span>
+              <span class="sgi-obras-pct">0%</span>
+              <span class="sgi-obras-n">0</span>
+              <div class="sgi-obras-bar"><span></span></div>
+            </div>
+          {% endif %}
+        </div>
       </div>
     </article>
   </section>
