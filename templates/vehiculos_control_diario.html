@@ -69,6 +69,9 @@
     }
 
     .mobile-only { display:none; }
+    .mobile-cta {
+      display:none;
+    }
     @media (max-width: 860px) {
       .hide-mobile { display:none !important; }
       .mobile-only { display:block; }
@@ -96,6 +99,24 @@
       .vd-card-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:12px; color:#334155; }
       .vd-card-actions { display:flex; gap:8px; flex-wrap:wrap; }
       .vd-card-actions .btn { padding:6px 10px; font-size:12px; }
+
+      .mobile-cta {
+        display:flex;
+        position:sticky;
+        bottom:8px;
+        z-index:5;
+        gap:8px;
+        padding:8px;
+        background: rgba(241, 245, 249, 0.9);
+        border:1px solid #e5e7eb;
+        border-radius:14px;
+        backdrop-filter: blur(6px);
+      }
+      .mobile-cta .btn {
+        flex:1;
+        padding:10px 12px;
+        font-size:13px;
+      }
     }
   </style>
 
@@ -484,6 +505,11 @@
         {% endfor %}
       </tbody>
     </table>
+  </div>
+
+  <div class="mobile-cta">
+    <a class="btn btn-mpd" href="#form-carga-viaje">+ Cargar viaje</a>
+    <a class="btn btn-mpd" href="#tabla-viajes">Ver tabla</a>
   </div>
 
   <div class="mobile-only" style="display:grid;gap:10px;margin-top:10px">
