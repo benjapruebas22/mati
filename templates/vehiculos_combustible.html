@@ -58,6 +58,8 @@
       #form-carga-comb .comb-row { grid-template-columns: 1fr; }
       #form-carga-comb .btn.primary { width:100%; }
       .comb-table-wrap { overflow-x:auto; }
+      .comb-help summary { font-weight:800; cursor:pointer; }
+      .comb-help[open] summary { color:#0f172a; }
     }
   </style>
 
@@ -143,13 +145,15 @@
     </div>
 
     <div class="comb-card">
-      <h3 style="margin:0 0 8px 0">Referencia rapida</h3>
-      <div class="muted">Cargá cada fila igual que en Excel:</div>
-      <div style="margin-top:8px;font-size:13px;line-height:1.45">
-        <div><b>Precio por litro:</b> valor unitario de esa carga.</div>
-        <div><b>Cantidad en Plata:</b> importe total pagado.</div>
-        <div><b>Kilometro actual:</b> odometro al momento de cargar.</div>
-      </div>
+      <details class="comb-help">
+        <summary>Referencia rapida</summary>
+        <div class="muted" style="margin-top:6px">Cargá cada fila igual que en Excel:</div>
+        <div style="margin-top:8px;font-size:13px;line-height:1.45">
+          <div><b>Precio por litro:</b> valor unitario de esa carga.</div>
+          <div><b>Cantidad en Plata:</b> importe total pagado.</div>
+          <div><b>Kilometro actual:</b> odometro al momento de cargar.</div>
+        </div>
+      </details>
     </div>
   </div>
 
