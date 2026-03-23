@@ -1,0 +1,90 @@
+Fecha;Vehiculo ;chofer;KM Inicial tramo;KM final del tramo;Dif de Km;Agente;sector;dpto/defensoria;destino
+9/3/2026;AB946VK;Emiliano Perez de la Puente;104337;104360;23;Lic. Fernanda Mir;Asisitentes sociales;; Alto comedero
+9/3/2026;AE856GD;Ignacio Baroni;99253;99264;11;Procuracion Civil;Defensoria Civil;;Centro
+9/3/2026;AE856GD;Ignacio Baroni;99264;99273;9;Combustible;Intendencia;; Alto comedero
+9/3/2026;AE856GD;Marcos Duran;99273;99283;10;Mantenimiento;Intendencia;;Palpala
+9/3/2026;AG846FR;Jorge Corbacho;26277;26284;7;Dra. Gabriela Burgos;Defensoria Gral;;Centro
+9/3/2026;AB946VK;Emiliano Perez de la Puente;104360;104384;24;Dr. Mateo Montiel ;Violencia;; Alto comedero
+9/3/2026;AF277OA; Mauro Vea Murguia;94185;94212;27;Lic. Ethel Cabezas;Asisitentes sociales;Asisitentes sociales; Alto comedero
+9/3/2026;AF277OA;Ignacio Baroni;94212;94224;12;Dra. Pacheco Claudia;Defensoria Civil;;Barrio San Pedrito
+10/3/2026;AE856GD;Ignacio Baroni;99283;99376;93;Lic. Gisel Suarez;Equipo Interdisciplinario ;; Monterrico
+10/3/2026;AB946VK;Emiliano Perez de la Puente;104384;104411;27;Dra. Leonor Montoya;Menores;; Alto comedero
+10/3/2026;AB946VK;Emiliano Perez de la Puente;104411;104418;7;Lic. Ruth Romero;Asisitentes sociales;;Barrio Cuyaya
+10/3/2026;AE856GE;Luis Cardozo;94677;94753;76;Lic. Nelida Garcia;Equipo Interdisciplinario ;Equipo Interdisciplinario ;Santa Clara
+10/3/2026;AB946VK;Emiliano Perez de la Puente;104418;104423;5;Sr. Matias Calderari;Intendencia;;Barrio San Pedrito
+10/3/2026;AF277OA; Mauro Vea Murguia;94224;94360;136;Lic. Jose Moreno;Organo de Revision;Organo de Revision;San Pedro
+11/3/2026;AE856GE;Luis Cardozo;94753;94827;74;Dra. Gabriela Sajama;Defensoria San Pedro;Defensoria San Pedro;Palma Sola
+11/3/2026;AE856GD;Emiliano Perez de la Puente;99376;99403;27;Dra. Vilma Vilca;Menores;Menores;Palpala
+11/3/2026;AE856GD;Emiliano Perez de la Puente;99403;99418;15;Lic. Ruth Romero;Asisitentes sociales;;Barrio San Pedrito
+11/3/2026;AE856GD;Emiliano Perez de la Puente;99418;99427;9;Procuracion Civil;Defensoria Gral;;Barrio San Pedrito
+11/3/2026;AE856GE;Luis Cardozo;94827;94834;7;Lic. Lescano Maria Patricia;Equipo Interdisciplinario ;Equipo Interdisciplinario ;San Pedro
+11/3/2026;AG846FR;Jorge Corbacho;26284;26495;211;;Organo de Revision;;Palma Sola
+11/3/2026;AG846FR;Emiliano Perez de la Puente;26495;26502;7;Dr. Guido Matias Luna;Defensor Adjunto;;Barrio Gorriti
+11/3/2026;AB946VK; Mauro Vea Murguia;104423;104447;24;Sr. Marcos Duran;Intendencia;Intendencia; Alto comedero
+11/3/2026;AB946VK; Mauro Vea Murguia;104447;104468;21;Lic. Ethel Cabezas;Asisitentes sociales;Asisitentes sociales; Alto comedero
+11/3/2026;AB946VK; Mauro Vea Murguia;104468;104488;20;Sr. Mauricio Zambrano;Sistemas;Sistemas; Alto comedero
+11/3/2026;AF277OA;Ignacio Baroni;94370;94385;15;Procuracion Civil;Defensoria Civil;;Centro
+11/3/2026;AF277OA;Ignacio Baroni;94385;94520;135;Lic. Patricia Moyata;Equipo Interdisciplinario ;;San Pedro
+11/3/2026;AB946VK;Ignacio Baroni;104488;104523;35;Lic. Fernanda Mir;Equipo Interdisciplinario ;; Alto comedero
+11/3/2026;AB946VK;Ignacio Baroni;104523;104539;16;Dra. Claudia Lamas;Menores;;B° Higuerillas
+12/3/2026;AF277OA; Mauro Vea Murguia;94520;94537;17;Lic. Natalia Marcos;Asisitentes sociales;Asisitentes sociales;Barrio San Pedrito
+12/3/2026;AF277OA; Mauro Vea Murguia;94537;94576;39;Lic. Natalia Marcos;Asisitentes sociales;Asisitentes sociales;Palpala
+12/3/2026;AE856GE;Luis Cardozo;94834;95062;228;Lic. Jimena Rojas Valverde;Equipo Interdisciplinario ;Equipo Interdisciplinario ;Yuto
+12/3/2026;AG846FR;Emiliano Perez de la Puente;26502;26991;489;Dr. Enrique Oyharzabal;;;Susques
+13/3/2026;AB946VK;Emiliano Perez de la Puente;104539;104548;9;Lic. Ethel Cabezas;Asisitentes sociales;;Barrio Mariano Moreno
+13/3/2026;AE856GD;Ignacio Baroni;99446;99452;6;Dra. Adriana Ficoseco;Defensoria Civil;;Barrio Mariano Moreno
+13/3/2026;AG846FR;Ignacio Baroni;27035;27048;13;Dra. Pacheco Claudia;Defensoria Civil;;Barrio Malvinas
+13/3/2026;AF277OA; Mauro Vea Murguia;94577;94585;8;Procuracion Civil;Defensoria Civil;Defensoria Civil;Centro
+13/3/2026;AF277OA; Mauro Vea Murguia;94585;94588;3;Sr. Martín Daje ;Defensoria 1;Defensoria 1;Centro
+13/3/2026;AF277OA; Mauro Vea Murguia;94588;94712;124;Dr. Alberto Buliubasich;Organo de Revision;Organo de Revision;San Pedro
+13/3/2026;AE856GE;Luis Cardozo;95062;95313;251;Dra. Castro Reyna;Menores;Menores;El Talar
+16/3/2026;AB946VK;Emiliano Perez de la Puente;104548;104567;19;Procuracion Civil;Defensoria Gral;;
+16/3/2026;AE856GD;Ignacio Baroni;99452;99475;23;Lavado de vehiculo;;;
+16/3/2026;AE856GD;Emiliano Perez de la Puente;99475;99496;21;Sr. Matias Calderari;Intendencia;Intendencia;San Salvador de Jujuy
+16/3/2026;AB946VK;Emiliano Perez de la Puente;104567;104577;10;Dr. Mateo Montiel ;Violencia;;Centro
+16/3/2026;AB946VK;Emiliano Perez de la Puente;104577;104581;4;Sra. Ethel Pasarini;Violencia;;Centro
+16/3/2026;AF277OA; Mauro Vea Murguia;94712;94872;160;Lic. Ruth Romero;Asisitentes sociales;Asisitentes sociales;Aguas Calientes
+16/3/2026;AE856GE;Luis Cardozo;95313;95447;134;Sr. Diego Zamar;Menores;Menores;San Salvador de Jujuy
+16/3/2026;AG846FR;Jorge Corbacho;27048;27079;31;;;;
+16/3/2026;AG846FR;Ignacio Baroni;27079;27086;7;Dra. Agustina Sadir;;;Centro
+16/3/2026;AG846FR;Ignacio Baroni;27086;27093;7;Dr. Mateo Montiel ;Violencia;;Barrio Gorriti
+17/3/2026;AE856GD;Ignacio Baroni;99496;99500;4;Dr. Ariel Gimenez;Violencia;;Barrio Chijra
+17/3/2026;AE856GD;Ignacio Baroni;99500;99508;8;Sra. Luciana Fernandez ;Administración;;Centro
+17/3/2026;AE856GD;Ignacio Baroni;99508;99515;7;Dr. Guido Matias Luna;Defensoria Gral;;Barrio Gorriti
+17/3/2026;AE856GD;Ignacio Baroni;99515;99519;4;Sr. Leonardo Aviles;Sistemas;;Barrio Gorriti
+17/3/2026;AF277OA; Mauro Vea Murguia;94872;94880;8;Traslados en solitario;Intendencia;Intendencia;Barrio Alte. Brown
+17/3/2026;AE856GD;Ignacio Baroni;99519;99526;7;Dr. Jorge Abud;;;Centro
+17/3/2026;AE856GD;Ignacio Baroni;99526;99551;25;Dra. Pacheco Claudia;;;Barrio Malvinas
+17/3/2026;AE856GE;Luis Cardozo;95447;95480;33;Lic. Lescano Maria Patricia;Equipo Interdisciplinario ;Equipo Interdisciplinario ;San Pedro
+17/3/2026;AF277OA; Mauro Vea Murguia;94880;94890;10;Sr. Nestor Guerrero;Intendencia;Intendencia;Barrio Gorriti
+17/3/2026;AF277OA; Mauro Vea Murguia;94890;94920;30;Lic. Fernanda Mir;Asisitentes sociales;Asisitentes sociales; Alto comedero
+17/3/2026;AF277OA; Mauro Vea Murguia;94920;94925;5;Dr. Roberto Savio;Defensor Adjunto;Defensor Adjunto;Centro
+17/3/2026;AB946VK;Emiliano Perez de la Puente;104581;104592;11;Mantenimiento;Intendencia;;Centro
+17/3/2026;AB946VK;Emiliano Perez de la Puente;104592;104627;35;Dra. Claudia Lamas;Menores;;Palpala
+18/3/2026;AE856GD;Ignacio Baroni;99555;99560;5;Procuracion Civil;Defensoria Civil;;Centro
+18/3/2026;AE856GD;Ignacio Baroni;99560;99564;4;Lic. Estefania Valdez Clinis;;;Centro
+18/3/2026;AB946VK;Emiliano Perez de la Puente;104627;104651;24;Dr. Jorge Abud;Defensoria Civil;;Barrio Los Perales
+18/3/2026;AE856GD;Ignacio Baroni;99564;99573;9;Dra. Claudia Lamas;Menores;;Barrio Cuyaya
+18/3/2026;AB946VK;Emiliano Perez de la Puente;104651;104656;5;Lic. Estefania Valdez Clinis;Organo de Revision;;Centro
+18/3/2026;AB946VK;Emiliano Perez de la Puente;104656;104659;3;Sr. Matias Calderari;Intendencia;;Centro
+18/3/2026;AF277OA; Mauro Vea Murguia;94925;94950;25;Lic. Ethel Cabezas;Asisitentes sociales;Asisitentes sociales;Yala
+18/3/2026;AF277OA; Mauro Vea Murguia;94950;94984;34;Lic. Ethel Cabezas;Asisitentes sociales;Asisitentes sociales;Palpala
+17/3/2026;AE856GE;Juan Pablo Canetti;95480;95495;15;Dr. Juan Pablo Canetti;Defensoria San Pedro;Defensoria San Pedro;San Pedro
+18/3/2026;AE856GE;Luis Cardozo;95495;95499;4;Lic. Lescano Maria Patricia;Equipo Interdisciplinario ;Equipo Interdisciplinario ;San Pedro
+18/3/2026;AE856GE;Luis Cardozo;95499;95527;28;Dra. America del Valle Ubeid;Defensoria San Pedro;Defensoria San Pedro;La Mendieta
+18/3/2026;AB946VK;Emiliano Perez de la Puente;104659;104675;16;Mantenimiento;Intendencia;;San Salvador de Jujuy
+19/3/2026;AE856GD;Ignacio Baroni;99574;99584;10;Procuracion Civil;Defensoria Civil;;Barrio Alte. Brown
+19/3/2026;AF277OA; Mauro Vea Murguia;94984;95226;242;Dr. Ariel Gimenez;Violencia;Violencia;Chalican
+19/3/2026;AE856GE;Luis Cardozo;95527;95550;23;Sr. Franco Giulietti;Defensoria San Pedro;Defensoria San Pedro;San Pedro
+19/3/2026;AE856GD;Ignacio Baroni;99584;99612;28;Dra. Mariela Jurado;Defensoria Civil;;Barrio San Pedrito
+19/3/2026;AE856GD;Ignacio Baroni;99612;99620;8;Procuracion Civil;Defensoria Civil;;Barrio Chijra
+19/3/2026;AB946VK;Emiliano Perez de la Puente;104675;104729;54;Lic. Ethel Cabezas;Asisitentes sociales;;Palpala
+19/3/2026;AG846FR;Francisco Savio;27196;27201;5;Lic. Jose Moreno;Equipo Interdisciplinario ;;Barrio Mariano Moreno
+19/3/2026;AG846FR;Ignacio Baroni;27201;;-27201;Dra. Mariela Jurado;Defensoria Civil;;Centro
+20/3/2026;AE856GD;Ignacio Baroni;99620;99623;3;Cpn. Elisa Gutierrez;Administración;;Centro
+20/3/2026;AE856GD;Ignacio Baroni;99623;99636;13;Dra. Maria Moreno;Defensoria Civil;;Centro
+20/3/2026;AE856GD;Ignacio Baroni;99636;99646;10;Dra. Claudia Lamas;;;Centro
+20/3/2026;AF277OA; Mauro Vea Murguia;95226;95241;15;Lic. Ruth Romero;Asisitentes sociales;Asisitentes sociales;Barrio Huaico
+20/3/2026;AF277OA; Mauro Vea Murguia;95241;95282;41;Lic. Ruth Romero;Asisitentes sociales;Asisitentes sociales;Perico
+20/3/2026;AF277OA; Mauro Vea Murguia;95282;95326;44;Lic. Ruth Romero;Asisitentes sociales;Asisitentes sociales;El Carmen
+20/3/2026;AB946VK;Emiliano Perez de la Puente;104729;104773;44;Lic. Ethel Cabezas;Asisitentes sociales;;Palpala
