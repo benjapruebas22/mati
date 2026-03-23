@@ -601,6 +601,15 @@
     .veh-grid { grid-template-columns: 1fr; }
     .nvd-form-grid { grid-template-columns: 1fr; }
     .control-header h1 { font-size: 19px; }
+    .control-shell { display: flex; flex-direction: column; }
+    .card-resumen { order: 1; }
+    .card-registro { order: 2; }
+    .card-operativa { order: 3; }
+    .card-alertas { order: 4; }
+    .card-vehiculos { order: 5; }
+    .card-historial { order: 6; }
+    #registroNvdBox > summary { display: none; }
+    #btnHistorialTop { display: none; }
   }
 </style>
 
@@ -1539,6 +1548,9 @@
       aplicarEstiloEstadoSelect(tgt);
     });
 
+    if (window.innerWidth <= 640 && el.registroBox) {
+      el.registroBox.open = true;
+    }
     loadControl();
   })();
 </script>
