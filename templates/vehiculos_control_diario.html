@@ -68,9 +68,34 @@
       .vd-kpis { grid-template-columns:1fr; }
     }
 
+    .mobile-only { display:none; }
     @media (max-width: 860px) {
       .hide-mobile { display:none !important; }
+      .mobile-only { display:block; }
       .mobile-priority { display:block; }
+      .tabla-viajes { overflow-x:auto; -webkit-overflow-scrolling: touch; }
+      .tabla-viajes table { font-size:11px; }
+      .tabla-viajes th, .tabla-viajes td { padding:6px !important; }
+      .vd-card {
+        border:1px solid #e5e7eb;
+        border-radius:14px;
+        background:#fff;
+        padding:10px;
+        display:grid;
+        gap:6px;
+        box-shadow: 0 6px 18px rgba(15,23,42,.06);
+      }
+      .vd-card-head {
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:8px;
+      }
+      .vd-card-title { font-weight:800; color:#0f172a; font-size:13px; }
+      .vd-card-sub { color:#64748b; font-size:12px; }
+      .vd-card-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:12px; color:#334155; }
+      .vd-card-actions { display:flex; gap:8px; flex-wrap:wrap; }
+      .vd-card-actions .btn { padding:6px 10px; font-size:12px; }
     }
   </style>
 
@@ -367,7 +392,7 @@
     </button>
   </div>
 
-  <div id="tabla-viajes" class="hide-mobile" style="height:60vh;overflow:auto;border:1px solid #e5e7eb;border-radius:12px;background:#fff">
+  <div id="tabla-viajes" class="hide-mobile tabla-viajes" style="height:60vh;overflow:auto;border:1px solid #e5e7eb;border-radius:12px;background:#fff">
     <table style="width:100%;border-collapse:collapse;font-size:13px">
       <thead>
         <tr style="background:#f8fafc;text-align:left;position:sticky;top:0;z-index:2">
@@ -459,6 +484,52 @@
         {% endfor %}
       </tbody>
     </table>
+  </div>
+
+  <div class="mobile-only" style="display:grid;gap:10px;margin-top:10px">
+    {% for v in viajes %}
+    <div class="vd-card" data-vehiculo="{{ v.patente or '' }}" data-chofer="{{ v.chofer_nombre or '' }}">
+      <div class="vd-card-head">
+        <div>
+          <div class="vd-card-title">{{ v.codigo_interno }} — {{ v.patente }}</div>
+          <div class="vd-card-sub">{{ v.fecha }} · {{ v.chofer_nombre or "-" }}</div>
+        </div>
+        <div>
+          {% set estado_u = (v.estado or '')|upper %}
+          {% if estado_u == 'ABIERTO' %}
+            <span class="estado-viaje est-curso">EN CURSO</span>
+          {% elif estado_u == 'CERRADO' %}
+            <span class="estado-viaje est-cerrado">CERRADO</span>
+          {% elif estado_u %}
+            <span class="estado-viaje est-error">{{ estado_u }}</span>
+          {% else %}
+            <span class="estado-viaje est-error">SIN ESTADO</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="vd-card-grid">
+        <div>KM ini: <strong>{{ v.km_ini or 0 }}</strong></div>
+        <div>KM fin: <strong>{{ v.km_fin or 0 }}</strong></div>
+        <div>Dif: <strong>{{ v.recorrido_km or 0 }}</strong></div>
+        <div>Agente: <strong>{{ v.agente_nombre or "-" }}</strong></div>
+        <div>Sector: <strong>{{ v.sector or "" }}</strong></div>
+        <div>Dpto/Def: <strong>{{ v.dependencia or "" }}</strong></div>
+        <div style="grid-column:1 / -1">Destino: <strong>{{ v.destino_nombre or "-" }}</strong></div>
+      </div>
+
+      <div class="vd-card-actions">
+        <a class="btn btn-mpd" href="{{ url_for('viaje_editar', viaje_id=v.id, fecha=fecha) }}">Editar</a>
+        <form method="post" action="{{ url_for('viaje_eliminar', viaje_id=v.id, fecha=fecha) }}" style="display:inline" onsubmit="return confirm('¿Eliminar viaje #{{ v.id }}?');">
+          <button type="submit" class="btn btn-mpd" style="border-color:#fecaca">Eliminar</button>
+        </form>
+      </div>
+    </div>
+    {% else %}
+    <div class="vd-card">
+      <div class="vd-card-title">Sin viajes cargados.</div>
+    </div>
+    {% endfor %}
   </div>
 
 </section>
