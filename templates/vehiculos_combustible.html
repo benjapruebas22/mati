@@ -159,7 +159,7 @@
 
   <h3 style="margin:14px 0 8px 0">Ultimas cargas</h3>
   <div id="filtro-cargas" class="comb-card" style="margin-bottom:8px;padding:10px;display:none">
-    <div style="display:grid;grid-template-columns: 1fr 1fr auto auto;gap:8px;align-items:end">
+    <div style="display:grid;grid-template-columns: 1fr 1fr 160px 160px auto auto;gap:8px;align-items:end">
       <div>
         <label class="muted" style="display:block;margin-bottom:4px">Filtrar por vehiculo</label>
         <input id="fltPatente" class="in" placeholder="Ej: AE856GE o G-02">
@@ -167,6 +167,14 @@
       <div>
         <label class="muted" style="display:block;margin-bottom:4px">Filtrar por chofer</label>
         <input id="fltChofer" class="in" placeholder="Ej: Luis Cardozo">
+      </div>
+      <div>
+        <label class="muted" style="display:block;margin-bottom:4px">Desde</label>
+        <input id="fltDesde" type="date" class="in">
+      </div>
+      <div>
+        <label class="muted" style="display:block;margin-bottom:4px">Hasta</label>
+        <input id="fltHasta" type="date" class="in">
       </div>
       <button class="btn btn-mpd" type="button" onclick="applyCombFilter()">Aplicar filtro</button>
       <button class="btn outline-slate" type="button" onclick="resetCombFilter()">Limpiar</button>
@@ -189,7 +197,7 @@
       </thead>
       <tbody>
         {% for c in cargas %}
-        <tr data-patente="{{ (c.patente or '')|lower }}" data-chofer="{{ (c.chofer_nombre or '')|lower }}">
+        <tr data-patente="{{ (c.patente or '')|lower }}" data-chofer="{{ (c.chofer_nombre or '')|lower }}" data-fecha="{{ c.fecha }}">
           <td><span class="veh-badge">{{ c.codigo_interno or c.patente }} - {{ c.patente }}</span></td>
           <td><span class="chofer-txt">{{ c.chofer_nombre or "-" }}</span></td>
           <td>${{ "{:,.2f}".format(c.importe_real or 0) }}</td>
@@ -240,20 +248,30 @@
   function applyCombFilter() {
     const pat = (document.getElementById("fltPatente")?.value || "").trim().toLowerCase();
     const cho = (document.getElementById("fltChofer")?.value || "").trim().toLowerCase();
+    const dFrom = (document.getElementById("fltDesde")?.value || "").trim();
+    const dTo = (document.getElementById("fltHasta")?.value || "").trim();
     document.querySelectorAll("#tabla-cargas tbody tr[data-patente]").forEach((tr) => {
       const p = tr.dataset.patente || "";
       const c = tr.dataset.chofer || "";
+      const f = (tr.dataset.fecha || "").trim();
       const okPat = !pat || p.includes(pat);
       const okCho = !cho || c.includes(cho);
-      tr.style.display = (okPat && okCho) ? "" : "none";
+      let okFecha = true;
+      if (dFrom && f) okFecha = f >= dFrom;
+      if (okFecha && dTo && f) okFecha = f <= dTo;
+      tr.style.display = (okPat && okCho && okFecha) ? "" : "none";
     });
   }
 
   function resetCombFilter() {
     const a = document.getElementById("fltPatente");
     const b = document.getElementById("fltChofer");
+    const d1 = document.getElementById("fltDesde");
+    const d2 = document.getElementById("fltHasta");
     if (a) a.value = "";
     if (b) b.value = "";
+    if (d1) d1.value = "";
+    if (d2) d2.value = "";
     applyCombFilter();
   }
 </script>
