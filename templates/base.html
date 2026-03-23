@@ -485,12 +485,11 @@
 
           {% if can_access("obras") %}
           <div class="dropdown-sep"></div>
-          <div class="dropdown-title">Control interno</div>
-          <a href="{{ url_for('materiales_home') }}">Materiales en stock</a>
+          <div class="dropdown-title">Relevamientos / Control</div>
           <a href="{{ url_for('auditoria_mobiliario') }}">Mobiliario</a>
-          <a href="{{ url_for('auditoria_herramientas') }}">Herramientas</a>
-          <a href="{{ url_for('auditoria_operativa', rubro='vehiculos_estado') }}">Auditoria vehiculos (estado)</a>
-          <a href="{{ url_for('auditoria_operativa', rubro='vehiculos_documentacion') }}">Auditoria vehiculos (documentacion)</a>
+          <a href="{{ url_for('auditoria_aires') }}">Aires</a>
+          <a href="{{ url_for('auditoria_luminarias') }}">Luminarias</a>
+          <a href="{{ url_for('relevamientos_comparativa') }}">Comparativa</a>
           {% endif %}
         </div>
       </div>

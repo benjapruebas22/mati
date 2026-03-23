@@ -15,6 +15,17 @@ def register_auditorias(app, get_db):
         ("biblioteca_baja", "Bibliotecas bajas"),
         ("otros", "Otros (bancas, sillones, etc.)"),
     ]
+    AIRES_ITEM_PAIRS = [
+        ("total", "Equipos de aire"),
+    ]
+    LUMINARIAS_ITEM_PAIRS = [
+        ("tubo_fria", "Tubo fria"),
+        ("tubo_calido", "Tubo calida"),
+        ("foco", "Foco"),
+        ("panel", "Panel"),
+        ("puestos_trabajo", "Puestos de trabajo"),
+        ("otros", "Otros"),
+    ]
     OPERATIVA_RUBROS = [
         ("materiales", "Materiales"),
         ("mobiliario", "Mobiliario"),
@@ -184,6 +195,62 @@ def register_auditorias(app, get_db):
         con.execute("""
             CREATE INDEX IF NOT EXISTS idx_auditoria_mobiliario_items_auditoria
             ON auditoria_mobiliario_items(auditoria_id)
+        """)
+
+    def ensure_auditoria_aires_tables(con):
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS auditoria_aires(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                fecha TEXT NOT NULL,
+                sede_codigo TEXT NOT NULL,
+                deposito TEXT,
+                responsable TEXT,
+                observaciones TEXT
+            )
+        """)
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS auditoria_aires_items(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                auditoria_id INTEGER NOT NULL,
+                item TEXT NOT NULL,
+                cantidad REAL
+            )
+        """)
+        con.execute("""
+            CREATE INDEX IF NOT EXISTS idx_auditoria_aires_fecha_sede_dep
+            ON auditoria_aires(fecha, sede_codigo, deposito)
+        """)
+        con.execute("""
+            CREATE INDEX IF NOT EXISTS idx_auditoria_aires_items_auditoria
+            ON auditoria_aires_items(auditoria_id)
+        """)
+
+    def ensure_auditoria_luminarias_tables(con):
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS auditoria_luminarias(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                fecha TEXT NOT NULL,
+                sede_codigo TEXT NOT NULL,
+                deposito TEXT,
+                responsable TEXT,
+                observaciones TEXT
+            )
+        """)
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS auditoria_luminarias_items(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                auditoria_id INTEGER NOT NULL,
+                item TEXT NOT NULL,
+                cantidad REAL
+            )
+        """)
+        con.execute("""
+            CREATE INDEX IF NOT EXISTS idx_auditoria_luminarias_fecha_sede_dep
+            ON auditoria_luminarias(fecha, sede_codigo, deposito)
+        """)
+        con.execute("""
+            CREATE INDEX IF NOT EXISTS idx_auditoria_luminarias_items_auditoria
+            ON auditoria_luminarias_items(auditoria_id)
         """)
 
     @app.route("/auditoria/herramientas", methods=["GET", "POST"], endpoint="auditoria_herramientas")
@@ -545,6 +612,203 @@ def register_auditorias(app, get_db):
             auditorias=auditorias,
             edit_row=edit_row,
             edit_items=edit_items,
+            allow_otros=True,
+        )
+
+    @app.route("/auditoria/aires", methods=["GET", "POST"], endpoint="auditoria_aires")
+    def auditoria_aires():
+        con = get_db()
+        con.row_factory = sqlite3.Row
+        ensure_auditoria_aires_tables(con)
+        cur = con.cursor()
+
+        today = date.today().isoformat()
+        items = AIRES_ITEM_PAIRS
+        item_labels = [label for _, label in items]
+
+        sedes = con.execute("""
+            SELECT codigo, nombre, ciudad
+            FROM sedes_mpd
+            ORDER BY codigo
+        """).fetchall()
+        depositos = con.execute("""
+            SELECT codigo_sede, codigo_local, descripcion
+            FROM sedes_depositos
+            ORDER BY codigo_sede, codigo_local
+        """).fetchall()
+
+        edit_row = None
+        edit_items = {}
+        auditoria_id_raw = (request.args.get("edit") or "").strip()
+        auditoria_id = int(auditoria_id_raw) if auditoria_id_raw.isdigit() else None
+        if auditoria_id:
+            edit_row = con.execute("SELECT * FROM auditoria_aires WHERE id = ?", (auditoria_id,)).fetchone()
+            if edit_row:
+                rows = con.execute("SELECT item, cantidad FROM auditoria_aires_items WHERE auditoria_id = ?", (auditoria_id,)).fetchall()
+                for r in rows:
+                    edit_items[(r["item"] or "").strip()] = r["cantidad"]
+
+        if request.method == "POST":
+            fecha = (request.form.get("fecha") or today).strip() or today
+            sede_codigo = (request.form.get("sede_codigo") or "").strip().upper()
+            deposito = (request.form.get("deposito") or "").strip().upper()
+            responsable = (request.form.get("responsable") or "").strip()
+            observaciones = (request.form.get("observaciones") or "").strip()
+
+            auditoria_id_raw = (request.form.get("auditoria_id") or "").strip()
+            auditoria_id = int(auditoria_id_raw) if auditoria_id_raw.isdigit() else None
+
+            if not sede_codigo or not deposito:
+                flash("Completa sede y deposito para guardar el relevamiento.", "warning")
+                return redirect(url_for("auditoria_aires", edit=auditoria_id) if auditoria_id else url_for("auditoria_aires"))
+
+            if auditoria_id:
+                cur.execute("""
+                    UPDATE auditoria_aires
+                    SET fecha = ?, sede_codigo = ?, deposito = ?, responsable = ?, observaciones = ?
+                    WHERE id = ?
+                """, (fecha, sede_codigo, deposito, responsable, observaciones, auditoria_id))
+                cur.execute("DELETE FROM auditoria_aires_items WHERE auditoria_id = ?", (auditoria_id,))
+            else:
+                cur.execute("""
+                    INSERT INTO auditoria_aires (fecha, sede_codigo, deposito, responsable, observaciones)
+                    VALUES (?,?,?,?,?)
+                """, (fecha, sede_codigo, deposito, responsable, observaciones))
+                auditoria_id = cur.lastrowid
+
+            for key, label in items:
+                qty_raw = (request.form.get(f"qty_{key}") or "").strip()
+                if qty_raw == "":
+                    continue
+                try:
+                    qty = float(qty_raw)
+                except Exception:
+                    qty = 0
+                cur.execute("""
+                    INSERT INTO auditoria_aires_items (auditoria_id, item, cantidad)
+                    VALUES (?,?,?)
+                """, (auditoria_id, label, qty))
+
+            con.commit()
+            flash("Relevamiento de aires guardado." if not auditoria_id_raw else "Relevamiento de aires actualizado.", "success")
+            return redirect(url_for("auditoria_aires"))
+
+        auditorias = con.execute("""
+            SELECT *
+            FROM auditoria_aires
+            ORDER BY fecha DESC, id DESC
+            LIMIT 50
+        """).fetchall()
+        con.close()
+        return render_template(
+            "auditoria_aires.html",
+            sedes=sedes,
+            depositos=depositos,
+            items=items,
+            item_labels=item_labels,
+            today=today,
+            auditorias=auditorias,
+            edit_row=edit_row,
+            edit_items=edit_items,
+            allow_otros=False,
+        )
+
+    @app.route("/auditoria/luminarias", methods=["GET", "POST"], endpoint="auditoria_luminarias")
+    def auditoria_luminarias():
+        con = get_db()
+        con.row_factory = sqlite3.Row
+        ensure_auditoria_luminarias_tables(con)
+        cur = con.cursor()
+
+        today = date.today().isoformat()
+        items = LUMINARIAS_ITEM_PAIRS
+        item_labels = [label for _, label in items]
+
+        sedes = con.execute("""
+            SELECT codigo, nombre, ciudad
+            FROM sedes_mpd
+            ORDER BY codigo
+        """).fetchall()
+        depositos = con.execute("""
+            SELECT codigo_sede, codigo_local, descripcion
+            FROM sedes_depositos
+            ORDER BY codigo_sede, codigo_local
+        """).fetchall()
+
+        edit_row = None
+        edit_items = {}
+        auditoria_id_raw = (request.args.get("edit") or "").strip()
+        auditoria_id = int(auditoria_id_raw) if auditoria_id_raw.isdigit() else None
+        if auditoria_id:
+            edit_row = con.execute("SELECT * FROM auditoria_luminarias WHERE id = ?", (auditoria_id,)).fetchone()
+            if edit_row:
+                rows = con.execute("SELECT item, cantidad FROM auditoria_luminarias_items WHERE auditoria_id = ?", (auditoria_id,)).fetchall()
+                for r in rows:
+                    edit_items[(r["item"] or "").strip()] = r["cantidad"]
+
+        if request.method == "POST":
+            fecha = (request.form.get("fecha") or today).strip() or today
+            sede_codigo = (request.form.get("sede_codigo") or "").strip().upper()
+            deposito = (request.form.get("deposito") or "").strip().upper()
+            responsable = (request.form.get("responsable") or "").strip()
+            observaciones = (request.form.get("observaciones") or "").strip()
+
+            auditoria_id_raw = (request.form.get("auditoria_id") or "").strip()
+            auditoria_id = int(auditoria_id_raw) if auditoria_id_raw.isdigit() else None
+
+            if not sede_codigo or not deposito:
+                flash("Completa sede y deposito para guardar el relevamiento.", "warning")
+                return redirect(url_for("auditoria_luminarias", edit=auditoria_id) if auditoria_id else url_for("auditoria_luminarias"))
+
+            if auditoria_id:
+                cur.execute("""
+                    UPDATE auditoria_luminarias
+                    SET fecha = ?, sede_codigo = ?, deposito = ?, responsable = ?, observaciones = ?
+                    WHERE id = ?
+                """, (fecha, sede_codigo, deposito, responsable, observaciones, auditoria_id))
+                cur.execute("DELETE FROM auditoria_luminarias_items WHERE auditoria_id = ?", (auditoria_id,))
+            else:
+                cur.execute("""
+                    INSERT INTO auditoria_luminarias (fecha, sede_codigo, deposito, responsable, observaciones)
+                    VALUES (?,?,?,?,?)
+                """, (fecha, sede_codigo, deposito, responsable, observaciones))
+                auditoria_id = cur.lastrowid
+
+            for key, label in items:
+                qty_raw = (request.form.get(f"qty_{key}") or "").strip()
+                if qty_raw == "":
+                    continue
+                try:
+                    qty = float(qty_raw)
+                except Exception:
+                    qty = 0
+                cur.execute("""
+                    INSERT INTO auditoria_luminarias_items (auditoria_id, item, cantidad)
+                    VALUES (?,?,?)
+                """, (auditoria_id, label, qty))
+
+            con.commit()
+            flash("Relevamiento de luminarias guardado." if not auditoria_id_raw else "Relevamiento de luminarias actualizado.", "success")
+            return redirect(url_for("auditoria_luminarias"))
+
+        auditorias = con.execute("""
+            SELECT *
+            FROM auditoria_luminarias
+            ORDER BY fecha DESC, id DESC
+            LIMIT 50
+        """).fetchall()
+        con.close()
+        return render_template(
+            "auditoria_luminarias.html",
+            sedes=sedes,
+            depositos=depositos,
+            items=items,
+            item_labels=item_labels,
+            today=today,
+            auditorias=auditorias,
+            edit_row=edit_row,
+            edit_items=edit_items,
+            allow_otros=False,
         )
 
     @app.route("/auditoria/mobiliario/<int:aid>/borrar", methods=["POST"], endpoint="auditoria_mobiliario_borrar")
@@ -559,13 +823,89 @@ def register_auditorias(app, get_db):
         flash("Relevamiento eliminado.", "info")
         return redirect(url_for("auditoria_mobiliario"))
 
-    @app.route("/auditoria/mobiliario/supervisor", methods=["GET"], endpoint="auditoria_mobiliario_supervisor")
-    def auditoria_mobiliario_supervisor():
+    @app.route("/auditoria/aires/<int:aid>/borrar", methods=["POST"], endpoint="auditoria_aires_borrar")
+    def auditoria_aires_borrar(aid):
         con = get_db()
         con.row_factory = sqlite3.Row
-        ensure_auditoria_mobiliario_tables(con)
+        ensure_auditoria_aires_tables(con)
+        con.execute("DELETE FROM auditoria_aires_items WHERE auditoria_id = ?", (aid,))
+        con.execute("DELETE FROM auditoria_aires WHERE id = ?", (aid,))
+        con.commit()
+        con.close()
+        flash("Relevamiento eliminado.", "info")
+        return redirect(url_for("auditoria_aires"))
 
-        item_pairs = MOBILIARIO_ITEM_PAIRS
+    @app.route("/auditoria/luminarias/<int:aid>/borrar", methods=["POST"], endpoint="auditoria_luminarias_borrar")
+    def auditoria_luminarias_borrar(aid):
+        con = get_db()
+        con.row_factory = sqlite3.Row
+        ensure_auditoria_luminarias_tables(con)
+        con.execute("DELETE FROM auditoria_luminarias_items WHERE auditoria_id = ?", (aid,))
+        con.execute("DELETE FROM auditoria_luminarias WHERE id = ?", (aid,))
+        con.commit()
+        con.close()
+        flash("Relevamiento eliminado.", "info")
+        return redirect(url_for("auditoria_luminarias"))
+
+    def _comparativa_render(tipo):
+        con = get_db()
+        con.row_factory = sqlite3.Row
+
+        if tipo == "aires":
+            ensure_auditoria_aires_tables(con)
+            item_pairs = AIRES_ITEM_PAIRS
+            auditoria_tabla = "auditoria_aires"
+            auditoria_items = "auditoria_aires_items"
+            oficiales_sql = """
+                SELECT
+                    sede_codigo AS sede_codigo,
+                    ambiente_codigo AS deposito_codigo,
+                    COUNT(*) AS total
+                FROM aires_sede
+                GROUP BY sede_codigo, ambiente_codigo
+            """
+            tipo_label = "Aires"
+        elif tipo == "luminarias":
+            ensure_auditoria_luminarias_tables(con)
+            item_pairs = LUMINARIAS_ITEM_PAIRS
+            auditoria_tabla = "auditoria_luminarias"
+            auditoria_items = "auditoria_luminarias_items"
+            oficiales_sql = """
+                SELECT
+                    codigo_sede AS sede_codigo,
+                    codigo_local AS deposito_codigo,
+                    COALESCE(SUM(COALESCE(tubo_led_fria, 0)), 0) AS tubo_fria,
+                    COALESCE(SUM(COALESCE(tubo_led_calido, 0)), 0) AS tubo_calido,
+                    COALESCE(SUM(COALESCE(foco_comun, 0)), 0) AS foco,
+                    COALESCE(SUM(COALESCE(panel_led, 0)), 0) AS panel,
+                    COALESCE(SUM(COALESCE(puestos_trabajo, 0)), 0) AS puestos_trabajo,
+                    0 AS otros
+                FROM luminarias_sede
+                GROUP BY codigo_sede, codigo_local
+            """
+            tipo_label = "Luminarias"
+        else:
+            ensure_auditoria_mobiliario_tables(con)
+            item_pairs = MOBILIARIO_ITEM_PAIRS
+            auditoria_tabla = "auditoria_mobiliario"
+            auditoria_items = "auditoria_mobiliario_items"
+            oficiales_sql = """
+                SELECT
+                    codigo_sede AS sede_codigo,
+                    codigo_local AS deposito_codigo,
+                    COALESCE(SUM(COALESCE(aire_marca, 0)), 0) AS aire_marca,
+                    COALESCE(SUM(COALESCE(escritorio_prof, 0)), 0) AS escritorio_prof,
+                    COALESCE(SUM(COALESCE(mesa_pc, 0)), 0) AS mesa_pc,
+                    COALESCE(SUM(COALESCE(silla_giratoria, 0)), 0) AS silla_giratoria,
+                    COALESCE(SUM(COALESCE(silla_fija, 0)), 0) AS silla_fija,
+                    COALESCE(SUM(COALESCE(armario_alto, 0)), 0) AS armario_alto,
+                    COALESCE(SUM(COALESCE(biblioteca_baja, 0)), 0) AS biblioteca_baja,
+                    COALESCE(SUM(COALESCE(otros, 0)), 0) AS otros
+                FROM mobiliario_sede
+                GROUP BY codigo_sede, codigo_local
+            """
+            tipo_label = "Mobiliario"
+
         keys = [k for k, _ in item_pairs]
         label_to_key = {label: key for key, label in item_pairs}
 
@@ -589,7 +929,7 @@ def register_auditorias(app, get_db):
         sql_where = ("WHERE " + " AND ".join(where)) if where else ""
         auditorias = con.execute(f"""
             SELECT a.id, a.fecha, a.sede_codigo, a.deposito, a.responsable, a.observaciones
-            FROM auditoria_mobiliario a
+            FROM {auditoria_tabla} a
             {sql_where}
             ORDER BY date(a.fecha) DESC, a.id DESC
             LIMIT 120
@@ -601,7 +941,7 @@ def register_auditorias(app, get_db):
             marks = ",".join("?" for _ in audit_ids)
             item_rows = con.execute(f"""
                 SELECT auditoria_id, item, cantidad
-                FROM auditoria_mobiliario_items
+                FROM {auditoria_items}
                 WHERE auditoria_id IN ({marks})
             """, tuple(audit_ids)).fetchall()
             for r in item_rows:
@@ -625,26 +965,7 @@ def register_auditorias(app, get_db):
 
         oficiales_map = {}
         try:
-            cols = con.execute("PRAGMA table_info(mobiliario_sede)").fetchall()
-            has_activo = any((c["name"] or "").lower() == "activo" for c in cols)
-            where_activo = "WHERE COALESCE(activo, 1) = 1" if has_activo else ""
-
-            oficiales_rows = con.execute(f"""
-                SELECT
-                    codigo_sede AS sede_codigo,
-                    codigo_local AS deposito_codigo,
-                    COALESCE(SUM(COALESCE(aire_marca, 0)), 0) AS aire_marca,
-                    COALESCE(SUM(COALESCE(escritorio_prof, 0)), 0) AS escritorio_prof,
-                    COALESCE(SUM(COALESCE(mesa_pc, 0)), 0) AS mesa_pc,
-                    COALESCE(SUM(COALESCE(silla_giratoria, 0)), 0) AS silla_giratoria,
-                    COALESCE(SUM(COALESCE(silla_fija, 0)), 0) AS silla_fija,
-                    COALESCE(SUM(COALESCE(armario_alto, 0)), 0) AS armario_alto,
-                    COALESCE(SUM(COALESCE(biblioteca_baja, 0)), 0) AS biblioteca_baja,
-                    COALESCE(SUM(COALESCE(otros, 0)), 0) AS otros
-                FROM mobiliario_sede
-                {where_activo}
-                GROUP BY codigo_sede, codigo_local
-            """).fetchall()
+            oficiales_rows = con.execute(oficiales_sql).fetchall()
             for r in oficiales_rows:
                 sede = (r["sede_codigo"] or "").upper()
                 depo = (r["deposito_codigo"] or "").upper()
@@ -693,7 +1014,6 @@ def register_auditorias(app, get_db):
             FROM sedes_mpd
             ORDER BY codigo
         """).fetchall()
-
         depositos = con.execute("""
             SELECT codigo_sede, codigo_local, descripcion
             FROM sedes_depositos
@@ -702,7 +1022,7 @@ def register_auditorias(app, get_db):
 
         con.close()
         return render_template(
-            "auditoria_mobiliario_supervisor.html",
+            "auditoria_comparativa.html",
             filas=filas,
             sedes=sedes,
             depositos=depositos,
@@ -710,7 +1030,19 @@ def register_auditorias(app, get_db):
             q_deposito=q_deposito,
             q_fecha_desde=q_fecha_desde,
             q_fecha_hasta=q_fecha_hasta,
+            tipo_label=tipo_label,
         )
+
+    @app.route("/auditoria/mobiliario/supervisor", methods=["GET"], endpoint="auditoria_mobiliario_supervisor")
+    def auditoria_mobiliario_supervisor():
+        return _comparativa_render("mobiliario")
+
+    @app.route("/relevamientos/comparativa", methods=["GET"], endpoint="relevamientos_comparativa")
+    def relevamientos_comparativa():
+        tipo = (request.args.get("tipo") or "mobiliario").strip().lower()
+        if tipo not in ("mobiliario", "aires", "luminarias"):
+            tipo = "mobiliario"
+        return _comparativa_render(tipo)
 
     @app.route("/auditoria/operativa", methods=["GET", "POST"], endpoint="auditoria_operativa")
     def auditoria_operativa():

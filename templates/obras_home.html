@@ -28,8 +28,7 @@
     <button class="btn btn-sm action-filtros" type="button" data-panel="panel-filtros">Filtrar</button>
     <button class="btn btn-sm action-desinf" type="button" data-panel="panel-desinf">🧴 Desinfecciones</button>
     <a class="btn btn-sm action-hist" href="{{ url_for('obras_home', sede=cod_filtro, estado='FINALIZADA', prioridad=prioridad_filtro) }}">Historial</a>
-    <button class="btn btn-sm action-calculo" type="button" data-panel="panel-calculo">🧮 Calculo materiales</button>
-    <a class="btn btn-sm action-stats" href="{{ url_for('materiales_home') }}">📦 Materiales en stock</a>
+    {# Materiales/stock fuera de Obras #}
     <button class="btn btn-sm action-stats" type="button" data-panel="panel-stats">📊 Estadisticas por sede</button>
   </div>
 
@@ -157,116 +156,6 @@
             <button type="submit" class="btn primary btn-wide">➕ Registrar obra / trabajo</button>
           </div>
         </form>
-    </section>
-
-    <!-- CALCULADORA -->
-    <section class="cardx obras-panel" id="panel-calculo">
-        <div class="cardx-head">
-          <div>
-            <h3>Calculadora rápida</h3>
-            <p>Estimación orientativa para pedido de materiales.</p>
-          </div>
-          <span class="pill-soft">Materiales</span>
-        </div>
-
-        <div class="panel-back">          <button type="button" class="btn ghost btn-sm js-back-list"><- Volver al listado</button>        </div>        <div class="formx">
-          <div class="gridx">
-            <div class="fg">
-              <label>Tipo</label>
-              <select id="calc-tipo">
-                <option value="durlock">Durlock – tabique</option>
-                <option value="pintura">Pintura</option>
-                <option value="imperme_liquida">Impermeabilización líquida</option>
-                <option value="membrana_asfaltica">Membrana asfáltica</option>
-                <option value="aire_split">Aire Acondicionado Split (kit instalación)</option>
-                <option value="frio">Cálculo FR (aire acondicionado)</option>
-              </select>
-            </div>
-
-            <div class="fg full" id="calc-durlock-campos">
-              <label>Metros lineales (tabique)</label>
-              <input type="number" step="0.1" id="calc-ml" placeholder="Ej.: 4 (oficina 4 m)">
-              <small class="help">Altura estándar 2,60 m · placas en ambas caras.</small>
-            </div>
-
-            <div class="fg full" id="calc-m2-campos" style="display:none;">
-              <label id="label-m2">Metros cuadrados</label>
-              <input type="number" step="0.1" id="calc-m2" placeholder="Ej.: 16 (oficina 4x4 / techo)">
-              <small class="help" id="help-m2">Considera 2 manos de látex interior.</small>
-            </div>
-
-            <div class="fg full" id="calc-aire-campos" style="display:none;">
-              <label>Cantidad de equipos</label>
-              <input type="number" step="1" id="calc-aire-cant" value="1" min="1">
-              <label style="margin-top:8px;">Metros de cañería por equipo</label>
-              <input type="number" step="0.1" id="calc-aire-ml" value="3">
-              <small class="help">Kit estándar 1/4 + 3/8 x 3 m. Ajustá si hace falta más.</small>
-            </div>
-
-            <div class="fg full" id="calc-frio-campos" style="display:none;">
-              <label>Metros cuadrados (m²)</label>
-              <input type="number" step="0.1" id="calc-frio-m2" placeholder="Ej.: 25">
-              <small class="help">Base: 100 FR por m² (oficina típica).</small>
-
-              <div style="margin-top:10px;font-weight:800;font-size:12px;color:#0f172a;">Factores</div>
-              <div class="gridx" style="margin-top:6px;">
-                <div class="fg">
-                  <label>Altura de techo</label>
-                  <select id="frio-altura">
-                    <option value="0">Hasta 2,6 m (0%)</option>
-                    <option value="10">2,7 – 3,2 m (+10%)</option>
-                    <option value="25">3,3 – 4,0 m (+20–30%)</option>
-                    <option value="40">Más de 4 m (+40%)</option>
-                  </select>
-                </div>
-                <div class="fg">
-                  <label>Personas (n)</label>
-                  <input type="number" step="1" id="frio-personas" value="0" min="0">
-                  <small class="help">+200 FR por persona.</small>
-                </div>
-                <div class="fg">
-                  <label>Iluminación</label>
-                  <select id="frio-iluminacion">
-                    <option value="0">LED común (0%)</option>
-                    <option value="10">Muchas luces / salón (+10%)</option>
-                    <option value="15">Iluminación fuerte (+15%)</option>
-                  </select>
-                </div>
-                <div class="fg">
-                  <label>Paredes / techo</label>
-                  <select id="frio-paredes">
-                    <option value="0">Normal (0%)</option>
-                    <option value="10">Pesada (+10%)</option>
-                    <option value="20">Muy pesada (+20%)</option>
-                  </select>
-                </div>
-                <div class="fg">
-                  <label>Sol directo</label>
-                  <select id="frio-sol">
-                    <option value="0">Poco sol (0%)</option>
-                    <option value="10">Sol fuerte (+10%)</option>
-                    <option value="20">Sol fuerte varias horas (+20%)</option>
-                  </select>
-                </div>
-                <div class="fg">
-                  <label>Uso del ambiente</label>
-                  <select id="frio-uso">
-                    <option value="0">Oficina administrativa (0%)</option>
-                    <option value="20">Salón / público (+20%)</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="formx-actions">
-            <button type="button" class="btn primary btn-wide" onclick="calcularMaterialesObra()">
-              🧮 Calcular
-            </button>
-          </div>
-
-          <div id="calc-resultado" class="calc-result"></div>
-        </div>
     </section>
 
     <!-- FILTROS -->
