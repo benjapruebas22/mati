@@ -68,13 +68,78 @@
       .vd-kpis { grid-template-columns:1fr; }
     }
 
-    .mobile-only { display:none; }
+    .mobile-only { display:none !important; }
+    .btn-main {
+      background: linear-gradient(180deg, #e6f0ff, #f2f7ff);
+      border:1px solid #bcd2ff;
+      color:#1e3a8a;
+      font-weight:800;
+    }
+    .btn-subtle {
+      background:#f6f9ff;
+      border:1px solid #d6e3ff;
+      color:#35507a;
+      font-weight:700;
+    }
+    .vd-nav-group{
+      background:#ffffff;
+      border:1px solid #dbe3f3;
+      border-radius:12px;
+      padding:6px 8px 8px;
+      box-shadow:0 1px 2px rgba(15,23,42,0.04);
+    }
+    .vd-nav-group.nav-main{
+      background:linear-gradient(180deg,#f1f7ff,#ffffff);
+      border-color:#cfe0ff;
+    }
+    .vd-nav-group.nav-sub{
+      background:linear-gradient(180deg,#f8fbff,#ffffff);
+      border-color:#e2ecff;
+    }
+    .vd-nav-title{
+      font-size:11px;
+      font-weight:800;
+      color:#47608a;
+      letter-spacing:.3px;
+      margin-bottom:4px;
+      text-align:center;
+    }
+    .vd-nav-row{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      justify-content:center;
+    }
+    .vd-actions-row {
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .vd-actions-box {
+      background: linear-gradient(180deg,#f8fafc,#eef2ff);
+      border:1px solid #e2e8f0;
+    }
+    .vd-actions-box .btn-subtle {
+      background:#eef2ff;
+      border-color:#c7d2fe;
+      color:#3730a3;
+    }
+    .vd-actions-box .btn-subtle {
+      padding:6px 10px;
+      font-size:12px;
+      line-height:1;
+    }
+    .vd-actions-box .vd-actions-row {
+      gap:6px;
+      flex-wrap:nowrap;
+    }
     .mobile-cta {
       display:none;
     }
     @media (max-width: 860px) {
       .hide-mobile { display:none !important; }
-      .mobile-only { display:block; }
+      .mobile-only { display:block !important; }
       .mobile-priority { display:block; }
       .tabla-viajes { overflow-x:auto; -webkit-overflow-scrolling: touch; }
       .tabla-viajes table { font-size:11px; }
@@ -114,11 +179,16 @@
         border-radius:14px;
         backdrop-filter: blur(6px);
       }
-      .mobile-cta .btn {
-        flex:1;
-        padding:10px 12px;
-        font-size:13px;
-      }
+    .mobile-cta .btn {
+      flex:1;
+      padding:10px 12px;
+      font-size:13px;
+    }
+
+    .vd-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .vd-collapse summary{cursor:pointer}
+    .compact-alerts ul{margin:6px 0 0}
+    .compact-alerts li{font-size:12px}
     }
   </style>
 
@@ -129,12 +199,22 @@
         Registro simple de tramos por vehículo (igual a la planilla de Excel).
       </p>
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
-      <a class="btn btn-mpd" href="{{ url_for('vehiculos_control_diario', fecha=fecha) }}">Control diario</a>
-      <a class="btn btn-mpd" href="{{ url_for('vehiculos_combustible') }}">Combustible</a>
-      <a class="btn btn-mpd" href="{{ url_for('vehiculos_estadisticas') }}">Estadisticas</a>
-      <a class="btn btn-mpd" href="{{ url_for('vehiculos_documentacion') }}">Documentacion</a>
-      <a class="btn btn-mpd" href="{{ url_for('vehiculos_bd_home') }}">Base de datos</a>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end">
+      <div class="vd-nav-group nav-main">
+        <div class="vd-nav-title">REGISTROS DIARIOS</div>
+        <div class="vd-nav-row">
+          <a class="btn btn-mpd btn-main" href="{{ url_for('vehiculos_control_diario', fecha=fecha) }}">Control diario</a>
+          <a class="btn btn-mpd btn-main" href="{{ url_for('vehiculos_combustible') }}">Combustible</a>
+        </div>
+      </div>
+      <div class="vd-nav-group nav-sub">
+        <div class="vd-nav-title">GESTION</div>
+        <div class="vd-nav-row">
+          <a class="btn btn-mpd btn-subtle" href="{{ url_for('vehiculos_estadisticas') }}">Estadisticas</a>
+          <a class="btn btn-mpd btn-subtle" href="{{ url_for('vehiculos_documentacion') }}">Documentacion</a>
+          <a class="btn btn-mpd btn-subtle" href="{{ url_for('vehiculos_bd_home') }}">Base de datos</a>
+        </div>
+      </div>
     </div>
   </header>
   {% set calc = namespace(open_patentes=[], fuera_patentes=[], inco=0, sin_estado=0) %}
@@ -176,17 +256,7 @@
     </div>
   </div>
 
-  <div class="vd-box vd-alerts hide-mobile {{ 'has-alerts' if (calc.inco > 0 or calc.sin_estado > 0) else ('warn-alerts' if en_uso > 0 else 'no-alerts') }}">
-    <div class="vd-block-head">
-      <h3>Alertas operativas</h3>
-    </div>
-    <ul>
-      {% if calc.inco > 0 %}<li>KM incoherente detectado en {{ calc.inco }} viaje(s).</li>{% endif %}
-      {% if calc.sin_estado > 0 %}<li>Hay {{ calc.sin_estado }} viaje(s) sin estado cargado.</li>{% endif %}
-      {% if en_uso > 0 %}<li>Hay {{ en_uso }} viaje(s) en curso (abiertos).</li>{% endif %}
-      {% if calc.inco == 0 and calc.sin_estado == 0 and en_uso == 0 %}<li>Sin alertas criticas ni inconsistencias.</li>{% endif %}
-    </ul>
-  </div>
+  {# Alertas operativas se muestran en SGI #}
 
   <div class="vd-box mobile-priority" style="display:none">
     <div class="vd-block-head">
@@ -211,71 +281,16 @@
     </div>
   </div>
 
-  <div class="vd-box hide-mobile">
-    <div class="vd-block-head">
-      <h3>Combustible</h3>
-      <a class="btn btn-mpd" href="{{ url_for('vehiculos_combustible') }}">Ver combustible</a>
-    </div>
-    <div class="vd-kpis">
-      <div class="vd-kpi kpi-monto">
-        <small>$ combustible total</small>
-        <b>${{ "{:,.2f}".format(kpi_rango.monto_total or 0) }}</b>
-      </div>
-      <div class="vd-kpi kpi-litros">
-        <small>Litros cargados totales</small>
-        <b>{{ '%.2f'|format(kpi_rango.litros_total or 0) }}</b>
-      </div>
-      <div class="vd-kpi kpi-km">
-        <small>KM recorridos totales</small>
-        <b>{{ '%.1f'|format(kpi_rango.km_total or 0) }}</b>
-      </div>
-      <div class="vd-kpi kpi-tramos">
-        <small>Tramos totales</small>
-        <b>{{ kpi_rango.tramos }}</b>
-      </div>
-    </div>
-  </div>
+  {# Combustible resumido se ve en el modulo principal de combustible #}
 
-  <div class="vd-box hide-mobile">
-    <div class="vd-block-head">
-      <h3>Estadisticas</h3>
-      <div class="vd-links">
-        <a class="btn btn-mpd" href="{{ url_for('vehiculos_estadisticas') }}">KM por vehiculo / chofer</a>
-        <a class="btn btn-mpd" href="{{ url_for('vehiculos_combustible_estadisticas') }}">Rendimiento combustible</a>
+  <div class="vd-box hide-mobile vd-actions-box" style="padding:10px 12px;">
+    <div class="vd-actions-row" style="justify-content:space-between;gap:10px;">
+      <h3 style="margin:0;font-size:14px;color:#1f2937;">Accesos rapidos</h3>
+      <div class="vd-actions-row">
+      <a class="btn btn-mpd btn-subtle" href="{{ url_for('vehiculos_estadisticas') }}">Estad. vehiculos</a>
+      <a class="btn btn-mpd btn-subtle" href="{{ url_for('vehiculos_combustible_estadisticas') }}">Estad. combustible</a>
+      <a class="btn btn-mpd btn-subtle" href="{{ url_for('vehiculos_documentacion') }}">Informes</a>
       </div>
-    </div>
-  </div>
-
-  <div class="vd-box hide-mobile">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
-      <h3 style="margin:0;font-size:16px;">Documentos SGI vinculados a vehiculos</h3>
-      <button type="button" id="btnToggleDocsVeh" class="btn btn-mpd" onclick="toggleDocsVehiculos()">Ver Informes</button>
-    </div>
-
-    <div id="panelDocsVehiculos" style="display:none;margin-top:8px;">
-      {% if documentos_vinculados_vehiculos and documentos_vinculados_vehiculos|length > 0 %}
-        <div style="display:grid;gap:6px;max-height:220px;overflow:auto;">
-          {% for d in documentos_vinculados_vehiculos[:40] %}
-            <div style="border:1px solid #e5e7eb;border-radius:10px;background:#f8fbff;padding:8px;display:grid;gap:3px;">
-              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
-                <strong style="font-size:12px;color:#0f172a;">{{ d.titulo }}</strong>
-                <span style="font-size:10px;font-weight:800;color:#0f6f85;border:1px solid #a9e5ef;border-radius:999px;padding:2px 8px;background:#ecfbff;">{{ d.patente }}</span>
-              </div>
-              <div style="font-size:11px;color:#64748b;">
-                {% if d.fecha %}<span><b>Fecha:</b> {{ d.fecha }}</span>{% endif %}
-                {% if d.tipo_documento %} ? <span><b>Tipo:</b> {{ d.tipo_documento }}</span>{% endif %}
-                {% if d.estado %} ? <span><b>Estado:</b> {{ d.estado }}</span>{% endif %}
-                {% if d.tags_txt %} ? <span><b>Tags:</b> {{ d.tags_txt }}</span>{% endif %}
-              </div>
-              {% if d.archivo_url %}
-                <div><a href="{{ d.archivo_url }}" target="_blank" rel="noopener" style="font-size:11px;font-weight:800;color:#1d4ed8;text-decoration:none;">Abrir documento</a></div>
-              {% endif %}
-            </div>
-          {% endfor %}
-        </div>
-      {% else %}
-        <p style="margin:8px 0 0;color:#64748b;">No hay documentos SGI vinculados a vehiculos.</p>
-      {% endif %}
     </div>
   </div>
 
@@ -373,7 +388,7 @@
        FILTROS RÁPIDOS (BOTONES)
        (NO rompe backend, filtra en JS)
   ========================= -->
-  <div id="quick-filters" class="hide-mobile" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0 12px 0">
+  <div id="quick-filters" class="hide-mobile" style="display:none;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0 12px 0">
 
     <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
       <span style="font-size:12px;color:#64748b;font-weight:700">Vehículos:</span>
@@ -732,18 +747,6 @@
     const el = document.getElementById(id);
     if (!el) return;
     el.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
-  function toggleDocsVehiculos(forceOpen) {
-    const panel = document.getElementById("panelDocsVehiculos");
-    const btn = document.getElementById("btnToggleDocsVeh");
-    if (!panel || !btn) return;
-
-    const isHidden = panel.style.display === "none" || panel.style.display === "";
-    const open = (typeof forceOpen === "boolean") ? forceOpen : isHidden;
-
-    panel.style.display = open ? "block" : "none";
-    btn.textContent = open ? "Ocultar Informes" : "Ver Informes";
   }
 
   let filtroVehiculo = "";
