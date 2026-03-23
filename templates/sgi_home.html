@@ -90,6 +90,18 @@
     display: grid;
     gap: 4px;
   }
+  .sgi-menu-group.primary {
+    border-color: #c9d8f4;
+    background: linear-gradient(180deg, #ffffff 0%, #f6f9ff 100%);
+  }
+  .sgi-menu-group.secondary {
+    border-color: #e6edf8;
+    background: #fbfdff;
+  }
+  .sgi-menu-group.tertiary {
+    border-color: #eef2f8;
+    background: #fcfeff;
+  }
 
   .sgi-menu-group .grp-title {
     margin: 0;
@@ -128,6 +140,23 @@
     text-align: center;
     text-decoration: none;
   }
+  .sgi-menu-group.primary .btn {
+    min-height: 28px;
+    min-width: 108px;
+    font-size: 11px;
+    font-weight: 900;
+    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+  }
+  .sgi-menu-group.secondary .btn {
+    opacity: .78;
+    filter: saturate(.85);
+  }
+  .sgi-menu-group.secondary .btn:hover { opacity: 1; filter: saturate(1); }
+  .sgi-menu-group.tertiary .btn {
+    opacity: .68;
+    filter: saturate(.8);
+  }
+  .sgi-menu-group.tertiary .btn:hover { opacity: .9; filter: saturate(1); }
 
   .sgi-menu-group .btn.vehiculos { border-color: #86c8ff; background: #eef7ff; color: #0e5f97; }
   .sgi-menu-group .btn.obras { border-color: #9fe8b8; background: #ecfbf2; color: #0d7a3f; }
@@ -167,7 +196,7 @@
   }
 
   .sgi-kpi .v {
-    font-size: clamp(19px, 1.2vw, 24px);
+    font-size: clamp(17px, 1.1vw, 22px);
     font-weight: 900;
     line-height: 1.05;
     color: #0e2f57;
@@ -250,7 +279,7 @@
   }
 
   .sgi-kpi-secondary {
-    display: grid;
+    display: none;
     grid-template-columns: minmax(0, 1fr);
     gap: 6px;
   }
@@ -574,6 +603,10 @@
     display: grid;
     gap: 8px;
   }
+  .sgi-panel.sgi-panel-obras {
+    border-left: 4px solid #f2b277;
+    background: linear-gradient(180deg, #ffffff 0%, #fff8f0 100%);
+  }
 
   .sgi-panel-head {
     display: flex;
@@ -600,11 +633,62 @@
   .sgi-veh-card {
     border: 1px solid #e3ebf7;
     border-radius: 12px;
-    background: #fbfdff;
+    background: #ffffff;
     padding: 6px 8px;
     display: grid;
     gap: 4px;
+    position: relative;
   }
+  .sgi-veh-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 3px;
+    background: #e2e8f0;
+    border-radius: 12px 12px 0 0;
+  }
+  .sgi-veh-card.state-ok,
+  .sgi-veh-card.state-use,
+  .sgi-veh-card.state-warn,
+  .sgi-veh-card.state-off {
+    border-color: #e5e9f4;
+    background: #ffffff;
+  }
+  .sgi-veh-card[data-veh="AB946VK"] {
+    border-color: #93c5fd;
+  }
+  .sgi-veh-card[data-veh="AB946VK"]::before {
+    background: #93c5fd;
+  }
+  .sgi-veh-card[data-veh="AE856GD"] {
+    border-color: #86efac;
+  }
+  .sgi-veh-card[data-veh="AE856GD"]::before {
+    background: #86efac;
+  }
+  .sgi-veh-card[data-veh="AE856GE"] {
+    border-color: #fde047;
+  }
+  .sgi-veh-card[data-veh="AE856GE"]::before {
+    background: #fde047;
+  }
+  .sgi-veh-card[data-veh="AF277OA"] {
+    border-color: #67e8f9;
+  }
+  .sgi-veh-card[data-veh="AF277OA"]::before {
+    background: #67e8f9;
+  }
+  .sgi-veh-card[data-veh="AG846FR"] {
+    border-color: #fda4af;
+  }
+  .sgi-veh-card[data-veh="AG846FR"]::before {
+    background: #fda4af;
+  }
+
+  .sgi-menu-group .btn { opacity: .9; }
+  .sgi-menu-group .btn:hover { opacity: 1; }
 
   .sgi-veh-top {
     display: flex;
@@ -657,8 +741,8 @@
 
   .sgi-obras-grid {
     display: grid;
-    grid-template-columns: 160px 1fr;
-    gap: 10px;
+    grid-template-columns: 168px 1fr;
+    gap: 12px;
     align-items: center;
   }
 
@@ -697,39 +781,44 @@
 
   .sgi-obras-list {
     display: grid;
-    gap: 6px;
+    gap: 8px;
   }
 
   .sgi-obras-row {
     display: grid;
-    grid-template-columns: 1fr 46px 30px;
-    gap: 6px;
+    grid-template-columns: 1fr 58px 34px;
+    gap: 8px;
     align-items: center;
     font-size: 11px;
     color: #335075;
+    padding: 6px 8px;
+    border-radius: 10px;
+    border: 1px solid #e6edf8;
+    background: #fbfdff;
   }
 
   .sgi-obras-label {
     font-weight: 700;
-    color: #2f4568;
+    color: #23385a;
   }
 
   .sgi-obras-pct {
     text-align: right;
     font-weight: 900;
+    color: #1d3e6e;
   }
 
   .sgi-obras-n {
     text-align: right;
-    color: #6b7c94;
-    font-weight: 700;
+    color: #5b6d86;
+    font-weight: 800;
   }
 
   .sgi-obras-bar {
     grid-column: 1 / -1;
     height: 6px;
     border-radius: 999px;
-    background: #ecf1f8;
+    background: #eef3fb;
     position: relative;
     overflow: hidden;
   }
@@ -779,16 +868,15 @@
   <section class="sgi-menu-board">
     <p class="sgi-menu-main">Menu principal</p>
     <div class="sgi-menu-groups">
-      <div class="sgi-menu-group">
+      <div class="sgi-menu-group primary">
         <p class="grp-title">Registros diarios</p>
         <div class="grp-links">
           <a class="btn vehiculos" href="{{ url_for('vehiculos_control_diario') }}">Vehiculos</a>
           <a class="btn obras" href="{{ url_for('obras_home') }}">Obras</a>
-          <a class="btn progreso" href="{{ url_for('dashboard_sede_estado_manual') }}">Progreso sedes</a>
         </div>
       </div>
 
-      <div class="sgi-menu-group">
+      <div class="sgi-menu-group secondary">
         <p class="grp-title">Infraestructura</p>
         <div class="grp-links">
           <a class="btn sedes" href="{{ url_for('sede_ficha', codigo='S01', home=1) }}">Sedes</a>
@@ -796,7 +884,7 @@
         </div>
       </div>
 
-      <div class="sgi-menu-group">
+      <div class="sgi-menu-group tertiary">
         <p class="grp-title">Gestion</p>
         <div class="grp-links">
           <a class="btn personal" href="{{ url_for('personal_sede_home') }}">Personal MPD</a>
@@ -901,7 +989,7 @@
               {% set state_class = 'off' %}
               {% set bar_color = '#f5a5a5' %}
             {% endif %}
-            <div class="sgi-veh-card">
+            <div class="sgi-veh-card state-{{ state_class }}" data-veh="{{ v.patente }}">
               <div class="sgi-veh-top">
                 <span class="sgi-veh-pat">{{ v.patente }}</span>
                 <span class="sgi-veh-state {{ state_class }}">{{ v.estado }}</span>
@@ -918,7 +1006,7 @@
             </div>
           {% endfor %}
         {% else %}
-          <div class="sgi-veh-card">
+          <div class="sgi-veh-card state-warn">
             <div class="sgi-veh-top">
               <span class="sgi-veh-pat">Sin datos</span>
               <span class="sgi-veh-state warn">Sin datos</span>
@@ -964,11 +1052,8 @@
     </article>
   </section>
 
-  <section class="sgi-modules">
-    <div class="sgi-section-head">
-      <h2>Modulos principales SGI</h2>
-    </div>
-
+  <details class="sgi-modules" style="display:block;">
+    <summary class="sgi-section-head" style="cursor:pointer;">Modulos principales SGI (oculto)</summary>
     <div class="sgi-mod-grid">
       <article class="sgi-mod mod-flota">
         <div class="sgi-mod-top">
@@ -1084,7 +1169,7 @@
         </details>
       </article>
     </div>
-  </section>
+  </details>
 
   <details class="sgi-accordions">
     <summary>Informacion institucional (resumen oculto)</summary>

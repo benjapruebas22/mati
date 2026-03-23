@@ -93,6 +93,11 @@
     display: grid;
     gap: 10px;
   }
+  .exec-block.sedes-block { border-left: 4px solid #9fd9e7; background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%); }
+  .exec-block.vehiculos-block { border-left: 4px solid #9fe8b8; background: linear-gradient(180deg, #ffffff 0%, #f6fff9 100%); }
+  .exec-block.obras-block { border-left: 4px solid #f5d08a; background: linear-gradient(180deg, #ffffff 0%, #fffaf2 100%); }
+  .exec-block.estado-obras-block { border-left: 4px solid #f2b0c3; background: linear-gradient(180deg, #ffffff 0%, #fff6f8 100%); }
+  .exec-block.sst-block { border-left: 4px solid #b9b6f5; background: linear-gradient(180deg, #ffffff 0%, #f7f6ff 100%); }
   .exec-block-head {
     display: flex;
     align-items: center;
@@ -448,7 +453,7 @@
     </article>
   </section>
 
-  <section class="exec-block">
+  <section class="exec-block sedes-block">
     <div class="exec-block-head">
       <h2>Sedes (prioridad)</h2>
       <a class="exec-btn" href="{{ url_for('sede_ficha', codigo='S01', home=1) }}">Ver todas las sedes ({{ sedes_total }})</a>
@@ -481,7 +486,7 @@
     </div>
   </section>
 
-  <section class="exec-block">
+  <section class="exec-block vehiculos-block">
     <div class="exec-block-head">
       <h2>Vehiculos operativos</h2>
       <div class="exec-actions">
@@ -528,7 +533,7 @@
     </div>
   </section>
 
-  <section class="exec-block">
+  <section class="exec-block estado-obras-block">
     <div class="exec-block-head">
       <h2>Estado de obras</h2>
     </div>
@@ -554,7 +559,7 @@
       </div>
   </section>
 
-  <section class="exec-block">
+  <section class="exec-block obras-block">
     <div class="exec-block-head">
       <h2>Obras e intervenciones</h2>
       <div class="exec-actions">
@@ -579,7 +584,7 @@
     </div>
   </section>
 
-  <section class="exec-block">
+  <section class="exec-block sst-block">
     <div class="exec-block-head">
       <h2>SG-SST</h2>
       <a class="exec-btn primary" href="{{ url_for('dashboard_sede_estado_manual') }}">Ver tablero SG-SST</a>
