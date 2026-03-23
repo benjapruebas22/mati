@@ -56,6 +56,7 @@ ROLE_SST_VEHICULOS = "sst_vehiculos"
 ROLE_OBRAS_VEHICULOS = "obras_vehiculos"
 ROLE_DASH_OBRAS = "dashboard_obras"
 ROLE_DASH_VEHICULOS = "dashboard_vehiculos"
+ROLE_EJECUTIVO = "ejecutivo"
 
 
 def ensure_auth_tables(con):
@@ -96,6 +97,8 @@ def ensure_auth_tables(con):
         ("mflores", "Manuel Flores", ROLE_DASH_OBRAS),
         ("mabatedaga", "Maximiliano Abatedaga", ROLE_FULL),
         ("admin", "Administrator", ROLE_FULL),
+        ("mluna", "Matias Luna", ROLE_EJECUTIVO),
+        ("gburgos", "G. Burgos", ROLE_EJECUTIVO),
     ]
     has_legacy_password = "password" in cols
     has_legacy_role = "rol" in cols
@@ -174,11 +177,14 @@ def role_allows(role: str, module: str) -> bool:
         ROLE_OBRAS_VEHICULOS: {"obras", "vehiculos"},
         ROLE_DASH_OBRAS: {"dashboard", "obras"},
         ROLE_DASH_VEHICULOS: {"dashboard", "vehiculos"},
+        ROLE_EJECUTIVO: {"dashboard", "obras", "vehiculos", "sedes", "sst", "other"},
     }
     return module in perms.get(role or "", set())
 
 
 def default_redirect_for_role(role: str):
+    if role == ROLE_EJECUTIVO:
+        return url_for("dashboard_ejecutivo")
     if role == ROLE_DASH_OBRAS:
         return url_for("dashboard")
     if role == ROLE_DASH_VEHICULOS:
@@ -1566,7 +1572,15 @@ register_mapa(app, get_db)
 register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combustible_columns, rebuild_eventos_vehiculos)
 register_inventario_checklist(app, get_db)
 register_inventario_general(app, get_db, get_db_connection, ensure_luminarias_columns)
-rebuild_eventos_limpieza_sede = register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, CAL_COLORS, ensure_auth_tables)
+rebuild_eventos_limpieza_sede = register_sst(
+    app,
+    get_db,
+    ensure_cols,
+    ensure_sedes_mpd_cols,
+    CAL_COLORS,
+    ensure_auth_tables,
+    default_redirect_for_role,
+)
 
 def ensure_materiales_table(con):
     con.execute("""

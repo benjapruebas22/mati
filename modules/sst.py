@@ -11,7 +11,7 @@ from flask import render_template, request, redirect, url_for, flash, Response, 
 from werkzeug.security import generate_password_hash, check_password_hash
 
 
-def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, ensure_auth_tables):
+def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, ensure_auth_tables, default_redirect_for_role=None):
     CAL_COLORS = cal_colors
     SEDE_ESTADO_VARS = [
         "relevamiento",
@@ -1281,7 +1281,9 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             nxt = request.args.get("next")
             if nxt:
                 return redirect(nxt)
-            return redirect(default_redirect_for_role(session.get("role")))
+            if default_redirect_for_role:
+                return redirect(default_redirect_for_role(session.get("role")))
+            return redirect(url_for("dashboard"))
 
         con.close()
         return render_template("login.html")
@@ -1321,7 +1323,9 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             con.close()
             session["must_change"] = 0
             flash("Clave actualizada.", "success")
-            return redirect(default_redirect_for_role(session.get("role")))
+            if default_redirect_for_role:
+                return redirect(default_redirect_for_role(session.get("role")))
+            return redirect(url_for("dashboard"))
 
         con.close()
         return render_template("password_change.html")
@@ -4462,9 +4466,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         con.close()
         return jsonify({"ok": True, "rows": rows_out, "resumen": resumen})
 
-    @app.route("/api/dashboard_sede_estado", methods=["GET"], endpoint="api_dashboard_sede_estado")
-    def api_dashboard_sede_estado():
-        con = get_db()
+    def _dashboard_sede_estado_read(con):
         try:
             con.execute("""
                 CREATE TABLE IF NOT EXISTS dashboard_sede_estado(
@@ -4531,6 +4533,12 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 "actualizadoEn": (_row_value(r, "actualizado_en", "") or "").strip(),
             })
 
+        return sedes, items
+
+    @app.route("/api/dashboard_sede_estado", methods=["GET"], endpoint="api_dashboard_sede_estado")
+    def api_dashboard_sede_estado():
+        con = get_db()
+        sedes, items = _dashboard_sede_estado_read(con)
         con.close()
         return jsonify({
             "variables": [{"key": v, "label": SEDE_ESTADO_LABELS.get(v, v)} for v in SEDE_ESTADO_VARS],
@@ -4597,6 +4605,126 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
     @app.route("/dashboard/gestion", endpoint="dashboard_gestion")
     def dashboard_gestion():
         return render_template("dashboard_gestion.html")
+
+    def _vehiculos_cards_from_base(base, con):
+        vehiculos_cards = []
+        veh_lookup = {}
+        if _table_exists(con, "vehiculos"):
+            rows = con.execute("""
+                SELECT patente, tipo, combustible, base_ciudad, lugar_reservado, activo
+                FROM vehiculos
+            """).fetchall()
+            for r in rows:
+                pat = (_row_value(r, "patente", "") or "").strip()
+                if not pat:
+                    continue
+                veh_lookup[pat] = {
+                    "tipo": (_row_value(r, "tipo", "") or "").strip(),
+                    "combustible": (_row_value(r, "combustible", "") or "").strip(),
+                    "base": (_row_value(r, "base_ciudad", "") or "").strip(),
+                    "lugar": (_row_value(r, "lugar_reservado", "") or "").strip(),
+                    "activo": int(_row_value(r, "activo", 1) or 1),
+                }
+
+        base_items = ((base.get("vehiculos") or {}).get("topAsignacion") or [])
+        if not base_items and veh_lookup:
+            for pat, v in list(veh_lookup.items())[:6]:
+                base_items.append({
+                    "patente": pat,
+                    "alias": "-",
+                    "ubicacion": v.get("base") or v.get("lugar") or "-",
+                    "kmSemana": "-",
+                    "kmMes": "-",
+                    "estado": "Disponible" if v.get("activo", 1) else "No disponible",
+                })
+
+        def _bar_pct(estado):
+            if estado == "Disponible":
+                return 80
+            if estado == "En uso":
+                return 60
+            if estado == "Pendiente cierre":
+                return 40
+            if estado == "No disponible":
+                return 15
+            return 50
+
+        for item in base_items[:8]:
+            pat = (item.get("patente") or "").strip() or "-"
+            v = veh_lookup.get(pat, {})
+            km = item.get("kmSemana")
+            if not isinstance(km, (int, float)):
+                km = item.get("kmMes")
+            km_txt = f"{km} km" if isinstance(km, (int, float)) else "-"
+            estado = item.get("estado") or "Sin datos"
+            vehiculos_cards.append({
+                "patente": pat,
+                "estado": estado,
+                "combustible": v.get("combustible") or "-",
+                "km": km_txt,
+                "sede": item.get("ubicacion") or v.get("base") or v.get("lugar") or "-",
+                "uso": v.get("tipo") or "-",
+                "bar": _bar_pct(estado),
+            })
+        return vehiculos_cards
+
+    def _obras_sedes_resumen(con):
+        obras_sedes = []
+        obras_total = 0
+        obras_donut = ""
+        sedes_lookup = {}
+        if _table_exists(con, "sedes_mpd"):
+            rows = con.execute("SELECT codigo, nombre, direccion FROM sedes_mpd").fetchall()
+            for r in rows:
+                cod = (_row_value(r, "codigo", "") or "").strip().upper()
+                if not cod:
+                    continue
+                sedes_lookup[cod] = {
+                    "nombre": (_row_value(r, "nombre", "") or "").strip(),
+                    "direccion": (_row_value(r, "direccion", "") or "").strip(),
+                }
+
+        if _table_exists(con, "obras_sede"):
+            cols_obras = _table_cols(con, "obras_sede")
+            if "codigo_sede" in cols_obras:
+                rows = con.execute("""
+                    SELECT UPPER(TRIM(COALESCE(codigo_sede, ''))) AS sede, COUNT(*) AS n
+                    FROM obras_sede
+                    WHERE TRIM(COALESCE(codigo_sede, '')) <> ''
+                    GROUP BY UPPER(TRIM(COALESCE(codigo_sede, '')))
+                    ORDER BY n DESC, sede ASC
+                """).fetchall()
+
+                obras_total = sum(int(_row_value(r, "n", 0) or 0) for r in rows)
+                palette = ["#8ac5ff", "#9fe8b8", "#f5d08a", "#f2b0c3", "#b9b6f5", "#9fd9e7", "#f3c89a", "#c6e6b0"]
+                acc = 0.0
+                donut_parts = []
+                for idx, r in enumerate(rows[:8]):
+                    n = int(_row_value(r, "n", 0) or 0)
+                    if n <= 0 or obras_total <= 0:
+                        continue
+                    sede = (_row_value(r, "sede", "") or "").strip().upper()
+                    meta = sedes_lookup.get(sede, {})
+                    label = meta.get("direccion") or meta.get("nombre") or sede or "Sede"
+                    pct = round((n / obras_total) * 100, 1)
+                    color = palette[idx % len(palette)]
+                    obras_sedes.append({
+                        "codigo": sede,
+                        "label": label,
+                        "pct": pct,
+                        "n": n,
+                        "color": color,
+                    })
+                    start = acc
+                    end = acc + pct
+                    donut_parts.append(f"{color} {start}%, {color} {end}%")
+                    acc = end
+
+                if obras_total > 0 and acc < 100:
+                    donut_parts.append(f"#e8eef7 {acc}%, #e8eef7 100%")
+                obras_donut = "conic-gradient(" + ", ".join(donut_parts) + ")" if donut_parts else ""
+
+        return obras_sedes, obras_total, obras_donut
 
     @app.route("/dashboard/sgi", endpoint="sgi_home")
     def sgi_home():
@@ -4721,7 +4849,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             )
 
         # =========================
-        # BLOQUE VEHICULOS OPERATIVOS
+        # BLOQUE VEHICULOS OPERATIVOS + OBRAS POR SEDE
         # =========================
         vehiculos_cards = []
         obras_sedes = []
@@ -4730,119 +4858,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
 
         con = get_db()
         try:
-            veh_lookup = {}
-            if _table_exists(con, "vehiculos"):
-                rows = con.execute("""
-                    SELECT patente, tipo, combustible, base_ciudad, lugar_reservado, activo
-                    FROM vehiculos
-                """).fetchall()
-                for r in rows:
-                    pat = (_row_value(r, "patente", "") or "").strip()
-                    if not pat:
-                        continue
-                    veh_lookup[pat] = {
-                        "tipo": (_row_value(r, "tipo", "") or "").strip(),
-                        "combustible": (_row_value(r, "combustible", "") or "").strip(),
-                        "base": (_row_value(r, "base_ciudad", "") or "").strip(),
-                        "lugar": (_row_value(r, "lugar_reservado", "") or "").strip(),
-                        "activo": int(_row_value(r, "activo", 1) or 1),
-                    }
-
-            base_items = ((base.get("vehiculos") or {}).get("topAsignacion") or [])
-            if not base_items and veh_lookup:
-                for pat, v in list(veh_lookup.items())[:6]:
-                    base_items.append({
-                        "patente": pat,
-                        "alias": "—",
-                        "ubicacion": v.get("base") or v.get("lugar") or "—",
-                        "kmSemana": "—",
-                        "kmMes": "—",
-                        "estado": "Disponible" if v.get("activo", 1) else "No disponible",
-                    })
-
-            def _bar_pct(estado):
-                if estado == "Disponible":
-                    return 80
-                if estado == "En uso":
-                    return 60
-                if estado == "Pendiente cierre":
-                    return 40
-                if estado == "No disponible":
-                    return 15
-                return 50
-
-            for item in base_items[:8]:
-                pat = (item.get("patente") or "").strip() or "—"
-                v = veh_lookup.get(pat, {})
-                km = item.get("kmSemana")
-                if not isinstance(km, (int, float)):
-                    km = item.get("kmMes")
-                km_txt = f"{km} km" if isinstance(km, (int, float)) else "—"
-                estado = item.get("estado") or "Sin datos"
-                vehiculos_cards.append({
-                    "patente": pat,
-                    "estado": estado,
-                    "combustible": v.get("combustible") or "—",
-                    "km": km_txt,
-                    "sede": item.get("ubicacion") or v.get("base") or v.get("lugar") or "—",
-                    "uso": v.get("tipo") or "—",
-                    "bar": _bar_pct(estado),
-                })
-
-            # =========================
-            # BLOQUE OBRAS POR SEDE
-            # =========================
-            sedes_lookup = {}
-            if _table_exists(con, "sedes_mpd"):
-                rows = con.execute("SELECT codigo, nombre, direccion FROM sedes_mpd").fetchall()
-                for r in rows:
-                    cod = (_row_value(r, "codigo", "") or "").strip().upper()
-                    if not cod:
-                        continue
-                    sedes_lookup[cod] = {
-                        "nombre": (_row_value(r, "nombre", "") or "").strip(),
-                        "direccion": (_row_value(r, "direccion", "") or "").strip(),
-                    }
-
-            if _table_exists(con, "obras_sede"):
-                cols_obras = _table_cols(con, "obras_sede")
-                if "codigo_sede" in cols_obras:
-                    rows = con.execute("""
-                        SELECT UPPER(TRIM(COALESCE(codigo_sede, ''))) AS sede, COUNT(*) AS n
-                        FROM obras_sede
-                        WHERE TRIM(COALESCE(codigo_sede, '')) <> ''
-                        GROUP BY UPPER(TRIM(COALESCE(codigo_sede, '')))
-                        ORDER BY n DESC, sede ASC
-                    """).fetchall()
-
-                    obras_total = sum(int(_row_value(r, "n", 0) or 0) for r in rows)
-                    palette = ["#8ac5ff", "#9fe8b8", "#f5d08a", "#f2b0c3", "#b9b6f5", "#9fd9e7", "#f3c89a", "#c6e6b0"]
-                    acc = 0.0
-                    donut_parts = []
-                    for idx, r in enumerate(rows[:8]):
-                        n = int(_row_value(r, "n", 0) or 0)
-                        if n <= 0 or obras_total <= 0:
-                            continue
-                        sede = (_row_value(r, "sede", "") or "").strip().upper()
-                        meta = sedes_lookup.get(sede, {})
-                        label = meta.get("direccion") or meta.get("nombre") or sede or "Sede"
-                        pct = round((n / obras_total) * 100, 1)
-                        color = palette[idx % len(palette)]
-                        obras_sedes.append({
-                            "codigo": sede,
-                            "label": label,
-                            "pct": pct,
-                            "n": n,
-                            "color": color,
-                        })
-                        start = acc
-                        end = acc + pct
-                        donut_parts.append(f"{color} {start}%, {color} {end}%")
-                        acc = end
-
-                    if obras_total > 0 and acc < 100:
-                        donut_parts.append(f"#e8eef7 {acc}%, #e8eef7 100%")
-                    obras_donut = "conic-gradient(" + ", ".join(donut_parts) + ")" if donut_parts else ""
+            vehiculos_cards = _vehiculos_cards_from_base(base, con)
+            obras_sedes, obras_total, obras_donut = _obras_sedes_resumen(con)
         except Exception:
             pass
         finally:
@@ -4858,6 +4875,379 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             obras_sedes=obras_sedes,
             obras_total=obras_total,
             obras_donut=obras_donut,
+        )
+
+    @app.route("/dashboard/alta-direccion", endpoint="dashboard_ejecutivo")
+    def dashboard_ejecutivo():
+        base = {}
+        try:
+            base = _dashboard_operativo_data() or {}
+        except Exception:
+            base = {}
+
+        con = get_db()
+        con.row_factory = sqlite3.Row
+        try:
+            # =========================
+            # KPIs GENERALES
+            # =========================
+            sedes_activas = 0
+            if _table_exists(con, "sedes_mpd"):
+                cols_sedes = _table_cols(con, "sedes_mpd")
+                if "activa" in cols_sedes:
+                    row = con.execute("SELECT COUNT(*) AS n FROM sedes_mpd WHERE COALESCE(activa,1)=1").fetchone()
+                else:
+                    row = con.execute("SELECT COUNT(*) AS n FROM sedes_mpd").fetchone()
+                sedes_activas = int(_row_value(row, "n", 0) or 0)
+
+            obras_en_curso = 0
+            pendientes_criticos = 0
+            obras_total = 0
+            obras_finalizadas = 0
+            if _table_exists(con, "obras_sede"):
+                cols_obras = _table_cols(con, "obras_sede")
+                estado_expr = "UPPER(TRIM(COALESCE(estado,'')))" if "estado" in cols_obras else "''"
+                prioridad_expr = "UPPER(TRIM(COALESCE(prioridad,'')))" if "prioridad" in cols_obras else "''"
+                row = con.execute(f"""
+                    SELECT
+                        COALESCE(SUM(CASE WHEN {estado_expr} IN ('EN_CURSO','EN CURSO') THEN 1 ELSE 0 END),0) AS en_curso,
+                        COALESCE(SUM(CASE WHEN {estado_expr} IN ('FINALIZADA','CERRADA','CERRADO') THEN 1 ELSE 0 END),0) AS finalizadas,
+                        COALESCE(COUNT(*),0) AS total,
+                        COALESCE(SUM(CASE WHEN {prioridad_expr} IN ('ALTA','URGENTE')
+                            AND {estado_expr} NOT IN ('FINALIZADA','CERRADA','CERRADO') THEN 1 ELSE 0 END),0) AS criticas
+                    FROM obras_sede
+                """).fetchone()
+                obras_en_curso = int(_row_value(row, "en_curso", 0) or 0)
+                pendientes_criticos = int(_row_value(row, "criticas", 0) or 0)
+                obras_total = int(_row_value(row, "total", 0) or 0)
+                obras_finalizadas = int(_row_value(row, "finalizadas", 0) or 0)
+
+            donut = (base.get("vehiculos") or {}).get("donut") or {}
+            veh_total = int(donut.get("total") or 0)
+            veh_no_disp = int(donut.get("noDisponibles") or 0)
+            veh_operativos = max(veh_total - veh_no_disp, 0)
+
+            # =========================
+            # SG-SST (progreso por sede)
+            # =========================
+            sedes_sst, items_sst = _dashboard_sede_estado_read(con)
+            sst_avg = 0
+            if items_sst:
+                sst_avg = round(sum([i.get("pct", 0) for i in items_sst]) / len(items_sst), 1)
+            if sst_avg >= 85:
+                sst_estado = "Adecuado"
+                sst_estado_cls = "ok"
+            elif sst_avg >= 70:
+                sst_estado = "En progreso"
+                sst_estado_cls = "warn"
+            elif items_sst:
+                sst_estado = "Critico"
+                sst_estado_cls = "bad"
+            else:
+                sst_estado = "Sin datos"
+                sst_estado_cls = "na"
+
+            sst_etapa = "-"
+            if _table_exists(con, "sst_objetivo_acciones"):
+                cols_acc = _table_cols(con, "sst_objetivo_acciones")
+                if "fase" in cols_acc:
+                    row = con.execute("""
+                        SELECT UPPER(TRIM(COALESCE(fase,''))) AS fase, COUNT(*) AS n
+                        FROM sst_objetivo_acciones
+                        WHERE TRIM(COALESCE(fase,'')) <> ''
+                        GROUP BY UPPER(TRIM(COALESCE(fase,'')))
+                        ORDER BY n DESC
+                        LIMIT 1
+                    """).fetchone()
+                    fase = (row["fase"] if row else "") or ""
+                    if "PLANIFIC" in fase:
+                        sst_etapa = "Planificacion"
+                    elif "IMPLEMENT" in fase:
+                        sst_etapa = "Implementacion"
+                    elif "EVAL" in fase:
+                        sst_etapa = "Evaluacion"
+
+            # =========================
+            # SEDES (cards ejecutivas)
+            # =========================
+            sedes_cards = []
+            if _table_exists(con, "sedes_mpd"):
+                rows_sedes = con.execute("""
+                    SELECT codigo, nombre, ciudad, direccion
+                    FROM sedes_mpd
+                    WHERE TRIM(COALESCE(codigo,'')) <> ''
+                    ORDER BY codigo
+                """).fetchall()
+
+                def _safe_int(v):
+                    try:
+                        return int(v or 0)
+                    except Exception:
+                        return 0
+
+                for s in rows_sedes:
+                    cod = (_row_value(s, "codigo", "") or "").strip().upper()
+                    if not cod:
+                        continue
+
+                    infra = con.execute("""
+                        SELECT oficinas, salas_entrevistas, banios, espacios_comunes, depositos, personas,
+                               m2_totales, m2_por_persona, personas_por_oficina
+                        FROM sedes_infraestructura
+                        WHERE sede_codigo = ?
+                    """, (cod,)).fetchone() if _table_exists(con, "sedes_infraestructura") else None
+
+                    metricas_row = con.execute("""
+                        SELECT sede_codigo, m2_totales, personas, oficinas, depositos, actualizado_en
+                        FROM sedes_metricas
+                        WHERE sede_codigo = ?
+                    """, (cod,)).fetchone() if _table_exists(con, "sedes_metricas") else None
+                    metricas_row = dict(metricas_row) if metricas_row else {}
+
+                    m2_totales = metricas_row.get("m2_totales")
+                    personas_m = metricas_row.get("personas")
+                    oficinas_m = metricas_row.get("oficinas")
+                    depositos_m = metricas_row.get("depositos")
+
+                    m2_por_persona = None
+                    if m2_totales is not None and personas_m:
+                        try:
+                            m2_por_persona = round(float(m2_totales) / float(personas_m), 2)
+                        except Exception:
+                            m2_por_persona = None
+
+                    personas_por_oficina = None
+                    if personas_m and oficinas_m:
+                        try:
+                            personas_por_oficina = round(float(personas_m) / float(oficinas_m), 2)
+                        except Exception:
+                            personas_por_oficina = None
+
+                    ocupacion_pct = None
+                    if personas_m and oficinas_m:
+                        base_oc = float(oficinas_m) * 2.5
+                        if base_oc:
+                            ocupacion_pct = round((float(personas_m) / base_oc) * 100.0, 1)
+
+                    depositos_kpi = 0
+                    if depositos_m is not None:
+                        depositos_kpi = depositos_m
+                    else:
+                        try:
+                            depositos_kpi = con.execute(
+                                "SELECT COUNT(*) AS c FROM sedes_depositos WHERE codigo_sede = ?",
+                                (cod,)
+                            ).fetchone()["c"]
+                        except Exception:
+                            depositos_kpi = _row_value(infra, "depositos", 0) if infra else 0
+
+                    per_kpi = con.execute("""
+                        SELECT COALESCE(COUNT(*),0) AS personas
+                        FROM personal_sede
+                        WHERE codigo_sede = ?
+                          AND COALESCE(activo,1)=1
+                    """, (cod,)).fetchone() if _table_exists(con, "personal_sede") else {"personas": 0}
+
+                    puestos_trabajo = 0
+                    if _table_exists(con, "luminarias_sede"):
+                        try:
+                            row_pt = con.execute("""
+                                SELECT COALESCE(SUM(COALESCE(puestos_trabajo,0)),0) AS n
+                                FROM luminarias_sede
+                                WHERE codigo_sede = ?
+                            """, (cod,)).fetchone()
+                            puestos_trabajo = _safe_int(_row_value(row_pt, "n", 0))
+                        except Exception:
+                            puestos_trabajo = 0
+
+                    seg_vencen = 0
+                    if _table_exists(con, "matafuegos_sede"):
+                        try:
+                            row_v = con.execute("""
+                                SELECT COALESCE(COUNT(*),0) AS vencen_pronto
+                                FROM matafuegos_sede
+                                WHERE cod_sede = ?
+                                  AND COALESCE(activo,1)=1
+                                  AND fecha_vencimiento IS NOT NULL
+                                  AND date(fecha_vencimiento) <= date('now','+45 day')
+                            """, (cod,)).fetchone()
+                            seg_vencen = _safe_int(_row_value(row_v, "vencen_pronto", 0))
+                        except Exception:
+                            seg_vencen = 0
+
+                    infra_oficinas = _safe_int(_row_value(infra, "oficinas", 0) if infra else 0)
+                    infra_entrev = _safe_int(_row_value(infra, "salas_entrevistas", 0) if infra else 0)
+                    infra_banios = _safe_int(_row_value(infra, "banios", 0) if infra else 0)
+                    infra_comunes = _safe_int(_row_value(infra, "espacios_comunes", 0) if infra else 0)
+                    infra_depositos = _safe_int(_row_value(infra, "depositos", 0) if infra else 0)
+
+                    m2pp_base = m2_por_persona if m2_por_persona is not None else None
+                    amb_oficinas = (oficinas_m if oficinas_m is not None else infra_oficinas) or 0
+                    amb_depositos = (depositos_m if depositos_m is not None else infra_depositos) or 0
+                    amb_utiles = amb_oficinas + infra_entrev + infra_banios + infra_comunes
+                    amb_total = amb_utiles + amb_depositos
+                    factor_deposito = (amb_depositos / amb_total) if amb_total > 0 else 0
+                    factor_potencial = (1 + (factor_deposito * 0.7))
+                    m2pp = round((m2pp_base * factor_potencial), 2) if m2pp_base is not None else None
+
+                    ppo = personas_por_oficina if personas_por_oficina is not None else None
+                    venc45 = seg_vencen
+
+                    if m2pp is None:
+                        m2_class = "na"
+                        m2_score = None
+                    elif m2pp < 8:
+                        m2_class = "bad"
+                        m2_score = 35
+                    elif m2pp <= 12:
+                        m2_class = "ok"
+                        m2_score = 100
+                    elif m2pp <= 20:
+                        m2_class = "warn"
+                        m2_score = 70
+                    else:
+                        m2_class = "info"
+                        m2_score = 60
+
+                    if m2pp_base is not None and m2pp is not None and m2pp_base < 8 and m2pp >= 8 and amb_depositos > 0:
+                        m2_class = "warn"
+                        m2_score = 75
+
+                    if ppo is None:
+                        ppo_class = "na"
+                        ppo_score = None
+                    elif ppo <= 2:
+                        ppo_class = "ok"
+                        ppo_score = 100
+                    elif ppo <= 3:
+                        ppo_class = "warn"
+                        ppo_score = 70
+                    else:
+                        ppo_class = "bad"
+                        ppo_score = 35
+
+                    if venc45 is None:
+                        seg_class = "na"
+                        seg_score = None
+                    elif int(venc45) == 0:
+                        seg_class = "ok"
+                        seg_score = 100
+                    elif int(venc45) <= 2:
+                        seg_class = "warn"
+                        seg_score = 70
+                    else:
+                        seg_class = "bad"
+                        seg_score = 35
+
+                    idx_sum = 0
+                    idx_n = 0
+                    for sc in (m2_score, ppo_score, seg_score):
+                        if sc is not None:
+                            idx_sum += sc
+                            idx_n += 1
+                    idx_general = int(round((idx_sum / idx_n), 0)) if idx_n > 0 else None
+                    if idx_general is None:
+                        idx_class = "na"
+                    elif idx_general >= 85:
+                        idx_class = "ok"
+                    elif idx_general >= 70:
+                        idx_class = "warn"
+                    else:
+                        idx_class = "bad"
+
+                    sedes_cards.append({
+                        "codigo": cod,
+                        "nombre": _row_value(s, "nombre", "") or "",
+                        "ciudad": _row_value(s, "ciudad", "") or "",
+                        "direccion": _row_value(s, "direccion", "") or "",
+                        "personal": _safe_int(_row_value(per_kpi, "personas", 0)),
+                        "puestos": puestos_trabajo,
+                        "depositos": depositos_kpi or 0,
+                        "ocupacion_pct": ocupacion_pct,
+                        "m2pp": m2pp,
+                        "ppo": ppo,
+                        "idx_general": idx_general,
+                        "idx_class": idx_class,
+                    })
+
+                severity_order = {"bad": 0, "warn": 1, "ok": 2, "na": 3}
+                sedes_cards.sort(key=lambda x: (severity_order.get(x["idx_class"], 9), x["codigo"]))
+
+            # =========================
+            # OBRAS / INTERVENCIONES
+            # =========================
+            top_obras = []
+            if _table_exists(con, "obras_sede"):
+                cols_obras = _table_cols(con, "obras_sede")
+                has_fecha = "fecha_solicitud" in cols_obras
+                rows_o = con.execute(f"""
+                    SELECT codigo_sede, titulo, tipo, prioridad, estado, {'fecha_solicitud' if has_fecha else 'NULL'} AS fecha_solicitud
+                    FROM obras_sede
+                    WHERE TRIM(COALESCE(titulo,'')) <> ''
+                    ORDER BY
+                        CASE WHEN UPPER(COALESCE(prioridad,'')) IN ('ALTA','URGENTE') THEN 0
+                             WHEN UPPER(COALESCE(prioridad,'')) = 'MEDIA' THEN 1
+                             ELSE 2 END,
+                        CASE WHEN UPPER(COALESCE(estado,'')) IN ('EN_CURSO','EN CURSO') THEN 0
+                             WHEN UPPER(COALESCE(estado,'')) = 'PENDIENTE' THEN 1
+                             ELSE 2 END,
+                        COALESCE(fecha_solicitud, '') DESC
+                    LIMIT 5
+                """).fetchall()
+                for r in rows_o:
+                    top_obras.append({
+                        "sede": (_row_value(r, "codigo_sede", "") or "").strip(),
+                        "titulo": (_row_value(r, "titulo", "") or "").strip(),
+                        "tipo": (_row_value(r, "tipo", "") or "").strip(),
+                        "prioridad": (_row_value(r, "prioridad", "") or "").strip(),
+                        "estado": (_row_value(r, "estado", "") or "").strip(),
+                    })
+
+            obras_avance_pct = round((obras_finalizadas * 100.0 / obras_total), 1) if obras_total else 0
+            obras_sedes, obras_total_sedes, obras_donut = _obras_sedes_resumen(con)
+
+            # =========================
+            # VEHICULOS
+            # =========================
+            vehiculos_cards = _vehiculos_cards_from_base(base, con)
+            total_km = ((base.get("indicadores2026") or {}).get("totalKm")) or 0
+            uso_general = {
+                "en_uso": int(donut.get("enUso") or 0),
+                "guardados": int(donut.get("guardados") or 0),
+                "pendientes": int(donut.get("pendientesCierre") or 0),
+                "no_disp": int(donut.get("noDisponibles") or 0),
+                "total": veh_total,
+            }
+
+            # =========================
+            # SG-SST LISTA (TOP)
+            # =========================
+            sst_top = sorted(items_sst, key=lambda x: x.get("pct", 0), reverse=True)[:6]
+
+        finally:
+            con.close()
+
+        return render_template(
+            "dashboard_ejecutivo.html",
+            sedes_activas=sedes_activas,
+            obras_en_curso=obras_en_curso,
+            pendientes_criticos=pendientes_criticos,
+            vehiculos_operativos=veh_operativos,
+            sst_avance=sst_avg,
+            sst_estado=sst_estado,
+            sst_estado_cls=sst_estado_cls,
+            sst_etapa=sst_etapa,
+            sedes_cards=sedes_cards[:8],
+            sedes_total=len(sedes_cards),
+            obras_avance_pct=obras_avance_pct,
+            obras_total=obras_total,
+            obras_sedes=obras_sedes,
+            obras_donut=obras_donut,
+            top_obras=top_obras,
+            vehiculos_cards=vehiculos_cards,
+            total_km=total_km,
+            uso_general=uso_general,
+            sst_top=sst_top,
         )
 
 

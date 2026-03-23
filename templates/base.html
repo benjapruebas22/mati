@@ -293,6 +293,17 @@
       border-color: #dbe3ee;
     }
 
+    .btn-area-ejecutivo {
+      background: #ffdcb3;
+      border-color: #f2c48e;
+      color: #7a4a12;
+      box-shadow: 0 4px 10px rgba(122, 74, 18, 0.08);
+    }
+
+    .nav-spacer {
+      flex: 1 0 16px;
+    }
+
     .btn-area-sedes {
       background: #eaf6ff;
       border-color: #c8e3f7;
@@ -429,6 +440,9 @@
     <div class="top-sep" aria-hidden="true"></div>
 
     <nav class="main-nav">
+      {% if user_role == 'ejecutivo' %}
+      <a class="btn btn-mpd btn-area-ejecutivo" href="{{ url_for('dashboard_ejecutivo') }}">Alta Direccion</a>
+      {% else %}
       <a class="btn btn-mpd btn-area-inicio" href="{{ url_for('dashboard') }}">Centro Operativo</a>
 
       {% if can_access("sst") %}
@@ -476,6 +490,9 @@
           <a href="{{ url_for('agentes_home') }}">Agentes</a>
         </div>
       </div>
+      <span class="nav-spacer" aria-hidden="true"></span>
+      <a class="btn btn-mpd btn-area-ejecutivo" href="{{ url_for('dashboard_ejecutivo') }}">Alta Direccion</a>
+      {% endif %}
     </nav>
 
     <div class="top-actions">
