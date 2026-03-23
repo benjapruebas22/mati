@@ -176,24 +176,22 @@
     <table class="comb-table">
       <thead>
         <tr>
-          <th>Fecha</th>
-          <th>Chofer</th>
-          <th>Kilometro actual</th>
           <th>Vehiculo-Patente</th>
+          <th>Chofer</th>
           <th>Cantidad en Plata</th>
           <th>Litros</th>
           <th>Precio por litro</th>
           <th>N° de Remito</th>
+          <th>Fecha</th>
+          <th>Kilometro actual</th>
           <th>Accion</th>
         </tr>
       </thead>
       <tbody>
         {% for c in cargas %}
         <tr data-patente="{{ (c.patente or '')|lower }}" data-chofer="{{ (c.chofer_nombre or '')|lower }}">
-          <td>{{ c.fecha }}</td>
-          <td><span class="chofer-txt">{{ c.chofer_nombre or "-" }}</span></td>
-          <td>{{ c.km_actual or "-" }}</td>
           <td><span class="veh-badge">{{ c.codigo_interno or c.patente }} - {{ c.patente }}</span></td>
+          <td><span class="chofer-txt">{{ c.chofer_nombre or "-" }}</span></td>
           <td>${{ "{:,.2f}".format(c.importe_real or 0) }}</td>
           <td>{{ c.litros }}</td>
           <td>${{ "{:,.2f}".format(c.precio_unit or 0) }}</td>
@@ -209,6 +207,8 @@
             </div>
             {% endif %}
           </td>
+          <td>{{ c.fecha }}</td>
+          <td>{{ c.km_actual or "-" }}</td>
           <td style="white-space:nowrap">
             <a class="btn btn-mpd" style="padding:6px 10px;font-size:12px" href="{{ url_for('combustible_editar', cid=c.id) }}">Editar</a>
             <form method="post" action="{{ url_for('combustible_eliminar', cid=c.id) }}" style="display:inline" onsubmit="return confirm('Eliminar carga #{{ c.id }}?');">
