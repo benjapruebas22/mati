@@ -79,6 +79,8 @@
       .tabla-viajes { overflow-x:auto; -webkit-overflow-scrolling: touch; }
       .tabla-viajes table { font-size:11px; }
       .tabla-viajes th, .tabla-viajes td { padding:6px !important; }
+      #box-carga-viaje { display:block !important; }
+      #form-carga-viaje { grid-template-columns: 1fr !important; }
       .vd-card {
         border:1px solid #e5e7eb;
         border-radius:14px;
@@ -281,7 +283,7 @@
     <button type="button" class="main" onclick="goBlock('form-carga-viaje')">+ Cargar viaje</button>
     <button type="button" class="sub" onclick="goBlock('tabla-viajes')">Ver tabla</button>
   </div>
-  <div id="box-carga-viaje" class="vd-box hide-mobile" style="display:none">
+  <div id="box-carga-viaje" class="vd-box" style="display:none">
   <!-- FORM ALTA (POST) -->
   <form id="form-carga-viaje" method="post" style="display:grid;grid-template-columns: 320px 320px 1fr;gap:14px;align-items:start">
     <div>
@@ -508,8 +510,8 @@
   </div>
 
   <div class="mobile-cta">
-    <a class="btn btn-mpd" href="#form-carga-viaje">+ Cargar viaje</a>
-    <a class="btn btn-mpd" href="#tabla-viajes">Ver tabla</a>
+    <button type="button" class="btn btn-mpd" onclick="goBlock('form-carga-viaje')">+ Cargar viaje</button>
+    <button type="button" class="btn btn-mpd" onclick="goBlock('tabla-viajes')">Ver tabla</button>
   </div>
 
   <div class="mobile-only" style="display:grid;gap:10px;margin-top:10px">
