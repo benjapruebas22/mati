@@ -12,6 +12,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 
 def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, ensure_auth_tables, default_redirect_for_role=None):
+    default_redirect_for_role_fn = default_redirect_for_role if callable(default_redirect_for_role) else None
     CAL_COLORS = cal_colors
     SEDE_ESTADO_VARS = [
         "relevamiento",
@@ -1281,8 +1282,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             nxt = request.args.get("next")
             if nxt:
                 return redirect(nxt)
-            if default_redirect_for_role:
-                return redirect(default_redirect_for_role(session.get("role")))
+            if default_redirect_for_role_fn:
+                return redirect(default_redirect_for_role_fn(session.get("role")))
             return redirect(url_for("dashboard"))
 
         con.close()
@@ -1323,8 +1324,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             con.close()
             session["must_change"] = 0
             flash("Clave actualizada.", "success")
-            if default_redirect_for_role:
-                return redirect(default_redirect_for_role(session.get("role")))
+            if default_redirect_for_role_fn:
+                return redirect(default_redirect_for_role_fn(session.get("role")))
             return redirect(url_for("dashboard"))
 
         con.close()
