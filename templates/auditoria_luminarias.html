@@ -4,14 +4,14 @@
 <section class="aud-shell">
   <header class="aud-top">
     <div>
-      <h2 class="aud-h2">Relevamientos / Control · Mobiliario</h2>
+      <h2 class="aud-h2">Relevamientos / Control · Luminarias</h2>
       <p class="aud-sub">Relevamiento por sede/deposito para control cruzado.</p>
     </div>
     <div class="aud-tabs">
-      <a class="aud-tab active" href="{{ url_for('auditoria_mobiliario') }}">Mobiliario</a>
+      <a class="aud-tab" href="{{ url_for('auditoria_mobiliario') }}">Mobiliario</a>
       <a class="aud-tab" href="{{ url_for('auditoria_aires') }}">Aires</a>
-      <a class="aud-tab" href="{{ url_for('auditoria_luminarias') }}">Luminarias</a>
-      <a class="aud-tab" href="{{ url_for('relevamientos_comparativa') }}?tipo=mobiliario">Comparativa</a>
+      <a class="aud-tab active" href="{{ url_for('auditoria_luminarias') }}">Luminarias</a>
+      <a class="aud-tab" href="{{ url_for('relevamientos_comparativa') }}?tipo=luminarias">Comparativa</a>
     </div>
   </header>
 
@@ -30,7 +30,7 @@
         <div class="gridx aud-form">
           <div class="fg">
             <label>Sede</label>
-            <select id="aud_sede_mob" name="sede_codigo" required>
+            <select id="aud_sede_lum" name="sede_codigo" required>
               <option value="">-- elegir sede --</option>
               {% for s in sedes %}
                 <option value="{{ s.codigo }}" {% if edit_row and edit_row.sede_codigo == s.codigo %}selected{% endif %}>{{ s.codigo }} - {{ s.nombre }} ({{ s.ciudad }})</option>
@@ -39,7 +39,7 @@
           </div>
           <div class="fg">
             <label>Deposito</label>
-            <select id="aud_deposito_mob" name="deposito" required>
+            <select id="aud_deposito_lum" name="deposito" required>
               <option value="">-- elegir deposito --</option>
               {% for d in depositos %}
                 <option value="{{ (d.codigo_local or '')|upper }}" data-sede="{{ (d.codigo_sede or '')|upper }}" data-codigo="{{ (d.codigo_local or '')|upper }}" {% if edit_row and (edit_row.deposito or '')|upper == (d.codigo_local or '')|upper %}selected{% endif %}>{{ d.codigo_sede }} - {{ d.codigo_local }}{% if d.descripcion %} · {{ d.descripcion }}{% endif %}</option>
@@ -90,7 +90,7 @@
         <div class="formx-actions">
           <button type="submit" class="btn primary btn-wide">{{ 'Guardar cambios' if edit_row else 'Guardar relevamiento' }}</button>
           {% if edit_row %}
-            <a class="btn outline-slate btn-wide" href="{{ url_for('auditoria_mobiliario') }}">Cancelar edición</a>
+            <a class="btn outline-slate btn-wide" href="{{ url_for('auditoria_luminarias') }}">Cancelar edición</a>
           {% endif %}
         </div>
       </form>
@@ -125,8 +125,8 @@
                 <td>{{ a.responsable or '-' }}</td>
                 <td>{{ a.observaciones or '-' }}</td>
                 <td style="white-space:nowrap">
-                  <a class="btn xs outline" href="{{ url_for('auditoria_mobiliario', edit=a.id) }}">Editar</a>
-                  <form method="post" action="{{ url_for('auditoria_mobiliario_borrar', aid=a.id) }}" style="display:inline-block" onsubmit="return confirm('¿Eliminar relevamiento?');">
+                  <a class="btn xs outline" href="{{ url_for('auditoria_luminarias', edit=a.id) }}">Editar</a>
+                  <form method="post" action="{{ url_for('auditoria_luminarias_borrar', aid=a.id) }}" style="display:inline-block" onsubmit="return confirm('¿Eliminar relevamiento?');">
                     <button type="submit" class="btn xs outline">Eliminar</button>
                   </form>
                 </td>
@@ -184,8 +184,8 @@
 
 <script>
   (function(){
-    const sedeSel = document.getElementById("aud_sede_mob");
-    const depSel = document.getElementById("aud_deposito_mob");
+    const sedeSel = document.getElementById("aud_sede_lum");
+    const depSel = document.getElementById("aud_deposito_lum");
     if (!sedeSel || !depSel) return;
 
     const allOptions = Array.from(depSel.querySelectorAll("option")).map(o => ({
