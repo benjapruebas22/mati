@@ -1,3 +1,4 @@
+﻿# -*- coding: utf-8 -*-
 import csv
 import re
 import sqlite3
@@ -27,9 +28,7 @@ def to_float(x: str):
     x = str(x).strip()
     if x == "":
         return None
-    # remove currency symbols and spaces
     x = x.replace("$", "").replace(" ", "")
-    # convert thousand separators
     x = x.replace(".", "").replace(",", ".")
     try:
         return float(x)
@@ -72,7 +71,7 @@ def main():
             monto = to_float(row.get("Cantidad en Plata"))
             litros = to_float(row.get("Litros"))
             precio_litro = to_float(row.get("Precio de la Nafta") or row.get("Precio por litro"))
-            remito = (row.get("N� de Remito") or row.get("N de Remito") or row.get("Remito") or "").strip()
+            remito = (row.get("N° de Remito") or row.get("N de Remito") or row.get("Remito") or "").strip()
             km_actual = to_float(row.get("Kilometraje") or row.get("Kilometro actual") or "")
 
             if not fecha or not patente or litros is None or precio_litro is None or monto is None:
