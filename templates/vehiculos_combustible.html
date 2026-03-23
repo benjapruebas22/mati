@@ -50,6 +50,14 @@
     }
     @media (max-width: 700px) {
       .comb-row { grid-template-columns: 1fr; }
+      .comb-actions { flex-direction:column; align-items:flex-start; }
+      .comb-actions .btn { width:100%; }
+      .comb-quick { position:sticky; top:4px; z-index:4; background:rgba(241,245,249,.92); padding:8px; border-radius:12px; border:1px solid #e5e7eb; }
+      #box-carga-comb { display:block !important; }
+      #form-carga-comb { display:grid; gap:10px; }
+      #form-carga-comb .comb-row { grid-template-columns: 1fr; }
+      #form-carga-comb .btn.primary { width:100%; }
+      .comb-table-wrap { overflow-x:auto; }
     }
   </style>
 
