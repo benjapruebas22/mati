@@ -663,6 +663,69 @@
         <div class="k-val" id="kpiOk">0</div>
       </div>
     </div>
+  <article class="control-card card-registro">
+    <div class="card-head">
+      <h2>5. Registrar novedad</h2>
+      <div class="card-head-actions">
+        <span class="state-chip soft">Carga manual</span>
+      </div>
+    </div>
+
+    <details id="registroNvdBox" class="registro-box">
+      <summary class="registro-summary">+ Registrar novedad</summary>
+
+      <div class="registro-body">
+        <input id="nvdId" type="hidden" value="0">
+        <div class="nvd-form-grid">
+          <div class="f-group">
+            <label for="nvdFecha">Fecha</label>
+            <input id="nvdFecha" class="ctl-inp" type="date">
+          </div>
+          <div class="f-group">
+            <label for="nvdAgente">Agente que carga</label>
+            <select id="nvdAgente" class="ctl-sel"></select>
+          </div>
+          <div class="f-group">
+            <div class="label-row">
+              <label for="nvdSede">Sede</label>
+              <button id="btnAddSede" type="button" class="btn-mini">+ Cargar</button>
+            </div>
+            <select id="nvdSede" class="ctl-sel"></select>
+          </div>
+          <div class="f-group">
+            <div class="label-row">
+              <label for="nvdTipo">Tipo</label>
+              <button id="btnAddTipo" type="button" class="btn-mini">+ Cargar</button>
+            </div>
+            <select id="nvdTipo" class="ctl-sel"></select>
+          </div>
+          <div class="f-group">
+            <div class="label-row">
+              <label for="nvdSubtipo">Subtipo / motivo</label>
+              <button id="btnAddSubtipo" type="button" class="btn-mini">+ Cargar</button>
+            </div>
+            <select id="nvdSubtipo" class="ctl-sel"></select>
+          </div>
+          <div class="f-group">
+            <label for="nvdEstado">Estado</label>
+            <select id="nvdEstado" class="ctl-sel"></select>
+          </div>
+          <button id="nvdGuardar" type="button" class="btn-dark">Guardar</button>
+          <button id="nvdCancelarEdit" type="button" class="btn-soft" style="display:none;">Cancelar</button>
+        </div>
+
+        <div class="nvd-obs-row">
+          <label for="nvdObs" style="font-size:11px;color:#59799e;font-weight:700;">Observacion (quien solicita / detalle / patente)</label>
+          <input id="nvdObs" class="ctl-inp" type="text" maxlength="240" placeholder="Ej: Mauro solicita horario especial / AB946VK al mecanico">
+        </div>
+
+        <div id="nvdMsgRow" class="aux-row" style="display:none;">
+          <div id="nvdMsg" class="aux-msg"></div>
+        </div>
+      </div>
+    </details>
+  </article>
+
   </article>
 
   <article class="control-card card-operativa">
@@ -753,68 +816,7 @@
     </div>
   </article>
 
-  <article class="control-card card-registro">
-    <div class="card-head">
-      <h2>5. Registrar novedad</h2>
-      <div class="card-head-actions">
-        <span class="state-chip soft">Carga manual</span>
-      </div>
-    </div>
-
-    <details id="registroNvdBox" class="registro-box">
-      <summary class="registro-summary">+ Registrar novedad</summary>
-
-      <div class="registro-body">
-        <input id="nvdId" type="hidden" value="0">
-        <div class="nvd-form-grid">
-          <div class="f-group">
-            <label for="nvdFecha">Fecha</label>
-            <input id="nvdFecha" class="ctl-inp" type="date">
-          </div>
-          <div class="f-group">
-            <label for="nvdAgente">Agente que carga</label>
-            <select id="nvdAgente" class="ctl-sel"></select>
-          </div>
-          <div class="f-group">
-            <div class="label-row">
-              <label for="nvdSede">Sede</label>
-              <button id="btnAddSede" type="button" class="btn-mini">+ Cargar</button>
-            </div>
-            <select id="nvdSede" class="ctl-sel"></select>
-          </div>
-          <div class="f-group">
-            <div class="label-row">
-              <label for="nvdTipo">Tipo</label>
-              <button id="btnAddTipo" type="button" class="btn-mini">+ Cargar</button>
-            </div>
-            <select id="nvdTipo" class="ctl-sel"></select>
-          </div>
-          <div class="f-group">
-            <div class="label-row">
-              <label for="nvdSubtipo">Subtipo / motivo</label>
-              <button id="btnAddSubtipo" type="button" class="btn-mini">+ Cargar</button>
-            </div>
-            <select id="nvdSubtipo" class="ctl-sel"></select>
-          </div>
-          <div class="f-group">
-            <label for="nvdEstado">Estado</label>
-            <select id="nvdEstado" class="ctl-sel"></select>
-          </div>
-          <button id="nvdGuardar" type="button" class="btn-dark">Guardar</button>
-          <button id="nvdCancelarEdit" type="button" class="btn-soft" style="display:none;">Cancelar</button>
-        </div>
-
-        <div class="nvd-obs-row">
-          <label for="nvdObs" style="font-size:11px;color:#59799e;font-weight:700;">Observacion (quien solicita / detalle / patente)</label>
-          <input id="nvdObs" class="ctl-inp" type="text" maxlength="240" placeholder="Ej: Mauro solicita horario especial / AB946VK al mecanico">
-        </div>
-
-        <div id="nvdMsgRow" class="aux-row" style="display:none;">
-          <div id="nvdMsg" class="aux-msg"></div>
-        </div>
-      </div>
-    </details>
-  </article>
+  
 
   <article class="control-card card-historial">
     <div class="card-head">
