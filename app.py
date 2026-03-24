@@ -57,6 +57,8 @@ ROLE_OBRAS_VEHICULOS = "obras_vehiculos"
 ROLE_DASH_OBRAS = "dashboard_obras"
 ROLE_DASH_VEHICULOS = "dashboard_vehiculos"
 ROLE_EJECUTIVO = "ejecutivo"
+ROLE_CHOFER_INTENDENCIA = "chofer_intendencia"
+ROLE_CHOFER_AUTORIZADO = "chofer_autorizado"
 
 
 def ensure_auth_tables(con):
@@ -99,6 +101,21 @@ def ensure_auth_tables(con):
         ("admin", "Administrator", ROLE_FULL),
         ("mluna", "Matias Luna", ROLE_EJECUTIVO),
         ("gburgos", "G. Burgos", ROLE_EJECUTIVO),
+        # Choferes autorizados (otras areas) - acceso limitado a control diario
+        ("nmatorras", "Nabil Matorras", ROLE_CHOFER_AUTORIZADO),
+        ("mmontiel", "Mateo Montiel", ROLE_CHOFER_AUTORIZADO),
+        ("mzambrano", "Mauricio Zambrano", ROLE_CHOFER_AUTORIZADO),
+        ("laviles", "Leonardo Aviles", ROLE_CHOFER_AUTORIZADO),
+        ("lzurueta", "Lucio Zurueta", ROLE_CHOFER_AUTORIZADO),
+        ("bburgos", "Benjamin Burgos", ROLE_CHOFER_AUTORIZADO),
+        ("jdaud", "Julio Daud", ROLE_CHOFER_AUTORIZADO),
+        ("agonzalez", "Agustin Gonzalez", ROLE_CHOFER_AUTORIZADO),
+        ("jvaldivia", "Javier Valdivia", ROLE_CHOFER_AUTORIZADO),
+        ("fgiuletti", "Giuletti", ROLE_CHOFER_AUTORIZADO),
+        ("dzamar", "Diego Zamar", ROLE_CHOFER_AUTORIZADO),
+        ("jcorbacho", "Jorge Corbacho", ROLE_CHOFER_AUTORIZADO),
+        ("msorbllo", "Marcos Sorbello", ROLE_CHOFER_AUTORIZADO),
+        ("ndaje", "Nicolas Daje", ROLE_CHOFER_AUTORIZADO),
     ]
     has_legacy_password = "password" in cols
     has_legacy_role = "rol" in cols
@@ -178,6 +195,8 @@ def role_allows(role: str, module: str) -> bool:
         ROLE_DASH_OBRAS: {"dashboard", "obras"},
         ROLE_DASH_VEHICULOS: {"dashboard", "vehiculos"},
         ROLE_EJECUTIVO: {"dashboard", "obras", "vehiculos", "sedes", "sst", "other"},
+        ROLE_CHOFER_INTENDENCIA: {"vehiculos"},
+        ROLE_CHOFER_AUTORIZADO: {"vehiculos"},
     }
     return module in perms.get(role or "", set())
 
@@ -195,6 +214,8 @@ def default_redirect_for_role(role: str):
         return url_for("sst_general")
     if role == ROLE_OBRAS_VEHICULOS:
         return url_for("obras_home")
+    if role == ROLE_CHOFER_INTENDENCIA or role == ROLE_CHOFER_AUTORIZADO:
+        return url_for("vehiculos_control_diario")
     return url_for("dashboard")
 
 

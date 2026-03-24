@@ -2,12 +2,14 @@ from datetime import date, datetime, timedelta
 import sqlite3
 import unicodedata
 
-from flask import request, redirect, url_for, flash, render_template, jsonify
+from flask import request, redirect, url_for, flash, render_template, jsonify, session
 from werkzeug.utils import secure_filename
 
 def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combustible_columns, rebuild_eventos_vehiculos):
     MAX_LITROS_CARGA = 150.0
     MAX_PRECIO_LITRO = 10000.0
+    ROLE_CHOFER_INTENDENCIA = "chofer_intendencia"
+    ROLE_CHOFER_AUTORIZADO = "chofer_autorizado"
     CHOFERES_INTENDENCIA_PERMITIDOS = (
         "Emiliano P de la Puente",
         "Emiliano Perez de la Puente",
@@ -60,6 +62,40 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
         nombre = str(chofer_nombre_raw or "").strip()
         if not nombre:
             return None
+
+    def _current_user_chofer_id(conn):
+        full_name = (session.get("full_name") or "").strip()
+        if not full_name:
+            return None
+        row = conn.execute(
+            "SELECT id FROM agentes_intendencia WHERE lower(agente) = lower(?)",
+            (full_name,),
+        ).fetchone()
+        if row:
+            return row["id"]
+        # crear chofer si no existe
+        conn.execute(
+            "INSERT INTO agentes_intendencia(agente, rubro, activo) VALUES (?,?,1)",
+            (full_name, "Chofer autorizado"),
+        )
+        conn.commit()
+        row = conn.execute(
+            "SELECT id FROM agentes_intendencia WHERE lower(agente) = lower(?)",
+            (full_name,),
+        ).fetchone()
+        return row["id"] if row else None
+
+    def _deny_if_not_owner(conn, viaje_id):
+        role = session.get("role") or ""
+        if role != ROLE_CHOFER_AUTORIZADO:
+            return None
+        user_cid = _current_user_chofer_id(conn)
+        if not user_cid:
+            return redirect(url_for("access_denied"))
+        row = conn.execute("SELECT chofer_id FROM viajes WHERE id = ?", (viaje_id,)).fetchone()
+        if not row or row["chofer_id"] != user_cid:
+            return redirect(url_for("access_denied"))
+        return None
 
         row = conn.execute(
             """
@@ -155,6 +191,8 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
 
     @app.route("/vehiculos/viaje/<int:viaje_id>/eliminar", methods=["POST"], endpoint="viaje_eliminar")
     def viaje_eliminar(viaje_id):
+        if (session.get("role") or "") == ROLE_CHOFER_AUTORIZADO:
+            return redirect(url_for("access_denied"))
         conn = get_db_connection()
 
         # para volver manteniendo filtros
@@ -171,6 +209,8 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
 
     @app.route("/vehiculos/estadisticas", methods=["GET"], endpoint="vehiculos_estadisticas2")
     def vehiculos_estadisticas2():
+        if (session.get("role") or "") == ROLE_CHOFER_AUTORIZADO:
+            return redirect(url_for("access_denied"))
 
         conn = get_db_connection()
 
@@ -332,6 +372,10 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
     @app.route("/viajes/<int:viaje_id>/cerrar", methods=["GET", "POST"], endpoint="viaje_cerrar")
     def viaje_cerrar(viaje_id):
         conn = get_db_connection()
+        deny = _deny_if_not_owner(conn, viaje_id)
+        if deny:
+            conn.close()
+            return deny
 
         viaje = conn.execute("""
             SELECT
@@ -399,6 +443,8 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
     def vehiculos_control_diario():
         conn = get_db_connection()
         _ensure_viajes_operativo_cols(conn)
+        role = session.get("role") or ""
+        is_autorizado = role == ROLE_CHOFER_AUTORIZADO
 
         # -------------------------
         # PARAMETROS
@@ -418,9 +464,19 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
         choferes = conn.execute("""
             SELECT id, agente
             FROM agentes_intendencia
-            WHERE rubro='choferes' AND COALESCE(activo,1)=1
+            WHERE COALESCE(activo,1)=1
+              AND (rubro='choferes' OR lower(rubro)='chofer autorizado')
             ORDER BY agente
         """).fetchall()
+
+        user_chofer_id = None
+        if is_autorizado:
+            user_chofer_id = _current_user_chofer_id(conn)
+            if user_chofer_id:
+                choferes = conn.execute(
+                    "SELECT id, agente FROM agentes_intendencia WHERE id = ?",
+                    (user_chofer_id,),
+                ).fetchall()
 
         personal = conn.execute("""
             SELECT
@@ -448,6 +504,8 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
 
             patente = (request.form.get("patente") or "").strip()
             chofer_id = request.form.get("chofer_id") or None
+            if is_autorizado and user_chofer_id:
+                chofer_id = str(user_chofer_id)
             destino_id = request.form.get("destino_id") or None
             personal_id = request.form.get("personal_id") or None
 
@@ -544,11 +602,11 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
         # -------------------------
         # LISTADO (TABLA COMPLETA)
         # -------------------------
-        viajes = conn.execute("""
+        viajes_sql = """
             SELECT
                 vc.id,
                 ROW_NUMBER() OVER (ORDER BY date(vc.fecha) ASC, vc.id ASC) AS nro,
-                vc.fecha, v.codigo_interno, vc.patente,
+                vc.fecha, v.codigo_interno, vc.patente, vc.chofer_id,
                 c.agente AS chofer_nombre,
                 ps.nombre_apellido AS agente_nombre,
                 vc.sector, vc.dependencia,
@@ -561,16 +619,25 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
             LEFT JOIN agentes_intendencia c ON c.id = vc.chofer_id
             LEFT JOIN personal_sede ps ON ps.id = vc.personal_id
             LEFT JOIN destinos d ON d.id = vc.destino_id
-            ORDER BY date(vc.fecha) DESC, vc.id DESC
-        """).fetchall()
-        kpi_control = conn.execute(
-            """
+        """
+        params = []
+        if is_autorizado and user_chofer_id:
+            viajes_sql += " WHERE vc.chofer_id = ?"
+            params.append(user_chofer_id)
+        viajes_sql += " ORDER BY date(vc.fecha) DESC, vc.id DESC"
+        viajes = conn.execute(viajes_sql, params).fetchall()
+
+        kpi_sql = """
             SELECT
                 COUNT(*) AS tramos,
                 ROUND(COALESCE(SUM(vc.recorrido_km), 0), 2) AS km_total
             FROM viajes vc
-            """
-        ).fetchone()
+        """
+        kpi_params = []
+        if is_autorizado and user_chofer_id:
+            kpi_sql += " WHERE vc.chofer_id = ?"
+            kpi_params.append(user_chofer_id)
+        kpi_control = conn.execute(kpi_sql, kpi_params).fetchone()
         kpi_comb = conn.execute(
             """
             SELECT
@@ -632,11 +699,15 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
             viajes=viajes,
             kpi_rango=kpi_rango,
             documentos_vinculados_vehiculos=documentos_vinculados_vehiculos,
+            is_autorizado=is_autorizado,
+            user_chofer_id=user_chofer_id,
         )
 
 
     @app.route("/vehiculos/documentacion", methods=["GET", "POST"], endpoint="vehiculos_documentacion")
     def vehiculos_documentacion():
+        if (session.get("role") or "") == ROLE_CHOFER_AUTORIZADO:
+            return redirect(url_for("access_denied"))
         from datetime import datetime, timedelta
 
         conn = get_db_connection()
@@ -884,6 +955,8 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
 
     @app.route("/vehiculos/estadisticas", methods=["GET"], endpoint="vehiculos_estadisticas")
     def vehiculos_estadisticas():
+        if (session.get("role") or "") == ROLE_CHOFER_AUTORIZADO:
+            return redirect(url_for("access_denied"))
         conn = get_db_connection()
 
         # -------------------------
@@ -1089,6 +1162,8 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
     # -------------------------
     @app.route("/vehiculos/combustible", methods=["GET", "POST"], endpoint="vehiculos_combustible")
     def vehiculos_combustible():
+        if (session.get("role") or "") == ROLE_CHOFER_AUTORIZADO:
+            return redirect(url_for("access_denied"))
         conn = get_db_connection()
         ensure_combustible_columns(conn)
 
@@ -1280,6 +1355,8 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
 
     @app.route("/vehiculos/combustible/estadisticas", methods=["GET"], endpoint="vehiculos_combustible_estadisticas")
     def vehiculos_combustible_estadisticas():
+        if (session.get("role") or "") == ROLE_CHOFER_AUTORIZADO:
+            return redirect(url_for("access_denied"))
         conn = get_db_connection()
         ensure_combustible_columns(conn)
         ensure_cols(conn, "vehiculos", [("rendimiento_ref", "REAL")])
@@ -1611,6 +1688,8 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
     # -------------------------
     @app.route("/vehiculos/combustible/nuevo", methods=["GET", "POST"], endpoint="vehiculos_combustible_nuevo")
     def vehiculos_combustible_nuevo():
+        if (session.get("role") or "") == ROLE_CHOFER_AUTORIZADO:
+            return redirect(url_for("access_denied"))
         conn = get_db_connection()
         ensure_combustible_columns(conn)
 
@@ -1736,6 +1815,10 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
     @app.route("/viajes/<int:viaje_id>/editar", methods=["GET", "POST"], endpoint="viaje_editar")
     def viaje_editar(viaje_id):
         conn = get_db_connection()
+        deny = _deny_if_not_owner(conn, viaje_id)
+        if deny:
+            conn.close()
+            return deny
         _ensure_viajes_operativo_cols(conn)
 
         # Combos (mismos que control diario)
@@ -1881,6 +1964,8 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
 
     @app.route("/viajes/<int:viaje_id>/eliminar", methods=["POST"], endpoint="viajes_delete")
     def viajes_delete(viaje_id):
+        if (session.get("role") or "") == ROLE_CHOFER_AUTORIZADO:
+            return redirect(url_for("access_denied"))
         conn = get_db_connection()
         fecha = _delete_viaje(conn, viaje_id)
         conn.close()
@@ -2110,6 +2195,8 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
     # =========================================================
     @app.route("/vehiculos/basedatos", endpoint="vehiculos_bd_home")
     def vehiculos_bd_home():
+        if (session.get("role") or "") == ROLE_CHOFER_AUTORIZADO:
+            return redirect(url_for("access_denied"))
         return render_template("vehiculos_bd_home.html")
 
 

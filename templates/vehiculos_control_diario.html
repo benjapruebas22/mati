@@ -200,6 +200,14 @@
       </p>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end">
+      {% if is_autorizado %}
+      <div class="vd-nav-group nav-main">
+        <div class="vd-nav-title">CONTROL DIARIO</div>
+        <div class="vd-nav-row">
+          <a class="btn btn-mpd btn-main" href="{{ url_for('vehiculos_control_diario', fecha=fecha) }}">Control diario</a>
+        </div>
+      </div>
+      {% else %}
       <div class="vd-nav-group nav-main">
         <div class="vd-nav-title">REGISTROS DIARIOS</div>
         <div class="vd-nav-row">
@@ -215,6 +223,7 @@
           <a class="btn btn-mpd btn-subtle" href="{{ url_for('vehiculos_bd_home') }}">Base de datos</a>
         </div>
       </div>
+      {% endif %}
     </div>
   </header>
   {% set calc = namespace(open_patentes=[], fuera_patentes=[], inco=0, sin_estado=0) %}
@@ -283,6 +292,7 @@
 
   {# Combustible resumido se ve en el modulo principal de combustible #}
 
+  {% if not is_autorizado %}
   <div class="vd-box hide-mobile vd-actions-box" style="padding:10px 12px;">
     <div class="vd-actions-row" style="justify-content:space-between;gap:10px;">
       <h3 style="margin:0;font-size:14px;color:#1f2937;">Accesos rapidos</h3>
@@ -293,6 +303,16 @@
       </div>
     </div>
   </div>
+  {% endif %}
+
+  {% if is_autorizado %}
+  <div class="vd-box hide-mobile" style="padding:10px 12px;background:#fff7ed;border-color:#fdba74;">
+    <div style="font-size:12px;color:#9a3412;font-weight:700;">
+      Al iniciar un viaje, el usuario declara haber verificado el estado del vehiculo.
+      El viaje debe permanecer abierto mientras el vehiculo este en uso.
+    </div>
+  </div>
+  {% endif %}
 
   <div class="vd-quick hide-mobile">
     <button type="button" class="main" onclick="goBlock('form-carga-viaje')">+ Cargar viaje</button>
@@ -325,12 +345,18 @@
 
     <div>
       <label style="font-size:12px;color:#64748b">Chofer</label>
+      {% if is_autorizado %}
+      <input type="text" value="{{ session.full_name }}" disabled
+        style="width:100%;padding:10px;border-radius:10px;border:1px solid #e5e7eb;background:#f8fafc">
+      <input type="hidden" name="chofer_id" value="{{ user_chofer_id }}">
+      {% else %}
       <select name="chofer_id" required style="width:100%;padding:10px;border-radius:10px;border:1px solid #e5e7eb">
         <option value="">-- seleccionar --</option>
         {% for c in choferes %}
         <option value="{{ c.id }}">{{ c.agente }}</option>
         {% endfor %}
       </select>
+      {% endif %}
     </div>
 
     <div>
@@ -346,7 +372,7 @@
     </div>
 
     <div>
-      <label style="font-size:12px;color:#64748b">Agente del traslado (Personal)</label>
+      {% if is_autorizado %}<label style="font-size:12px;color:#64748b">Agente trasladado</label>{% else %}<label style="font-size:12px;color:#64748b">Agente del traslado (Personal)</label>{% endif %}
       <select name="personal_id" required style="width:100%;padding:10px;border-radius:10px;border:1px solid #e5e7eb">
         <option value="">-- seleccionar --</option>
         {% for p in personal %}
@@ -498,20 +524,24 @@
           <td style="padding:10px;border-bottom:1px solid #eef2f7;white-space:nowrap">
 
             <!-- IMPORTANTE: conservar fecha seleccionada -->
+            {% if not is_autorizado or (user_chofer_id and v.chofer_id == user_chofer_id) %}
             <a class="btn btn-mpd" style="padding:6px 10px;font-size:12px"
               href="{{ url_for('viaje_editar', viaje_id=v.id, fecha=fecha) }}">
               Editar
             </a>
+            {% endif %}
 
+            {% if not is_autorizado %}
             <form method="post"
               action="{{ url_for('viaje_eliminar', viaje_id=v.id, fecha=fecha) }}"
-              style="display:inline" onsubmit="return confirm('¿Eliminar viaje #{{ v.id }}?');">
+              style="display:inline" onsubmit="return confirm('?Eliminar viaje #{{ v.id }}?');">
               <button type="submit" class="btn btn-mpd" style="padding:6px 10px;font-size:12px;border-color:#fecaca">
                 Eliminar
               </button>
             </form>
+            {% endif %}
 
-          </td>
+</td>
         </tr>
         {% else %}
         <tr>
@@ -562,10 +592,14 @@
       </div>
 
       <div class="vd-card-actions">
+        {% if not is_autorizado or (user_chofer_id and v.chofer_id == user_chofer_id) %}
         <a class="btn btn-mpd" href="{{ url_for('viaje_editar', viaje_id=v.id, fecha=fecha) }}">Editar</a>
-        <form method="post" action="{{ url_for('viaje_eliminar', viaje_id=v.id, fecha=fecha) }}" style="display:inline" onsubmit="return confirm('¿Eliminar viaje #{{ v.id }}?');">
+        {% endif %}
+        {% if not is_autorizado %}
+        <form method="post" action="{{ url_for('viaje_eliminar', viaje_id=v.id, fecha=fecha) }}" style="display:inline" onsubmit="return confirm('?Eliminar viaje #{{ v.id }}?');">
           <button type="submit" class="btn btn-mpd" style="border-color:#fecaca">Eliminar</button>
         </form>
+        {% endif %}
       </div>
     </div>
     {% else %}
