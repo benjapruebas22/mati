@@ -70,11 +70,11 @@ def main():
             chofer = (row.get("Chofer") or "").strip()
             monto = to_float(row.get("Cantidad en Plata"))
             litros = to_float(row.get("Litros"))
-            precio_litro = to_float(row.get("Precio de la Nafta") or row.get("Precio por litro"))
+            precio_unit = to_float(row.get("Precio de la Nafta") or row.get("Precio por litro"))
             remito = (row.get("N° de Remito") or row.get("N de Remito") or row.get("Remito") or "").strip()
             km_actual = to_float(row.get("Kilometraje") or row.get("Kilometro actual") or "")
 
-            if not fecha or not patente or litros is None or precio_litro is None or monto is None:
+            if not fecha or not patente or litros is None or precio_unit is None or monto is None:
                 skipped += 1
                 continue
 
@@ -84,11 +84,12 @@ def main():
                 if chofer_id is None:
                     missing_chofer.add(chofer)
 
+            # Duplicado en tabla combustible (la que usa la vista)
             dup = con.execute(
                 """
-                SELECT id FROM combustible_cargas
+                SELECT id FROM combustible
                 WHERE fecha=? AND patente=? AND COALESCE(km_actual,0)=COALESCE(?,0)
-                  AND COALESCE(remito,'')=COALESCE(?, '')
+                  AND COALESCE(nro_remito,'')=COALESCE(?, '')
                 """,
                 (fecha, patente, km_actual or 0, remito),
             ).fetchone()
@@ -96,13 +97,31 @@ def main():
                 skipped += 1
                 continue
 
+            tipo = "nafta"
+            importe_calc = (litros or 0) * (precio_unit or 0)
+
             cur.execute(
                 """
-                INSERT INTO combustible_cargas
-                (fecha, patente, chofer_id, remito, km_actual, litros, precio_litro, precio_total, notas)
-                VALUES (?,?,?,?,?,?,?,?,?)
+                INSERT INTO combustible
+                (fecha, patente, chofer_id, tipo, km_actual, litros, precio_unit,
+                 importe_calc, importe_real, observaciones, nro_remito, importe_calculado, remito_archivo)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
                 """,
-                (fecha, patente, chofer_id, remito, km_actual or 0, litros, precio_litro, monto, ""),
+                (
+                    fecha,
+                    patente,
+                    chofer_id,
+                    tipo,
+                    int(km_actual or 0),
+                    litros,
+                    precio_unit,
+                    importe_calc,
+                    monto,
+                    "",
+                    remito,
+                    importe_calc,
+                    "",
+                ),
             )
             inserted += 1
 
