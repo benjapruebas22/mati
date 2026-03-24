@@ -102,10 +102,23 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
         if role != ROLE_CHOFER_AUTORIZADO:
             return None
         user_cid = _current_user_chofer_id(conn)
-        if not user_cid:
+        user_name = (session.get("full_name") or session.get("username") or "").strip()
+        if not user_cid and not user_name:
             return redirect(url_for("access_denied"))
-        row = conn.execute("SELECT chofer_id FROM viajes WHERE id = ?", (viaje_id,)).fetchone()
-        if not row or row["chofer_id"] != user_cid:
+        row = conn.execute(
+            """
+            SELECT vc.chofer_id, c.agente AS chofer_nombre
+            FROM viajes vc
+            LEFT JOIN agentes_intendencia c ON c.id = vc.chofer_id
+            WHERE vc.id = ?
+            """,
+            (viaje_id,),
+        ).fetchone()
+        if not row:
+            return redirect(url_for("access_denied"))
+        ok_id = user_cid and row["chofer_id"] == user_cid
+        ok_name = user_name and _normalize_text(row["chofer_nombre"] or "") == _normalize_text(user_name)
+        if not (ok_id or ok_name):
             return redirect(url_for("access_denied"))
         return None
 
@@ -482,6 +495,7 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
         """).fetchall()
 
         user_chofer_id = None
+        user_name = (session.get("full_name") or session.get("username") or "").strip()
         if is_autorizado:
             user_chofer_id = _current_user_chofer_id(conn)
             if user_chofer_id:
@@ -638,9 +652,16 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
             LEFT JOIN destinos d ON d.id = vc.destino_id
         """
         params = []
-        if is_autorizado and user_chofer_id:
-            viajes_sql += " WHERE vc.chofer_id = ?"
-            params.append(user_chofer_id)
+        if is_autorizado:
+            if user_chofer_id and user_name:
+                viajes_sql += " WHERE (vc.chofer_id = ? OR lower(c.agente) = lower(?))"
+                params.extend([user_chofer_id, user_name])
+            elif user_chofer_id:
+                viajes_sql += " WHERE vc.chofer_id = ?"
+                params.append(user_chofer_id)
+            elif user_name:
+                viajes_sql += " WHERE lower(c.agente) = lower(?)"
+                params.append(user_name)
         viajes_sql += " ORDER BY date(vc.fecha) DESC, vc.id DESC"
         viajes = conn.execute(viajes_sql, params).fetchall()
 
@@ -651,9 +672,16 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
             FROM viajes vc
         """
         kpi_params = []
-        if is_autorizado and user_chofer_id:
-            kpi_sql += " WHERE vc.chofer_id = ?"
-            kpi_params.append(user_chofer_id)
+        if is_autorizado:
+            if user_chofer_id and user_name:
+                kpi_sql += " WHERE (vc.chofer_id = ? OR lower(c.agente) = lower(?))"
+                kpi_params.extend([user_chofer_id, user_name])
+            elif user_chofer_id:
+                kpi_sql += " WHERE vc.chofer_id = ?"
+                kpi_params.append(user_chofer_id)
+            elif user_name:
+                kpi_sql += " WHERE lower(c.agente) = lower(?)"
+                kpi_params.append(user_name)
         kpi_control = conn.execute(kpi_sql, kpi_params).fetchone()
         kpi_comb = conn.execute(
             """
