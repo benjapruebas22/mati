@@ -70,12 +70,21 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
             full_name = username
         if not full_name:
             return None
+
+        # match exact (case-insensitive)
         row = conn.execute(
-            "SELECT id FROM agentes_intendencia WHERE lower(agente) = lower(?)",
+            "SELECT id, agente FROM agentes_intendencia WHERE lower(agente) = lower(?)",
             (full_name,),
         ).fetchone()
         if row:
             return row["id"]
+
+        # match normalized (sin tildes)
+        target = _normalize_text(full_name)
+        for r in conn.execute("SELECT id, agente FROM agentes_intendencia"):
+            if _normalize_text(r["agente"]) == target:
+                return r["id"]
+
         # crear chofer si no existe
         conn.execute(
             "INSERT INTO agentes_intendencia(agente, rubro, activo) VALUES (?,?,1)",
@@ -507,7 +516,12 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
 
             patente = (request.form.get("patente") or "").strip()
             chofer_id = request.form.get("chofer_id") or None
-            if is_autorizado and user_chofer_id:
+            if is_autorizado:
+                if not user_chofer_id:
+                    user_chofer_id = _current_user_chofer_id(conn)
+                if not user_chofer_id:
+                    conn.close()
+                    return redirect(url_for("access_denied"))
                 chofer_id = str(user_chofer_id)
             destino_id = request.form.get("destino_id") or None
             personal_id = request.form.get("personal_id") or None
