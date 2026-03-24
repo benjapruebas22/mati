@@ -65,6 +65,9 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
 
     def _current_user_chofer_id(conn):
         full_name = (session.get("full_name") or "").strip()
+        username = (session.get("username") or "").strip()
+        if not full_name and username:
+            full_name = username
         if not full_name:
             return None
         row = conn.execute(
