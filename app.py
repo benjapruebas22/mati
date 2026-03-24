@@ -59,6 +59,12 @@ ROLE_DASH_VEHICULOS = "dashboard_vehiculos"
 ROLE_EJECUTIVO = "ejecutivo"
 ROLE_CHOFER_INTENDENCIA = "chofer_intendencia"
 ROLE_CHOFER_AUTORIZADO = "chofer_autorizado"
+ROLE_OPERATIVO_CLAVE = "operativo_clave"
+ROLE_CONTROL_SEDES = "control_sedes"
+ROLE_INT_VEHICULOS = "int_vehiculos"
+ROLE_INT_OBRAS = "int_obras"
+ROLE_INT_OBRAS_RELEV = "int_obras_relev"
+ROLE_INT_OBRAS_SEDES = "int_obras_sedes"
 
 
 def ensure_auth_tables(con):
@@ -90,15 +96,14 @@ def ensure_auth_tables(con):
     default_users = [
         ("mcalderari", "Matias Calderari", ROLE_FULL),
         ("ibaroni", "Ignacio Baroni", ROLE_FULL),
-        ("fsavio", "Francisco Savio", ROLE_FULL),
-        ("mvea", "Mauro Vea Murguia", ROLE_DASH_VEHICULOS),
-        ("eperez", "Emiliano Perez de la Puente", ROLE_FULL),
-        ("cvidaurre", "Carlos Vidaurre", ROLE_DASH_OBRAS),
-        ("mduran", "Marcos Duran", ROLE_DASH_OBRAS),
-        ("nguerrero", "Nestor Guerrero", ROLE_DASH_OBRAS),
-        ("mflores", "Manuel Flores", ROLE_DASH_OBRAS),
+        ("fsavio", "Francisco Savio", ROLE_OPERATIVO_CLAVE),
+        ("mvea", "Mauro Vea Murguia", ROLE_INT_VEHICULOS),
+        ("eperez", "Emiliano Perez de la Puente", ROLE_OPERATIVO_CLAVE),
+        ("cvidaurre", "Carlos Vidaurre", ROLE_INT_OBRAS),
+        ("mduran", "Marcos Duran", ROLE_INT_OBRAS_RELEV),
+        ("nguerrero", "Nestor Guerrero", ROLE_INT_OBRAS),
+        ("mflores", "Manuel Flores", ROLE_INT_OBRAS_SEDES),
         ("mabatedaga", "Maximiliano Abatedaga", ROLE_FULL),
-        ("admin", "Administrator", ROLE_FULL),
         ("mluna", "Matias Luna", ROLE_EJECUTIVO),
         ("gburgos", "G. Burgos", ROLE_EJECUTIVO),
         # Choferes autorizados (otras areas) - acceso limitado a control diario
@@ -106,7 +111,6 @@ def ensure_auth_tables(con):
         ("mmontiel", "Mateo Montiel", ROLE_CHOFER_AUTORIZADO),
         ("mzambrano", "Mauricio Zambrano", ROLE_CHOFER_AUTORIZADO),
         ("laviles", "Leonardo Aviles", ROLE_CHOFER_AUTORIZADO),
-        ("lzurueta", "Lucio Zurueta", ROLE_CHOFER_AUTORIZADO),
         ("bburgos", "Benjamin Burgos", ROLE_CHOFER_AUTORIZADO),
         ("jdaud", "Julio Daud", ROLE_CHOFER_AUTORIZADO),
         ("agonzalez", "Agustin Gonzalez", ROLE_CHOFER_AUTORIZADO),
@@ -114,7 +118,6 @@ def ensure_auth_tables(con):
         ("fgiuletti", "Giuletti", ROLE_CHOFER_AUTORIZADO),
         ("dzamar", "Diego Zamar", ROLE_CHOFER_AUTORIZADO),
         ("jcorbacho", "Jorge Corbacho", ROLE_CHOFER_AUTORIZADO),
-        ("msorbllo", "Marcos Sorbello", ROLE_CHOFER_AUTORIZADO),
         ("ndaje", "Nicolas Daje", ROLE_CHOFER_AUTORIZADO),
     ]
     has_legacy_password = "password" in cols
@@ -193,14 +196,20 @@ def module_from_path(path: str) -> str:
 def role_allows(role: str, module: str) -> bool:
     perms = {
         ROLE_FULL: {"dashboard", "vehiculos", "obras", "sst", "agentes", "sedes", "eventos", "other", "relevamientos"},
-        ROLE_SEDE_VEHICULOS: {"sedes", "vehiculos", "eventos", "relevamientos"},
-        ROLE_SST_VEHICULOS: {"sst", "vehiculos", "eventos", "relevamientos"},
-        ROLE_OBRAS_VEHICULOS: {"obras", "vehiculos", "eventos", "relevamientos"},
-        ROLE_DASH_OBRAS: {"dashboard", "obras", "eventos", "relevamientos"},
-        ROLE_DASH_VEHICULOS: {"dashboard", "vehiculos", "eventos", "relevamientos"},
+        ROLE_SEDE_VEHICULOS: {"sedes", "vehiculos", "eventos"},
+        ROLE_SST_VEHICULOS: {"sst", "vehiculos", "eventos"},
+        ROLE_OBRAS_VEHICULOS: {"obras", "vehiculos", "eventos"},
+        ROLE_DASH_OBRAS: {"dashboard", "obras", "eventos"},
+        ROLE_DASH_VEHICULOS: {"dashboard", "vehiculos", "eventos"},
         ROLE_EJECUTIVO: {"dashboard", "obras", "vehiculos", "sedes", "sst", "other", "eventos", "relevamientos"},
-        ROLE_CHOFER_INTENDENCIA: {"vehiculos", "eventos", "relevamientos", "sedes"},
-        ROLE_CHOFER_AUTORIZADO: {"vehiculos", "eventos", "relevamientos", "sedes"},
+        ROLE_CHOFER_INTENDENCIA: {"vehiculos", "eventos"},
+        ROLE_CHOFER_AUTORIZADO: {"vehiculos", "eventos"},
+        ROLE_OPERATIVO_CLAVE: {"sedes", "vehiculos", "eventos"},
+        ROLE_CONTROL_SEDES: {"sedes", "eventos"},
+        ROLE_INT_VEHICULOS: {"vehiculos", "eventos"},
+        ROLE_INT_OBRAS: {"obras", "eventos"},
+        ROLE_INT_OBRAS_RELEV: {"obras", "relevamientos", "eventos", "vehiculos"},
+        ROLE_INT_OBRAS_SEDES: {"obras", "sedes", "eventos", "vehiculos"},
     }
     return module in perms.get(role or "", set())
 
@@ -212,13 +221,25 @@ def default_redirect_for_role(role: str):
         return url_for("dashboard")
     if role == ROLE_DASH_VEHICULOS:
         return url_for("dashboard")
+    if role == ROLE_OPERATIVO_CLAVE:
+        return url_for("sedes_home")
+    if role == ROLE_CONTROL_SEDES:
+        return url_for("sedes_home")
     if role == ROLE_SEDE_VEHICULOS:
         return url_for("sede_ficha", codigo="S01", home=1)
     if role == ROLE_SST_VEHICULOS:
         return url_for("sst_general")
     if role == ROLE_OBRAS_VEHICULOS:
         return url_for("obras_home")
+    if role == ROLE_INT_OBRAS:
+        return url_for("obras_home")
+    if role == ROLE_INT_OBRAS_RELEV:
+        return url_for("obras_home")
+    if role == ROLE_INT_OBRAS_SEDES:
+        return url_for("obras_home")
     if role == ROLE_CHOFER_INTENDENCIA or role == ROLE_CHOFER_AUTORIZADO:
+        return url_for("vehiculos_control_diario")
+    if role == ROLE_INT_VEHICULOS:
         return url_for("vehiculos_control_diario")
     return url_for("dashboard")
 
@@ -1494,28 +1515,29 @@ def enforce_auth():
 
     role = session.get("role")
     module = module_from_path(request.path)
-    username = (session.get("username") or "").strip().lower()
-
-    # Reglas por usuario
-    VEHICULOS_DENY = {"cvidaurre", "nguerrero"}
-    OBRAS_ALLOW = {"mduran", "nguerrero", "cvidaurre", "mflores", "eperez"}
     if not role_allows(role, module):
         if role == ROLE_DASH_OBRAS:
             return redirect(url_for("dashboard"))
         if role == ROLE_DASH_VEHICULOS:
             return redirect(url_for("dashboard"))
+        if role == ROLE_OPERATIVO_CLAVE:
+            return redirect(url_for("sedes_home"))
+        if role == ROLE_CONTROL_SEDES:
+            return redirect(url_for("sedes_home"))
         if role == ROLE_SEDE_VEHICULOS:
             return redirect(url_for("sede_ficha", codigo="S01", home=1))
         if role == ROLE_SST_VEHICULOS:
             return redirect(url_for("sst_general"))
         if role == ROLE_OBRAS_VEHICULOS:
             return redirect(url_for("obras_home"))
-        return redirect(url_for("access_denied"))
-
-    # Restricciones adicionales por usuario
-    if module == "vehiculos" and username in VEHICULOS_DENY:
-        return redirect(url_for("access_denied"))
-    if module == "obras" and username not in OBRAS_ALLOW:
+        if role == ROLE_INT_OBRAS:
+            return redirect(url_for("obras_home"))
+        if role == ROLE_INT_OBRAS_RELEV:
+            return redirect(url_for("obras_home"))
+        if role == ROLE_INT_OBRAS_SEDES:
+            return redirect(url_for("obras_home"))
+        if role == ROLE_INT_VEHICULOS:
+            return redirect(url_for("vehiculos_control_diario"))
         return redirect(url_for("access_denied"))
 
     return None
