@@ -175,6 +175,8 @@ def module_from_path(path: str) -> str:
         return "vehiculos"
     if path.startswith("/viajes"):
         return "vehiculos"
+    if path.startswith("/auditoria") or path.startswith("/relevamientos"):
+        return "relevamientos"
     if path.startswith("/obras"):
         return "obras"
     if path.startswith("/sst"):
@@ -190,15 +192,15 @@ def module_from_path(path: str) -> str:
 
 def role_allows(role: str, module: str) -> bool:
     perms = {
-        ROLE_FULL: {"dashboard", "vehiculos", "obras", "sst", "agentes", "sedes", "eventos", "other"},
-        ROLE_SEDE_VEHICULOS: {"sedes", "vehiculos", "eventos"},
-        ROLE_SST_VEHICULOS: {"sst", "vehiculos"},
-        ROLE_OBRAS_VEHICULOS: {"obras", "vehiculos"},
-        ROLE_DASH_OBRAS: {"dashboard", "obras"},
-        ROLE_DASH_VEHICULOS: {"dashboard", "vehiculos"},
-        ROLE_EJECUTIVO: {"dashboard", "obras", "vehiculos", "sedes", "sst", "other"},
-        ROLE_CHOFER_INTENDENCIA: {"vehiculos"},
-        ROLE_CHOFER_AUTORIZADO: {"vehiculos"},
+        ROLE_FULL: {"dashboard", "vehiculos", "obras", "sst", "agentes", "sedes", "eventos", "other", "relevamientos"},
+        ROLE_SEDE_VEHICULOS: {"sedes", "vehiculos", "eventos", "relevamientos"},
+        ROLE_SST_VEHICULOS: {"sst", "vehiculos", "eventos", "relevamientos"},
+        ROLE_OBRAS_VEHICULOS: {"obras", "vehiculos", "eventos", "relevamientos"},
+        ROLE_DASH_OBRAS: {"dashboard", "obras", "eventos", "relevamientos"},
+        ROLE_DASH_VEHICULOS: {"dashboard", "vehiculos", "eventos", "relevamientos"},
+        ROLE_EJECUTIVO: {"dashboard", "obras", "vehiculos", "sedes", "sst", "other", "eventos", "relevamientos"},
+        ROLE_CHOFER_INTENDENCIA: {"vehiculos", "eventos", "relevamientos", "sedes"},
+        ROLE_CHOFER_AUTORIZADO: {"vehiculos", "eventos", "relevamientos", "sedes"},
     }
     return module in perms.get(role or "", set())
 
@@ -1492,6 +1494,11 @@ def enforce_auth():
 
     role = session.get("role")
     module = module_from_path(request.path)
+    username = (session.get("username") or "").strip().lower()
+
+    # Reglas por usuario
+    VEHICULOS_DENY = {"cvidaurre", "nguerrero"}
+    OBRAS_ALLOW = {"mduran", "nguerrero", "cvidaurre", "mflores", "eperez"}
     if not role_allows(role, module):
         if role == ROLE_DASH_OBRAS:
             return redirect(url_for("dashboard"))
@@ -1503,6 +1510,12 @@ def enforce_auth():
             return redirect(url_for("sst_general"))
         if role == ROLE_OBRAS_VEHICULOS:
             return redirect(url_for("obras_home"))
+        return redirect(url_for("access_denied"))
+
+    # Restricciones adicionales por usuario
+    if module == "vehiculos" and username in VEHICULOS_DENY:
+        return redirect(url_for("access_denied"))
+    if module == "obras" and username not in OBRAS_ALLOW:
         return redirect(url_for("access_denied"))
 
     return None
