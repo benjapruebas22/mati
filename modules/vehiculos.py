@@ -670,6 +670,7 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
                 COUNT(*) AS tramos,
                 ROUND(COALESCE(SUM(vc.recorrido_km), 0), 2) AS km_total
             FROM viajes vc
+            LEFT JOIN agentes_intendencia c ON c.id = vc.chofer_id
         """
         kpi_params = []
         if is_autorizado:
