@@ -173,6 +173,8 @@ def module_from_path(path: str) -> str:
         return "dashboard"
     if path.startswith("/vehiculos"):
         return "vehiculos"
+    if path.startswith("/viajes"):
+        return "vehiculos"
     if path.startswith("/obras"):
         return "obras"
     if path.startswith("/sst"):
