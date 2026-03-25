@@ -174,6 +174,8 @@ def ensure_auth_tables(con):
 def module_from_path(path: str) -> str:
     if path == "/" or path.startswith("/dashboard"):
         return "dashboard"
+    if path.startswith("/api/dashboard"):
+        return "dashboard"
     if path.startswith("/vehiculos"):
         return "vehiculos"
     if path.startswith("/viajes"):
