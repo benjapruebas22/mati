@@ -205,7 +205,7 @@ def role_allows(role: str, module: str) -> bool:
         ROLE_EJECUTIVO: {"dashboard", "obras", "vehiculos", "sedes", "sst", "other", "eventos", "relevamientos"},
         ROLE_CHOFER_INTENDENCIA: {"vehiculos", "eventos"},
         ROLE_CHOFER_AUTORIZADO: {"vehiculos", "eventos"},
-        ROLE_OPERATIVO_CLAVE: {"sedes", "vehiculos", "eventos"},
+        ROLE_OPERATIVO_CLAVE: {"sedes", "vehiculos", "eventos", "dashboard"},
         ROLE_CONTROL_SEDES: {"sedes", "eventos"},
         ROLE_INT_VEHICULOS: {"vehiculos", "eventos", "dashboard"},
         ROLE_INT_OBRAS: {"obras", "eventos"},
