@@ -797,30 +797,9 @@
     <div class="nvd-footnote">Resueltos e informados se muestran solo en Historial.</div>
   </article>
 
-  <article id="alertasCard" class="control-card card-alertas no-alertas">
-    <div class="card-head">
-      <h2>3. Alertas criticas</h2>
-    </div>
-    <ul id="alertasList" class="alert-list">
-      <li>Sin alertas criticas hoy.</li>
-    </ul>
-  </article>
-
-  <article class="control-card card-vehiculos">
-    <div class="card-head">
-      <h2>4. Estado de vehiculos</h2>
-      <a class="btn-soft" href="{{ url_for('vehiculos_control_diario') }}">Ir a modulo vehiculos</a>
-    </div>
-    <div id="vehiculosWrap" class="veh-grid">
-      <div class="veh-card"><div class="veh-code">-</div><div class="veh-pat">-</div><div class="veh-est">Sin datos</div></div>
-    </div>
-  </article>
-
-  
-
   <article class="control-card card-historial">
     <div class="card-head">
-      <h2>6. Historial operativo</h2>
+      <h2>4. Historial operativo</h2>
       <div class="card-head-actions">
         <button id="btnHistorialTop" type="button" class="btn-soft">Historial</button>
       </div>
@@ -861,6 +840,25 @@
           </tbody>
         </table>
       </div>
+    </div>
+  </article>
+
+  <article id="alertasCard" class="control-card card-alertas no-alertas">
+    <div class="card-head">
+      <h2>5. Alertas criticas</h2>
+    </div>
+    <ul id="alertasList" class="alert-list">
+      <li>Sin alertas criticas hoy.</li>
+    </ul>
+  </article>
+
+  <article class="control-card card-vehiculos">
+    <div class="card-head">
+      <h2>6. Estado de vehiculos</h2>
+      <a class="btn-soft" href="{{ url_for('vehiculos_control_diario') }}">Ir a modulo vehiculos</a>
+    </div>
+    <div id="vehiculosWrap" class="veh-grid">
+      <div class="veh-card"><div class="veh-code">-</div><div class="veh-pat">-</div><div class="veh-est">Sin datos</div></div>
     </div>
   </article>
 </section>
