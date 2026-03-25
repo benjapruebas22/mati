@@ -222,7 +222,7 @@ def default_redirect_for_role(role: str):
     if role == ROLE_DASH_VEHICULOS:
         return url_for("dashboard")
     if role == ROLE_OPERATIVO_CLAVE:
-        return url_for("sedes_resumen_mpd")
+        return url_for("dashboard_exec")
     if role == ROLE_CONTROL_SEDES:
         return url_for("sedes_resumen_mpd")
     if role == ROLE_SEDE_VEHICULOS:
@@ -1521,7 +1521,7 @@ def enforce_auth():
         if role == ROLE_DASH_VEHICULOS:
             return redirect(url_for("dashboard"))
         if role == ROLE_OPERATIVO_CLAVE:
-            return redirect(url_for("sedes_resumen_mpd"))
+            return redirect(url_for("dashboard_exec"))
         if role == ROLE_CONTROL_SEDES:
             return redirect(url_for("sedes_resumen_mpd"))
         if role == ROLE_SEDE_VEHICULOS:
