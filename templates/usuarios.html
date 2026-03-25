@@ -78,7 +78,7 @@
                                 {% endif %}
                             </td>
                             <td class="text-end pe-4">
-                                <button class="btn btn-sm btn-edit-user rounded-pill shadow-sm" onclick="openEditModal('{{ u.id }}', '{{ u.username }}', '{{ u.full_name }}')">
+                                <button class="btn btn-sm btn-edit-user rounded-pill shadow-sm" onclick="openEditModal('{{ u.id }}', '{{ u.username }}', '{{ u.full_name }}', '{{ u_role }}')">
                                     <i class="fas fa-edit me-1"></i> Modificar
                                 </button>
                             </td>
@@ -108,15 +108,24 @@
                     </div>
                     
                     <div class="form-group mb-4">
-                        <label for="new_password" class="label-custom">NUEVA CONTRASEÑA</label>
+                        <label for="new_role" class="label-custom">ROL / PERMISOS</label>
+                        <select class="form-select modern-input-group" id="new_role" name="new_role">
+                            <option value="admin">Administrador (admin)</option>
+                            <option value="full">Administrador (full)</option>
+                            <option value="operativo">Operativo</option>
+                            <option value="operativo_clave">Operativo Clave</option>
+                            <option value="chofer_autorizado">Chofer Autorizado</option>
+                            <option value="invitado">Invitado</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-4">
+                        <label for="new_password" class="label-custom">NUEVA CONTRASEÑA (OPCIONAL)</label>
                         <div class="input-group modern-input-group">
                             <span class="input-group-text bg-white border-end-0">
                                 <i class="fas fa-shield-alt text-muted"></i>
                             </span>
-                            <input type="text" class="form-control border-start-0" id="new_password" name="new_password" required placeholder="Escribe la contraseña aquí...">
-                        </div>
-                        <div class="form-text text-muted small mt-2">
-                             Se actualizará tanto el hash criptográfico como la clave de acceso directo.
+                            <input type="text" class="form-control border-start-0" id="new_password" name="new_password" placeholder="Dejar vacío para no cambiar...">
                         </div>
                     </div>
                     
@@ -195,13 +204,19 @@ document.getElementById('userFilter').addEventListener('keyup', function() {
     });
 });
 
-function openEditModal(id, username, full_name) {
+function openEditModal(id, username, full_name, current_role) {
     const form = document.getElementById('editUserForm');
     form.action = `/admin/usuarios/${id}/edit`;
     
     document.getElementById('displayUsername').textContent = username;
     document.getElementById('displayFullName').textContent = full_name || 'Sin nombre completo';
     document.getElementById('new_password').value = '';
+    
+    // Set current role in select
+    const roleSelect = document.getElementById('new_role');
+    if (current_role) {
+        roleSelect.value = current_role;
+    }
     
     const modalView = new bootstrap.Modal(document.getElementById('editUserModal'));
     modalView.show();

@@ -196,6 +196,7 @@ def module_from_path(path: str) -> str:
 def role_allows(role: str, module: str) -> bool:
     perms = {
         ROLE_FULL: {"dashboard", "vehiculos", "obras", "sst", "agentes", "sedes", "eventos", "other", "relevamientos"},
+        "admin": {"dashboard", "vehiculos", "obras", "sst", "agentes", "sedes", "eventos", "other", "relevamientos"},
         ROLE_SEDE_VEHICULOS: {"sedes", "vehiculos", "eventos"},
         ROLE_SST_VEHICULOS: {"sst", "vehiculos", "eventos"},
         ROLE_OBRAS_VEHICULOS: {"obras", "vehiculos", "eventos"},
@@ -5969,8 +5970,8 @@ def maestranza_home():
 
 @app.route("/admin/usuarios")
 def admin_usuarios():
-    # Solo accesible para el rol FULL (admin)
-    if session.get("role") != ROLE_FULL:
+    # Solo accesible para el rol FULL (full) o 'admin'
+    if session.get("role") not in [ROLE_FULL, "admin"]:
         return redirect(url_for("access_denied"))
     
     con = get_db()
@@ -5992,25 +5993,29 @@ def admin_usuarios():
 
 @app.route("/admin/usuarios/<int:uid>/edit", methods=["POST"])
 def admin_usuarios_edit(uid):
-    if session.get("role") != ROLE_FULL:
+    if session.get("role") not in [ROLE_FULL, "admin"]:
         return redirect(url_for("access_denied"))
     
     new_password = request.form.get("new_password", "").strip()
+    new_role = request.form.get("new_role", "").strip()
     must_change = 1 if request.form.get("force_change") else 0
     
-    if not new_password:
-        flash("La contraseña no puede estar vacía.", "warning")
-        return redirect(url_for("admin_usuarios"))
-    
     con = get_db()
-    # Actualizamos tanto el hash como el password legacy por consistencia con el sistema actual
-    con.execute("""
-        UPDATE usuarios 
-        SET password_hash = ?, 
-            password = ?, 
-            must_change = ? 
-        WHERE id = ?
-    """, (generate_password_hash(new_password), new_password, must_change, uid))
+    
+    # Actualizamos el rol si se proporcionó
+    if new_role:
+        con.execute("UPDATE usuarios SET role = ?, rol = ? WHERE id = ?", (new_role, new_role, uid))
+    
+    # Actualizamos la contraseña solo si se proporcionó una nueva
+    if new_password:
+        con.execute("""
+            UPDATE usuarios 
+            SET password_hash = ?, 
+                password = ?, 
+                must_change = ? 
+            WHERE id = ?
+        """, (generate_password_hash(new_password), new_password, must_change, uid))
+    
     con.commit()
     con.close()
     
