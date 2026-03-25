@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Usuarios - MPD Intendencia{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header Section -->
+    <div class="row align-items-center mb-4">
+        <div class="col">
+            <h1 class="h3 fw-bold text-dark mb-1">
+                <i class="fas fa-users-cog text-primary me-2"></i>Gestión de Usuarios
+            </h1>
+            <p class="text-muted small">Panel administrativo para el control de accesos y credenciales del sistema.</p>
+        </div>
+        <div class="col-auto">
+            <div class="bg-white p-2 rounded-3 shadow-sm border small">
+                <span class="text-muted"><i class="fas fa-info-circle me-1"></i> Total: <b>{{ users|length }}</b> usuarios registrados</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Table Card -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+        <div class="card-header bg-white py-3 border-bottom border-light">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h6 class="mb-0 fw-bold">Listado Maestro de Usuarios</h6>
+                </div>
+                <div class="col-auto">
+                    <div class="input-group input-group-sm" style="max-width: 250px;">
+                        <span class="input-group-text bg-light border-end-0"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" class="form-control bg-light border-start-0" id="userFilter" placeholder="Buscar usuario...">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="usersTable">
+                    <thead class="bg-light-soft">
+                        <tr>
+                            <th class="ps-4 py-3 text-muted small text-uppercase fw-bold" style="width: 25%;">Identidad / Usuario</th>
+                            <th class="py-3 text-muted small text-uppercase fw-bold" style="width: 20%;">Nombre Completo</th>
+                            <th class="py-3 text-muted small text-uppercase fw-bold" style="width: 15%;">Rol Asignado</th>
+                            <th class="py-3 text-muted small text-uppercase fw-bold" style="width: 15%;">Acceso Directo</th>
+                            <th class="py-3 text-muted small text-uppercase fw-bold" style="width: 10%;">Estado</th>
+                            <th class="py-3 text-end pe-4 text-muted small text-uppercase fw-bold" style="width: 15%;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                        {% set u_role = u.role|string if u.role is not none else '' %}
+                        <tr class="user-row">
+                            <td class="ps-4">
+                                <div class="fw-bold text-dark fs-6">{{ u.username }}</div>
+                                <div class="text-muted extra-small">Ref ID: #{{ u.id }}</div>
+                            </td>
+                            <td>
+                                <span class="text-dark">{{ u.full_name or '---' }}</span>
+                            </td>
+                            <td>
+                                <span class="badge rounded-pill shadow-none fw-600 {% if u_role == 'full' %}role-admin{% elif 'operativo' in u_role %}role-ops{% else %}role-default{% endif %}">
+                                    <i class="fas {% if u_role == 'full' %}fa-user-shield{% elif 'operativo' in u_role %}fa-user-cog{% else %}fa-user{% endif %} me-1"></i>
+                                    {{ u.role or 'Sin rol' }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="password-cell px-2 py-1 rounded bg-light d-inline-block border border-light">
+                                    <i class="fas fa-key text-muted extra-small me-1"></i>
+                                    <code class="text-primary fw-bold" style="font-size: 0.85rem;">{{ u.password or '********' }}</code>
+                                </div>
+                            </td>
+                            <td>
+                                {% if u.activo == 1 or u.activo is none %}
+                                <span class="status-indicator status-active">Activo</span>
+                                {% else %}
+                                <span class="status-indicator status-inactive">Inactivo</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-4">
+                                <button class="btn btn-sm btn-edit-user rounded-pill shadow-sm" onclick="openEditModal('{{ u.id }}', '{{ u.username }}', '{{ u.full_name }}')">
+                                    <i class="fas fa-edit me-1"></i> Modificar
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Password Edit Modal -->
+<div class="modal fade" id="editUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <form id="editUserForm" method="POST">
+                <div class="modal-header border-0 pb-0 ps-4 pt-4">
+                    <h5 class="modal-title fw-800 text-dark"><i class="fas fa-lock text-primary me-2"></i>Actualizar Credenciales</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- User info header inside modal -->
+                    <div class="user-info-box p-3 rounded-4 mb-4 border shadow-sm">
+                        <div class="fw-800 text-dark fs-5" id="displayUsername"></div>
+                        <div class="text-muted small" id="displayFullName"></div>
+                    </div>
+                    
+                    <div class="form-group mb-4">
+                        <label for="new_password" class="label-custom">NUEVA CONTRASEÑA</label>
+                        <div class="input-group modern-input-group">
+                            <span class="input-group-text bg-white border-end-0">
+                                <i class="fas fa-shield-alt text-muted"></i>
+                            </span>
+                            <input type="text" class="form-control border-start-0" id="new_password" name="new_password" required placeholder="Escribe la contraseña aquí...">
+                        </div>
+                        <div class="form-text text-muted small mt-2">
+                             Se actualizará tanto el hash criptográfico como la clave de acceso directo.
+                        </div>
+                    </div>
+                    
+                    <div class="p-3 rounded-4 bg-light border border-light">
+                        <div class="form-check form-switch d-flex align-items-center gap-2">
+                            <input class="form-check-input" type="checkbox" id="force_change" name="force_change" checked>
+                            <label class="form-check-label small fw-600 text-dark mb-0" for="force_change">Exigir cambio de clave al ingresar</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4 fw-600 text-muted" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 fw-600 shadow">Confirmar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    
+    :root {
+        --primary-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    }
+
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+
+    .extra-small { font-size: 0.725rem; }
+    .fw-600 { font-weight: 600; }
+    .fw-800 { font-weight: 800; }
+    
+    .bg-light-soft { background-color: #f8fafc; }
+    .bg-primary-soft { background-color: rgba(79, 70, 229, 0.1); }
+    
+    .card { border: 1px solid #f1f5f9; }
+    .table thead th { border-top: none; letter-spacing: 0.025em; font-size: 0.75rem; }
+    .user-row { transition: all 0.2s ease; }
+    .user-row:hover { background-color: #f1f5f9 !important; }
+
+    /* Badge Styles */
+    .badge { padding: 0.5em 0.85em; font-size: 0.75rem; letter-spacing: 0.01em; }
+    .role-admin { background-color: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+    .role-ops { background-color: rgba(14, 165, 233, 0.1); color: #0ea5e9; border: 1px solid rgba(14, 165, 233, 0.2); }
+    .role-default { background-color: rgba(100, 116, 139, 0.1); color: #64748b; border: 1px solid rgba(100, 116, 139, 0.2); }
+
+    /* Status Indicators */
+    .status-indicator { font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.6rem; border-radius: 6px; position: relative; padding-left: 1.25rem; }
+    .status-indicator::before { content: ""; position: absolute; left: 0.45rem; top: 50%; transform: translateY(-50%); width: 8px; height: 8px; border-radius: 50%; }
+    .status-active { color: #10b981; }
+    .status-active::before { background-color: #10b981; box-shadow: 0 0 8px #10b981; }
+    .status-inactive { color: #f43f5e; }
+    .status-inactive::before { background-color: #f43f5e; }
+
+    /* Custom Buttons */
+    .btn-edit-user { color: #4f46e5; background: white; border: 1px solid #e2e8f0; font-weight: 600; padding: 0.4rem 1rem; }
+    .btn-edit-user:hover { background: #4f46e5; color: white; border-color: #4f46e5; }
+    
+    /* Modal Styles */
+    .label-custom { display: block; font-size: 0.7rem; font-weight: 800; color: #64748b; letter-spacing: 0.05em; margin-bottom: 0.6rem; }
+    .modern-input-group .form-control { border-radius: 0 0.75rem 0.75rem 0; padding: 0.75rem 1rem; border-color: #e2e8f0; font-weight: 500; }
+    .modern-input-group .input-group-text { border-radius: 0.75rem 0 0 0.75rem; border-color: #e2e8f0; }
+    .user-info-box { background: #f8fafc; border-color: #e2e8f0; }
+    
+    .form-check-input:checked { background-color: #4f46e5; border-color: #4f46e5; }
+</style>
+
+<script>
+// Filter functionality
+document.getElementById('userFilter').addEventListener('keyup', function() {
+    let value = this.value.toLowerCase();
+    let rows = document.querySelectorAll('#usersTable tbody tr.user-row');
+    
+    rows.forEach(row => {
+        row.style.display = (row.textContent.toLowerCase().indexOf(value) > -1) ? '' : 'none';
+    });
+});
+
+function openEditModal(id, username, full_name) {
+    const form = document.getElementById('editUserForm');
+    form.action = `/admin/usuarios/${id}/edit`;
+    
+    document.getElementById('displayUsername').textContent = username;
+    document.getElementById('displayFullName').textContent = full_name || 'Sin nombre completo';
+    document.getElementById('new_password').value = '';
+    
+    const modalView = new bootstrap.Modal(document.getElementById('editUserModal'));
+    modalView.show();
+}
+</script>
+{% endblock %}

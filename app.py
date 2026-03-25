@@ -5963,6 +5963,60 @@ def ver_remito(filename):
 def maestranza_home():
     return render_template("placeholder.html", titulo="Maestranza")
 
+# =========================
+# ADMIN - USUARIOS
+# =========================
+
+@app.route("/admin/usuarios")
+def admin_usuarios():
+    # Solo accesible para el rol FULL (admin)
+    if session.get("role") != ROLE_FULL:
+        return redirect(url_for("access_denied"))
+    
+    con = get_db()
+    # Traemos todos los usuarios, manejando la inconsistencia de columnas 'role' y 'rol'
+    # y devolviendo 'Sin rol' si ambos son nulos.
+    users = con.execute("""
+        SELECT 
+            id, 
+            username, 
+            full_name, 
+            COALESCE(role, rol) as role, 
+            password, 
+            activo
+        FROM usuarios
+        ORDER BY username
+    """).fetchall()
+    con.close()
+    return render_template("usuarios.html", users=users)
+
+@app.route("/admin/usuarios/<int:uid>/edit", methods=["POST"])
+def admin_usuarios_edit(uid):
+    if session.get("role") != ROLE_FULL:
+        return redirect(url_for("access_denied"))
+    
+    new_password = request.form.get("new_password", "").strip()
+    must_change = 1 if request.form.get("force_change") else 0
+    
+    if not new_password:
+        flash("La contraseña no puede estar vacía.", "warning")
+        return redirect(url_for("admin_usuarios"))
+    
+    con = get_db()
+    # Actualizamos tanto el hash como el password legacy por consistencia con el sistema actual
+    con.execute("""
+        UPDATE usuarios 
+        SET password_hash = ?, 
+            password = ?, 
+            must_change = ? 
+        WHERE id = ?
+    """, (generate_password_hash(new_password), new_password, must_change, uid))
+    con.commit()
+    con.close()
+    
+    flash("Usuario actualizado correctamente.", "success")
+    return redirect(url_for("admin_usuarios"))
+
 if __name__ == "__main__":
     init_tabla_calendario_eventos()  # crea tabla eventos si no existe
 

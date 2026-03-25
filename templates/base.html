@@ -468,6 +468,12 @@
       <a class="btn btn-mpd btn-area-ejecutivo" href="{{ url_for('dashboard_ejecutivo') }}">Alta Direccion</a>
       {% else %}
       <a class="btn btn-mpd btn-area-inicio" href="{{ url_for('dashboard') }}">Centro Operativo</a>
+      
+      {% if user_role == 'full' %}
+      <a class="btn btn-mpd btn-area-admin" href="{{ url_for('admin_usuarios') }}">
+        <i class="fas fa-users-cog"></i> Usuarios
+      </a>
+      {% endif %}
 
       {% if can_access("sst") %}
       <div class="nav-dropdown nav-menu">
