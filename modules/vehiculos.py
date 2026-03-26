@@ -1468,8 +1468,8 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
             return redirect(filename)
         return redirect(REMITOS_DRIVE_URL)
 
-    @app.route("/viajes/<int:viaje_id>/editar", methods=["GET", "POST"], endpoint="viaje_editar")
-    def viaje_editar(viaje_id):
+    @app.route("/viajes/<int:viaje_id>/editar", methods=["GET", "POST"], endpoint="viaje_editar_legacy")
+    def viaje_editar_legacy(viaje_id):
         conn = get_db_connection()
         deny = _deny_if_not_owner(conn, viaje_id)
         if deny:

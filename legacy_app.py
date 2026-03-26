@@ -1515,6 +1515,10 @@ if "auth.password_change" in app.view_functions:
 if "auth.access_denied" in app.view_functions:
     app.view_functions.setdefault("access_denied", app.view_functions["auth.access_denied"])
 
+# Alias sedes_home -> sedes_resumen_mpd (compatibilidad url_for)
+if "sedes_resumen_mpd" in app.view_functions:
+    app.view_functions.setdefault("sedes_home", app.view_functions["sedes_resumen_mpd"])
+
 # =========================
 # NOVEDADES / DASHBOARD BLUEPRINT (refactor seguro)
 # =========================
@@ -1530,6 +1534,62 @@ from app.vehiculos import bp as vehiculos_bp
 from app.vehiculos.routes import register_vehiculos_control
 register_vehiculos_control(vehiculos_bp, get_db_connection, ensure_cols, rebuild_eventos_vehiculos)
 app.register_blueprint(vehiculos_bp)
+try:
+    # Alias de endpoints sin blueprint para compatibilidad con url_for existentes
+    if "vehiculos.vehiculos_control_diario" in app.view_functions:
+        app.view_functions.setdefault(
+            "vehiculos_control_diario",
+            app.view_functions["vehiculos.vehiculos_control_diario"],
+        )
+        app.add_url_rule(
+            "/vehiculos/control_diario",
+            endpoint="vehiculos_control_diario",
+            view_func=app.view_functions["vehiculos.vehiculos_control_diario"],
+            methods=["GET", "POST"],
+        )
+    if "vehiculos.vehiculos_home" in app.view_functions:
+        app.view_functions.setdefault("vehiculos_home", app.view_functions["vehiculos.vehiculos_home"])
+        app.add_url_rule(
+            "/vehiculos",
+            endpoint="vehiculos_home",
+            view_func=app.view_functions["vehiculos.vehiculos_home"],
+            methods=["GET", "POST"],
+        )
+    if "vehiculos.viaje_editar" in app.view_functions:
+        app.view_functions.setdefault("viaje_editar", app.view_functions["vehiculos.viaje_editar"])
+        app.add_url_rule(
+            "/viajes/<int:viaje_id>/editar",
+            endpoint="viaje_editar",
+            view_func=app.view_functions["vehiculos.viaje_editar"],
+            methods=["GET", "POST"],
+        )
+    if "vehiculos.viaje_editar2" in app.view_functions:
+        app.view_functions.setdefault("viaje_editar2", app.view_functions["vehiculos.viaje_editar2"])
+        app.add_url_rule(
+            "/viajes/<int:viaje_id>/editar2",
+            endpoint="viaje_editar2",
+            view_func=app.view_functions["vehiculos.viaje_editar2"],
+            methods=["GET", "POST"],
+        )
+    if "vehiculos.viaje_cerrar" in app.view_functions:
+        app.view_functions.setdefault("viaje_cerrar", app.view_functions["vehiculos.viaje_cerrar"])
+        app.add_url_rule(
+            "/viajes/<int:viaje_id>/cerrar",
+            endpoint="viaje_cerrar",
+            view_func=app.view_functions["vehiculos.viaje_cerrar"],
+            methods=["GET", "POST"],
+        )
+    if "vehiculos.viaje_eliminar" in app.view_functions:
+        app.view_functions.setdefault("viaje_eliminar", app.view_functions["vehiculos.viaje_eliminar"])
+        app.add_url_rule(
+            "/vehiculos/viaje/<int:viaje_id>/eliminar",
+            endpoint="viaje_eliminar",
+            view_func=app.view_functions["vehiculos.viaje_eliminar"],
+            methods=["POST"],
+        )
+except Exception:
+    # No bloquear el arranque por alias
+    pass
 
 
 
