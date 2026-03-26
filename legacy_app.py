@@ -1526,6 +1526,11 @@ from app.novedades import bp as novedades_bp
 from app.novedades.routes import register_novedades
 register_novedades(novedades_bp, get_db)
 app.register_blueprint(novedades_bp)
+# Compatibilidad: alias de endpoints de dashboard sin blueprint
+if "novedades.dashboard" in app.view_functions:
+    app.view_functions.setdefault("dashboard", app.view_functions["novedades.dashboard"])
+if "novedades.dashboard_gestion" in app.view_functions:
+    app.view_functions.setdefault("dashboard_gestion", app.view_functions["novedades.dashboard_gestion"])
 
 # =========================
 # VEHICULOS CONTROL DIARIO (blueprint parcial)
