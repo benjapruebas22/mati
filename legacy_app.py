@@ -1508,12 +1508,36 @@ app.register_blueprint(auth_bp)
 # Compatibilidad: alias de endpoints sin blueprint
 if "auth.login" in app.view_functions:
     app.view_functions.setdefault("login", app.view_functions["auth.login"])
+    app.add_url_rule(
+        "/login",
+        endpoint="login",
+        view_func=app.view_functions["auth.login"],
+        methods=["GET", "POST"],
+    )
 if "auth.logout" in app.view_functions:
     app.view_functions.setdefault("logout", app.view_functions["auth.logout"])
+    app.add_url_rule(
+        "/logout",
+        endpoint="logout",
+        view_func=app.view_functions["auth.logout"],
+        methods=["GET"],
+    )
 if "auth.password_change" in app.view_functions:
     app.view_functions.setdefault("password_change", app.view_functions["auth.password_change"])
+    app.add_url_rule(
+        "/password",
+        endpoint="password_change",
+        view_func=app.view_functions["auth.password_change"],
+        methods=["GET", "POST"],
+    )
 if "auth.access_denied" in app.view_functions:
     app.view_functions.setdefault("access_denied", app.view_functions["auth.access_denied"])
+    app.add_url_rule(
+        "/acceso-denegado",
+        endpoint="access_denied",
+        view_func=app.view_functions["auth.access_denied"],
+        methods=["GET"],
+    )
 
 # Alias sedes_home -> sedes_resumen_mpd (compatibilidad url_for)
 if "sedes_resumen_mpd" in app.view_functions:
@@ -1529,8 +1553,20 @@ app.register_blueprint(novedades_bp)
 # Compatibilidad: alias de endpoints de dashboard sin blueprint
 if "novedades.dashboard" in app.view_functions:
     app.view_functions.setdefault("dashboard", app.view_functions["novedades.dashboard"])
+    app.add_url_rule(
+        "/",
+        endpoint="dashboard",
+        view_func=app.view_functions["novedades.dashboard"],
+        methods=["GET"],
+    )
 if "novedades.dashboard_gestion" in app.view_functions:
     app.view_functions.setdefault("dashboard_gestion", app.view_functions["novedades.dashboard_gestion"])
+    app.add_url_rule(
+        "/dashboard/gestion",
+        endpoint="dashboard_gestion",
+        view_func=app.view_functions["novedades.dashboard_gestion"],
+        methods=["GET"],
+    )
 
 # =========================
 # VEHICULOS CONTROL DIARIO (blueprint parcial)
