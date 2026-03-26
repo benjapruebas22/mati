@@ -1,4 +1,5 @@
 from datetime import date, datetime
+import unicodedata
 
 from flask import render_template, request, jsonify, session, current_app
 
@@ -17,6 +18,7 @@ _row_value = nvd_h._row_value
 _ensure_novedades_catalogo_table = nvd_h._ensure_novedades_catalogo_table
 _nvd_tipos_subtipos = nvd_h._nvd_tipos_subtipos
 _ensure_novedades_diarias_table = nvd_h._ensure_novedades_diarias_table
+_ensure_novedades_diarias_chat_table = nvd_h._ensure_novedades_diarias_chat_table
 _safe_today = nvd_h._safe_today
 _norm_nvd_estado = nvd_h._norm_nvd_estado
 _novedades_resumen = nvd_h._novedades_resumen
@@ -32,6 +34,77 @@ _ensure_dashboard_vehiculos_cfg = nvd_h._ensure_dashboard_vehiculos_cfg
 _ensure_dashboard_turnos_choferes_ack_table = nvd_h._ensure_dashboard_turnos_choferes_ack_table
 _ensure_dashboard_rotacion_limpieza_table = nvd_h._ensure_dashboard_rotacion_limpieza_table
 _ensure_dashboard_novedades_obra_table = nvd_h._ensure_dashboard_novedades_obra_table
+
+NVD_GESTION_TIPOS = {
+    "pedido de materiales",
+    "reclamo / mantenimiento",
+    "provision de mobiliario",
+    "asignacion de tareas",
+}
+NVD_TIPO_TAREA = "Asignacion de tareas"
+
+
+def _norm_ci(value):
+    raw = str(value or "").strip().lower()
+    if not raw:
+        return ""
+    try:
+        raw = unicodedata.normalize("NFD", raw)
+        raw = "".join(ch for ch in raw if unicodedata.category(ch) != "Mn")
+    except Exception:
+        pass
+    return " ".join(raw.split())
+
+
+def _is_matias_actor(username, full_name):
+    norm_user = _norm_ci(username)
+    norm_name = _norm_ci(full_name)
+    return norm_user in {"mcalderari"} or norm_name == "matias calderari"
+
+
+def _session_actor():
+    username = (session.get("username") or "").strip()
+    full_name = (session.get("full_name") or "").strip()
+    display = full_name or username
+    return {
+        "username": username,
+        "full_name": full_name,
+        "display": display,
+        "is_matias": _is_matias_actor(username, full_name),
+    }
+
+
+def _tipo_tiene_gestion(tipo):
+    return bool(str(tipo or "").strip())
+
+
+def _actor_can_view_gestion(actor, agente_novedad, agente_tarea=""):
+    if not actor:
+        return False
+    if bool(actor.get("is_matias")):
+        return True
+    actor_user = _norm_ci(actor.get("username") or "")
+    actor_name = _norm_ci(actor.get("full_name") or actor.get("display") or "")
+    agentes_vinculados = {
+        _norm_ci(agente_novedad),
+        _norm_ci(agente_tarea),
+    }
+    agentes_vinculados = {a for a in agentes_vinculados if a}
+    if not agentes_vinculados:
+        return False
+    return bool(agentes_vinculados.intersection({actor_user, actor_name}))
+
+
+def _actor_match_name(actor, raw_name):
+    val = _norm_ci(raw_name)
+    if not val:
+        return False
+    ids = {
+        _norm_ci(actor.get("username") or ""),
+        _norm_ci(actor.get("full_name") or ""),
+        _norm_ci(actor.get("display") or ""),
+    }
+    return val in {x for x in ids if x}
 
 
 def register_novedades(bp, get_db):
@@ -55,6 +128,156 @@ def register_novedades(bp, get_db):
             return fn()
         return {}
 
+    def _fetch_novedad(con, nov_id):
+        return con.execute("""
+            SELECT
+                id,
+                COALESCE(fecha,'') AS fecha,
+                COALESCE(hora,'') AS hora,
+                COALESCE(agente,'') AS agente,
+                COALESCE(sede_codigo,'') AS sede_codigo,
+                COALESCE(tipo,'') AS tipo,
+                COALESCE(subtipo,'') AS subtipo,
+                COALESCE(observacion,'') AS observacion,
+                COALESCE(estado,'Informado') AS estado,
+                COALESCE(tarea_asignada,'') AS tarea_asignada,
+                COALESCE(tarea_estado,'') AS tarea_estado,
+                COALESCE(tarea_sede_codigo,'') AS tarea_sede_codigo,
+                COALESCE(tarea_deposito_codigo,'') AS tarea_deposito_codigo,
+                COALESCE(tarea_deposito_nombre,'') AS tarea_deposito_nombre,
+                COALESCE(tarea_agente,'') AS tarea_agente,
+                COALESCE(tarea_asignado_por,'') AS tarea_asignado_por,
+                COALESCE(tarea_asignado_por_username,'') AS tarea_asignado_por_username,
+                COALESCE(tarea_asignado_en,'') AS tarea_asignado_en,
+                COALESCE(tarea_actualizado_en,'') AS tarea_actualizado_en
+            FROM novedades_diarias
+            WHERE id=?
+            LIMIT 1
+        """, (nov_id,)).fetchone()
+
+    def _depositos_por_sede(con, sede_codigo):
+        sede = (sede_codigo or "").strip().upper()
+        if not sede or not _table_exists(con, "sedes_depositos"):
+            return []
+        try:
+            rows = con.execute("""
+                SELECT
+                    UPPER(COALESCE(codigo_local,'')) AS codigo,
+                    COALESCE(descripcion,'') AS descripcion,
+                    COALESCE(nombre,'') AS nombre,
+                    COALESCE(ubicacion,'') AS ubicacion
+                FROM sedes_depositos
+                WHERE UPPER(COALESCE(codigo_sede,'')) = UPPER(?)
+                ORDER BY codigo
+            """, (sede,)).fetchall()
+        except Exception:
+            return []
+        out = []
+        seen = set()
+        for r in rows:
+            codigo = (_row_value(r, "codigo", "") or "").strip().upper()
+            if not codigo or codigo in seen:
+                continue
+            seen.add(codigo)
+            descripcion = (_row_value(r, "descripcion", "") or "").strip()
+            if not descripcion:
+                descripcion = (_row_value(r, "nombre", "") or "").strip()
+            if not descripcion:
+                descripcion = (_row_value(r, "ubicacion", "") or "").strip()
+            out.append({
+                "codigo": codigo,
+                "descripcion": descripcion or codigo,
+            })
+        return out
+
+    def _alertas_tareas_agente(con, actor):
+        if not actor or bool(actor.get("is_matias")):
+            return []
+        out = []
+        try:
+            _ensure_novedades_diarias_table(con)
+            rows = con.execute("""
+                SELECT
+                    id,
+                    COALESCE(fecha,'') AS fecha,
+                    COALESCE(tipo,'') AS tipo,
+                    COALESCE(sede_codigo,'') AS sede_codigo,
+                    COALESCE(tarea_asignada,'') AS tarea_asignada,
+                    COALESCE(tarea_estado,'') AS tarea_estado,
+                    COALESCE(tarea_sede_codigo,'') AS tarea_sede_codigo,
+                    COALESCE(tarea_deposito_codigo,'') AS tarea_deposito_codigo,
+                    COALESCE(tarea_deposito_nombre,'') AS tarea_deposito_nombre,
+                    COALESCE(tarea_agente,'') AS tarea_agente,
+                    COALESCE(tarea_asignado_por,'') AS tarea_asignado_por,
+                    COALESCE(tarea_asignado_por_username,'') AS tarea_asignado_por_username,
+                    COALESCE(tarea_asignado_en,'') AS tarea_asignado_en
+                FROM novedades_diarias
+                WHERE TRIM(COALESCE(tarea_asignada,'')) <> ''
+                ORDER BY date(COALESCE(tarea_asignado_en, actualizado_en, fecha)) DESC, id DESC
+                LIMIT 500
+            """).fetchall()
+            for r in rows:
+                tarea_agente = (_row_value(r, "tarea_agente", "") or "").strip()
+                if not _actor_match_name(actor, tarea_agente):
+                    continue
+                by_user = _norm_ci(_row_value(r, "tarea_asignado_por_username", "") or "")
+                by_name = _norm_ci(_row_value(r, "tarea_asignado_por", "") or "")
+                if by_user != "mcalderari" and by_name != "matias calderari":
+                    continue
+                tarea_estado = (_row_value(r, "tarea_estado", "") or "").strip() or "Pendiente"
+                if _norm_ci(tarea_estado) in {"completada", "resuelto", "cerrado"}:
+                    continue
+                out.append({
+                    "novedad_id": int(_row_value(r, "id", 0) or 0),
+                    "fecha": (_row_value(r, "fecha", "") or "").strip(),
+                    "tipo": (_row_value(r, "tipo", "") or "").strip(),
+                    "tarea": (_row_value(r, "tarea_asignada", "") or "").strip(),
+                    "estado": tarea_estado,
+                    "sede_codigo": ((_row_value(r, "tarea_sede_codigo", "") or "").strip().upper() or (_row_value(r, "sede_codigo", "") or "").strip().upper()),
+                    "deposito_codigo": (_row_value(r, "tarea_deposito_codigo", "") or "").strip().upper(),
+                    "deposito_nombre": (_row_value(r, "tarea_deposito_nombre", "") or "").strip(),
+                    "asignado_en": (_row_value(r, "tarea_asignado_en", "") or "").strip(),
+                })
+                if len(out) >= 12:
+                    break
+        except Exception:
+            return []
+        return out
+
+    def _serialize_novedad(row, actor):
+        tipo = (_row_value(row, "tipo", "") or "").strip()
+        agente = (_row_value(row, "agente", "") or "").strip()
+        tarea_agente = (_row_value(row, "tarea_agente", "") or "").strip()
+        gestion_habilitada = _tipo_tiene_gestion(tipo)
+        puede_ver_gestion = gestion_habilitada and _actor_can_view_gestion(actor, agente, tarea_agente)
+        es_matias = bool(actor.get("is_matias"))
+        return {
+            "id": int(_row_value(row, "id", 0) or 0),
+            "fecha": (_row_value(row, "fecha", "") or "").strip(),
+            "hora": (_row_value(row, "hora", "") or "").strip(),
+            "agente": agente,
+            "sede_codigo": (_row_value(row, "sede_codigo", "") or "").strip().upper(),
+            "tipo": tipo,
+            "subtipo": (_row_value(row, "subtipo", "") or "").strip(),
+            "observacion": (_row_value(row, "observacion", "") or "").strip(),
+            "estado": _norm_nvd_estado(_row_value(row, "estado", "Informado") or "Informado"),
+            "tarea_asignada": (_row_value(row, "tarea_asignada", "") or "").strip(),
+            "tarea_estado": (_row_value(row, "tarea_estado", "") or "").strip(),
+            "tarea_sede_codigo": (_row_value(row, "tarea_sede_codigo", "") or "").strip().upper(),
+            "tarea_deposito_codigo": (_row_value(row, "tarea_deposito_codigo", "") or "").strip().upper(),
+            "tarea_deposito_nombre": (_row_value(row, "tarea_deposito_nombre", "") or "").strip(),
+            "tarea_agente": tarea_agente,
+            "tarea_asignado_por": (_row_value(row, "tarea_asignado_por", "") or "").strip(),
+            "tarea_asignado_por_username": (_row_value(row, "tarea_asignado_por_username", "") or "").strip(),
+            "tarea_asignado_en": (_row_value(row, "tarea_asignado_en", "") or "").strip(),
+            "tarea_actualizado_en": (_row_value(row, "tarea_actualizado_en", "") or "").strip(),
+            "gestion_habilitada": gestion_habilitada,
+            "puede_ver_gestion": puede_ver_gestion,
+            "puede_cambiar_estado": (es_matias if gestion_habilitada else True),
+            "puede_cerrar": (es_matias if gestion_habilitada else True),
+            "puede_asignar_tarea": False,
+        }
+
     @bp.route("/api/dashboard_operativo", methods=["GET"], endpoint="api_dashboard_operativo")
     def api_dashboard_operativo():
         return jsonify(_dashboard_operativo_data())
@@ -71,6 +294,7 @@ def register_novedades(bp, get_db):
             datetime.strptime(fecha, "%Y-%m-%d")
         except Exception:
             fecha = _safe_today()
+        actor = _session_actor()
 
         con = get_db()
         try:
@@ -81,6 +305,7 @@ def register_novedades(bp, get_db):
             tipos_subtipos = _nvd_tipos_subtipos(con)
             vehs = _dashboard_vehiculos_simple(con, fecha)
             resumen = _novedades_resumen(con, fecha)
+            alertas_tareas_asignadas = _alertas_tareas_agente(con, actor)
         except Exception as e:
             con.close()
             return jsonify({"ok": False, "error": str(e)}), 500
@@ -89,7 +314,7 @@ def register_novedades(bp, get_db):
         base = _dashboard_operativo_data()
         alertas = _dashboard_alertas_criticas(base)
 
-        user_name = (session.get("full_name") or session.get("username") or "").strip()
+        user_name = (actor.get("display") or "").strip()
         if user_name and user_name.lower() not in {a.lower() for a in agentes}:
             agentes.insert(0, user_name)
 
@@ -97,12 +322,20 @@ def register_novedades(bp, get_db):
             "ok": True,
             "fecha": fecha,
             "agente_actual": user_name,
+            "usuario_actual": {
+                "username": actor.get("username") or "",
+                "full_name": actor.get("full_name") or "",
+                "is_matias": bool(actor.get("is_matias")),
+            },
+            "is_matias": bool(actor.get("is_matias")),
+            "puede_editar_agente": bool(actor.get("is_matias")),
             "sedes": sedes,
             "agentes": agentes,
             "tipos_subtipos": tipos_subtipos,
             "estados": list(NVD_ESTADOS),
             "vehiculos": vehs,
             "alertas": alertas,
+            "alertas_tareas_asignadas": alertas_tareas_asignadas,
             "resumen_novedades": resumen,
         })
 
@@ -117,6 +350,8 @@ def register_novedades(bp, get_db):
         con = get_db()
         try:
             _ensure_novedades_diarias_table(con)
+            _ensure_novedades_diarias_chat_table(con)
+            actor = _session_actor()
             rows = con.execute("""
                 SELECT
                     id,
@@ -127,7 +362,17 @@ def register_novedades(bp, get_db):
                     COALESCE(tipo,'') AS tipo,
                     COALESCE(subtipo,'') AS subtipo,
                     COALESCE(observacion,'') AS observacion,
-                    COALESCE(estado,'Informado') AS estado
+                    COALESCE(estado,'Informado') AS estado,
+                    COALESCE(tarea_asignada,'') AS tarea_asignada,
+                    COALESCE(tarea_estado,'') AS tarea_estado,
+                    COALESCE(tarea_sede_codigo,'') AS tarea_sede_codigo,
+                    COALESCE(tarea_deposito_codigo,'') AS tarea_deposito_codigo,
+                    COALESCE(tarea_deposito_nombre,'') AS tarea_deposito_nombre,
+                    COALESCE(tarea_agente,'') AS tarea_agente,
+                    COALESCE(tarea_asignado_por,'') AS tarea_asignado_por,
+                    COALESCE(tarea_asignado_por_username,'') AS tarea_asignado_por_username,
+                    COALESCE(tarea_asignado_en,'') AS tarea_asignado_en,
+                    COALESCE(tarea_actualizado_en,'') AS tarea_actualizado_en
                 FROM novedades_diarias
                 WHERE (
                         date(fecha) = date(?)
@@ -141,20 +386,12 @@ def register_novedades(bp, get_db):
                 ORDER BY date(fecha) DESC, COALESCE(hora,'') DESC, id DESC
                 LIMIT 800
             """, (fecha, fecha)).fetchall()
-            base_items = [{
-                "id": int(_row_value(r, "id", 0) or 0),
-                "fecha": (_row_value(r, "fecha", "") or "").strip(),
-                "hora": (_row_value(r, "hora", "") or "").strip(),
-                "agente": (_row_value(r, "agente", "") or "").strip(),
-                "sede_codigo": (_row_value(r, "sede_codigo", "") or "").strip().upper(),
-                "tipo": (_row_value(r, "tipo", "") or "").strip(),
-                "subtipo": (_row_value(r, "subtipo", "") or "").strip(),
-                "observacion": (_row_value(r, "observacion", "") or "").strip(),
-                "estado": _norm_nvd_estado(_row_value(r, "estado", "Informado") or "Informado"),
-            } for r in rows]
+            base_items = [_serialize_novedad(r, actor) for r in rows]
             pendientes_dia = []
             pendientes_acumulados = []
             resueltos_informados = []
+            tareas_asignadas = []
+            solicitudes_recibidas = []
             for it in base_items:
                 est = (it.get("estado") or "").strip().lower()
                 es_pendiente = est in ("informado", "en proceso")
@@ -165,6 +402,21 @@ def register_novedades(bp, get_db):
                         pendientes_acumulados.append(it)
                 else:
                     resueltos_informados.append(it)
+                tipo_norm = _norm_ci(it.get("tipo") or "")
+                tiene_tarea = bool((it.get("tarea_asignada") or "").strip())
+                by_matias = _norm_ci(it.get("tarea_asignado_por_username") or "") == "mcalderari"
+                es_tarea = (tipo_norm == _norm_ci(NVD_TIPO_TAREA)) or (tiene_tarea and by_matias)
+                if not es_pendiente:
+                    continue
+                if es_tarea:
+                    if not tiene_tarea:
+                        continue
+                    agente_obj = (it.get("tarea_agente") or it.get("agente") or "").strip()
+                    if bool(actor.get("is_matias")) or _actor_match_name(actor, agente_obj):
+                        tareas_asignadas.append(it)
+                else:
+                    if bool(actor.get("is_matias")) or _actor_match_name(actor, it.get("agente") or ""):
+                        solicitudes_recibidas.append(it)
             resumen = _novedades_resumen(con, fecha)
         except Exception as e:
             con.close()
@@ -177,6 +429,8 @@ def register_novedades(bp, get_db):
             "pendientes_dia": pendientes_dia,
             "pendientes_acumulados": pendientes_acumulados,
             "resueltos_informados": resueltos_informados,
+            "tareas_asignadas": tareas_asignadas,
+            "solicitudes_recibidas": solicitudes_recibidas,
             "resumen": resumen,
         })
 
@@ -296,14 +550,10 @@ def register_novedades(bp, get_db):
         tipo = (payload.get("tipo") or "").strip()
         subtipo = (payload.get("subtipo") or "").strip()
         observacion = (payload.get("observacion") or "").strip()
-        estado = _norm_nvd_estado(payload.get("estado") or "Informado")
+        actor = _session_actor()
         if len(observacion) > 240:
             observacion = observacion[:240]
 
-        if not agente:
-            agente = (session.get("full_name") or session.get("username") or "").strip()
-        if not agente:
-            return jsonify({"ok": False, "error": "Agente obligatorio"}), 400
         try:
             datetime.strptime(fecha, "%Y-%m-%d")
         except Exception:
@@ -317,6 +567,7 @@ def register_novedades(bp, get_db):
         try:
             _ensure_novedades_diarias_table(con)
             _ensure_novedades_catalogo_table(con)
+            _ensure_novedades_diarias_chat_table(con)
             tipos_subtipos = _nvd_tipos_subtipos(con)
             if tipo not in tipos_subtipos:
                 con.close()
@@ -326,6 +577,28 @@ def register_novedades(bp, get_db):
             if subtipo not in (tipos_subtipos.get(tipo) or []):
                 con.close()
                 return jsonify({"ok": False, "error": "Subtipo invalido para el tipo elegido"}), 400
+            existing = None
+            if nov_id > 0:
+                existing = _fetch_novedad(con, nov_id)
+                if not existing:
+                    con.close()
+                    return jsonify({"ok": False, "error": "Novedad inexistente"}), 404
+                estado = _norm_nvd_estado(_row_value(existing, "estado", "Informado") or "Informado")
+            else:
+                estado = "Informado"
+
+            if not bool(actor.get("is_matias")):
+                if nov_id > 0:
+                    agente = (_row_value(existing, "agente", "") or "").strip() or (actor.get("display") or "").strip()
+                else:
+                    agente = (actor.get("display") or "").strip()
+            elif not agente:
+                agente = (actor.get("display") or "").strip()
+
+            if not agente:
+                con.close()
+                return jsonify({"ok": False, "error": "Agente obligatorio"}), 400
+
             if nov_id > 0:
                 con.execute("""
                     UPDATE novedades_diarias
@@ -354,6 +627,96 @@ def register_novedades(bp, get_db):
         con.close()
         return jsonify({"ok": True, "id": rid})
 
+    @bp.route("/api/dashboard/tareas_asignadas_save", methods=["POST"], endpoint="api_dashboard_tareas_asignadas_save")
+    def api_dashboard_tareas_asignadas_save():
+        actor = _session_actor()
+        if not bool(actor.get("is_matias")):
+            return jsonify({"ok": False, "error": "Solo Matias puede crear tareas asignadas"}), 403
+        payload = request.get_json(silent=True) or {}
+        fecha = (payload.get("fecha") or "").strip() or _safe_today()
+        agente = (payload.get("agente") or payload.get("agente_asignado") or "").strip()
+        sede_codigo = (payload.get("sede_codigo") or "").strip().upper()
+        deposito_codigo = (payload.get("deposito_codigo") or "").strip().upper()
+        deposito_nombre = (payload.get("deposito_nombre") or "").strip()
+        tarea = (payload.get("tarea") or payload.get("tarea_asignada") or "").strip()
+        if len(tarea) > 280:
+            tarea = tarea[:280]
+        if not agente:
+            return jsonify({"ok": False, "error": "Selecciona agente asignado"}), 400
+        if not sede_codigo:
+            return jsonify({"ok": False, "error": "Selecciona sede"}), 400
+        if not tarea:
+            return jsonify({"ok": False, "error": "Escribe la tarea"}), 400
+        try:
+            datetime.strptime(fecha, "%Y-%m-%d")
+        except Exception:
+            return jsonify({"ok": False, "error": "Fecha invalida"}), 400
+
+        now = datetime.now()
+        hora = now.strftime("%H:%M")
+        ts = now.strftime("%Y-%m-%d %H:%M:%S")
+
+        con = get_db()
+        try:
+            _ensure_novedades_diarias_table(con)
+            _ensure_novedades_diarias_chat_table(con)
+            deps = _depositos_por_sede(con, sede_codigo)
+            if deps:
+                if not deposito_codigo:
+                    con.close()
+                    return jsonify({"ok": False, "error": "Selecciona deposito/local"}), 400
+                dep_map = {str(d.get("codigo") or "").strip().upper(): str(d.get("descripcion") or "").strip() for d in deps}
+                if deposito_codigo not in dep_map:
+                    con.close()
+                    return jsonify({"ok": False, "error": "Deposito invalido para la sede"}), 400
+                if not deposito_nombre:
+                    deposito_nombre = dep_map.get(deposito_codigo, "")
+            else:
+                deposito_codigo = ""
+                deposito_nombre = ""
+            cur = con.execute("""
+                INSERT INTO novedades_diarias
+                    (fecha, hora, agente, sede_codigo, tipo, subtipo, observacion, estado,
+                     tarea_asignada, tarea_estado, tarea_sede_codigo, tarea_deposito_codigo, tarea_deposito_nombre,
+                     tarea_agente, tarea_asignado_por, tarea_asignado_por_username, tarea_asignado_en, tarea_actualizado_en,
+                     creado_en, actualizado_en)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 'Informado',
+                        ?, 'Pendiente', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                fecha,
+                hora,
+                agente,
+                sede_codigo,
+                NVD_TIPO_TAREA,
+                (deposito_codigo or "General"),
+                tarea,
+                tarea,
+                sede_codigo,
+                deposito_codigo,
+                deposito_nombre,
+                agente,
+                actor.get("display") or "Matias",
+                actor.get("username") or "",
+                ts,
+                ts,
+                ts,
+                ts,
+            ))
+            rid = int(cur.lastrowid or 0)
+            msg_dep = deposito_codigo if deposito_codigo else "-"
+            msg = f"Matias asigno tarea a {agente}: {tarea} (Sede {sede_codigo} / Deposito {msg_dep} / Estado Pendiente)."
+            con.execute("""
+                INSERT INTO novedades_diarias_chat
+                    (novedad_id, autor, autor_username, mensaje, es_sistema, creado_en)
+                VALUES (?, 'Sistema', ?, ?, 1, ?)
+            """, (rid, actor.get("username") or "", msg, ts))
+            con.commit()
+        except Exception as e:
+            con.close()
+            return jsonify({"ok": False, "error": str(e)}), 500
+        con.close()
+        return jsonify({"ok": True, "id": rid})
+
     @bp.route("/api/dashboard/novedades_diarias_estado", methods=["POST"], endpoint="api_dashboard_novedades_diarias_estado")
     def api_dashboard_novedades_diarias_estado():
         payload = request.get_json(silent=True) or {}
@@ -361,20 +724,338 @@ def register_novedades(bp, get_db):
         estado = _norm_nvd_estado(payload.get("estado") or "Informado")
         if nov_id <= 0:
             return jsonify({"ok": False, "error": "ID invalido"}), 400
+        actor = _session_actor()
         con = get_db()
         try:
             _ensure_novedades_diarias_table(con)
+            _ensure_novedades_diarias_chat_table(con)
+            row = _fetch_novedad(con, nov_id)
+            if not row:
+                con.close()
+                return jsonify({"ok": False, "error": "Novedad inexistente"}), 404
+            gestion_habilitada = _tipo_tiene_gestion(_row_value(row, "tipo", "") or "")
+            if gestion_habilitada and not bool(actor.get("is_matias")):
+                con.close()
+                return jsonify({"ok": False, "error": "Solo Matias puede cambiar estado en esta novedad"}), 403
+            estado_prev = _norm_nvd_estado(_row_value(row, "estado", "Informado") or "Informado")
+            ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             con.execute("""
                 UPDATE novedades_diarias
                 SET estado=?, actualizado_en=?
                 WHERE id=?
-            """, (estado, datetime.now().strftime("%Y-%m-%d %H:%M:%S"), nov_id))
+            """, (estado, ts, nov_id))
+            if gestion_habilitada and estado_prev != estado:
+                actor_name = (actor.get("display") or "Sistema").strip() or "Sistema"
+                con.execute("""
+                    INSERT INTO novedades_diarias_chat
+                        (novedad_id, autor, autor_username, mensaje, es_sistema, creado_en)
+                    VALUES (?, 'Sistema', ?, ?, 1, ?)
+                """, (nov_id, actor.get("username") or "", f"{actor_name} cambio el estado a '{estado}'.", ts))
             con.commit()
         except Exception as e:
             con.close()
             return jsonify({"ok": False, "error": str(e)}), 500
         con.close()
         return jsonify({"ok": True})
+
+    @bp.route("/api/dashboard/novedades_diarias_gestion/<int:nov_id>", methods=["GET"], endpoint="api_dashboard_novedades_diarias_gestion")
+    def api_dashboard_novedades_diarias_gestion(nov_id):
+        actor = _session_actor()
+        con = get_db()
+        try:
+            _ensure_novedades_diarias_table(con)
+            _ensure_novedades_diarias_chat_table(con)
+            _ensure_novedades_catalogo_table(con)
+            row = _fetch_novedad(con, nov_id)
+            if not row:
+                con.close()
+                return jsonify({"ok": False, "error": "Novedad inexistente"}), 404
+            item = _serialize_novedad(row, actor)
+            if not bool(item.get("gestion_habilitada")):
+                con.close()
+                return jsonify({"ok": False, "error": "La novedad no tiene gestion interna"}), 400
+            if not bool(item.get("puede_ver_gestion")):
+                con.close()
+                return jsonify({"ok": False, "error": "No autorizado para ver esta gestion"}), 403
+            rows = con.execute("""
+                SELECT
+                    id,
+                    COALESCE(autor,'') AS autor,
+                    COALESCE(autor_username,'') AS autor_username,
+                    COALESCE(mensaje,'') AS mensaje,
+                    COALESCE(es_sistema,0) AS es_sistema,
+                    COALESCE(creado_en,'') AS creado_en
+                FROM novedades_diarias_chat
+                WHERE novedad_id=?
+                ORDER BY id ASC
+                LIMIT 500
+            """, (nov_id,)).fetchall()
+            actor_user = _norm_ci(actor.get("username") or "")
+            actor_name = _norm_ci(actor.get("display") or "")
+            mensajes = []
+            for r in rows:
+                autor = (_row_value(r, "autor", "") or "").strip()
+                autor_username = (_row_value(r, "autor_username", "") or "").strip()
+                es_propio = False
+                if _norm_ci(autor_username) and _norm_ci(autor_username) == actor_user:
+                    es_propio = True
+                elif _norm_ci(autor) and _norm_ci(autor) == actor_name:
+                    es_propio = True
+                mensajes.append({
+                    "id": int(_row_value(r, "id", 0) or 0),
+                    "autor": autor,
+                    "autor_username": autor_username,
+                    "mensaje": (_row_value(r, "mensaje", "") or "").strip(),
+                    "es_sistema": int(_row_value(r, "es_sistema", 0) or 0) == 1,
+                    "creado_en": (_row_value(r, "creado_en", "") or "").strip(),
+                    "es_propio": es_propio,
+                })
+            sedes = _dashboard_sedes_opts(con)
+            agentes = _dashboard_agentes_opts(con)
+            user_name = (actor.get("display") or "").strip()
+            if user_name and user_name.lower() not in {a.lower() for a in agentes}:
+                agentes.insert(0, user_name)
+            sede_tarea = (item.get("tarea_sede_codigo") or item.get("sede_codigo") or "").strip().upper()
+            depositos = _depositos_por_sede(con, sede_tarea)
+        except Exception as e:
+            con.close()
+            return jsonify({"ok": False, "error": str(e)}), 500
+        con.close()
+        return jsonify({
+            "ok": True,
+            "novedad": item,
+            "mensajes": mensajes,
+            "is_matias": bool(actor.get("is_matias")),
+            "estados": list(NVD_ESTADOS),
+            "sedes": sedes,
+            "agentes": agentes,
+            "depositos_sede": depositos,
+        })
+
+    @bp.route("/api/dashboard/novedades_depositos_por_sede", methods=["GET"], endpoint="api_dashboard_novedades_depositos_por_sede")
+    def api_dashboard_novedades_depositos_por_sede():
+        sede_codigo = (request.args.get("sede_codigo") or request.args.get("sede") or "").strip().upper()
+        if not sede_codigo:
+            return jsonify({"ok": True, "sede_codigo": "", "depositos": []})
+        con = get_db()
+        try:
+            depositos = _depositos_por_sede(con, sede_codigo)
+        except Exception as e:
+            con.close()
+            return jsonify({"ok": False, "error": str(e), "depositos": []}), 500
+        con.close()
+        return jsonify({"ok": True, "sede_codigo": sede_codigo, "depositos": depositos})
+
+    @bp.route("/api/dashboard/novedades_diarias_gestion/<int:nov_id>/mensaje", methods=["POST"], endpoint="api_dashboard_novedades_diarias_gestion_mensaje")
+    def api_dashboard_novedades_diarias_gestion_mensaje(nov_id):
+        actor = _session_actor()
+        payload = request.get_json(silent=True) or {}
+        mensaje = (payload.get("mensaje") or "").strip()
+        if not mensaje:
+            return jsonify({"ok": False, "error": "Mensaje obligatorio"}), 400
+        if len(mensaje) > 1000:
+            mensaje = mensaje[:1000]
+        con = get_db()
+        try:
+            _ensure_novedades_diarias_table(con)
+            _ensure_novedades_diarias_chat_table(con)
+            row = _fetch_novedad(con, nov_id)
+            if not row:
+                con.close()
+                return jsonify({"ok": False, "error": "Novedad inexistente"}), 404
+            item = _serialize_novedad(row, actor)
+            if not bool(item.get("gestion_habilitada")):
+                con.close()
+                return jsonify({"ok": False, "error": "La novedad no tiene gestion interna"}), 400
+            if not bool(item.get("puede_ver_gestion")):
+                con.close()
+                return jsonify({"ok": False, "error": "No autorizado para responder esta gestion"}), 403
+            autor = (actor.get("display") or actor.get("username") or "").strip()
+            if not autor:
+                con.close()
+                return jsonify({"ok": False, "error": "Usuario invalido"}), 403
+            ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            cur = con.execute("""
+                INSERT INTO novedades_diarias_chat
+                    (novedad_id, autor, autor_username, mensaje, es_sistema, creado_en)
+                VALUES (?, ?, ?, ?, 0, ?)
+            """, (nov_id, autor, actor.get("username") or "", mensaje, ts))
+            con.commit()
+            msg_id = int(cur.lastrowid or 0)
+        except Exception as e:
+            con.close()
+            return jsonify({"ok": False, "error": str(e)}), 500
+        con.close()
+        return jsonify({
+            "ok": True,
+            "mensaje": {
+                "id": msg_id,
+                "autor": autor,
+                "autor_username": actor.get("username") or "",
+                "mensaje": mensaje,
+                "es_sistema": False,
+                "creado_en": ts,
+                "es_propio": True,
+            },
+        })
+
+    @bp.route("/api/dashboard/novedades_diarias_gestion/<int:nov_id>/estado", methods=["POST"], endpoint="api_dashboard_novedades_diarias_gestion_estado")
+    def api_dashboard_novedades_diarias_gestion_estado(nov_id):
+        actor = _session_actor()
+        if not bool(actor.get("is_matias")):
+            return jsonify({"ok": False, "error": "Solo Matias puede cambiar estado"}), 403
+        payload = request.get_json(silent=True) or {}
+        estado = _norm_nvd_estado(payload.get("estado") or "Informado")
+        con = get_db()
+        try:
+            _ensure_novedades_diarias_table(con)
+            _ensure_novedades_diarias_chat_table(con)
+            row = _fetch_novedad(con, nov_id)
+            if not row:
+                con.close()
+                return jsonify({"ok": False, "error": "Novedad inexistente"}), 404
+            item = _serialize_novedad(row, actor)
+            if not bool(item.get("gestion_habilitada")):
+                con.close()
+                return jsonify({"ok": False, "error": "La novedad no tiene gestion interna"}), 400
+            estado_prev = _norm_nvd_estado(_row_value(row, "estado", "Informado") or "Informado")
+            ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            con.execute("""
+                UPDATE novedades_diarias
+                SET estado=?, actualizado_en=?
+                WHERE id=?
+            """, (estado, ts, nov_id))
+            if estado_prev != estado:
+                con.execute("""
+                    INSERT INTO novedades_diarias_chat
+                        (novedad_id, autor, autor_username, mensaje, es_sistema, creado_en)
+                    VALUES (?, 'Sistema', ?, ?, 1, ?)
+                """, (nov_id, actor.get("username") or "", f"Matias cambio el estado a '{estado}'.", ts))
+            con.commit()
+        except Exception as e:
+            con.close()
+            return jsonify({"ok": False, "error": str(e)}), 500
+        con.close()
+        return jsonify({"ok": True, "estado": estado})
+
+    @bp.route("/api/dashboard/novedades_diarias_gestion/<int:nov_id>/tarea", methods=["POST"], endpoint="api_dashboard_novedades_diarias_gestion_tarea")
+    def api_dashboard_novedades_diarias_gestion_tarea(nov_id):
+        actor = _session_actor()
+        if not bool(actor.get("is_matias")):
+            return jsonify({"ok": False, "error": "Solo Matias puede asignar tareas"}), 403
+        payload = request.get_json(silent=True) or {}
+        tarea = (payload.get("tarea") or "").strip()
+        tarea_estado = (payload.get("estado") or "").strip() or "Pendiente"
+        tarea_sede_codigo = (payload.get("sede_codigo") or payload.get("tarea_sede_codigo") or "").strip().upper()
+        tarea_agente = (payload.get("agente") or payload.get("tarea_agente") or "").strip()
+        tarea_deposito_codigo = (payload.get("deposito_codigo") or payload.get("tarea_deposito_codigo") or "").strip().upper()
+        tarea_deposito_nombre = (payload.get("deposito_nombre") or payload.get("tarea_deposito_nombre") or "").strip()
+        limpiar = str(payload.get("limpiar") or "").strip().lower() in {"1", "true", "si", "yes"}
+        if len(tarea) > 280:
+            tarea = tarea[:280]
+        if limpiar:
+            tarea = ""
+            tarea_estado = ""
+            tarea_sede_codigo = ""
+            tarea_agente = ""
+            tarea_deposito_codigo = ""
+            tarea_deposito_nombre = ""
+        if tarea and tarea_estado not in {"Pendiente", "En curso", "Completada"}:
+            tarea_estado = "Pendiente"
+        con = get_db()
+        try:
+            _ensure_novedades_diarias_table(con)
+            _ensure_novedades_diarias_chat_table(con)
+            row = _fetch_novedad(con, nov_id)
+            if not row:
+                con.close()
+                return jsonify({"ok": False, "error": "Novedad inexistente"}), 404
+            item = _serialize_novedad(row, actor)
+            if not bool(item.get("gestion_habilitada")):
+                con.close()
+                return jsonify({"ok": False, "error": "La novedad no tiene gestion interna"}), 400
+            if not limpiar:
+                if not tarea_sede_codigo:
+                    tarea_sede_codigo = (item.get("sede_codigo") or "").strip().upper()
+                if not tarea_agente:
+                    tarea_agente = (item.get("agente") or "").strip()
+                if not tarea_sede_codigo:
+                    con.close()
+                    return jsonify({"ok": False, "error": "Selecciona sede para la tarea"}), 400
+                if not tarea_agente:
+                    con.close()
+                    return jsonify({"ok": False, "error": "Selecciona agente asignado"}), 400
+                deps = _depositos_por_sede(con, tarea_sede_codigo)
+                if deps:
+                    if not tarea_deposito_codigo:
+                        con.close()
+                        return jsonify({"ok": False, "error": "Selecciona deposito de la sede"}), 400
+                    dep_map = {str(d.get("codigo") or "").strip().upper(): str(d.get("descripcion") or "").strip() for d in deps}
+                    if tarea_deposito_codigo not in dep_map:
+                        con.close()
+                        return jsonify({"ok": False, "error": "Deposito invalido para la sede seleccionada"}), 400
+                    if not tarea_deposito_nombre:
+                        tarea_deposito_nombre = dep_map.get(tarea_deposito_codigo, "")
+                else:
+                    tarea_deposito_codigo = ""
+                    tarea_deposito_nombre = ""
+            ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            con.execute("""
+                UPDATE novedades_diarias
+                SET tarea_asignada=?,
+                    tarea_estado=?,
+                    tarea_sede_codigo=?,
+                    tarea_deposito_codigo=?,
+                    tarea_deposito_nombre=?,
+                    tarea_agente=?,
+                    tarea_asignado_por=?,
+                    tarea_asignado_por_username=?,
+                    tarea_asignado_en=?,
+                    tarea_actualizado_en=?,
+                    actualizado_en=?
+                WHERE id=?
+            """, (
+                tarea,
+                tarea_estado,
+                tarea_sede_codigo,
+                tarea_deposito_codigo,
+                tarea_deposito_nombre,
+                tarea_agente,
+                (actor.get("display") or "Matias") if tarea else "",
+                (actor.get("username") or "") if tarea else "",
+                ts if not limpiar else "",
+                ts,
+                ts,
+                nov_id,
+            ))
+            if tarea:
+                sede_txt = tarea_sede_codigo or "-"
+                dep_txt = tarea_deposito_codigo if tarea_deposito_codigo else "-"
+                msg = (
+                    f"Matias asigno tarea a {tarea_agente}: {tarea} "
+                    f"(Sede {sede_txt} / Deposito {dep_txt} / Estado {tarea_estado})."
+                )
+            else:
+                msg = "Matias elimino la tarea asignada."
+            con.execute("""
+                INSERT INTO novedades_diarias_chat
+                    (novedad_id, autor, autor_username, mensaje, es_sistema, creado_en)
+                VALUES (?, 'Sistema', ?, ?, 1, ?)
+            """, (nov_id, actor.get("username") or "", msg, ts))
+            con.commit()
+        except Exception as e:
+            con.close()
+            return jsonify({"ok": False, "error": str(e)}), 500
+        con.close()
+        return jsonify({
+            "ok": True,
+            "tarea": tarea,
+            "estado": tarea_estado,
+            "sede_codigo": tarea_sede_codigo,
+            "deposito_codigo": tarea_deposito_codigo,
+            "deposito_nombre": tarea_deposito_nombre,
+            "agente": tarea_agente,
+        })
 
     @bp.route("/api/dashboard/turnos_choferes_cfg_save", methods=["POST"], endpoint="api_dashboard_turnos_choferes_cfg_save")
     def api_dashboard_turnos_choferes_cfg_save():

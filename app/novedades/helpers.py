@@ -184,6 +184,16 @@ def _ensure_novedades_diarias_table(con):
             subtipo TEXT,
             observacion TEXT,
             estado TEXT DEFAULT 'Informado',
+            tarea_asignada TEXT DEFAULT '',
+            tarea_estado TEXT DEFAULT '',
+            tarea_sede_codigo TEXT DEFAULT '',
+            tarea_deposito_codigo TEXT DEFAULT '',
+            tarea_deposito_nombre TEXT DEFAULT '',
+            tarea_agente TEXT DEFAULT '',
+            tarea_asignado_por TEXT DEFAULT '',
+            tarea_asignado_por_username TEXT DEFAULT '',
+            tarea_asignado_en TEXT,
+            tarea_actualizado_en TEXT,
             creado_en TEXT,
             actualizado_en TEXT
         )
@@ -196,6 +206,16 @@ def _ensure_novedades_diarias_table(con):
         ("subtipo", "TEXT"),
         ("observacion", "TEXT"),
         ("estado", "TEXT DEFAULT 'Informado'"),
+        ("tarea_asignada", "TEXT DEFAULT ''"),
+        ("tarea_estado", "TEXT DEFAULT ''"),
+        ("tarea_sede_codigo", "TEXT DEFAULT ''"),
+        ("tarea_deposito_codigo", "TEXT DEFAULT ''"),
+        ("tarea_deposito_nombre", "TEXT DEFAULT ''"),
+        ("tarea_agente", "TEXT DEFAULT ''"),
+        ("tarea_asignado_por", "TEXT DEFAULT ''"),
+        ("tarea_asignado_por_username", "TEXT DEFAULT ''"),
+        ("tarea_asignado_en", "TEXT"),
+        ("tarea_actualizado_en", "TEXT"),
         ("creado_en", "TEXT"),
         ("actualizado_en", "TEXT"),
     ):
@@ -207,6 +227,39 @@ def _ensure_novedades_diarias_table(con):
     con.execute("""
         CREATE INDEX IF NOT EXISTS idx_novedades_diarias_fecha
         ON novedades_diarias(fecha)
+    """)
+    con.commit()
+
+
+def _ensure_novedades_diarias_chat_table(con):
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS novedades_diarias_chat(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            novedad_id INTEGER NOT NULL,
+            autor TEXT NOT NULL,
+            autor_username TEXT,
+            mensaje TEXT NOT NULL,
+            es_sistema INTEGER DEFAULT 0,
+            creado_en TEXT NOT NULL
+        )
+    """)
+    cols = _table_cols(con, "novedades_diarias_chat")
+    for name, sql_type in (
+        ("novedad_id", "INTEGER NOT NULL"),
+        ("autor", "TEXT NOT NULL"),
+        ("autor_username", "TEXT"),
+        ("mensaje", "TEXT NOT NULL"),
+        ("es_sistema", "INTEGER DEFAULT 0"),
+        ("creado_en", "TEXT NOT NULL"),
+    ):
+        if name not in cols:
+            try:
+                con.execute(f"ALTER TABLE novedades_diarias_chat ADD COLUMN {name} {sql_type}")
+            except Exception:
+                pass
+    con.execute("""
+        CREATE INDEX IF NOT EXISTS idx_novedades_diarias_chat_novedad
+        ON novedades_diarias_chat(novedad_id, id)
     """)
     con.commit()
 

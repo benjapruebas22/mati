@@ -1,7 +1,6 @@
 from datetime import date, datetime, timedelta
 import sqlite3
 from collections import defaultdict
-from datetime import date, datetime
 import csv
 import io
 import os

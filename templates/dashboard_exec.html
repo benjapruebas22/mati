@@ -83,6 +83,7 @@
   .control-card.card-vehiculos::before { background: var(--veh-accent); }
   .control-card.card-registro::before { background: #64748b; }
   .control-card.card-historial::before { background: #6366f1; }
+  .control-card.card-task-alert::before { background: #ef4444; }
 
   .control-card.card-resumen {
     background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
@@ -112,6 +113,10 @@
   }
   .control-card.card-historial {
     background: linear-gradient(180deg, #ffffff 0%, #f8f9ff 100%);
+  }
+  .control-card.card-task-alert {
+    background: linear-gradient(180deg, #fff7f8 0%, #fff0f2 100%);
+    border-color: #f3d4d8;
   }
 
   .card-head {
@@ -357,6 +362,12 @@
     border-color: #f1e2c6;
     background: linear-gradient(180deg, #ffffff 0%, #fffaf2 100%);
   }
+  .control-shell.hide-no-cerrados .nvd-split-block.split-pend {
+    display: none;
+  }
+  .control-shell.hide-no-cerrados .nvd-footnote {
+    display: none;
+  }
   .nvd-footnote {
     font-size: 12px;
     color: #5f7ea4;
@@ -403,6 +414,23 @@
   .estado-en-revision { background: #fff1f5; border-color: #f4d8e3; color: #9d4e68; }
   .estado-en-proceso { background: #fff1f5; border-color: #f4d8e3; color: #9d4e68; }
   .estado-resuelto { background: var(--ok-bg); border-color: var(--ok-bd); color: var(--ok-tx); }
+  .tarea-pill {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    border: 1px solid #d8e3f4;
+    background: #f5f9ff;
+    color: #35567f;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+  .tarea-pill.none {
+    background: #f7f9fd;
+    color: #6c84a4;
+    border-color: #e1e8f5;
+  }
 
   .agente-pill {
     display: inline-flex;
@@ -430,6 +458,10 @@
     font-size: 11px;
     font-weight: 800;
     cursor: pointer;
+  }
+  .btn-inline[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 
   .aux-row {
@@ -586,6 +618,182 @@
   }
   .hist-box.open { display: grid; }
 
+  .gestion-modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    z-index: 1200;
+  }
+  .gestion-modal.open {
+    display: block;
+  }
+  .gestion-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(17, 36, 69, 0.45);
+  }
+  .gestion-dialog {
+    position: relative;
+    width: min(860px, calc(100vw - 24px));
+    max-height: calc(100vh - 30px);
+    margin: 15px auto;
+    background: #fff;
+    border: 1px solid #d8e3f4;
+    border-radius: 14px;
+    box-shadow: 0 20px 36px rgba(17, 36, 69, 0.2);
+    display: grid;
+    grid-template-rows: auto auto auto 1fr auto;
+    overflow: hidden;
+  }
+  .gestion-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 12px;
+    border-bottom: 1px solid #e4ebf7;
+    background: linear-gradient(180deg, #f8fbff 0%, #f1f6ff 100%);
+  }
+  .gestion-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 900;
+    color: #1f3a61;
+  }
+  .gestion-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 12px 0;
+  }
+  .gestion-meta-item {
+    border: 1px solid #dbe5f4;
+    border-radius: 999px;
+    background: #f6f9ff;
+    color: #37567e;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+  }
+  .gestion-status-row {
+    padding: 8px 12px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .gestion-tarea-row {
+    padding: 8px 12px 0;
+    display: grid;
+    gap: 6px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: end;
+  }
+  .gestion-tarea-view {
+    margin: 8px 12px 0;
+    border: 1px dashed #d9e4f4;
+    border-radius: 8px;
+    background: #f7fbff;
+    color: #35567f;
+    padding: 6px 8px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .gestion-chat-list {
+    margin: 8px 12px 0;
+    border: 1px solid #e1e9f6;
+    border-radius: 10px;
+    background: linear-gradient(180deg, #fbfdff 0%, #f8fbff 100%);
+    padding: 10px;
+    overflow: auto;
+    min-height: 220px;
+    max-height: 360px;
+    display: grid;
+    gap: 8px;
+  }
+  .chat-msg {
+    display: grid;
+    gap: 2px;
+    max-width: 82%;
+  }
+  .chat-msg .m-head {
+    font-size: 11px;
+    color: #6380a3;
+    font-weight: 700;
+  }
+  .chat-msg .m-body {
+    border: 1px solid #dbe6f7;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #1f3453;
+    padding: 7px 9px;
+    font-size: 12px;
+    line-height: 1.3;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .chat-msg.mine {
+    justify-self: end;
+  }
+  .chat-msg.mine .m-body {
+    border-color: #cfe0f7;
+    background: #eef5ff;
+  }
+  .chat-msg.system {
+    max-width: 100%;
+    justify-self: stretch;
+  }
+  .chat-msg.system .m-body {
+    border-style: dashed;
+    background: #fff8ec;
+    border-color: #f2dfbd;
+    color: #8a6028;
+    text-align: center;
+    font-weight: 700;
+  }
+  .chat-empty {
+    color: #6f86a5;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .gestion-compose {
+    padding: 8px 12px 12px;
+    display: grid;
+    gap: 8px;
+  }
+  .gestion-compose textarea {
+    min-height: 66px;
+    resize: vertical;
+  }
+  .nvd-hint {
+    font-size: 11px;
+    color: #5f7c9e;
+    font-weight: 700;
+    margin-top: 2px;
+  }
+  .task-alert-list {
+    margin: 0;
+    padding-left: 18px;
+    display: grid;
+    gap: 6px;
+    font-size: 12px;
+    color: #6e2f43;
+  }
+  .task-alert-list li {
+    border: 1px solid #f2ccd3;
+    background: #fff4f6;
+    border-radius: 8px;
+    padding: 6px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .task-alert-main {
+    font-weight: 800;
+  }
+
   @media (max-width: 1220px) {
     .nvd-form-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -625,6 +833,17 @@
     .btn-mini { padding: 2px 6px; font-size: 10px; }
     .registro-body { padding: 6px 0 0; }
     .nvd-obs-row input { width: 100%; }
+    .gestion-dialog {
+      width: calc(100vw - 12px);
+      max-height: calc(100vh - 12px);
+      margin: 6px auto;
+    }
+    .gestion-chat-list {
+      max-height: 42vh;
+    }
+    .gestion-tarea-row {
+      grid-template-columns: 1fr;
+    }
   }
 </style>
 
@@ -636,6 +855,13 @@
     </div>
     <p>Registro de novedades diarias, alertas automaticas y estado operativo de recursos.</p>
   </header>
+
+  <article id="taskAlertCard" class="control-card card-task-alert" style="display:none;">
+    <div class="card-head">
+      <h2>Tareas asignadas por Matias</h2>
+    </div>
+    <ul id="taskAlertList" class="task-alert-list"></ul>
+  </article>
 
   <article class="control-card card-resumen">
     <div class="card-head">
@@ -663,6 +889,8 @@
         <div class="k-val" id="kpiOk">0</div>
       </div>
     </div>
+  </article>
+
   <article class="control-card card-registro">
     <div class="card-head">
       <h2>2. Registrar novedad</h2>
@@ -677,44 +905,61 @@
       <div class="registro-body">
         <input id="nvdId" type="hidden" value="0">
         <div class="nvd-form-grid">
+          <div id="nvdModoWrap" class="f-group">
+            <label for="nvdModo">Modo</label>
+            <select id="nvdModo" class="ctl-sel">
+              <option value="solicitud">Solicitud / Novedad</option>
+              <option value="tarea">Tarea asignada</option>
+            </select>
+          </div>
           <div class="f-group">
             <label for="nvdFecha">Fecha</label>
             <input id="nvdFecha" class="ctl-inp" type="date">
           </div>
           <div class="f-group">
-            <label for="nvdAgente">Agente que carga</label>
+            <label id="nvdAgenteLabel" for="nvdAgente">Agente que carga</label>
             <select id="nvdAgente" class="ctl-sel"></select>
+            <div id="nvdAgenteHint" class="nvd-hint"></div>
           </div>
           <div class="f-group">
-            <div class="label-row">
-              <label for="nvdSede">Sede</label>
+            <div class="label-row mode-solicitud">
+              <label id="nvdSedeLabel" for="nvdSede">Sede</label>
               <button id="btnAddSede" type="button" class="btn-mini">+ Cargar</button>
             </div>
+            <label id="nvdSedeLabelSimple" for="nvdSede" class="mode-tarea" style="display:none;font-size:12px;font-weight:700;color:#355f8f;">Sede</label>
             <select id="nvdSede" class="ctl-sel"></select>
           </div>
-          <div class="f-group">
+          <div class="f-group mode-solicitud">
             <div class="label-row">
               <label for="nvdTipo">Tipo</label>
               <button id="btnAddTipo" type="button" class="btn-mini">+ Cargar</button>
             </div>
             <select id="nvdTipo" class="ctl-sel"></select>
           </div>
-          <div class="f-group">
+          <div class="f-group mode-solicitud">
             <div class="label-row">
               <label for="nvdSubtipo">Subtipo / motivo</label>
               <button id="btnAddSubtipo" type="button" class="btn-mini">+ Cargar</button>
             </div>
             <select id="nvdSubtipo" class="ctl-sel"></select>
           </div>
-          <div class="f-group">
+          <div class="f-group mode-solicitud" style="display:none;">
             <label for="nvdEstado">Estado</label>
             <select id="nvdEstado" class="ctl-sel"></select>
+          </div>
+          <div class="f-group mode-tarea" style="display:none;">
+            <label for="nvdDeposito">Deposito / local</label>
+            <select id="nvdDeposito" class="ctl-sel"></select>
+          </div>
+          <div class="f-group mode-tarea" style="display:none;grid-column: span 2;">
+            <label for="nvdTareaTxt">Tarea asignada</label>
+            <input id="nvdTareaTxt" class="ctl-inp" type="text" maxlength="280" placeholder="Ej: Cambiar luminarias en S01 D02">
           </div>
           <button id="nvdGuardar" type="button" class="btn-dark">Guardar</button>
           <button id="nvdCancelarEdit" type="button" class="btn-soft" style="display:none;">Cancelar</button>
         </div>
 
-        <div class="nvd-obs-row">
+        <div class="nvd-obs-row mode-solicitud">
           <label for="nvdObs" style="font-size:11px;color:#59799e;font-weight:700;">Observacion (quien solicita / detalle / patente)</label>
           <input id="nvdObs" class="ctl-inp" type="text" maxlength="240" placeholder="Ej: Mauro solicita horario especial / AB946VK al mecanico">
         </div>
@@ -724,8 +969,6 @@
         </div>
       </div>
     </details>
-  </article>
-
   </article>
 
   <article class="control-card card-operativa">
@@ -748,12 +991,34 @@
 
     <div id="nvdSplitWrap" class="nvd-split-grid">
       <div class="nvd-split-block split-dia">
-        <div class="nvd-split-head dia">Pendientes del dia</div>
+        <div class="nvd-split-head dia">Tareas asignadas</div>
         <div class="table-wrap" style="max-height:220px;">
           <table class="tbl">
             <thead>
               <tr>
-                <th>Hora</th>
+                <th>Fecha</th>
+                <th>Agente</th>
+                <th>Sede</th>
+                <th>Depos./Local</th>
+                <th>Tarea</th>
+                <th>Estado tarea</th>
+                <th>Accion</th>
+              </tr>
+            </thead>
+            <tbody id="nvdBodyDia">
+              <tr><td colspan="7" style="color:#6f86a5;">Sin tareas asignadas.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="nvd-split-block split-solic">
+        <div class="nvd-split-head pend">Solicitudes / novedades recibidas</div>
+        <div class="table-wrap" style="max-height:220px;">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Fecha</th>
                 <th>Agente</th>
                 <th>Sede</th>
                 <th>Tipo</th>
@@ -763,8 +1028,8 @@
                 <th>Accion</th>
               </tr>
             </thead>
-            <tbody id="nvdBodyDia">
-              <tr><td colspan="8" style="color:#6f86a5;">Sin pendientes del dia.</td></tr>
+            <tbody id="nvdBodySolic">
+              <tr><td colspan="8" style="color:#6f86a5;">Sin solicitudes cargadas.</td></tr>
             </tbody>
           </table>
         </div>
@@ -784,11 +1049,12 @@
                 <th>Subtipo</th>
                 <th>Observacion</th>
                 <th>Estado</th>
+                <th>Tarea</th>
                 <th>Accion</th>
               </tr>
             </thead>
             <tbody id="nvdBodyPend">
-              <tr><td colspan="9" style="color:#6f86a5;">Sin pendientes acumulados.</td></tr>
+              <tr><td colspan="10" style="color:#6f86a5;">Sin pendientes acumulados.</td></tr>
             </tbody>
           </table>
         </div>
@@ -863,8 +1129,59 @@
   </article>
 </section>
 
+<div id="gestionModal" class="gestion-modal" aria-hidden="true">
+  <div class="gestion-backdrop" data-close-gestion="1"></div>
+  <div class="gestion-dialog" role="dialog" aria-modal="true" aria-labelledby="gestionTitle">
+    <div class="gestion-head">
+      <h3 id="gestionTitle" class="gestion-title">Gestion interna</h3>
+      <button id="gestionClose" type="button" class="btn-soft">Cerrar</button>
+    </div>
+    <div id="gestionMeta" class="gestion-meta"></div>
+    <div id="gestionStatusRow" class="gestion-status-row" style="display:none;">
+      <label for="gestionEstado" style="font-size:11px;color:#59799e;font-weight:800;">Estado</label>
+      <select id="gestionEstado" class="ctl-sel" style="max-width:180px;"></select>
+      <button id="gestionEstadoGuardar" type="button" class="btn-inline">Actualizar estado</button>
+      <button id="gestionCerrar" type="button" class="btn-inline">Cerrar novedad</button>
+    </div>
+    <div id="gestionTareaRow" class="gestion-tarea-row" style="display:none;">
+      <div>
+        <label for="gestionTareaAgente" style="font-size:11px;color:#59799e;font-weight:800;">Agente asignado</label>
+        <select id="gestionTareaAgente" class="ctl-sel"></select>
+      </div>
+      <div>
+        <label for="gestionTareaSede" style="font-size:11px;color:#59799e;font-weight:800;">Sede</label>
+        <select id="gestionTareaSede" class="ctl-sel"></select>
+      </div>
+      <div>
+        <label for="gestionTareaDeposito" style="font-size:11px;color:#59799e;font-weight:800;">Deposito</label>
+        <select id="gestionTareaDeposito" class="ctl-sel"></select>
+      </div>
+      <div>
+        <label for="gestionTarea" style="font-size:11px;color:#59799e;font-weight:800;">Tarea asignada</label>
+        <input id="gestionTarea" class="ctl-inp" type="text" maxlength="280" placeholder="Ej: Coordinar compra de luminarias para S11">
+      </div>
+      <div>
+        <label for="gestionTareaEstado" style="font-size:11px;color:#59799e;font-weight:800;">Estado tarea</label>
+        <select id="gestionTareaEstado" class="ctl-sel"></select>
+      </div>
+      <button id="gestionTareaGuardar" type="button" class="btn-inline">Guardar tarea</button>
+      <button id="gestionTareaLimpiar" type="button" class="btn-inline">Limpiar</button>
+    </div>
+    <div id="gestionTareaView" class="gestion-tarea-view">Sin tarea asignada.</div>
+    <div id="gestionChatList" class="gestion-chat-list"></div>
+    <div class="gestion-compose">
+      <textarea id="gestionTexto" class="ctl-inp" maxlength="1000" placeholder="Escribe una respuesta interna..."></textarea>
+      <div class="aux-row">
+        <div id="gestionMsg" class="aux-msg"></div>
+        <button id="gestionEnviar" type="button" class="btn-dark">Enviar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
   (function () {
+    var CURRENT_USER = {{ (current_user or {})|tojson }};
     var SUBTIPOS = {};
     var ESTADOS = ["Informado", "En proceso", "Resuelto"];
     var ITEM_INDEX = {};
@@ -872,7 +1189,16 @@
     var RAW_DIA = [];
     var RAW_PEND = [];
     var RAW_FINAL = [];
+    var RAW_TASK = [];
+    var RAW_SOLIC = [];
     var RESUMEN_BASE = { total: 0, informado: 0, en_proceso: 0, resuelto: 0 };
+    var HIDE_PENDIENTES_NO_CERRADOS = true;
+    var TAREA_ESTADOS = ["Pendiente", "En curso", "Completada"];
+    var IS_MATIAS = false;
+    var GESTION_OPEN_ID = 0;
+    var GESTION_DATA = null;
+    var SEDES_ASSIGN = [];
+    var AGENTES_ASSIGN = [];
     var AGENTES_PERMITIDOS = [
       "Matias Calderari",
       "Marcos Duran",
@@ -916,12 +1242,20 @@
     };
 
     var el = {
+      shell: document.querySelector(".control-shell"),
       id: document.getElementById("nvdId"),
+      modo: document.getElementById("nvdModo"),
+      modoWrap: document.getElementById("nvdModoWrap"),
       fecha: document.getElementById("nvdFecha"),
+      agenteLabel: document.getElementById("nvdAgenteLabel"),
       agente: document.getElementById("nvdAgente"),
+      sedeLabel: document.getElementById("nvdSedeLabel"),
+      sedeLabelSimple: document.getElementById("nvdSedeLabelSimple"),
       sede: document.getElementById("nvdSede"),
+      deposito: document.getElementById("nvdDeposito"),
       tipo: document.getElementById("nvdTipo"),
       subtipo: document.getElementById("nvdSubtipo"),
+      tareaTxt: document.getElementById("nvdTareaTxt"),
       addSede: document.getElementById("btnAddSede"),
       addTipo: document.getElementById("btnAddTipo"),
       addSubtipo: document.getElementById("btnAddSubtipo"),
@@ -935,6 +1269,7 @@
       recargar: document.getElementById("btnRecargarDia"),
       splitWrap: document.getElementById("nvdSplitWrap"),
       bodyDia: document.getElementById("nvdBodyDia"),
+      bodySolic: document.getElementById("nvdBodySolic"),
       bodyPend: document.getElementById("nvdBodyPend"),
       kTotal: document.getElementById("kpiTotal"),
       kInfo: document.getElementById("kpiInfo"),
@@ -943,6 +1278,8 @@
       vehWrap: document.getElementById("vehiculosWrap"),
       alertas: document.getElementById("alertasList"),
       alertasCard: document.getElementById("alertasCard"),
+      taskAlertCard: document.getElementById("taskAlertCard"),
+      taskAlertList: document.getElementById("taskAlertList"),
       registroBox: document.getElementById("registroNvdBox"),
       histTop: document.getElementById("btnHistorialTop"),
       histBox: document.getElementById("histBox"),
@@ -951,7 +1288,32 @@
       histHasta: document.getElementById("histHasta"),
       histBuscar: document.getElementById("btnHistBuscar"),
       histBody: document.getElementById("histBody"),
+      agenteHint: document.getElementById("nvdAgenteHint"),
+      gestionModal: document.getElementById("gestionModal"),
+      gestionClose: document.getElementById("gestionClose"),
+      gestionTitle: document.getElementById("gestionTitle"),
+      gestionMeta: document.getElementById("gestionMeta"),
+      gestionChatList: document.getElementById("gestionChatList"),
+      gestionTexto: document.getElementById("gestionTexto"),
+      gestionEnviar: document.getElementById("gestionEnviar"),
+      gestionMsg: document.getElementById("gestionMsg"),
+      gestionEstadoRow: document.getElementById("gestionStatusRow"),
+      gestionEstado: document.getElementById("gestionEstado"),
+      gestionEstadoGuardar: document.getElementById("gestionEstadoGuardar"),
+      gestionCerrar: document.getElementById("gestionCerrar"),
+      gestionTareaRow: document.getElementById("gestionTareaRow"),
+      gestionTarea: document.getElementById("gestionTarea"),
+      gestionTareaEstado: document.getElementById("gestionTareaEstado"),
+      gestionTareaSede: document.getElementById("gestionTareaSede"),
+      gestionTareaAgente: document.getElementById("gestionTareaAgente"),
+      gestionTareaDeposito: document.getElementById("gestionTareaDeposito"),
+      gestionTareaGuardar: document.getElementById("gestionTareaGuardar"),
+      gestionTareaLimpiar: document.getElementById("gestionTareaLimpiar"),
+      gestionTareaView: document.getElementById("gestionTareaView"),
     };
+    if (HIDE_PENDIENTES_NO_CERRADOS && el.shell) {
+      el.shell.classList.add("hide-no-cerrados");
+    }
 
     function setMsg(txt, isErr) {
       el.msg.textContent = txt || "";
@@ -959,6 +1321,21 @@
       if (el.msgRow) {
         el.msgRow.style.display = txt ? "flex" : "none";
       }
+    }
+
+    function setGestionMsg(txt, isErr) {
+      if (!el.gestionMsg) return;
+      el.gestionMsg.textContent = txt || "";
+      el.gestionMsg.style.color = isErr ? "#9e4459" : "#5c789c";
+    }
+
+    function escapeHtml(v) {
+      return String(v || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
     }
 
     function estadoClass(v) {
@@ -1026,6 +1403,75 @@
         out.push(aliasMatch || nom);
       });
       return out;
+    }
+
+    function applyAgentePolicy(apiAgentes, agenteActual) {
+      var agentes = agentesVisibles(apiAgentes || []);
+      var actual = normalizarAgente(
+        agenteActual ||
+        (CURRENT_USER && CURRENT_USER.full_name) ||
+        (CURRENT_USER && CURRENT_USER.username) ||
+        ""
+      );
+      if (IS_MATIAS) {
+        fillSelect(el.agente, agentes, true, "Agente que carga");
+        el.agente.disabled = false;
+        if (el.agenteHint) el.agenteHint.textContent = "Matias puede seleccionar o editar el agente manualmente.";
+        if (actual && agentes.indexOf(actual) >= 0) {
+          el.agente.value = actual;
+        }
+        return agentes;
+      }
+      var unico = actual || "";
+      fillSelect(el.agente, unico ? [unico] : [], false);
+      if (unico) el.agente.value = unico;
+      el.agente.disabled = true;
+      if (el.agenteHint) el.agenteHint.textContent = "Se completa automaticamente segun tu usuario.";
+      return agentes;
+    }
+
+    function refreshFormDepositos(preferCodigo) {
+      if (!el.sede || !el.deposito) return Promise.resolve();
+      var sede = String(el.sede.value || "").trim().toUpperCase();
+      if (!sede) {
+        fillSelect(el.deposito, [], true, "Deposito / local");
+        return Promise.resolve();
+      }
+      return fetchDepositosBySede(sede).then(function (deps) {
+        var depOpts = (deps || []).map(function (d) {
+          var c = String((d && d.codigo) || "").trim().toUpperCase();
+          var desc = String((d && d.descripcion) || c).trim();
+          return { value: c, label: c + (desc && desc !== c ? (" - " + desc) : "") };
+        });
+        fillSelect(el.deposito, depOpts, true, "Deposito / local");
+        var pref = String(preferCodigo || "").trim().toUpperCase();
+        if (pref) el.deposito.value = pref;
+      });
+    }
+
+    function applyModoUI() {
+      if (!el.modo) return;
+      if (!IS_MATIAS) {
+        el.modo.value = "solicitud";
+        el.modo.disabled = true;
+        if (el.modoWrap) el.modoWrap.style.display = "none";
+      } else {
+        el.modo.disabled = false;
+        if (el.modoWrap) el.modoWrap.style.display = "";
+      }
+      var modo = String(el.modo.value || "solicitud");
+      var isTask = IS_MATIAS && modo === "tarea";
+      var nodesSol = document.querySelectorAll(".mode-solicitud");
+      var nodesTask = document.querySelectorAll(".mode-tarea");
+      nodesSol.forEach(function (n) { n.style.display = isTask ? "none" : ""; });
+      nodesTask.forEach(function (n) { n.style.display = isTask ? "" : "none"; });
+      if (el.agenteLabel) {
+        el.agenteLabel.textContent = isTask ? "Agente asignado" : "Agente que carga";
+      }
+      if (el.estado) el.estado.value = "Informado";
+      if (isTask) {
+        refreshFormDepositos("");
+      }
     }
 
     function nombreCortoAgente(v) {
@@ -1152,7 +1598,7 @@
       el.vehWrap.innerHTML = rows.map(function (r) {
         var est = String(r.estado || "Disponible");
         var cls = (est === "Disponible") ? "ok" : "use";
-        var dot = (est === "Disponible") ? "🟢" : "🔴";
+        var dot = (est === "Disponible") ? "OK" : "ALERTA";
         return (
           '<div class="veh-card">' +
             '<div class="veh-code">' + (r.codigo || r.patente || "-") + "</div>" +
@@ -1165,7 +1611,7 @@
 
     function renderAlertas(items) {
       function norm(s) {
-        try { return String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); }
+        try { return String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
         catch (_e) { return String(s || "").toLowerCase(); }
       }
       function alertClass(r) {
@@ -1202,37 +1648,389 @@
       }).join("");
     }
 
-    function makeRowActions(r) {
-      var stSel = ESTADOS.map(function (s) {
-        var sel = (s === r.estado) ? " selected" : "";
-        return '<option value="' + s + '"' + sel + ">" + s + "</option>";
+    function renderTaskAlerts(items) {
+      var rows = Array.isArray(items) ? items : [];
+      if (!el.taskAlertCard || !el.taskAlertList) return;
+      if (!rows.length) {
+        el.taskAlertCard.style.display = "none";
+        el.taskAlertList.innerHTML = "";
+        return;
+      }
+      el.taskAlertCard.style.display = "grid";
+      el.taskAlertList.innerHTML = rows.map(function (r) {
+        var sede = String(r.sede_codigo || "-");
+        var dep = String(r.deposito_codigo || "");
+        var depNom = String(r.deposito_nombre || "");
+        var depTxt = dep ? (" / " + dep + (depNom ? (" - " + depNom) : "")) : "";
+        var txt = sede + depTxt + " - " + String(r.tarea || "-") + " (" + String(r.estado || "Pendiente") + ")";
+        return (
+          "<li>" +
+            '<span class="task-alert-main">' + escapeHtml(txt) + "</span>" +
+            '<button type="button" class="btn-inline task-open-gestion" data-id="' + String(r.novedad_id || 0) + '">' + gestionButtonLabel() + "</button>" +
+          "</li>"
+        );
       }).join("");
-      return (
-        '<button type="button" class="btn-inline row-edit" data-id="' + r.id + '">Editar</button> ' +
-        '<select class="ctl-sel row-estado" data-id="' + r.id + '" style="display:inline-block;width:auto;min-width:120px;padding:4px 6px;">' + stSel + "</select> " +
-        '<button type="button" class="btn-inline row-save-est" data-id="' + r.id + '">Cambiar estado</button> ' +
-        '<button type="button" class="btn-inline row-hist">Ver historial</button>'
-      );
     }
 
-    function renderPendientesRows(target, items, includeFecha, emptyText) {
+    function fetchDepositosBySede(sedeCodigo) {
+      var sede = String(sedeCodigo || "").trim().toUpperCase();
+      if (!sede) return Promise.resolve([]);
+      return fetch("/api/dashboard/novedades_depositos_por_sede?sede_codigo=" + encodeURIComponent(sede))
+        .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, b: b || {} }; }); })
+        .then(function (x) {
+          if (!x.ok || !x.b.ok) return [];
+          return Array.isArray(x.b.depositos) ? x.b.depositos : [];
+        })
+        .catch(function () { return []; });
+    }
+
+    function refreshGestionDepositos(preferCodigo) {
+      if (!el.gestionTareaSede || !el.gestionTareaDeposito) return Promise.resolve();
+      var sede = String(el.gestionTareaSede.value || "").trim().toUpperCase();
+      if (!sede) {
+        fillSelect(el.gestionTareaDeposito, [], true, "Deposito");
+        return Promise.resolve();
+      }
+      return fetchDepositosBySede(sede).then(function (deps) {
+        var depOpts = (deps || []).map(function (d) {
+          var c = String((d && d.codigo) || "").trim().toUpperCase();
+          var desc = String((d && d.descripcion) || c).trim();
+          return { value: c, label: c + (desc && desc !== c ? (" - " + desc) : "") };
+        });
+        fillSelect(el.gestionTareaDeposito, depOpts, true, "Deposito");
+        var pref = String(preferCodigo || "").trim().toUpperCase();
+        if (pref) el.gestionTareaDeposito.value = pref;
+      });
+    }
+
+    function gestionButtonLabel() {
+      return IS_MATIAS ? "Abrir gestion" : "Responder";
+    }
+
+    function canOpenGestion(row) {
+      return !!(row && row.gestion_habilitada && row.puede_ver_gestion);
+    }
+
+    function closeGestionModal() {
+      GESTION_OPEN_ID = 0;
+      GESTION_DATA = null;
+      if (el.gestionModal) {
+        el.gestionModal.classList.remove("open");
+        el.gestionModal.setAttribute("aria-hidden", "true");
+      }
+      setGestionMsg("", false);
+    }
+
+    function renderGestion(payload) {
+      var p = payload || {};
+      var nov = p.novedad || {};
+      GESTION_DATA = p;
+      if (el.gestionTitle) {
+        el.gestionTitle.textContent = "Gestion interna #"+ String(nov.id || "-") + " - " + String(nov.tipo || "Novedad");
+      }
+      if (el.gestionMeta) {
+        var tags = [];
+        tags.push("Agente: " + String(nov.agente || "-"));
+        tags.push("Sede: " + String(nov.sede_codigo || "-"));
+        tags.push("Estado: " + String(nov.estado || "Informado"));
+        tags.push("Subtipo: " + String(nov.subtipo || "General"));
+        el.gestionMeta.innerHTML = tags.map(function (t) {
+          return '<span class="gestion-meta-item">' + escapeHtml(t) + "</span>";
+        }).join("");
+      }
+
+      var estados = Array.isArray(p.estados) && p.estados.length ? p.estados : ESTADOS;
+      fillSelect(el.gestionEstado, estados, false);
+      el.gestionEstado.value = String(nov.estado || "Informado");
+      aplicarEstiloEstadoSelect(el.gestionEstado);
+      if (el.gestionEstadoRow) {
+        el.gestionEstadoRow.style.display = (IS_MATIAS && nov.puede_cambiar_estado) ? "flex" : "none";
+      }
+      if (el.gestionTareaRow) {
+        el.gestionTareaRow.style.display = (IS_MATIAS && nov.puede_asignar_tarea) ? "grid" : "none";
+      }
+      if (el.gestionTareaEstado) {
+        fillSelect(el.gestionTareaEstado, TAREA_ESTADOS, false);
+        var tareaEstadoActual = String(nov.tarea_estado || "Pendiente");
+        if (TAREA_ESTADOS.indexOf(tareaEstadoActual) < 0) tareaEstadoActual = "Pendiente";
+        el.gestionTareaEstado.value = tareaEstadoActual;
+      }
+      if (el.gestionTareaAgente) {
+        var agentesRef = Array.isArray(p.agentes) && p.agentes.length ? p.agentes : AGENTES_ASSIGN;
+        fillSelect(el.gestionTareaAgente, agentesRef, false);
+        var agSel = String(nov.tarea_agente || nov.agente || "");
+        if (agSel) el.gestionTareaAgente.value = agSel;
+      }
+      if (el.gestionTareaSede) {
+        var sedesRef = Array.isArray(p.sedes) && p.sedes.length ? p.sedes : SEDES_ASSIGN;
+        var sedesOpts = sedesRef.map(function (s) {
+          if (typeof s === "string") return { value: s, label: s };
+          var c = String((s && s.codigo) || "").trim();
+          var n = String((s && s.nombre) || c).trim();
+          return { value: c, label: c + (n && n !== c ? (" - " + n) : "") };
+        }).filter(function (x) { return x.value; });
+        fillSelect(el.gestionTareaSede, sedesOpts, false);
+        var sedeSel = String(nov.tarea_sede_codigo || nov.sede_codigo || "");
+        if (sedeSel) el.gestionTareaSede.value = sedeSel;
+      }
+      if (el.gestionTareaDeposito) {
+        var deps = Array.isArray(p.depositos_sede) ? p.depositos_sede : [];
+        var depOpts = deps.map(function (d) {
+          var c = String((d && d.codigo) || "").trim().toUpperCase();
+          var desc = String((d && d.descripcion) || c).trim();
+          return { value: c, label: c + (desc && desc !== c ? (" - " + desc) : "") };
+        });
+        fillSelect(el.gestionTareaDeposito, depOpts, true, "Deposito");
+        var depSel = String(nov.tarea_deposito_codigo || "");
+        if (depSel) el.gestionTareaDeposito.value = depSel;
+      }
+      refreshGestionDepositos(String(nov.tarea_deposito_codigo || ""));
+      if (el.gestionTarea) {
+        el.gestionTarea.value = String(nov.tarea_asignada || "");
+      }
+      if (el.gestionTareaView) {
+        if (nov.tarea_asignada) {
+          el.gestionTareaView.style.display = "block";
+          var tareaAg = String(nov.tarea_agente || nov.agente || "-");
+          var tareaSede = String(nov.tarea_sede_codigo || nov.sede_codigo || "-");
+          var tareaDep = String(nov.tarea_deposito_codigo || "");
+          var tareaDepNom = String(nov.tarea_deposito_nombre || "");
+          var depTxtView = tareaDep ? (" / " + tareaDep + (tareaDepNom ? (" - " + tareaDepNom) : "")) : "";
+          var tareaTxt = "Tarea actual: " + tareaAg + " - " + tareaSede + depTxtView + " - " + String(nov.tarea_asignada) + " (" + String(nov.tarea_estado || "Pendiente") + ")";
+          if (nov.tarea_actualizado_en) tareaTxt += " - " + String(nov.tarea_actualizado_en);
+          el.gestionTareaView.textContent = tareaTxt;
+        } else {
+          el.gestionTareaView.textContent = "";
+          el.gestionTareaView.style.display = "none";
+        }
+      }
+
+      var mensajes = Array.isArray(p.mensajes) ? p.mensajes : [];
+      if (el.gestionChatList) {
+        if (!mensajes.length) {
+          el.gestionChatList.innerHTML = '<div class="chat-empty">Sin mensajes todavia.</div>';
+        } else {
+          el.gestionChatList.innerHTML = mensajes.map(function (m) {
+            var cls = "chat-msg";
+            if (m.es_sistema) cls += " system";
+            else if (m.es_propio) cls += " mine";
+            var autor = m.es_sistema ? "Sistema" : String(m.autor || "Usuario");
+            var stamp = String(m.creado_en || "");
+            var body = escapeHtml(m.mensaje || "").replace(/\n/g, "<br>");
+            return (
+              '<div class="' + cls + '">' +
+                '<div class="m-head">' + escapeHtml(autor + (stamp ? (" - " + stamp) : "")) + "</div>" +
+                '<div class="m-body">' + body + "</div>" +
+              "</div>"
+            );
+          }).join("");
+        }
+        el.gestionChatList.scrollTop = el.gestionChatList.scrollHeight;
+      }
+
+      var canReply = !!nov.puede_ver_gestion;
+      if (el.gestionTexto) {
+        el.gestionTexto.disabled = !canReply;
+        if (!canReply) el.gestionTexto.value = "";
+      }
+      if (el.gestionEnviar) el.gestionEnviar.disabled = !canReply;
+      if (el.gestionTareaGuardar) el.gestionTareaGuardar.disabled = !(IS_MATIAS && nov.puede_asignar_tarea);
+      if (el.gestionTareaLimpiar) el.gestionTareaLimpiar.disabled = !(IS_MATIAS && nov.puede_asignar_tarea);
+      setGestionMsg("", false);
+    }
+
+    function loadGestion(novId) {
+      if (!novId) return Promise.resolve();
+      setGestionMsg("Cargando gestion...", false);
+      return fetch("/api/dashboard/novedades_diarias_gestion/" + encodeURIComponent(String(novId)))
+        .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, b: b || {} }; }); })
+        .then(function (x) {
+          if (!x.ok || !x.b.ok) throw new Error(x.b.error || "No se pudo cargar la gestion");
+          GESTION_OPEN_ID = Number((x.b.novedad && x.b.novedad.id) || novId || 0);
+          renderGestion(x.b);
+          if (el.gestionModal) {
+            el.gestionModal.classList.add("open");
+            el.gestionModal.setAttribute("aria-hidden", "false");
+          }
+        })
+        .catch(function (e) {
+          setMsg(e.message || "No se pudo abrir la gestion", true);
+          closeGestionModal();
+        });
+    }
+
+    function sendGestionMensaje() {
+      var novId = Number(GESTION_OPEN_ID || 0);
+      if (novId <= 0) return;
+      var msg = String((el.gestionTexto && el.gestionTexto.value) || "").trim();
+      if (!msg) {
+        setGestionMsg("Escribe un mensaje.", true);
+        return;
+      }
+      if (el.gestionEnviar) el.gestionEnviar.disabled = true;
+      setGestionMsg("Enviando...", false);
+      fetch("/api/dashboard/novedades_diarias_gestion/" + encodeURIComponent(String(novId)) + "/mensaje", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mensaje: msg }),
+      })
+        .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, b: b || {} }; }); })
+        .then(function (x) {
+          if (!x.ok || !x.b.ok) throw new Error(x.b.error || "No se pudo enviar el mensaje");
+          if (el.gestionTexto) el.gestionTexto.value = "";
+          return loadGestion(novId).then(function () { return loadDay(); });
+        })
+        .catch(function (e) {
+          setGestionMsg(e.message || "No se pudo enviar el mensaje", true);
+        })
+        .finally(function () {
+          if (el.gestionEnviar) el.gestionEnviar.disabled = false;
+        });
+    }
+
+    function saveGestionEstado(estadoNuevo) {
+      var novId = Number(GESTION_OPEN_ID || 0);
+      if (novId <= 0) return;
+      fetch("/api/dashboard/novedades_diarias_gestion/" + encodeURIComponent(String(novId)) + "/estado", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estado: String(estadoNuevo || "Informado") }),
+      })
+        .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, b: b || {} }; }); })
+        .then(function (x) {
+          if (!x.ok || !x.b.ok) throw new Error(x.b.error || "No se pudo cambiar el estado");
+          setGestionMsg("Estado actualizado.", false);
+          return loadGestion(novId).then(function () { return loadDay(); });
+        })
+        .catch(function (e) {
+          setGestionMsg(e.message || "No se pudo actualizar estado", true);
+        });
+    }
+
+    function saveGestionTarea(limpiar) {
+      var novId = Number(GESTION_OPEN_ID || 0);
+      if (novId <= 0) return;
+      var tarea = String((el.gestionTarea && el.gestionTarea.value) || "").trim();
+      var estado = String((el.gestionTareaEstado && el.gestionTareaEstado.value) || "Pendiente");
+      var agente = String((el.gestionTareaAgente && el.gestionTareaAgente.value) || "").trim();
+      var sede = String((el.gestionTareaSede && el.gestionTareaSede.value) || "").trim().toUpperCase();
+      var depositoCodigo = String((el.gestionTareaDeposito && el.gestionTareaDeposito.value) || "").trim().toUpperCase();
+      var depositoNombre = "";
+      if (el.gestionTareaDeposito && depositoCodigo) {
+        var opt = el.gestionTareaDeposito.options[el.gestionTareaDeposito.selectedIndex];
+        if (opt) {
+          var label = String(opt.text || "").trim();
+          if (label && label !== depositoCodigo) {
+            depositoNombre = label.replace(new RegExp("^" + depositoCodigo + "\\s*-\\s*"), "").trim();
+          }
+        }
+      }
+      if (!limpiar && !tarea) {
+        setGestionMsg("Escribe una tarea para asignar.", true);
+        return;
+      }
+      if (!limpiar && !agente) {
+        setGestionMsg("Selecciona el agente asignado.", true);
+        return;
+      }
+      if (!limpiar && !sede) {
+        setGestionMsg("Selecciona la sede de la tarea.", true);
+        return;
+      }
+      fetch("/api/dashboard/novedades_diarias_gestion/" + encodeURIComponent(String(novId)) + "/tarea", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tarea: limpiar ? "" : tarea,
+          estado: limpiar ? "" : estado,
+          agente: limpiar ? "" : agente,
+          sede_codigo: limpiar ? "" : sede,
+          deposito_codigo: limpiar ? "" : depositoCodigo,
+          deposito_nombre: limpiar ? "" : depositoNombre,
+          limpiar: !!limpiar,
+        }),
+      })
+        .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, b: b || {} }; }); })
+        .then(function (x) {
+          if (!x.ok || !x.b.ok) throw new Error(x.b.error || "No se pudo guardar la tarea");
+          setGestionMsg(limpiar ? "Tarea eliminada." : "Tarea guardada.", false);
+          return loadGestion(novId).then(function () { return loadDay(); });
+        })
+        .catch(function (e) {
+          setGestionMsg(e.message || "No se pudo guardar la tarea", true);
+        });
+    }
+
+    function makeRowActions(r) {
+      if (r && r.puede_ver_gestion) {
+        return '<button type="button" class="btn-inline row-gestion" data-id="' + r.id + '">Abrir gestion</button>';
+      }
+      return "";
+    }
+
+    function tareaCell(r) {
+      var tarea = String((r && r.tarea_asignada) || "").trim();
+      var tareaEstado = String((r && r.tarea_estado) || "").trim();
+      var tareaAgente = String((r && r.tarea_agente) || "").trim();
+      var tareaSede = String((r && r.tarea_sede_codigo) || (r && r.sede_codigo) || "").trim().toUpperCase();
+      var tareaDeposito = String((r && r.tarea_deposito_codigo) || "").trim().toUpperCase();
+      var tareaDepositoNom = String((r && r.tarea_deposito_nombre) || "").trim();
+      if (!tarea) {
+        return '<span class="tarea-pill none">Sin tarea</span>';
+      }
+      var depTxt = tareaDeposito ? ("/" + tareaDeposito + (tareaDepositoNom ? ("-" + tareaDepositoNom) : "")) : "";
+      var pref = [];
+      if (tareaAgente) pref.push(tareaAgente);
+      if (tareaSede) pref.push(tareaSede + depTxt);
+      var txt = (pref.length ? (pref.join(" - ") + " - ") : "") + tarea;
+      if (tareaEstado) txt += " (" + tareaEstado + ")";
+      return '<span class="tarea-pill" title="' + escapeHtml(txt) + '">' + escapeHtml(txt) + "</span>";
+    }
+
+    function renderTareasRows(target, items) {
       var rows = Array.isArray(items) ? items : [];
       if (!rows.length) {
-        target.innerHTML = '<tr><td colspan="' + (includeFecha ? 9 : 8) + '" style="color:#6f86a5;">' + emptyText + "</td></tr>";
+        target.innerHTML = '<tr><td colspan="7" style="color:#6f86a5;">Sin tareas asignadas.</td></tr>';
+        return;
+      }
+      target.innerHTML = rows.map(function (r) {
+        var depCod = String((r && r.tarea_deposito_codigo) || "").trim().toUpperCase();
+        var depNom = String((r && r.tarea_deposito_nombre) || "").trim();
+        var depTxt = depCod ? (depCod + (depNom ? (" - " + depNom) : "")) : "-";
+        var ag = String((r && r.tarea_agente) || (r && r.agente) || "").trim();
+        var sede = String((r && r.tarea_sede_codigo) || (r && r.sede_codigo) || "").trim().toUpperCase() || "-";
+        var tareaEstado = String((r && r.tarea_estado) || "Pendiente").trim();
+        return (
+          "<tr>" +
+            "<td>" + (r.fecha || "-") + "</td>" +
+            "<td>" + agenteCell(ag) + "</td>" +
+            "<td>" + sede + "</td>" +
+            "<td>" + depTxt + "</td>" +
+            "<td>" + escapeHtml(String((r && r.tarea_asignada) || "-")) + "</td>" +
+            '<td><span class="tarea-pill">' + escapeHtml(tareaEstado) + "</span></td>" +
+            '<td style="white-space:nowrap;">' + makeRowActions(r) + "</td>" +
+          "</tr>"
+        );
+      }).join("");
+    }
+
+    function renderSolicitudesRows(target, items) {
+      var rows = Array.isArray(items) ? items : [];
+      if (!rows.length) {
+        target.innerHTML = '<tr><td colspan="8" style="color:#6f86a5;">Sin solicitudes cargadas.</td></tr>';
         return;
       }
       target.innerHTML = rows.map(function (r) {
         return (
           "<tr>" +
-            (includeFecha ? ("<td>" + (r.fecha || "-") + "</td>") : "") +
-            "<td>" + (r.hora || "-") + "</td>" +
+            "<td>" + (r.fecha || "-") + "</td>" +
             "<td>" + agenteCell(r.agente) + "</td>" +
             "<td>" + (r.sede_codigo || "-") + "</td>" +
             "<td>" + (r.tipo || "-") + "</td>" +
             "<td>" + (r.subtipo || "-") + "</td>" +
             "<td>" + (r.observacion || "-") + "</td>" +
-            '<td><span class="estado-pill ' + estadoClass(r.estado) + '">' + (r.estado || "Informado") + "</span></td>" +
-            '<td style="white-space:nowrap;">' + makeRowActions(r) + "</td>" +
+            "<td><span class=\"estado-pill " + estadoClass(r.estado) + "\">" + (r.estado || "Informado") + "</span></td>" +
+            "<td style=\"white-space:nowrap;\">" + makeRowActions(r) + "</td>" +
           "</tr>"
         );
       }).join("");
@@ -1243,16 +2041,23 @@
       RAW_DIA = Array.isArray(p.pendientes_dia) ? p.pendientes_dia.slice() : [];
       RAW_PEND = Array.isArray(p.pendientes_acumulados) ? p.pendientes_acumulados.slice() : [];
       RAW_FINAL = Array.isArray(p.resueltos_informados) ? p.resueltos_informados.slice() : RAW_FINAL;
+      RAW_TASK = Array.isArray(p.tareas_asignadas) ? p.tareas_asignadas.slice() : [];
+      RAW_SOLIC = Array.isArray(p.solicitudes_recibidas) ? p.solicitudes_recibidas.slice() : [];
       if (p.resumen) RESUMEN_BASE = p.resumen;
-      var dia = aplicarFiltroAgente(RAW_DIA);
-      var pendientes = aplicarFiltroAgente(RAW_PEND);
+      var tasksBase = RAW_TASK.map(function (r) {
+        var out = Object.assign({}, r || {});
+        if (!out.agente && out.tarea_agente) out.agente = out.tarea_agente;
+        return out;
+      });
+      var tasks = aplicarFiltroAgente(tasksBase);
+      var solicitudes = aplicarFiltroAgente(RAW_SOLIC);
       ITEM_INDEX = {};
-      RAW_DIA.concat(RAW_PEND).forEach(function (r) {
+      tasksBase.concat(RAW_SOLIC).forEach(function (r) {
         ITEM_INDEX[String(r.id || "")] = r;
       });
-      renderPendientesRows(el.bodyDia, dia, false, "Sin pendientes del dia.");
-      renderPendientesRows(el.bodyPend, pendientes, true, "Sin pendientes acumulados.");
-      el.splitWrap.querySelectorAll(".row-estado").forEach(aplicarEstiloEstadoSelect);
+      renderTareasRows(el.bodyDia, tasks);
+      if (el.bodySolic) renderSolicitudesRows(el.bodySolic, solicitudes);
+      if (el.bodyPend) el.bodyPend.innerHTML = '<tr><td colspan="10" style="color:#6f86a5;">Sin pendientes acumulados.</td></tr>';
       renderResumenSegunFiltro();
     }
 
@@ -1260,10 +2065,14 @@
       el.id.value = "0";
       el.guardar.textContent = "Guardar";
       el.cancelar.style.display = "none";
+      if (el.modo) el.modo.value = "solicitud";
       el.estado.value = "Informado";
       aplicarEstiloEstadoSelect(el.estado);
       if (el.obs) el.obs.value = "";
+      if (el.tareaTxt) el.tareaTxt.value = "";
+      if (el.deposito) fillSelect(el.deposito, [], true, "Deposito / local");
       loadSubtipos();
+      applyModoUI();
     }
 
     function loadDay() {
@@ -1281,23 +2090,49 @@
     }
 
     function saveNovedad() {
-      var payload = {
-        id: Number(el.id.value || 0),
-        fecha: String(el.fecha.value || ""),
-        agente: String(el.agente.value || ""),
-        sede_codigo: String(el.sede.value || ""),
-        tipo: String(el.tipo.value || ""),
-        subtipo: String(el.subtipo.value || ""),
-        observacion: String((el.obs && el.obs.value) || ""),
-        estado: String(el.estado.value || "Informado"),
-      };
-      if (!payload.fecha || !payload.agente || !payload.tipo) {
-        setMsg("Completa fecha, agente y tipo.", true);
-        return;
+      var modo = String((el.modo && el.modo.value) || "solicitud");
+      var isTask = IS_MATIAS && modo === "tarea";
+      var payload = null;
+      var url = "/api/dashboard/novedades_diarias_save";
+      if (isTask) {
+        var depOpt = (el.deposito && el.deposito.options && el.deposito.selectedIndex >= 0) ? el.deposito.options[el.deposito.selectedIndex] : null;
+        var depCod = String((el.deposito && el.deposito.value) || "").trim().toUpperCase();
+        var depNom = "";
+        if (depOpt && depCod) {
+          depNom = String(depOpt.text || "").replace(new RegExp("^" + depCod + "\\s*-\\s*"), "").trim();
+        }
+        payload = {
+          fecha: String(el.fecha.value || ""),
+          agente: String(el.agente.value || ""),
+          sede_codigo: String(el.sede.value || "").trim().toUpperCase(),
+          deposito_codigo: depCod,
+          deposito_nombre: depNom,
+          tarea: String((el.tareaTxt && el.tareaTxt.value) || "").trim(),
+        };
+        url = "/api/dashboard/tareas_asignadas_save";
+        if (!payload.fecha || !payload.agente || !payload.sede_codigo || !payload.tarea) {
+          setMsg("Completa fecha, agente asignado, sede y tarea.", true);
+          return;
+        }
+      } else {
+        payload = {
+          id: Number(el.id.value || 0),
+          fecha: String(el.fecha.value || ""),
+          agente: String(el.agente.value || ""),
+          sede_codigo: String(el.sede.value || ""),
+          tipo: String(el.tipo.value || ""),
+          subtipo: String(el.subtipo.value || ""),
+          observacion: String((el.obs && el.obs.value) || ""),
+          estado: "Informado",
+        };
+        if (!payload.fecha || !payload.tipo || !payload.agente) {
+          setMsg("Completa fecha, tipo y agente.", true);
+          return;
+        }
       }
       el.guardar.disabled = true;
       setMsg("Guardando...", false);
-      fetch("/api/dashboard/novedades_diarias_save", {
+      fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -1305,7 +2140,7 @@
         .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, b: b || {} }; }); })
         .then(function (x) {
           if (!x.ok || !x.b.ok) throw new Error(x.b.error || "No se pudo guardar");
-          setMsg(payload.id > 0 ? "Novedad actualizada." : "Novedad registrada.", false);
+          setMsg(isTask ? "Tarea asignada." : (payload.id > 0 ? "Novedad actualizada." : "Novedad registrada."), false);
           resetForm();
           return loadDay();
         })
@@ -1409,21 +2244,31 @@
             var n = String(s.nombre || c).trim();
             return { value: c, label: c + (n && n !== c ? (" - " + n) : "") };
           });
+          SEDES_ASSIGN = Array.isArray(d.sedes) ? d.sedes.slice() : [];
           fillSelect(el.sede, sedes, true, "Sede");
 
-          var agentes = agentesVisibles(d.agentes || []);
-          fillSelect(el.agente, agentes, true, "Agente que carga");
+          IS_MATIAS = !!d.is_matias;
+          var agentes = applyAgentePolicy(d.agentes || [], d.agente_actual || "");
+          AGENTES_ASSIGN = Array.isArray(agentes) ? agentes.slice() : [];
+          if (el.modo) {
+            el.modo.value = (IS_MATIAS && pref.modo === "tarea") ? "tarea" : "solicitud";
+          }
+          applyModoUI();
           renderAgenteFiltros(agentes);
-          if (d.agente_actual) {
+          if (IS_MATIAS && d.agente_actual) {
             var actualNorm = normalizarAgente(d.agente_actual);
             if (agentes.indexOf(actualNorm) >= 0) el.agente.value = actualNorm;
           }
-          if (pref.agente) el.agente.value = pref.agente;
+          if (IS_MATIAS && pref.agente) el.agente.value = pref.agente;
           if (!el.fecha.value) el.fecha.value = d.fecha || "";
           if (pref.sede) el.sede.value = pref.sede;
           if (pref.tipo) el.tipo.value = pref.tipo;
+          if (IS_MATIAS && String((el.modo && el.modo.value) || "") === "tarea") {
+            refreshFormDepositos("");
+          }
           renderVehiculos(d.vehiculos || []);
           renderAlertas(d.alertas || []);
+          renderTaskAlerts(d.alertas_tareas_asignadas || []);
           renderResumen(d.resumen_novedades || {});
           loadSubtipos(pref.subtipo || "");
           return loadDay();
@@ -1434,6 +2279,19 @@
     }
 
     el.tipo.addEventListener("change", function () { loadSubtipos(); });
+    if (el.modo) {
+      el.modo.addEventListener("change", function () {
+        applyModoUI();
+      });
+    }
+    if (el.sede) {
+      el.sede.addEventListener("change", function () {
+        var modo = String((el.modo && el.modo.value) || "solicitud");
+        if (IS_MATIAS && modo === "tarea") {
+          refreshFormDepositos("");
+        }
+      });
+    }
     el.addSede.addEventListener("click", function () {
       var val = window.prompt("Nueva sede (ej: TALLER / DEPOSITO / FUERA DE SEDE):", "");
       if (!val) return;
@@ -1505,6 +2363,72 @@
     el.histTop.addEventListener("click", openHistorial);
     el.histClose.addEventListener("click", function () { el.histBox.classList.remove("open"); });
     el.histBuscar.addEventListener("click", loadHistorial);
+    if (el.gestionClose) {
+      el.gestionClose.addEventListener("click", closeGestionModal);
+    }
+    if (el.gestionModal) {
+      el.gestionModal.addEventListener("click", function (ev) {
+        var tgt = ev.target;
+        if (!tgt) return;
+        if (tgt.getAttribute && tgt.getAttribute("data-close-gestion") === "1") {
+          closeGestionModal();
+        }
+      });
+    }
+    if (el.gestionEnviar) {
+      el.gestionEnviar.addEventListener("click", sendGestionMensaje);
+    }
+    if (el.gestionTexto) {
+      el.gestionTexto.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter" && (ev.ctrlKey || ev.metaKey)) {
+          ev.preventDefault();
+          sendGestionMensaje();
+        }
+      });
+    }
+    if (el.gestionEstado) {
+      el.gestionEstado.addEventListener("change", function () {
+        aplicarEstiloEstadoSelect(el.gestionEstado);
+      });
+    }
+    if (el.gestionEstadoGuardar) {
+      el.gestionEstadoGuardar.addEventListener("click", function () {
+        saveGestionEstado(el.gestionEstado ? el.gestionEstado.value : "Informado");
+      });
+    }
+    if (el.gestionCerrar) {
+      el.gestionCerrar.addEventListener("click", function () {
+        saveGestionEstado("Resuelto");
+      });
+    }
+    if (el.gestionTareaGuardar) {
+      el.gestionTareaGuardar.addEventListener("click", function () {
+        saveGestionTarea(false);
+      });
+    }
+    if (el.gestionTareaSede) {
+      el.gestionTareaSede.addEventListener("change", function () {
+        refreshGestionDepositos("");
+      });
+    }
+    if (el.gestionTareaLimpiar) {
+      el.gestionTareaLimpiar.addEventListener("click", function () {
+        saveGestionTarea(true);
+      });
+    }
+    if (el.taskAlertList) {
+      el.taskAlertList.addEventListener("click", function (ev) {
+        var tgt = ev.target;
+        if (!tgt || !tgt.classList || !tgt.classList.contains("task-open-gestion")) return;
+        var gid = Number(tgt.getAttribute("data-id") || 0);
+        if (gid > 0) loadGestion(gid);
+      });
+    }
+    document.addEventListener("keydown", function (ev) {
+      if (ev.key === "Escape" && el.gestionModal && el.gestionModal.classList.contains("open")) {
+        closeGestionModal();
+      }
+    });
     if (el.agenteFiltroList) {
       el.agenteFiltroList.addEventListener("click", function (ev) {
         var tgt = ev.target;
@@ -1518,6 +2442,8 @@
         renderSplitRows({
           pendientes_dia: RAW_DIA,
           pendientes_acumulados: RAW_PEND,
+          tareas_asignadas: RAW_TASK,
+          solicitudes_recibidas: RAW_SOLIC,
         });
       });
     }
@@ -1525,42 +2451,10 @@
     el.splitWrap.addEventListener("click", function (ev) {
       var tgt = ev.target;
       if (!tgt) return;
-      if (tgt.classList.contains("row-edit")) {
-        var id = Number(tgt.getAttribute("data-id") || 0);
-        var row = ITEM_INDEX[String(id)] || null;
-        if (!row) return;
-        el.id.value = String(row.id);
-        el.fecha.value = row.fecha || el.fecha.value;
-        el.agente.value = row.agente || el.agente.value;
-        el.sede.value = row.sede_codigo || "";
-        el.tipo.value = row.tipo || el.tipo.value;
-        loadSubtipos(row.subtipo || "");
-        if (el.obs) el.obs.value = row.observacion || "";
-        el.estado.value = row.estado || "Informado";
-        aplicarEstiloEstadoSelect(el.estado);
-        el.guardar.textContent = "Actualizar";
-        el.cancelar.style.display = "inline-flex";
-        if (el.registroBox && !el.registroBox.open) {
-          el.registroBox.open = true;
-        }
-        if (el.registroBox && el.registroBox.scrollIntoView) {
-          el.registroBox.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
-        setMsg("Editando novedad #" + row.id, false);
-      } else if (tgt.classList.contains("row-save-est")) {
-        var rid = Number(tgt.getAttribute("data-id") || 0);
-        if (rid <= 0) return;
-        var sel = el.splitWrap.querySelector('.row-estado[data-id="' + rid + '"]');
-        var st = sel ? String(sel.value || "Informado") : "Informado";
-        updateEstado(rid, st);
-      } else if (tgt.classList.contains("row-hist")) {
-        openHistorial();
+      if (tgt.classList.contains("row-gestion")) {
+        var gid = Number(tgt.getAttribute("data-id") || 0);
+        if (gid > 0) loadGestion(gid);
       }
-    });
-    el.splitWrap.addEventListener("change", function (ev) {
-      var tgt = ev.target;
-      if (!tgt || !tgt.classList || !tgt.classList.contains("row-estado")) return;
-      aplicarEstiloEstadoSelect(tgt);
     });
 
     if (window.innerWidth <= 640 && el.registroBox) {
@@ -1570,3 +2464,4 @@
   })();
 </script>
 {% endblock %}
+
