@@ -1,5 +1,6 @@
 import unicodedata
 from datetime import date, datetime
+from statistics import median
 
 from flask import request, redirect, url_for, flash, render_template, session
 
@@ -356,7 +357,91 @@ def register_vehiculos_control(bp, get_db_connection, ensure_cols, rebuild_event
                 viajes_sql += " WHERE lower(c.agente) = lower(?)"
                 params.append(user_name)
         viajes_sql += " ORDER BY date(vc.fecha) DESC, vc.id DESC"
-        viajes = conn.execute(viajes_sql, params).fetchall()
+        viajes_rows = conn.execute(viajes_sql, params).fetchall()
+        viajes = [dict(r) for r in viajes_rows]
+
+        username_now = (session.get("username") or "").strip().lower()
+        full_name_now = _normalize_text(session.get("full_name") or "")
+        show_km_razonable = username_now in {"mcalderari", "ibaroni"} or full_name_now in {
+            "matias calderari",
+            "ignacio baroni",
+        }
+
+        refs = {}
+        for v in viajes:
+            estado_u = (v.get("estado") or "").strip().upper()
+            if estado_u != "CERRADO":
+                continue
+            destino = (v.get("destino_nombre") or "").strip()
+            if not destino:
+                continue
+            try:
+                km_v = float(v.get("recorrido_km") or 0)
+            except Exception:
+                km_v = 0.0
+            if km_v <= 0:
+                continue
+            dkey = _normalize_text(destino)
+            refs.setdefault(dkey, []).append(km_v)
+
+        ref_stats = {}
+        for dkey, vals in refs.items():
+            if not vals:
+                continue
+            ref_stats[dkey] = {
+                "km_ref": float(median(vals)),
+                "muestras": len(vals),
+            }
+
+        for v in viajes:
+            v["km_check_label"] = "-"
+            v["km_check_class"] = "km-none"
+            v["km_check_hint"] = ""
+            v["km_ref"] = None
+            v["km_ref_n"] = 0
+
+            estado_u = (v.get("estado") or "").strip().upper()
+            if estado_u != "CERRADO":
+                continue
+
+            destino = (v.get("destino_nombre") or "").strip()
+            if not destino:
+                v["km_check_label"] = "Sin destino"
+                continue
+
+            try:
+                km_real = float(v.get("recorrido_km") or 0)
+            except Exception:
+                km_real = 0.0
+
+            if km_real <= 0:
+                v["km_check_label"] = "Sin km"
+                continue
+
+            dkey = _normalize_text(destino)
+            ref = ref_stats.get(dkey)
+            if not ref:
+                v["km_check_label"] = "Sin base"
+                v["km_check_hint"] = "No hay historial suficiente para este destino"
+                continue
+
+            km_ref = float(ref.get("km_ref") or 0)
+            muestras = int(ref.get("muestras") or 0)
+            v["km_ref"] = km_ref
+            v["km_ref_n"] = muestras
+            low = max(0.0, km_ref * 0.55)
+            high = max(km_ref * 1.60, km_ref + 6.0)
+
+            if km_real < low:
+                v["km_check_label"] = "Bajo"
+                v["km_check_class"] = "km-low"
+            elif km_real > high:
+                v["km_check_label"] = "Alto"
+                v["km_check_class"] = "km-high"
+            else:
+                v["km_check_label"] = "Razonable"
+                v["km_check_class"] = "km-ok"
+            v["km_check_hint"] = f"Real {km_real:.1f} km | Ref {km_ref:.1f} km ({muestras})"
 
         kpi_sql = """
             SELECT
@@ -440,6 +525,7 @@ def register_vehiculos_control(bp, get_db_connection, ensure_cols, rebuild_event
             documentos_vinculados_vehiculos=documentos_vinculados_vehiculos,
             is_autorizado=is_autorizado,
             user_chofer_id=user_chofer_id,
+            show_km_razonable=show_km_razonable,
         )
 
     @bp.route("/viajes/<int:viaje_id>/editar", methods=["GET", "POST"], endpoint="viaje_editar")

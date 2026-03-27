@@ -54,6 +54,21 @@
     .estado-viaje.est-cerrado { background:#ecfdf5; border-color:#86efac; color:#166534; }
     .estado-viaje.est-error { background:#fff1f2; border-color:#fda4af; color:#be123c; }
     .estado-viaje.est-revisar { background:#fff7ed; border-color:#fdba74; color:#9a3412; }
+    .km-check {
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      padding:2px 8px;
+      border-radius:999px;
+      border:1px solid transparent;
+      font-size:11px;
+      font-weight:800;
+      white-space:nowrap;
+    }
+    .km-check.km-ok { background:#ecfdf5; border-color:#86efac; color:#166534; }
+    .km-check.km-high { background:#fff1f2; border-color:#fda4af; color:#be123c; }
+    .km-check.km-low { background:#fffbeb; border-color:#fcd34d; color:#a16207; }
+    .km-check.km-none { background:#f8fafc; border-color:#cbd5e1; color:#475569; }
 
     @media (max-width: 1100px) {
       .vd-kpis { grid-template-columns:1fr 1fr; }
@@ -467,6 +482,9 @@
           <th style="padding:10px;border-bottom:1px solid #e5e7eb">KM inicial</th>
           <th style="padding:10px;border-bottom:1px solid #e5e7eb">KM final</th>
           <th style="padding:10px;border-bottom:1px solid #e5e7eb">Dif Km</th>
+          {% if show_km_razonable %}
+          <th style="padding:10px;border-bottom:1px solid #e5e7eb">KM razonable</th>
+          {% endif %}
           <th style="padding:10px;border-bottom:1px solid #e5e7eb">Agente</th>
           <th style="padding:10px;border-bottom:1px solid #e5e7eb">Sector</th>
           <th style="padding:10px;border-bottom:1px solid #e5e7eb">Dpto/Def</th>
@@ -499,6 +517,16 @@
           <td style="padding:10px;border-bottom:1px solid #eef2f7;font-weight:800;color:#0f172a;background:#eef2ff">
             {{ v.recorrido_km or 0 }}
           </td>
+          {% if show_km_razonable %}
+          <td style="padding:10px;border-bottom:1px solid #eef2f7">
+            <span class="km-check {{ v.km_check_class or 'km-none' }}" title="{{ v.km_check_hint or '' }}">
+              {{ v.km_check_label or '-' }}
+            </span>
+            {% if v.km_ref %}
+            <div style="font-size:10px;color:#64748b;margin-top:3px;">ref {{ '%.1f'|format(v.km_ref) }} km · {{ v.km_ref_n or 0 }}</div>
+            {% endif %}
+          </td>
+          {% endif %}
 
           <td style="padding:10px;border-bottom:1px solid #eef2f7">{{ v.agente_nombre or "-" }}</td>
           <td style="padding:10px;border-bottom:1px solid #eef2f7">{{ v.sector or "" }}</td>
@@ -545,7 +573,7 @@
         </tr>
         {% else %}
         <tr>
-          <td colspan="13" style="padding:14px;text-align:center;color:#94a3b8">
+          <td colspan="{% if show_km_razonable %}14{% else %}13{% endif %}" style="padding:14px;text-align:center;color:#94a3b8">
             Sin viajes cargados.
           </td>
         </tr>
@@ -585,6 +613,13 @@
         <div>KM ini: <strong>{{ v.km_ini or 0 }}</strong></div>
         <div>KM fin: <strong>{{ v.km_fin or 0 }}</strong></div>
         <div>Dif: <strong>{{ v.recorrido_km or 0 }}</strong></div>
+        {% if show_km_razonable %}
+        <div title="{{ v.km_check_hint or '' }}">KM razonable:
+          <strong>
+            <span class="km-check {{ v.km_check_class or 'km-none' }}">{{ v.km_check_label or '-' }}</span>
+          </strong>
+        </div>
+        {% endif %}
         <div>Agente: <strong>{{ v.agente_nombre or "-" }}</strong></div>
         <div>Sector: <strong>{{ v.sector or "" }}</strong></div>
         <div>Dpto/Def: <strong>{{ v.dependencia or "" }}</strong></div>
