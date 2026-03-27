@@ -66,9 +66,13 @@ ROLE_INT_VEHICULOS = "int_vehiculos"
 ROLE_INT_OBRAS = "int_obras"
 ROLE_INT_OBRAS_RELEV = "int_obras_relev"
 ROLE_INT_OBRAS_SEDES = "int_obras_sedes"
+_AUTH_TABLES_READY = False
 
 
 def ensure_auth_tables(con):
+    global _AUTH_TABLES_READY
+    if _AUTH_TABLES_READY:
+        return
     con.execute("""
         CREATE TABLE IF NOT EXISTS usuarios(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -170,6 +174,7 @@ def ensure_auth_tables(con):
                     WHERE username = ?
                 """, ("654321", username))
     con.commit()
+    _AUTH_TABLES_READY = True
 
 
 def module_from_path(path: str) -> str:
@@ -1493,9 +1498,9 @@ def plano_permitido(filename):
     return ext in ALLOWED_EXTENSIONS_PLANOS
 
 def get_db():
-    con = sqlite3.connect(DB_PATH, timeout=5)
+    con = sqlite3.connect(DB_PATH, timeout=20)
     con.row_factory = sqlite3.Row
-    con.execute("PRAGMA busy_timeout = 3000")
+    con.execute("PRAGMA busy_timeout = 10000")
     return con
 
 def get_db_connection():
@@ -1655,8 +1660,25 @@ def enforce_auth():
         return None
 
     con = get_db()
-    ensure_auth_tables(con)
-    con.close()
+    try:
+        ensure_auth_tables(con)
+    except sqlite3.OperationalError as e:
+        msg = str(e).lower()
+        if "database is locked" in msg or "database table is locked" in msg:
+            row = con.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name='usuarios'"
+            ).fetchone()
+            if not row:
+                con.close()
+                raise
+        else:
+            con.close()
+            raise
+    finally:
+        try:
+            con.close()
+        except Exception:
+            pass
 
     if not session.get("user_id"):
         return redirect(url_for("login", next=request.path))

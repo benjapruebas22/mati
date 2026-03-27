@@ -1,12 +1,27 @@
 from flask import request, render_template, redirect, url_for, flash, session
 from werkzeug.security import check_password_hash, generate_password_hash
+import sqlite3
 
 
 def register_auth(bp, get_db, ensure_auth_tables, default_redirect_for_role):
+    def _safe_ensure_auth(con):
+        try:
+            ensure_auth_tables(con)
+        except sqlite3.OperationalError as e:
+            msg = str(e).lower()
+            if "database is locked" in msg or "database table is locked" in msg:
+                row = con.execute(
+                    "SELECT 1 FROM sqlite_master WHERE type='table' AND name='usuarios'"
+                ).fetchone()
+                if not row:
+                    raise
+            else:
+                raise
+
     @bp.route("/login", methods=["GET", "POST"], endpoint="login")
     def login():
         con = get_db()
-        ensure_auth_tables(con)
+        _safe_ensure_auth(con)
 
         if request.method == "POST":
             username = (request.form.get("username") or "").strip()
@@ -57,7 +72,7 @@ def register_auth(bp, get_db, ensure_auth_tables, default_redirect_for_role):
             return redirect(url_for("login"))
 
         con = get_db()
-        ensure_auth_tables(con)
+        _safe_ensure_auth(con)
 
         if request.method == "POST":
             current = (request.form.get("current_password") or "").strip()
