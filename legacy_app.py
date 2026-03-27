@@ -1527,15 +1527,16 @@ def plano_permitido(filename):
     return ext in ALLOWED_EXTENSIONS_PLANOS
 
 def get_db():
+    # Aumentamos el timeout a 10 segundos para evitar el error 'database is locked' en servidores con NFS como PythonAnywhere
     con = sqlite3.connect(DB_PATH, timeout=10, check_same_thread=False)
     con.row_factory = sqlite3.Row
-    # PRAGMAs de performance — se aplican una vez por conexión
-    con.execute("PRAGMA journal_mode = WAL")       # escrituras no bloquean lecturas
-    con.execute("PRAGMA synchronous = NORMAL")      # fsync solo en checkpoints (mucho más rápido)
-    con.execute("PRAGMA cache_size = -65536")       # 64MB de cache en memoria
-    con.execute("PRAGMA temp_store = MEMORY")       # tablas temporales en RAM
-    con.execute("PRAGMA mmap_size = 134217728")     # 128MB memory-mapped I/O
-    con.execute("PRAGMA busy_timeout = 5000")
+    # PRAGMAs de performance críticos para sistemas multi-usuario
+    con.execute("PRAGMA journal_mode = WAL")       # Lecturas concurrentes no bloquean escrituras
+    con.execute("PRAGMA synchronous = NORMAL")      # 5x más veloz en escrituras y más seguro en fallos
+    con.execute("PRAGMA cache_size = -64000")       # Cache de 64MB en RAM
+    con.execute("PRAGMA temp_store = MEMORY")       # Operaciones temporales (SORT/JOIN) en RAM
+    con.execute("PRAGMA mmap_size = 268435456")     # 256MB memory-mapped I/O
+    con.execute("PRAGMA busy_timeout = 10000")      # Que espere 10s antes de rendirse
     return con
 
 
