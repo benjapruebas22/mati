@@ -417,8 +417,7 @@ def _dashboard_vehiculos_simple(con, fecha_iso):
                 continue
             alias = (_row_value(r, "alias", "") or "").strip().upper()
             has_open = int(_row_value(r, "has_open", 0) or 0)
-            has_trip = int(_row_value(r, "has_trip", 0) or 0)
-            estado = "En uso" if (has_open or has_trip) else "Disponible"
+            estado = "En uso" if has_open else "Disponible"
             out.append({
                 "patente": pat,
                 "codigo": alias or pat,

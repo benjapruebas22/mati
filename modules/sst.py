@@ -1708,8 +1708,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     continue
                 alias = (_row_value(r, "alias", "") or "").strip().upper()
                 has_open = int(_row_value(r, "has_open", 0) or 0)
-                has_trip = int(_row_value(r, "has_trip", 0) or 0)
-                estado = "En uso" if (has_open or has_trip) else "Disponible"
+                estado = "En uso" if has_open else "Disponible"
                 out.append({
                     "patente": pat,
                     "codigo": alias or pat,
@@ -1946,10 +1945,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     """, (today_iso,)).fetchall()
                     for r in rows_hoy:
                         has_open = int(_row_value(r, "has_open", 0) or 0)
-                        has_trip_today = int(_row_value(r, "has_trip_today", 0) or 0)
                         if has_open:
-                            pendientes += 1
-                        elif has_trip_today > 0:
                             en_uso += 1
                 except Exception:
                     pendientes = 0
@@ -2037,18 +2033,14 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     alias = (_row_value(r, "alias", "") or "").strip()
                     activo = int(_row_value(r, "activo", 1) or 1)
                     has_open = int(_row_value(r, "has_open", 0) or 0)
-                    has_trip = int(_row_value(r, "has_trip", 0) or 0)
-
                     if activo == 0:
                         estado = "No disponible"
                     elif has_open:
-                        estado = "Pendiente cierre"
-                    elif has_trip > 0:
                         estado = "En uso"
                     else:
                         estado = "Disponible"
 
-                    if estado in ("Pendiente cierre", "En uso"):
+                    if estado == "En uso":
                         ubicacion = "En calle"
                     else:
                         base_ciudad = (_row_value(r, "base_ciudad", "") or "").strip()
