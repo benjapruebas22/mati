@@ -1487,6 +1487,11 @@ def init_performance_indexes():
 app = Flask(__name__)
 app.secret_key = "mpd-intendencia-2025"
 
+# CONFIGURACIÓN DE SESIONES (Prevenir que el login falle en producción)
+app.config["SESSION_COOKIE_NAME"] = "mpd_session"
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SECURE"] = False  # Cambiar a True solo si usas HTTPS
+app.config["PERMANENT_SESSION_LIFETIME"] = 86400  # 24 horas
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "uploads", "remitos")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
@@ -6373,15 +6378,17 @@ def admin_usuarios_edit(uid):
 if __name__ == "__main__":
     init_tabla_calendario_eventos()  # crea tabla eventos si no existe
 
-    init_performance_indexes()  # crea índices de performance si no existen
+    # init_performance_indexes()  # crea índices de performance si no existen
 
-    with app.app_context():
-        rebuild_eventos_agentes()
-        rebuild_eventos_vehiculos()
-        rebuild_eventos_obras()
-        rebuild_eventos_inventario()
-        rebuild_eventos_seguridad_limpieza()
-        rebuild_eventos_limpieza_sede()
+    # DESACTIVADO: La reconstrucción de eventos en cada arranque bloquea el servidor en producción.
+    # Se recomienda activarlos solo cuando sea estrictamente necesario o mediante una tarea programada.
+    # with app.app_context():
+    #     rebuild_eventos_agentes()
+    #     rebuild_eventos_vehiculos()
+    #     rebuild_eventos_obras()
+    #     rebuild_eventos_inventario()
+    #     rebuild_eventos_seguridad_limpieza()
+    #     rebuild_eventos_limpieza_sede()
 
 
-        app.run(host="0.0.0.0", debug=True)
+    app.run(host="0.0.0.0", debug=True)
