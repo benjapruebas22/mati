@@ -13,7 +13,7 @@ def register_auth(bp, get_db, ensure_auth_tables, default_redirect_for_role):
             password = (request.form.get("password") or "").strip()
 
             row = con.execute("""
-                SELECT id, username, full_name, role, password_hash, must_change, activo
+                SELECT id, username, full_name, role, password, must_change, activo
                 FROM usuarios
                 WHERE username = ?
             """, (username,)).fetchone()
@@ -23,7 +23,8 @@ def register_auth(bp, get_db, ensure_auth_tables, default_redirect_for_role):
                 flash("Usuario o clave invalidos.", "error")
                 return render_template("login.html")
 
-            if not check_password_hash(row["password_hash"], password):
+            # COMPARACIÓN EN TEXTO PLANO (SISTEMA ANTERIOR)
+            if row["password"] != password:
                 con.close()
                 flash("Usuario o clave invalidos.", "error")
                 return render_template("login.html")
@@ -64,19 +65,9 @@ def register_auth(bp, get_db, ensure_auth_tables, default_redirect_for_role):
             new1 = (request.form.get("new_password") or "").strip()
             new2 = (request.form.get("confirm_password") or "").strip()
 
-            row = con.execute("SELECT password_hash FROM usuarios WHERE id = ?", (session.get("user_id"),)).fetchone()
-            if not row or not check_password_hash(row["password_hash"], current):
-                con.close()
-                flash("Clave actual incorrecta.", "error")
-                return render_template("password_change.html")
-
-            if not new1 or new1 != new2:
-                con.close()
-                flash("La nueva clave no coincide.", "error")
-                return render_template("password_change.html")
-
-            con.execute("UPDATE usuarios SET password_hash = ?, must_change = 0 WHERE id = ?",
-                        (generate_password_hash(new1), session.get("user_id")))
+            # ACTUALIZACIÓN EN TEXTO PLANO
+            con.execute("UPDATE usuarios SET password = ?, must_change = 0 WHERE id = ?",
+                        (new1, session.get("user_id")))
             con.commit()
             con.close()
             session["must_change"] = 0
