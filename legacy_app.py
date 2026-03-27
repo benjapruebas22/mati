@@ -1490,7 +1490,8 @@ app.secret_key = "mpd-intendencia-2025"
 # CONFIGURACIÓN DE SESIONES (Prevenir que el login falle en producción)
 app.config["SESSION_COOKIE_NAME"] = "mpd_session"
 app.config["SESSION_COOKIE_HTTPONLY"] = True
-app.config["SESSION_COOKIE_SECURE"] = False  # Cambiar a True solo si usas HTTPS
+app.config["SESSION_COOKIE_SECURE"] = True   # PythonAnywhere usa HTTPS
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"  # evita que el redirect borre la cookie
 app.config["PERMANENT_SESSION_LIFETIME"] = 86400  # 24 horas
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "uploads", "remitos")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
