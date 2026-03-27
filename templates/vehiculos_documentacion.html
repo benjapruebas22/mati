@@ -8,10 +8,10 @@
       <p>Control de vencimientos y fechas clave. Todo queda en el calendario general.</p>
     </div>
     <div class="veh-doc-actions">
-      <a class="btn btn-mpd" href="{{ url_for('vehiculos_control_diario') }}">Control diario</a>
-      <a class="btn btn-mpd" href="{{ url_for('vehiculos_combustible') }}">Combustible</a>
-      <a class="btn btn-mpd" href="{{ url_for('vehiculos_estadisticas') }}">Estadisticas</a>
-      <a class="btn btn-mpd" href="{{ url_for('vehiculos_bd_home') }}">Base de datos</a>
+      <a class="btn btn-mpd" href="{{ url_for('vehiculos.vehiculos_control_diario') }}">Control diario</a>
+      <a class="btn btn-mpd" href="{{ url_for('vehiculos.vehiculos_combustible') }}">Combustible</a>
+      <a class="btn btn-mpd" href="{{ url_for('vehiculos.vehiculos_estadisticas') }}">Estadisticas</a>
+      <a class="btn btn-mpd" href="{{ url_for('vehiculos.vehiculos_bd_home') }}">Base de datos</a>
     </div>
   </header>
 
@@ -185,7 +185,7 @@
           <h3>Choferes</h3>
           <p>Estado de carnet por chofer.</p>
         </div>
-        <a class="btn btn-mpd" href="{{ url_for('bd_choferes') }}">Agregar chofer</a>
+        <a class="btn btn-mpd" href="{{ url_for('vehiculos.bd_choferes') }}">Agregar chofer</a>
       </div>
     </div>
     <div class="table-wrap">
@@ -203,7 +203,7 @@
             <td>{{ c.agente }}</td>
             <td><span class="pill {{ c.estado }}">{{ c.fecha_vencimiento or '-' }}</span></td>
             <td>
-              <a class="btn btn-mpd" href="{{ url_for('agente_documentacion', id=c.id) }}">Editar</a>
+              <a class="btn btn-mpd" href="{{ url_for('agentes.agente_documentacion', id=c.id) }}">Editar</a>
             </td>
           </tr>
           {% endfor %}

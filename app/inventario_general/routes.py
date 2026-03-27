@@ -1,10 +1,11 @@
 import sqlite3
+from flask import Blueprint
+from . import bp
 
+import sqlite3
 from flask import render_template, request, redirect, url_for, flash
-
-
-def register_inventario_general(app, get_db, get_db_connection, ensure_luminarias_columns):
-    @app.route("/sedes/<codigo>/inventario", methods=["GET", "POST"])
+def register_inventario_general_routes(app, bp, get_db, get_db_connection, ensure_luminarias_columns):
+    @bp.route("/sedes/<codigo>/inventario", methods=["GET", "POST"])
     def sede_inventario(codigo):
         con = get_db_connection()
 
@@ -76,7 +77,7 @@ def register_inventario_general(app, get_db, get_db_connection, ensure_luminaria
             if not deposito_codigo:
                 flash("Debés elegir un depósito / ambiente.", "error")
                 con.close()
-                return redirect(url_for("sede_inventario", codigo=codigo))
+                return redirect(url_for("inventario_general.sede_inventario", codigo=codigo))
 
             if inv_id:  # EDITAR
                 con.execute("""
@@ -131,7 +132,7 @@ def register_inventario_general(app, get_db, get_db_connection, ensure_luminaria
             con.commit()
             con.close()
             flash("Registro de inventario guardado.", "ok")
-            return redirect(url_for("sede_inventario", codigo=codigo))
+            return redirect(url_for("inventario_general.sede_inventario", codigo=codigo))
 
         # 5) Listado de inventario de esta sede
         registros = con.execute("""
@@ -188,7 +189,7 @@ def register_inventario_general(app, get_db, get_db_connection, ensure_luminaria
 
 
 
-    @app.route("/inventario_sede/<int:inv_id>/borrar", methods=["POST"])
+    @bp.route("/inventario_sede/<int:inv_id>/borrar", methods=["POST"])
     def inventario_sede_borrar(inv_id):
         sede_codigo = request.form.get("sede_codigo")
 
@@ -198,11 +199,11 @@ def register_inventario_general(app, get_db, get_db_connection, ensure_luminaria
         con.close()
 
         flash("Registro de inventario eliminado.", "ok")
-        return redirect(url_for("sede_inventario", codigo=sede_codigo))
+        return redirect(url_for("inventario_general.sede_inventario", codigo=sede_codigo))
 
 
 
-    @app.route("/inventario/dashboard", endpoint="inventario_dashboard")
+    @bp.route("/inventario/dashboard", endpoint="inventario_dashboard")
     def inventario_dashboard():
         ensure_luminarias_columns()
         con = get_db()

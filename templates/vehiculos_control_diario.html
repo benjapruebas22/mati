@@ -204,23 +204,23 @@
       <div class="vd-nav-group nav-main">
         <div class="vd-nav-title">CONTROL DIARIO</div>
         <div class="vd-nav-row">
-          <a class="btn btn-mpd btn-main" href="{{ url_for('vehiculos_control_diario', fecha=fecha) }}">Control diario</a>
+          <a class="btn btn-mpd btn-main" href="{{ url_for('vehiculos.vehiculos_control_diario', fecha=fecha) }}">Control diario</a>
         </div>
       </div>
       {% else %}
       <div class="vd-nav-group nav-main">
         <div class="vd-nav-title">REGISTROS DIARIOS</div>
         <div class="vd-nav-row">
-          <a class="btn btn-mpd btn-main" href="{{ url_for('vehiculos_control_diario', fecha=fecha) }}">Control diario</a>
-          <a class="btn btn-mpd btn-main" href="{{ url_for('vehiculos_combustible') }}">Combustible</a>
+          <a class="btn btn-mpd btn-main" href="{{ url_for('vehiculos.vehiculos_control_diario', fecha=fecha) }}">Control diario</a>
+          <a class="btn btn-mpd btn-main" href="{{ url_for('vehiculos.vehiculos_combustible') }}">Combustible</a>
         </div>
       </div>
       <div class="vd-nav-group nav-sub">
         <div class="vd-nav-title">GESTION</div>
         <div class="vd-nav-row">
-          <a class="btn btn-mpd btn-subtle" href="{{ url_for('vehiculos_estadisticas') }}">Estadisticas</a>
-          <a class="btn btn-mpd btn-subtle" href="{{ url_for('vehiculos_documentacion') }}">Documentacion</a>
-          <a class="btn btn-mpd btn-subtle" href="{{ url_for('vehiculos_bd_home') }}">Base de datos</a>
+          <a class="btn btn-mpd btn-subtle" href="{{ url_for('vehiculos.vehiculos_estadisticas') }}">Estadisticas</a>
+          <a class="btn btn-mpd btn-subtle" href="{{ url_for('vehiculos.vehiculos_documentacion') }}">Documentacion</a>
+          <a class="btn btn-mpd btn-subtle" href="{{ url_for('vehiculos.vehiculos_bd_home') }}">Base de datos</a>
         </div>
       </div>
       {% endif %}
@@ -297,9 +297,9 @@
     <div class="vd-actions-row" style="justify-content:space-between;gap:10px;">
       <h3 style="margin:0;font-size:14px;color:#1f2937;">Accesos rapidos</h3>
       <div class="vd-actions-row">
-      <a class="btn btn-mpd btn-subtle" href="{{ url_for('vehiculos_estadisticas') }}">Estad. vehiculos</a>
-      <a class="btn btn-mpd btn-subtle" href="{{ url_for('vehiculos_combustible_estadisticas') }}">Estad. combustible</a>
-      <a class="btn btn-mpd btn-subtle" href="{{ url_for('vehiculos_documentacion') }}">Informes</a>
+      <a class="btn btn-mpd btn-subtle" href="{{ url_for('vehiculos.vehiculos_estadisticas') }}">Estad. vehiculos</a>
+      <a class="btn btn-mpd btn-subtle" href="{{ url_for('vehiculos.vehiculos_combustible_estadisticas') }}">Estad. combustible</a>
+      <a class="btn btn-mpd btn-subtle" href="{{ url_for('vehiculos.vehiculos_documentacion') }}">Informes</a>
       </div>
     </div>
   </div>
@@ -398,7 +398,7 @@
       </button>
 
       <!-- botón rápido: recarga manteniendo rango -->
-      <a class="btn btn-mpd" href="{{ url_for('vehiculos_control_diario', fecha=fecha) }}"
+      <a class="btn btn-mpd" href="{{ url_for('vehiculos.vehiculos_control_diario', fecha=fecha) }}"
         style="padding:10px 16px;border-radius:999px">
         Actualizar
       </a>
@@ -526,14 +526,14 @@
             <!-- IMPORTANTE: conservar fecha seleccionada -->
             {% if not is_autorizado or (user_chofer_id and v.chofer_id == user_chofer_id) %}
             <a class="btn btn-mpd" style="padding:6px 10px;font-size:12px"
-              href="{{ url_for('viaje_editar', viaje_id=v.id, fecha=fecha) }}">
+              href="{{ url_for('vehiculos.viaje_editar', viaje_id=v.id, fecha=fecha) }}">
               Editar
             </a>
             {% endif %}
 
             {% if not is_autorizado %}
             <form method="post"
-              action="{{ url_for('viaje_eliminar', viaje_id=v.id, fecha=fecha) }}"
+              action="{{ url_for('vehiculos.viaje_eliminar', viaje_id=v.id, fecha=fecha) }}"
               style="display:inline" onsubmit="return confirm('?Eliminar viaje #{{ v.id }}?');">
               <button type="submit" class="btn btn-mpd" style="padding:6px 10px;font-size:12px;border-color:#fecaca">
                 Eliminar
@@ -593,10 +593,10 @@
 
       <div class="vd-card-actions">
         {% if not is_autorizado or (user_chofer_id and v.chofer_id == user_chofer_id) %}
-        <a class="btn btn-mpd" href="{{ url_for('viaje_editar', viaje_id=v.id, fecha=fecha) }}">Editar</a>
+        <a class="btn btn-mpd" href="{{ url_for('vehiculos.viaje_editar', viaje_id=v.id, fecha=fecha) }}">Editar</a>
         {% endif %}
         {% if not is_autorizado %}
-        <form method="post" action="{{ url_for('viaje_eliminar', viaje_id=v.id, fecha=fecha) }}" style="display:inline" onsubmit="return confirm('?Eliminar viaje #{{ v.id }}?');">
+        <form method="post" action="{{ url_for('vehiculos.viaje_eliminar', viaje_id=v.id, fecha=fecha) }}" style="display:inline" onsubmit="return confirm('?Eliminar viaje #{{ v.id }}?');">
           <button type="submit" class="btn btn-mpd" style="border-color:#fecaca">Eliminar</button>
         </form>
         {% endif %}

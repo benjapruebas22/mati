@@ -54,7 +54,7 @@
     </div>
 
     <div class="section-actions">
-      <a class="btn outline-slate" href="{{ url_for('agentes_home', id=agente.id) }}">
+      <a class="btn outline-slate" href="{{ url_for('agentes.agentes_home', id=agente.id) }}">
         Volver a la ficha del agente
       </a>
     </div>
@@ -82,11 +82,11 @@
             <form method="post"
                   class="license-form"
                   action="{% if des_editar %}
-                             {{ url_for('agente_desempeno_editar',
+                             {{ url_for('agentes.agente_desempeno_editar',
                                         agente_id=agente.id,
                                         des_id=des_editar.id) }}
                           {% else %}
-                             {{ url_for('agente_desempeno', id=agente.id) }}
+                             {{ url_for('agentes.agente_desempeno', id=agente.id) }}
                           {% endif %}">
 
               <div class="license-grid">
@@ -150,7 +150,7 @@
                   Guardar {% if des_editar %}cambios{% else %}registro{% endif %}
                 </button>
                 <a class="btn outline-slate"
-                   href="{{ url_for('agentes_home', id=agente.id) }}">
+                   href="{{ url_for('agentes.agentes_home', id=agente.id) }}">
                   Cancelar
                 </a>
               </div>
@@ -193,13 +193,13 @@
                     <td>{{ d.observaciones }}</td>
                     <td class="actions-cell">
                       <a class="btn xs outline-amber"
-                         href="{{ url_for('agente_desempeno_editar',
+                         href="{{ url_for('agentes.agente_desempeno_editar',
                                           agente_id=agente.id,
                                           des_id=d.id) }}">
                         Editar
                       </a>
                       <form method="post"
-                            action="{{ url_for('agente_desempeno_eliminar',
+                            action="{{ url_for('agentes.agente_desempeno_eliminar',
                                                agente_id=agente.id,
                                                des_id=d.id) }}"
                             style="display:inline;"

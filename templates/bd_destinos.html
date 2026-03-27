@@ -3,7 +3,7 @@
 <section class="sedes-section" style="max-width:900px;margin:auto">
   <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
     <h2 style="margin:0;">Destinos</h2>
-    <a class="btn ghost" href="{{ url_for('vehiculos_bd_home') }}">← Volver</a>
+    <a class="btn ghost" href="{{ url_for('vehiculos.vehiculos_bd_home') }}">← Volver</a>
   </div>
 
   <form method="post" class="form-soft" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;align-items:end;">
@@ -31,7 +31,7 @@
       <tr>
         <td>{{ d.nombre }}</td>
         <td style="text-align:right">
-          <form method="post" action="{{ url_for('bd_destinos_delete', did=d.id) }}">
+          <form method="post" action="{{ url_for('vehiculos.bd_destinos_delete', did=d.id) }}">
             <button class="btn xs outline-red">Eliminar</button>
           </form>
         </td>

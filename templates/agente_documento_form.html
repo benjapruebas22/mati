@@ -13,7 +13,7 @@
     </div>
 
     <div class="section-actions">
-      <a class="btn outline-slate" href="{{ url_for('agentes_home', id=agente.id) }}">
+      <a class="btn outline-slate" href="{{ url_for('agentes.agentes_home', id=agente.id) }}">
         ⬅ Volver a la ficha del agente
       </a>
     </div>
@@ -111,7 +111,7 @@
                 {% if documento.archivo %}
                   <small class="muted">
                     Archivo actual:
-                    <a href="{{ url_for('agente_documentacion_archivo', filename=documento.archivo) }}"
+                    <a href="{{ url_for('agentes.agente_documentacion_archivo', filename=documento.archivo) }}"
                        target="_blank" rel="noopener">Ver</a>
                   </small>
                 {% endif %}
@@ -133,7 +133,7 @@
               <div class="form-actions">
                 <button type="submit" class="btn outline-amber">💾 Guardar cambios</button>
                 <a class="btn outline-slate"
-                   href="{{ url_for('agentes_home', id=agente.id) }}">
+                   href="{{ url_for('agentes.agentes_home', id=agente.id) }}">
                   Cancelar
                 </a>
               </div>

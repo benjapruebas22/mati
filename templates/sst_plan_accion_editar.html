@@ -72,7 +72,7 @@
       </div>
       <div class="license-actions">
         <button class="btn outline-amber" type="submit">Guardar cambios</button>
-        <a class="btn outline-slate" href="{{ url_for('sst_plan_cargar') if return_to == 'cargar' else url_for('sst_plan') }}">Cancelar</a>
+        <a class="btn outline-slate" href="{{ url_for('sst.sst_plan_cargar') if return_to == 'cargar' else url_for('sst.sst_plan') }}">Cancelar</a>
       </div>
     </form>
   </div>

@@ -4,15 +4,15 @@
   <h2>Base de datos - Vehículos</h2>
 
   <div class="buttons-row" style="margin-top:10px;flex-wrap:wrap">
-    <a class="btn big ghost" href="{{ url_for('vehiculos_control_diario') }}">⬅ Volver a vehículos</a>
+    <a class="btn big ghost" href="{{ url_for('vehiculos.vehiculos_control_diario') }}">⬅ Volver a vehículos</a>
 
-    <a class="btn big outline-slate" href="{{ url_for('bd_destinos') }}">📍 Destinos</a>
+    <a class="btn big outline-slate" href="{{ url_for('vehiculos.bd_destinos') }}">📍 Destinos</a>
 
     <!-- ✅ LISTA GENERAL (alimenta el combo de Control Diario) -->
-    <a class="btn big outline-slate" href="{{ url_for('bd_choferes') }}">👤 Choferes (lista general)</a>
+    <a class="btn big outline-slate" href="{{ url_for('vehiculos.bd_choferes') }}">👤 Choferes (lista general)</a>
 
 
-    <a class="btn big outline-amber" href="{{ url_for('bd_precios') }}">⛽ Precios combustible</a>
+    <a class="btn big outline-amber" href="{{ url_for('vehiculos.bd_precios') }}">⛽ Precios combustible</a>
   </div>
 
   <p style="margin-top:12px;color:#94a3b8">

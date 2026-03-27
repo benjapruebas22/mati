@@ -8,8 +8,8 @@
       <p class="aud-sub">Marcar presencia y cantidad por sede/deposito.</p>
     </div>
     <div class="aud-top-actions">
-      <a class="btn outline-green btn-sm" href="{{ url_for('auditoria_mobiliario') }}">Auditoria mobiliario</a>
-      <a class="btn outline-amber btn-sm" href="{{ url_for('auditoria_operativa') }}">Auditoria operativa</a>
+      <a class="btn outline-green btn-sm" href="{{ url_for('auditorias.auditoria_mobiliario') }}">Auditoria mobiliario</a>
+      <a class="btn outline-amber btn-sm" href="{{ url_for('auditorias.auditoria_operativa') }}">Auditoria operativa</a>
       <a class="btn outline-blue btn-sm" href="{{ url_for('materiales_home') }}">Volver a Materiales</a>
     </div>
   </header>
@@ -136,7 +136,7 @@
         <span class="pill-soft">Catálogo</span>
       </div>
 
-      <form method="post" action="{{ url_for('auditoria_herramientas_catalogo_agregar') }}" class="formx">
+      <form method="post" action="{{ url_for('auditorias.auditoria_herramientas_catalogo_agregar') }}" class="formx">
         <div class="gridx">
           <div class="fg">
             <label>Herramienta</label>
@@ -170,7 +170,7 @@
             {% for h in catalogo %}
               <tr>
                 <td>
-                  <form id="form-h-{{ h.id }}" method="post" action="{{ url_for('auditoria_herramientas_catalogo_editar', cid=h.id) }}"></form>
+                  <form id="form-h-{{ h.id }}" method="post" action="{{ url_for('auditorias.auditoria_herramientas_catalogo_editar', cid=h.id) }}"></form>
                   <input type="number" name="orden" step="1" min="0" value="{{ h.orden or 0 }}" form="form-h-{{ h.id }}">
                 </td>
                 <td>
@@ -181,7 +181,7 @@
                 </td>
                 <td>
                   <button type="submit" class="btn xs outline" form="form-h-{{ h.id }}">Guardar</button>
-                  <form method="post" action="{{ url_for('auditoria_herramientas_catalogo_borrar', cid=h.id) }}"
+                  <form method="post" action="{{ url_for('auditorias.auditoria_herramientas_catalogo_borrar', cid=h.id) }}"
                         onsubmit="return confirm('¿Eliminar herramienta?');" style="display:inline-block">
                     <button type="submit" class="btn xs outline">Borrar</button>
                   </form>

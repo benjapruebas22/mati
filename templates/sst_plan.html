@@ -1591,11 +1591,11 @@
         {% if ergo_gestion_url %}
           <a class="btn outline-slate btn-ergo-soft" href="{{ ergo_gestion_url }}" target="_blank" rel="noopener">Como gestionamos el riesgo</a>
         {% endif %}
-        <a class="btn outline-slate btn-ergo-soft" href="{{ url_for('sst_ergonomia_export_csv', ergo_sede=ergo_sede or None) }}">CSV</a>
+        <a class="btn outline-slate btn-ergo-soft" href="{{ url_for('sst.sst_ergonomia_export_csv', ergo_sede=ergo_sede or None) }}">CSV</a>
       </div>
     </div>
     {% if ergonomia_loaded %}
-      <form method="get" action="{{ url_for('sst_plan_cargar') if show_carga else url_for('sst_plan') }}" class="ergo-filters" id="ergo-filtro-form">
+      <form method="get" action="{{ url_for('sst.sst_plan_cargar') if show_carga else url_for('sst.sst_plan') }}" class="ergo-filters" id="ergo-filtro-form">
         <div class="license-field">
           <label>Sede</label>
           <select name="ergo_sede" data-ergo-filtro>
@@ -1693,7 +1693,7 @@
                         <span class="ergo-badge otro" data-ergo-accion>{{ r.accion_label or '-' }}</span>
                       {% endif %}
                       <a class="btn xs outline-amber"
-                         href="{{ url_for('sst_ergonomia_gestion_riesgo',
+                         href="{{ url_for('sst.sst_ergonomia_gestion_riesgo',
                                           personal_id=r.personal_id,
                                           persona=r.nombre_apellido,
                                           sede=r.codigo_sede,
@@ -1705,7 +1705,7 @@
                         Gestion riesgo
                       </a>
                       <a class="btn xs outline-slate"
-                         href="{{ (url_for('sst_plan_cargar') if show_carga else url_for('sst_plan')) ~ '?ergo_sede=' ~ (ergo_sede or '') ~ '&ergo_personal_id=' ~ r.personal_id ~ '#ergo-carga-box' }}">
+                         href="{{ (url_for('sst.sst_plan_cargar') if show_carga else url_for('sst.sst_plan')) ~ '?ergo_sede=' ~ (ergo_sede or '') ~ '&ergo_personal_id=' ~ r.personal_id ~ '#ergo-carga-box' }}">
                         Editar
                       </a>
                     </div>
@@ -1773,7 +1773,7 @@
       </details>
 
       {% if ergo_selected %}
-      <form method="post" action="{{ url_for('sst_ergonomia_guardar') }}" class="ergo-form" data-autosave="1" id="ergo-ficha">
+      <form method="post" action="{{ url_for('sst.sst_ergonomia_guardar') }}" class="ergo-form" data-autosave="1" id="ergo-ficha">
         <input type="hidden" name="next" value="{{ 'cargar' if show_carga else 'plan' }}">
         <input type="hidden" name="ergo_sede" value="{{ ergo_sede or '' }}">
         <input type="hidden" name="personal_id" value="{{ ergo_selected.personal_id }}">
@@ -1913,7 +1913,7 @@
           </div>
         </div>
       </form>
-      <form method="post" action="{{ url_for('sst_ergonomia_salud_guardar') }}" class="ergo-form" style="margin-top:8px;background:#f8fbff;border-color:#dbeafe;">
+      <form method="post" action="{{ url_for('sst.sst_ergonomia_salud_guardar') }}" class="ergo-form" style="margin-top:8px;background:#f8fbff;border-color:#dbeafe;">
         <input type="hidden" name="next" value="{{ 'cargar' if show_carga else 'plan' }}">
         <input type="hidden" name="ergo_sede" value="{{ ergo_sede or '' }}">
         <input type="hidden" name="personal_id" value="{{ ergo_selected.personal_id }}">
@@ -1948,13 +1948,13 @@
           <button class="btn xs outline-slate" type="submit">Guardar salud</button>
         </div>
       </form>
-      <form method="post" action="{{ url_for('sst_ergonomia_reevaluar') }}" style="margin-top:10px;margin-bottom:12px;">
+      <form method="post" action="{{ url_for('sst.sst_ergonomia_reevaluar') }}" style="margin-top:10px;margin-bottom:12px;">
         <input type="hidden" name="next" value="{{ 'cargar' if show_carga else 'plan' }}">
         <input type="hidden" name="ergo_sede" value="{{ ergo_sede or '' }}">
         <input type="hidden" name="personal_id" value="{{ ergo_selected.personal_id }}">
         <button class="btn xs outline-amber" type="submit" onclick="return confirm('Iniciar reevaluacion y reiniciar estado del caso?');">Reevaluar</button>
       </form>
-      <form method="post" action="{{ url_for('sst_ergonomia_cerrar') }}" style="margin-top:-8px;margin-bottom:12px;">
+      <form method="post" action="{{ url_for('sst.sst_ergonomia_cerrar') }}" style="margin-top:-8px;margin-bottom:12px;">
         <input type="hidden" name="next" value="{{ 'cargar' if show_carga else 'plan' }}">
         <input type="hidden" name="ergo_sede" value="{{ ergo_sede or '' }}">
         <input type="hidden" name="personal_id" value="{{ ergo_selected.personal_id }}">
@@ -1974,11 +1974,11 @@
       </div>
       <div class="plan-actions">
         {% if show_carga %}
-          <a class="btn outline-slate" href="{{ url_for('sst_plan') }}">Ver cronograma</a>
+          <a class="btn outline-slate" href="{{ url_for('sst.sst_plan') }}">Ver cronograma</a>
         {% else %}
-          <a class="btn outline-amber" href="{{ url_for('sst_plan_cargar') }}">Cargar</a>
+          <a class="btn outline-amber" href="{{ url_for('sst.sst_plan_cargar') }}">Cargar</a>
         {% endif %}
-        <a class="btn outline-slate" href="{{ url_for('sst_general') }}">Volver a SST</a>
+        <a class="btn outline-slate" href="{{ url_for('sst.sst_general') }}">Volver a SST</a>
       </div>
     </header>
     {% endif %}
@@ -1988,7 +1988,7 @@
     {% if show_carga and edit_obj %}
       <div class="plan-card">
         <div class="plan-title">Editar objetivo</div>
-        <form method="post" action="{{ url_for('sst_plan_editar', oid=edit_obj.id, next='cargar') }}" class="plan-form">
+        <form method="post" action="{{ url_for('sst.sst_plan_editar', oid=edit_obj.id, next='cargar') }}" class="plan-form">
           <input type="hidden" name="return_to" value="cargar">
           <div class="license-grid">
             <div class="license-field">
@@ -2050,7 +2050,7 @@
           </div>
           <div class="license-actions">
             <button class="btn outline-amber" type="submit">Guardar cambios</button>
-            <a class="btn outline-slate" href="{{ url_for('sst_plan_cargar') }}">Cancelar</a>
+            <a class="btn outline-slate" href="{{ url_for('sst.sst_plan_cargar') }}">Cancelar</a>
           </div>
         </form>
       </div>
@@ -2059,7 +2059,7 @@
       <div class="plan-card">
         <div class="plan-title">Editar accion</div>
         <div class="plan-meta" style="margin-bottom:6px;">{{ edit_acc.objetivo_titulo }}</div>
-        <form method="post" action="{{ url_for('sst_plan_accion_editar', aid=edit_acc.id, next='cargar') }}" class="plan-form">
+        <form method="post" action="{{ url_for('sst.sst_plan_accion_editar', aid=edit_acc.id, next='cargar') }}" class="plan-form">
           <input type="hidden" name="return_to" value="cargar">
           <div class="license-grid">
             <div class="license-field full">
@@ -2123,7 +2123,7 @@
           </div>
           <div class="license-actions">
             <button class="btn outline-amber" type="submit">Guardar cambios</button>
-            <a class="btn outline-slate" href="{{ url_for('sst_plan_cargar') }}">Cancelar</a>
+            <a class="btn outline-slate" href="{{ url_for('sst.sst_plan_cargar') }}">Cancelar</a>
           </div>
         </form>
       </div>
@@ -2131,7 +2131,7 @@
     {% if show_carga %}
       <div class="plan-card">
         <div class="plan-title">Nuevo objetivo</div>
-        <form method="post" action="{{ url_for('sst_plan') }}" class="plan-form">
+        <form method="post" action="{{ url_for('sst.sst_plan') }}" class="plan-form">
           <input type="hidden" name="return_to" value="cargar">
           <div class="license-grid">
             <div class="license-field">
@@ -2348,8 +2348,8 @@
               <div class="content">
                 {% if show_carga %}
                   <div class="plan-actions" style="justify-content:flex-end;">
-                    <a class="btn xs outline-slate" href="{{ url_for('sst_plan_editar', oid=o.id, next='cargar') }}">Editar</a>
-                    <form method="post" action="{{ url_for('sst_plan_eliminar', oid=o.id, next='cargar') }}" onsubmit="return confirm('Eliminar objetivo?');">
+                    <a class="btn xs outline-slate" href="{{ url_for('sst.sst_plan_editar', oid=o.id, next='cargar') }}">Editar</a>
+                    <form method="post" action="{{ url_for('sst.sst_plan_eliminar', oid=o.id, next='cargar') }}" onsubmit="return confirm('Eliminar objetivo?');">
                       <button class="btn xs outline-amber" type="submit">Eliminar</button>
                     </form>
                   </div>
@@ -2385,8 +2385,8 @@
                       <td>
                         {% if show_carga %}
                           <div class="plan-actions">
-                            <a class="btn xs outline-slate" href="{{ url_for('sst_plan_accion_editar', aid=a.id, next='cargar') }}">Editar</a>
-                            <form method="post" action="{{ url_for('sst_plan_accion_eliminar', aid=a.id, next='cargar') }}" onsubmit="return confirm('Eliminar accion?');">
+                            <a class="btn xs outline-slate" href="{{ url_for('sst.sst_plan_accion_editar', aid=a.id, next='cargar') }}">Editar</a>
+                            <form method="post" action="{{ url_for('sst.sst_plan_accion_eliminar', aid=a.id, next='cargar') }}" onsubmit="return confirm('Eliminar accion?');">
                               <button class="btn xs outline-amber" type="submit">Eliminar</button>
                             </form>
                           </div>
@@ -2469,7 +2469,7 @@
             </div>
 
             {% if show_carga %}
-              <form method="post" action="{{ url_for('sst_plan_accion_agregar', oid=o.id, next='cargar') }}" class="action-form">
+              <form method="post" action="{{ url_for('sst.sst_plan_accion_agregar', oid=o.id, next='cargar') }}" class="action-form">
                 <div class="full">
                   <label>Agregar accion</label>
                 </div>

@@ -23,7 +23,7 @@
         <td>{{ e.profesion }}</td>
         <td>{{ e.nombre }}</td>
         <td>
-          <form method="post" action="{{ url_for('bd_equipo_delete', eid=e.id) }}">
+          <form method="post" action="{{ url_for('vehiculos.bd_equipo_delete', eid=e.id) }}">
             <button class="btn xs outline-red">Baja</button>
           </form>
         </td>
@@ -32,6 +32,6 @@
     </tbody>
   </table>
 
-  <a class="btn ghost" href="{{ url_for('vehiculos_bd_home') }}">⬅ Volver</a>
+  <a class="btn ghost" href="{{ url_for('vehiculos.vehiculos_bd_home') }}">⬅ Volver</a>
 </section>
 {% endblock %}

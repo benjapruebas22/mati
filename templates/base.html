@@ -465,7 +465,7 @@
 
     <nav class="main-nav">
       {% if user_role == 'ejecutivo' %}
-      <a class="btn btn-mpd btn-area-ejecutivo" href="{{ url_for('dashboard_ejecutivo') }}">Alta Direccion</a>
+      <a class="btn btn-mpd btn-area-ejecutivo" href="{{ url_for('sst.dashboard_ejecutivo') }}">Alta Direccion</a>
       {% else %}
       <a class="btn btn-mpd btn-area-inicio" href="{{ url_for('dashboard') }}">Centro Operativo</a>
       
@@ -477,50 +477,50 @@
 
       {% if can_access("sst") %}
       <div class="nav-dropdown nav-menu">
-        <a class="btn btn-mpd btn-sst nav-dd-link" href="{{ url_for('sst_general') }}" title="Sistema de Gestion de Seguridad Salud en el Trabajo">
+        <a class="btn btn-mpd btn-sst nav-dd-link" href="{{ url_for('sst.sst_general') }}" title="Sistema de Gestion de Seguridad Salud en el Trabajo">
           <span class="sg-text">SG</span><span class="dash">-</span>
           <span class="sst-celeste">S</span><span class="sst-violeta">S</span><span class="sst-rosa">T</span>
         </a>
         <span class="nav-dd-caret" aria-hidden="true">v</span>
         <div class="dropdown-menu">
           <div class="dropdown-title">SST</div>
-          <a href="{{ url_for('sst_general') }}">Estado general</a>
-          <a href="{{ url_for('sst_ergonomia_gestion_riesgo') }}">Gestion de riesgos</a>
-          <a href="{{ url_for('sst_plan_gantt') }}">Cronograma SST</a>
-          <a href="{{ url_for('sst_cuadro_unico') }}">Sedes SST</a>
+          <a href="{{ url_for('sst.sst_general') }}">Estado general</a>
+          <a href="{{ url_for('sst.sst_ergonomia_gestion_riesgo') }}">Gestion de riesgos</a>
+          <a href="{{ url_for('sst.sst_plan_gantt') }}">Cronograma SST</a>
+          <a href="{{ url_for('sst.sst_cuadro_unico') }}">Sedes SST</a>
 
           {% if can_access("obras") %}
           <div class="dropdown-sep"></div>
           <div class="dropdown-title">Relevamientos / Control</div>
-          <a href="{{ url_for('auditoria_mobiliario') }}">Mobiliario</a>
-          <a href="{{ url_for('auditoria_aires') }}">Aires</a>
-          <a href="{{ url_for('auditoria_luminarias') }}">Luminarias</a>
-          <a href="{{ url_for('relevamientos_comparativa') }}">Comparativa</a>
+          <a href="{{ url_for('auditorias.auditoria_mobiliario') }}">Mobiliario</a>
+          <a href="{{ url_for('auditorias.auditoria_aires') }}">Aires</a>
+          <a href="{{ url_for('auditorias.auditoria_luminarias') }}">Luminarias</a>
+          <a href="{{ url_for('auditorias.relevamientos_comparativa') }}">Comparativa</a>
           {% endif %}
         </div>
       </div>
       {% endif %}
 
       <div class="nav-dropdown nav-menu">
-        <a class="btn btn-mpd btn-sgi nav-dd-link" href="{{ url_for('sgi_home') }}">
+        <a class="btn btn-mpd btn-sgi nav-dd-link" href="{{ url_for('sst.sgi_home') }}">
           <span class="sgi-s">S</span><span class="sgi-g">G</span><span class="sgi-i">I</span>
         </a>
         <span class="nav-dd-caret" aria-hidden="true">v</span>
         <div class="dropdown-menu">
           <div class="dropdown-title">Principal</div>
-          <a href="{{ url_for('sgi_home') }}">Inicio SGI</a>
-          <a href="{{ url_for('vehiculos_control_diario') }}">Vehiculos</a>
-          <a href="{{ url_for('obras_home') }}">Obras</a>
+          <a href="{{ url_for('sst.sgi_home') }}">Inicio SGI</a>
+          <a href="{{ url_for('vehiculos.vehiculos_control_diario') }}">Vehiculos</a>
+          <a href="{{ url_for('obras.obras_home') }}">Obras</a>
           <a href="{{ url_for('sede_ficha', codigo='S01', home=1) }}">Sedes</a>
           <div class="dropdown-sep"></div>
           <div class="dropdown-title">Apoyo</div>
-          <a href="{{ url_for('mapa_ssj') }}">Mapa SSJ</a>
+          <a href="{{ url_for('mapa.mapa_ssj') }}">Mapa SSJ</a>
           <a href="{{ url_for('personal_sede_home') }}">Personal</a>
-          <a href="{{ url_for('agentes_home') }}">Agentes</a>
+          <a href="{{ url_for('agentes.agentes_home') }}">Agentes</a>
         </div>
       </div>
       <span class="nav-spacer" aria-hidden="true"></span>
-      <a class="btn btn-mpd btn-area-ejecutivo" href="{{ url_for('dashboard_ejecutivo') }}">Alta Direccion</a>
+      <a class="btn btn-mpd btn-area-ejecutivo" href="{{ url_for('sst.dashboard_ejecutivo') }}">Alta Direccion</a>
       {% endif %}
     </nav>
 

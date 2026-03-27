@@ -1,10 +1,11 @@
+import sqlite3
+from flask import Blueprint
+from . import bp
+
 from datetime import date
 import sqlite3
-
 from flask import render_template, request, redirect, url_for, flash
-
-
-def register_auditorias(app, get_db):
+def register_auditorias_routes(app, bp, get_db):
     MOBILIARIO_ITEM_PAIRS = [
         ("aire_marca", "Aires acondicionados"),
         ("escritorio_prof", "Escritorios profesionales"),
@@ -252,12 +253,20 @@ def register_auditorias(app, get_db):
             CREATE INDEX IF NOT EXISTS idx_auditoria_luminarias_items_auditoria
             ON auditoria_luminarias_items(auditoria_id)
         """)
+    # --- DDL BOOTSTRAP INJECTED ---
+    ensure_auditoria_mobiliario_tables(get_db())
+    ensure_auditoria_luminarias_tables(get_db())
+    ensure_auditoria_aires_tables(get_db())
+    ensure_auditoria_operativa_tables(get_db())
+    ensure_auditoria_herramientas_tables(get_db())
+    # ------------------------------
 
-    @app.route("/auditoria/herramientas", methods=["GET", "POST"], endpoint="auditoria_herramientas")
+
+    @bp.route("/auditoria/herramientas", methods=["GET", "POST"], endpoint="auditoria_herramientas")
     def auditoria_herramientas():
         con = get_db()
         con.row_factory = sqlite3.Row
-        ensure_auditoria_herramientas_tables(con)
+        # ensure_auditoria_herramientas_tables(con)  # DDL-MOVED
         cur = con.cursor()
 
         today = date.today().isoformat()
@@ -366,7 +375,7 @@ def register_auditorias(app, get_db):
 
             if not sede_codigo or not deposito:
                 flash("Elegi sede y deposito.", "warning")
-                return redirect(url_for("auditoria_herramientas"))
+                return redirect(url_for("auditorias.auditoria_herramientas"))
 
             cur.execute("""
                 INSERT INTO auditoria_herramientas (fecha, sede_codigo, deposito, responsable, observaciones)
@@ -402,7 +411,7 @@ def register_auditorias(app, get_db):
 
             con.commit()
             flash("Auditoria de herramientas guardada.", "success")
-            return redirect(url_for("auditoria_herramientas"))
+            return redirect(url_for("auditorias.auditoria_herramientas"))
 
         auditorias = con.execute("""
             SELECT *
@@ -422,12 +431,12 @@ def register_auditorias(app, get_db):
             auditorias=auditorias
         )
 
-    @app.route("/auditoria/herramientas/catalogo/agregar", methods=["POST"],
+    @bp.route("/auditoria/herramientas/catalogo/agregar", methods=["POST"],
                endpoint="auditoria_herramientas_catalogo_agregar")
     def auditoria_herramientas_catalogo_agregar():
         con = get_db()
         con.row_factory = sqlite3.Row
-        ensure_auditoria_herramientas_tables(con)
+        # ensure_auditoria_herramientas_tables(con)  # DDL-MOVED
 
         nombre = (request.form.get("nombre") or "").strip()
         activo = 1 if request.form.get("activo") else 0
@@ -445,14 +454,14 @@ def register_auditorias(app, get_db):
             con.commit()
 
         con.close()
-        return redirect(url_for("auditoria_herramientas"))
+        return redirect(url_for("auditorias.auditoria_herramientas"))
 
-    @app.route("/auditoria/herramientas/catalogo/<int:cid>/editar", methods=["POST"],
+    @bp.route("/auditoria/herramientas/catalogo/<int:cid>/editar", methods=["POST"],
                endpoint="auditoria_herramientas_catalogo_editar")
     def auditoria_herramientas_catalogo_editar(cid):
         con = get_db()
         con.row_factory = sqlite3.Row
-        ensure_auditoria_herramientas_tables(con)
+        # ensure_auditoria_herramientas_tables(con)  # DDL-MOVED
 
         nombre = (request.form.get("nombre") or "").strip()
         activo = 1 if request.form.get("activo") else 0
@@ -471,24 +480,24 @@ def register_auditorias(app, get_db):
             con.commit()
 
         con.close()
-        return redirect(url_for("auditoria_herramientas"))
+        return redirect(url_for("auditorias.auditoria_herramientas"))
 
-    @app.route("/auditoria/herramientas/catalogo/<int:cid>/borrar", methods=["POST"],
+    @bp.route("/auditoria/herramientas/catalogo/<int:cid>/borrar", methods=["POST"],
                endpoint="auditoria_herramientas_catalogo_borrar")
     def auditoria_herramientas_catalogo_borrar(cid):
         con = get_db()
         con.row_factory = sqlite3.Row
-        ensure_auditoria_herramientas_tables(con)
+        # ensure_auditoria_herramientas_tables(con)  # DDL-MOVED
         con.execute("DELETE FROM auditoria_herramientas_catalogo WHERE id = ?", (cid,))
         con.commit()
         con.close()
-        return redirect(url_for("auditoria_herramientas"))
+        return redirect(url_for("auditorias.auditoria_herramientas"))
 
-    @app.route("/auditoria/mobiliario", methods=["GET", "POST"], endpoint="auditoria_mobiliario")
+    @bp.route("/auditoria/mobiliario", methods=["GET", "POST"], endpoint="auditoria_mobiliario")
     def auditoria_mobiliario():
         con = get_db()
         con.row_factory = sqlite3.Row
-        ensure_auditoria_mobiliario_tables(con)
+        # ensure_auditoria_mobiliario_tables(con)  # DDL-MOVED
         cur = con.cursor()
 
         today = date.today().isoformat()
@@ -548,8 +557,8 @@ def register_auditorias(app, get_db):
             if not sede_codigo or not deposito:
                 flash("Elegi sede y deposito.", "warning")
                 if auditoria_id:
-                    return redirect(url_for("auditoria_mobiliario", edit=auditoria_id))
-                return redirect(url_for("auditoria_mobiliario"))
+                    return redirect(url_for("auditorias.auditoria_mobiliario", edit=auditoria_id))
+                return redirect(url_for("auditorias.auditoria_mobiliario"))
 
             if auditoria_id:
                 cur.execute("""
@@ -592,7 +601,7 @@ def register_auditorias(app, get_db):
 
             con.commit()
             flash("Auditoria de mobiliario actualizada." if auditoria_id_raw else "Auditoria de mobiliario guardada.", "success")
-            return redirect(url_for("auditoria_mobiliario"))
+            return redirect(url_for("auditorias.auditoria_mobiliario"))
 
         auditorias = con.execute("""
             SELECT *
@@ -615,11 +624,11 @@ def register_auditorias(app, get_db):
             allow_otros=True,
         )
 
-    @app.route("/auditoria/aires", methods=["GET", "POST"], endpoint="auditoria_aires")
+    @bp.route("/auditoria/aires", methods=["GET", "POST"], endpoint="auditoria_aires")
     def auditoria_aires():
         con = get_db()
         con.row_factory = sqlite3.Row
-        ensure_auditoria_aires_tables(con)
+        # ensure_auditoria_aires_tables(con)  # DDL-MOVED
         cur = con.cursor()
 
         today = date.today().isoformat()
@@ -660,7 +669,7 @@ def register_auditorias(app, get_db):
 
             if not sede_codigo or not deposito:
                 flash("Completa sede y deposito para guardar el relevamiento.", "warning")
-                return redirect(url_for("auditoria_aires", edit=auditoria_id) if auditoria_id else url_for("auditoria_aires"))
+                return redirect(url_for("auditorias.auditoria_aires", edit=auditoria_id) if auditoria_id else url_for("auditorias.auditoria_aires"))
 
             if auditoria_id:
                 cur.execute("""
@@ -691,7 +700,7 @@ def register_auditorias(app, get_db):
 
             con.commit()
             flash("Relevamiento de aires guardado." if not auditoria_id_raw else "Relevamiento de aires actualizado.", "success")
-            return redirect(url_for("auditoria_aires"))
+            return redirect(url_for("auditorias.auditoria_aires"))
 
         auditorias = con.execute("""
             SELECT *
@@ -713,11 +722,11 @@ def register_auditorias(app, get_db):
             allow_otros=False,
         )
 
-    @app.route("/auditoria/luminarias", methods=["GET", "POST"], endpoint="auditoria_luminarias")
+    @bp.route("/auditoria/luminarias", methods=["GET", "POST"], endpoint="auditoria_luminarias")
     def auditoria_luminarias():
         con = get_db()
         con.row_factory = sqlite3.Row
-        ensure_auditoria_luminarias_tables(con)
+        # ensure_auditoria_luminarias_tables(con)  # DDL-MOVED
         cur = con.cursor()
 
         today = date.today().isoformat()
@@ -758,7 +767,7 @@ def register_auditorias(app, get_db):
 
             if not sede_codigo or not deposito:
                 flash("Completa sede y deposito para guardar el relevamiento.", "warning")
-                return redirect(url_for("auditoria_luminarias", edit=auditoria_id) if auditoria_id else url_for("auditoria_luminarias"))
+                return redirect(url_for("auditorias.auditoria_luminarias", edit=auditoria_id) if auditoria_id else url_for("auditorias.auditoria_luminarias"))
 
             if auditoria_id:
                 cur.execute("""
@@ -789,7 +798,7 @@ def register_auditorias(app, get_db):
 
             con.commit()
             flash("Relevamiento de luminarias guardado." if not auditoria_id_raw else "Relevamiento de luminarias actualizado.", "success")
-            return redirect(url_for("auditoria_luminarias"))
+            return redirect(url_for("auditorias.auditoria_luminarias"))
 
         auditorias = con.execute("""
             SELECT *
@@ -811,48 +820,48 @@ def register_auditorias(app, get_db):
             allow_otros=False,
         )
 
-    @app.route("/auditoria/mobiliario/<int:aid>/borrar", methods=["POST"], endpoint="auditoria_mobiliario_borrar")
+    @bp.route("/auditoria/mobiliario/<int:aid>/borrar", methods=["POST"], endpoint="auditoria_mobiliario_borrar")
     def auditoria_mobiliario_borrar(aid):
         con = get_db()
         con.row_factory = sqlite3.Row
-        ensure_auditoria_mobiliario_tables(con)
+        # ensure_auditoria_mobiliario_tables(con)  # DDL-MOVED
         con.execute("DELETE FROM auditoria_mobiliario_items WHERE auditoria_id = ?", (aid,))
         con.execute("DELETE FROM auditoria_mobiliario WHERE id = ?", (aid,))
         con.commit()
         con.close()
         flash("Relevamiento eliminado.", "info")
-        return redirect(url_for("auditoria_mobiliario"))
+        return redirect(url_for("auditorias.auditoria_mobiliario"))
 
-    @app.route("/auditoria/aires/<int:aid>/borrar", methods=["POST"], endpoint="auditoria_aires_borrar")
+    @bp.route("/auditoria/aires/<int:aid>/borrar", methods=["POST"], endpoint="auditoria_aires_borrar")
     def auditoria_aires_borrar(aid):
         con = get_db()
         con.row_factory = sqlite3.Row
-        ensure_auditoria_aires_tables(con)
+        # ensure_auditoria_aires_tables(con)  # DDL-MOVED
         con.execute("DELETE FROM auditoria_aires_items WHERE auditoria_id = ?", (aid,))
         con.execute("DELETE FROM auditoria_aires WHERE id = ?", (aid,))
         con.commit()
         con.close()
         flash("Relevamiento eliminado.", "info")
-        return redirect(url_for("auditoria_aires"))
+        return redirect(url_for("auditorias.auditoria_aires"))
 
-    @app.route("/auditoria/luminarias/<int:aid>/borrar", methods=["POST"], endpoint="auditoria_luminarias_borrar")
+    @bp.route("/auditoria/luminarias/<int:aid>/borrar", methods=["POST"], endpoint="auditoria_luminarias_borrar")
     def auditoria_luminarias_borrar(aid):
         con = get_db()
         con.row_factory = sqlite3.Row
-        ensure_auditoria_luminarias_tables(con)
+        # ensure_auditoria_luminarias_tables(con)  # DDL-MOVED
         con.execute("DELETE FROM auditoria_luminarias_items WHERE auditoria_id = ?", (aid,))
         con.execute("DELETE FROM auditoria_luminarias WHERE id = ?", (aid,))
         con.commit()
         con.close()
         flash("Relevamiento eliminado.", "info")
-        return redirect(url_for("auditoria_luminarias"))
+        return redirect(url_for("auditorias.auditoria_luminarias"))
 
     def _comparativa_render(tipo):
         con = get_db()
         con.row_factory = sqlite3.Row
 
         if tipo == "aires":
-            ensure_auditoria_aires_tables(con)
+            # ensure_auditoria_aires_tables(con)  # DDL-MOVED
             item_pairs = AIRES_ITEM_PAIRS
             auditoria_tabla = "auditoria_aires"
             auditoria_items = "auditoria_aires_items"
@@ -866,7 +875,7 @@ def register_auditorias(app, get_db):
             """
             tipo_label = "Aires"
         elif tipo == "luminarias":
-            ensure_auditoria_luminarias_tables(con)
+            # ensure_auditoria_luminarias_tables(con)  # DDL-MOVED
             item_pairs = LUMINARIAS_ITEM_PAIRS
             auditoria_tabla = "auditoria_luminarias"
             auditoria_items = "auditoria_luminarias_items"
@@ -885,7 +894,7 @@ def register_auditorias(app, get_db):
             """
             tipo_label = "Luminarias"
         else:
-            ensure_auditoria_mobiliario_tables(con)
+            # ensure_auditoria_mobiliario_tables(con)  # DDL-MOVED
             item_pairs = MOBILIARIO_ITEM_PAIRS
             auditoria_tabla = "auditoria_mobiliario"
             auditoria_items = "auditoria_mobiliario_items"
@@ -1033,22 +1042,22 @@ def register_auditorias(app, get_db):
             tipo_label=tipo_label,
         )
 
-    @app.route("/auditoria/mobiliario/supervisor", methods=["GET"], endpoint="auditoria_mobiliario_supervisor")
+    @bp.route("/auditoria/mobiliario/supervisor", methods=["GET"], endpoint="auditoria_mobiliario_supervisor")
     def auditoria_mobiliario_supervisor():
         return _comparativa_render("mobiliario")
 
-    @app.route("/relevamientos/comparativa", methods=["GET"], endpoint="relevamientos_comparativa")
+    @bp.route("/relevamientos/comparativa", methods=["GET"], endpoint="relevamientos_comparativa")
     def relevamientos_comparativa():
         tipo = (request.args.get("tipo") or "mobiliario").strip().lower()
         if tipo not in ("mobiliario", "aires", "luminarias"):
             tipo = "mobiliario"
         return _comparativa_render(tipo)
 
-    @app.route("/auditoria/operativa", methods=["GET", "POST"], endpoint="auditoria_operativa")
+    @bp.route("/auditoria/operativa", methods=["GET", "POST"], endpoint="auditoria_operativa")
     def auditoria_operativa():
         con = get_db()
         con.row_factory = sqlite3.Row
-        ensure_auditoria_operativa_tables(con)
+        # ensure_auditoria_operativa_tables(con)  # DDL-MOVED
         cur = con.cursor()
 
         today = date.today().isoformat()
@@ -1086,7 +1095,7 @@ def register_auditorias(app, get_db):
             if not sede_codigo or not rubro or not item_defs:
                 con.close()
                 flash("Completa sede y rubro para guardar la auditoria.", "warning")
-                return redirect(url_for("auditoria_operativa", rubro=rubro or q_rubro))
+                return redirect(url_for("auditorias.auditoria_operativa", rubro=rubro or q_rubro))
 
             missing_labels = []
             parsed_items = []
@@ -1126,7 +1135,7 @@ def register_auditorias(app, get_db):
             if missing_labels:
                 con.close()
                 flash("Completa resultado (OK/Obs/NC) en todos los items del checklist.", "warning")
-                return redirect(url_for("auditoria_operativa", rubro=rubro))
+                return redirect(url_for("auditorias.auditoria_operativa", rubro=rubro))
 
             if any(r == 0 for r in resultados):
                 estado_general = "rojo"
@@ -1178,7 +1187,7 @@ def register_auditorias(app, get_db):
             con.commit()
             con.close()
             flash("Auditoria operativa guardada.", "success")
-            return redirect(url_for("auditoria_operativa", rubro=rubro))
+            return redirect(url_for("auditorias.auditoria_operativa", rubro=rubro))
 
         item_defs = OPERATIVA_ITEMS_BY_RUBRO.get(q_rubro, [])
         auditorias = con.execute("""

@@ -31,7 +31,7 @@
         <td>{{ a.codigo_interno }} — {{ a.patente }}</td>
         <td>{{ a.agente }}</td>
         <td>
-          <form method="post" action="{{ url_for('bd_choferes_aut_delete', cid=a.id) }}">
+          <form method="post" action="{{ url_for('vehiculos.bd_choferes_aut_delete', cid=a.id) }}">
             <button class="btn xs outline-red">Eliminar</button>
           </form>
         </td>

@@ -8,7 +8,7 @@
             <p style="margin:0;color:#64748b;font-size:13px">Modificar datos del viaje y guardar.</p>
         </div>
         <div>
-            <a class="btn btn-mpd" href="{{ url_for('vehiculos_control_diario', fecha=viaje.fecha) }}">Volver</a>
+            <a class="btn btn-mpd" href="{{ url_for('vehiculos.vehiculos_control_diario', fecha=viaje.fecha) }}">Volver</a>
         </div>
     </header>
 
@@ -86,7 +86,7 @@
                 style="padding:10px 16px;border-radius:999px;border:1px solid #e5e7eb;background:#fff;font-weight:700;cursor:pointer">
                 Guardar cambios
             </button>
-            <a class="btn btn-mpd" href="{{ url_for('vehiculos_control_diario', fecha=viaje.fecha) }}">Cancelar</a>
+            <a class="btn btn-mpd" href="{{ url_for('vehiculos.vehiculos_control_diario', fecha=viaje.fecha) }}">Cancelar</a>
         </div>
 
     </form>

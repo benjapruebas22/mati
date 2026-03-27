@@ -72,8 +72,8 @@
 
   <div class="comb-actions">
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <a class="btn btn-mpd" href="{{ url_for('vehiculos_combustible_estadisticas') }}">Estadisticas</a>
-      <a class="btn outline-slate" href="{{ url_for('bd_precios') }}">Precios base</a>
+      <a class="btn btn-mpd" href="{{ url_for('vehiculos.vehiculos_combustible_estadisticas') }}">Estadisticas</a>
+      <a class="btn outline-slate" href="{{ url_for('vehiculos.bd_precios') }}">Precios base</a>
     </div>
     <div class="muted">
       Nafta: <b>${{ '%.2f'|format(precio_nafta or 0) }}</b>/L |
@@ -210,7 +210,7 @@
               {% if c.remito_archivo.startswith('http') %}
               <a href="{{ c.remito_archivo }}" target="_blank" rel="noopener">Ver</a>
               {% else %}
-              <a href="{{ url_for('combustible_remito_ver', filename=c.remito_archivo) }}" target="_blank" rel="noopener">Ver</a>
+              <a href="{{ url_for('vehiculos.combustible_remito_ver', filename=c.remito_archivo) }}" target="_blank" rel="noopener">Ver</a>
               {% endif %}
             </div>
             {% endif %}
@@ -218,8 +218,8 @@
           <td>{{ c.fecha }}</td>
           <td>{{ c.km_actual or "-" }}</td>
           <td style="white-space:nowrap">
-            <a class="btn btn-mpd" style="padding:6px 10px;font-size:12px" href="{{ url_for('combustible_editar', cid=c.id) }}">Editar</a>
-            <form method="post" action="{{ url_for('combustible_eliminar', cid=c.id) }}" style="display:inline" onsubmit="return confirm('Eliminar carga #{{ c.id }}?');">
+            <a class="btn btn-mpd" style="padding:6px 10px;font-size:12px" href="{{ url_for('vehiculos.combustible_editar', cid=c.id) }}">Editar</a>
+            <form method="post" action="{{ url_for('vehiculos.combustible_eliminar', cid=c.id) }}" style="display:inline" onsubmit="return confirm('Eliminar carga #{{ c.id }}?');">
               <button type="submit" class="btn btn-mpd" style="padding:6px 10px;font-size:12px;border-color:#fecaca">Eliminar</button>
             </form>
           </td>

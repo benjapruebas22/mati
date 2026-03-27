@@ -8,8 +8,8 @@
       <p class="op-sub">Checklist simple para materiales, mobiliario, herramientas y vehiculos.</p>
     </div>
     <div class="op-actions">
-      <a class="btn outline-green btn-sm" href="{{ url_for('auditoria_mobiliario') }}">Auditoria mobiliario</a>
-      <a class="btn outline-green btn-sm" href="{{ url_for('auditoria_herramientas') }}">Auditoria herramientas</a>
+      <a class="btn outline-green btn-sm" href="{{ url_for('auditorias.auditoria_mobiliario') }}">Auditoria mobiliario</a>
+      <a class="btn outline-green btn-sm" href="{{ url_for('auditorias.auditoria_herramientas') }}">Auditoria herramientas</a>
       <a class="btn outline-blue btn-sm" href="{{ url_for('materiales_home') }}">Volver a Materiales</a>
     </div>
   </header>
@@ -242,7 +242,7 @@
       rubroSel.addEventListener("change", function(){
         const v = (rubroSel.value || "").trim();
         if (!v) return;
-        window.location.href = "{{ url_for('auditoria_operativa') }}?rubro=" + encodeURIComponent(v);
+        window.location.href = "{{ url_for('auditorias.auditoria_operativa') }}?rubro=" + encodeURIComponent(v);
       });
     }
     if (!sedeSel || !localSel) return;

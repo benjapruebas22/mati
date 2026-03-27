@@ -1,14 +1,148 @@
-from datetime import date, datetime
-import os
-import sqlite3
+from flask import Blueprint
+from . import bp
 
-from flask import render_template, request, redirect, url_for, flash, send_from_directory, send_file
+
+
 from werkzeug.utils import secure_filename
+from flask import render_template, request, redirect, url_for, flash, send_from_directory, send_file
+
+import sqlite3
+import os
+from datetime import date, datetime
+def register_agentes_routes(bp, get_db, ensure_cols, rebuild_eventos_agentes, allowed_agente_doc, AGENTE_DOCS_FOLDER):
 
 
-def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_agente_doc, AGENTE_DOCS_FOLDER):
+    # ======= DDL BOOTSTRAP (runs ONCE on server start) =======
+    _bootstrap_con = get_db()
+    _bootstrap_con.execute("""
+        CREATE TABLE IF NOT EXISTS agentes_compensatorios_mov(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            agente_id INTEGER NOT NULL,
+            fecha TEXT NOT NULL,
+            tipo TEXT NOT NULL,
+            dias REAL DEFAULT 0,
+            horas REAL DEFAULT 0,
+            periodo TEXT,
+            desde TEXT,
+            hasta TEXT,
+            observaciones TEXT
+        )
+    """)
+    ensure_cols(_bootstrap_con, "agentes_compensatorios_mov", [
+        ("agente_id", "INTEGER"), ("fecha", "TEXT"), ("tipo", "TEXT"),
+        ("dias", "REAL"), ("horas", "REAL"), ("periodo", "TEXT"),
+        ("desde", "TEXT"), ("hasta", "TEXT"), ("observaciones", "TEXT"),
+    ])
+    ensure_cols(_bootstrap_con, "agentes_documentacion", [
+        ("archivo", "TEXT"), ("archivo_url", "TEXT")
+    ])
+    _bootstrap_con.commit()
+    _bootstrap_con.close()
+    # ======= END DDL BOOTSTRAP =======
 
-    @app.route("/agentes", endpoint="agentes_home")
+    def _get_agente_details(conn, agente_id):
+        comp_movs = conn.execute("""
+            SELECT
+                id,
+                fecha,
+                tipo,
+                dias,
+                horas,
+                periodo,
+                desde,
+                hasta,
+                observaciones
+            FROM agentes_compensatorios_mov
+            WHERE agente_id = ?
+            ORDER BY date(fecha) DESC, id DESC
+        """, (agente_id,)).fetchall()
+
+        total_horas = 0.0
+        dias_gen = 0.0
+        dias_tom = 0.0
+        for m in comp_movs:
+            if (m["tipo"] or "").upper() in ("INICIAL", "FERIA"):
+                dias_gen += float(m["dias"] or 0)
+            elif (m["tipo"] or "").upper() == "TOMA":
+                dias_tom += float(m["dias"] or 0)
+            elif (m["tipo"] or "").upper() == "HORAS":
+                total_horas += float(m["horas"] or 0)
+
+        dias_horas = int(total_horas // 6)
+        horas_rem = float(total_horas - (dias_horas * 6))
+        comp_saldo = {
+            "dias": (dias_gen + dias_horas - dias_tom),
+            "horas": horas_rem,
+            "dias_generados": dias_gen + dias_horas,
+            "dias_tomados": dias_tom,
+        }
+
+        documentos = conn.execute("""
+            SELECT id, tipo, fecha_vencimiento, estado, observaciones
+            FROM agentes_documentacion
+            WHERE agente_id = ?
+            ORDER BY tipo
+        """, (agente_id,)).fetchall()
+
+        entregas_epp = conn.execute("""
+            SELECT id, tipo, categoria, fecha_entrega, cantidad, estado, observaciones
+            FROM agentes_epp
+            WHERE agente_id = ?
+            ORDER BY fecha_entrega DESC
+        """, (agente_id,)).fetchall()
+
+        incidentes = conn.execute("""
+            SELECT id, fecha, tipo, lugar, descripcion, consecuencia, acciones, estado
+            FROM agentes_incidentes
+            WHERE agente_id = ?
+            ORDER BY fecha DESC, id DESC
+        """, (agente_id,)).fetchall()
+
+        desempenos = conn.execute("""
+            SELECT id, fecha, tipo, periodo, calificacion, observaciones, estado
+            FROM agentes_desempeno
+            WHERE agente_id = ?
+            ORDER BY fecha DESC, id DESC
+        """, (agente_id,)).fetchall()
+
+        documentos_vinculados_agente = []
+        try:
+            t_docs = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='documentos'").fetchone()
+            t_rel = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='documentos_agentes'").fetchone()
+            if t_docs and t_rel:
+                documentos_vinculados_agente = conn.execute("""
+                    SELECT
+                        d.id_documento,
+                        d.titulo,
+                        d.tipo_documento,
+                        d.estado,
+                        d.fecha,
+                        d.archivo_url,
+                        COALESCE((
+                            SELECT GROUP_CONCAT(dt.tag, ', ')
+                            FROM documentos_tags dt
+                            WHERE dt.id_documento = d.id_documento
+                        ), '') AS tags_txt
+                    FROM documentos d
+                    JOIN documentos_agentes da ON da.id_documento = d.id_documento
+                    WHERE da.id_agente = ?
+                    ORDER BY COALESCE(d.fecha, d.creado_en) DESC, d.id_documento DESC
+                    LIMIT 40
+                """, (agente_id,)).fetchall()
+        except Exception:
+            pass
+
+        return {
+            "comp_movs": comp_movs,
+            "comp_saldo": comp_saldo,
+            "documentos": documentos,
+            "entregas_epp": entregas_epp,
+            "incidentes": incidentes,
+            "desempenos": desempenos,
+            "documentos_vinculados_agente": documentos_vinculados_agente,
+        }
+
+    @bp.route("/agentes", endpoint="agentes_home")
     def agentes_home():
         con = get_db()
         con.execute("""
@@ -90,98 +224,14 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
         documentos_vinculados_agente = []
 
         if agente_destacado is not None:
-            agente_id = agente_destacado["id"]
-
-            comp_movs = con.execute("""
-                SELECT
-                    id,
-                    fecha,
-                    tipo,
-                    dias,
-                    horas,
-                    periodo,
-                    desde,
-                    hasta,
-                    observaciones
-                FROM agentes_compensatorios_mov
-                WHERE agente_id = ?
-                ORDER BY date(fecha) DESC, id DESC
-            """, (agente_id,)).fetchall()
-
-            total_horas = 0.0
-            dias_gen = 0.0
-            dias_tom = 0.0
-            for m in comp_movs:
-                if (m["tipo"] or "").upper() in ("INICIAL", "FERIA"):
-                    dias_gen += float(m["dias"] or 0)
-                elif (m["tipo"] or "").upper() == "TOMA":
-                    dias_tom += float(m["dias"] or 0)
-                elif (m["tipo"] or "").upper() == "HORAS":
-                    total_horas += float(m["horas"] or 0)
-
-            dias_horas = int(total_horas // 6)
-            horas_rem = float(total_horas - (dias_horas * 6))
-            comp_saldo = {
-                "dias": (dias_gen + dias_horas - dias_tom),
-                "horas": horas_rem,
-                "dias_generados": dias_gen + dias_horas,
-                "dias_tomados": dias_tom,
-            }
-
-            documentos = con.execute("""
-                SELECT id, tipo, fecha_vencimiento, estado, observaciones
-                FROM agentes_documentacion
-                WHERE agente_id = ?
-                ORDER BY tipo
-            """, (agente_id,)).fetchall()
-
-            entregas_epp = con.execute("""
-                SELECT id, tipo, categoria, fecha_entrega, cantidad, estado, observaciones
-                FROM agentes_epp
-                WHERE agente_id = ?
-                ORDER BY fecha_entrega DESC
-            """, (agente_id,)).fetchall()
-
-            incidentes = con.execute("""
-                SELECT id, fecha, tipo, lugar, descripcion, consecuencia, acciones, estado
-                FROM agentes_incidentes
-                WHERE agente_id = ?
-                ORDER BY fecha DESC, id DESC
-            """, (agente_id,)).fetchall()
-
-            desempenos = con.execute("""
-                SELECT id, fecha, tipo, periodo, calificacion, observaciones, estado
-                FROM agentes_desempeno
-                WHERE agente_id = ?
-                ORDER BY fecha DESC, id DESC
-            """, (agente_id,)).fetchall()
-
-            try:
-                t_docs = con.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='documentos'").fetchone()
-                t_rel = con.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='documentos_agentes'").fetchone()
-                if t_docs and t_rel:
-                    documentos_vinculados_agente = con.execute("""
-                        SELECT
-                            d.id_documento,
-                            d.titulo,
-                            d.tipo_documento,
-                            d.estado,
-                            d.fecha,
-                            d.archivo_url,
-                            COALESCE((
-                                SELECT GROUP_CONCAT(dt.tag, ', ')
-                                FROM documentos_tags dt
-                                WHERE dt.id_documento = d.id_documento
-                            ), '') AS tags_txt
-                        FROM documentos d
-                        JOIN documentos_agentes da ON da.id_documento = d.id_documento
-                        WHERE da.id_agente = ?
-                        ORDER BY COALESCE(d.fecha, d.creado_en) DESC, d.id_documento DESC
-                        LIMIT 40
-                    """, (agente_id,)).fetchall()
-            except Exception:
-                documentos_vinculados_agente = []
-
+            details = _get_agente_details(con, agente_destacado["id"])
+            comp_movs = details["comp_movs"]
+            comp_saldo = details["comp_saldo"]
+            documentos = details["documentos"]
+            entregas_epp = details["entregas_epp"]
+            incidentes = details["incidentes"]
+            desempenos = details["desempenos"]
+            documentos_vinculados_agente = details["documentos_vinculados_agente"]
 
         con.close()
 
@@ -200,7 +250,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
 
 
 
-    @app.route("/agentes/<int:agente_id>/licencias/nueva",
+    @bp.route("/agentes/<int:agente_id>/licencias/nueva",
                methods=["GET", "POST"],
                endpoint="agente_nueva_licencia")
     def agente_nueva_licencia(agente_id):
@@ -215,7 +265,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
         if not agente:
             con.close()
             flash("Agente no encontrado.", "warning")
-            return redirect(url_for("agentes_home"))
+            return redirect(url_for("agentes.agentes_home"))
 
         if request.method == "POST":
             tipo          = request.form.get("tipo") or ""
@@ -227,12 +277,12 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
             if not tipo or not fecha_desde or not fecha_hasta:
                 flash("Completá tipo y fechas de la licencia.", "warning")
                 con.close()
-                return redirect(url_for("agente_nueva_licencia", agente_id=agente_id))
+                return redirect(url_for("agentes.agente_nueva_licencia", agente_id=agente_id))
 
             if fecha_hasta < fecha_desde:
                 flash("La fecha hasta no puede ser menor que la fecha desde.", "warning")
                 con.close()
-                return redirect(url_for("agente_nueva_licencia", agente_id=agente_id))
+                return redirect(url_for("agentes.agente_nueva_licencia", agente_id=agente_id))
 
             con.execute("""
                 INSERT INTO agentes_licencias
@@ -244,7 +294,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
             con.close()
             rebuild_eventos_agentes()
             flash("✅ Licencia cargada correctamente.", "success")
-            return redirect(url_for("agentes_home", id=agente_id))
+            return redirect(url_for("agentes.agentes_home", id=agente_id))
 
         con.close()
         return render_template("agente_licencia_form.html",
@@ -253,7 +303,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
 
 
 
-    @app.route("/agentes/<int:agente_id>/licencias/<int:lic_id>/editar",
+    @bp.route("/agentes/<int:agente_id>/licencias/<int:lic_id>/editar",
                methods=["GET", "POST"],
                endpoint="agente_licencia_editar")
     def agente_licencia_editar(agente_id, lic_id):
@@ -274,7 +324,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
         if not agente or not licencia:
             con.close()
             flash("Licencia o agente no encontrado.", "warning")
-            return redirect(url_for("agentes_home"))
+            return redirect(url_for("agentes.agentes_home"))
 
         if request.method == "POST":
             tipo          = request.form.get("tipo") or ""
@@ -286,13 +336,13 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
             if not tipo or not fecha_desde or not fecha_hasta:
                 flash("Completá tipo y fechas de la licencia.", "warning")
                 con.close()
-                return redirect(url_for("agente_licencia_editar",
+                return redirect(url_for("agentes.agente_licencia_editar",
                                         agente_id=agente_id, lic_id=lic_id))
 
             if fecha_hasta < fecha_desde:
                 flash("La fecha hasta no puede ser menor que la fecha desde.", "warning")
                 con.close()
-                return redirect(url_for("agente_licencia_editar",
+                return redirect(url_for("agentes.agente_licencia_editar",
                                         agente_id=agente_id, lic_id=lic_id))
 
             con.execute("""
@@ -306,7 +356,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
             con.close()
             rebuild_eventos_agentes()
             flash("✅ Licencia actualizada.", "success")
-            return redirect(url_for("agentes_home", id=agente_id))
+            return redirect(url_for("agentes.agentes_home", id=agente_id))
 
         con.close()
         return render_template("agente_licencia_form.html",
@@ -315,7 +365,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
 
 
 
-    @app.route("/agentes/<int:agente_id>/licencias/<int:lic_id>/eliminar",
+    @bp.route("/agentes/<int:agente_id>/licencias/<int:lic_id>/eliminar",
                methods=["POST"],
                endpoint="agente_licencia_eliminar")
 
@@ -329,10 +379,10 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
         con.close()
         rebuild_eventos_agentes()
         flash("🗑️ Licencia eliminada.", "info")
-        return redirect(url_for("agentes_home", id=agente_id))
+        return redirect(url_for("agentes.agentes_home", id=agente_id))
 
 
-    @app.route("/agentes/<int:id>/compensatorios", methods=["GET", "POST"], endpoint="agente_compensatorios")
+    @bp.route("/agentes/<int:id>/compensatorios", methods=["GET", "POST"], endpoint="agente_compensatorios")
     def agente_compensatorios(id):
         con = get_db()
         con.execute("""
@@ -370,7 +420,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
         if not agente:
             con.close()
             flash("El agente no existe o est? inactivo.", "error")
-            return redirect(url_for("agentes_home"))
+            return redirect(url_for("agentes.agentes_home"))
 
         if request.method == "POST":
             tipo = (request.form.get("tipo") or "").strip().upper()
@@ -394,23 +444,23 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
             if tipo not in ("INICIAL", "FERIA", "HORAS", "TOMA"):
                 flash("Seleccion? un tipo v?lido.", "warning")
                 con.close()
-                return redirect(url_for("agente_compensatorios", id=id))
+                return redirect(url_for("agentes.agente_compensatorios", id=id))
 
             if tipo in ("INICIAL", "FERIA") and dias <= 0:
                 flash("Ingres? la cantidad de d?as.", "warning")
                 con.close()
-                return redirect(url_for("agente_compensatorios", id=id))
+                return redirect(url_for("agentes.agente_compensatorios", id=id))
 
             if tipo == "HORAS" and horas <= 0:
                 flash("Ingres? la cantidad de horas.", "warning")
                 con.close()
-                return redirect(url_for("agente_compensatorios", id=id))
+                return redirect(url_for("agentes.agente_compensatorios", id=id))
 
             if tipo == "TOMA":
                 if not desde or not hasta:
                     flash("Ingres? desde y hasta para la toma.", "warning")
                     con.close()
-                    return redirect(url_for("agente_compensatorios", id=id))
+                    return redirect(url_for("agentes.agente_compensatorios", id=id))
                 try:
                     d1 = datetime.strptime(desde, "%Y-%m-%d").date()
                     d2 = datetime.strptime(hasta, "%Y-%m-%d").date()
@@ -423,7 +473,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
                 except Exception:
                     flash("Fechas inv?lidas para la toma.", "warning")
                     con.close()
-                    return redirect(url_for("agente_compensatorios", id=id))
+                    return redirect(url_for("agentes.agente_compensatorios", id=id))
 
             con.execute("""
                 INSERT INTO agentes_compensatorios_mov
@@ -434,7 +484,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
             con.close()
             rebuild_eventos_agentes()
             flash("Movimiento compensatorio guardado.", "success")
-            return redirect(url_for("agente_compensatorios", id=id))
+            return redirect(url_for("agentes.agente_compensatorios", id=id))
 
         comp_movs = con.execute("""
             SELECT
@@ -475,7 +525,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
 
 
 
-    @app.route("/agentes/<int:agente_id>/compensatorios/<int:mov_id>/eliminar",
+    @bp.route("/agentes/<int:agente_id>/compensatorios/<int:mov_id>/eliminar",
                methods=["POST"],
                endpoint="agente_compensatorio_eliminar")
     def agente_compensatorio_eliminar(agente_id, mov_id):
@@ -488,11 +538,11 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
         con.close()
         rebuild_eventos_agentes()
         flash("Movimiento compensatorio eliminado.", "info")
-        return redirect(url_for("agente_compensatorios", id=agente_id))
+        return redirect(url_for("agentes.agente_compensatorios", id=agente_id))
 
 
 
-    @app.route("/agentes/<int:agente_id>/compensatorios/<int:mov_id>/editar",
+    @bp.route("/agentes/<int:agente_id>/compensatorios/<int:mov_id>/editar",
                methods=["GET", "POST"],
                endpoint="agente_compensatorio_editar")
     def agente_compensatorio_editar(agente_id, mov_id):
@@ -527,7 +577,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
         if not agente or not mov:
             con.close()
             flash("Movimiento no encontrado.", "warning")
-            return redirect(url_for("agente_compensatorios", id=agente_id))
+            return redirect(url_for("agentes.agente_compensatorios", id=agente_id))
 
         if request.method == "POST":
             tipo = (request.form.get("tipo") or "").strip().upper()
@@ -551,26 +601,26 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
             if tipo not in ("INICIAL", "FERIA", "HORAS", "TOMA"):
                 flash("Seleccioná un tipo válido.", "warning")
                 con.close()
-                return redirect(url_for("agente_compensatorio_editar",
+                return redirect(url_for("agentes.agente_compensatorio_editar",
                                         agente_id=agente_id, mov_id=mov_id))
 
             if tipo in ("INICIAL", "FERIA") and dias <= 0:
                 flash("Ingresá la cantidad de días.", "warning")
                 con.close()
-                return redirect(url_for("agente_compensatorio_editar",
+                return redirect(url_for("agentes.agente_compensatorio_editar",
                                         agente_id=agente_id, mov_id=mov_id))
 
             if tipo == "HORAS" and horas <= 0:
                 flash("Ingresá la cantidad de horas.", "warning")
                 con.close()
-                return redirect(url_for("agente_compensatorio_editar",
+                return redirect(url_for("agentes.agente_compensatorio_editar",
                                         agente_id=agente_id, mov_id=mov_id))
 
             if tipo == "TOMA":
                 if not desde or not hasta:
                     flash("Ingresá desde y hasta para la toma.", "warning")
                     con.close()
-                    return redirect(url_for("agente_compensatorio_editar",
+                    return redirect(url_for("agentes.agente_compensatorio_editar",
                                             agente_id=agente_id, mov_id=mov_id))
                 try:
                     d1 = datetime.strptime(desde, "%Y-%m-%d").date()
@@ -584,7 +634,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
                 except Exception:
                     flash("Fechas inválidas para la toma.", "warning")
                     con.close()
-                    return redirect(url_for("agente_compensatorio_editar",
+                    return redirect(url_for("agentes.agente_compensatorio_editar",
                                             agente_id=agente_id, mov_id=mov_id))
 
             con.execute("""
@@ -597,7 +647,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
             con.close()
             rebuild_eventos_agentes()
             flash("Movimiento compensatorio actualizado.", "success")
-            return redirect(url_for("agente_compensatorios", id=agente_id))
+            return redirect(url_for("agentes.agente_compensatorios", id=agente_id))
 
         con.close()
         return render_template(
@@ -609,7 +659,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
 
 
 
-    @app.route("/agentes/<int:id>/desempeno", methods=["GET", "POST"], endpoint="agente_desempeno")
+    @bp.route("/agentes/<int:id>/desempeno", methods=["GET", "POST"], endpoint="agente_desempeno")
     def agente_desempeno(id):
         con = get_db()
 
@@ -623,7 +673,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
         if not agente:
             con.close()
             flash("El agente no existe o está inactivo.", "error")
-            return redirect(url_for("agentes_home"))
+            return redirect(url_for("agentes.agentes_home"))
 
         if request.method == "POST":
             fecha = request.form.get("fecha", "").strip()
@@ -676,7 +726,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
         )
 
 
-    @app.route("/agentes/<int:agente_id>/desempeno/<int:des_id>/editar",
+    @bp.route("/agentes/<int:agente_id>/desempeno/<int:des_id>/editar",
                methods=["GET", "POST"],
                endpoint="agente_desempeno_editar")
     def agente_desempeno_editar(agente_id, des_id):
@@ -691,7 +741,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
         if not agente:
             con.close()
             flash("El agente no existe o está inactivo.", "error")
-            return redirect(url_for("agentes_home"))
+            return redirect(url_for("agentes.agentes_home"))
 
         registro = con.execute("""
             SELECT id, fecha, tipo, periodo, calificacion, observaciones, estado
@@ -702,7 +752,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
         if not registro:
             con.close()
             flash("El registro de desempeño no existe.", "error")
-            return redirect(url_for("agente_desempeno", id=agente_id))
+            return redirect(url_for("agentes.agente_desempeno", id=agente_id))
 
         if request.method == "POST":
             fecha = request.form.get("fecha", "").strip()
@@ -731,7 +781,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
                 rebuild_eventos_agentes()
                 con.close()
                 flash("Registro de desempeño actualizado.", "success")
-                return redirect(url_for("agente_desempeno", id=agente_id))
+                return redirect(url_for("agentes.agente_desempeno", id=agente_id))
 
         desempenos = con.execute("""
             SELECT id, fecha, tipo, periodo, calificacion, observaciones, estado
@@ -750,7 +800,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
 
 
 
-    @app.route("/agentes/<int:agente_id>/desempeno/<int:des_id>/eliminar",
+    @bp.route("/agentes/<int:agente_id>/desempeno/<int:des_id>/eliminar",
                methods=["POST"],
                endpoint="agente_desempeno_eliminar")
     def agente_desempeno_eliminar(agente_id, des_id):
@@ -764,12 +814,12 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
         con.close()
 
         flash("Registro de desempeño eliminado.", "success")
-        return redirect(url_for("agente_desempeno", id=agente_id))
+        return redirect(url_for("agentes.agente_desempeno", id=agente_id))
 
 
 
 
-    @app.route("/agentes/<int:id>/asignacion", methods=["GET", "POST"], endpoint="agente_asignacion")
+    @bp.route("/agentes/<int:id>/asignacion", methods=["GET", "POST"], endpoint="agente_asignacion")
     def agente_asignacion(id):
         con = get_db()
 
@@ -783,7 +833,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
         if not agente:
             con.close()
             flash("El agente no existe o está inactivo.", "error")
-            return redirect(url_for("agentes_home"))
+            return redirect(url_for("agentes.agentes_home"))
 
         # Traer sedes para elegir (S01, S02, etc.)  <-- ACA EL CAMBIO
         sedes = con.execute("""
@@ -832,7 +882,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
 
 
 
-    @app.route("/agentes/<int:id>/incidentes", methods=["GET", "POST"], endpoint="agente_incidentes")
+    @bp.route("/agentes/<int:id>/incidentes", methods=["GET", "POST"], endpoint="agente_incidentes")
     def agente_incidentes(id):
         con = get_db()
 
@@ -846,7 +896,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
         if not agente:
             con.close()
             flash("El agente no existe o está inactivo.", "error")
-            return redirect(url_for("agentes_home"))
+            return redirect(url_for("agentes.agentes_home"))
 
         if request.method == "POST":
             fecha = request.form.get("fecha", "").strip()
@@ -894,7 +944,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
 
 
 
-    @app.route("/agentes/<int:id>/sst", methods=["GET", "POST"], endpoint="agente_sst")
+    @bp.route("/agentes/<int:id>/sst", methods=["GET", "POST"], endpoint="agente_sst")
     def agente_sst(id):
         con = get_db()
 
@@ -907,7 +957,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
         if not agente:
             con.close()
             flash("Agente no encontrado.", "warning")
-            return redirect(url_for("agentes_home"))
+            return redirect(url_for("agentes.agentes_home"))
 
         if request.method == "POST":
             fecha = (request.form.get("fecha") or "").strip()
@@ -918,7 +968,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
 
             if not fecha or not tipo:
                 flash("Fecha y tipo son obligatorios.", "error")
-                return redirect(url_for("agente_sst", id=id))
+                return redirect(url_for("agentes.agente_sst", id=id))
 
             con.execute("""
                 INSERT INTO agentes_sst (agente_id, fecha, tipo, titulo, detalle, estado)
@@ -928,7 +978,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
             con.close()
             rebuild_eventos_agentes()
             flash("Registro SST guardado.", "success")
-            return redirect(url_for("agente_sst", id=id))
+            return redirect(url_for("agentes.agente_sst", id=id))
 
         sst_registros = con.execute("""
             SELECT id, fecha, tipo, titulo, detalle, estado
@@ -947,7 +997,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
 
 
 
-    @app.route("/agentes/<int:agente_id>/sst/<int:sst_id>/eliminar",
+    @bp.route("/agentes/<int:agente_id>/sst/<int:sst_id>/eliminar",
                methods=["POST"], endpoint="agente_sst_eliminar")
     def agente_sst_eliminar(agente_id, sst_id):
         con = get_db()
@@ -959,7 +1009,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
         con.close()
         rebuild_eventos_agentes()
         flash("Registro SST eliminado.", "success")
-        return redirect(url_for("agente_sst", id=agente_id))
+        return redirect(url_for("agentes.agente_sst", id=agente_id))
 
 
 
@@ -1023,7 +1073,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
         return round(left, 2), round(width, 2)
 
 
-    @app.route("/agentes/<int:id>/epp", methods=["GET", "POST"], endpoint="agente_epp")
+    @bp.route("/agentes/<int:id>/epp", methods=["GET", "POST"], endpoint="agente_epp")
     def agente_epp(id):
         con = get_db()
 
@@ -1037,7 +1087,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
         if not agente:
             con.close()
             flash("El agente no existe o está inactivo.", "error")
-            return redirect(url_for("agentes_home"))
+            return redirect(url_for("agentes.agentes_home"))
 
         if request.method == "POST":
             tipo          = request.form.get("tipo", "").strip()
@@ -1088,7 +1138,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
 
 
 
-    @app.route("/agentes/<int:agente_id>/epp/<int:epp_id>/editar",
+    @bp.route("/agentes/<int:agente_id>/epp/<int:epp_id>/editar",
                methods=["GET", "POST"],
                endpoint="agente_epp_editar")
     def agente_epp_editar(agente_id, epp_id):
@@ -1104,7 +1154,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
         if not agente:
             con.close()
             flash("El agente no existe o está inactivo.", "error")
-            return redirect(url_for("agentes_home"))
+            return redirect(url_for("agentes.agentes_home"))
 
         # entrega a editar
         entrega = con.execute("""
@@ -1116,7 +1166,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
         if not entrega:
             con.close()
             flash("La entrega de EPP / herramienta no existe.", "error")
-            return redirect(url_for("agente_epp", id=agente_id))
+            return redirect(url_for("agentes.agente_epp", id=agente_id))
 
         if request.method == "POST":
             tipo          = request.form.get("tipo", "").strip()
@@ -1146,7 +1196,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
                 rebuild_eventos_agentes()
                 con.close()
                 flash("Entrega de EPP / herramienta actualizada.", "success")
-                return redirect(url_for("agente_epp", id=agente_id))
+                return redirect(url_for("agentes.agente_epp", id=agente_id))
 
         # recargar listado completo
         entregas = con.execute("""
@@ -1166,7 +1216,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
 
 
 
-    @app.route("/agentes/<int:agente_id>/epp/<int:epp_id>/eliminar",
+    @bp.route("/agentes/<int:agente_id>/epp/<int:epp_id>/eliminar",
                methods=["POST"],
                endpoint="agente_epp_eliminar")
     def agente_epp_eliminar(agente_id, epp_id):
@@ -1180,7 +1230,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
         con.close()
 
         flash("Entrega de EPP / herramienta eliminada.", "success")
-        return redirect(url_for("agente_epp", id=agente_id))
+        return redirect(url_for("agentes.agente_epp", id=agente_id))
 
 
 
@@ -1188,7 +1238,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
 
 
 
-    @app.route("/agentes/<int:id>/documentacion", methods=["GET", "POST"], endpoint="agente_documentacion")
+    @bp.route("/agentes/<int:id>/documentacion", methods=["GET", "POST"], endpoint="agente_documentacion")
     def agente_documentacion(id):
         con = get_db()
         ensure_cols(con, "agentes_documentacion", [("archivo", "TEXT"), ("archivo_url", "TEXT")])
@@ -1203,7 +1253,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
         if not agente:
             con.close()
             flash("El agente no existe o está inactivo.", "error")
-            return redirect(url_for("agentes_home"))
+            return redirect(url_for("agentes.agentes_home"))
 
         if request.method == "POST":
             tipo = request.form.get("tipo", "").strip()
@@ -1290,7 +1340,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
     # DOCUMENTACION: ARCHIVOS
     # =========================
 
-    @app.route("/agentes/documentacion/archivo/<path:filename>",
+    @bp.route("/agentes/documentacion/archivo/<path:filename>",
                endpoint="agente_documentacion_archivo")
     def agente_documentacion_archivo(filename):
         return send_from_directory(AGENTE_DOCS_FOLDER, filename, as_attachment=False)
@@ -1299,7 +1349,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
     # DOCUMENTOS: EDITAR / ELIMINAR DESDE LA FICHA
     # =========================
 
-    @app.route("/agentes/<int:agente_id>/documentos/<int:doc_id>/editar",
+    @bp.route("/agentes/<int:agente_id>/documentos/<int:doc_id>/editar",
                methods=["GET", "POST"],
                endpoint="agente_documento_editar")
     def agente_documento_editar(agente_id, doc_id):
@@ -1321,7 +1371,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
         if not agente or not documento:
             con.close()
             flash("Documento o agente no encontrado.", "warning")
-            return redirect(url_for("agentes_home"))
+            return redirect(url_for("agentes.agentes_home"))
 
         if request.method == "POST":
             tipo = (request.form.get("tipo") or "").strip()
@@ -1335,14 +1385,14 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
             if not tipo or not fecha_venc:
                 flash("Tipo y fecha de vencimiento son obligatorios.", "warning")
                 con.close()
-                return redirect(url_for("agente_documento_editar",
+                return redirect(url_for("agentes.agente_documento_editar",
                                         agente_id=agente_id, doc_id=doc_id))
 
             if archivo and archivo.filename.strip():
                 if not allowed_agente_doc(archivo.filename):
                     flash("Archivo: formato no permitido. Usa PDF/JPG/PNG.", "warning")
                     con.close()
-                    return redirect(url_for("agente_documento_editar",
+                    return redirect(url_for("agentes.agente_documento_editar",
                                             agente_id=agente_id, doc_id=doc_id))
                 nombre_seguro = secure_filename(archivo.filename)
                 _, ext = os.path.splitext(nombre_seguro)
@@ -1365,7 +1415,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
             rebuild_eventos_agentes()
 
             flash("✅ Documento actualizado correctamente.", "success")
-            return redirect(url_for("agentes_home", id=agente_id))
+            return redirect(url_for("agentes.agentes_home", id=agente_id))
 
         con.close()
         return render_template("agente_documento_form.html",
@@ -1374,7 +1424,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
 
 
 
-    @app.route("/agentes/<int:agente_id>/documentos/<int:doc_id>/eliminar",
+    @bp.route("/agentes/<int:agente_id>/documentos/<int:doc_id>/eliminar",
                methods=["POST"],
                endpoint="agente_documento_eliminar")
     def agente_documento_eliminar(agente_id, doc_id):
@@ -1391,7 +1441,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
         rebuild_eventos_agentes()
 
         flash("🗑️ Documento eliminado.", "info")
-        return redirect(url_for("agentes_home", id=agente_id))
+        return redirect(url_for("agentes.agentes_home", id=agente_id))
 
     # =========================
     # INCIDENTES: EDITAR / ELIMINAR DESDE LA FICHA
@@ -1400,7 +1450,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
     # INCIDENTES: EDITAR / ELIMINAR DESDE LA FICHA
     # =========================
 
-    @app.route("/agentes/<int:agente_id>/incidentes/<int:inc_id>/editar",
+    @bp.route("/agentes/<int:agente_id>/incidentes/<int:inc_id>/editar",
                methods=["GET", "POST"],
                endpoint="agente_incidente_editar")
     def agente_incidente_editar(agente_id, inc_id):
@@ -1431,7 +1481,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
         if not agente or not incidente:
             con.close()
             flash("Incidente o agente no encontrado.", "warning")
-            return redirect(url_for("agentes_home"))
+            return redirect(url_for("agentes.agentes_home"))
 
         if request.method == "POST":
             fecha        = (request.form.get("fecha") or "").strip()
@@ -1445,7 +1495,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
             if not fecha or not tipo:
                 flash("Fecha y tipo son obligatorios.", "warning")
                 con.close()
-                return redirect(url_for("agente_incidente_editar",
+                return redirect(url_for("agentes.agente_incidente_editar",
                                         agente_id=agente_id, inc_id=inc_id))
 
             con.execute("""
@@ -1461,7 +1511,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
             rebuild_eventos_agentes()
 
             flash("✅ Incidente / accidente actualizado.", "success")
-            return redirect(url_for("agentes_home", id=agente_id))
+            return redirect(url_for("agentes.agentes_home", id=agente_id))
 
         con.close()
         return render_template(
@@ -1473,7 +1523,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
 
 
 
-    @app.route("/agentes/<int:agente_id>/incidentes/<int:inc_id>/eliminar",
+    @bp.route("/agentes/<int:agente_id>/incidentes/<int:inc_id>/eliminar",
                methods=["POST"],
                endpoint="agente_incidente_eliminar")
     def agente_incidente_eliminar(agente_id, inc_id):
@@ -1489,7 +1539,7 @@ def register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_
         rebuild_eventos_agentes()
 
         flash("🗑️ Incidente / accidente eliminado.", "info")
-        return redirect(url_for("agentes_home", id=agente_id))
+        return redirect(url_for("agentes.agentes_home", id=agente_id))
 
     # -----------------------------------------------------
     # CAPACITACIONES - GANTT (PDF ESTÁTICO)

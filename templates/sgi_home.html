@@ -862,7 +862,7 @@
       <h1>Sistema Integrado de Gestion de Intendencia (<span class="sgi-title-s">S</span><span class="sgi-title-g">G</span><span class="sgi-title-i">I</span>)</h1>
       <p class="section-sub">Panel operativo, logistica y control de recursos.</p>
     </div>
-    <a class="sgi-head-doc" href="{{ url_for('sgi_documentacion') }}">Documentacion del sistema</a>
+    <a class="sgi-head-doc" href="{{ url_for('sst.sgi_documentacion') }}">Documentacion del sistema</a>
   </header>
 
   <section class="sgi-menu-board">
@@ -871,8 +871,8 @@
       <div class="sgi-menu-group primary">
         <p class="grp-title">Registros diarios</p>
         <div class="grp-links">
-          <a class="btn vehiculos" href="{{ url_for('vehiculos_control_diario') }}">Vehiculos</a>
-          <a class="btn obras" href="{{ url_for('obras_home') }}">Obras</a>
+          <a class="btn vehiculos" href="{{ url_for('vehiculos.vehiculos_control_diario') }}">Vehiculos</a>
+          <a class="btn obras" href="{{ url_for('obras.obras_home') }}">Obras</a>
         </div>
       </div>
 
@@ -880,7 +880,7 @@
         <p class="grp-title">Infraestructura</p>
         <div class="grp-links">
           <a class="btn sedes" href="{{ url_for('sede_ficha', codigo='S01', home=1) }}">Sedes</a>
-          <a class="btn mapa" href="{{ url_for('mapa_ssj') }}">Mapa</a>
+          <a class="btn mapa" href="{{ url_for('mapa.mapa_ssj') }}">Mapa</a>
         </div>
       </div>
 
@@ -888,7 +888,7 @@
         <p class="grp-title">Gestion</p>
         <div class="grp-links">
           <a class="btn personal" href="{{ url_for('personal_sede_home') }}">Personal MPD</a>
-          <a class="btn agentes" href="{{ url_for('agentes_home') }}">Agentes</a>
+          <a class="btn agentes" href="{{ url_for('agentes.agentes_home') }}">Agentes</a>
           <a class="btn mapa" href="{{ url_for('sede_ficha', codigo='S01', home=1, cal='1') }}">Calendario</a>
         </div>
       </div>
@@ -972,7 +972,7 @@
     <article class="sgi-panel sgi-panel-vehiculos">
       <div class="sgi-panel-head">
         <h2>Vehiculos operativos</h2>
-        <a class="btn-soft" href="{{ url_for('vehiculos_control_diario') }}">Ver modulo</a>
+        <a class="btn-soft" href="{{ url_for('vehiculos.vehiculos_control_diario') }}">Ver modulo</a>
       </div>
       <div class="sgi-veh-grid">
         {% if vehiculos_cards %}
@@ -1021,7 +1021,7 @@
     <article class="sgi-panel sgi-panel-obras">
       <div class="sgi-panel-head">
         <h2>Obras por sede</h2>
-        <a class="btn-soft" href="{{ url_for('obras_home') }}">Ver modulo</a>
+        <a class="btn-soft" href="{{ url_for('obras.obras_home') }}">Ver modulo</a>
       </div>
       <div class="sgi-obras-grid">
         <div class="sgi-donut-wrap">
@@ -1062,7 +1062,7 @@
         </div>
         <p class="sgi-mod-kpi">Traslados, kilometraje y combustible.</p>
         <div class="sgi-mod-actions">
-          <a class="btn" href="{{ url_for('vehiculos_control_diario') }}">Ver modulo</a>
+          <a class="btn" href="{{ url_for('vehiculos.vehiculos_control_diario') }}">Ver modulo</a>
         </div>
         <details class="sgi-link-panel">
           <summary>Enlace operativo</summary>
@@ -1081,7 +1081,7 @@
         </div>
         <p class="sgi-mod-kpi">Reparaciones y seguimiento por sede.</p>
         <div class="sgi-mod-actions">
-          <a class="btn" href="{{ url_for('obras_home') }}">Ver modulo</a>
+          <a class="btn" href="{{ url_for('obras.obras_home') }}">Ver modulo</a>
         </div>
         <details class="sgi-link-panel">
           <summary>Enlace operativo</summary>
@@ -1138,7 +1138,7 @@
         </div>
         <p class="sgi-mod-kpi">Coordinacion de traslados entre sedes.</p>
         <div class="sgi-mod-actions">
-          <a class="btn" href="{{ url_for('mapa_ssj') }}">Ver modulo</a>
+          <a class="btn" href="{{ url_for('mapa.mapa_ssj') }}">Ver modulo</a>
         </div>
         <details class="sgi-link-panel">
           <summary>Enlace operativo</summary>
@@ -1157,7 +1157,7 @@
         </div>
         <p class="sgi-mod-kpi">Registro operativo e indicadores de gestion.</p>
         <div class="sgi-mod-actions">
-          <a class="btn" href="{{ url_for('dashboard_sede_estado_manual') }}">Ver modulo</a>
+          <a class="btn" href="{{ url_for('sst.dashboard_sede_estado_manual') }}">Ver modulo</a>
         </div>
         <details class="sgi-link-panel">
           <summary>Enlace operativo</summary>

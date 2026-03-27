@@ -851,7 +851,7 @@
   <header class="control-header">
     <div class="control-header-top">
       <h1>Centro de control operativo - Intendencia</h1>
-      <a class="btn-soft" href="{{ url_for('dashboard_sede_estado_manual') }}">Progreso sedes</a>
+      <a class="btn-soft" href="{{ url_for('sst.dashboard_sede_estado_manual') }}">Progreso sedes</a>
     </div>
     <p>Registro de novedades diarias, alertas automaticas y estado operativo de recursos.</p>
   </header>
@@ -867,7 +867,7 @@
     <div class="card-head">
       <h2>1. Resumen del dia</h2>
       <div class="card-head-actions">
-        <a class="btn-soft" href="{{ url_for('vehiculos_bd_home') }}">Base de datos</a>
+        <a class="btn-soft" href="{{ url_for('vehiculos.vehiculos_bd_home') }}">Base de datos</a>
       </div>
     </div>
 
@@ -1121,7 +1121,7 @@
   <article class="control-card card-vehiculos">
     <div class="card-head">
       <h2>5. Estado de vehiculos</h2>
-      <a class="btn-soft" href="{{ url_for('vehiculos_control_diario') }}">Ir a modulo vehiculos</a>
+      <a class="btn-soft" href="{{ url_for('vehiculos.vehiculos_control_diario') }}">Ir a modulo vehiculos</a>
     </div>
     <div id="vehiculosWrap" class="veh-grid">
       <div class="veh-card"><div class="veh-code">-</div><div class="veh-pat">-</div><div class="veh-est">Sin datos</div></div>

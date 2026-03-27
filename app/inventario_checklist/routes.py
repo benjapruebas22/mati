@@ -1,13 +1,14 @@
+import sqlite3
+from flask import Blueprint
+from . import bp
+
 from datetime import date
 import sqlite3
-
 from flask import render_template, request, redirect, url_for, flash
-
-
-def register_inventario_checklist(app, get_db):
+def register_inventario_checklist_routes(app, bp, get_db):
     if "checklist_mobiliario" in app.view_functions:
         return
-    @app.route("/checklist/inventario", methods=["GET", "POST"])
+    @bp.route("/checklist/inventario", methods=["GET", "POST"])
     def checklist_inventario():
         con = get_db()
         cur = con.cursor()
@@ -63,7 +64,7 @@ def register_inventario_checklist(app, get_db):
 
             if not dep_sel or "|" not in dep_sel:
                 flash("Elegí un depósito / ambiente para controlar.", "error")
-                return redirect(url_for("checklist_inventario"))
+                return redirect(url_for("inventario_checklist.checklist_inventario"))
 
             sede_codigo, deposito_codigo = [p.strip() for p in dep_sel.split("|", 1)]
             dep_suffix = _dep_suffix(deposito_codigo)
@@ -178,7 +179,7 @@ def register_inventario_checklist(app, get_db):
 
             con.commit()
             flash("Checklist de inventario guardado correctamente.", "success")
-            return redirect(url_for("checklist_inventario"))
+            return redirect(url_for("inventario_checklist.checklist_inventario"))
 
         # ===== 4) ÚLTIMOS CONTROLES REGISTRADOS =====
         cur.execute("""
@@ -201,7 +202,7 @@ def register_inventario_checklist(app, get_db):
             controles=controles
         )
 
-    @app.route("/checklist/inventario/<int:cid>/editar", methods=["GET", "POST"],
+    @bp.route("/checklist/inventario/<int:cid>/editar", methods=["GET", "POST"],
                endpoint="checklist_inventario_editar")
     def checklist_inventario_editar(cid):
         con = get_db()
@@ -229,7 +230,7 @@ def register_inventario_checklist(app, get_db):
         if not control:
             con.close()
             flash("No se encontró el control seleccionado.", "error")
-            return redirect(url_for("checklist_mobiliario"))
+            return redirect(url_for("inventario_checklist.checklist_mobiliario"))
 
         if request.method == "POST":
             fecha = request.form.get("fecha") or control["fecha"]
@@ -301,7 +302,7 @@ def register_inventario_checklist(app, get_db):
             con.commit()
             con.close()
             flash("Control actualizado.", "success")
-            return redirect(url_for("checklist_mobiliario"))
+            return redirect(url_for("inventario_checklist.checklist_mobiliario"))
 
         con.close()
         return render_template(
@@ -310,7 +311,7 @@ def register_inventario_checklist(app, get_db):
             agentes=agentes
         )
 
-    @app.route("/checklist/mobiliario")
+    @bp.route("/checklist/mobiliario")
     def checklist_mobiliario():
         con = get_db()
         cur = con.cursor()

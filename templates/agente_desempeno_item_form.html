@@ -13,7 +13,7 @@
     </div>
 
     <div class="section-actions">
-      <a class="btn outline-slate" href="{{ url_for('agente_desempeno', id=agente.id) }}">
+      <a class="btn outline-slate" href="{{ url_for('agentes.agente_desempeno', id=agente.id) }}">
         ⬅ Volver a desempeño
       </a>
     </div>
@@ -99,7 +99,7 @@
               <div class="form-actions">
                 <button type="submit" class="btn outline-amber">💾 Guardar cambios</button>
                 <a class="btn outline-slate"
-                   href="{{ url_for('agente_desempeno', id=agente.id) }}">
+                   href="{{ url_for('agentes.agente_desempeno', id=agente.id) }}">
                   Cancelar
                 </a>
               </div>

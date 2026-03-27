@@ -5094,7 +5094,7 @@
         {% endif %}
 
         <a class="btn btn-metricas" href="{{ url_for('sede_metricas_edit', codigo=sede.codigo) }}">Editar metricas</a>
-        <a class="btn btn-resumen-sedes" href="{{ url_for('auditoria_mobiliario') }}">Relevamientos / Control</a>
+        <a class="btn btn-resumen-sedes" href="{{ url_for('auditorias.auditoria_mobiliario') }}">Relevamientos / Control</a>
 
 
         {% if home_mode %}
@@ -8623,7 +8623,7 @@
   </summary>
 
   <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;">
-    <a class="btn btn-mpd" href="{{ url_for('sgi_documentacion_informes', sede=sede.codigo) }}">Ver en Informes</a>
+    <a class="btn btn-mpd" href="{{ url_for('sst.sgi_documentacion_informes', sede=sede.codigo) }}">Ver en Informes</a>
   </div>
 
   {% if documentos_vinculados_sede and documentos_vinculados_sede|length > 0 %}

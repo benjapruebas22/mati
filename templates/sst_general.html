@@ -867,9 +867,9 @@
     </div>
     <div class="sst-head-right">
       <div class="sst-fast-links">
-        <a class="btn outline-slate cu" href="{{ url_for('sst_cuadro_unico') }}">Estado general</a>
-        <a class="btn outline-slate ergo" href="{{ url_for('sst_ergonomia_panel') }}">Gestion de riesgos</a>
-        <a class="btn outline-slate gantt" href="{{ url_for('sst_plan_gantt') }}">Cronograma SST</a>
+        <a class="btn outline-slate cu" href="{{ url_for('sst.sst_cuadro_unico') }}">Estado general</a>
+        <a class="btn outline-slate ergo" href="{{ url_for('sst.sst_ergonomia_panel') }}">Gestion de riesgos</a>
+        <a class="btn outline-slate gantt" href="{{ url_for('sst.sst_plan_gantt') }}">Cronograma SST</a>
         <a class="btn outline-slate sedes" href="{{ url_for('sede_ficha', codigo='S01', home=1) }}">Sedes</a>
       </div>
     </div>
@@ -1157,7 +1157,7 @@
         <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:10px;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <div style="font-weight:800;">Entrega EPP</div>
-            <a class="btn xs outline-amber" href="{{ url_for('agente_epp', id=agente_sst_sel.id) }}">Gestionar</a>
+            <a class="btn xs outline-amber" href="{{ url_for('agentes.agente_epp', id=agente_sst_sel.id) }}">Gestionar</a>
           </div>
           {% if entregas_epp_sst %}
             <div style="margin-top:8px;max-height:180px;overflow:auto;border:1px solid #e5e7eb;border-radius:8px;">
@@ -1180,7 +1180,7 @@
         <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:10px;">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <div style="font-weight:800;">Incidentes</div>
-            <a class="btn xs outline-amber" href="{{ url_for('agente_incidentes', id=agente_sst_sel.id) }}">Gestionar</a>
+            <a class="btn xs outline-amber" href="{{ url_for('agentes.agente_incidentes', id=agente_sst_sel.id) }}">Gestionar</a>
           </div>
           {% if incidentes_sst %}
             <div style="margin-top:8px;max-height:180px;overflow:auto;border:1px solid #e5e7eb;border-radius:8px;">
@@ -1273,7 +1273,7 @@
         </div>
         <div class="license-actions" style="grid-column:1 / -1;">
           <button class="btn outline-amber" type="submit">Filtrar</button>
-          <a class="btn outline-slate" href="{{ url_for('sst_general') }}">Reset</a>
+          <a class="btn outline-slate" href="{{ url_for('sst.sst_general') }}">Reset</a>
         </div>
       </form>
 
@@ -1322,9 +1322,9 @@
                   </td>
                   <td>
                     <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                      <a class="btn xs outline-slate" href="{{ url_for('sst_general_editar', sst_id=r.id) }}">Editar</a>
+                      <a class="btn xs outline-slate" href="{{ url_for('sst.sst_general_editar', sst_id=r.id) }}">Editar</a>
                       <form method="post"
-                            action="{{ url_for('sst_general_eliminar', sst_id=r.id) }}"
+                            action="{{ url_for('sst.sst_general_eliminar', sst_id=r.id) }}"
                             onsubmit="return confirm('Eliminar este registro?');">
                         <button type="submit" class="btn xs outline-amber">Eliminar</button>
                       </form>

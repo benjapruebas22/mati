@@ -12,7 +12,7 @@
   if not viaje:
   conn.close()
   flash("Viaje no encontrado.", "error")
-  return redirect(url_for("vehiculos_control_diario"))
+  return redirect(url_for("vehiculos.vehiculos_control_diario"))
 
   if request.method == "POST":
   km_fin = request.form.get("km_fin") or ""
@@ -20,14 +20,14 @@
 
   km_ini = float(viaje["km_ini"] or 0)
 
-  if km_fin <= 0: conn.close() flash("KM final obligatorio.", "error" ) return redirect(url_for("viaje_cerrar",
+  if km_fin <= 0: conn.close() flash("KM final obligatorio.", "error" ) return redirect(url_for("vehiculos.viaje_cerrar",
     viaje_id=viaje_id)) if km_fin < km_ini: conn.close() flash("KM final no puede ser menor que KM inicial.", "error" )
-    return redirect(url_for("viaje_cerrar", viaje_id=viaje_id)) recorrido=km_fin - km_ini conn.execute(""" UPDATE viajes
+    return redirect(url_for("vehiculos.viaje_cerrar", viaje_id=viaje_id)) recorrido=km_fin - km_ini conn.execute(""" UPDATE viajes
     SET km_fin=?, recorrido_km=?, estado='CERRADO' WHERE id=? """, (km_fin, recorrido, viaje_id))
 
         conn.commit()
         conn.close()
 
         flash(f" Viaje cerrado. Dif KM: {recorrido:.1f}", "success" ) return
-    redirect(url_for("vehiculos_control_diario", fecha=viaje["fecha"])) conn.close() return
+    redirect(url_for("vehiculos.vehiculos_control_diario", fecha=viaje["fecha"])) conn.close() return
     render_template("viaje_cerrar.html", viaje=viaje)

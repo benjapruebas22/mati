@@ -36,7 +36,7 @@
       <h2 style="margin:0">Estadisticas de combustible</h2>
       <div class="muted">Estimado: litros esperados = km / rendimiento por tipo de combustible (gasoil/nafta).</div>
     </div>
-    <a class="btn btn-mpd" href="{{ url_for('vehiculos_combustible') }}">Volver</a>
+    <a class="btn btn-mpd" href="{{ url_for('vehiculos.vehiculos_combustible') }}">Volver</a>
   </div>
 
   <div class="c-card">
@@ -70,10 +70,10 @@
       </div>
       <div class="c-actions">
         <button class="btn btn-mpd c-quick-btn" type="submit">Aplicar</button>
-        <a class="btn outline-slate c-quick-btn" href="{{ url_for('vehiculos_combustible_estadisticas') }}">Limpiar</a>
-        <a class="btn c-quick-btn" href="{{ url_for('vehiculos_combustible_estadisticas', desde=mes_actual_desde, hasta=mes_actual_hasta, patente=patente, rendimiento_gasoil=rendimiento_gasoil, rendimiento_nafta=rendimiento_nafta) }}">Mes actual</a>
-        <a class="btn c-quick-btn" href="{{ url_for('vehiculos_combustible_estadisticas', desde=mes_anterior_desde, hasta=mes_anterior_hasta, patente=patente, rendimiento_gasoil=rendimiento_gasoil, rendimiento_nafta=rendimiento_nafta) }}">Mes anterior</a>
-        <a class="btn c-quick-btn" href="{{ url_for('vehiculos_combustible_estadisticas', desde=mes_cerrado_desde, hasta=mes_cerrado_hasta, patente=patente, rendimiento_gasoil=rendimiento_gasoil, rendimiento_nafta=rendimiento_nafta) }}">Mes cerrado</a>
+        <a class="btn outline-slate c-quick-btn" href="{{ url_for('vehiculos.vehiculos_combustible_estadisticas') }}">Limpiar</a>
+        <a class="btn c-quick-btn" href="{{ url_for('vehiculos.vehiculos_combustible_estadisticas', desde=mes_actual_desde, hasta=mes_actual_hasta, patente=patente, rendimiento_gasoil=rendimiento_gasoil, rendimiento_nafta=rendimiento_nafta) }}">Mes actual</a>
+        <a class="btn c-quick-btn" href="{{ url_for('vehiculos.vehiculos_combustible_estadisticas', desde=mes_anterior_desde, hasta=mes_anterior_hasta, patente=patente, rendimiento_gasoil=rendimiento_gasoil, rendimiento_nafta=rendimiento_nafta) }}">Mes anterior</a>
+        <a class="btn c-quick-btn" href="{{ url_for('vehiculos.vehiculos_combustible_estadisticas', desde=mes_cerrado_desde, hasta=mes_cerrado_hasta, patente=patente, rendimiento_gasoil=rendimiento_gasoil, rendimiento_nafta=rendimiento_nafta) }}">Mes cerrado</a>
       </div>
     </form>
   </div>

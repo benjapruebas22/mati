@@ -27,7 +27,7 @@
     <button class="btn btn-sm action-interv" type="button" data-panel="panel-intervenciones">+ Registrar intervencion</button>
     <button class="btn btn-sm action-filtros" type="button" data-panel="panel-filtros">Filtrar</button>
     <button class="btn btn-sm action-desinf" type="button" data-panel="panel-desinf">🧴 Desinfecciones</button>
-    <a class="btn btn-sm action-hist" href="{{ url_for('obras_home', sede=cod_filtro, estado='FINALIZADA', prioridad=prioridad_filtro) }}">Historial</a>
+    <a class="btn btn-sm action-hist" href="{{ url_for('obras.obras_home', sede=cod_filtro, estado='FINALIZADA', prioridad=prioridad_filtro) }}">Historial</a>
     {# Materiales/stock fuera de Obras #}
     <button class="btn btn-sm action-stats" type="button" data-panel="panel-stats">📊 Estadisticas por sede</button>
   </div>
@@ -234,7 +234,7 @@
 
           <section class="interv-mode interv-mode-registro">
             <form method="post"
-                  action="{{ url_for('obra_intervencion_crear', sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro, iv_sede=iv_sede_filtro, iv_estado=iv_estado_filtro, iv_tipo=iv_tipo_filtro, iv_fecha=iv_fecha_filtro, panel='panel-intervenciones') }}"
+                  action="{{ url_for('obras.obra_intervencion_crear', sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro, iv_sede=iv_sede_filtro, iv_estado=iv_estado_filtro, iv_tipo=iv_tipo_filtro, iv_fecha=iv_fecha_filtro, panel='panel-intervenciones') }}"
                   class="interv-form">
 
               <div class="interv-group">
@@ -353,7 +353,7 @@
 
               <div class="formx-actions">
                 <button type="submit" class="btn ghost">Aplicar filtros</button>
-                <a class="btn outline" href="{{ url_for('obras_home', sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro, panel='panel-intervenciones') }}">Limpiar</a>
+                <a class="btn outline" href="{{ url_for('obras.obras_home', sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro, panel='panel-intervenciones') }}">Limpiar</a>
               </div>
             </form>
 
@@ -389,7 +389,7 @@
                         <td>
                           <div class="cell-actions">
                             <form method="post"
-                                  action="{{ url_for('obra_intervencion_cambiar_estado', iid=r.id, sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro, iv_sede=iv_sede_filtro, iv_estado=iv_estado_filtro, iv_tipo=iv_tipo_filtro, iv_fecha=iv_fecha_filtro, panel='panel-intervenciones') }}"
+                                  action="{{ url_for('obras.obra_intervencion_cambiar_estado', iid=r.id, sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro, iv_sede=iv_sede_filtro, iv_estado=iv_estado_filtro, iv_tipo=iv_tipo_filtro, iv_fecha=iv_fecha_filtro, panel='panel-intervenciones') }}"
                                   class="estado-form estado-form-inline">
                               <select name="estado">
                                 {% for e in interv_estados %}
@@ -400,12 +400,12 @@
                             </form>
 
                             <a class="btn xs outline"
-                               href="{{ url_for('obra_intervencion_editar', iid=r.id, sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro, iv_sede=iv_sede_filtro, iv_estado=iv_estado_filtro, iv_tipo=iv_tipo_filtro, iv_fecha=iv_fecha_filtro, panel='panel-intervenciones') }}">
+                               href="{{ url_for('obras.obra_intervencion_editar', iid=r.id, sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro, iv_sede=iv_sede_filtro, iv_estado=iv_estado_filtro, iv_tipo=iv_tipo_filtro, iv_fecha=iv_fecha_filtro, panel='panel-intervenciones') }}">
                               Editar
                             </a>
 
                             <form method="post"
-                                  action="{{ url_for('obra_intervencion_eliminar', iid=r.id, sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro, iv_sede=iv_sede_filtro, iv_estado=iv_estado_filtro, iv_tipo=iv_tipo_filtro, iv_fecha=iv_fecha_filtro, panel='panel-intervenciones') }}"
+                                  action="{{ url_for('obras.obra_intervencion_eliminar', iid=r.id, sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro, iv_sede=iv_sede_filtro, iv_estado=iv_estado_filtro, iv_tipo=iv_tipo_filtro, iv_fecha=iv_fecha_filtro, panel='panel-intervenciones') }}"
                                   onsubmit="return confirm('Eliminar esta intervencion?');">
                               <button class="btn xs danger" type="submit">Eliminar</button>
                             </form>
@@ -677,27 +677,27 @@
 
       <div class="obras-quick">
         <a class="pill quick pend {% if estado_filtro=='PENDIENTE' and prioridad_filtro!='ALTA' %}active{% endif %}"
-           href="{{ url_for('obras_home', sede=cod_filtro, estado='PENDIENTE', prioridad=prioridad_filtro) }}">
+           href="{{ url_for('obras.obras_home', sede=cod_filtro, estado='PENDIENTE', prioridad=prioridad_filtro) }}">
           <span class="quick-label">Pendiente</span>
           <span class="quick-count">{{ obras_totals.pendientes if obras_totals else 0 }}</span>
         </a>
         <a class="pill quick pend-alta {% if estado_filtro=='PENDIENTE' and prioridad_filtro=='ALTA' %}active{% endif %}"
-           href="{{ url_for('obras_home', sede=cod_filtro, estado='PENDIENTE', prioridad='ALTA') }}">
+           href="{{ url_for('obras.obras_home', sede=cod_filtro, estado='PENDIENTE', prioridad='ALTA') }}">
           <span class="quick-label">Pendiente alta</span>
           <span class="quick-count">{{ pendientes_alta_total if pendientes_alta_total is defined else 0 }}</span>
         </a>
         <a class="pill quick curso {% if estado_filtro=='EN_CURSO' %}active{% endif %}"
-           href="{{ url_for('obras_home', sede=cod_filtro, estado='EN_CURSO', prioridad=prioridad_filtro) }}">
+           href="{{ url_for('obras.obras_home', sede=cod_filtro, estado='EN_CURSO', prioridad=prioridad_filtro) }}">
           <span class="quick-label">En curso</span>
           <span class="quick-count">{{ obras_totals.en_curso if obras_totals else 0 }}</span>
         </a>
         <a class="pill quick fin {% if estado_filtro=='FINALIZADA' %}active{% endif %}"
-           href="{{ url_for('obras_home', sede=cod_filtro, estado='FINALIZADA', prioridad=prioridad_filtro) }}">
+           href="{{ url_for('obras.obras_home', sede=cod_filtro, estado='FINALIZADA', prioridad=prioridad_filtro) }}">
           <span class="quick-label">Finalizadas</span>
           <span class="quick-count">{{ obras_totals.finalizadas if obras_totals else 0 }}</span>
         </a>
         <a class="pill quick all {% if not estado_filtro %}active{% endif %}"
-           href="{{ url_for('obras_home', sede=cod_filtro, prioridad=prioridad_filtro) }}">
+           href="{{ url_for('obras.obras_home', sede=cod_filtro, prioridad=prioridad_filtro) }}">
           <span class="quick-label">Todas</span>
           <span class="quick-count">{{ obras_totals.total if obras_totals else 0 }}</span>
         </a>
@@ -742,15 +742,15 @@
                       <span class="pill {{ prio_cls }}">{{ prio_txt }}</span>
                       {% if o.estado != 'FINALIZADA' %}
                       <div class="prio-mini" title="Cambiar prioridad">
-                        <form method="post" action="{{ url_for('obra_cambiar_prioridad', oid=o.id, sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro) }}">
+                        <form method="post" action="{{ url_for('obras.obra_cambiar_prioridad', oid=o.id, sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro) }}">
                           <input type="hidden" name="prioridad" value="alta">
                           <button class="prio-dot alta {% if 'alta' in prio_norm %}active{% endif %}" type="submit" title="Alta"></button>
                         </form>
-                        <form method="post" action="{{ url_for('obra_cambiar_prioridad', oid=o.id, sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro) }}">
+                        <form method="post" action="{{ url_for('obras.obra_cambiar_prioridad', oid=o.id, sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro) }}">
                           <input type="hidden" name="prioridad" value="media">
                           <button class="prio-dot media {% if 'media' in prio_norm %}active{% endif %}" type="submit" title="Media"></button>
                         </form>
-                        <form method="post" action="{{ url_for('obra_cambiar_prioridad', oid=o.id, sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro) }}">
+                        <form method="post" action="{{ url_for('obras.obra_cambiar_prioridad', oid=o.id, sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro) }}">
                           <input type="hidden" name="prioridad" value="baja">
                           <button class="prio-dot baja {% if 'baja' in prio_norm %}active{% endif %}" type="submit" title="Baja"></button>
                         </form>
@@ -776,7 +776,7 @@
                   <td>
                     <div class="cell-actions">
                       <form method="post"
-                            action="{{ url_for('obra_cambiar_estado', oid=o.id, sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro) }}"
+                            action="{{ url_for('obras.obra_cambiar_estado', oid=o.id, sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro) }}"
                             class="estado-form estado-form-inline">
                         <select name="estado">
                           {% if estado_filtro == 'FINALIZADA' %}
@@ -795,7 +795,7 @@
                         <summary class="btn xs outline">Acciones</summary>
                         <div class="acciones-dropdown">
                       <form method="post"
-                            action="{{ url_for('obra_cambiar_estado', oid=o.id, sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro) }}"
+                            action="{{ url_for('obras.obra_cambiar_estado', oid=o.id, sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro) }}"
                             class="estado-form estado-form-menu">
                         <select name="estado">
                           {% if estado_filtro == 'FINALIZADA' %}
@@ -809,14 +809,14 @@
                         </select>
                         <button class="btn xs primary" type="submit">Guardar</button>
                       </form>
-                      <a class="btn xs outline" href="{{ url_for('obra_editar', oid=o.id) }}">Editar</a>
+                      <a class="btn xs outline" href="{{ url_for('obras.obra_editar', oid=o.id) }}">Editar</a>
 
                       {% if o.informe_url %}
                       <a class="btn xs info" href="{{ o.informe_url }}" target="_blank" rel="noopener">Informe</a>
                       {% endif %}
 
                       <form method="post"
-                            action="{{ url_for('obra_eliminar', oid=o.id, sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro) }}"
+                            action="{{ url_for('obras.obra_eliminar', oid=o.id, sede=cod_filtro, estado=estado_filtro, prioridad=prioridad_filtro) }}"
                             onsubmit="return confirm('¿Eliminar esta obra?');">
                         <button class="btn xs danger" type="submit">Eliminar</button>
                       </form>

@@ -1,13 +1,14 @@
+import sqlite3
+from flask import Blueprint
+from . import bp
+
 from datetime import date
 import sqlite3
 from datetime import date
 import re
 import unicodedata
-
 from flask import render_template, request, jsonify
-
-
-def register_mapa(app, get_db):
+def register_mapa_routes(app, bp, get_db):
     def _strip_accents(text):
         if not text:
             return ""
@@ -91,8 +92,13 @@ def register_mapa(app, get_db):
             "resultado_detalle": (data.get("resultado_detalle") or "").strip() if is_pericia else "",
             "fecha_objetivo": (data.get("fecha_objetivo") or "").strip() if is_pericia else "",
         }
+    # --- DDL BOOTSTRAP INJECTED ---
 
-    @app.get("/mapa_ssj")
+    ensure_mapa_ssj_table(get_db())
+    # ------------------------------
+
+
+    @bp.get("/mapa_ssj")
     def mapa_ssj():
         tipos_select = [
             "sede_mpd", "sede_mpa", "sede_pj",
@@ -106,28 +112,14 @@ def register_mapa(app, get_db):
             estados_select=estados_select
         )
 
-    @app.get("/api/mapa_ssj_puntos")
+    @bp.get("/api/mapa_ssj_puntos")
     def api_mapa_ssj_puntos():
         tipo = (request.args.get("tipo") or "").strip()
         estado = (request.args.get("estado") or "").strip()
 
         con = get_db()
         con.row_factory = sqlite3.Row
-        ensure_mapa_ssj_table(con)
-        ensure_cols(con, "mapa_ssj_puntos", [
-            ("categoria", "TEXT"),
-            ("responsable", "TEXT"),
-            ("expediente", "TEXT"),
-            ("asistido_nombre", "TEXT"),
-            ("etapa", "TEXT"),
-            ("etapa_total", "TEXT"),
-            ("resultado", "TEXT"),
-            ("resultado_detalle", "TEXT"),
-            ("direccion_extra", "TEXT"),
-            ("barrio", "TEXT"),
-            ("localidad", "TEXT"),
-            ("fecha_objetivo", "TEXT"),
-        ])
+        # ensure_mapa_ssj_table(con)  # DDL-MOVED
 
         q = "SELECT * FROM mapa_ssj_puntos WHERE 1=1"
         params = []
@@ -158,7 +150,7 @@ def register_mapa(app, get_db):
 
         return jsonify(out)
 
-    @app.post("/mapa_ssj/nuevo")
+    @bp.post("/mapa_ssj/nuevo")
     def mapa_ssj_nuevo():
         data = request.get_json(force=True) or {}
         cleaned = normalize_payload(data)
@@ -186,21 +178,7 @@ def register_mapa(app, get_db):
             fecha_alta = date.today().strftime("%Y-%m-%d")
 
         con = get_db()
-        ensure_mapa_ssj_table(con)
-        ensure_cols(con, "mapa_ssj_puntos", [
-            ("categoria", "TEXT"),
-            ("responsable", "TEXT"),
-            ("expediente", "TEXT"),
-            ("asistido_nombre", "TEXT"),
-            ("etapa", "TEXT"),
-            ("etapa_total", "TEXT"),
-            ("resultado", "TEXT"),
-            ("resultado_detalle", "TEXT"),
-            ("direccion_extra", "TEXT"),
-            ("barrio", "TEXT"),
-            ("localidad", "TEXT"),
-            ("fecha_objetivo", "TEXT"),
-        ])
+        # ensure_mapa_ssj_table(con)  # DDL-MOVED
 
         con.execute("""
             INSERT INTO mapa_ssj_puntos
@@ -229,7 +207,7 @@ def register_mapa(app, get_db):
         con.close()
         return jsonify({"ok": True})
 
-    @app.post("/mapa_ssj/editar/<int:punto_id>")
+    @bp.post("/mapa_ssj/editar/<int:punto_id>")
     def mapa_ssj_editar(punto_id):
         data = request.get_json(force=True) or {}
         cleaned = normalize_payload(data)
@@ -257,21 +235,7 @@ def register_mapa(app, get_db):
             fecha_alta = date.today().strftime("%Y-%m-%d")
 
         con = get_db()
-        ensure_mapa_ssj_table(con)
-        ensure_cols(con, "mapa_ssj_puntos", [
-            ("categoria", "TEXT"),
-            ("responsable", "TEXT"),
-            ("expediente", "TEXT"),
-            ("asistido_nombre", "TEXT"),
-            ("etapa", "TEXT"),
-            ("etapa_total", "TEXT"),
-            ("resultado", "TEXT"),
-            ("resultado_detalle", "TEXT"),
-            ("direccion_extra", "TEXT"),
-            ("barrio", "TEXT"),
-            ("localidad", "TEXT"),
-            ("fecha_objetivo", "TEXT"),
-        ])
+        # ensure_mapa_ssj_table(con)  # DDL-MOVED
 
         con.execute("""
             UPDATE mapa_ssj_puntos
@@ -301,7 +265,7 @@ def register_mapa(app, get_db):
         con.close()
         return jsonify({"ok": True})
 
-    @app.post("/mapa_ssj/estado/<int:punto_id>")
+    @bp.post("/mapa_ssj/estado/<int:punto_id>")
     def mapa_ssj_estado(punto_id):
         data = request.get_json(force=True) or {}
         estado = (data.get("estado") or "").strip().lower()
@@ -311,7 +275,7 @@ def register_mapa(app, get_db):
             return jsonify({"ok": False, "error": "Estado inválido"}), 400
 
         con = get_db()
-        ensure_mapa_ssj_table(con)
+        # ensure_mapa_ssj_table(con)  # DDL-MOVED
 
         if estado == "cerrado":
             if not fecha_visita:
@@ -326,10 +290,10 @@ def register_mapa(app, get_db):
         con.close()
         return jsonify({"ok": True})
 
-    @app.post("/mapa_ssj/borrar/<int:punto_id>")
+    @bp.post("/mapa_ssj/borrar/<int:punto_id>")
     def mapa_ssj_borrar(punto_id):
         con = get_db()
-        ensure_mapa_ssj_table(con)
+        # ensure_mapa_ssj_table(con)  # DDL-MOVED
         con.execute("DELETE FROM mapa_ssj_puntos WHERE id=?", (punto_id,))
         con.commit()
         con.close()

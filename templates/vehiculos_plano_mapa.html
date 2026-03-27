@@ -218,7 +218,7 @@
             {% for nombre in meses %}
               <a
                 class="pill-month {% if loop.index == fecha_sel.month %}active{% endif %}"
-                href="{{ url_for('vehiculos_control_diario',
+                href="{{ url_for('vehiculos.vehiculos_control_diario',
                                  fecha=fecha_sel.replace(month=loop.index, day=1).isoformat()) }}"
               >
                 {{ nombre }}

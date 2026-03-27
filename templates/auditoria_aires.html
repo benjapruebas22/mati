@@ -8,10 +8,10 @@
       <p class="aud-sub">Relevamiento por sede/deposito para control cruzado.</p>
     </div>
     <div class="aud-tabs">
-      <a class="aud-tab" href="{{ url_for('auditoria_mobiliario') }}">Mobiliario</a>
-      <a class="aud-tab active" href="{{ url_for('auditoria_aires') }}">Aires</a>
-      <a class="aud-tab" href="{{ url_for('auditoria_luminarias') }}">Luminarias</a>
-      <a class="aud-tab" href="{{ url_for('relevamientos_comparativa') }}?tipo=aires">Comparativa</a>
+      <a class="aud-tab" href="{{ url_for('auditorias.auditoria_mobiliario') }}">Mobiliario</a>
+      <a class="aud-tab active" href="{{ url_for('auditorias.auditoria_aires') }}">Aires</a>
+      <a class="aud-tab" href="{{ url_for('auditorias.auditoria_luminarias') }}">Luminarias</a>
+      <a class="aud-tab" href="{{ url_for('auditorias.relevamientos_comparativa') }}?tipo=aires">Comparativa</a>
     </div>
   </header>
 
@@ -90,7 +90,7 @@
         <div class="formx-actions">
           <button type="submit" class="btn primary btn-wide">{{ 'Guardar cambios' if edit_row else 'Guardar relevamiento' }}</button>
           {% if edit_row %}
-            <a class="btn outline-slate btn-wide" href="{{ url_for('auditoria_aires') }}">Cancelar edición</a>
+            <a class="btn outline-slate btn-wide" href="{{ url_for('auditorias.auditoria_aires') }}">Cancelar edición</a>
           {% endif %}
         </div>
       </form>
@@ -125,8 +125,8 @@
                 <td>{{ a.responsable or '-' }}</td>
                 <td>{{ a.observaciones or '-' }}</td>
                 <td style="white-space:nowrap">
-                  <a class="btn xs outline" href="{{ url_for('auditoria_aires', edit=a.id) }}">Editar</a>
-                  <form method="post" action="{{ url_for('auditoria_aires_borrar', aid=a.id) }}" style="display:inline-block" onsubmit="return confirm('¿Eliminar relevamiento?');">
+                  <a class="btn xs outline" href="{{ url_for('auditorias.auditoria_aires', edit=a.id) }}">Editar</a>
+                  <form method="post" action="{{ url_for('auditorias.auditoria_aires_borrar', aid=a.id) }}" style="display:inline-block" onsubmit="return confirm('¿Eliminar relevamiento?');">
                     <button type="submit" class="btn xs outline">Eliminar</button>
                   </form>
                 </td>

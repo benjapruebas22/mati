@@ -555,8 +555,8 @@
         <p class="sgi-inf-sub">Centro documental operativo del SGI. Carga, clasifica y vincula por sede, agente, vehiculo y SST con trazabilidad en un solo lugar.</p>
       </div>
       <div class="sgi-inf-head-actions">
-        <a class="sgi-inf-action-link" href="{{ url_for('sgi_documentacion') }}">Documentacion base</a>
-        <a class="sgi-inf-action-link" href="{{ url_for('sgi_home') }}">Volver a SGI</a>
+        <a class="sgi-inf-action-link" href="{{ url_for('sst.sgi_documentacion') }}">Documentacion base</a>
+        <a class="sgi-inf-action-link" href="{{ url_for('sst.sgi_home') }}">Volver a SGI</a>
       </div>
     </header>
 
@@ -616,11 +616,11 @@
       </div>
     </div>
     <div class="sgi-inf-type-tabs">
-      <a class="sgi-inf-type-tab all {% if not q_tipo %}active{% endif %}" href="{{ url_for('sgi_documentacion_informes', q=q_texto or None, tipo='', estado=q_estado or None, sede=q_sede or None, agente=q_agente or None, vehiculo=q_vehiculo or None, destino=q_destino or None, tag=q_tag or None) }}">Todos ({{ ns.total }})</a>
-      <a class="sgi-inf-type-tab informe {% if q_tipo == 'informe' %}active{% endif %}" href="{{ url_for('sgi_documentacion_informes', q=q_texto or None, tipo='informe', estado=q_estado or None, sede=q_sede or None, agente=q_agente or None, vehiculo=q_vehiculo or None, destino=q_destino or None, tag=q_tag or None) }}">Informe ({{ ns.informes }})</a>
-      <a class="sgi-inf-type-tab protocolo {% if q_tipo == 'protocolo' %}active{% endif %}" href="{{ url_for('sgi_documentacion_informes', q=q_texto or None, tipo='protocolo', estado=q_estado or None, sede=q_sede or None, agente=q_agente or None, vehiculo=q_vehiculo or None, destino=q_destino or None, tag=q_tag or None) }}">Protocolo ({{ ns.protocolos }})</a>
-      <a class="sgi-inf-type-tab nota {% if q_tipo == 'nota' %}active{% endif %}" href="{{ url_for('sgi_documentacion_informes', q=q_texto or None, tipo='nota', estado=q_estado or None, sede=q_sede or None, agente=q_agente or None, vehiculo=q_vehiculo or None, destino=q_destino or None, tag=q_tag or None) }}">Nota ({{ ns.notas }})</a>
-      <a class="sgi-inf-type-tab instruccion {% if q_tipo == 'instruccion' %}active{% endif %}" href="{{ url_for('sgi_documentacion_informes', q=q_texto or None, tipo='instruccion', estado=q_estado or None, sede=q_sede or None, agente=q_agente or None, vehiculo=q_vehiculo or None, destino=q_destino or None, tag=q_tag or None) }}">Instructivo ({{ ns.instrucciones }})</a>
+      <a class="sgi-inf-type-tab all {% if not q_tipo %}active{% endif %}" href="{{ url_for('sst.sgi_documentacion_informes', q=q_texto or None, tipo='', estado=q_estado or None, sede=q_sede or None, agente=q_agente or None, vehiculo=q_vehiculo or None, destino=q_destino or None, tag=q_tag or None) }}">Todos ({{ ns.total }})</a>
+      <a class="sgi-inf-type-tab informe {% if q_tipo == 'informe' %}active{% endif %}" href="{{ url_for('sst.sgi_documentacion_informes', q=q_texto or None, tipo='informe', estado=q_estado or None, sede=q_sede or None, agente=q_agente or None, vehiculo=q_vehiculo or None, destino=q_destino or None, tag=q_tag or None) }}">Informe ({{ ns.informes }})</a>
+      <a class="sgi-inf-type-tab protocolo {% if q_tipo == 'protocolo' %}active{% endif %}" href="{{ url_for('sst.sgi_documentacion_informes', q=q_texto or None, tipo='protocolo', estado=q_estado or None, sede=q_sede or None, agente=q_agente or None, vehiculo=q_vehiculo or None, destino=q_destino or None, tag=q_tag or None) }}">Protocolo ({{ ns.protocolos }})</a>
+      <a class="sgi-inf-type-tab nota {% if q_tipo == 'nota' %}active{% endif %}" href="{{ url_for('sst.sgi_documentacion_informes', q=q_texto or None, tipo='nota', estado=q_estado or None, sede=q_sede or None, agente=q_agente or None, vehiculo=q_vehiculo or None, destino=q_destino or None, tag=q_tag or None) }}">Nota ({{ ns.notas }})</a>
+      <a class="sgi-inf-type-tab instruccion {% if q_tipo == 'instruccion' %}active{% endif %}" href="{{ url_for('sst.sgi_documentacion_informes', q=q_texto or None, tipo='instruccion', estado=q_estado or None, sede=q_sede or None, agente=q_agente or None, vehiculo=q_vehiculo or None, destino=q_destino or None, tag=q_tag or None) }}">Instructivo ({{ ns.instrucciones }})</a>
     </div>
   </section>
 
@@ -749,7 +749,7 @@
       <div>
         <button type="submit" class="btn btn-mpd">{% if doc_editar %}Actualizar documento{% else %}Guardar documento{% endif %}</button>
         {% if doc_editar %}
-        <a class="btn btn-mpd" href="{{ url_for('sgi_documentacion_informes') }}">Cancelar edicion</a>
+        <a class="btn btn-mpd" href="{{ url_for('sst.sgi_documentacion_informes') }}">Cancelar edicion</a>
         {% endif %}
       </div>
     </form>
@@ -840,7 +840,7 @@
 
       <div>
         <button type="submit" class="btn btn-mpd">Aplicar filtros</button>
-        <a class="btn btn-mpd" href="{{ url_for('sgi_documentacion_informes') }}">Reset</a>
+        <a class="btn btn-mpd" href="{{ url_for('sst.sgi_documentacion_informes') }}">Reset</a>
       </div>
     </form>
 
@@ -900,7 +900,7 @@
         </div>
 
         <div class="sgi-inf-item-actions">
-          <a class="btn btn-mpd" href="{{ url_for('sgi_documentacion_informes', edit=d.id_documento) }}">Editar</a>
+          <a class="btn btn-mpd" href="{{ url_for('sst.sgi_documentacion_informes', edit=d.id_documento) }}">Editar</a>
           <form method="post" onsubmit="return confirm('Borrar este documento y sus vinculos?');" style="display:inline-flex;">
             <input type="hidden" name="_action" value="delete" />
             <input type="hidden" name="id_documento" value="{{ d.id_documento }}" />

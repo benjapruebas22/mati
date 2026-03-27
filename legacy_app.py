@@ -11,14 +11,13 @@ from flask import request, render_template, redirect, url_for, flash
 import os
 from datetime import date
 from flask import request, render_template, redirect, url_for, flash, send_from_directory
-from modules.auditorias import register_auditorias
-from modules.obras import register_obras
-from modules.agentes import register_agentes
-from modules.mapa import register_mapa
-from modules.vehiculos import register_vehiculos
-from modules.inventario_checklist import register_inventario_checklist
-from modules.inventario_general import register_inventario_general
-from modules.sst import register_sst
+# from modules.auditorias import register_auditorias
+# from modules.obras import register_obras
+# from modules.agentes import register_agentes (DEPRECATED: Movido a app.agentes)
+# from modules.mapa import register_mapa
+# from modules.inventario_checklist import register_inventario_checklist
+# from modules.inventario_general import register_inventario_general
+# from modules.sst import register_sst (DEPRECATED)
 from werkzeug.utils import secure_filename
 
 # =========================
@@ -219,7 +218,7 @@ def role_allows(role: str, module: str) -> bool:
 
 def default_redirect_for_role(role: str):
     if role == ROLE_EJECUTIVO:
-        return url_for("dashboard_ejecutivo")
+        return url_for("sst.dashboard_ejecutivo")
     if role == ROLE_DASH_OBRAS:
         return url_for("dashboard")
     if role == ROLE_DASH_VEHICULOS:
@@ -231,7 +230,7 @@ def default_redirect_for_role(role: str):
     if role == ROLE_SEDE_VEHICULOS:
         return url_for("sede_ficha", codigo="S01", home=1)
     if role == ROLE_SST_VEHICULOS:
-        return url_for("sst_general")
+        return url_for("sst.sst_general")
     if role == ROLE_OBRAS_VEHICULOS:
         return url_for("obras_home")
     if role == ROLE_INT_OBRAS:
@@ -241,9 +240,9 @@ def default_redirect_for_role(role: str):
     if role == ROLE_INT_OBRAS_SEDES:
         return url_for("obras_home")
     if role == ROLE_CHOFER_INTENDENCIA or role == ROLE_CHOFER_AUTORIZADO:
-        return url_for("vehiculos_control_diario")
+        return url_for("vehiculos.vehiculos_control_diario")
     if role == ROLE_INT_VEHICULOS:
-        return url_for("vehiculos_control_diario")
+        return url_for("vehiculos.vehiculos_control_diario")
     return url_for("dashboard")
 
 
@@ -1446,6 +1445,45 @@ def init_tabla_calendario_eventos():
     con.close()
 
 
+def init_performance_indexes():
+    """
+    Crea índices de performance en la DB si no existen.
+    Idempotente: se puede llamar en cada arranque sin riesgo.
+    """
+    con = get_db_connection()
+    indexes = [
+        "CREATE INDEX IF NOT EXISTS idx_eventos_fecha ON eventos(fecha)",
+        "CREATE INDEX IF NOT EXISTS idx_eventos_fuente_fecha ON eventos(fuente, fecha)",
+        "CREATE INDEX IF NOT EXISTS idx_eventos_tipo ON eventos(tipo)",
+        "CREATE INDEX IF NOT EXISTS idx_viajes_fecha ON viajes(fecha)",
+        "CREATE INDEX IF NOT EXISTS idx_viajes_patente_fecha ON viajes(patente, fecha)",
+        "CREATE INDEX IF NOT EXISTS idx_viajes_estado ON viajes(estado)",
+        "CREATE INDEX IF NOT EXISTS idx_agentes_activo ON agentes_intendencia(activo)",
+        "CREATE INDEX IF NOT EXISTS idx_agentes_rubro ON agentes_intendencia(rubro, activo)",
+        "CREATE INDEX IF NOT EXISTS idx_agentes_nombre ON agentes_intendencia(agente)",
+        "CREATE INDEX IF NOT EXISTS idx_agentes_licencias_agente ON agentes_licencias(agente_id, activo)",
+        "CREATE INDEX IF NOT EXISTS idx_agentes_licencias_fecha ON agentes_licencias(fecha_vencimiento)",
+        "CREATE INDEX IF NOT EXISTS idx_agentes_epp_agente ON agentes_epp(agente_id)",
+        "CREATE INDEX IF NOT EXISTS idx_agentes_desempeno_agente ON agentes_desempeno(agente_id)",
+        "CREATE INDEX IF NOT EXISTS idx_agentes_compen_agente ON agentes_compensatorios_mov(agente_id)",
+        "CREATE INDEX IF NOT EXISTS idx_vehiculos_activo ON vehiculos(activo)",
+        "CREATE INDEX IF NOT EXISTS idx_vehiculo_estado_pat ON vehiculo_estado(patente, tipo)",
+        "CREATE INDEX IF NOT EXISTS idx_obras_estado ON obras_sede(estado)",
+        "CREATE INDEX IF NOT EXISTS idx_obras_sede_fecha ON obras_sede(codigo_sede, estado)",
+        "CREATE INDEX IF NOT EXISTS idx_obras_fecha_sol ON obras_sede(fecha_solicitud)",
+        "CREATE INDEX IF NOT EXISTS idx_combustible_patente ON combustible_cargas(patente, fecha)",
+        "CREATE INDEX IF NOT EXISTS idx_combustible_fecha ON combustible_cargas(fecha)",
+    ]
+    for sql in indexes:
+        try:
+            con.execute(sql)
+        except Exception:
+            pass
+    con.commit()
+    con.close()
+
+
+
 app = Flask(__name__)
 app.secret_key = "mpd-intendencia-2025"
 
@@ -1489,10 +1527,17 @@ def plano_permitido(filename):
     return ext in ALLOWED_EXTENSIONS_PLANOS
 
 def get_db():
-    con = sqlite3.connect(DB_PATH, timeout=5)
+    con = sqlite3.connect(DB_PATH, timeout=10, check_same_thread=False)
     con.row_factory = sqlite3.Row
-    con.execute("PRAGMA busy_timeout = 3000")
+    # PRAGMAs de performance — se aplican una vez por conexión
+    con.execute("PRAGMA journal_mode = WAL")       # escrituras no bloquean lecturas
+    con.execute("PRAGMA synchronous = NORMAL")      # fsync solo en checkpoints (mucho más rápido)
+    con.execute("PRAGMA cache_size = -65536")       # 64MB de cache en memoria
+    con.execute("PRAGMA temp_store = MEMORY")       # tablas temporales en RAM
+    con.execute("PRAGMA mmap_size = 134217728")     # 128MB memory-mapped I/O
+    con.execute("PRAGMA busy_timeout = 5000")
     return con
+
 
 def get_db_connection():
     return get_db()
@@ -1575,62 +1620,107 @@ from app.vehiculos import bp as vehiculos_bp
 from app.vehiculos.routes import register_vehiculos_control
 register_vehiculos_control(vehiculos_bp, get_db_connection, ensure_cols, rebuild_eventos_vehiculos)
 app.register_blueprint(vehiculos_bp)
+
+# =========================
+# AGENTES (blueprint)
+# =========================
+from app.agentes import bp as agentes_bp
+from app.agentes.routes import register_agentes_routes
+def allowed_agente_doc(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'pdf', 'png', 'jpg', 'jpeg', 'docx', 'doc'}
+register_agentes_routes(agentes_bp, get_db, ensure_cols, rebuild_eventos_agentes, allowed_agente_doc, AGENTE_DOCS_FOLDER)
+app.register_blueprint(agentes_bp)
+
 try:
-    # Alias de endpoints sin blueprint para compatibilidad con url_for existentes
-    if "vehiculos.vehiculos_control_diario" in app.view_functions:
-        app.view_functions.setdefault(
-            "vehiculos_control_diario",
-            app.view_functions["vehiculos.vehiculos_control_diario"],
-        )
-        app.add_url_rule(
-            "/vehiculos/control_diario",
-            endpoint="vehiculos_control_diario",
-            view_func=app.view_functions["vehiculos.vehiculos_control_diario"],
-            methods=["GET", "POST"],
-        )
-    if "vehiculos.vehiculos_home" in app.view_functions:
-        app.view_functions.setdefault("vehiculos_home", app.view_functions["vehiculos.vehiculos_home"])
-        app.add_url_rule(
-            "/vehiculos",
-            endpoint="vehiculos_home",
-            view_func=app.view_functions["vehiculos.vehiculos_home"],
-            methods=["GET", "POST"],
-        )
-    if "vehiculos.viaje_editar" in app.view_functions:
-        app.view_functions.setdefault("viaje_editar", app.view_functions["vehiculos.viaje_editar"])
-        app.add_url_rule(
-            "/viajes/<int:viaje_id>/editar",
-            endpoint="viaje_editar",
-            view_func=app.view_functions["vehiculos.viaje_editar"],
-            methods=["GET", "POST"],
-        )
-    if "vehiculos.viaje_editar2" in app.view_functions:
-        app.view_functions.setdefault("viaje_editar2", app.view_functions["vehiculos.viaje_editar2"])
-        app.add_url_rule(
-            "/viajes/<int:viaje_id>/editar2",
-            endpoint="viaje_editar2",
-            view_func=app.view_functions["vehiculos.viaje_editar2"],
-            methods=["GET", "POST"],
-        )
-    if "vehiculos.viaje_cerrar" in app.view_functions:
-        app.view_functions.setdefault("viaje_cerrar", app.view_functions["vehiculos.viaje_cerrar"])
-        app.add_url_rule(
-            "/viajes/<int:viaje_id>/cerrar",
-            endpoint="viaje_cerrar",
-            view_func=app.view_functions["vehiculos.viaje_cerrar"],
-            methods=["GET", "POST"],
-        )
-    if "vehiculos.viaje_eliminar" in app.view_functions:
-        app.view_functions.setdefault("viaje_eliminar", app.view_functions["vehiculos.viaje_eliminar"])
-        app.add_url_rule(
-            "/vehiculos/viaje/<int:viaje_id>/eliminar",
-            endpoint="viaje_eliminar",
-            view_func=app.view_functions["vehiculos.viaje_eliminar"],
-            methods=["POST"],
-        )
-except Exception:
-    # No bloquear el arranque por alias
-    pass
+    # Alias de todos los endpoints del blueprint de vehículos para compatibilidad legacy
+    vehiculos_endpoints = [
+        "vehiculos_home", "viaje_editar2", "viaje_eliminar", "viaje_cerrar",
+        "vehiculos_control_diario", "viaje_editar", "vehiculos_nuevo",
+        "vehiculos_documentacion", "vehiculos_estadisticas", "viaje_set_km_ini",
+        "vehiculos_combustible", "vehiculos_combustible_estadisticas",
+        "vehiculos_combustible_nuevo", "combustible_remito_ver", "viaje_editar_legacy",
+        "viajes_delete", "vehiculos_checklist", "combustible_editar",
+        "combustible_eliminar", "vehiculos_bd_home", "bd_destinos",
+        "bd_destinos_delete", "bd_equipo", "bd_equipo_delete", "bd_choferes",
+        "bd_choferes_editar", "bd_choferes_baja", "bd_choferes_alta",
+        "bd_choferes_aut", "bd_choferes_aut_delete", "bd_precios",
+        "vehiculos_eventos_regenerar"
+    ]
+    for ep in vehiculos_endpoints:
+        bp_ep = f"vehiculos.{ep}"
+        if bp_ep in app.view_functions:
+            app.view_functions.setdefault(ep, app.view_functions[bp_ep])
+except Exception as e:
+    print(f"Error registrando alias de vehículos: {e}")
+
+# Asegurar creación de tablas críticas que antes estaban en SST
+with app.app_context():
+    con = get_db()
+    # VIAJES
+    con.execute("""
+    CREATE TABLE IF NOT EXISTS viajes(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        fecha TEXT NOT NULL,
+        patente TEXT NOT NULL,
+        chofer_id INTEGER,
+        agente_trasladado TEXT,
+        equipo_id INTEGER,
+        destino_id INTEGER,
+        origen TEXT DEFAULT 'San Salvador de Jujuy',
+        km_ini REAL DEFAULT 0,
+        km_fin REAL DEFAULT 0,
+        recorrido_km REAL DEFAULT 0,
+        largo INTEGER DEFAULT 0,
+        observaciones TEXT,
+        FOREIGN KEY(patente) REFERENCES vehiculos(patente),
+        FOREIGN KEY(chofer_id) REFERENCES agentes_intendencia(id),
+        FOREIGN KEY(destino_id) REFERENCES destinos(id)
+    )
+    """)
+    # COMBUSTIBLE
+    con.execute("""
+    CREATE TABLE IF NOT EXISTS combustible_cargas(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        fecha TEXT NOT NULL,
+        patente TEXT NOT NULL,
+        chofer_id INTEGER,
+        remito TEXT,
+        km_actual REAL DEFAULT 0,
+        litros REAL NOT NULL,
+        precio_litro REAL NOT NULL,
+        precio_total REAL NOT NULL,
+        notas TEXT,
+        FOREIGN KEY(patente) REFERENCES vehiculos(patente),
+        FOREIGN KEY(chofer_id) REFERENCES agentes_intendencia(id)
+    )
+    """)
+    # CHECKLIST
+    con.execute("CREATE TABLE IF NOT EXISTS checklist_items(id INTEGER PRIMARY KEY AUTOINCREMENT, nombre TEXT NOT NULL UNIQUE, activo INTEGER DEFAULT 1)")
+    con.execute("""
+    CREATE TABLE IF NOT EXISTS checklist_registros(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        fecha TEXT NOT NULL,
+        patente TEXT NOT NULL,
+        chofer_id INTEGER,
+        tipo TEXT NOT NULL,
+        observaciones TEXT,
+        FOREIGN KEY(patente) REFERENCES vehiculos(patente),
+        FOREIGN KEY(chofer_id) REFERENCES agentes_intendencia(id)
+    )
+    """)
+    con.execute("""
+    CREATE TABLE IF NOT EXISTS checklist_detalle(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        registro_id INTEGER NOT NULL,
+        item_id INTEGER NOT NULL,
+        ok INTEGER DEFAULT 1,
+        nota TEXT,
+        FOREIGN KEY(registro_id) REFERENCES checklist_registros(id),
+        FOREIGN KEY(item_id) REFERENCES checklist_items(id)
+    )
+    """)
+    con.commit()
+    con.close()
 
 
 
@@ -1666,7 +1756,7 @@ def enforce_auth():
         if role == ROLE_SEDE_VEHICULOS:
             return redirect(url_for("sede_ficha", codigo="S01", home=1))
         if role == ROLE_SST_VEHICULOS:
-            return redirect(url_for("sst_general"))
+            return redirect(url_for("sst.sst_general"))
         if role == ROLE_OBRAS_VEHICULOS:
             return redirect(url_for("obras_home"))
         if role == ROLE_INT_OBRAS:
@@ -1676,7 +1766,7 @@ def enforce_auth():
         if role == ROLE_INT_OBRAS_SEDES:
             return redirect(url_for("obras_home"))
         if role == ROLE_INT_VEHICULOS:
-            return redirect(url_for("vehiculos_control_diario"))
+            return redirect(url_for("vehiculos.vehiculos_control_diario"))
         return redirect(url_for("access_denied"))
 
     return None
@@ -1762,22 +1852,141 @@ def ensure_luminarias_columns():
 
 
 
-register_auditorias(app, get_db)
-register_obras(app, get_db, rebuild_eventos_obras)
-register_agentes(app, get_db, ensure_cols, rebuild_eventos_agentes, allowed_agente_doc, AGENTE_DOCS_FOLDER)
-register_mapa(app, get_db)
-register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combustible_columns, rebuild_eventos_vehiculos)
-register_inventario_checklist(app, get_db)
-register_inventario_general(app, get_db, get_db_connection, ensure_luminarias_columns)
-rebuild_eventos_limpieza_sede = register_sst(
-    app,
-    get_db,
-    ensure_cols,
-    ensure_sedes_mpd_cols,
-    CAL_COLORS,
-    ensure_auth_tables,
-    default_redirect_for_role,
+# =========================
+# PHASE 4 BLUEPRINTS
+# =========================
+from app.obras.routes import register_obras_routes
+from app.obras import bp as obras_bp
+rebuild_eventos_obras = register_obras_routes(app, obras_bp, get_db, rebuild_eventos_obras)
+app.register_blueprint(obras_bp)
+
+from app.auditorias.routes import register_auditorias_routes
+from app.auditorias import bp as auditorias_bp
+register_auditorias_routes(app, auditorias_bp, get_db)
+app.register_blueprint(auditorias_bp)
+
+from app.mapa.routes import register_mapa_routes
+from app.mapa import bp as mapa_bp
+register_mapa_routes(app, mapa_bp, get_db)
+app.register_blueprint(mapa_bp)
+
+from app.inventario_checklist.routes import register_inventario_checklist_routes
+from app.inventario_checklist import bp as invc_bp
+register_inventario_checklist_routes(app, invc_bp, get_db)
+app.register_blueprint(invc_bp)
+
+from app.inventario_general.routes import register_inventario_general_routes
+from app.inventario_general import bp as invg_bp
+register_inventario_general_routes(app, invg_bp, get_db, get_db_connection, ensure_luminarias_columns)
+app.register_blueprint(invg_bp)
+
+
+try:
+    for ep in ["obra_intervencion_crear", "obra_intervencion_eliminar", "obras_home", "obra_cambiar_prioridad", "obra_intervencion_cambiar_estado", "obra_intervencion_editar", "obra_editar", "obra_cambiar_estado", "obra_eliminar"]:
+        bp_ep = f"obras.{ep}"
+        if bp_ep in app.view_functions:
+            app.view_functions.setdefault(ep, app.view_functions[bp_ep])
+except Exception as e:
+    print(e)
+
+try:
+    for ep in ["auditoria_mobiliario_supervisor", "auditoria_herramientas_catalogo_agregar", "auditoria_operativa", "auditoria_aires_borrar", "auditoria_herramientas", "auditoria_mobiliario", "auditoria_mobiliario_borrar", "auditoria_aires", "auditoria_luminarias", "auditoria_herramientas_catalogo_editar", "auditoria_herramientas_catalogo_borrar", "auditoria_luminarias_borrar", "relevamientos_comparativa"]:
+        bp_ep = f"auditorias.{ep}"
+        if bp_ep in app.view_functions:
+            app.view_functions.setdefault(ep, app.view_functions[bp_ep])
+except Exception as e:
+    print(e)
+
+try:
+    for ep in ["mapa_ssj_editar", "api_mapa_ssj_puntos", "mapa_ssj_nuevo", "mapa_ssj", "mapa_ssj_borrar", "mapa_ssj_estado"]:
+        bp_ep = f"mapa.{ep}"
+        if bp_ep in app.view_functions:
+            app.view_functions.setdefault(ep, app.view_functions[bp_ep])
+except Exception as e:
+    print(e)
+
+try:
+    for ep in ["checklist_inventario_editar", "checklist_mobiliario", "checklist_inventario"]:
+        bp_ep = f"inventario_checklist.{ep}"
+        if bp_ep in app.view_functions:
+            app.view_functions.setdefault(ep, app.view_functions[bp_ep])
+except Exception as e:
+    print(e)
+
+try:
+    for ep in ["inventario_dashboard", "inventario_sede_borrar", "sede_inventario"]:
+        bp_ep = f"inventario_general.{ep}"
+        if bp_ep in app.view_functions:
+            app.view_functions.setdefault(ep, app.view_functions[bp_ep])
+except Exception as e:
+    print(e)
+
+# =========================
+# SST (blueprint)
+# =========================
+from app.sst import bp as sst_bp
+from app.sst.init_db import init_sst_db
+from app.sst.routes import register_sst_routes
+
+with app.app_context():
+    con = get_db()
+    init_sst_db(con, ensure_cols, ensure_sedes_mpd_cols, get_db)
+    con.close()
+
+rebuild_eventos_limpieza_sede = register_sst_routes(
+    app, sst_bp, get_db, ensure_cols, ensure_sedes_mpd_cols, 
+    CAL_COLORS, ensure_auth_tables, default_redirect_for_role
 )
+app.register_blueprint(sst_bp)
+
+try:
+    sst_endpoints = [
+        "sgi_home",
+        "dashboard_ejecutivo",
+        "sgi_documentacion",
+        "sgi_documentacion_informes",
+        "dashboard_materiales_historial",
+        "dashboard_novedades_historial",
+        "dashboard_sede_estado_manual",
+        "sst_general",
+        "sst_general_eliminar",
+        "sst_general_editar",
+        "sst_plan",
+        "sst_plan_cargar",
+        "sst_plan_editar",
+        "sst_plan_eliminar",
+        "sst_plan_accion_agregar",
+        "sst_plan_accion_editar",
+        "sst_cuadro_unico",
+        "sst_ergonomia_panel",
+        "sst_plan_gantt",
+        "sst_plan_accion_eliminar",
+        "sst_ergonomia_guardar",
+        "sst_plan_cargar",
+        "sst_plan_cargar",
+        "sst_plan_cargar",
+        "sst_ergonomia_manual",
+        "sst_ergonomia_gestion_riesgo",
+        "sst_ergonomia_salud_guardar",
+        "sst_plan_cargar",
+        "sst_plan_cargar",
+        "sst_plan_cargar",
+        "sst_ergonomia_reevaluar",
+        "sst_plan_cargar",
+        "sst_plan_cargar",
+        "sst_ergonomia_cerrar",
+        "sst_plan_cargar",
+        "sst_plan_cargar",
+        "sst_ergonomia_reporte",
+        "sst_ergonomia_export_csv",
+        "sst_ergonomia_pro_validacion"
+    ]
+    for ep in sst_endpoints:
+        bp_ep = f"sst.{ep}"
+        if bp_ep in app.view_functions:
+            app.view_functions.setdefault(ep, app.view_functions[bp_ep])
+except Exception as e:
+    print(f"Error registrando alias de sst: {e}")
 
 def ensure_materiales_table(con):
     con.execute("""
@@ -4590,23 +4799,23 @@ def sede_ficha(codigo):
             if ref.startswith("VIAJE-"):
                 try:
                     vid = int(ref.split("-")[1])
-                    return url_for("viaje_editar", viaje_id=vid)
+                    return url_for("vehiculos.viaje_editar", viaje_id=vid)
                 except Exception:
-                    return url_for("vehiculos_control_diario")
+                    return url_for("vehiculos.vehiculos_control_diario")
             if ref.startswith("COMB-"):
                 try:
                     cid = int(ref.split("-")[1])
-                    return url_for("combustible_editar", cid=cid)
+                    return url_for("vehiculos.combustible_editar", cid=cid)
                 except Exception:
-                    return url_for("vehiculos_combustible")
+                    return url_for("vehiculos.vehiculos_combustible")
             if ref.startswith(("SERV-", "LAVA-", "SEG-", "RTV-")):
-                return url_for("vehiculos_documentacion")
+                return url_for("vehiculos.vehiculos_documentacion")
             if fuente == "vehiculos":
-                return url_for("vehiculos_control_diario")
+                return url_for("vehiculos.vehiculos_control_diario")
             if fuente == "obras":
                 return url_for("obras_home")
             if fuente == "agentes":
-                return url_for("agentes_home")
+                return url_for("agentes.agentes_home")
             if fuente == "seguridad":
                 return url_for("matafuegos_home")
             return None
@@ -6096,7 +6305,7 @@ def matafuegos_home():
     )
 @app.route("/remitos/<path:filename>")
 def ver_remito(filename):
-    return redirect(url_for("combustible_remito_ver", filename=filename))
+    return redirect(url_for("vehiculos.combustible_remito_ver", filename=filename))
 
 @app.route("/maestranza")
 def maestranza_home():
@@ -6162,6 +6371,8 @@ def admin_usuarios_edit(uid):
 
 if __name__ == "__main__":
     init_tabla_calendario_eventos()  # crea tabla eventos si no existe
+
+    init_performance_indexes()  # crea índices de performance si no existen
 
     with app.app_context():
         rebuild_eventos_agentes()

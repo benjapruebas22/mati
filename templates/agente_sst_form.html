@@ -35,7 +35,7 @@
       </p>
     </div>
     <div class="section-actions">
-      <a class="btn outline-slate" href="{{ url_for('agentes_home', id=agente.id) }}">
+      <a class="btn outline-slate" href="{{ url_for('agentes.agentes_home', id=agente.id) }}">
         Volver a la ficha del agente
       </a>
     </div>
@@ -88,7 +88,7 @@
 
               <div class="license-actions">
                 <button type="submit" class="btn outline-amber">Guardar registro</button>
-                <a class="btn outline-slate" href="{{ url_for('agentes_home', id=agente.id) }}">
+                <a class="btn outline-slate" href="{{ url_for('agentes.agentes_home', id=agente.id) }}">
                   Cancelar
                 </a>
               </div>
@@ -125,7 +125,7 @@
                     <td>{{ r.estado or '-' }}</td>
                     <td>
                       <form method="post"
-                            action="{{ url_for('agente_sst_eliminar', agente_id=agente.id, sst_id=r.id) }}"
+                            action="{{ url_for('agentes.agente_sst_eliminar', agente_id=agente.id, sst_id=r.id) }}"
                             onsubmit="return confirm('Eliminar este registro?');">
                         <button type="submit" class="btn xs outline-amber">Eliminar</button>
                       </form>

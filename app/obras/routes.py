@@ -1,11 +1,12 @@
+import sqlite3
+from flask import Blueprint
+from . import bp
+
 from datetime import date
 import sqlite3
 import unicodedata
-
 from flask import render_template, request, redirect, url_for, flash, session
-
-
-def register_obras(app, get_db, rebuild_eventos_obras):
+def register_obras_routes(app, bp, get_db, rebuild_eventos_obras):
     estimaciones_catalogo = [
         {"label": "Durlock", "keywords": ("durlock", "durlok"), "dias_min": 4.0, "dias_max": 8.0, "personas": 2.0, "materiales": 9.0},
         {"label": "Pintura", "keywords": ("pintura",), "dias_min": 2.0, "dias_max": 4.0, "personas": 1.5, "materiales": 4.0},
@@ -151,11 +152,15 @@ def register_obras(app, get_db, rebuild_eventos_obras):
             "iv_fecha": _sanitize_interv_fecha(request.args.get("iv_fecha")),
             "panel": (request.args.get("panel") or "panel-intervenciones").strip() or "panel-intervenciones",
         }
+    # --- DDL BOOTSTRAP INJECTED ---
+    _ensure_intervenciones_table(get_db())
+    # ------------------------------
 
-    @app.route("/obras", methods=["GET", "POST"], endpoint="obras_home")
+
+    @bp.route("/obras", methods=["GET", "POST"], endpoint="obras_home")
     def obras_home():
         con = get_db()
-        _ensure_intervenciones_table(con)
+        # _ensure_intervenciones_table(con)  # DDL-MOVED
 
         # listado de sedes para el combo
         sedes = con.execute("""
@@ -206,7 +211,7 @@ def register_obras(app, get_db, rebuild_eventos_obras):
                 rebuild_eventos_obras()
                 flash("Obra / trabajo cargado correctamente.", "success")
 
-            return redirect(url_for("obras_home", sede=codigo_sede))
+            return redirect(url_for("obras.obras_home", sede=codigo_sede))
 
         # ---------- LISTADO DE OBRAS ----------
         sql = """
@@ -519,7 +524,7 @@ def register_obras(app, get_db, rebuild_eventos_obras):
             desinf_stats=desinf_stats
         )
 
-    @app.route("/obras/<int:oid>/estado", methods=["POST"], endpoint="obra_cambiar_estado")
+    @bp.route("/obras/<int:oid>/estado", methods=["POST"], endpoint="obra_cambiar_estado")
     def obra_cambiar_estado(oid):
         nuevo_estado = (request.form.get("estado") or "PENDIENTE").strip().upper()
         hoy_str = date.today().isoformat()
@@ -555,10 +560,10 @@ def register_obras(app, get_db, rebuild_eventos_obras):
         if prioridad not in ("ALTA", "MEDIA", "BAJA"):
             prioridad = ""
         if nuevo_estado == "FINALIZADA":
-            return redirect(url_for("obras_home", sede=sede, estado="FINALIZADA", prioridad=prioridad))
-        return redirect(url_for("obras_home", sede=sede, estado=estado, prioridad=prioridad))
+            return redirect(url_for("obras.obras_home", sede=sede, estado="FINALIZADA", prioridad=prioridad))
+        return redirect(url_for("obras.obras_home", sede=sede, estado=estado, prioridad=prioridad))
 
-    @app.route("/obras/<int:oid>/prioridad", methods=["POST"], endpoint="obra_cambiar_prioridad")
+    @bp.route("/obras/<int:oid>/prioridad", methods=["POST"], endpoint="obra_cambiar_prioridad")
     def obra_cambiar_prioridad(oid):
         raw = (request.form.get("prioridad") or "Media").strip().lower()
         mapping = {
@@ -581,12 +586,12 @@ def register_obras(app, get_db, rebuild_eventos_obras):
         prioridad = (request.args.get("prioridad") or "").strip().upper()
         if prioridad not in ("ALTA", "MEDIA", "BAJA"):
             prioridad = ""
-        return redirect(url_for("obras_home", sede=sede, estado=estado, prioridad=prioridad))
+        return redirect(url_for("obras.obras_home", sede=sede, estado=estado, prioridad=prioridad))
 
-    @app.route("/obras/intervenciones", methods=["POST"], endpoint="obra_intervencion_crear")
+    @bp.route("/obras/intervenciones", methods=["POST"], endpoint="obra_intervencion_crear")
     def obra_intervencion_crear():
         con = get_db()
-        _ensure_intervenciones_table(con)
+        # _ensure_intervenciones_table(con)  # DDL-MOVED
 
         fecha = _sanitize_interv_fecha(request.form.get("fecha")) or date.today().isoformat()
         codigo_sede = (request.form.get("codigo_sede") or "").strip()
@@ -611,9 +616,9 @@ def register_obras(app, get_db, rebuild_eventos_obras):
             flash("Intervencion diaria registrada.", "success")
 
         con.close()
-        return redirect(url_for("obras_home", **_interv_redirect_args()))
+        return redirect(url_for("obras.obras_home", **_interv_redirect_args()))
 
-    @app.route(
+    @bp.route(
         "/obras/intervenciones/<int:iid>/estado",
         methods=["POST"],
         endpoint="obra_intervencion_cambiar_estado",
@@ -621,7 +626,7 @@ def register_obras(app, get_db, rebuild_eventos_obras):
     def obra_intervencion_cambiar_estado(iid):
         nuevo_estado = _sanitize_interv_estado(request.form.get("estado")) or "PENDIENTE"
         con = get_db()
-        _ensure_intervenciones_table(con)
+        # _ensure_intervenciones_table(con)  # DDL-MOVED
 
         exists = con.execute(
             "SELECT id FROM obras_intervenciones_diarias WHERE id = ?",
@@ -630,7 +635,7 @@ def register_obras(app, get_db, rebuild_eventos_obras):
         if not exists:
             con.close()
             flash("Intervencion no encontrada.", "warning")
-            return redirect(url_for("obras_home", **_interv_redirect_args()))
+            return redirect(url_for("obras.obras_home", **_interv_redirect_args()))
 
         con.execute(
             """
@@ -643,16 +648,16 @@ def register_obras(app, get_db, rebuild_eventos_obras):
         con.commit()
         con.close()
         flash("Estado de intervencion actualizado.", "success")
-        return redirect(url_for("obras_home", **_interv_redirect_args()))
+        return redirect(url_for("obras.obras_home", **_interv_redirect_args()))
 
-    @app.route(
+    @bp.route(
         "/obras/intervenciones/editar/<int:iid>",
         methods=["GET", "POST"],
         endpoint="obra_intervencion_editar",
     )
     def obra_intervencion_editar(iid):
         con = get_db()
-        _ensure_intervenciones_table(con)
+        # _ensure_intervenciones_table(con)  # DDL-MOVED
 
         sedes = con.execute(
             """
@@ -676,7 +681,7 @@ def register_obras(app, get_db, rebuild_eventos_obras):
         if not intervencion:
             con.close()
             flash("Intervencion no encontrada.", "warning")
-            return redirect(url_for("obras_home", **_interv_redirect_args()))
+            return redirect(url_for("obras.obras_home", **_interv_redirect_args()))
 
         if request.method == "POST":
             fecha = _sanitize_interv_fecha(request.form.get("fecha")) or date.today().isoformat()
@@ -708,7 +713,7 @@ def register_obras(app, get_db, rebuild_eventos_obras):
                 con.commit()
                 con.close()
                 flash("Intervencion diaria actualizada.", "success")
-                return redirect(url_for("obras_home", **_interv_redirect_args()))
+                return redirect(url_for("obras.obras_home", **_interv_redirect_args()))
 
             intervencion = con.execute(
                 """
@@ -721,8 +726,8 @@ def register_obras(app, get_db, rebuild_eventos_obras):
                 (iid,),
             ).fetchone()
 
-        back_url = url_for("obras_home", **_interv_redirect_args())
-        form_action = url_for("obra_intervencion_editar", iid=iid, **_interv_redirect_args())
+        back_url = url_for("obras.obras_home", **_interv_redirect_args())
+        form_action = url_for("obras.obra_intervencion_editar", iid=iid, **_interv_redirect_args())
         con.close()
         return render_template(
             "intervencion_diaria_editar.html",
@@ -736,14 +741,14 @@ def register_obras(app, get_db, rebuild_eventos_obras):
             form_action=form_action,
         )
 
-    @app.route(
+    @bp.route(
         "/obras/intervenciones/eliminar/<int:iid>",
         methods=["POST"],
         endpoint="obra_intervencion_eliminar",
     )
     def obra_intervencion_eliminar(iid):
         con = get_db()
-        _ensure_intervenciones_table(con)
+        # _ensure_intervenciones_table(con)  # DDL-MOVED
         exists = con.execute(
             "SELECT id FROM obras_intervenciones_diarias WHERE id = ?",
             (iid,),
@@ -751,15 +756,15 @@ def register_obras(app, get_db, rebuild_eventos_obras):
         if not exists:
             con.close()
             flash("Intervencion no encontrada.", "warning")
-            return redirect(url_for("obras_home", **_interv_redirect_args()))
+            return redirect(url_for("obras.obras_home", **_interv_redirect_args()))
 
         con.execute("DELETE FROM obras_intervenciones_diarias WHERE id = ?", (iid,))
         con.commit()
         con.close()
         flash("Intervencion eliminada.", "success")
-        return redirect(url_for("obras_home", **_interv_redirect_args()))
+        return redirect(url_for("obras.obras_home", **_interv_redirect_args()))
 
-    @app.route("/obras/editar/<int:oid>", methods=["GET", "POST"])
+    @bp.route("/obras/editar/<int:oid>", methods=["GET", "POST"])
     def obra_editar(oid):
         con = get_db()
 
@@ -775,7 +780,7 @@ def register_obras(app, get_db, rebuild_eventos_obras):
         if not obra:
             con.close()
             flash("Obra no encontrada.", "warning")
-            return redirect(url_for("obras_home"))
+            return redirect(url_for("obras.obras_home"))
 
         sedes = con.execute("""
             SELECT codigo, nombre, ciudad
@@ -828,7 +833,7 @@ def register_obras(app, get_db, rebuild_eventos_obras):
                 con.close()
                 rebuild_eventos_obras()
                 flash("Obra actualizada.", "success")
-                return redirect(url_for("obras_home", sede=codigo_sede))
+                return redirect(url_for("obras.obras_home", sede=codigo_sede))
 
         con.close()
         return render_template(
@@ -837,7 +842,7 @@ def register_obras(app, get_db, rebuild_eventos_obras):
             sedes=sedes,
         )
 
-    @app.route("/obras/eliminar/<int:oid>", methods=["POST"], endpoint="obra_eliminar")
+    @bp.route("/obras/eliminar/<int:oid>", methods=["POST"], endpoint="obra_eliminar")
     def obra_eliminar(oid):
         con = get_db()
 
@@ -846,7 +851,7 @@ def register_obras(app, get_db, rebuild_eventos_obras):
         if not r:
             con.close()
             flash("Obra no encontrada.", "warning")
-            return redirect(url_for("obras_home"))
+            return redirect(url_for("obras.obras_home"))
 
         # Eliminar
         con.execute("DELETE FROM obras_sede WHERE id=?", (oid,))
@@ -862,4 +867,4 @@ def register_obras(app, get_db, rebuild_eventos_obras):
         prioridad = (request.args.get("prioridad") or "").strip().upper()
         if prioridad not in ("ALTA", "MEDIA", "BAJA"):
             prioridad = ""
-        return redirect(url_for("obras_home", sede=sede, estado=estado, prioridad=prioridad))
+        return redirect(url_for("obras.obras_home", sede=sede, estado=estado, prioridad=prioridad))

@@ -20,7 +20,7 @@
             Agregar
         </button>
 
-        <a class="btn btn-mpd" href="{{ url_for('vehiculos_bd_home') }}" style="padding:10px 16px;border-radius:999px">
+        <a class="btn btn-mpd" href="{{ url_for('vehiculos.vehiculos_bd_home') }}" style="padding:10px 16px;border-radius:999px">
             Volver
         </a>
     </form>
@@ -45,13 +45,13 @@
                     <td style="padding:10px;border-bottom:1px solid #eef2f7">{{ c.activo }}</td>
                     <td style="padding:10px;border-bottom:1px solid #eef2f7;white-space:nowrap">
 
-                        <a class="btn btn-mpd" href="{{ url_for('bd_choferes_editar', cid=c.id) }}"
+                        <a class="btn btn-mpd" href="{{ url_for('vehiculos.bd_choferes_editar', cid=c.id) }}"
                             style="padding:6px 10px;font-size:12px">
                             Editar
                         </a>
 
                         {% if c.activo|int == 1 %}
-                        <form method="post" action="{{ url_for('bd_choferes_baja', cid=c.id) }}" style="display:inline"
+                        <form method="post" action="{{ url_for('vehiculos.bd_choferes_baja', cid=c.id) }}" style="display:inline"
                             onsubmit="return confirm('¿Dar de baja a {{ c.agente }}?');">
                             <button class="btn btn-mpd" type="submit"
                                 style="padding:6px 10px;font-size:12px;border-color:#fecaca">
@@ -59,7 +59,7 @@
                             </button>
                         </form>
                         {% else %}
-                        <form method="post" action="{{ url_for('bd_choferes_alta', cid=c.id) }}" style="display:inline"
+                        <form method="post" action="{{ url_for('vehiculos.bd_choferes_alta', cid=c.id) }}" style="display:inline"
                             onsubmit="return confirm('¿Reactivar a {{ c.agente }}?');">
                             <button class="btn btn-mpd" type="submit"
                                 style="padding:6px 10px;font-size:12px;border-color:#bbf7d0">

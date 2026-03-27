@@ -80,7 +80,7 @@
     </div>
 
     <div class="section-actions">
-      <a class="btn outline-slate" href="{{ url_for('agente_compensatorios', id=agente.id) }}">
+      <a class="btn outline-slate" href="{{ url_for('agentes.agente_compensatorios', id=agente.id) }}">
         Volver
       </a>
     </div>
@@ -138,7 +138,7 @@
 
       <div class="license-actions">
         <button type="submit" class="btn outline-amber">Guardar cambios</button>
-        <a class="btn outline-slate" href="{{ url_for('agente_compensatorios', id=agente.id) }}">Cancelar</a>
+        <a class="btn outline-slate" href="{{ url_for('agentes.agente_compensatorios', id=agente.id) }}">Cancelar</a>
       </div>
     </form>
   </div>

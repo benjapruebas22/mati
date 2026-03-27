@@ -14,7 +14,7 @@
     </div>
 
     <div class="section-actions">
-      <a class="btn outline-slate" href="{{ url_for('checklist_inventario') }}">⬅ Volver al control diario</a>
+      <a class="btn outline-slate" href="{{ url_for('inventario_checklist.checklist_inventario') }}">⬅ Volver al control diario</a>
       <a class="btn outline-slate" href="{{ url_for('dashboard') }}">🏠 Ir al inicio</a>
     </div>
   </header>
@@ -238,7 +238,7 @@
                 </td>
 
                 <td>
-                  <a class="btn xs outline" href="{{ url_for('checklist_inventario_editar', cid=c.id) }}">Editar</a>
+                  <a class="btn xs outline" href="{{ url_for('inventario_checklist.checklist_inventario_editar', cid=c.id) }}">Editar</a>
                 </td>
               </tr>
             {% endfor %}

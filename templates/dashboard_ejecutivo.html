@@ -414,9 +414,9 @@
       <div class="exec-sub">SGI + SG-SST - Vista institucional de seguimiento</div>
     </div>
     <div class="exec-actions">
-      <a class="exec-btn map" href="{{ url_for('mapa_ssj') }}">Ver mapa</a>
+      <a class="exec-btn map" href="{{ url_for('mapa.mapa_ssj') }}">Ver mapa</a>
       <a class="exec-btn" href="{{ url_for('dashboard_exec') }}">Centro operativo</a>
-      <a class="exec-btn primary" href="{{ url_for('sst_general') }}">Ver SG-SST</a>
+      <a class="exec-btn primary" href="{{ url_for('sst.sst_general') }}">Ver SG-SST</a>
     </div>
   </header>
 
@@ -490,8 +490,8 @@
     <div class="exec-block-head">
       <h2>Vehiculos operativos</h2>
       <div class="exec-actions">
-        <a class="exec-btn" href="{{ url_for('vehiculos_control_diario') }}">Ver modulo</a>
-        <a class="exec-btn" href="{{ url_for('vehiculos_estadisticas') }}">Ver estadisticas</a>
+        <a class="exec-btn" href="{{ url_for('vehiculos.vehiculos_control_diario') }}">Ver modulo</a>
+        <a class="exec-btn" href="{{ url_for('vehiculos.vehiculos_estadisticas') }}">Ver estadisticas</a>
       </div>
     </div>
     <div class="sede-meta" style="grid-template-columns: repeat(4, minmax(0,1fr));">
@@ -563,8 +563,8 @@
     <div class="exec-block-head">
       <h2>Obras e intervenciones</h2>
       <div class="exec-actions">
-        <a class="exec-btn" href="{{ url_for('obras_home') }}">Ver modulo</a>
-        <a class="exec-btn" href="{{ url_for('obras_home') }}">Ver estadisticas</a>
+        <a class="exec-btn" href="{{ url_for('obras.obras_home') }}">Ver modulo</a>
+        <a class="exec-btn" href="{{ url_for('obras.obras_home') }}">Ver estadisticas</a>
       </div>
     </div>
     <div class="obras-grid">
@@ -587,7 +587,7 @@
   <section class="exec-block sst-block">
     <div class="exec-block-head">
       <h2>SG-SST</h2>
-      <a class="exec-btn primary" href="{{ url_for('dashboard_sede_estado_manual') }}">Ver tablero SG-SST</a>
+      <a class="exec-btn primary" href="{{ url_for('sst.dashboard_sede_estado_manual') }}">Ver tablero SG-SST</a>
     </div>
     <div class="sst-list">
       {% for r in sst_top %}

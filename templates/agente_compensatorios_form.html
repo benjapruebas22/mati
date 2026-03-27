@@ -115,7 +115,7 @@
     </div>
 
     <div class="section-actions">
-      <a class="btn outline-slate" href="{{ url_for('agentes_home', id=agente.id) }}">
+      <a class="btn outline-slate" href="{{ url_for('agentes.agentes_home', id=agente.id) }}">
         Volver al agente
       </a>
     </div>
@@ -192,7 +192,7 @@
 
       <div class="license-actions">
         <button type="submit" class="btn outline-amber">Guardar</button>
-        <a class="btn outline-slate" href="{{ url_for('agentes_home', id=agente.id) }}">Cancelar</a>
+        <a class="btn outline-slate" href="{{ url_for('agentes.agentes_home', id=agente.id) }}">Cancelar</a>
       </div>
     </form>
   </div>
@@ -230,9 +230,9 @@
                 <td style="padding:6px;border-top:1px solid #e5e7eb;">{{ m.observaciones or '' }}</td>
                 <td style="padding:6px;border-top:1px solid #e5e7eb;text-align:right;">
                   <a class="btn xs outline-slate"
-                     href="{{ url_for('agente_compensatorio_editar', agente_id=agente.id, mov_id=m.id) }}">Editar</a>
+                     href="{{ url_for('agentes.agente_compensatorio_editar', agente_id=agente.id, mov_id=m.id) }}">Editar</a>
                   <form method="post"
-                        action="{{ url_for('agente_compensatorio_eliminar', agente_id=agente.id, mov_id=m.id) }}"
+                        action="{{ url_for('agentes.agente_compensatorio_eliminar', agente_id=agente.id, mov_id=m.id) }}"
                         onsubmit="return confirm('Eliminar este movimiento?');">
                     <button type="submit" class="btn xs outline-amber">Eliminar</button>
                   </form>

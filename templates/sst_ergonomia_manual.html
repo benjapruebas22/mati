@@ -110,7 +110,7 @@
       <h1 class="manual-title">Instructivo Ergonomía</h1>
       <p class="manual-sub">Guía técnica y operativa para carga en campo con cálculo automático.</p>
     </div>
-    <a class="btn outline-slate" href="{{ url_for('sst_plan_cargar') if request.args.get('next') == 'cargar' else url_for('sst_plan') }}">Volver</a>
+    <a class="btn outline-slate" href="{{ url_for('sst.sst_plan_cargar') if request.args.get('next') == 'cargar' else url_for('sst.sst_plan') }}">Volver</a>
   </div>
 
   <div class="manual-grid">
