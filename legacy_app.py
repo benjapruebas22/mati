@@ -56,6 +56,7 @@ ROLE_SST_VEHICULOS = "sst_vehiculos"
 ROLE_OBRAS_VEHICULOS = "obras_vehiculos"
 ROLE_DASH_OBRAS = "dashboard_obras"
 ROLE_DASH_VEHICULOS = "dashboard_vehiculos"
+ROLE_DASH_SOLO = "dashboard_solo"
 ROLE_EJECUTIVO = "ejecutivo"
 ROLE_CHOFER_INTENDENCIA = "chofer_intendencia"
 ROLE_CHOFER_AUTORIZADO = "chofer_autorizado"
@@ -99,10 +100,10 @@ def ensure_auth_tables(con):
         ("fsavio", "Francisco Savio", ROLE_OPERATIVO_CLAVE),
         ("mvea", "Mauro Vea Murguia", ROLE_INT_VEHICULOS),
         ("eperez", "Emiliano Perez de la Puente", ROLE_OPERATIVO_CLAVE),
-        ("cvidaurre", "Carlos Vidaurre", ROLE_INT_OBRAS),
-        ("mduran", "Marcos Duran", ROLE_INT_OBRAS_RELEV),
-        ("nguerrero", "Nestor Guerrero", ROLE_INT_OBRAS),
-        ("mflores", "Manuel Flores", ROLE_INT_OBRAS_SEDES),
+        ("cvidaurre", "Carlos Vidaurre", ROLE_DASH_SOLO),
+        ("mduran", "Marcos Duran", ROLE_DASH_VEHICULOS),
+        ("nguerrero", "Nestor Guerrero", ROLE_DASH_SOLO),
+        ("mflores", "Manuel Flores", ROLE_DASH_VEHICULOS),
         ("mabatedaga", "Maximiliano Abatedaga", ROLE_FULL),
         ("mluna", "Matias Luna", ROLE_EJECUTIVO),
         ("gburgos", "G. Burgos", ROLE_EJECUTIVO),
@@ -204,6 +205,7 @@ def role_allows(role: str, module: str) -> bool:
         ROLE_OBRAS_VEHICULOS: {"obras", "vehiculos", "eventos"},
         ROLE_DASH_OBRAS: {"dashboard", "obras", "eventos"},
         ROLE_DASH_VEHICULOS: {"dashboard", "vehiculos", "eventos"},
+        ROLE_DASH_SOLO: {"dashboard", "eventos"},
         ROLE_EJECUTIVO: {"dashboard", "obras", "vehiculos", "sedes", "sst", "other", "eventos", "relevamientos"},
         ROLE_CHOFER_INTENDENCIA: {"vehiculos", "eventos"},
         ROLE_CHOFER_AUTORIZADO: {"vehiculos", "eventos"},
@@ -224,6 +226,8 @@ def default_redirect_for_role(role: str):
         return url_for("dashboard")
     if role == ROLE_DASH_VEHICULOS:
         return url_for("dashboard")
+    if role == ROLE_DASH_SOLO:
+        return url_for("dashboard_exec")
     if role == ROLE_OPERATIVO_CLAVE:
         return url_for("dashboard_exec")
     if role == ROLE_CONTROL_SEDES:
@@ -1659,6 +1663,8 @@ def enforce_auth():
             return redirect(url_for("dashboard"))
         if role == ROLE_DASH_VEHICULOS:
             return redirect(url_for("dashboard"))
+        if role == ROLE_DASH_SOLO:
+            return redirect(url_for("dashboard_exec"))
         if role == ROLE_OPERATIVO_CLAVE:
             return redirect(url_for("dashboard_exec"))
         if role == ROLE_CONTROL_SEDES:
