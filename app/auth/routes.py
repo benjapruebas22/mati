@@ -13,7 +13,9 @@ def register_auth(bp, get_db, ensure_auth_tables, default_redirect_for_role):
             password = (request.form.get("password") or "").strip()
 
             row = con.execute("""
-                SELECT id, username, full_name, role, password, must_change, activo
+                SELECT id, username, full_name,
+                       COALESCE(role, rol) as role,
+                       password, must_change, activo
                 FROM usuarios
                 WHERE username = ?
             """, (username,)).fetchone()

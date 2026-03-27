@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, send_file,
 from datetime import date, datetime, timedelta
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.middleware.proxy_fix import ProxyFix
 from collections import defaultdict
 import sqlite3, os, calendar
 from functools import wraps
@@ -1485,6 +1486,7 @@ def init_performance_indexes():
 
 
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)  # PythonAnywhere reverse proxy
 app.secret_key = "mpd-intendencia-2025"
 
 # CONFIGURACIÓN DE SESIONES (Prevenir que el login falle en producción)
