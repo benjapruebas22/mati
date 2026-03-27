@@ -1563,6 +1563,14 @@ if "novedades.dashboard" in app.view_functions:
         view_func=app.view_functions["novedades.dashboard"],
         methods=["GET"],
     )
+if "novedades.dashboard_exec" in app.view_functions:
+    app.view_functions.setdefault("dashboard_exec", app.view_functions["novedades.dashboard_exec"])
+    app.add_url_rule(
+        "/dashboard",
+        endpoint="dashboard_exec",
+        view_func=app.view_functions["novedades.dashboard_exec"],
+        methods=["GET"],
+    )
 if "novedades.dashboard_gestion" in app.view_functions:
     app.view_functions.setdefault("dashboard_gestion", app.view_functions["novedades.dashboard_gestion"])
     app.add_url_rule(
