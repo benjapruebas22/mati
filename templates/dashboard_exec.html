@@ -199,8 +199,11 @@
   .kpi.ok { background: linear-gradient(180deg, #eef9f2 0%, #e5f5ed 100%); border-color: #d7ecdf; }
   .kpi.ok .k-val { color: #20704e; }
   .card-resumen .kpi .k-val { font-size: 30px; }
+  .kpi-grid.resumen-base {
+    display: none;
+  }
   .kpi-grid.operativa {
-    margin-top: 8px;
+    margin-top: 0;
   }
   .kpi.pending-old { background: linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%); border-color: #fed7aa; }
   .kpi.pending-old .k-val { color: #b45309; }
@@ -881,7 +884,7 @@
       </div>
     </div>
 
-    <div class="kpi-grid">
+    <div class="kpi-grid resumen-base">
       <div class="kpi total">
         <div class="k-label">Total del dia</div>
         <div class="k-val" id="kpiTotal">0</div>
