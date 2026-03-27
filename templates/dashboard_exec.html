@@ -100,9 +100,9 @@
     background: linear-gradient(180deg, #ffffff 0%, #fcfdff 100%);
   }
   .control-card.card-alertas.has-alertas {
-    border-color: #f2b8c2;
-    background: linear-gradient(180deg, #fff7f8 0%, #fff0f2 100%);
-    box-shadow: 0 10px 22px rgba(181, 59, 79, 0.12);
+    border-color: #ead9b6;
+    background: linear-gradient(180deg, #fffef9 0%, #fff9ee 100%);
+    box-shadow: 0 10px 22px rgba(146, 109, 38, 0.08);
   }
   .control-card.card-vehiculos {
     background: linear-gradient(180deg, #ffffff 0%, #f9fcfa 100%);
@@ -199,6 +199,17 @@
   .kpi.ok { background: linear-gradient(180deg, #eef9f2 0%, #e5f5ed 100%); border-color: #d7ecdf; }
   .kpi.ok .k-val { color: #20704e; }
   .card-resumen .kpi .k-val { font-size: 30px; }
+  .kpi-grid.operativa {
+    margin-top: 8px;
+  }
+  .kpi.pending-old { background: linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%); border-color: #fed7aa; }
+  .kpi.pending-old .k-val { color: #b45309; }
+  .kpi.today-open { background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%); border-color: #bfdbfe; }
+  .kpi.today-open .k-val { color: #1d4ed8; }
+  .kpi.assign-open { background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%); border-color: #fde68a; }
+  .kpi.assign-open .k-val { color: #a16207; }
+  .kpi.matias-open { background: linear-gradient(180deg, #fdf2f8 0%, #fce7f3 100%); border-color: #f9a8d4; }
+  .kpi.matias-open .k-val { color: #be185d; }
 
   .nvd-form-grid {
     display: grid;
@@ -593,15 +604,14 @@
   .alert-list li.alert-obra-solicitada { border-color: #f5ddc9; background: #fff7f1; color: #b86b22; }
   .alert-list li.alert-obra-curso { border-color: #f0e5b7; background: #fffbe9; color: #8a6b17; }
   .alert-list li.alert-obra-finalizada { border-color: #d5efd9; background: #eefaf1; color: #2b7f4e; }
+  .alert-list li.alert-obras { border-color: #f5ddc9; background: #fff7f1; color: #b86b22; }
+  .alert-list li.alert-calendario { border-color: #c7e9fb; background: #f0faff; color: #1f7faf; }
+  .alert-list li.alert-recordatorio { border-color: #ddd8fb; background: #f5f3ff; color: #5d54c7; }
+  .alert-list li.alert-matafuegos { border-color: #fbd38d; background: #fff8e1; color: #9c6200; }
   .alert-list li.alert-vencimientos { border-color: #f1dfbd; background: #fff8ec; color: #946228; }
   .alert-list li.alert-sst { border-color: #c7e9fb; background: #f0faff; color: #1f7faf; }
 
-  #alertasCard.has-alertas .card-head h2 { color: #9f1239; }
-  #alertasCard.has-alertas .alert-list li {
-    border-color: #f3d4d8;
-    background: #fff2f4;
-    color: #9f1239;
-  }
+  #alertasCard.has-alertas .card-head h2 { color: #8a5b1f; }
   #alertasCard.no-alertas .alert-list li {
     border-color: #dfe7f3;
     background: #f7f9fd;
@@ -887,6 +897,25 @@
       <div class="kpi ok">
         <div class="k-label">Resueltos</div>
         <div class="k-val" id="kpiOk">0</div>
+      </div>
+    </div>
+
+    <div class="kpi-grid operativa">
+      <div class="kpi pending-old">
+        <div class="k-label">Pendientes no cerrados (anteriores)</div>
+        <div class="k-val" id="kpiPendPrev">0</div>
+      </div>
+      <div class="kpi today-open">
+        <div class="k-label">Pendientes del dia</div>
+        <div class="k-val" id="kpiPendDia">0</div>
+      </div>
+      <div class="kpi assign-open">
+        <div class="k-label">Asignaciones abiertas</div>
+        <div class="k-val" id="kpiAsigOpen">0</div>
+      </div>
+      <div class="kpi matias-open">
+        <div class="k-label" id="kpiPendMatiasLabel">Pendientes de Matias</div>
+        <div class="k-val" id="kpiPendMatias">0</div>
       </div>
     </div>
   </article>
@@ -1275,6 +1304,11 @@
       kInfo: document.getElementById("kpiInfo"),
       kProc: document.getElementById("kpiProc"),
       kOk: document.getElementById("kpiOk"),
+      kPendPrev: document.getElementById("kpiPendPrev"),
+      kPendDia: document.getElementById("kpiPendDia"),
+      kAsigOpen: document.getElementById("kpiAsigOpen"),
+      kPendMatiasLabel: document.getElementById("kpiPendMatiasLabel"),
+      kPendMatias: document.getElementById("kpiPendMatias"),
       vehWrap: document.getElementById("vehiculosWrap"),
       alertas: document.getElementById("alertasList"),
       alertasCard: document.getElementById("alertasCard"),
@@ -1571,6 +1605,7 @@
     function renderResumenSegunFiltro() {
       if (!AGENTE_FILTRO_ACTIVO) {
         renderResumen(RESUMEN_BASE);
+        renderKpisOperativos();
         return;
       }
       var fechaSel = String(el.fecha.value || "");
@@ -1587,6 +1622,21 @@
       });
       out.total = out.informado + out.en_proceso + out.resuelto;
       renderResumen(out);
+      renderKpisOperativos();
+    }
+
+    function renderKpisOperativos() {
+      var pendientesPrev = aplicarFiltroAgente(RAW_PEND).length;
+      var pendientesDia = aplicarFiltroAgente(RAW_DIA).length;
+      var asignacionesAbiertas = aplicarFiltroAgente(RAW_TASK).length;
+      var pendientesMatias = aplicarFiltroAgente(RAW_SOLIC).length;
+      if (el.kPendPrev) el.kPendPrev.textContent = String(pendientesPrev);
+      if (el.kPendDia) el.kPendDia.textContent = String(pendientesDia);
+      if (el.kAsigOpen) el.kAsigOpen.textContent = String(asignacionesAbiertas);
+      if (el.kPendMatias) el.kPendMatias.textContent = String(pendientesMatias);
+      if (el.kPendMatiasLabel) {
+        el.kPendMatiasLabel.textContent = IS_MATIAS ? "Pendientes de Matias" : "Mis solicitudes abiertas";
+      }
     }
 
     function renderVehiculos(items) {
@@ -1617,6 +1667,11 @@
       function alertClass(r) {
         var txt = norm((r && r.texto) || "");
         var src = norm((r && r.fuente) || "");
+        if (txt.indexOf("matafuego") >= 0) return "alert-matafuegos";
+        if (src.indexOf("obras") >= 0) return "alert-obras";
+        if (src.indexOf("calendario") >= 0) return "alert-calendario";
+        if (src.indexOf("recordatorio") >= 0) return "alert-recordatorio";
+        if (txt.indexOf("viaje") >= 0 || src.indexOf("vehiculos") >= 0) return "alert-viajes";
         if (txt.indexOf("uso de salon") >= 0 || txt.indexOf("uso salon") >= 0) return "alert-uso-salon";
         if (txt.indexOf("licencia") >= 0) return "alert-licencias";
         if (txt.indexOf("documentacion") >= 0) return "alert-documentacion";
@@ -1626,7 +1681,6 @@
         if (txt.indexOf("obra finalizada") >= 0) return "alert-obra-finalizada";
         if (txt.indexOf("venc") >= 0 || txt.indexOf("vtv") >= 0 || txt.indexOf("rtv") >= 0 || txt.indexOf("seguro") >= 0 || txt.indexOf("carnet") >= 0 || txt.indexOf("matafuego") >= 0) return "alert-vencimientos";
         if (txt.indexOf("sst") >= 0) return "alert-sst";
-        if (txt.indexOf("viaje") >= 0 || src.indexOf("vehiculos") >= 0) return "alert-viajes";
         return "alert-default";
       }
       var rows = Array.isArray(items) ? items : [];
@@ -2041,14 +2095,14 @@
       RAW_DIA = Array.isArray(p.pendientes_dia) ? p.pendientes_dia.slice() : [];
       RAW_PEND = Array.isArray(p.pendientes_acumulados) ? p.pendientes_acumulados.slice() : [];
       RAW_FINAL = Array.isArray(p.resueltos_informados) ? p.resueltos_informados.slice() : RAW_FINAL;
-      RAW_TASK = Array.isArray(p.tareas_asignadas) ? p.tareas_asignadas.slice() : [];
       RAW_SOLIC = Array.isArray(p.solicitudes_recibidas) ? p.solicitudes_recibidas.slice() : [];
       if (p.resumen) RESUMEN_BASE = p.resumen;
-      var tasksBase = RAW_TASK.map(function (r) {
+      var tasksBase = (Array.isArray(p.tareas_asignadas) ? p.tareas_asignadas : []).map(function (r) {
         var out = Object.assign({}, r || {});
         if (!out.agente && out.tarea_agente) out.agente = out.tarea_agente;
         return out;
       });
+      RAW_TASK = tasksBase.slice();
       var tasks = aplicarFiltroAgente(tasksBase);
       var solicitudes = aplicarFiltroAgente(RAW_SOLIC);
       ITEM_INDEX = {};
