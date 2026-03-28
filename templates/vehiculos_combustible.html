@@ -45,6 +45,34 @@
     .remito-chip.miss { background:#fffbeb; border-color:#fcd34d; color:#92400e; }
     .remito-link { display:inline-flex; margin-top:4px; padding:2px 8px; border-radius:999px; border:1px solid #93c5fd; background:#eff6ff; color:#1d4ed8; font-size:11px; font-weight:800; text-decoration:none; }
     .remito-link:hover { background:#dbeafe; }
+    .comb-chip-filters { display:grid; gap:6px; margin-bottom:10px; }
+    .comb-chip-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+    .comb-chip-label { font-size:12px; color:#475569; font-weight:700; min-width:68px; }
+    .comb-chip-wrap { display:flex; gap:6px; flex-wrap:wrap; }
+    .comb-chip {
+      border:1px solid #cbd5e1;
+      background:#f8fafc;
+      color:#1f2937;
+      border-radius:999px;
+      padding:4px 10px;
+      font-size:12px;
+      font-weight:800;
+      line-height:1;
+      cursor:pointer;
+    }
+    .comb-chip:hover { filter:brightness(.98); }
+    .comb-chip.active { box-shadow: inset 0 0 0 2px #0f172a; }
+    .comb-chip.chip-todos { background:#e2e8f0; border-color:#cbd5e1; color:#1e293b; }
+    .comb-chip.chip-veh-ab946vk { background:#dbeafe; border-color:#93c5fd; color:#1d4ed8; }
+    .comb-chip.chip-veh-ae856gd { background:#dcfce7; border-color:#86efac; color:#166534; }
+    .comb-chip.chip-veh-ae856ge { background:#fef9c3; border-color:#fde047; color:#854d0e; }
+    .comb-chip.chip-veh-af277oa { background:#cffafe; border-color:#67e8f9; color:#155e75; }
+    .comb-chip.chip-veh-ag846fr { background:#ffe4e6; border-color:#fda4af; color:#9f1239; }
+    .comb-chip.chip-chofer-ignacio-baroni { background:#ffedd5; border-color:#fdba74; color:#7c2d12; }
+    .comb-chip.chip-chofer-mauro-vea-murguia { background:#f3e8ff; border-color:#d8b4fe; color:#6b21a8; }
+    .comb-chip.chip-chofer-emiliano-perez-de-la-puente { background:#dbeafe; border-color:#93c5fd; color:#1d4ed8; }
+    .comb-chip.chip-chofer-luis-cardozo { background:#dcfce7; border-color:#86efac; color:#166534; }
+    .comb-chip.chip-chofer-matias-calderari { background:#fee2e2; border-color:#fca5a5; color:#991b1b; }
     tr[data-chofer*="ignacio baroni"] .chofer-txt { color:#4e342e; }
     tr[data-chofer*="mauro vea"] .chofer-txt { color:#6a1b9a; }
     tr[data-chofer*="emiliano"] .chofer-txt { color:#0d47a1; }
@@ -169,6 +197,16 @@
 
   <h3 style="margin:14px 0 8px 0">Ultimas cargas</h3>
   <div id="filtro-cargas" class="comb-card" style="margin-bottom:8px;padding:10px;display:none">
+    <div class="comb-chip-filters">
+      <div class="comb-chip-row">
+        <span class="comb-chip-label">Vehículos:</span>
+        <div id="combVehChips" class="comb-chip-wrap"></div>
+      </div>
+      <div class="comb-chip-row">
+        <span class="comb-chip-label">Choferes:</span>
+        <div id="combChoferChips" class="comb-chip-wrap"></div>
+      </div>
+    </div>
     <div style="display:grid;grid-template-columns: 1fr 1fr 160px 160px auto auto;gap:8px;align-items:end">
       <div>
         <label class="muted" style="display:block;margin-bottom:4px">Filtrar por vehiculo</label>
@@ -276,6 +314,7 @@
       if (okFecha && dTo && f) okFecha = f <= dTo;
       tr.style.display = (okPat && okCho && okFecha) ? "" : "none";
     });
+    syncCombChipActive();
   }
 
   function resetCombFilter() {
@@ -289,6 +328,72 @@
     if (d2) d2.value = "";
     applyCombFilter();
   }
+
+  function combSlug(v) {
+    return String(v || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
+  function renderCombChip(container, text, kind, rawValue) {
+    var b = document.createElement("button");
+    b.type = "button";
+    b.className = "comb-chip " + (rawValue ? ("chip-" + kind + "-" + combSlug(rawValue)) : "chip-todos");
+    b.dataset.kind = kind;
+    b.dataset.value = rawValue || "";
+    b.textContent = text;
+    b.addEventListener("click", function () {
+      if (kind === "veh") {
+        var p = document.getElementById("fltPatente");
+        if (p) p.value = rawValue || "";
+      } else {
+        var c = document.getElementById("fltChofer");
+        if (c) c.value = rawValue || "";
+      }
+      applyCombFilter();
+    });
+    container.appendChild(b);
+  }
+
+  function syncCombChipActive() {
+    var pat = (document.getElementById("fltPatente")?.value || "").trim().toLowerCase();
+    var cho = (document.getElementById("fltChofer")?.value || "").trim().toLowerCase();
+    document.querySelectorAll(".comb-chip[data-kind='veh']").forEach(function (el) {
+      var v = (el.dataset.value || "").trim().toLowerCase();
+      el.classList.toggle("active", (!pat && !v) || (v && pat === v));
+    });
+    document.querySelectorAll(".comb-chip[data-kind='chofer']").forEach(function (el) {
+      var v = (el.dataset.value || "").trim().toLowerCase();
+      el.classList.toggle("active", (!cho && !v) || (v && cho === v));
+    });
+  }
+
+  (function buildCombQuickChips() {
+    var vehWrap = document.getElementById("combVehChips");
+    var choWrap = document.getElementById("combChoferChips");
+    if (!vehWrap || !choWrap) return;
+
+    var vehSet = new Set();
+    var choMap = new Map();
+    document.querySelectorAll("#tabla-cargas tbody tr[data-patente]").forEach(function (tr) {
+      var pat = String(tr.dataset.patente || "").trim().toUpperCase();
+      if (pat) vehSet.add(pat);
+      var choTxt = (tr.querySelector(".chofer-txt")?.textContent || "").trim();
+      if (choTxt && choTxt !== "-") choMap.set(choTxt.toLowerCase(), choTxt);
+    });
+
+    renderCombChip(vehWrap, "Todos", "veh", "");
+    Array.from(vehSet).sort().forEach(function (v) { renderCombChip(vehWrap, v, "veh", v); });
+
+    renderCombChip(choWrap, "Todos", "chofer", "");
+    Array.from(choMap.values()).sort(function (a, b) { return a.localeCompare(b, "es"); })
+      .forEach(function (v) { renderCombChip(choWrap, v, "chofer", v); });
+
+    syncCombChipActive();
+  })();
 
   (function setupCombPasteRemito() {
     var box = document.getElementById("combPasteBox");
