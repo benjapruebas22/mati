@@ -91,16 +91,18 @@
     gap: 4px;
   }
   .sgi-menu-group.primary {
-    border-color: #c9d8f4;
-    background: linear-gradient(180deg, #ffffff 0%, #f6f9ff 100%);
+    border-color: #aecdff;
+    background: linear-gradient(180deg, #ffffff 0%, #eef4ff 100%);
+    box-shadow: 0 8px 18px rgba(30, 64, 175, 0.12);
   }
   .sgi-menu-group.secondary {
-    border-color: #e6edf8;
-    background: #fbfdff;
+    border-color: #d8e4f7;
+    background: #f8fbff;
   }
   .sgi-menu-group.tertiary {
-    border-color: #eef2f8;
-    background: #fcfeff;
+    border-color: #e7edf6;
+    background: #fbfdff;
+    opacity: .92;
   }
 
   .sgi-menu-group .grp-title {
@@ -139,24 +141,32 @@
     justify-content: center;
     text-align: center;
     text-decoration: none;
+    transition: transform .14s ease, box-shadow .14s ease, opacity .14s ease;
   }
   .sgi-menu-group.primary .btn {
-    min-height: 28px;
-    min-width: 108px;
-    font-size: 11px;
+    min-height: 34px;
+    min-width: 126px;
+    font-size: 13px;
     font-weight: 900;
-    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+    box-shadow: 0 8px 16px rgba(15, 23, 42, 0.12);
   }
   .sgi-menu-group.secondary .btn {
-    opacity: .78;
-    filter: saturate(.85);
+    min-height: 30px;
+    min-width: 112px;
+    font-size: 11px;
+    opacity: .9;
+    filter: saturate(.9);
   }
   .sgi-menu-group.secondary .btn:hover { opacity: 1; filter: saturate(1); }
   .sgi-menu-group.tertiary .btn {
-    opacity: .68;
-    filter: saturate(.8);
+    min-height: 26px;
+    min-width: 98px;
+    font-size: 10px;
+    opacity: .74;
+    filter: saturate(.78);
   }
   .sgi-menu-group.tertiary .btn:hover { opacity: .9; filter: saturate(1); }
+  .sgi-menu-group .btn:hover { transform: translateY(-1px); }
 
   .sgi-menu-group .btn.vehiculos { border-color: #86c8ff; background: #eef7ff; color: #0e5f97; }
   .sgi-menu-group .btn.obras { border-color: #9fe8b8; background: #ecfbf2; color: #0d7a3f; }
@@ -783,6 +793,13 @@
     display: grid;
     gap: 8px;
   }
+  .sgi-obras-more {
+    margin-top: 4px;
+    font-size: 10px;
+    color: #5e7291;
+    text-align: right;
+    font-weight: 700;
+  }
 
   .sgi-obras-row {
     display: grid;
@@ -1031,7 +1048,7 @@
         </div>
         <div class="sgi-obras-list">
           {% if obras_sedes %}
-            {% for o in obras_sedes %}
+            {% for o in obras_sedes[:5] %}
               <div class="sgi-obras-row" style="--pct: {{ o.pct }}%; --color: {{ o.color }};">
                 <span class="sgi-obras-label">{{ o.codigo }} - {{ o.label }}</span>
                 <span class="sgi-obras-pct">{{ o.pct }}%</span>
@@ -1039,6 +1056,9 @@
                 <div class="sgi-obras-bar"><span></span></div>
               </div>
             {% endfor %}
+            {% if obras_sedes|length > 5 %}
+              <div class="sgi-obras-more">Mostrando 5 de {{ obras_sedes|length }} sedes</div>
+            {% endif %}
           {% else %}
             <div class="sgi-obras-row">
               <span class="sgi-obras-label">Sin datos de obras</span>
