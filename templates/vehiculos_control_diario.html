@@ -111,6 +111,16 @@
       font-size: 11px !important;
       line-height: 1 !important;
     }
+    .th-dif,
+    .td-dif {
+      text-align: center !important;
+    }
+    .col-text {
+      white-space: normal !important;
+      overflow: visible !important;
+      text-overflow: clip !important;
+      line-height: 1.12;
+    }
     .chofer-txt {
       font-weight: 700;
       font-size: 10px;
@@ -510,7 +520,7 @@
     </button>
   </div>
 
-  <div id="tabla-viajes" class="hide-mobile tabla-viajes" style="height:60vh;overflow-y:auto;overflow-x:hidden;border:1px solid #e5e7eb;border-radius:12px;background:#fff">
+  <div id="tabla-viajes" class="hide-mobile tabla-viajes" style="height:auto;min-height:120px;max-height:60vh;overflow-y:auto;overflow-x:hidden;border:1px solid #e5e7eb;border-radius:12px;background:#fff">
     <table style="width:100%;border-collapse:collapse;font-size:11px">
       {% if show_km_razonable %}
       <colgroup>
@@ -554,7 +564,7 @@
           <th style="padding:10px;border-bottom:1px solid #e5e7eb">Chofer</th>
           <th style="padding:10px;border-bottom:1px solid #e5e7eb">KM inicial</th>
           <th style="padding:10px;border-bottom:1px solid #e5e7eb">KM final</th>
-          <th style="padding:10px;border-bottom:1px solid #e5e7eb">Dif Km</th>
+          <th class="th-dif" style="padding:10px;border-bottom:1px solid #e5e7eb">Dif Km</th>
           {% if show_km_razonable %}
           <th style="padding:10px;border-bottom:1px solid #e5e7eb">KM razonable</th>
           {% endif %}
@@ -580,14 +590,14 @@
             </span>
           </td>
 
-          <td style="padding:10px;border-bottom:1px solid #eef2f7">
+          <td class="col-text" style="padding:10px;border-bottom:1px solid #eef2f7">
             <span class="chofer-txt">{{ v.chofer_nombre or "-" }}</span>
           </td>
 
           <td style="padding:10px;border-bottom:1px solid #eef2f7">{{ v.km_ini or 0 }}</td>
           <td style="padding:10px;border-bottom:1px solid #eef2f7">{{ v.km_fin or 0 }}</td>
 
-          <td style="padding:10px;border-bottom:1px solid #eef2f7;font-weight:800;color:#0f172a;background:#eef2ff">
+          <td class="td-dif" style="padding:10px;border-bottom:1px solid #eef2f7;font-weight:800;color:#0f172a;background:#eef2ff">
             {{ v.recorrido_km or 0 }}
           </td>
           {% if show_km_razonable %}
@@ -601,10 +611,10 @@
           </td>
           {% endif %}
 
-          <td style="padding:10px;border-bottom:1px solid #eef2f7">{{ v.agente_nombre or "-" }}</td>
-          <td style="padding:10px;border-bottom:1px solid #eef2f7">{{ v.sector or "" }}</td>
-          <td style="padding:10px;border-bottom:1px solid #eef2f7">{{ v.dependencia or "" }}</td>
-          <td style="padding:10px;border-bottom:1px solid #eef2f7">{{ v.destino_nombre or "-" }}</td>
+          <td class="col-text" style="padding:10px;border-bottom:1px solid #eef2f7">{{ v.agente_nombre or "-" }}</td>
+          <td class="col-text" style="padding:10px;border-bottom:1px solid #eef2f7">{{ v.sector or "" }}</td>
+          <td class="col-text" style="padding:10px;border-bottom:1px solid #eef2f7">{{ v.dependencia or "" }}</td>
+          <td class="col-text" style="padding:10px;border-bottom:1px solid #eef2f7">{{ v.destino_nombre or "-" }}</td>
           {% set estado_u = (v.estado or '')|upper %}
           {% set inco = (v.km_fin is not none) and (v.km_ini is not none) and (v.km_fin|float < v.km_ini|float) %}
           <td style="padding:10px;border-bottom:1px solid #eef2f7">
