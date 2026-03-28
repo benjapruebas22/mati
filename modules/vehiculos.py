@@ -1831,12 +1831,22 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
                     return default
 
             remito_url_in = (request.form.get("remito_url") or "").strip()
+            remito_clear = (request.form.get("remito_clear") or "").strip() == "1"
             try:
                 nuevo_remito = _save_remito_image_from_request(request)
             except ValueError as e:
                 conn.close()
                 flash(str(e), "danger")
                 return redirect(url_for("combustible_editar", cid=cid))
+
+            if remito_clear:
+                _delete_local_remito_if_exists(row_get(carga, "remito_archivo"))
+                conn.execute("UPDATE combustible SET remito_archivo=NULL WHERE id=?", (cid,))
+                conn.commit()
+                conn.close()
+                rebuild_eventos_vehiculos()
+                flash("✅ Remito eliminado.", "success")
+                return redirect(url_for("vehiculos_combustible"))
 
             # Flujo seguro: subir/pegar solo remito, sin tocar el resto de campos.
             if (request.form.get("remito_only") or "").strip() == "1":
@@ -1869,14 +1879,10 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
                 chofer_id = row_get(carga, "chofer_id")
 
             def fnum(x, default=0.0):
-                txt = str(x or "").strip()
-                if txt == "":
+                val = _parse_float_local(x)
+                if val is None:
                     return default
-                txt = txt.replace("$", "").replace(" ", "").replace(".", "").replace(",", ".")
-                try:
-                    return float(txt)
-                except Exception:
-                    return default
+                return val
 
             km_actual = fnum(request.form.get("km_actual"), fnum(row_get(carga, "km_actual"), 0.0))
             litros = fnum(request.form.get("litros"), fnum(row_get(carga, "litros"), 0.0))

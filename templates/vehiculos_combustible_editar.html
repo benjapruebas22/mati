@@ -69,6 +69,7 @@
         <div style="margin-top:10px;display:flex;gap:8px">
             <button class="btn primary" type="submit">Guardar cambios</button>
             <button class="btn" type="submit" name="remito_only" value="1">Guardar solo remito</button>
+            <button class="btn" type="submit" name="remito_clear" value="1" onclick="return confirm('Quitar foto/link del remito de esta carga?');">Quitar remito</button>
             <a class="btn ghost" href="{{ url_for('vehiculos_combustible') }}">Cancelar</a>
         </div>
 
