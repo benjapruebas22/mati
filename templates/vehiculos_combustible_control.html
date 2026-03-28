@@ -9,6 +9,7 @@
     .cc-filtros label { display:block; font-size:12px; color:#64748b; margin-bottom:4px; }
     .cc-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:10px; flex-wrap:wrap; }
     .cc-kpis { display:grid; grid-template-columns:repeat(3,minmax(140px,1fr)); gap:8px; margin:10px 0; }
+    .cc-kpis-mini { display:grid; grid-template-columns:repeat(4,minmax(140px,1fr)); gap:8px; margin:8px 0 12px 0; }
     .cc-kpi { border:1px solid #e2e8f0; border-radius:10px; background:#f8fafc; padding:8px; }
     .cc-kpi small { color:#64748b; font-size:11px; display:block; }
     .cc-kpi b { color:#0f172a; font-size:18px; display:block; line-height:1.1; }
@@ -28,7 +29,7 @@
       .cc-grid { grid-template-columns:1fr; }
     }
     @media (max-width: 640px) {
-      .cc-filtros, .cc-kpis { grid-template-columns:1fr; }
+      .cc-filtros, .cc-kpis, .cc-kpis-mini { grid-template-columns:1fr; }
     }
   </style>
 
@@ -94,13 +95,32 @@
     </div>
   </div>
 
+  <div class="cc-kpis-mini">
+    <div class="cc-kpi">
+      <small>Rendimiento prom. general</small>
+      <b>{% if kpis_rendimiento.rend_prom_kml is not none %}{{ '%.2f'|format(kpis_rendimiento.rend_prom_kml) }} km/l{% else %}-{% endif %}</b>
+    </div>
+    <div class="cc-kpi">
+      <small>Costo prom. por km</small>
+      <b>{% if kpis_rendimiento.costo_prom_km is not none %}${{ "{:,.2f}".format(kpis_rendimiento.costo_prom_km) }}{% else %}-{% endif %}</b>
+    </div>
+    <div class="cc-kpi">
+      <small>Mejor vehiculo del periodo</small>
+      <b style="font-size:13px">{{ kpis_rendimiento.mejor_vehiculo }}</b>
+    </div>
+    <div class="cc-kpi">
+      <small>Peor vehiculo del periodo</small>
+      <b style="font-size:13px">{{ kpis_rendimiento.peor_vehiculo }}</b>
+    </div>
+  </div>
+
   <h3 style="margin:10px 0 6px 0">Analisis de rendimiento por vehiculo</h3>
   <div class="cc-table-wrap" style="max-height:42vh">
     <table class="cc-table">
       <thead>
         <tr>
           <th>Vehiculo</th>
-          <th>Estado</th>
+          <th>Estado rendimiento</th>
           <th>KM</th>
           <th>Litros</th>
           <th>Rend. km/l</th>
@@ -110,6 +130,7 @@
           <th>Tramos</th>
           <th>KM/tramo</th>
           <th>Ref km/l</th>
+          <th>Desvio %</th>
         </tr>
       </thead>
       <tbody>
@@ -126,9 +147,10 @@
           <td>{{ r.tramos or 0 }}</td>
           <td>{{ '%.2f'|format(r.km_por_tramo or 0) }}</td>
           <td>{{ '%.2f'|format(r.rendimiento_ref or 0) }}</td>
+          <td>{{ r.desvio_pct_fmt or '-' }}</td>
         </tr>
         {% else %}
-        <tr><td colspan="11" class="muted" style="text-align:center;padding:12px">Sin datos para analizar en el rango seleccionado</td></tr>
+        <tr><td colspan="12" class="muted" style="text-align:center;padding:12px">Sin datos para analizar en el rango seleccionado</td></tr>
         {% endfor %}
       </tbody>
     </table>
@@ -200,6 +222,8 @@
           <th>Cargas</th>
           <th>Litros</th>
           <th>Importe</th>
+          <th>KM/L</th>
+          <th>Estado rendimiento</th>
           <th>Primera</th>
           <th>Última</th>
         </tr>
@@ -212,11 +236,13 @@
           <td>{{ r.cargas }}</td>
           <td>{{ '%.2f'|format(r.litros_total or 0) }}</td>
           <td>${{ "{:,.2f}".format(r.importe_total or 0) }}</td>
+          <td>{% if (r.km_l or 0) > 0 %}{{ '%.2f'|format(r.km_l or 0) }}{% else %}-{% endif %}</td>
+          <td><span class="cc-badge {{ r.estado_rendimiento_cls }}">{{ r.estado_rendimiento }}</span></td>
           <td>{{ r.primera_fecha or '-' }}</td>
           <td>{{ r.ultima_fecha or '-' }}</td>
         </tr>
         {% else %}
-        <tr><td colspan="7" class="muted" style="text-align:center;padding:12px">Sin datos</td></tr>
+        <tr><td colspan="9" class="muted" style="text-align:center;padding:12px">Sin datos</td></tr>
         {% endfor %}
       </tbody>
     </table>

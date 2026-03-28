@@ -1584,6 +1584,84 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
             params_v,
         ).fetchall()
 
+        VEHICULOS_INFO = {
+            "AF277OA": {"combustible": "diesel", "modelo": "Ford Ranger XL 2.2"},
+            "AE856GD": {"combustible": "diesel", "modelo": "Ford Ranger XL 2.2"},
+            "AE856GE": {"combustible": "diesel", "modelo": "Ford Ranger XL 2.2"},
+            "AB946VK": {"combustible": "nafta", "modelo": "Ford Ranger XL 2.5"},
+        }
+
+        def extraerDominioVehiculo(textoVehiculo):
+            txt = str(textoVehiculo or "").upper().strip()
+            if not txt:
+                return ""
+            txt = txt.replace("-", " ").replace("/", " ").replace("_", " ")
+            for part in txt.split():
+                tok = "".join(ch for ch in part if ch.isalnum())
+                if len(tok) == 7 and tok[:2].isalpha() and tok[2:5].isdigit() and tok[5:].isalpha():
+                    return tok
+            tok = "".join(ch for ch in txt if ch.isalnum())
+            if len(tok) == 7 and tok[:2].isalpha() and tok[2:5].isdigit() and tok[5:].isalpha():
+                return tok
+            return ""
+
+        def obtenerInfoVehiculo(textoVehiculo, combustible_db=""):
+            dom = extraerDominioVehiculo(textoVehiculo)
+            info = VEHICULOS_INFO.get(dom, {})
+            comb = str(info.get("combustible") or combustible_db or "").strip().lower()
+            if comb.startswith("naf"):
+                comb = "nafta"
+            elif comb.startswith("gas") or comb.startswith("die"):
+                comb = "diesel"
+            else:
+                comb = ""
+            return {"dominio": dom, "combustible": comb, "modelo": info.get("modelo", "")}
+
+        def obtenerKmLEsperadoBase(textoVehiculo, combustible_db=""):
+            comb = obtenerInfoVehiculo(textoVehiculo, combustible_db).get("combustible", "")
+            if comb == "diesel":
+                return 12.0
+            if comb == "nafta":
+                return 9.0
+            return None
+
+        def evaluarEstadoRendimiento(kmL, textoVehiculo, combustible_db=""):
+            try:
+                kmL_num = float(kmL or 0)
+            except Exception:
+                kmL_num = 0.0
+            comb = obtenerInfoVehiculo(textoVehiculo, combustible_db).get("combustible", "")
+            if not comb or kmL_num <= 0:
+                return ("Sin referencia", "na")
+            if comb == "diesel":
+                if kmL_num > 13:
+                    return ("Optimo", "ok")
+                if kmL_num >= 11:
+                    return ("Normal", "warn")
+                return ("Alto consumo", "bad")
+            if comb == "nafta":
+                if kmL_num > 10:
+                    return ("Optimo", "ok")
+                if kmL_num >= 8:
+                    return ("Normal", "warn")
+                return ("Alto consumo", "bad")
+            return ("Sin referencia", "na")
+
+        def calcularDesvioPct(kmL, textoVehiculo, combustible_db=""):
+            base = obtenerKmLEsperadoBase(textoVehiculo, combustible_db)
+            try:
+                kmL_num = float(kmL or 0)
+            except Exception:
+                kmL_num = 0.0
+            if not base or kmL_num <= 0:
+                return None
+            return ((kmL_num - base) / base) * 100.0
+
+        def formatearPorcentaje(valor):
+            if valor is None:
+                return "-"
+            return f"{valor:+.1f}%"
+
         comb_por_pat = {
             (str(r["patente"] or "").strip().upper()): {
                 "cargas": int(r["cargas"] or 0),
@@ -1616,27 +1694,19 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
             km = float(v.get("km", 0) or 0)
             tramos = int(v.get("tramos", 0) or 0)
             comb_t = str(v.get("combustible") or "").strip().lower()
+            info_v = obtenerInfoVehiculo(pat, comb_t)
+            comb_final = info_v.get("combustible", "")
             ref_cfg = float(v.get("rend_ref", 0) or 0)
-            ref = ref_cfg if ref_cfg > 0 else (10.0 if comb_t.startswith("naf") else 8.0)
+            ref_base = obtenerKmLEsperadoBase(pat, comb_final)
+            ref = ref_cfg if ref_cfg > 0 else (ref_base or 0.0)
             rendimiento = (km / litros) if litros > 0 else 0.0
             consumo_100 = ((litros / km) * 100.0) if km > 0 else 0.0
             costo_km = (importe / km) if km > 0 else 0.0
             precio_prom = (importe / litros) if litros > 0 else 0.0
             km_por_tramo = (km / tramos) if tramos > 0 else 0.0
 
-            estado = "Sin base"
-            cls = "na"
-            if km > 0 and litros > 0:
-                ratio = (rendimiento / ref) if ref > 0 else 0.0
-                if ratio >= 1.0:
-                    estado = "Muy bueno"
-                    cls = "ok"
-                elif ratio >= 0.85:
-                    estado = "En rango"
-                    cls = "warn"
-                else:
-                    estado = "Revisar"
-                    cls = "bad"
+            estado, cls = evaluarEstadoRendimiento(rendimiento, pat, comb_final)
+            desvio_pct = calcularDesvioPct(rendimiento, pat, comb_final)
 
             analisis_vehiculos.append(
                 {
@@ -1655,10 +1725,77 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
                     "rendimiento_ref": ref,
                     "estado": estado,
                     "estado_cls": cls,
+                    "desvio_pct": desvio_pct,
+                    "desvio_pct_fmt": formatearPorcentaje(desvio_pct),
+                    "combustible_tipo": comb_final,
                 }
             )
 
         analisis_vehiculos.sort(key=lambda x: (x["estado_cls"] != "bad", -x["km_recorridos"]))
+
+        viajes_chofer_vehiculo = conn.execute(
+            f"""
+            SELECT
+                COALESCE(aiv.agente,'-') AS chofer,
+                UPPER(COALESCE(v.patente,'')) AS patente,
+                ROUND(COALESCE(SUM(v.recorrido_km), 0), 2) AS km_recorridos
+            FROM viajes v
+            LEFT JOIN agentes_intendencia aiv ON aiv.id = v.chofer_id
+            WHERE {wsql_v}
+            GROUP BY COALESCE(aiv.agente,'-'), UPPER(COALESCE(v.patente,''))
+            """,
+            params_v,
+        ).fetchall()
+        km_cv_map = {
+            (
+                str(r["chofer"] or "").strip().lower(),
+                str(r["patente"] or "").strip().upper(),
+            ): float(r["km_recorridos"] or 0)
+            for r in viajes_chofer_vehiculo
+        }
+        chofer_vehiculo_ext = []
+        for r in chofer_vehiculo:
+            chofer_key = str(r["chofer"] or "").strip()
+            pat_key = str(r["patente"] or "").strip().upper()
+            km_cv = float(km_cv_map.get((chofer_key.lower(), pat_key), 0) or 0)
+            litros_cv = float(r["litros_total"] or 0)
+            kml_cv = (km_cv / litros_cv) if km_cv > 0 and litros_cv > 0 else 0.0
+            comb_cv = str(via_por_pat.get(pat_key, {}).get("combustible", "") or "")
+            estado_cv, cls_cv = evaluarEstadoRendimiento(kml_cv, pat_key, comb_cv)
+            chofer_vehiculo_ext.append(
+                {
+                    "chofer": r["chofer"],
+                    "codigo_interno": r["codigo_interno"],
+                    "patente": r["patente"],
+                    "cargas": r["cargas"],
+                    "litros_total": r["litros_total"],
+                    "importe_total": r["importe_total"],
+                    "primera_fecha": r["primera_fecha"],
+                    "ultima_fecha": r["ultima_fecha"],
+                    "km_l": kml_cv,
+                    "estado_rendimiento": estado_cv,
+                    "estado_rendimiento_cls": cls_cv,
+                }
+            )
+        chofer_vehiculo = chofer_vehiculo_ext
+
+        km_total = sum(float(x.get("km_recorridos", 0) or 0) for x in analisis_vehiculos)
+        litros_total = sum(float(x.get("litros_total", 0) or 0) for x in analisis_vehiculos)
+        importe_total = sum(float(x.get("importe_total", 0) or 0) for x in analisis_vehiculos)
+        rend_prom = (km_total / litros_total) if litros_total > 0 else None
+        costo_prom_km = (importe_total / km_total) if km_total > 0 else None
+        con_ref = [
+            x for x in analisis_vehiculos
+            if x.get("estado_cls") != "na" and float(x.get("rendimiento_kml", 0) or 0) > 0
+        ]
+        mejor = max(con_ref, key=lambda x: x["rendimiento_kml"]) if con_ref else None
+        peor = min(con_ref, key=lambda x: x["rendimiento_kml"]) if con_ref else None
+        kpis_rendimiento = {
+            "rend_prom_kml": rend_prom,
+            "costo_prom_km": costo_prom_km,
+            "mejor_vehiculo": f'{mejor["codigo_interno"] or mejor["patente"]} ({mejor["rendimiento_kml"]:.2f} km/l)' if mejor else "-",
+            "peor_vehiculo": f'{peor["codigo_interno"] or peor["patente"]} ({peor["rendimiento_kml"]:.2f} km/l)' if peor else "-",
+        }
 
         conn.close()
         return render_template(
@@ -1675,6 +1812,7 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
             chofer_vehiculo=chofer_vehiculo,
             detalle=detalle,
             analisis_vehiculos=analisis_vehiculos,
+            kpis_rendimiento=kpis_rendimiento,
         )
 
 
