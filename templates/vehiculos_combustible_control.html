@@ -18,6 +18,11 @@
     .cc-table th, .cc-table td { padding:8px; border-bottom:1px solid #eef2f7; white-space:nowrap; }
     .cc-table th { position:sticky; top:0; z-index:1; background:#f8fafc; text-align:left; }
     .muted { color:#64748b; font-size:12px; }
+    .cc-badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:11px; font-weight:800; }
+    .cc-badge.ok { color:#166534; background:#dcfce7; border:1px solid #86efac; }
+    .cc-badge.warn { color:#92400e; background:#fef3c7; border:1px solid #fcd34d; }
+    .cc-badge.bad { color:#991b1b; background:#fee2e2; border:1px solid #fca5a5; }
+    .cc-badge.na { color:#475569; background:#e2e8f0; border:1px solid #cbd5e1; }
     @media (max-width: 1000px) {
       .cc-filtros { grid-template-columns:1fr 1fr; }
       .cc-grid { grid-template-columns:1fr; }
@@ -87,6 +92,46 @@
       <small>Importe total</small>
       <b>${{ "{:,.2f}".format(resumen.importe_total or 0) }}</b>
     </div>
+  </div>
+
+  <h3 style="margin:10px 0 6px 0">Analisis de rendimiento por vehiculo</h3>
+  <div class="cc-table-wrap" style="max-height:42vh">
+    <table class="cc-table">
+      <thead>
+        <tr>
+          <th>Vehiculo</th>
+          <th>Estado</th>
+          <th>KM</th>
+          <th>Litros</th>
+          <th>Rend. km/l</th>
+          <th>L/100km</th>
+          <th>Costo/km</th>
+          <th>Precio prom/L</th>
+          <th>Tramos</th>
+          <th>KM/tramo</th>
+          <th>Ref km/l</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in analisis_vehiculos %}
+        <tr>
+          <td>{{ r.codigo_interno or r.patente }} - {{ r.patente }}</td>
+          <td><span class="cc-badge {{ r.estado_cls }}">{{ r.estado }}</span></td>
+          <td>{{ '%.2f'|format(r.km_recorridos or 0) }}</td>
+          <td>{{ '%.2f'|format(r.litros_total or 0) }}</td>
+          <td>{{ '%.2f'|format(r.rendimiento_kml or 0) }}</td>
+          <td>{{ '%.2f'|format(r.consumo_100 or 0) }}</td>
+          <td>${{ "{:,.2f}".format(r.costo_km or 0) }}</td>
+          <td>${{ "{:,.2f}".format(r.precio_prom_litro or 0) }}</td>
+          <td>{{ r.tramos or 0 }}</td>
+          <td>{{ '%.2f'|format(r.km_por_tramo or 0) }}</td>
+          <td>{{ '%.2f'|format(r.rendimiento_ref or 0) }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="11" class="muted" style="text-align:center;padding:12px">Sin datos para analizar en el rango seleccionado</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 
   <div class="cc-grid">
@@ -215,4 +260,3 @@
 </section>
 
 {% endblock %}
-
