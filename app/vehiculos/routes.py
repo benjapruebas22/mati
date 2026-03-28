@@ -367,7 +367,9 @@ def register_vehiculos_control(bp, get_db_connection, ensure_cols, rebuild_event
             "ignacio baroni",
         }
 
-        refs = {}
+        refs_destino = {}
+        refs_vehiculo = {}
+        refs_vehiculo_destino = {}
         for v in viajes:
             estado_u = (v.get("estado") or "").strip().upper()
             if estado_u != "CERRADO":
@@ -381,17 +383,27 @@ def register_vehiculos_control(bp, get_db_connection, ensure_cols, rebuild_event
                 km_v = 0.0
             if km_v <= 0:
                 continue
+            pat = (v.get("patente") or "").strip().upper()
             dkey = _normalize_text(destino)
-            refs.setdefault(dkey, []).append(km_v)
+            refs_destino.setdefault(dkey, []).append(km_v)
+            if pat:
+                refs_vehiculo.setdefault(pat, []).append(km_v)
+                refs_vehiculo_destino.setdefault((pat, dkey), []).append(km_v)
 
-        ref_stats = {}
-        for dkey, vals in refs.items():
-            if not vals:
-                continue
-            ref_stats[dkey] = {
-                "km_ref": float(median(vals)),
-                "muestras": len(vals),
-            }
+        def _build_stats(src):
+            out = {}
+            for key, vals in src.items():
+                if not vals:
+                    continue
+                out[key] = {
+                    "km_ref": float(median(vals)),
+                    "muestras": len(vals),
+                }
+            return out
+
+        ref_stats_destino = _build_stats(refs_destino)
+        ref_stats_vehiculo = _build_stats(refs_vehiculo)
+        ref_stats_vehiculo_destino = _build_stats(refs_vehiculo_destino)
 
         for v in viajes:
             v["km_check_label"] = "-"
@@ -418,11 +430,28 @@ def register_vehiculos_control(bp, get_db_connection, ensure_cols, rebuild_event
                 v["km_check_label"] = "Sin km"
                 continue
 
+            pat = (v.get("patente") or "").strip().upper()
             dkey = _normalize_text(destino)
-            ref = ref_stats.get(dkey)
+            ref = None
+            ref_from = ""
+            if pat:
+                r_vd = ref_stats_vehiculo_destino.get((pat, dkey))
+                if r_vd and int(r_vd.get("muestras") or 0) >= 2:
+                    ref = r_vd
+                    ref_from = "vehiculo+destino"
+            if ref is None and pat:
+                r_v = ref_stats_vehiculo.get(pat)
+                if r_v and int(r_v.get("muestras") or 0) >= 3:
+                    ref = r_v
+                    ref_from = "vehiculo"
+            if ref is None:
+                r_d = ref_stats_destino.get(dkey)
+                if r_d and int(r_d.get("muestras") or 0) >= 2:
+                    ref = r_d
+                    ref_from = "destino"
             if not ref:
                 v["km_check_label"] = "Sin base"
-                v["km_check_hint"] = "No hay historial suficiente para este destino"
+                v["km_check_hint"] = "Sin historial suficiente para comparar"
                 continue
 
             km_ref = float(ref.get("km_ref") or 0)
@@ -441,7 +470,7 @@ def register_vehiculos_control(bp, get_db_connection, ensure_cols, rebuild_event
             else:
                 v["km_check_label"] = "Razonable"
                 v["km_check_class"] = "km-ok"
-            v["km_check_hint"] = f"Real {km_real:.1f} km | Ref {km_ref:.1f} km ({muestras})"
+            v["km_check_hint"] = f"Real {km_real:.1f} km | Ref {km_ref:.1f} km ({muestras}, {ref_from})"
 
         kpi_sql = """
             SELECT
