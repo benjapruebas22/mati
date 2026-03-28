@@ -117,15 +117,6 @@
     max-height: 150px !important;
     display: block;
   }
-  .chart-bar-wrap {
-    position: relative;
-    min-height: 220px;
-  }
-  .chart-bar-wrap canvas {
-    width: 100% !important;
-    height: 100% !important;
-    display: block;
-  }
 
   .chart-title {
     margin: 0 0 4px;
@@ -282,25 +273,19 @@
         <div class="card">
             <div class="chart-box">
                 <h3 class="chart-title">KM por Chofer (Top 20)</h3>
-                <div id="chChoferWrap" class="chart-bar-wrap">
-                    <canvas id="chChofer"></canvas>
-                </div>
+                <canvas id="chChofer" height="75"></canvas>
             </div>
         </div>
         <div class="card">
             <div class="chart-box">
                 <h3 class="chart-title">KM por Vehiculo (Top 20)</h3>
-                <div id="chVehiculoWrap" class="chart-bar-wrap">
-                    <canvas id="chVehiculo"></canvas>
-                </div>
+                <canvas id="chVehiculo" height="75"></canvas>
             </div>
         </div>
         <div class="card">
             <div class="chart-box">
                 <h3 class="chart-title">KM por Persona trasladada (Top 20)</h3>
-                <div id="chPersonaWrap" class="chart-bar-wrap">
-                    <canvas id="chPersona"></canvas>
-                </div>
+                <canvas id="chPersona" height="75"></canvas>
             </div>
         </div>
     </div>
@@ -397,56 +382,23 @@
     const perLabels = {{ por_persona| map(attribute = 'label') | list | tojson }};
     const perKm = {{ por_persona| map(attribute = 'km') | list | tojson }};
 
-    function tuneBarWrap(wrapId, count) {
-        const wrap = document.getElementById(wrapId);
-        if (!wrap) return;
-        const n = Math.max(1, Number(count || 0));
-        const h = Math.max(220, Math.min(620, n * 28 + 40));
-        wrap.style.height = String(h) + 'px';
-    }
+    new Chart(document.getElementById('chChofer'), {
+        type: 'bar',
+        data: { labels: choferLabels, datasets: [{ label: 'KM', data: choferKm }] },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+    });
 
-    function makeBarHorizontal(canvasId, labels, values, color) {
-        return new Chart(document.getElementById(canvasId), {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'KM',
-                    data: values,
-                    backgroundColor: color
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                indexAxis: 'y',
-                plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                        callbacks: {
-                            label: (ctx) => 'KM: ' + Number(ctx.raw || 0).toFixed(1)
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        beginAtZero: true,
-                        ticks: { precision: 0 }
-                    },
-                    y: {
-                        ticks: { autoSkip: false }
-                    }
-                }
-            }
-        });
-    }
+    new Chart(document.getElementById('chVehiculo'), {
+        type: 'bar',
+        data: { labels: vehLabels, datasets: [{ label: 'KM', data: vehKm }] },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+    });
 
-    tuneBarWrap('chChoferWrap', choferLabels.length);
-    tuneBarWrap('chVehiculoWrap', vehLabels.length);
-    tuneBarWrap('chPersonaWrap', perLabels.length);
-    makeBarHorizontal('chChofer', choferLabels, choferKm, '#60a5fa');
-    makeBarHorizontal('chVehiculo', vehLabels, vehKm, '#34d399');
-    makeBarHorizontal('chPersona', perLabels, perKm, '#f59e0b');
+    new Chart(document.getElementById('chPersona'), {
+        type: 'bar',
+        data: { labels: perLabels, datasets: [{ label: 'KM', data: perKm }] },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+    });
 
     const pieLabels = [];
     const pieData = [];
