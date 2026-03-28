@@ -49,7 +49,7 @@
     .vd-mini-grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px; }
     .vd-links { display:flex; gap:8px; flex-wrap:wrap; }
 
-    .estado-viaje { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:999px; border:1px solid transparent; font-size:11px; font-weight:800; margin-right:4px; }
+    .estado-viaje { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:999px; border:1px solid transparent; font-size:11px; font-weight:800; margin-right:4px; line-height:1.1; white-space:nowrap; }
     .estado-viaje.est-curso { background:#eff6ff; border-color:#93c5fd; color:#1d4ed8; }
     .estado-viaje.est-cerrado { background:#ecfdf5; border-color:#86efac; color:#166534; }
     .estado-viaje.est-error { background:#fff1f2; border-color:#fda4af; color:#be123c; }
@@ -106,6 +106,14 @@
       white-space: normal;
       width: 110px;
       overflow: visible !important;
+    }
+    .th-estado,
+    .td-estado {
+      text-align: center;
+      white-space: nowrap !important;
+      overflow: visible !important;
+      text-overflow: clip !important;
+      width: 96px;
     }
     .td-acciones .acc-wrap {
       display: grid;
@@ -387,6 +395,7 @@
 
   <div class="vd-quick hide-mobile">
     <button type="button" class="main" onclick="goBlock('form-carga-viaje')">+ Cargar viaje</button>
+    <button type="button" class="sub" onclick="toggleFiltrosRapidos()">Filtros rápidos</button>
     <button type="button" class="sub" onclick="goBlock('tabla-viajes')">Ver tabla</button>
   </div>
   <div id="box-carga-viaje" class="vd-box" style="display:none">
@@ -512,7 +521,7 @@
       {% set seen_choferes = [] %}
       {% for r in viajes %}
       {% set ch = r.chofer_nombre or '' %}
-      {% if ch and ch not in seen_choferes and ('Mauro Vea' in ch or 'Ignacio Baroni' in ch or 'Emiliano' in ch or 'Luis Cardozo' in ch) %}
+      {% if ch and ch not in seen_choferes %}
       {% set _ = seen_choferes.append(ch) %}
       <button type="button" class="chip chip-ch" data-chip-ch="{{ ch }}"
         onclick="setChofer('{{ ch|replace("'","\\'") }}')">
@@ -579,7 +588,7 @@
           <th style="padding:10px;border-bottom:1px solid #e5e7eb">Sector</th>
           <th style="padding:10px;border-bottom:1px solid #e5e7eb">Dpto/Def</th>
           <th style="padding:10px;border-bottom:1px solid #e5e7eb">Destino</th>
-          <th style="padding:10px;border-bottom:1px solid #e5e7eb">Estado</th>
+          <th class="th-estado" style="padding:10px;border-bottom:1px solid #e5e7eb">Estado</th>
           <th class="th-acciones" style="padding:10px;border-bottom:1px solid #e5e7eb">Acciones</th>
         </tr>
       </thead>
@@ -612,9 +621,7 @@
             <span class="km-check {{ v.km_check_class or 'km-none' }}" title="{{ v.km_check_hint or '' }}">
               {{ v.km_check_label or '-' }}
             </span>
-            {% if v.km_ref %}
-            <div style="font-size:10px;color:#64748b;margin-top:3px;">ref {{ '%.1f'|format(v.km_ref) }} km · {{ v.km_ref_n or 0 }}</div>
-            {% endif %}
+            <div style="font-size:10px;color:#64748b;margin-top:3px;">{{ v.km_ref_txt or 'ref --' }}</div>
           </td>
           {% endif %}
 
@@ -624,7 +631,7 @@
           <td class="col-text" style="padding:10px;border-bottom:1px solid #eef2f7">{{ v.destino_nombre or "-" }}</td>
           {% set estado_u = (v.estado or '')|upper %}
           {% set inco = (v.km_fin is not none) and (v.km_ini is not none) and (v.km_fin|float < v.km_ini|float) %}
-          <td style="padding:10px;border-bottom:1px solid #eef2f7">
+          <td class="td-estado" style="padding:10px;border-bottom:1px solid #eef2f7">
             {% if estado_u == 'ABIERTO' %}
               <span class="estado-viaje est-curso">EN CURSO</span>
             {% elif estado_u == 'CERRADO' %}
@@ -874,6 +881,31 @@
     border-color: #86efac;
     color: #166534;
   }
+  .chip-ch[data-chip-ch*="Matias Calderari"] {
+    background: #fee2e2;
+    border-color: #fca5a5;
+    color: #991b1b;
+  }
+  .chip-ch[data-chip-ch*="Carlos Vidaurre"] {
+    background: #ffe4e6;
+    border-color: #fda4af;
+    color: #9f1239;
+  }
+  .chip-ch[data-chip-ch*="Nestor Guerrero"] {
+    background: #fce7f3;
+    border-color: #f9a8d4;
+    color: #9d174d;
+  }
+  .chip-ch[data-chip-ch*="Marcos Duran"] {
+    background: #d1fae5;
+    border-color: #6ee7b7;
+    color: #065f46;
+  }
+  .chip-ch[data-chip-ch*="Manuel Flores"] {
+    background: #fef3c7;
+    border-color: #fcd34d;
+    color: #92400e;
+  }
 
   /* Viaje abierto destacado para cierre posterior */
   tr[data-estado="ABIERTO"] td {
@@ -901,13 +933,16 @@
       boxCarga.style.display = "";
       if (quick) quick.style.display = "none";
     }
-    if (id === "tabla-viajes" && quick) {
-      quick.style.display = "flex";
-    }
 
     const el = document.getElementById(id);
     if (!el) return;
     el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function toggleFiltrosRapidos() {
+    const quick = document.getElementById("quick-filters");
+    if (!quick) return;
+    quick.style.display = (quick.style.display === "flex") ? "none" : "flex";
   }
 
   let filtroVehiculo = "";
