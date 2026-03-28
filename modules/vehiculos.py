@@ -1,13 +1,22 @@
 from datetime import date, datetime, timedelta
+import base64
+import binascii
+import os
 import sqlite3
 import unicodedata
+import uuid
 
-from flask import request, redirect, url_for, flash, render_template, jsonify, session
+from flask import request, redirect, url_for, flash, render_template, jsonify, session, send_from_directory
 from werkzeug.utils import secure_filename
 
 def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combustible_columns, rebuild_eventos_vehiculos):
     MAX_LITROS_CARGA = 150.0
     MAX_PRECIO_LITRO = 10000.0
+    MAX_REMITO_IMG_BYTES = 4 * 1024 * 1024
+    ALLOWED_REMITO_IMG_EXT = {"jpg", "jpeg", "png", "webp"}
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    REMITOS_UPLOAD_DIR = os.path.join(BASE_DIR, "uploads", "combustible_remitos")
+    os.makedirs(REMITOS_UPLOAD_DIR, exist_ok=True)
     ROLE_CHOFER_INTENDENCIA = "chofer_intendencia"
     ROLE_CHOFER_AUTORIZADO = "chofer_autorizado"
     CHOFERES_INTENDENCIA_PERMITIDOS = (
@@ -50,6 +59,63 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
             return float(txt)
         except Exception:
             return None
+
+    def _save_remito_image_from_request(req):
+        file_obj = req.files.get("remito_file")
+        if file_obj and getattr(file_obj, "filename", ""):
+            filename = secure_filename(file_obj.filename or "")
+            ext = (filename.rsplit(".", 1)[-1].lower() if "." in filename else "")
+            if ext not in ALLOWED_REMITO_IMG_EXT:
+                raise ValueError("Formato de imagen no valido. Usar JPG, PNG o WEBP.")
+            raw = file_obj.read() or b""
+            if not raw:
+                raise ValueError("La imagen del remito esta vacia.")
+            if len(raw) > MAX_REMITO_IMG_BYTES:
+                raise ValueError("Imagen muy pesada. Maximo permitido: 4 MB.")
+            out_name = f"remito_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}.{ext}"
+            out_path = os.path.join(REMITOS_UPLOAD_DIR, out_name)
+            with open(out_path, "wb") as fh:
+                fh.write(raw)
+            return out_name
+
+        data_url = (req.form.get("remito_paste_data") or "").strip()
+        if data_url:
+            if "," not in data_url or not data_url.startswith("data:image/"):
+                raise ValueError("Imagen pegada invalida.")
+            header, b64_data = data_url.split(",", 1)
+            mime = header.split(";")[0].replace("data:image/", "").strip().lower()
+            ext = "jpg" if mime == "jpeg" else mime
+            if ext not in ALLOWED_REMITO_IMG_EXT:
+                raise ValueError("Formato de imagen pegada no valido.")
+            try:
+                raw = base64.b64decode(b64_data, validate=True)
+            except (binascii.Error, ValueError):
+                raise ValueError("No se pudo leer la imagen pegada.")
+            if not raw:
+                raise ValueError("La imagen pegada esta vacia.")
+            if len(raw) > MAX_REMITO_IMG_BYTES:
+                raise ValueError("Imagen pegada muy pesada. Maximo permitido: 4 MB.")
+            out_name = f"remito_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}.{ext}"
+            out_path = os.path.join(REMITOS_UPLOAD_DIR, out_name)
+            with open(out_path, "wb") as fh:
+                fh.write(raw)
+            return out_name
+
+        return None
+
+    def _delete_local_remito_if_exists(value):
+        name = str(value or "").strip()
+        if not name or name.startswith("http://") or name.startswith("https://"):
+            return
+        safe = secure_filename(name)
+        if not safe:
+            return
+        path = os.path.join(REMITOS_UPLOAD_DIR, safe)
+        if os.path.isfile(path):
+            try:
+                os.remove(path)
+            except Exception:
+                pass
 
     def _resolve_or_create_chofer_id(conn, chofer_id_raw, chofer_nombre_raw):
         cid_txt = str(chofer_id_raw or "").strip()
@@ -920,8 +986,14 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
             # Importe calculado automático
             importe_calculado = round(litros * precio_unit, 2)
 
-            # remito: guardar link de Drive (no se guarda archivo local)
             remito_archivo = (request.form.get("remito_url") or "").strip() or None
+            if not remito_archivo:
+                try:
+                    remito_archivo = _save_remito_image_from_request(request)
+                except ValueError as e:
+                    flash(str(e), "danger")
+                    conn.close()
+                    return redirect(url_for("vehiculos_combustible"))
 
             # Guardar en tabla combustible (OJO: usa chofer_id)
             conn.execute(
@@ -1422,8 +1494,14 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
             importe_calculado = round(litros * precio_litro, 2)
             importe_real      = importe_calculado  # si querés después podés editarlo
 
-            # remito: guardar link de Drive (no se guarda archivo local)
             remito_archivo = (request.form.get("remito_url") or "").strip() or None
+            if not remito_archivo:
+                try:
+                    remito_archivo = _save_remito_image_from_request(request)
+                except ValueError as e:
+                    flash(str(e), "danger")
+                    conn.close()
+                    return redirect(url_for("vehiculos_combustible"))
 
             conn.execute(
                 """
@@ -1463,9 +1541,13 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
     # =========================
     @app.route("/vehiculos/combustible/remitos/<path:filename>", endpoint="combustible_remito_ver")
     def combustible_remito_ver(filename):
-        # Remitos solo por Drive
         if filename.startswith("http://") or filename.startswith("https://"):
             return redirect(filename)
+        safe = secure_filename(filename or "")
+        if safe:
+            abs_path = os.path.join(REMITOS_UPLOAD_DIR, safe)
+            if os.path.isfile(abs_path):
+                return send_from_directory(REMITOS_UPLOAD_DIR, safe, as_attachment=False)
         return redirect(REMITOS_DRIVE_URL)
 
     @app.route("/viajes/<int:viaje_id>/editar", methods=["GET", "POST"], endpoint="viaje_editar_legacy")
@@ -1780,8 +1862,17 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
             observaciones = (request.form.get("notas") or "").strip()
 
             importe_calculado = round(litros * precio_unit, 2)
-            # remito: guardar link de Drive (no se guarda archivo local)
             remito_archivo_guardado = (request.form.get("remito_url") or "").strip() or row_get(carga, "remito_archivo")
+            if not (request.form.get("remito_url") or "").strip():
+                try:
+                    nuevo_remito = _save_remito_image_from_request(request)
+                except ValueError as e:
+                    conn.close()
+                    flash(str(e), "danger")
+                    return redirect(url_for("combustible_editar", cid=cid))
+                if nuevo_remito:
+                    _delete_local_remito_if_exists(row_get(carga, "remito_archivo"))
+                    remito_archivo_guardado = nuevo_remito
 
             conn.execute("""
                 UPDATE combustible
@@ -1832,12 +1923,11 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
             flash("Carga no encontrada.", "danger")
             return redirect(url_for("vehiculos_combustible"))
 
+        _delete_local_remito_if_exists(row["remito_archivo"])
         conn.execute("DELETE FROM combustible WHERE id=?", (cid,))
         conn.commit()
         conn.close()
         rebuild_eventos_vehiculos()
-        # remitos solo en Drive (no hay archivo local para borrar)
-
         flash("🗑️ Carga eliminada.", "info")
         return redirect(url_for("vehiculos_combustible"))
 

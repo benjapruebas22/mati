@@ -4,7 +4,7 @@
 <section class="sedes-section">
     <h2>Editar carga de combustible #{{ carga.id }}</h2>
 
-    <form method="post" class="form-soft">
+    <form method="post" enctype="multipart/form-data" class="form-soft">
 
         <label>Fecha</label>
         <input type="date" name="fecha" value="{{ carga.fecha }}" required>
@@ -44,8 +44,13 @@
         <label>Remito / ticket (número)</label>
         <input name="remito" value="{{ carga.nro_remito or '' }}">
 
-        <label>Link remito (Drive)</label>
-        <input type="url" name="remito_url" placeholder="https://drive.google.com/...">
+        <label>Foto remito (subir o pegar)</label>
+        <input type="file" name="remito_file" accept="image/*">
+        <input type="hidden" name="remito_paste_data" id="combEditPasteData">
+        <div id="combEditPasteBox" style="margin-top:6px;border:1px dashed #93c5fd;border-radius:10px;padding:10px;color:#1e3a8a;background:#eff6ff;font-size:12px">
+            Click aca y pega la foto con <b>Ctrl + V</b>
+        </div>
+        <img id="combEditPastePreview" alt="preview remito" style="display:none;max-width:220px;margin-top:8px;border:1px solid #dbeafe;border-radius:8px">
 
         {% if carga.remito_archivo %}
         <p style="margin-top:6px;color:#64748b;font-size:13px">
@@ -68,5 +73,47 @@
 
     </form>
 </section>
+
+<script>
+  (function setupCombEditPasteRemito() {
+    var box = document.getElementById("combEditPasteBox");
+    var hidden = document.getElementById("combEditPasteData");
+    var preview = document.getElementById("combEditPastePreview");
+    if (!box || !hidden || !preview) return;
+
+    function setPreview(dataUrl) {
+      hidden.value = dataUrl || "";
+      if (!dataUrl) {
+        preview.style.display = "none";
+        preview.removeAttribute("src");
+        box.style.background = "#eff6ff";
+        box.style.borderColor = "#93c5fd";
+        box.innerHTML = "Click aca y pega la foto con <b>Ctrl + V</b>";
+        return;
+      }
+      preview.src = dataUrl;
+      preview.style.display = "block";
+      box.style.background = "#ecfdf5";
+      box.style.borderColor = "#86efac";
+      box.textContent = "Imagen pegada lista para guardar.";
+    }
+
+    box.tabIndex = 0;
+    box.addEventListener("paste", function (ev) {
+      var items = (ev.clipboardData && ev.clipboardData.items) ? ev.clipboardData.items : [];
+      for (var i = 0; i < items.length; i++) {
+        var it = items[i];
+        if (!it.type || it.type.indexOf("image/") !== 0) continue;
+        var file = it.getAsFile();
+        if (!file) continue;
+        var reader = new FileReader();
+        reader.onload = function (e) { setPreview(String((e && e.target && e.target.result) || "")); };
+        reader.readAsDataURL(file);
+        ev.preventDefault();
+        return;
+      }
+    });
+  })();
+</script>
 
 {% endblock %}
