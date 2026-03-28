@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="sedes-section">
+  <style>
+    .cc-card { border:1px solid #e5e7eb; border-radius:12px; background:#fff; padding:10px; }
+    .cc-top { display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:8px; }
+    .cc-filtros { display:grid; grid-template-columns:repeat(4,minmax(150px,1fr)); gap:10px; }
+    .cc-filtros label { display:block; font-size:12px; color:#64748b; margin-bottom:4px; }
+    .cc-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:10px; flex-wrap:wrap; }
+    .cc-kpis { display:grid; grid-template-columns:repeat(3,minmax(140px,1fr)); gap:8px; margin:10px 0; }
+    .cc-kpi { border:1px solid #e2e8f0; border-radius:10px; background:#f8fafc; padding:8px; }
+    .cc-kpi small { color:#64748b; font-size:11px; display:block; }
+    .cc-kpi b { color:#0f172a; font-size:18px; display:block; line-height:1.1; }
+    .cc-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:10px 0; }
+    .cc-table-wrap { border:1px solid #e5e7eb; border-radius:12px; background:#fff; max-height:48vh; overflow:auto; }
+    .cc-table { width:100%; border-collapse:collapse; font-size:12px; }
+    .cc-table th, .cc-table td { padding:8px; border-bottom:1px solid #eef2f7; white-space:nowrap; }
+    .cc-table th { position:sticky; top:0; z-index:1; background:#f8fafc; text-align:left; }
+    .muted { color:#64748b; font-size:12px; }
+    @media (max-width: 1000px) {
+      .cc-filtros { grid-template-columns:1fr 1fr; }
+      .cc-grid { grid-template-columns:1fr; }
+    }
+    @media (max-width: 640px) {
+      .cc-filtros, .cc-kpis { grid-template-columns:1fr; }
+    }
+  </style>
+
+  <div class="cc-top">
+    <div>
+      <h2 style="margin:0">Control combustible</h2>
+      <div class="muted">Control operativo por chofer y vehículo. Vista exclusiva Matías.</div>
+    </div>
+    <a class="btn btn-mpd" href="{{ url_for('vehiculos_combustible') }}">Volver a combustible</a>
+  </div>
+
+  <div class="cc-card">
+    <form method="get" class="form-soft" style="padding:0;border:none;background:transparent;box-shadow:none">
+      <div class="cc-filtros">
+        <div>
+          <label>Desde</label>
+          <input class="in" type="date" name="desde" value="{{ desde }}">
+        </div>
+        <div>
+          <label>Hasta</label>
+          <input class="in" type="date" name="hasta" value="{{ hasta }}">
+        </div>
+        <div>
+          <label>Vehículo</label>
+          <select class="in" name="patente">
+            <option value="">Todos</option>
+            {% for v in vehiculos_opts %}
+            <option value="{{ v.patente }}" {% if patente==v.patente %}selected{% endif %}>
+              {{ v.codigo_interno or v.patente }} - {{ v.patente }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label>Chofer</label>
+          <select class="in" name="chofer">
+            <option value="">Todos</option>
+            {% for c in choferes_opts %}
+            <option value="{{ c.chofer }}" {% if chofer==c.chofer %}selected{% endif %}>{{ c.chofer }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="cc-actions">
+        <button class="btn btn-mpd" type="submit">Aplicar filtro</button>
+        <a class="btn outline-slate" href="{{ url_for('vehiculos_combustible_control') }}">Limpiar</a>
+      </div>
+    </form>
+  </div>
+
+  <div class="cc-kpis">
+    <div class="cc-kpi">
+      <small>Cargas (rango)</small>
+      <b>{{ resumen.cargas or 0 }}</b>
+    </div>
+    <div class="cc-kpi">
+      <small>Litros totales</small>
+      <b>{{ '%.2f'|format(resumen.litros_total or 0) }}</b>
+    </div>
+    <div class="cc-kpi">
+      <small>Importe total</small>
+      <b>${{ "{:,.2f}".format(resumen.importe_total or 0) }}</b>
+    </div>
+  </div>
+
+  <div class="cc-grid">
+    <div class="cc-table-wrap">
+      <table class="cc-table">
+        <thead>
+          <tr>
+            <th>Chofer</th>
+            <th>Cargas</th>
+            <th>Litros</th>
+            <th>Importe</th>
+            <th>Vehículos</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in por_chofer %}
+          <tr>
+            <td>{{ r.chofer }}</td>
+            <td>{{ r.cargas }}</td>
+            <td>{{ '%.2f'|format(r.litros_total or 0) }}</td>
+            <td>${{ "{:,.2f}".format(r.importe_total or 0) }}</td>
+            <td>{{ r.vehiculos_distintos or 0 }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="muted" style="text-align:center;padding:12px">Sin datos</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="cc-table-wrap">
+      <table class="cc-table">
+        <thead>
+          <tr>
+            <th>Vehículo</th>
+            <th>Cargas</th>
+            <th>Litros</th>
+            <th>Importe</th>
+            <th>Choferes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in por_vehiculo %}
+          <tr>
+            <td>{{ r.codigo_interno or r.patente }} - {{ r.patente }}</td>
+            <td>{{ r.cargas }}</td>
+            <td>{{ '%.2f'|format(r.litros_total or 0) }}</td>
+            <td>${{ "{:,.2f}".format(r.importe_total or 0) }}</td>
+            <td>{{ r.choferes_distintos or 0 }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="muted" style="text-align:center;padding:12px">Sin datos</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <h3 style="margin:10px 0 6px 0">Cruce chofer + vehículo</h3>
+  <div class="cc-table-wrap" style="max-height:42vh">
+    <table class="cc-table">
+      <thead>
+        <tr>
+          <th>Chofer</th>
+          <th>Vehículo</th>
+          <th>Cargas</th>
+          <th>Litros</th>
+          <th>Importe</th>
+          <th>Primera</th>
+          <th>Última</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in chofer_vehiculo %}
+        <tr>
+          <td>{{ r.chofer }}</td>
+          <td>{{ r.codigo_interno or r.patente }} - {{ r.patente }}</td>
+          <td>{{ r.cargas }}</td>
+          <td>{{ '%.2f'|format(r.litros_total or 0) }}</td>
+          <td>${{ "{:,.2f}".format(r.importe_total or 0) }}</td>
+          <td>{{ r.primera_fecha or '-' }}</td>
+          <td>{{ r.ultima_fecha or '-' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="muted" style="text-align:center;padding:12px">Sin datos</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <h3 style="margin:10px 0 6px 0">Detalle de cargas</h3>
+  <div class="cc-table-wrap" style="max-height:55vh">
+    <table class="cc-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Fecha</th>
+          <th>Vehículo</th>
+          <th>Chofer</th>
+          <th>Litros</th>
+          <th>Precio/L</th>
+          <th>Importe</th>
+          <th>Remito</th>
+          <th>KM</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in detalle %}
+        <tr>
+          <td>{{ r.id }}</td>
+          <td>{{ r.fecha }}</td>
+          <td>{{ r.codigo_interno or r.patente }} - {{ r.patente }}</td>
+          <td>{{ r.chofer }}</td>
+          <td>{{ '%.2f'|format(r.litros or 0) }}</td>
+          <td>${{ "{:,.2f}".format(r.precio_unit or 0) }}</td>
+          <td>${{ "{:,.2f}".format(r.importe_real or 0) }}</td>
+          <td>{{ r.nro_remito or '-' }}</td>
+          <td>{{ r.km_actual or 0 }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="9" class="muted" style="text-align:center;padding:12px">Sin cargas para el rango seleccionado</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+{% endblock %}
+

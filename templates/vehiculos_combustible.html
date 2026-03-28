@@ -106,6 +106,9 @@
   <div class="comb-actions">
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <a class="btn btn-mpd" href="{{ url_for('vehiculos_combustible_estadisticas') }}">Estadisticas</a>
+      {% if (session.get('username') or '')|lower == 'mcalderari' or (session.get('full_name') or '')|lower == 'matias calderari' %}
+      <a class="btn btn-mpd" href="{{ url_for('vehiculos_combustible_control') }}">Control combustible</a>
+      {% endif %}
       <a class="btn outline-slate" href="{{ url_for('bd_precios') }}">Precios base</a>
     </div>
     <div class="muted">

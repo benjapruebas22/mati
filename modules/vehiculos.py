@@ -1409,6 +1409,169 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
             mes_cerrado_hasta=mes_cerrado_hasta,
         )
 
+    @app.route("/vehiculos/combustible/control", methods=["GET"], endpoint="vehiculos_combustible_control")
+    def vehiculos_combustible_control():
+        if (session.get("role") or "") == ROLE_CHOFER_AUTORIZADO:
+            return redirect(url_for("access_denied"))
+
+        username_now = (session.get("username") or "").strip().lower()
+        full_name_now = _normalize_text(session.get("full_name") or "")
+        if username_now != "mcalderari" and full_name_now != "matias calderari":
+            return redirect(url_for("access_denied"))
+
+        conn = get_db_connection()
+        ensure_combustible_columns(conn)
+
+        hoy = date.today()
+        desde_default = hoy.replace(day=1).isoformat()
+        hasta_default = hoy.isoformat()
+
+        desde = (request.args.get("desde") or "").strip() or desde_default
+        hasta = (request.args.get("hasta") or "").strip() or hasta_default
+        patente = (request.args.get("patente") or "").strip().upper()
+        chofer = (request.args.get("chofer") or "").strip()
+
+        vehiculos_opts = conn.execute(
+            """
+            SELECT DISTINCT
+                UPPER(COALESCE(c.patente,'')) AS patente,
+                COALESCE(v.codigo_interno, '') AS codigo_interno
+            FROM combustible c
+            LEFT JOIN vehiculos v ON v.patente = c.patente
+            WHERE TRIM(COALESCE(c.patente,'')) <> ''
+            ORDER BY COALESCE(v.codigo_interno, ''), UPPER(COALESCE(c.patente,''))
+            """
+        ).fetchall()
+        choferes_opts = conn.execute(
+            """
+            SELECT DISTINCT
+                COALESCE(ai.agente,'-') AS chofer
+            FROM combustible c
+            LEFT JOIN agentes_intendencia ai ON ai.id = c.chofer_id
+            WHERE TRIM(COALESCE(ai.agente,'')) <> ''
+            ORDER BY COALESCE(ai.agente,'-')
+            """
+        ).fetchall()
+
+        where = ["date(c.fecha) BETWEEN date(?) AND date(?)"]
+        params = [desde, hasta]
+        if patente:
+            where.append("UPPER(COALESCE(c.patente,'')) = UPPER(?)")
+            params.append(patente)
+        if chofer:
+            where.append("LOWER(COALESCE(ai.agente,'')) = LOWER(?)")
+            params.append(chofer)
+        wsql = " AND ".join(where)
+
+        resumen = conn.execute(
+            f"""
+            SELECT
+                COUNT(*) AS cargas,
+                ROUND(COALESCE(SUM(c.litros), 0), 2) AS litros_total,
+                ROUND(COALESCE(SUM(c.importe_real), 0), 2) AS importe_total
+            FROM combustible c
+            LEFT JOIN agentes_intendencia ai ON ai.id = c.chofer_id
+            WHERE {wsql}
+            """,
+            params,
+        ).fetchone()
+
+        por_chofer = conn.execute(
+            f"""
+            SELECT
+                COALESCE(ai.agente,'-') AS chofer,
+                COUNT(*) AS cargas,
+                ROUND(COALESCE(SUM(c.litros), 0), 2) AS litros_total,
+                ROUND(COALESCE(SUM(c.importe_real), 0), 2) AS importe_total,
+                COUNT(DISTINCT UPPER(COALESCE(c.patente,''))) AS vehiculos_distintos
+            FROM combustible c
+            LEFT JOIN agentes_intendencia ai ON ai.id = c.chofer_id
+            WHERE {wsql}
+            GROUP BY COALESCE(ai.agente,'-')
+            ORDER BY importe_total DESC, cargas DESC, chofer
+            """,
+            params,
+        ).fetchall()
+
+        por_vehiculo = conn.execute(
+            f"""
+            SELECT
+                COALESCE(v.codigo_interno, c.patente) AS codigo_interno,
+                UPPER(COALESCE(c.patente,'')) AS patente,
+                COUNT(*) AS cargas,
+                ROUND(COALESCE(SUM(c.litros), 0), 2) AS litros_total,
+                ROUND(COALESCE(SUM(c.importe_real), 0), 2) AS importe_total,
+                COUNT(DISTINCT COALESCE(ai.agente,'-')) AS choferes_distintos
+            FROM combustible c
+            LEFT JOIN vehiculos v ON v.patente = c.patente
+            LEFT JOIN agentes_intendencia ai ON ai.id = c.chofer_id
+            WHERE {wsql}
+            GROUP BY COALESCE(v.codigo_interno, c.patente), UPPER(COALESCE(c.patente,''))
+            ORDER BY importe_total DESC, cargas DESC, patente
+            """,
+            params,
+        ).fetchall()
+
+        chofer_vehiculo = conn.execute(
+            f"""
+            SELECT
+                COALESCE(ai.agente,'-') AS chofer,
+                COALESCE(v.codigo_interno, c.patente) AS codigo_interno,
+                UPPER(COALESCE(c.patente,'')) AS patente,
+                COUNT(*) AS cargas,
+                ROUND(COALESCE(SUM(c.litros), 0), 2) AS litros_total,
+                ROUND(COALESCE(SUM(c.importe_real), 0), 2) AS importe_total,
+                MIN(c.fecha) AS primera_fecha,
+                MAX(c.fecha) AS ultima_fecha
+            FROM combustible c
+            LEFT JOIN vehiculos v ON v.patente = c.patente
+            LEFT JOIN agentes_intendencia ai ON ai.id = c.chofer_id
+            WHERE {wsql}
+            GROUP BY COALESCE(ai.agente,'-'), COALESCE(v.codigo_interno, c.patente), UPPER(COALESCE(c.patente,''))
+            ORDER BY ultima_fecha DESC, chofer, patente
+            """,
+            params,
+        ).fetchall()
+
+        detalle = conn.execute(
+            f"""
+            SELECT
+                c.id,
+                c.fecha,
+                COALESCE(v.codigo_interno, c.patente) AS codigo_interno,
+                UPPER(COALESCE(c.patente,'')) AS patente,
+                COALESCE(ai.agente,'-') AS chofer,
+                ROUND(COALESCE(c.litros, 0), 2) AS litros,
+                ROUND(COALESCE(c.importe_real, 0), 2) AS importe_real,
+                ROUND(COALESCE(c.precio_unit, 0), 2) AS precio_unit,
+                COALESCE(c.nro_remito,'') AS nro_remito,
+                COALESCE(c.km_actual, 0) AS km_actual
+            FROM combustible c
+            LEFT JOIN vehiculos v ON v.patente = c.patente
+            LEFT JOIN agentes_intendencia ai ON ai.id = c.chofer_id
+            WHERE {wsql}
+            ORDER BY date(c.fecha) DESC, c.id DESC
+            LIMIT 1200
+            """,
+            params,
+        ).fetchall()
+
+        conn.close()
+        return render_template(
+            "vehiculos_combustible_control.html",
+            desde=desde,
+            hasta=hasta,
+            patente=patente,
+            chofer=chofer,
+            vehiculos_opts=vehiculos_opts,
+            choferes_opts=choferes_opts,
+            resumen=resumen,
+            por_chofer=por_chofer,
+            por_vehiculo=por_vehiculo,
+            chofer_vehiculo=chofer_vehiculo,
+            detalle=detalle,
+        )
+
 
     # -------------------------
     # COMBUSTIBLE - CARGA DESDE VIAJE ("Carga comb.")
