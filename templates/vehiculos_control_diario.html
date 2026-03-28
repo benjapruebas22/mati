@@ -78,6 +78,21 @@
       .vd-dispo-grid { grid-template-columns:1fr 1fr; }
       .vd-mini-grid { grid-template-columns:1fr; }
     }
+
+    .tabla-viajes {
+      display: flex;
+      justify-content: center;
+    }
+    .tabla-viajes table {
+      min-width: 1520px;
+      margin: 0 auto;
+    }
+    .th-acciones,
+    .td-acciones {
+      min-width: 160px;
+      text-align: center;
+      white-space: nowrap;
+    }
     @media (max-width: 640px) {
       .vd-dispo-grid { grid-template-columns:1fr; }
       .vd-kpis { grid-template-columns:1fr; }
@@ -472,7 +487,7 @@
   </div>
 
   <div id="tabla-viajes" class="hide-mobile tabla-viajes" style="height:60vh;overflow:auto;border:1px solid #e5e7eb;border-radius:12px;background:#fff">
-    <table style="width:100%;border-collapse:collapse;font-size:13px">
+    <table style="width:max-content;border-collapse:collapse;font-size:13px">
       <thead>
         <tr style="background:#f8fafc;text-align:left;position:sticky;top:0;z-index:2">
           <th style="padding:10px;border-bottom:1px solid #e5e7eb">#</th>
@@ -490,7 +505,7 @@
           <th style="padding:10px;border-bottom:1px solid #e5e7eb">Dpto/Def</th>
           <th style="padding:10px;border-bottom:1px solid #e5e7eb">Destino</th>
           <th style="padding:10px;border-bottom:1px solid #e5e7eb">Estado</th>
-          <th style="padding:10px;border-bottom:1px solid #e5e7eb">Acciones</th>
+          <th class="th-acciones" style="padding:10px;border-bottom:1px solid #e5e7eb">Acciones</th>
         </tr>
       </thead>
 
@@ -549,7 +564,7 @@
             {% endif %}
           </td>
 
-          <td style="padding:10px;border-bottom:1px solid #eef2f7;white-space:nowrap">
+          <td class="td-acciones" style="padding:10px;border-bottom:1px solid #eef2f7;white-space:nowrap">
 
             <!-- IMPORTANTE: conservar fecha seleccionada -->
             {% if not is_autorizado or (user_chofer_id and v.chofer_id == user_chofer_id) %}
