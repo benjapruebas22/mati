@@ -129,6 +129,42 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
         if not nombre:
             return None
 
+        row = conn.execute(
+            """
+            SELECT id
+            FROM agentes_intendencia
+            WHERE LOWER(TRIM(COALESCE(agente,''))) = LOWER(TRIM(?))
+            ORDER BY COALESCE(activo,1) DESC, id ASC
+            LIMIT 1
+            """,
+            (nombre,),
+        ).fetchone()
+        if row and int(row["id"] or 0) > 0:
+            return int(row["id"])
+
+        target = _normalize_text(nombre)
+        all_rows = conn.execute(
+            """
+            SELECT id, agente
+            FROM agentes_intendencia
+            ORDER BY COALESCE(activo,1) DESC, id ASC
+            """
+        ).fetchall()
+        for r in all_rows:
+            if _normalize_text(r["agente"]) == target:
+                return int(r["id"])
+
+        conn.execute(
+            """
+            INSERT INTO agentes_intendencia (agente, rubro, activo)
+            VALUES (?, 'choferes', 1)
+            """,
+            (nombre,),
+        )
+        conn.commit()
+        new_id = conn.execute("SELECT last_insert_rowid() AS id").fetchone()
+        return int(new_id["id"]) if new_id else None
+
     def _current_user_chofer_id(conn):
         full_name = (session.get("full_name") or "").strip()
         username = (session.get("username") or "").strip()
@@ -194,43 +230,6 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
         conn.execute("DELETE FROM viajes WHERE id = ?", (viaje_id,))
         conn.commit()
         return fecha
-
-        row = conn.execute(
-            """
-            SELECT id
-            FROM agentes_intendencia
-            WHERE rubro='choferes' AND LOWER(TRIM(agente)) = LOWER(TRIM(?))
-            ORDER BY activo DESC, id ASC
-            LIMIT 1
-            """,
-            (nombre,),
-        ).fetchone()
-        if row:
-            if int(row["id"] or 0) > 0:
-                return int(row["id"])
-
-        target = _normalize_text(nombre)
-        all_rows = conn.execute(
-            """
-            SELECT id, agente
-            FROM agentes_intendencia
-            WHERE rubro='choferes'
-            ORDER BY activo DESC, id ASC
-            """
-        ).fetchall()
-        for r in all_rows:
-            if _normalize_text(r["agente"]) == target:
-                return int(r["id"])
-
-        conn.execute(
-            """
-            INSERT INTO agentes_intendencia (agente, rubro, activo)
-            VALUES (?, 'choferes', 1)
-            """,
-            (nombre,),
-        )
-        new_id = conn.execute("SELECT last_insert_rowid() AS id").fetchone()
-        return int(new_id["id"]) if new_id else None
 
     @app.route("/vehiculos/nuevo", methods=["GET", "POST"], endpoint="vehiculos_nuevo")
     def vehiculos_nuevo():
