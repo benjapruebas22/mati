@@ -103,13 +103,20 @@
     .th-acciones,
     .td-acciones {
       text-align: center;
-      white-space: nowrap;
+      white-space: normal;
       width: 110px;
+      overflow: visible !important;
+    }
+    .td-acciones .acc-wrap {
+      display: grid;
+      gap: 4px;
     }
     .td-acciones .btn {
+      width: 100%;
       padding: 4px 8px !important;
-      font-size: 11px !important;
+      font-size: 10px !important;
       line-height: 1 !important;
+      min-width: 0 !important;
     }
     .th-dif,
     .td-dif {
@@ -632,25 +639,27 @@
             {% endif %}
           </td>
 
-          <td class="td-acciones" style="padding:10px;border-bottom:1px solid #eef2f7;white-space:nowrap">
+          <td class="td-acciones" style="padding:10px;border-bottom:1px solid #eef2f7">
 
             <!-- IMPORTANTE: conservar fecha seleccionada -->
-            {% if not is_autorizado or (user_chofer_id and v.chofer_id == user_chofer_id) %}
-            <a class="btn btn-mpd"
-              href="{{ url_for('viaje_editar', viaje_id=v.id, fecha=fecha) }}">
-              Editar
-            </a>
-            {% endif %}
+            <div class="acc-wrap">
+              {% if not is_autorizado or (user_chofer_id and v.chofer_id == user_chofer_id) %}
+              <a class="btn btn-mpd"
+                href="{{ url_for('viaje_editar', viaje_id=v.id, fecha=fecha) }}">
+                Editar
+              </a>
+              {% endif %}
 
-            {% if not is_autorizado %}
-            <form method="post"
-              action="{{ url_for('viaje_eliminar', viaje_id=v.id, fecha=fecha) }}"
-              style="display:inline" onsubmit="return confirm('?Eliminar viaje #{{ v.id }}?');">
-              <button type="submit" class="btn btn-mpd" style="border-color:#fecaca">
-                Eliminar
-              </button>
-            </form>
-            {% endif %}
+              {% if not is_autorizado %}
+              <form method="post"
+                action="{{ url_for('viaje_eliminar', viaje_id=v.id, fecha=fecha) }}"
+                onsubmit="return confirm('?Eliminar viaje #{{ v.id }}?');">
+                <button type="submit" class="btn btn-mpd" style="border-color:#fecaca">
+                  Eliminar
+                </button>
+              </form>
+              {% endif %}
+            </div>
 
 </td>
         </tr>
