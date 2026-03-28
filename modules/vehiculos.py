@@ -1830,6 +1830,34 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
                 except Exception:
                     return default
 
+            remito_url_in = (request.form.get("remito_url") or "").strip()
+            try:
+                nuevo_remito = _save_remito_image_from_request(request)
+            except ValueError as e:
+                conn.close()
+                flash(str(e), "danger")
+                return redirect(url_for("combustible_editar", cid=cid))
+
+            # Flujo seguro: subir/pegar solo remito, sin tocar el resto de campos.
+            if (request.form.get("remito_only") or "").strip() == "1":
+                remito_archivo_guardado = remito_url_in or row_get(carga, "remito_archivo")
+                if nuevo_remito:
+                    _delete_local_remito_if_exists(row_get(carga, "remito_archivo"))
+                    remito_archivo_guardado = nuevo_remito
+                if not remito_archivo_guardado:
+                    conn.close()
+                    flash("Subi o pega una imagen del remito.", "danger")
+                    return redirect(url_for("combustible_editar", cid=cid))
+                conn.execute(
+                    "UPDATE combustible SET remito_archivo=? WHERE id=?",
+                    (remito_archivo_guardado, cid),
+                )
+                conn.commit()
+                conn.close()
+                rebuild_eventos_vehiculos()
+                flash("✅ Remito actualizado (sin modificar la carga).", "success")
+                return redirect(url_for("vehiculos_combustible"))
+
             fecha = request.form.get("fecha") or carga["fecha"] or date.today().isoformat()
             patente = request.form.get("patente") or carga["patente"]
             tipo = request.form.get("tipo") or row_get(carga, "tipo") or "nafta"
@@ -1837,6 +1865,8 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
             chofer_id_raw = request.form.get("chofer_id") or ""
             chofer_nombre_raw = request.form.get("chofer_nombre") or ""
             chofer_id = _resolve_or_create_chofer_id(conn, chofer_id_raw, chofer_nombre_raw)
+            if chofer_id is None:
+                chofer_id = row_get(carga, "chofer_id")
 
             def fnum(x, default=0.0):
                 txt = str(x or "").strip()
@@ -1862,17 +1892,10 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
             observaciones = (request.form.get("notas") or "").strip()
 
             importe_calculado = round(litros * precio_unit, 2)
-            remito_archivo_guardado = (request.form.get("remito_url") or "").strip() or row_get(carga, "remito_archivo")
-            if not (request.form.get("remito_url") or "").strip():
-                try:
-                    nuevo_remito = _save_remito_image_from_request(request)
-                except ValueError as e:
-                    conn.close()
-                    flash(str(e), "danger")
-                    return redirect(url_for("combustible_editar", cid=cid))
-                if nuevo_remito:
-                    _delete_local_remito_if_exists(row_get(carga, "remito_archivo"))
-                    remito_archivo_guardado = nuevo_remito
+            remito_archivo_guardado = remito_url_in or row_get(carga, "remito_archivo")
+            if nuevo_remito:
+                _delete_local_remito_if_exists(row_get(carga, "remito_archivo"))
+                remito_archivo_guardado = nuevo_remito
 
             conn.execute("""
                 UPDATE combustible
