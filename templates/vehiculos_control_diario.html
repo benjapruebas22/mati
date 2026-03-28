@@ -82,23 +82,40 @@
     .tabla-viajes table {
       width: 100%;
       table-layout: fixed;
-      font-size: 11px;
+      font-size: 10px;
     }
     .tabla-viajes th,
     .tabla-viajes td {
-      padding: 7px 6px !important;
-      vertical-align: top;
-      word-break: break-word;
+      padding: 6px 5px !important;
+      vertical-align: middle;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      line-height: 1.15;
     }
     .tabla-viajes .veh-badge {
-      padding: 3px 6px !important;
-      font-size: 10px;
+      padding: 2px 5px !important;
+      font-size: 9px;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .th-acciones,
     .td-acciones {
       text-align: center;
       white-space: nowrap;
-      width: 120px;
+      width: 110px;
+    }
+    .td-acciones .btn {
+      padding: 4px 8px !important;
+      font-size: 11px !important;
+      line-height: 1 !important;
+    }
+    .chofer-txt {
+      font-weight: 700;
+      font-size: 10px;
+      line-height: 1.15;
+      display: block;
     }
     @media (max-width: 640px) {
       .vd-dispo-grid { grid-template-columns:1fr; }
@@ -493,8 +510,42 @@
     </button>
   </div>
 
-  <div id="tabla-viajes" class="hide-mobile tabla-viajes" style="height:60vh;overflow:auto;border:1px solid #e5e7eb;border-radius:12px;background:#fff">
+  <div id="tabla-viajes" class="hide-mobile tabla-viajes" style="height:60vh;overflow-y:auto;overflow-x:hidden;border:1px solid #e5e7eb;border-radius:12px;background:#fff">
     <table style="width:100%;border-collapse:collapse;font-size:11px">
+      {% if show_km_razonable %}
+      <colgroup>
+        <col style="width:3%">
+        <col style="width:6%">
+        <col style="width:9%">
+        <col style="width:8%">
+        <col style="width:6%">
+        <col style="width:6%">
+        <col style="width:6%">
+        <col style="width:9%">
+        <col style="width:8%">
+        <col style="width:8%">
+        <col style="width:10%">
+        <col style="width:8%">
+        <col style="width:6%">
+        <col style="width:7%">
+      </colgroup>
+      {% else %}
+      <colgroup>
+        <col style="width:3%">
+        <col style="width:6%">
+        <col style="width:10%">
+        <col style="width:9%">
+        <col style="width:6%">
+        <col style="width:6%">
+        <col style="width:6%">
+        <col style="width:9%">
+        <col style="width:9%">
+        <col style="width:11%">
+        <col style="width:9%">
+        <col style="width:7%">
+        <col style="width:9%">
+      </colgroup>
+      {% endif %}
       <thead>
         <tr style="background:#f8fafc;text-align:left;position:sticky;top:0;z-index:2">
           <th style="padding:10px;border-bottom:1px solid #e5e7eb">#</th>
@@ -575,7 +626,7 @@
 
             <!-- IMPORTANTE: conservar fecha seleccionada -->
             {% if not is_autorizado or (user_chofer_id and v.chofer_id == user_chofer_id) %}
-            <a class="btn btn-mpd" style="padding:6px 10px;font-size:12px"
+            <a class="btn btn-mpd"
               href="{{ url_for('viaje_editar', viaje_id=v.id, fecha=fecha) }}">
               Editar
             </a>
@@ -585,7 +636,7 @@
             <form method="post"
               action="{{ url_for('viaje_eliminar', viaje_id=v.id, fecha=fecha) }}"
               style="display:inline" onsubmit="return confirm('?Eliminar viaje #{{ v.id }}?');">
-              <button type="submit" class="btn btn-mpd" style="padding:6px 10px;font-size:12px;border-color:#fecaca">
+              <button type="submit" class="btn btn-mpd" style="border-color:#fecaca">
                 Eliminar
               </button>
             </form>
