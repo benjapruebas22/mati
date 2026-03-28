@@ -225,26 +225,37 @@ def role_allows(role: str, module: str) -> bool:
 
 
 def default_redirect_for_role(role: str):
+    def _first_url(*endpoints, **values):
+        for ep in endpoints:
+            try:
+                return url_for(ep, **values)
+            except Exception:
+                continue
+        return "/"
+
     if role == ROLE_EJECUTIVO:
-        return url_for("dashboard_ejecutivo")
+        return _first_url("dashboard_ejecutivo", "dashboard_exec", "novedades.dashboard_exec")
     if role == ROLE_DASH_OBRAS:
-        return url_for("dashboard")
+        return _first_url("dashboard", "novedades.dashboard", "dashboard_exec", "novedades.dashboard_exec")
     if role == ROLE_DASH_VEHICULOS:
-        return url_for("dashboard")
+        return _first_url("dashboard", "novedades.dashboard", "dashboard_exec", "novedades.dashboard_exec")
     if role == ROLE_DASH_SOLO:
-        return url_for("dashboard_exec")
+        return _first_url("dashboard_exec", "novedades.dashboard_exec", "dashboard_ejecutivo", "dashboard")
     if role == ROLE_OPERATIVO_CLAVE:
-        return url_for("dashboard_exec")
+        return _first_url("dashboard_exec", "novedades.dashboard_exec", "dashboard_ejecutivo", "dashboard")
     if role == ROLE_CONTROL_SEDES:
-        return url_for("sedes_resumen_mpd")
+        return _first_url("sedes_resumen_mpd", "dashboard_ejecutivo", "dashboard")
     if role == ROLE_SEDE_VEHICULOS:
-        return url_for("sede_ficha", codigo="S01", home=1)
+        s = _first_url("sede_ficha", codigo="S01", home=1)
+        if s != "/":
+            return s
+        return _first_url("dashboard", "dashboard_exec", "dashboard_ejecutivo")
     if role == ROLE_SST_VEHICULOS:
-        return url_for("sst_general")
+        return _first_url("sst_general", "dashboard_ejecutivo", "dashboard")
     if role == ROLE_OBRAS_VEHICULOS:
-        return url_for("obras_home")
+        return _first_url("obras_home", "dashboard", "dashboard_exec")
     if role == ROLE_INT_OBRAS:
-        return url_for("obras_home")
+        return _first_url("obras_home", "dashboard", "dashboard_exec")
     if role == ROLE_INT_OBRAS_RELEV:
         return url_for("obras_home")
     if role == ROLE_INT_OBRAS_SEDES:

@@ -1640,6 +1640,75 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             pass
         return sedes
 
+    def _dashboard_sede_estado_read(con):
+        try:
+            con.execute("""
+                CREATE TABLE IF NOT EXISTS dashboard_sede_estado(
+                    sede_codigo TEXT PRIMARY KEY,
+                    relevamiento INTEGER DEFAULT 0,
+                    obra_terminada INTEGER DEFAULT 0,
+                    matafuegos_recarga INTEGER DEFAULT 0,
+                    carteleria INTEGER DEFAULT 0,
+                    luces_emergencia INTEGER DEFAULT 0,
+                    plano_evac INTEGER DEFAULT 0,
+                    orden_limpieza INTEGER DEFAULT 0,
+                    senalizacion INTEGER DEFAULT 0,
+                    accesibilidad INTEGER DEFAULT 0,
+                    riesgo_electrico INTEGER DEFAULT 0,
+                    actualizado_en TEXT DEFAULT (datetime('now'))
+                )
+            """)
+            con.commit()
+        except Exception:
+            pass
+
+        sedes = []
+        if _table_exists(con, "sedes_mpd"):
+            try:
+                rows_s = con.execute("""
+                    SELECT UPPER(COALESCE(codigo,'')) AS codigo
+                    FROM sedes_mpd
+                    WHERE TRIM(COALESCE(codigo,'')) <> ''
+                    ORDER BY codigo
+                """).fetchall()
+                sedes = [(_row_value(r, "codigo", "") or "").strip() for r in rows_s]
+            except Exception:
+                sedes = []
+        if not sedes:
+            sedes = [f"S{str(i).zfill(2)}" for i in range(1, 21)]
+
+        for c in sedes:
+            if c:
+                try:
+                    con.execute("INSERT OR IGNORE INTO dashboard_sede_estado(sede_codigo) VALUES (?)", (c,))
+                except Exception:
+                    pass
+        con.commit()
+
+        rows = con.execute(f"""
+            SELECT
+                UPPER(COALESCE(sede_codigo,'')) AS sede_codigo,
+                {",".join([f"COALESCE({v},0) AS {v}" for v in SEDE_ESTADO_VARS])},
+                COALESCE(actualizado_en, '') AS actualizado_en
+            FROM dashboard_sede_estado
+            ORDER BY sede_codigo
+        """).fetchall()
+
+        items = []
+        for r in rows:
+            vals = {v: int(_row_value(r, v, 0) or 0) for v in SEDE_ESTADO_VARS}
+            pts = sum(1 if int(vals.get(v, 0)) > 0 else 0 for v in SEDE_ESTADO_VARS)
+            pct = int(round((pts / 10.0) * 100))
+            items.append({
+                "sede": (_row_value(r, "sede_codigo", "") or "").strip() or "-",
+                "values": vals,
+                "puntos": pts,
+                "pct": pct,
+                "actualizadoEn": (_row_value(r, "actualizado_en", "") or "").strip(),
+            })
+
+        return sedes, items
+
     def _dashboard_agentes_opts(con):
         vals = []
         seen = set()
