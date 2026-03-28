@@ -40,6 +40,11 @@
     tr[data-patente="af277oa"] .veh-badge { background:#cffafe; border-color:#67e8f9; color:#155e75; }
     tr[data-patente="ag846fr"] .veh-badge { background:#ffe4e6; border-color:#fda4af; color:#9f1239; }
     .chofer-txt { font-weight:800; }
+    .remito-chip { display:inline-flex; align-items:center; gap:4px; border-radius:999px; padding:2px 8px; font-size:11px; font-weight:800; border:1px solid transparent; margin-top:4px; }
+    .remito-chip.ok { background:#ecfdf5; border-color:#86efac; color:#166534; }
+    .remito-chip.miss { background:#fffbeb; border-color:#fcd34d; color:#92400e; }
+    .remito-link { display:inline-flex; margin-top:4px; padding:2px 8px; border-radius:999px; border:1px solid #93c5fd; background:#eff6ff; color:#1d4ed8; font-size:11px; font-weight:800; text-decoration:none; }
+    .remito-link:hover { background:#dbeafe; }
     tr[data-chofer*="ignacio baroni"] .chofer-txt { color:#4e342e; }
     tr[data-chofer*="mauro vea"] .chofer-txt { color:#6a1b9a; }
     tr[data-chofer*="emiliano"] .chofer-txt { color:#0d47a1; }
@@ -202,7 +207,7 @@
       </thead>
       <tbody>
         {% for c in cargas %}
-        <tr data-patente="{{ (c.patente or '')|lower }}" data-chofer="{{ (c.chofer_nombre or '')|lower }}" data-fecha="{{ c.fecha }}">
+        <tr data-patente="{{ (c.patente or '')|lower }}" data-chofer="{{ (c.chofer_nombre or '')|lower }}" data-fecha="{{ c.fecha }}" data-remito="{{ 'si' if c.remito_archivo else 'no' }}">
           <td><span class="veh-badge">{{ c.codigo_interno or c.patente }} - {{ c.patente }}</span></td>
           <td><span class="chofer-txt">{{ c.chofer_nombre or "-" }}</span></td>
           <td>${{ "{:,.2f}".format(c.importe_real or 0) }}</td>
@@ -212,12 +217,17 @@
             {{ c.nro_remito or "-" }}
             {% if c.remito_archivo %}
             <div>
+              <span class="remito-chip ok">Con remito</span>
+            </div>
+            <div>
               {% if c.remito_archivo.startswith('http') %}
-              <a href="{{ c.remito_archivo }}" target="_blank" rel="noopener">Ver</a>
+              <a class="remito-link" href="{{ c.remito_archivo }}" target="_blank" rel="noopener">Ver remito</a>
               {% else %}
-              <a href="{{ url_for('combustible_remito_ver', filename=c.remito_archivo) }}" target="_blank" rel="noopener">Ver</a>
+              <a class="remito-link" href="{{ url_for('combustible_remito_ver', filename=c.remito_archivo) }}" target="_blank" rel="noopener">Ver remito</a>
               {% endif %}
             </div>
+            {% else %}
+            <div><span class="remito-chip miss">Falta remito</span></div>
             {% endif %}
           </td>
           <td>{{ c.fecha }}</td>
