@@ -100,6 +100,7 @@ def ensure_auth_tables(con):
 
     default_users = [
         ("mcalderari", "Matias Calderari", ROLE_FULL),
+        ("admi", "Admi", ROLE_FULL),
         ("ibaroni", "Ignacio Baroni", ROLE_FULL),
         ("fsavio", "Francisco Savio", ROLE_OPERATIVO_CLAVE),
         ("mvea", "Mauro Vea Murguia", ROLE_INT_VEHICULOS),
@@ -116,7 +117,7 @@ def ensure_auth_tables(con):
         ("mmontiel", "Mateo Montiel", ROLE_CHOFER_AUTORIZADO),
         ("mzambrano", "Mauricio Zambrano", ROLE_CHOFER_AUTORIZADO),
         ("laviles", "Leonardo Aviles", ROLE_CHOFER_AUTORIZADO),
-        ("bburgos", "Benjamin Burgos", ROLE_CHOFER_AUTORIZADO),
+        ("bburgos", "Benjamin Burgos", ROLE_FULL),
         ("jdaud", "Julio Daud", ROLE_CHOFER_AUTORIZADO),
         ("agonzalez", "Agustin Gonzalez", ROLE_CHOFER_AUTORIZADO),
         ("jvaldivia", "Javier Valdivia", ROLE_CHOFER_AUTORIZADO),
