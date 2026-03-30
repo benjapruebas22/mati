@@ -188,6 +188,30 @@ def register_novedades(bp, get_db):
                 COALESCE(tarea_asignado_por_username,'') AS tarea_asignado_por_username,
                 COALESCE(tarea_asignado_en,'') AS tarea_asignado_en,
                 COALESCE(tarea_actualizado_en,'') AS tarea_actualizado_en,
+                COALESCE((
+                    SELECT c.autor
+                    FROM novedades_diarias_chat c
+                    WHERE c.novedad_id = novedades_diarias.id
+                      AND COALESCE(c.es_sistema,0)=0
+                    ORDER BY c.id DESC
+                    LIMIT 1
+                ),'') AS chat_ult_autor,
+                COALESCE((
+                    SELECT c.autor_username
+                    FROM novedades_diarias_chat c
+                    WHERE c.novedad_id = novedades_diarias.id
+                      AND COALESCE(c.es_sistema,0)=0
+                    ORDER BY c.id DESC
+                    LIMIT 1
+                ),'') AS chat_ult_autor_username,
+                COALESCE((
+                    SELECT c.creado_en
+                    FROM novedades_diarias_chat c
+                    WHERE c.novedad_id = novedades_diarias.id
+                      AND COALESCE(c.es_sistema,0)=0
+                    ORDER BY c.id DESC
+                    LIMIT 1
+                ),'') AS chat_ult_creado_en,
                 COALESCE(privado_flag,0) AS privado_flag,
                 COALESCE(privado_owner_username,'') AS privado_owner_username,
                 COALESCE(privado_owner_nombre,'') AS privado_owner_nombre
@@ -309,6 +333,24 @@ def register_novedades(bp, get_db):
         puede_gestionar_tarea = bool(
             puede_ver_novedad and (es_matias or (es_privada and es_duenio_privada))
         )
+        chat_ult_autor = (_row_value(row, "chat_ult_autor", "") or "").strip()
+        chat_ult_autor_username = (_row_value(row, "chat_ult_autor_username", "") or "").strip()
+        chat_ult_creado_en = (_row_value(row, "chat_ult_creado_en", "") or "").strip()
+        gestion_turno = "sin_mensajes"
+        gestion_turno_label = "Sin mensajes"
+        if chat_ult_autor or chat_ult_autor_username:
+            es_propio_ultimo = False
+            actor_user = _norm_ci(actor.get("username") or "")
+            if chat_ult_autor_username and _norm_ci(chat_ult_autor_username) == actor_user:
+                es_propio_ultimo = True
+            elif chat_ult_autor and _actor_match_name(actor, chat_ult_autor):
+                es_propio_ultimo = True
+            if es_propio_ultimo:
+                gestion_turno = "esperando"
+                gestion_turno_label = "Esperando respuesta"
+            else:
+                gestion_turno = "tu_respuesta"
+                gestion_turno_label = "Tu respuesta"
         return {
             "id": int(_row_value(row, "id", 0) or 0),
             "fecha": (_row_value(row, "fecha", "") or "").strip(),
@@ -329,6 +371,11 @@ def register_novedades(bp, get_db):
             "tarea_asignado_por_username": (_row_value(row, "tarea_asignado_por_username", "") or "").strip(),
             "tarea_asignado_en": (_row_value(row, "tarea_asignado_en", "") or "").strip(),
             "tarea_actualizado_en": (_row_value(row, "tarea_actualizado_en", "") or "").strip(),
+            "chat_ult_autor": chat_ult_autor,
+            "chat_ult_autor_username": chat_ult_autor_username,
+            "chat_ult_creado_en": chat_ult_creado_en,
+            "gestion_turno": gestion_turno,
+            "gestion_turno_label": gestion_turno_label,
             "es_privada": es_privada,
             "privado_owner_username": (_row_value(row, "privado_owner_username", "") or "").strip(),
             "privado_owner_nombre": (_row_value(row, "privado_owner_nombre", "") or "").strip(),
@@ -463,6 +510,30 @@ def register_novedades(bp, get_db):
                     COALESCE(tarea_asignado_por_username,'') AS tarea_asignado_por_username,
                     COALESCE(tarea_asignado_en,'') AS tarea_asignado_en,
                     COALESCE(tarea_actualizado_en,'') AS tarea_actualizado_en,
+                    COALESCE((
+                        SELECT c.autor
+                        FROM novedades_diarias_chat c
+                        WHERE c.novedad_id = novedades_diarias.id
+                          AND COALESCE(c.es_sistema,0)=0
+                        ORDER BY c.id DESC
+                        LIMIT 1
+                    ),'') AS chat_ult_autor,
+                    COALESCE((
+                        SELECT c.autor_username
+                        FROM novedades_diarias_chat c
+                        WHERE c.novedad_id = novedades_diarias.id
+                          AND COALESCE(c.es_sistema,0)=0
+                        ORDER BY c.id DESC
+                        LIMIT 1
+                    ),'') AS chat_ult_autor_username,
+                    COALESCE((
+                        SELECT c.creado_en
+                        FROM novedades_diarias_chat c
+                        WHERE c.novedad_id = novedades_diarias.id
+                          AND COALESCE(c.es_sistema,0)=0
+                        ORDER BY c.id DESC
+                        LIMIT 1
+                    ),'') AS chat_ult_creado_en,
                     COALESCE(privado_flag,0) AS privado_flag,
                     COALESCE(privado_owner_username,'') AS privado_owner_username,
                     COALESCE(privado_owner_nombre,'') AS privado_owner_nombre

@@ -477,6 +477,16 @@
     opacity: 0.6;
     cursor: not-allowed;
   }
+  .btn-inline.row-gestion.turn-tu-respuesta {
+    border-color: #f4c1ca;
+    background: #fff1f4;
+    color: #b4233f;
+  }
+  .btn-inline.row-gestion.turn-esperando {
+    border-color: #b8e2c7;
+    background: #eefbf2;
+    color: #1f7a45;
+  }
 
   .aux-row {
     display: flex;
@@ -1019,6 +1029,10 @@
         </div>
       </div>
       <button id="btnRecargarDia" type="button" class="btn-soft">Recargar dia</button>
+    </div>
+    <div class="aux-row" style="padding-top:0;">
+      <span class="btn-inline row-gestion turn-tu-respuesta" style="cursor:default;">Rojo: te toca responder</span>
+      <span class="btn-inline row-gestion turn-esperando" style="cursor:default;">Verde: esperando respuesta</span>
     </div>
 
     <div id="nvdSplitWrap" class="nvd-split-grid">
@@ -2048,7 +2062,20 @@
 
     function makeRowActions(r) {
       if (r && r.puede_ver_gestion) {
-        return '<button type="button" class="btn-inline row-gestion" data-id="' + r.id + '">Abrir gestion</button>';
+        var turno = String((r && r.gestion_turno) || "").trim();
+        var extraCls = "";
+        var label = "Abrir gestion";
+        var tip = "Abrir gestion interna";
+        if (turno === "tu_respuesta") {
+          extraCls = " turn-tu-respuesta";
+          label = "Responder";
+          tip = "Hay mensaje pendiente para vos";
+        } else if (turno === "esperando") {
+          extraCls = " turn-esperando";
+          label = "Esperando";
+          tip = "Esperando respuesta del otro";
+        }
+        return '<button type="button" class="btn-inline row-gestion' + extraCls + '" data-id="' + r.id + '" title="' + escapeHtml(tip) + '">' + escapeHtml(label) + "</button>";
       }
       return "";
     }
