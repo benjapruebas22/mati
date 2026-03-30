@@ -5477,10 +5477,90 @@ def sedes_resumen_mpd():
         resumen_sedes_totals["luminarias_total"] += safe_row_val(r, "luminarias_total") or 0
         resumen_sedes_totals["puestos_trabajo"] += safe_row_val(r, "puestos_trabajo") or 0
 
+    # Vencimientos globales de matafuegos (todas las sedes).
+    matafuegos_vto_raw = db.execute("""
+        SELECT
+            UPPER(COALESCE(m.cod_sede,'')) AS sede_codigo,
+            COALESCE(s.nombre,'') AS sede_nombre,
+            UPPER(COALESCE(m.piso,'')) AS piso,
+            UPPER(COALESCE(m.codigo_local,'')) AS codigo_local,
+            COALESCE(m.ubicacion,'') AS ubicacion,
+            COALESCE(m.numero_serie,'') AS numero_serie,
+            COALESCE(m.tipo,'') AS tipo,
+            COALESCE(m.capacidad_kg,'') AS capacidad_kg,
+            COALESCE(m.fecha_vencimiento,'') AS fecha_vencimiento
+        FROM matafuegos_sede m
+        LEFT JOIN sedes_mpd s
+          ON UPPER(COALESCE(s.codigo,'')) = UPPER(COALESCE(m.cod_sede,''))
+        WHERE COALESCE(m.activo,1)=1
+          AND TRIM(COALESCE(m.fecha_vencimiento,'')) <> ''
+        ORDER BY date(m.fecha_vencimiento) ASC,
+                 UPPER(COALESCE(m.cod_sede,'')) ASC,
+                 UPPER(COALESCE(m.codigo_local,'')) ASC,
+                 COALESCE(m.ubicacion,'') ASC,
+                 COALESCE(m.numero_serie,'') ASC
+        LIMIT 3000
+    """).fetchall()
+
+    hoy = date.today()
+    matafuegos_vto_rows = []
+    matafuegos_vto_kpi = {
+        "total": 0,
+        "vencidos": 0,
+        "vence_hoy": 0,
+        "vence_45d": 0,
+        "vigentes": 0,
+    }
+    for r in matafuegos_vto_raw:
+        f_vto = str(r["fecha_vencimiento"] or "").strip()
+        dias_restantes = None
+        estado_vto = "Sin fecha"
+        estado_key = "sin_fecha"
+        try:
+            fdate = datetime.strptime(f_vto, "%Y-%m-%d").date()
+            dias_restantes = (fdate - hoy).days
+            if dias_restantes < 0:
+                estado_vto = "Vencido"
+                estado_key = "vencido"
+                matafuegos_vto_kpi["vencidos"] += 1
+            elif dias_restantes == 0:
+                estado_vto = "Vence hoy"
+                estado_key = "hoy"
+                matafuegos_vto_kpi["vence_hoy"] += 1
+            elif dias_restantes <= 45:
+                estado_vto = "Vence <=45d"
+                estado_key = "45d"
+                matafuegos_vto_kpi["vence_45d"] += 1
+            else:
+                estado_vto = "Vigente"
+                estado_key = "vigente"
+                matafuegos_vto_kpi["vigentes"] += 1
+        except Exception:
+            estado_vto = "Fecha invalida"
+            estado_key = "invalida"
+
+        matafuegos_vto_rows.append({
+            "sede_codigo": str(r["sede_codigo"] or "").strip().upper(),
+            "sede_nombre": str(r["sede_nombre"] or "").strip(),
+            "piso": str(r["piso"] or "").strip().upper(),
+            "codigo_local": str(r["codigo_local"] or "").strip().upper(),
+            "ubicacion": str(r["ubicacion"] or "").strip(),
+            "numero_serie": str(r["numero_serie"] or "").strip(),
+            "tipo": str(r["tipo"] or "").strip(),
+            "capacidad_kg": str(r["capacidad_kg"] or "").strip(),
+            "fecha_vencimiento": f_vto,
+            "dias_restantes": dias_restantes,
+            "estado_vto": estado_vto,
+            "estado_vto_key": estado_key,
+        })
+        matafuegos_vto_kpi["total"] += 1
+
     return render_template(
         "sedes_resumen_mpd.html",
         rows=resumen_sedes_rows,
         totals=resumen_sedes_totals,
+        matafuegos_vto_rows=matafuegos_vto_rows,
+        matafuegos_vto_kpi=matafuegos_vto_kpi,
     )
 
 # ============================================================

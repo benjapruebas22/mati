@@ -103,6 +103,101 @@
         </tfoot>
       </table>
     </div>
+
+    <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#fff7ed;border:1px solid #fed7aa;padding:10px 12px;border-radius:12px;">
+      <div>
+        <h3 style="margin:0;font-size:15px;color:#9a3412;">Vencimientos de matafuegos (todas las sedes)</h3>
+        <div style="font-size:12px;color:#7c2d12;margin-top:2px;">Vista consolidada para controlar recargas/vencimientos en un solo lugar.</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:12px;">
+        <span style="background:#fff;padding:5px 8px;border-radius:999px;border:1px solid #e5e7eb;"><strong>Total:</strong> {{ matafuegos_vto_kpi.total }}</span>
+        <span style="background:#fff;padding:5px 8px;border-radius:999px;border:1px solid #fecaca;color:#991b1b;"><strong>Vencidos:</strong> {{ matafuegos_vto_kpi.vencidos }}</span>
+        <span style="background:#fff;padding:5px 8px;border-radius:999px;border:1px solid #fdba74;color:#9a3412;"><strong>Hoy:</strong> {{ matafuegos_vto_kpi.vence_hoy }}</span>
+        <span style="background:#fff;padding:5px 8px;border-radius:999px;border:1px solid #fcd34d;color:#92400e;"><strong><=45d:</strong> {{ matafuegos_vto_kpi.vence_45d }}</span>
+      </div>
+    </div>
+
+    <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:end;">
+      <div>
+        <label style="font-size:12px;color:#64748b;">Filtro sede (matafuegos)</label>
+        <select id="mfFiltroSede" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+          <option value="">Todas</option>
+          {% for r in rows %}
+            <option value="{{ r.codigo }}">{{ r.codigo }} - {{ r.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;color:#64748b;">Estado vencimiento</label>
+        <select id="mfFiltroEstado" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+          <option value="">Todos</option>
+          <option value="vencido">Vencido</option>
+          <option value="hoy">Vence hoy</option>
+          <option value="45d">Vence <=45d</option>
+          <option value="vigente">Vigente</option>
+        </select>
+      </div>
+      <button class="btn" type="button" onclick="resetFiltrosMatafuegos()" style="padding:6px 12px;">Reset</button>
+    </div>
+
+    <div style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;overflow:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;">
+        <thead style="background:#fff7ed;">
+          <tr>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Sede</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Nombre</th>
+            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Piso/Local</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Ubicacion</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Serie</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Tipo</th>
+            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Kg</th>
+            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Vencimiento</th>
+            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Dias</th>
+            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Estado</th>
+            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Accion</th>
+          </tr>
+        </thead>
+        <tbody id="mfVtoBody">
+          {% if matafuegos_vto_rows and matafuegos_vto_rows|length > 0 %}
+            {% for mf in matafuegos_vto_rows %}
+            <tr data-mf-sede="{{ mf.sede_codigo }}" data-mf-estado="{{ mf.estado_vto_key }}">
+              <td style="padding:8px;border-bottom:1px solid #e5e7eb;font-weight:900;">{{ mf.sede_codigo }}</td>
+              <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ mf.sede_nombre or '-' }}</td>
+              <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
+                {{ mf.piso or '-' }}{% if mf.codigo_local %} / {{ mf.codigo_local }}{% endif %}
+              </td>
+              <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ mf.ubicacion or '-' }}</td>
+              <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ mf.numero_serie or '-' }}</td>
+              <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ mf.tipo or '-' }}</td>
+              <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ mf.capacidad_kg or '-' }}</td>
+              <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ mf.fecha_vencimiento or '-' }}</td>
+              <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
+                {% if mf.dias_restantes is not none %}{{ mf.dias_restantes }}{% else %}-{% endif %}
+              </td>
+              <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
+                {% if mf.estado_vto_key == 'vencido' %}
+                  <span style="display:inline-block;padding:2px 7px;border-radius:999px;background:#fee2e2;color:#991b1b;font-weight:800;">Vencido</span>
+                {% elif mf.estado_vto_key == 'hoy' %}
+                  <span style="display:inline-block;padding:2px 7px;border-radius:999px;background:#ffedd5;color:#9a3412;font-weight:800;">Vence hoy</span>
+                {% elif mf.estado_vto_key == '45d' %}
+                  <span style="display:inline-block;padding:2px 7px;border-radius:999px;background:#fef3c7;color:#92400e;font-weight:800;">Vence <=45d</span>
+                {% else %}
+                  <span style="display:inline-block;padding:2px 7px;border-radius:999px;background:#dcfce7;color:#166534;font-weight:800;">Vigente</span>
+                {% endif %}
+              </td>
+              <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
+                <a class="btn" style="padding:4px 8px;" href="{{ url_for('sede_ficha', codigo=mf.sede_codigo, tab='matafuegos') }}">Ver sede</a>
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="11" style="padding:10px;color:#64748b;">No hay matafuegos con fecha de vencimiento cargada.</td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
     {% else %}
     <div style="color:#64748b;font-size:12px;margin-top:12px;">No hay datos para mostrar.</div>
     {% endif %}
@@ -112,6 +207,8 @@
 <script>
   const filtroSede = document.getElementById("filtroSede");
   const filtroElemento = document.getElementById("filtroElemento");
+  const mfFiltroSede = document.getElementById("mfFiltroSede");
+  const mfFiltroEstado = document.getElementById("mfFiltroEstado");
   const allCols = [
     "mesa_pc",
     "escritorio_prof",
@@ -170,6 +267,30 @@
   filtroSede.addEventListener("change", applyResumenFiltros);
   filtroElemento.addEventListener("change", applyResumenFiltros);
   applyResumenFiltros();
+
+  function applyMatafuegosFiltros() {
+    if (!mfFiltroSede || !mfFiltroEstado) return;
+    const sede = mfFiltroSede.value || "";
+    const est = mfFiltroEstado.value || "";
+    document.querySelectorAll("#mfVtoBody tr[data-mf-sede]").forEach(tr => {
+      const okSede = (!sede || (tr.dataset.mfSede || "") === sede);
+      const okEst = (!est || (tr.dataset.mfEstado || "") === est);
+      tr.style.display = (okSede && okEst) ? "" : "none";
+    });
+  }
+
+  function resetFiltrosMatafuegos() {
+    if (!mfFiltroSede || !mfFiltroEstado) return;
+    mfFiltroSede.value = "";
+    mfFiltroEstado.value = "";
+    applyMatafuegosFiltros();
+  }
+
+  if (mfFiltroSede && mfFiltroEstado) {
+    mfFiltroSede.addEventListener("change", applyMatafuegosFiltros);
+    mfFiltroEstado.addEventListener("change", applyMatafuegosFiltros);
+    applyMatafuegosFiltros();
+  }
 </script>
 
 {% endblock %}
