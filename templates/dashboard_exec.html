@@ -1227,6 +1227,7 @@
     var HIDE_PENDIENTES_NO_CERRADOS = true;
     var TAREA_ESTADOS = ["Pendiente", "En curso", "Completada"];
     var IS_MATIAS = false;
+    var IS_FRANCISCO = false;
     var GESTION_OPEN_ID = 0;
     var GESTION_DATA = null;
     var SEDES_ASSIGN = [];
@@ -1366,6 +1367,14 @@
       el.gestionMsg.style.color = isErr ? "#9e4459" : "#5c789c";
     }
 
+    function canUseTaskMode() {
+      return !!(IS_MATIAS || IS_FRANCISCO);
+    }
+
+    function isTaskMode() {
+      return canUseTaskMode() && String((el.modo && el.modo.value) || "solicitud") === "tarea";
+    }
+
     function escapeHtml(v) {
       return String(v || "")
         .replace(/&/g, "&amp;")
@@ -1471,16 +1480,13 @@
       if (!el.sede || !el.deposito) return Promise.resolve();
       var sede = String(el.sede.value || "").trim().toUpperCase();
       if (!sede) {
-        fillSelect(el.deposito, [], true, "Deposito / local");
+        fillSelect(el.deposito, [{ value: "", label: "(sin depositos cargados)" }], false);
         return Promise.resolve();
       }
       return fetchDepositosBySede(sede).then(function (deps) {
-        var depOpts = (deps || []).map(function (d) {
-          var c = String((d && d.codigo) || "").trim().toUpperCase();
-          var desc = String((d && d.descripcion) || c).trim();
-          return { value: c, label: c + (desc && desc !== c ? (" - " + desc) : "") };
-        });
-        fillSelect(el.deposito, depOpts, true, "Deposito / local");
+        var depOpts = mapDepositosToOptions(deps);
+        if (depOpts.length) fillSelect(el.deposito, depOpts, true, "Deposito / local");
+        else fillSelect(el.deposito, [{ value: "", label: "(sin depositos cargados)" }], false);
         var pref = String(preferCodigo || "").trim().toUpperCase();
         if (pref) el.deposito.value = pref;
       });
@@ -1488,7 +1494,11 @@
 
     function applyModoUI() {
       if (!el.modo) return;
-      if (!IS_MATIAS) {
+      var modoTaskOpt = el.modo.querySelector('option[value="tarea"]');
+      if (modoTaskOpt) {
+        modoTaskOpt.textContent = IS_MATIAS ? "Tarea asignada" : "Auto recordatorio (privado)";
+      }
+      if (!canUseTaskMode()) {
         el.modo.value = "solicitud";
         el.modo.disabled = true;
         if (el.modoWrap) el.modoWrap.style.display = "none";
@@ -1497,13 +1507,13 @@
         if (el.modoWrap) el.modoWrap.style.display = "";
       }
       var modo = String(el.modo.value || "solicitud");
-      var isTask = IS_MATIAS && modo === "tarea";
+      var isTask = canUseTaskMode() && modo === "tarea";
       var nodesSol = document.querySelectorAll(".mode-solicitud");
       var nodesTask = document.querySelectorAll(".mode-tarea");
       nodesSol.forEach(function (n) { n.style.display = isTask ? "none" : ""; });
       nodesTask.forEach(function (n) { n.style.display = isTask ? "" : "none"; });
       if (el.agenteLabel) {
-        el.agenteLabel.textContent = isTask ? "Agente asignado" : "Agente que carga";
+        el.agenteLabel.textContent = isTask ? (IS_MATIAS ? "Agente asignado" : "Agente") : "Agente que carga";
       }
       if (el.estado) el.estado.value = "Informado";
       if (isTask) {
@@ -1735,36 +1745,51 @@
     function fetchDepositosBySede(sedeCodigo) {
       var sede = String(sedeCodigo || "").trim().toUpperCase();
       if (!sede) return Promise.resolve([]);
-      return fetch("/api/dashboard/novedades_depositos_por_sede?sede_codigo=" + encodeURIComponent(sede))
-        .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, b: b || {} }; }); })
+      function fetchJson(url) {
+        return fetch(url)
+          .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, b: b || {} }; }); })
+          .catch(function () { return { ok: false, b: {} }; });
+      }
+      return fetchJson("/ordenes/api/depositos?sede_id=" + encodeURIComponent(sede))
         .then(function (x) {
-          if (!x.ok || !x.b.ok) return [];
-          return Array.isArray(x.b.depositos) ? x.b.depositos : [];
+          if (x.ok && x.b && Array.isArray(x.b.items)) return x.b.items;
+          return fetchJson("/api/dashboard/novedades_depositos_por_sede?sede_codigo=" + encodeURIComponent(sede))
+            .then(function (y) {
+              if (!y.ok || !y.b.ok) return [];
+              return Array.isArray(y.b.depositos) ? y.b.depositos : [];
+            });
         })
         .catch(function () { return []; });
+    }
+
+    function mapDepositosToOptions(deps) {
+      return (deps || []).map(function (d) {
+        var c = String((d && (d.codigo || d.deposito_id || d.value)) || "").trim().toUpperCase();
+        if (!c) return null;
+        var desc = String((d && (d.descripcion || d.label || d.nombre)) || "").trim();
+        var label = c + (desc && normTxt(desc) !== normTxt(c) ? (" - " + desc) : "");
+        return { value: c, label: label };
+      }).filter(Boolean);
     }
 
     function refreshGestionDepositos(preferCodigo) {
       if (!el.gestionTareaSede || !el.gestionTareaDeposito) return Promise.resolve();
       var sede = String(el.gestionTareaSede.value || "").trim().toUpperCase();
       if (!sede) {
-        fillSelect(el.gestionTareaDeposito, [], true, "Deposito");
+        fillSelect(el.gestionTareaDeposito, [{ value: "", label: "(sin depositos cargados)" }], false);
         return Promise.resolve();
       }
       return fetchDepositosBySede(sede).then(function (deps) {
-        var depOpts = (deps || []).map(function (d) {
-          var c = String((d && d.codigo) || "").trim().toUpperCase();
-          var desc = String((d && d.descripcion) || c).trim();
-          return { value: c, label: c + (desc && desc !== c ? (" - " + desc) : "") };
-        });
-        fillSelect(el.gestionTareaDeposito, depOpts, true, "Deposito");
+        var depOpts = mapDepositosToOptions(deps);
+        if (depOpts.length) fillSelect(el.gestionTareaDeposito, depOpts, true, "Deposito");
+        else fillSelect(el.gestionTareaDeposito, [{ value: "", label: "(sin depositos cargados)" }], false);
         var pref = String(preferCodigo || "").trim().toUpperCase();
         if (pref) el.gestionTareaDeposito.value = pref;
       });
     }
 
     function gestionButtonLabel() {
-      return IS_MATIAS ? "Abrir gestion" : "Responder";
+      return (IS_MATIAS || IS_FRANCISCO) ? "Abrir gestion" : "Responder";
     }
 
     function canOpenGestion(row) {
@@ -1804,10 +1829,10 @@
       el.gestionEstado.value = String(nov.estado || "Informado");
       aplicarEstiloEstadoSelect(el.gestionEstado);
       if (el.gestionEstadoRow) {
-        el.gestionEstadoRow.style.display = (IS_MATIAS && nov.puede_cambiar_estado) ? "flex" : "none";
+        el.gestionEstadoRow.style.display = nov.puede_cambiar_estado ? "flex" : "none";
       }
       if (el.gestionTareaRow) {
-        el.gestionTareaRow.style.display = (IS_MATIAS && nov.puede_asignar_tarea) ? "grid" : "none";
+        el.gestionTareaRow.style.display = nov.puede_asignar_tarea ? "grid" : "none";
       }
       if (el.gestionTareaEstado) {
         fillSelect(el.gestionTareaEstado, TAREA_ESTADOS, false);
@@ -1894,8 +1919,8 @@
         if (!canReply) el.gestionTexto.value = "";
       }
       if (el.gestionEnviar) el.gestionEnviar.disabled = !canReply;
-      if (el.gestionTareaGuardar) el.gestionTareaGuardar.disabled = !(IS_MATIAS && nov.puede_asignar_tarea);
-      if (el.gestionTareaLimpiar) el.gestionTareaLimpiar.disabled = !(IS_MATIAS && nov.puede_asignar_tarea);
+      if (el.gestionTareaGuardar) el.gestionTareaGuardar.disabled = !nov.puede_asignar_tarea;
+      if (el.gestionTareaLimpiar) el.gestionTareaLimpiar.disabled = !nov.puede_asignar_tarea;
       setGestionMsg("", false);
     }
 
@@ -2151,7 +2176,7 @@
 
     function saveNovedad() {
       var modo = String((el.modo && el.modo.value) || "solicitud");
-      var isTask = IS_MATIAS && modo === "tarea";
+      var isTask = canUseTaskMode() && modo === "tarea";
       var payload = null;
       var url = "/api/dashboard/novedades_diarias_save";
       if (isTask) {
@@ -2168,6 +2193,7 @@
           deposito_codigo: depCod,
           deposito_nombre: depNom,
           tarea: String((el.tareaTxt && el.tareaTxt.value) || "").trim(),
+          privado: !!IS_FRANCISCO,
         };
         url = "/api/dashboard/tareas_asignadas_save";
         if (!payload.fecha || !payload.agente || !payload.sede_codigo || !payload.tarea) {
@@ -2200,7 +2226,12 @@
         .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, b: b || {} }; }); })
         .then(function (x) {
           if (!x.ok || !x.b.ok) throw new Error(x.b.error || "No se pudo guardar");
-          setMsg(isTask ? "Tarea asignada." : (payload.id > 0 ? "Novedad actualizada." : "Novedad registrada."), false);
+          setMsg(
+            isTask
+              ? (IS_FRANCISCO ? "Recordatorio privado guardado." : "Tarea asignada.")
+              : (payload.id > 0 ? "Novedad actualizada." : "Novedad registrada."),
+            false
+          );
           resetForm();
           return loadDay();
         })
@@ -2308,10 +2339,11 @@
           fillSelect(el.sede, sedes, true, "Sede");
 
           IS_MATIAS = !!d.is_matias;
+          IS_FRANCISCO = !!d.is_francisco;
           var agentes = applyAgentePolicy(d.agentes || [], d.agente_actual || "");
           AGENTES_ASSIGN = Array.isArray(agentes) ? agentes.slice() : [];
           if (el.modo) {
-            el.modo.value = (IS_MATIAS && pref.modo === "tarea") ? "tarea" : "solicitud";
+            el.modo.value = (canUseTaskMode() && pref.modo === "tarea") ? "tarea" : "solicitud";
           }
           applyModoUI();
           renderAgenteFiltros(agentes);
@@ -2323,7 +2355,7 @@
           if (!el.fecha.value) el.fecha.value = d.fecha || "";
           if (pref.sede) el.sede.value = pref.sede;
           if (pref.tipo) el.tipo.value = pref.tipo;
-          if (IS_MATIAS && String((el.modo && el.modo.value) || "") === "tarea") {
+          if (isTaskMode()) {
             refreshFormDepositos("");
           }
           renderVehiculos(d.vehiculos || []);
@@ -2347,7 +2379,7 @@
     if (el.sede) {
       el.sede.addEventListener("change", function () {
         var modo = String((el.modo && el.modo.value) || "solicitud");
-        if (IS_MATIAS && modo === "tarea") {
+        if (canUseTaskMode() && modo === "tarea") {
           refreshFormDepositos("");
         }
       });

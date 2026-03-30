@@ -194,6 +194,9 @@ def _ensure_novedades_diarias_table(con):
             tarea_asignado_por_username TEXT DEFAULT '',
             tarea_asignado_en TEXT,
             tarea_actualizado_en TEXT,
+            privado_flag INTEGER DEFAULT 0,
+            privado_owner_username TEXT DEFAULT '',
+            privado_owner_nombre TEXT DEFAULT '',
             creado_en TEXT,
             actualizado_en TEXT
         )
@@ -216,6 +219,9 @@ def _ensure_novedades_diarias_table(con):
         ("tarea_asignado_por_username", "TEXT DEFAULT ''"),
         ("tarea_asignado_en", "TEXT"),
         ("tarea_actualizado_en", "TEXT"),
+        ("privado_flag", "INTEGER DEFAULT 0"),
+        ("privado_owner_username", "TEXT DEFAULT ''"),
+        ("privado_owner_nombre", "TEXT DEFAULT ''"),
         ("creado_en", "TEXT"),
         ("actualizado_en", "TEXT"),
     ):
