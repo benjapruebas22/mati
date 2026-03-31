@@ -213,6 +213,10 @@ def _actor_can_view_gestion(actor, agente_novedad, agente_tarea=""):
         return False
     if _can_admin_novedades(actor):
         return True
+    # Permitir por coincidencia flexible de nombre/usuario para evitar bloqueos
+    # cuando el nombre de tarea no coincide 1:1 con el nombre completo del login.
+    if _actor_match_name(actor, agente_novedad) or _actor_match_name(actor, agente_tarea):
+        return True
     actor_user = _norm_ci(actor.get("username") or "")
     actor_name = _norm_ci(actor.get("full_name") or actor.get("display") or "")
     agentes_vinculados = {
@@ -229,12 +233,37 @@ def _actor_match_name(actor, raw_name):
     val = _norm_ci(raw_name)
     if not val:
         return False
-    ids = {
+    ids = [
         _norm_ci(actor.get("username") or ""),
         _norm_ci(actor.get("full_name") or ""),
         _norm_ci(actor.get("display") or ""),
-    }
-    return val in {x for x in ids if x}
+    ]
+    ids = [x for x in ids if x]
+    if not ids:
+        return False
+
+    def _parts(txt):
+        clean = _norm_ci(txt).replace(",", " ").replace("-", " ")
+        return [p for p in clean.split() if len(p) >= 2]
+
+    val_user = val.split("@", 1)[0]
+    val_parts = _parts(val)
+    for ident in ids:
+        ident_user = ident.split("@", 1)[0]
+        if val == ident or val == ident_user or val_user == ident or val_user == ident_user:
+            return True
+        # Match flexible para nombres con segundo nombre/apellido
+        if " " in val and " " in ident:
+            if val in ident or ident in val:
+                return True
+            ident_parts = _parts(ident)
+            if len(val_parts) >= 2 and len(ident_parts) >= 2:
+                if val_parts[0] in ident_parts and val_parts[-1] in ident_parts:
+                    return True
+                overlap = len(set(val_parts).intersection(set(ident_parts)))
+                if overlap >= 2:
+                    return True
+    return False
 
 
 def _is_private_novedad_row(row):

@@ -799,15 +799,31 @@
     font-weight: 700;
     padding: 3px 8px;
   }
+  .gestion-section-title {
+    margin: 8px 12px 0;
+    font-size: 11px;
+    color: #4f6f98;
+    font-weight: 900;
+    letter-spacing: 0.2px;
+    text-transform: uppercase;
+  }
   .gestion-status-row {
-    padding: 8px 12px 0;
+    margin: 4px 12px 0;
+    border: 1px solid #dbe6f6;
+    border-radius: 10px;
+    background: #f8fbff;
+    padding: 8px;
     display: flex;
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
   }
   .gestion-tarea-row {
-    padding: 8px 12px 0;
+    margin: 4px 12px 0;
+    border: 1px solid #dbe6f6;
+    border-radius: 10px;
+    background: #f8fbff;
+    padding: 8px;
     display: grid;
     gap: 6px;
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -876,7 +892,7 @@
     font-weight: 700;
   }
   .gestion-chat-list {
-    margin: 8px 12px 0;
+    margin: 4px 12px 0;
     border: 1px solid #e1e9f6;
     border-radius: 10px;
     background: linear-gradient(180deg, #fbfdff 0%, #f8fbff 100%);
@@ -933,7 +949,11 @@
     font-weight: 700;
   }
   .gestion-compose {
-    padding: 8px 12px 12px;
+    margin: 4px 12px 12px;
+    border: 1px solid #dbe6f6;
+    border-radius: 10px;
+    background: #f8fbff;
+    padding: 8px;
     display: grid;
     gap: 8px;
   }
@@ -1357,12 +1377,14 @@
       <button id="gestionClose" type="button" class="btn-soft">Cerrar</button>
     </div>
     <div id="gestionMeta" class="gestion-meta"></div>
+    <div id="gestionStatusTitle" class="gestion-section-title" style="display:none;">Estado de novedad</div>
     <div id="gestionStatusRow" class="gestion-status-row" style="display:none;">
       <label for="gestionEstado" style="font-size:11px;color:#59799e;font-weight:800;">Estado</label>
       <select id="gestionEstado" class="ctl-sel" style="max-width:180px;"></select>
       <button id="gestionEstadoGuardar" type="button" class="btn-inline">Actualizar estado</button>
       <button id="gestionCerrar" type="button" class="btn-inline">Cerrar novedad</button>
     </div>
+    <div id="gestionTareaTitle" class="gestion-section-title" style="display:none;">Asignacion de tarea</div>
     <div id="gestionTareaRow" class="gestion-tarea-row" style="display:none;">
       <div>
         <label for="gestionTareaAgente" style="font-size:11px;color:#59799e;font-weight:800;">Agente asignado</label>
@@ -1387,6 +1409,7 @@
       <button id="gestionTareaGuardar" type="button" class="btn-inline">Guardar tarea</button>
       <button id="gestionTareaLimpiar" type="button" class="btn-inline">Limpiar</button>
     </div>
+    <div id="gestionToolsTitle" class="gestion-section-title" style="display:none;">Herramientas y equipos</div>
     <div id="gestionToolsRow" class="gestion-tools-row" style="display:none;">
       <div class="gestion-tools-title">Herramientas / equipos que se llevan</div>
       <div class="gestion-tools-add">
@@ -1405,6 +1428,7 @@
       <div class="gestion-tools-help">Marcá qué herramienta vuelve y cuál queda en sede para seguir trabajando.</div>
     </div>
     <div id="gestionTareaView" class="gestion-tarea-view">Sin tarea asignada.</div>
+    <div class="gestion-section-title">Conversacion interna</div>
     <div id="gestionChatList" class="gestion-chat-list"></div>
     <div class="gestion-compose">
       <textarea id="gestionTexto" class="ctl-inp" maxlength="1000" placeholder="Escribe una respuesta interna..."></textarea>
@@ -1540,6 +1564,9 @@
       gestionClose: document.getElementById("gestionClose"),
       gestionTitle: document.getElementById("gestionTitle"),
       gestionMeta: document.getElementById("gestionMeta"),
+      gestionStatusTitle: document.getElementById("gestionStatusTitle"),
+      gestionTareaTitle: document.getElementById("gestionTareaTitle"),
+      gestionToolsTitle: document.getElementById("gestionToolsTitle"),
       gestionChatList: document.getElementById("gestionChatList"),
       gestionTexto: document.getElementById("gestionTexto"),
       gestionEnviar: document.getElementById("gestionEnviar"),
@@ -2133,12 +2160,21 @@
       if (el.gestionEstadoRow) {
         el.gestionEstadoRow.style.display = nov.puede_cambiar_estado ? "flex" : "none";
       }
+      if (el.gestionStatusTitle) {
+        el.gestionStatusTitle.style.display = nov.puede_cambiar_estado ? "block" : "none";
+      }
       if (el.gestionTareaRow) {
         el.gestionTareaRow.style.display = nov.puede_asignar_tarea ? "grid" : "none";
+      }
+      if (el.gestionTareaTitle) {
+        el.gestionTareaTitle.style.display = nov.puede_asignar_tarea ? "block" : "none";
       }
       var canToolsEdit = !!(nov.puede_asignar_tarea || (nov.puede_ver_gestion && nov.tarea_asignada));
       if (el.gestionToolsRow) {
         el.gestionToolsRow.style.display = canToolsEdit ? "grid" : "none";
+      }
+      if (el.gestionToolsTitle) {
+        el.gestionToolsTitle.style.display = canToolsEdit ? "block" : "none";
       }
       if (el.gestionTareaEstado) {
         fillSelect(el.gestionTareaEstado, TAREA_ESTADOS, false);
@@ -2226,7 +2262,7 @@
         el.gestionChatList.scrollTop = el.gestionChatList.scrollHeight;
       }
 
-      var canReply = !!nov.puede_ver_gestion;
+      var canReply = !!(nov.puede_ver_gestion || nov.puede_asignar_tarea);
       if (el.gestionTexto) {
         el.gestionTexto.disabled = !canReply;
         if (!canReply) el.gestionTexto.value = "";
