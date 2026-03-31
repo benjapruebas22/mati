@@ -44,8 +44,15 @@ NVD_GESTION_TIPOS = {
 }
 NVD_TIPO_TAREA = "Asignacion de tareas"
 FRANCISCO_USERNAMES = {"fsavio", "francisco", "francisco.savio", "franciscosavio"}
-NVD_ADMIN_USERNAMES = {"mcalderari", "msorbello", "mabatedaga"}
-NVD_ADMIN_FULLNAMES = {"matias calderari", "marcos sorbello", "maximiliano abatedaga"}
+NVD_ADMIN_USERNAMES = {"mcalderari", "msorbello", "msorbllo", "msorbell", "mabatedaga"}
+NVD_ADMIN_FULLNAMES = {
+    "matias calderari",
+    "marcos sorbello",
+    "marcos a sorbello",
+    "maximiliano abatedaga",
+    "maxi abatedaga",
+}
+NVD_ADMIN_USERNAME_PREFIXES = ("mcalderari", "msorb", "mabatedag")
 NVD_HERRAMIENTAS_PRESET = [
     "Hidrolavadora",
     "Cortadora de pasto",
@@ -154,7 +161,17 @@ def _is_matias_actor(username, full_name):
 def _is_novedades_admin_actor(username, full_name):
     norm_user = _norm_ci(username)
     norm_name = _norm_ci(full_name)
-    return norm_user in NVD_ADMIN_USERNAMES or norm_name in NVD_ADMIN_FULLNAMES
+    if norm_user in NVD_ADMIN_USERNAMES or norm_name in NVD_ADMIN_FULLNAMES:
+        return True
+    if norm_user and any(norm_user.startswith(pref) for pref in NVD_ADMIN_USERNAME_PREFIXES):
+        return True
+    if "marcos" in norm_name and "sorbello" in norm_name:
+        return True
+    if "abatedaga" in norm_name and ("maxi" in norm_name or "maximiliano" in norm_name):
+        return True
+    if "matias" in norm_name and "calderari" in norm_name:
+        return True
+    return False
 
 
 def _is_francisco_actor(username, full_name):
