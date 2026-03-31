@@ -1,3 +1,4 @@
+import json
 from datetime import date, datetime
 import unicodedata
 
@@ -43,6 +44,27 @@ NVD_GESTION_TIPOS = {
 }
 NVD_TIPO_TAREA = "Asignacion de tareas"
 FRANCISCO_USERNAMES = {"fsavio", "francisco", "francisco.savio", "franciscosavio"}
+NVD_HERRAMIENTAS_PRESET = [
+    "Hidrolavadora",
+    "Cortadora de pasto",
+    "Desmalezadora",
+    "Taladro",
+    "Amoladora",
+    "Soldadora",
+    "Escalera",
+    "Pala",
+    "Carretilla",
+    "Llave francesa",
+    "Juego de llaves",
+    "Pinza",
+    "Martillo",
+    "Maza",
+    "Destornilladores",
+]
+NVD_HERRAMIENTA_ACCIONES = {
+    "vuelve": "Traer de vuelta",
+    "queda": "Queda en sede",
+}
 
 
 def _norm_ci(value):
@@ -55,6 +77,70 @@ def _norm_ci(value):
     except Exception:
         pass
     return " ".join(raw.split())
+
+
+def _norm_tool_action(value):
+    raw = _norm_ci(value)
+    if raw in {"queda", "queda en sede", "dejar en sede", "sede"}:
+        return "queda"
+    return "vuelve"
+
+
+def _norm_tool_name(value):
+    txt = str(value or "").strip()
+    if not txt:
+        return ""
+    txt = " ".join(txt.split())
+    if len(txt) > 80:
+        txt = txt[:80]
+    return txt
+
+
+def _parse_tarea_herramientas(raw_value):
+    if not raw_value:
+        return []
+    data = raw_value
+    if isinstance(raw_value, str):
+        try:
+            data = json.loads(raw_value)
+        except Exception:
+            return []
+    if not isinstance(data, list):
+        return []
+    out = []
+    seen = set()
+    for item in data:
+        if isinstance(item, dict):
+            nombre = _norm_tool_name(item.get("item") or item.get("nombre") or item.get("herramienta") or "")
+            accion = _norm_tool_action(item.get("accion") or item.get("destino") or "")
+        else:
+            nombre = _norm_tool_name(item)
+            accion = "vuelve"
+        if not nombre:
+            continue
+        key = _norm_ci(nombre)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append({
+            "item": nombre,
+            "accion": accion,
+            "accion_label": NVD_HERRAMIENTA_ACCIONES.get(accion, NVD_HERRAMIENTA_ACCIONES["vuelve"]),
+        })
+    return out
+
+
+def _dump_tarea_herramientas(items):
+    safe = _parse_tarea_herramientas(items)
+    payload = [{"item": it["item"], "accion": it["accion"]} for it in safe]
+    return json.dumps(payload, ensure_ascii=False)
+
+
+def _herramientas_resumen(items):
+    safe = _parse_tarea_herramientas(items)
+    if not safe:
+        return ""
+    return "; ".join([f"{it['item']} ({it['accion_label']})" for it in safe])
 
 
 def _is_matias_actor(username, full_name):
@@ -194,6 +280,7 @@ def register_novedades(bp, get_db):
                 COALESCE(tarea_deposito_codigo,'') AS tarea_deposito_codigo,
                 COALESCE(tarea_deposito_nombre,'') AS tarea_deposito_nombre,
                 COALESCE(tarea_agente,'') AS tarea_agente,
+                COALESCE(tarea_herramientas_json,'') AS tarea_herramientas_json,
                 COALESCE(tarea_asignado_por,'') AS tarea_asignado_por,
                 COALESCE(tarea_asignado_por_username,'') AS tarea_asignado_por_username,
                 COALESCE(tarea_asignado_en,'') AS tarea_asignado_en,
@@ -283,6 +370,7 @@ def register_novedades(bp, get_db):
                     COALESCE(tarea_deposito_codigo,'') AS tarea_deposito_codigo,
                     COALESCE(tarea_deposito_nombre,'') AS tarea_deposito_nombre,
                     COALESCE(tarea_agente,'') AS tarea_agente,
+                    COALESCE(tarea_herramientas_json,'') AS tarea_herramientas_json,
                     COALESCE(tarea_asignado_por,'') AS tarea_asignado_por,
                     COALESCE(tarea_asignado_por_username,'') AS tarea_asignado_por_username,
                     COALESCE(tarea_asignado_en,'') AS tarea_asignado_en,
@@ -330,6 +418,8 @@ def register_novedades(bp, get_db):
         tipo = (_row_value(row, "tipo", "") or "").strip()
         agente = (_row_value(row, "agente", "") or "").strip()
         tarea_agente = (_row_value(row, "tarea_agente", "") or "").strip()
+        tarea_herramientas = _parse_tarea_herramientas(_row_value(row, "tarea_herramientas_json", "") or "")
+        tarea_herramientas_resumen = _herramientas_resumen(tarea_herramientas)
         es_privada = _is_private_novedad_row(row)
         es_duenio_privada = _actor_can_manage_private_novedad(actor, row)
         puede_ver_novedad = _actor_can_view_novedad(actor, row)
@@ -377,6 +467,8 @@ def register_novedades(bp, get_db):
             "tarea_deposito_codigo": (_row_value(row, "tarea_deposito_codigo", "") or "").strip().upper(),
             "tarea_deposito_nombre": (_row_value(row, "tarea_deposito_nombre", "") or "").strip(),
             "tarea_agente": tarea_agente,
+            "tarea_herramientas": tarea_herramientas,
+            "tarea_herramientas_resumen": tarea_herramientas_resumen,
             "tarea_asignado_por": (_row_value(row, "tarea_asignado_por", "") or "").strip(),
             "tarea_asignado_por_username": (_row_value(row, "tarea_asignado_por_username", "") or "").strip(),
             "tarea_asignado_en": (_row_value(row, "tarea_asignado_en", "") or "").strip(),
@@ -519,6 +611,7 @@ def register_novedades(bp, get_db):
                     COALESCE(tarea_deposito_codigo,'') AS tarea_deposito_codigo,
                     COALESCE(tarea_deposito_nombre,'') AS tarea_deposito_nombre,
                     COALESCE(tarea_agente,'') AS tarea_agente,
+                    COALESCE(tarea_herramientas_json,'') AS tarea_herramientas_json,
                     COALESCE(tarea_asignado_por,'') AS tarea_asignado_por,
                     COALESCE(tarea_asignado_por_username,'') AS tarea_asignado_por_username,
                     COALESCE(tarea_asignado_en,'') AS tarea_asignado_en,
@@ -877,7 +970,7 @@ def register_novedades(bp, get_db):
                 INSERT INTO novedades_diarias
                     (fecha, hora, agente, sede_codigo, tipo, subtipo, observacion, estado,
                      tarea_asignada, tarea_estado, tarea_sede_codigo, tarea_deposito_codigo, tarea_deposito_nombre,
-                     tarea_agente, tarea_asignado_por, tarea_asignado_por_username, tarea_asignado_en, tarea_actualizado_en,
+                     tarea_agente, tarea_herramientas_json, tarea_asignado_por, tarea_asignado_por_username, tarea_asignado_en, tarea_actualizado_en,
                      privado_flag, privado_owner_username, privado_owner_nombre, creado_en, actualizado_en)
                 VALUES (?, ?, ?, ?, ?, ?, ?, 'Informado',
                         ?, 'Pendiente', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -894,6 +987,7 @@ def register_novedades(bp, get_db):
                 deposito_codigo,
                 deposito_nombre,
                 agente,
+                "[]",
                 actor.get("display") or ("Matias" if is_matias else "Sistema"),
                 actor.get("username") or "",
                 ts,
@@ -1038,6 +1132,7 @@ def register_novedades(bp, get_db):
             "ok": True,
             "novedad": item,
             "mensajes": mensajes,
+            "herramientas_preset": list(NVD_HERRAMIENTAS_PRESET),
             "is_full": bool(actor.get("is_full")),
             "is_matias": bool(actor.get("is_matias")),
             "estados": list(NVD_ESTADOS),
@@ -1170,6 +1265,10 @@ def register_novedades(bp, get_db):
         tarea_agente = (payload.get("agente") or payload.get("tarea_agente") or "").strip()
         tarea_deposito_codigo = (payload.get("deposito_codigo") or payload.get("tarea_deposito_codigo") or "").strip().upper()
         tarea_deposito_nombre = (payload.get("deposito_nombre") or payload.get("tarea_deposito_nombre") or "").strip()
+        tarea_herramientas = _parse_tarea_herramientas(
+            payload.get("herramientas") or payload.get("tarea_herramientas") or []
+        )
+        solo_herramientas = str(payload.get("solo_herramientas") or "").strip().lower() in {"1", "true", "si", "yes"}
         limpiar = str(payload.get("limpiar") or "").strip().lower() in {"1", "true", "si", "yes"}
         if len(tarea) > 280:
             tarea = tarea[:280]
@@ -1180,6 +1279,7 @@ def register_novedades(bp, get_db):
             tarea_agente = ""
             tarea_deposito_codigo = ""
             tarea_deposito_nombre = ""
+            tarea_herramientas = []
         if tarea and tarea_estado not in {"Pendiente", "En curso", "Completada"}:
             tarea_estado = "Pendiente"
         con = get_db()
@@ -1197,11 +1297,23 @@ def register_novedades(bp, get_db):
             if not bool(item.get("gestion_habilitada")):
                 con.close()
                 return jsonify({"ok": False, "error": "La novedad no tiene gestion interna"}), 400
-            if not bool(item.get("puede_asignar_tarea")):
+            can_tools_only = bool(item.get("puede_ver_gestion")) and bool((item.get("tarea_asignada") or "").strip())
+            if solo_herramientas:
+                if not can_tools_only:
+                    con.close()
+                    return jsonify({"ok": False, "error": "No autorizado para actualizar herramientas"}), 403
+                limpiar = False
+                tarea = (item.get("tarea_asignada") or "").strip()
+                tarea_estado = (item.get("tarea_estado") or "").strip() or "Pendiente"
+                tarea_sede_codigo = (item.get("tarea_sede_codigo") or item.get("sede_codigo") or "").strip().upper()
+                tarea_agente = (item.get("tarea_agente") or item.get("agente") or "").strip()
+                tarea_deposito_codigo = (item.get("tarea_deposito_codigo") or "").strip().upper()
+                tarea_deposito_nombre = (item.get("tarea_deposito_nombre") or "").strip()
+            elif not bool(item.get("puede_asignar_tarea")):
                 con.close()
                 return jsonify({"ok": False, "error": "No autorizado para editar tarea"}), 403
             es_privada_propia = _actor_can_manage_private_novedad(actor, row)
-            if not limpiar:
+            if not limpiar and not solo_herramientas:
                 if not tarea_sede_codigo:
                     tarea_sede_codigo = (item.get("sede_codigo") or "").strip().upper()
                 if es_privada_propia:
@@ -1237,6 +1349,7 @@ def register_novedades(bp, get_db):
                     tarea_deposito_codigo=?,
                     tarea_deposito_nombre=?,
                     tarea_agente=?,
+                    tarea_herramientas_json=?,
                     tarea_asignado_por=?,
                     tarea_asignado_por_username=?,
                     tarea_asignado_en=?,
@@ -1250,9 +1363,10 @@ def register_novedades(bp, get_db):
                 tarea_deposito_codigo,
                 tarea_deposito_nombre,
                 tarea_agente,
-                (actor.get("display") or actor.get("username") or "Sistema") if tarea else "",
-                (actor.get("username") or "") if tarea else "",
-                ts if not limpiar else "",
+                _dump_tarea_herramientas(tarea_herramientas),
+                ((item.get("tarea_asignado_por") or "") if solo_herramientas else ((actor.get("display") or actor.get("username") or "Sistema") if tarea else "")),
+                ((item.get("tarea_asignado_por_username") or "") if solo_herramientas else ((actor.get("username") or "") if tarea else "")),
+                ((item.get("tarea_asignado_en") or "") if solo_herramientas else (ts if not limpiar else "")),
                 ts,
                 ts,
                 nov_id,
@@ -1261,10 +1375,19 @@ def register_novedades(bp, get_db):
             if tarea:
                 sede_txt = tarea_sede_codigo or "-"
                 dep_txt = tarea_deposito_codigo if tarea_deposito_codigo else "-"
-                msg = (
-                    f"{actor_name} asigno tarea a {tarea_agente}: {tarea} "
-                    f"(Sede {sede_txt} / Deposito {dep_txt} / Estado {tarea_estado})."
-                )
+                tools_txt = _herramientas_resumen(tarea_herramientas)
+                if solo_herramientas:
+                    if tools_txt:
+                        msg = f"{actor_name} actualizo herramientas de la tarea: {tools_txt}."
+                    else:
+                        msg = f"{actor_name} limpio el listado de herramientas de la tarea."
+                else:
+                    msg = (
+                        f"{actor_name} asigno tarea a {tarea_agente}: {tarea} "
+                        f"(Sede {sede_txt} / Deposito {dep_txt} / Estado {tarea_estado})."
+                    )
+                    if tools_txt:
+                        msg += f" Herramientas: {tools_txt}."
             else:
                 msg = f"{actor_name} elimino la tarea asignada."
             con.execute("""
@@ -1285,6 +1408,9 @@ def register_novedades(bp, get_db):
             "deposito_codigo": tarea_deposito_codigo,
             "deposito_nombre": tarea_deposito_nombre,
             "agente": tarea_agente,
+            "herramientas": tarea_herramientas,
+            "herramientas_resumen": _herramientas_resumen(tarea_herramientas),
+            "solo_herramientas": solo_herramientas,
         })
 
     @bp.route("/api/dashboard/turnos_choferes_cfg_save", methods=["POST"], endpoint="api_dashboard_turnos_choferes_cfg_save")

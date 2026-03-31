@@ -712,6 +712,58 @@
     grid-template-columns: repeat(4, minmax(0, 1fr));
     align-items: end;
   }
+  .gestion-tools-row {
+    margin: 8px 12px 0;
+    border: 1px dashed #d8e4f5;
+    border-radius: 10px;
+    background: #f8fbff;
+    padding: 8px;
+    display: grid;
+    gap: 8px;
+  }
+  .gestion-tools-title {
+    font-size: 11px;
+    color: #4d6f99;
+    font-weight: 900;
+    letter-spacing: 0.2px;
+  }
+  .gestion-tools-add {
+    display: grid;
+    grid-template-columns: 1fr 180px auto;
+    gap: 6px;
+    align-items: end;
+  }
+  .gestion-tools-quick {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .gestion-tools-list {
+    display: grid;
+    gap: 6px;
+  }
+  .tool-row {
+    border: 1px solid #d9e5f6;
+    border-radius: 8px;
+    background: #ffffff;
+    padding: 6px;
+    display: grid;
+    grid-template-columns: 1fr 190px auto;
+    gap: 6px;
+    align-items: center;
+  }
+  .tool-name {
+    font-size: 12px;
+    font-weight: 700;
+    color: #254569;
+  }
+  .tool-row .btn-mini {
+    min-width: 58px;
+  }
+  .gestion-tools-help {
+    font-size: 11px;
+    color: #59789f;
+  }
   .gestion-tarea-view {
     margin: 8px 12px 0;
     border: 1px dashed #d9e4f4;
@@ -865,6 +917,12 @@
       max-height: 42vh;
     }
     .gestion-tarea-row {
+      grid-template-columns: 1fr;
+    }
+    .gestion-tools-add {
+      grid-template-columns: 1fr;
+    }
+    .tool-row {
       grid-template-columns: 1fr;
     }
   }
@@ -1213,6 +1271,23 @@
       <button id="gestionTareaGuardar" type="button" class="btn-inline">Guardar tarea</button>
       <button id="gestionTareaLimpiar" type="button" class="btn-inline">Limpiar</button>
     </div>
+    <div id="gestionToolsRow" class="gestion-tools-row" style="display:none;">
+      <div class="gestion-tools-title">Herramientas / equipos que se llevan</div>
+      <div class="gestion-tools-add">
+        <input id="gestionToolInput" class="ctl-inp" type="text" maxlength="80" placeholder="Ej: Hidrolavadora / Taladro / Escalera">
+        <select id="gestionToolAccion" class="ctl-sel">
+          <option value="vuelve">Traer de vuelta</option>
+          <option value="queda">Queda en sede</option>
+        </select>
+        <button id="gestionToolAdd" type="button" class="btn-inline">Agregar</button>
+      </div>
+      <div class="aux-row" style="margin:0;">
+        <button id="gestionToolsGuardar" type="button" class="btn-inline">Guardar herramientas</button>
+      </div>
+      <div id="gestionToolsQuick" class="gestion-tools-quick"></div>
+      <div id="gestionToolsList" class="gestion-tools-list"></div>
+      <div class="gestion-tools-help">Marcá qué herramienta vuelve y cuál queda en sede para seguir trabajando.</div>
+    </div>
     <div id="gestionTareaView" class="gestion-tarea-view">Sin tarea asignada.</div>
     <div id="gestionChatList" class="gestion-chat-list"></div>
     <div class="gestion-compose">
@@ -1240,12 +1315,14 @@
     var RESUMEN_BASE = { total: 0, informado: 0, en_proceso: 0, resuelto: 0 };
     var HIDE_PENDIENTES_NO_CERRADOS = true;
     var TAREA_ESTADOS = ["Pendiente", "En curso", "Completada"];
+    var HERRAMIENTAS_PRESET = ["Hidrolavadora", "Cortadora de pasto", "Desmalezadora", "Taladro", "Amoladora", "Soldadora", "Escalera", "Pala", "Carretilla"];
     var IS_MATIAS = false;
     var IS_FULL = false;
     var IS_FRANCISCO = false;
     var CAN_EDIT_AGENTE = false;
     var GESTION_OPEN_ID = 0;
     var GESTION_DATA = null;
+    var GESTION_HERRAMIENTAS = [];
     var SEDES_ASSIGN = [];
     var AGENTES_ASSIGN = [];
     var AGENTES_PERMITIDOS = [
@@ -1364,6 +1441,13 @@
       gestionTareaGuardar: document.getElementById("gestionTareaGuardar"),
       gestionTareaLimpiar: document.getElementById("gestionTareaLimpiar"),
       gestionTareaView: document.getElementById("gestionTareaView"),
+      gestionToolsRow: document.getElementById("gestionToolsRow"),
+      gestionToolInput: document.getElementById("gestionToolInput"),
+      gestionToolAccion: document.getElementById("gestionToolAccion"),
+      gestionToolAdd: document.getElementById("gestionToolAdd"),
+      gestionToolsGuardar: document.getElementById("gestionToolsGuardar"),
+      gestionToolsQuick: document.getElementById("gestionToolsQuick"),
+      gestionToolsList: document.getElementById("gestionToolsList"),
     };
     if (HIDE_PENDIENTES_NO_CERRADOS && el.shell) {
       el.shell.classList.add("hide-no-cerrados");
@@ -1448,6 +1532,87 @@
     function normalizarAgente(v) {
       var n = normTxt(v);
       return AGENTES_ALIAS[n] || String(v || "").trim();
+    }
+
+    function normalizarHerramienta(v) {
+      var txt = String(v || "").trim().replace(/\s+/g, " ");
+      if (!txt) return "";
+      if (txt.length > 80) txt = txt.slice(0, 80);
+      return txt;
+    }
+
+    function accionHerramienta(v) {
+      var n = normTxt(v);
+      if (n === "queda" || n === "queda en sede" || n === "dejar en sede") return "queda";
+      return "vuelve";
+    }
+
+    function accionHerramientaLabel(v) {
+      return accionHerramienta(v) === "queda" ? "Queda en sede" : "Traer de vuelta";
+    }
+
+    function herramientasResumen(items) {
+      var arr = Array.isArray(items) ? items : [];
+      if (!arr.length) return "";
+      return arr.map(function (it) {
+        return String(it.item || "") + " (" + accionHerramientaLabel(it.accion) + ")";
+      }).filter(Boolean).join("; ");
+    }
+
+    function setGestionHerramientas(items) {
+      var src = Array.isArray(items) ? items : [];
+      var byKey = {};
+      src.forEach(function (it) {
+        var nombre = normalizarHerramienta((it && (it.item || it.nombre || it.herramienta)) || "");
+        if (!nombre) return;
+        var key = normTxt(nombre);
+        if (byKey[key]) return;
+        byKey[key] = { item: nombre, accion: accionHerramienta(it && (it.accion || it.destino || "")) };
+      });
+      GESTION_HERRAMIENTAS = Object.keys(byKey).map(function (k) { return byKey[k]; });
+    }
+
+    function addGestionHerramienta(nombre, accion) {
+      var clean = normalizarHerramienta(nombre);
+      if (!clean) return;
+      var key = normTxt(clean);
+      var found = false;
+      GESTION_HERRAMIENTAS = (GESTION_HERRAMIENTAS || []).map(function (it) {
+        if (normTxt(it.item || "") !== key) return it;
+        found = true;
+        return { item: clean, accion: accionHerramienta(accion || it.accion || "vuelve") };
+      });
+      if (!found) {
+        GESTION_HERRAMIENTAS.push({ item: clean, accion: accionHerramienta(accion || "vuelve") });
+      }
+    }
+
+    function renderGestionHerramientas() {
+      if (!el.gestionToolsQuick || !el.gestionToolsList) return;
+      var quick = Array.isArray(HERRAMIENTAS_PRESET) ? HERRAMIENTAS_PRESET : [];
+      el.gestionToolsQuick.innerHTML = quick.map(function (nom) {
+        return '<button type="button" class="btn-mini tool-quick-add" data-tool="' + escapeHtml(nom) + '">+ ' + escapeHtml(nom) + "</button>";
+      }).join("");
+
+      var arr = Array.isArray(GESTION_HERRAMIENTAS) ? GESTION_HERRAMIENTAS : [];
+      if (!arr.length) {
+        el.gestionToolsList.innerHTML = '<div class="gestion-tools-help">Sin herramientas cargadas.</div>';
+        return;
+      }
+      el.gestionToolsList.innerHTML = arr.map(function (it, idx) {
+        var item = String(it.item || "");
+        var acc = accionHerramienta(it.accion || "vuelve");
+        return (
+          '<div class="tool-row" data-idx="' + idx + '">' +
+            '<div class="tool-name">' + escapeHtml(item) + "</div>" +
+            '<select class="ctl-sel tool-accion">' +
+              '<option value="vuelve"' + (acc === "vuelve" ? " selected" : "") + '>Traer de vuelta</option>' +
+              '<option value="queda"' + (acc === "queda" ? " selected" : "") + '>Queda en sede</option>' +
+            "</select>" +
+            '<button type="button" class="btn-mini tool-del">Quitar</button>' +
+          "</div>"
+        );
+      }).join("");
     }
 
     function agentesVisibles(listaApi) {
@@ -1819,6 +1984,7 @@
     function closeGestionModal() {
       GESTION_OPEN_ID = 0;
       GESTION_DATA = null;
+      GESTION_HERRAMIENTAS = [];
       if (el.gestionModal) {
         el.gestionModal.classList.remove("open");
         el.gestionModal.setAttribute("aria-hidden", "true");
@@ -1853,6 +2019,10 @@
       }
       if (el.gestionTareaRow) {
         el.gestionTareaRow.style.display = nov.puede_asignar_tarea ? "grid" : "none";
+      }
+      var canToolsEdit = !!(nov.puede_asignar_tarea || (nov.puede_ver_gestion && nov.tarea_asignada));
+      if (el.gestionToolsRow) {
+        el.gestionToolsRow.style.display = canToolsEdit ? "grid" : "none";
       }
       if (el.gestionTareaEstado) {
         fillSelect(el.gestionTareaEstado, TAREA_ESTADOS, false);
@@ -1893,6 +2063,11 @@
       if (el.gestionTarea) {
         el.gestionTarea.value = String(nov.tarea_asignada || "");
       }
+      if (Array.isArray(p.herramientas_preset) && p.herramientas_preset.length) {
+        HERRAMIENTAS_PRESET = p.herramientas_preset.slice();
+      }
+      setGestionHerramientas(nov.tarea_herramientas || []);
+      renderGestionHerramientas();
       if (el.gestionTareaView) {
         if (nov.tarea_asignada) {
           el.gestionTareaView.style.display = "block";
@@ -1902,6 +2077,8 @@
           var tareaDepNom = String(nov.tarea_deposito_nombre || "");
           var depTxtView = tareaDep ? (" / " + tareaDep + (tareaDepNom ? (" - " + tareaDepNom) : "")) : "";
           var tareaTxt = "Tarea actual: " + tareaAg + " - " + tareaSede + depTxtView + " - " + String(nov.tarea_asignada) + " (" + String(nov.tarea_estado || "Pendiente") + ")";
+          var toolsTxtView = herramientasResumen(nov.tarea_herramientas || []);
+          if (toolsTxtView) tareaTxt += " / Herramientas: " + toolsTxtView;
           if (nov.tarea_actualizado_en) tareaTxt += " - " + String(nov.tarea_actualizado_en);
           el.gestionTareaView.textContent = tareaTxt;
         } else {
@@ -1941,6 +2118,14 @@
       if (el.gestionEnviar) el.gestionEnviar.disabled = !canReply;
       if (el.gestionTareaGuardar) el.gestionTareaGuardar.disabled = !nov.puede_asignar_tarea;
       if (el.gestionTareaLimpiar) el.gestionTareaLimpiar.disabled = !nov.puede_asignar_tarea;
+      if (el.gestionToolInput) el.gestionToolInput.disabled = !canToolsEdit;
+      if (el.gestionToolAccion) el.gestionToolAccion.disabled = !canToolsEdit;
+      if (el.gestionToolAdd) el.gestionToolAdd.disabled = !canToolsEdit;
+      if (el.gestionToolsGuardar) el.gestionToolsGuardar.disabled = !canToolsEdit;
+      if (el.gestionToolsList) {
+        var toolInputs = el.gestionToolsList.querySelectorAll(".tool-accion, .tool-del");
+        toolInputs.forEach(function (node) { node.disabled = !canToolsEdit; });
+      }
       setGestionMsg("", false);
     }
 
@@ -2052,6 +2237,7 @@
           sede_codigo: limpiar ? "" : sede,
           deposito_codigo: limpiar ? "" : depositoCodigo,
           deposito_nombre: limpiar ? "" : depositoNombre,
+          herramientas: limpiar ? [] : (Array.isArray(GESTION_HERRAMIENTAS) ? GESTION_HERRAMIENTAS : []),
           limpiar: !!limpiar,
         }),
       })
@@ -2063,6 +2249,29 @@
         })
         .catch(function (e) {
           setGestionMsg(e.message || "No se pudo guardar la tarea", true);
+        });
+    }
+
+    function saveGestionHerramientas() {
+      var novId = Number(GESTION_OPEN_ID || 0);
+      if (novId <= 0) return;
+      var herramientas = Array.isArray(GESTION_HERRAMIENTAS) ? GESTION_HERRAMIENTAS : [];
+      fetch("/api/dashboard/novedades_diarias_gestion/" + encodeURIComponent(String(novId)) + "/tarea", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          solo_herramientas: true,
+          herramientas: herramientas,
+        }),
+      })
+        .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, b: b || {} }; }); })
+        .then(function (x) {
+          if (!x.ok || !x.b.ok) throw new Error(x.b.error || "No se pudieron guardar herramientas");
+          setGestionMsg("Herramientas actualizadas.", false);
+          return loadGestion(novId).then(function () { return loadDay(); });
+        })
+        .catch(function (e) {
+          setGestionMsg(e.message || "No se pudieron guardar herramientas", true);
         });
     }
 
@@ -2093,6 +2302,7 @@
       var tareaSede = String((r && r.tarea_sede_codigo) || (r && r.sede_codigo) || "").trim().toUpperCase();
       var tareaDeposito = String((r && r.tarea_deposito_codigo) || "").trim().toUpperCase();
       var tareaDepositoNom = String((r && r.tarea_deposito_nombre) || "").trim();
+      var tareaTools = String((r && r.tarea_herramientas_resumen) || "").trim();
       if (!tarea) {
         return '<span class="tarea-pill none">Sin tarea</span>';
       }
@@ -2102,6 +2312,7 @@
       if (tareaSede) pref.push(tareaSede + depTxt);
       var txt = (pref.length ? (pref.join(" - ") + " - ") : "") + tarea;
       if (tareaEstado) txt += " (" + tareaEstado + ")";
+      if (tareaTools) txt += " / Herr.: " + tareaTools;
       return '<span class="tarea-pill" title="' + escapeHtml(txt) + '">' + escapeHtml(txt) + "</span>";
     }
 
@@ -2541,6 +2752,68 @@
     if (el.gestionTareaLimpiar) {
       el.gestionTareaLimpiar.addEventListener("click", function () {
         saveGestionTarea(true);
+      });
+    }
+    if (el.gestionToolAdd) {
+      el.gestionToolAdd.addEventListener("click", function () {
+        var nombre = String((el.gestionToolInput && el.gestionToolInput.value) || "").trim();
+        if (!nombre) {
+          setGestionMsg("Escribi una herramienta para agregar.", true);
+          return;
+        }
+        var accion = String((el.gestionToolAccion && el.gestionToolAccion.value) || "vuelve");
+        addGestionHerramienta(nombre, accion);
+        renderGestionHerramientas();
+        if (el.gestionToolInput) el.gestionToolInput.value = "";
+        setGestionMsg("", false);
+      });
+    }
+    if (el.gestionToolInput) {
+      el.gestionToolInput.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter") {
+          ev.preventDefault();
+          if (el.gestionToolAdd) el.gestionToolAdd.click();
+        }
+      });
+    }
+    if (el.gestionToolsQuick) {
+      el.gestionToolsQuick.addEventListener("click", function (ev) {
+        if (el.gestionToolAdd && el.gestionToolAdd.disabled) return;
+        var tgt = ev.target;
+        if (!tgt || !tgt.classList || !tgt.classList.contains("tool-quick-add")) return;
+        var nombre = String(tgt.getAttribute("data-tool") || "").trim();
+        var accion = String((el.gestionToolAccion && el.gestionToolAccion.value) || "vuelve");
+        if (!nombre) return;
+        addGestionHerramienta(nombre, accion);
+        renderGestionHerramientas();
+      });
+    }
+    if (el.gestionToolsGuardar) {
+      el.gestionToolsGuardar.addEventListener("click", function () {
+        saveGestionHerramientas();
+      });
+    }
+    if (el.gestionToolsList) {
+      el.gestionToolsList.addEventListener("change", function (ev) {
+        if (el.gestionToolAdd && el.gestionToolAdd.disabled) return;
+        var tgt = ev.target;
+        if (!tgt || !tgt.classList || !tgt.classList.contains("tool-accion")) return;
+        var row = tgt.closest(".tool-row");
+        if (!row) return;
+        var idx = Number(row.getAttribute("data-idx") || -1);
+        if (idx < 0 || !GESTION_HERRAMIENTAS[idx]) return;
+        GESTION_HERRAMIENTAS[idx].accion = accionHerramienta(tgt.value || "vuelve");
+      });
+      el.gestionToolsList.addEventListener("click", function (ev) {
+        if (el.gestionToolAdd && el.gestionToolAdd.disabled) return;
+        var tgt = ev.target;
+        if (!tgt || !tgt.classList || !tgt.classList.contains("tool-del")) return;
+        var row = tgt.closest(".tool-row");
+        if (!row) return;
+        var idx = Number(row.getAttribute("data-idx") || -1);
+        if (idx < 0) return;
+        GESTION_HERRAMIENTAS = (GESTION_HERRAMIENTAS || []).filter(function (_it, i) { return i !== idx; });
+        renderGestionHerramientas();
       });
     }
     if (el.taskAlertList) {
