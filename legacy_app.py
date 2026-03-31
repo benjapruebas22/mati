@@ -111,6 +111,7 @@ def ensure_auth_tables(con):
         ("nguerrero", "Nestor Guerrero", ROLE_DASH_SOLO),
         ("mflores", "Manuel Flores", ROLE_DASH_VEHICULOS),
         ("mabatedaga", "Maximiliano Abatedaga", ROLE_FULL),
+        ("msorbello", "Marcos Sorbello", ROLE_FULL),
         ("mluna", "Matias Luna", ROLE_EJECUTIVO),
         ("gburgos", "G. Burgos", ROLE_EJECUTIVO),
         # Choferes autorizados (otras areas) - acceso limitado a control diario
