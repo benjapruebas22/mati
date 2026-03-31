@@ -73,10 +73,14 @@ def _session_actor():
     username = (session.get("username") or "").strip()
     full_name = (session.get("full_name") or "").strip()
     display = full_name or username
+    role = (session.get("role") or "").strip().lower()
+    is_full = role in {"full", "admin"}
     return {
         "username": username,
         "full_name": full_name,
         "display": display,
+        "role": role,
+        "is_full": is_full,
         "is_matias": _is_matias_actor(username, full_name),
         "is_francisco": _is_francisco_actor(username, full_name),
     }
@@ -86,10 +90,16 @@ def _tipo_tiene_gestion(tipo):
     return bool(str(tipo or "").strip())
 
 
+def _can_admin_novedades(actor):
+    if not actor:
+        return False
+    return bool(actor.get("is_matias"))
+
+
 def _actor_can_view_gestion(actor, agente_novedad, agente_tarea=""):
     if not actor:
         return False
-    if bool(actor.get("is_matias")):
+    if _can_admin_novedades(actor):
         return True
     actor_user = _norm_ci(actor.get("username") or "")
     actor_name = _norm_ci(actor.get("full_name") or actor.get("display") or "")
@@ -256,7 +266,7 @@ def register_novedades(bp, get_db):
         return out
 
     def _alertas_tareas_agente(con, actor):
-        if not actor or bool(actor.get("is_matias")):
+        if not actor or _can_admin_novedades(actor):
             return []
         out = []
         try:
@@ -331,7 +341,7 @@ def register_novedades(bp, get_db):
         )
         es_matias = bool(actor.get("is_matias"))
         puede_gestionar_tarea = bool(
-            puede_ver_novedad and (es_matias or (es_privada and es_duenio_privada))
+            puede_ver_novedad and (_can_admin_novedades(actor) or (es_privada and es_duenio_privada))
         )
         chat_ult_autor = (_row_value(row, "chat_ult_autor", "") or "").strip()
         chat_ult_autor_username = (_row_value(row, "chat_ult_autor_username", "") or "").strip()
@@ -460,12 +470,15 @@ def register_novedades(bp, get_db):
             "usuario_actual": {
                 "username": actor.get("username") or "",
                 "full_name": actor.get("full_name") or "",
+                "role": actor.get("role") or "",
+                "is_full": bool(actor.get("is_full")),
                 "is_matias": bool(actor.get("is_matias")),
                 "is_francisco": bool(actor.get("is_francisco")),
             },
+            "is_full": bool(actor.get("is_full")),
             "is_matias": bool(actor.get("is_matias")),
             "is_francisco": bool(actor.get("is_francisco")),
-            "puede_editar_agente": bool(actor.get("is_matias")),
+            "puede_editar_agente": _can_admin_novedades(actor),
             "sedes": sedes,
             "agentes": agentes,
             "tipos_subtipos": tipos_subtipos,
@@ -580,10 +593,10 @@ def register_novedades(bp, get_db):
                     if not tiene_tarea:
                         continue
                     agente_obj = (it.get("tarea_agente") or it.get("agente") or "").strip()
-                    if bool(actor.get("is_matias")) or _actor_match_name(actor, agente_obj):
+                    if _can_admin_novedades(actor) or _actor_match_name(actor, agente_obj):
                         tareas_asignadas.append(it)
                 else:
-                    if bool(actor.get("is_matias")) or _actor_match_name(actor, it.get("agente") or ""):
+                    if _can_admin_novedades(actor) or _actor_match_name(actor, it.get("agente") or ""):
                         solicitudes_recibidas.append(it)
             resumen = _novedades_resumen_visible(con, fecha, actor)
         except Exception as e:
@@ -766,7 +779,7 @@ def register_novedades(bp, get_db):
             else:
                 estado = "Informado"
 
-            if not bool(actor.get("is_matias")):
+            if not _can_admin_novedades(actor):
                 if nov_id > 0:
                     agente = (_row_value(existing, "agente", "") or "").strip() or (actor.get("display") or "").strip()
                 else:
@@ -820,10 +833,10 @@ def register_novedades(bp, get_db):
         deposito_codigo = (payload.get("deposito_codigo") or "").strip().upper()
         deposito_nombre = (payload.get("deposito_nombre") or "").strip()
         tarea = (payload.get("tarea") or payload.get("tarea_asignada") or "").strip()
-        privado_flag = 1 if is_francisco else 0
+        privado_flag = 1 if (is_francisco and not is_matias) else 0
         privado_owner_username = (actor.get("username") or "").strip() if privado_flag else ""
         privado_owner_nombre = (actor.get("display") or "").strip() if privado_flag else ""
-        if is_francisco:
+        if privado_flag:
             agente = (actor.get("display") or actor.get("full_name") or actor.get("username") or "").strip()
         if len(tarea) > 280:
             tarea = tarea[:280]
@@ -931,7 +944,7 @@ def register_novedades(bp, get_db):
                 return jsonify({"ok": False, "error": "No autorizado para ver esta novedad"}), 403
             gestion_habilitada = _tipo_tiene_gestion(_row_value(row, "tipo", "") or "")
             can_manage_private = _actor_can_manage_private_novedad(actor, row)
-            if gestion_habilitada and not (bool(actor.get("is_matias")) or can_manage_private):
+            if gestion_habilitada and not (_can_admin_novedades(actor) or can_manage_private):
                 con.close()
                 return jsonify({"ok": False, "error": "No autorizado para cambiar estado en esta novedad"}), 403
             estado_prev = _norm_nvd_estado(_row_value(row, "estado", "Informado") or "Informado")
@@ -1025,6 +1038,7 @@ def register_novedades(bp, get_db):
             "ok": True,
             "novedad": item,
             "mensajes": mensajes,
+            "is_full": bool(actor.get("is_full")),
             "is_matias": bool(actor.get("is_matias")),
             "estados": list(NVD_ESTADOS),
             "sedes": sedes,

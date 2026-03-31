@@ -1241,7 +1241,9 @@
     var HIDE_PENDIENTES_NO_CERRADOS = true;
     var TAREA_ESTADOS = ["Pendiente", "En curso", "Completada"];
     var IS_MATIAS = false;
+    var IS_FULL = false;
     var IS_FRANCISCO = false;
+    var CAN_EDIT_AGENTE = false;
     var GESTION_OPEN_ID = 0;
     var GESTION_DATA = null;
     var SEDES_ASSIGN = [];
@@ -1385,6 +1387,10 @@
       return !!(IS_MATIAS || IS_FRANCISCO);
     }
 
+    function isPrivateTaskOwner() {
+      return !!(IS_FRANCISCO && !IS_MATIAS);
+    }
+
     function isTaskMode() {
       return canUseTaskMode() && String((el.modo && el.modo.value) || "solicitud") === "tarea";
     }
@@ -1473,10 +1479,10 @@
         (CURRENT_USER && CURRENT_USER.username) ||
         ""
       );
-      if (IS_MATIAS) {
+      if (CAN_EDIT_AGENTE) {
         fillSelect(el.agente, agentes, true, "Agente que carga");
         el.agente.disabled = false;
-        if (el.agenteHint) el.agenteHint.textContent = "Matias puede seleccionar o editar el agente manualmente.";
+        if (el.agenteHint) el.agenteHint.textContent = "Podes seleccionar o editar el agente manualmente.";
         if (actual && agentes.indexOf(actual) >= 0) {
           el.agente.value = actual;
         }
@@ -1510,7 +1516,7 @@
       if (!el.modo) return;
       var modoTaskOpt = el.modo.querySelector('option[value="tarea"]');
       if (modoTaskOpt) {
-        modoTaskOpt.textContent = IS_MATIAS ? "Tarea asignada" : "Auto recordatorio (privado)";
+        modoTaskOpt.textContent = isPrivateTaskOwner() ? "Auto recordatorio (privado)" : "Tarea asignada";
       }
       if (!canUseTaskMode()) {
         el.modo.value = "solicitud";
@@ -1527,7 +1533,7 @@
       nodesSol.forEach(function (n) { n.style.display = isTask ? "none" : ""; });
       nodesTask.forEach(function (n) { n.style.display = isTask ? "" : "none"; });
       if (el.agenteLabel) {
-        el.agenteLabel.textContent = isTask ? (IS_MATIAS ? "Agente asignado" : "Agente") : "Agente que carga";
+        el.agenteLabel.textContent = isTask ? (isPrivateTaskOwner() ? "Agente" : "Agente asignado") : "Agente que carga";
       }
       if (el.estado) el.estado.value = "Informado";
       if (isTask) {
@@ -2220,7 +2226,7 @@
           deposito_codigo: depCod,
           deposito_nombre: depNom,
           tarea: String((el.tareaTxt && el.tareaTxt.value) || "").trim(),
-          privado: !!IS_FRANCISCO,
+          privado: isPrivateTaskOwner(),
         };
         url = "/api/dashboard/tareas_asignadas_save";
         if (!payload.fecha || !payload.agente || !payload.sede_codigo || !payload.tarea) {
@@ -2255,7 +2261,7 @@
           if (!x.ok || !x.b.ok) throw new Error(x.b.error || "No se pudo guardar");
           setMsg(
             isTask
-              ? (IS_FRANCISCO ? "Recordatorio privado guardado." : "Tarea asignada.")
+              ? (isPrivateTaskOwner() ? "Recordatorio privado guardado." : "Tarea asignada.")
               : (payload.id > 0 ? "Novedad actualizada." : "Novedad registrada."),
             false
           );
@@ -2366,7 +2372,9 @@
           fillSelect(el.sede, sedes, true, "Sede");
 
           IS_MATIAS = !!d.is_matias;
+          IS_FULL = !!d.is_full;
           IS_FRANCISCO = !!d.is_francisco;
+          CAN_EDIT_AGENTE = !!d.puede_editar_agente;
           var agentes = applyAgentePolicy(d.agentes || [], d.agente_actual || "");
           AGENTES_ASSIGN = Array.isArray(agentes) ? agentes.slice() : [];
           if (el.modo) {
@@ -2374,11 +2382,11 @@
           }
           applyModoUI();
           renderAgenteFiltros(agentes);
-          if (IS_MATIAS && d.agente_actual) {
+          if (CAN_EDIT_AGENTE && d.agente_actual) {
             var actualNorm = normalizarAgente(d.agente_actual);
             if (agentes.indexOf(actualNorm) >= 0) el.agente.value = actualNorm;
           }
-          if (IS_MATIAS && pref.agente) el.agente.value = pref.agente;
+          if (CAN_EDIT_AGENTE && pref.agente) el.agente.value = pref.agente;
           if (!el.fecha.value) el.fecha.value = d.fecha || "";
           if (pref.sede) el.sede.value = pref.sede;
           if (pref.tipo) el.tipo.value = pref.tipo;
