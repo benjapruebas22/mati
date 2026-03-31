@@ -329,6 +329,47 @@
   .tbl tbody tr:hover {
     background: #f7fbff;
   }
+  .nvd-split-block .table-wrap {
+    border-radius: 12px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
+  .nvd-split-block .tbl th {
+    backdrop-filter: saturate(120%) blur(1px);
+    box-shadow: inset 0 -1px 0 rgba(219, 230, 245, 0.8);
+  }
+  .nvd-split-block .tbl tbody tr:nth-child(even) {
+    background: rgba(244, 248, 255, 0.55);
+  }
+  .nvd-split-block.split-solic .tbl tbody tr:nth-child(even) {
+    background: rgba(255, 247, 235, 0.55);
+  }
+  .nvd-split-block.split-dia .tbl tbody tr:hover {
+    background: #edf4ff;
+  }
+  .nvd-split-block.split-solic .tbl tbody tr:hover {
+    background: #fff2df;
+  }
+  .nvd-split-block .tbl th:last-child,
+  .nvd-split-block .tbl td:last-child {
+    text-align: center;
+    width: 120px;
+    white-space: nowrap;
+  }
+  .nvd-split-block .tbl td:nth-last-child(2) {
+    white-space: nowrap;
+  }
+  .nvd-split-block .tbl tbody tr td[colspan] {
+    background: #f8fbff;
+    border-top: 1px dashed #dbe6f6;
+    font-weight: 700;
+    color: #6b82a3 !important;
+    text-align: center;
+    padding: 12px 8px;
+  }
+  .nvd-split-block.split-solic .tbl tbody tr td[colspan] {
+    background: #fffaf2;
+    border-top-color: #efdfc7;
+  }
   .nvd-split-grid {
     display: grid;
     gap: 10px;
