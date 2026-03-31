@@ -1584,11 +1584,11 @@
     }
 
     function canUseTaskMode() {
-      return !!(IS_MATIAS || IS_FRANCISCO);
+      return !!(CAN_EDIT_AGENTE || IS_FRANCISCO);
     }
 
     function isPrivateTaskOwner() {
-      return !!(IS_FRANCISCO && !IS_MATIAS);
+      return !!(IS_FRANCISCO && !CAN_EDIT_AGENTE);
     }
 
     function isTaskMode() {
@@ -2090,7 +2090,7 @@
     }
 
     function gestionButtonLabel() {
-      return (IS_MATIAS || IS_FRANCISCO) ? "Abrir gestion" : "Responder";
+      return (CAN_EDIT_AGENTE || IS_FRANCISCO) ? "Abrir gestion" : "Responder";
     }
 
     function canOpenGestion(row) {

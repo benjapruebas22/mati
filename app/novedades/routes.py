@@ -44,6 +44,8 @@ NVD_GESTION_TIPOS = {
 }
 NVD_TIPO_TAREA = "Asignacion de tareas"
 FRANCISCO_USERNAMES = {"fsavio", "francisco", "francisco.savio", "franciscosavio"}
+NVD_ADMIN_USERNAMES = {"mcalderari", "msorbello", "mabatedaga"}
+NVD_ADMIN_FULLNAMES = {"matias calderari", "marcos sorbello", "maximiliano abatedaga"}
 NVD_HERRAMIENTAS_PRESET = [
     "Hidrolavadora",
     "Cortadora de pasto",
@@ -149,6 +151,12 @@ def _is_matias_actor(username, full_name):
     return norm_user in {"mcalderari"} or norm_name == "matias calderari"
 
 
+def _is_novedades_admin_actor(username, full_name):
+    norm_user = _norm_ci(username)
+    norm_name = _norm_ci(full_name)
+    return norm_user in NVD_ADMIN_USERNAMES or norm_name in NVD_ADMIN_FULLNAMES
+
+
 def _is_francisco_actor(username, full_name):
     norm_user = _norm_ci(username)
     norm_name = _norm_ci(full_name)
@@ -168,6 +176,7 @@ def _session_actor():
         "role": role,
         "is_full": is_full,
         "is_matias": _is_matias_actor(username, full_name),
+        "is_novedades_admin": _is_novedades_admin_actor(username, full_name),
         "is_francisco": _is_francisco_actor(username, full_name),
     }
 
@@ -179,7 +188,7 @@ def _tipo_tiene_gestion(tipo):
 def _can_admin_novedades(actor):
     if not actor:
         return False
-    return bool(actor.get("is_matias"))
+    return bool(actor.get("is_novedades_admin"))
 
 
 def _actor_can_view_gestion(actor, agente_novedad, agente_tarea=""):
@@ -565,10 +574,12 @@ def register_novedades(bp, get_db):
                 "role": actor.get("role") or "",
                 "is_full": bool(actor.get("is_full")),
                 "is_matias": bool(actor.get("is_matias")),
+                "is_novedades_admin": bool(actor.get("is_novedades_admin")),
                 "is_francisco": bool(actor.get("is_francisco")),
             },
             "is_full": bool(actor.get("is_full")),
             "is_matias": bool(actor.get("is_matias")),
+            "is_novedades_admin": bool(actor.get("is_novedades_admin")),
             "is_francisco": bool(actor.get("is_francisco")),
             "puede_editar_agente": _can_admin_novedades(actor),
             "sedes": sedes,
@@ -916,9 +927,9 @@ def register_novedades(bp, get_db):
     def api_dashboard_tareas_asignadas_save():
         actor = _session_actor()
         payload = request.get_json(silent=True) or {}
-        is_matias = bool(actor.get("is_matias"))
+        can_admin_novedades = _can_admin_novedades(actor)
         is_francisco = bool(actor.get("is_francisco"))
-        if not is_matias and not is_francisco:
+        if not can_admin_novedades and not is_francisco:
             return jsonify({"ok": False, "error": "No autorizado para crear tareas asignadas"}), 403
         fecha = (payload.get("fecha") or "").strip() or _safe_today()
         agente = (payload.get("agente") or payload.get("agente_asignado") or "").strip()
@@ -926,7 +937,7 @@ def register_novedades(bp, get_db):
         deposito_codigo = (payload.get("deposito_codigo") or "").strip().upper()
         deposito_nombre = (payload.get("deposito_nombre") or "").strip()
         tarea = (payload.get("tarea") or payload.get("tarea_asignada") or "").strip()
-        privado_flag = 1 if (is_francisco and not is_matias) else 0
+        privado_flag = 1 if (is_francisco and not can_admin_novedades) else 0
         privado_owner_username = (actor.get("username") or "").strip() if privado_flag else ""
         privado_owner_nombre = (actor.get("display") or "").strip() if privado_flag else ""
         if privado_flag:
@@ -988,7 +999,7 @@ def register_novedades(bp, get_db):
                 deposito_nombre,
                 agente,
                 "[]",
-                actor.get("display") or ("Matias" if is_matias else "Sistema"),
+                actor.get("display") or ("Matias" if can_admin_novedades else "Sistema"),
                 actor.get("username") or "",
                 ts,
                 ts,
@@ -1135,6 +1146,7 @@ def register_novedades(bp, get_db):
             "herramientas_preset": list(NVD_HERRAMIENTAS_PRESET),
             "is_full": bool(actor.get("is_full")),
             "is_matias": bool(actor.get("is_matias")),
+            "is_novedades_admin": bool(actor.get("is_novedades_admin")),
             "estados": list(NVD_ESTADOS),
             "sedes": sedes,
             "agentes": agentes,
