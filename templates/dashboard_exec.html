@@ -342,14 +342,25 @@
     gap: 6px;
   }
   .nvd-split-head {
-    font-size: 12px;
+    display: grid;
+    gap: 2px;
+    padding: 4px 2px 6px;
+    border-bottom: 1px solid #e5ecf7;
+    margin-bottom: 2px;
+  }
+  .nvd-split-head .title {
+    font-size: 14px;
     font-weight: 900;
-    color: #2f4f77;
     letter-spacing: 0.01em;
   }
-  .nvd-split-head.dia { color: #2f5ea4; }
-  .nvd-split-head.pend { color: #9a6a2f; }
-  .nvd-split-head.res { color: #2d7a51; }
+  .nvd-split-head .sub {
+    font-size: 11px;
+    font-weight: 700;
+    color: #6c84a4;
+  }
+  .nvd-split-head.dia .title { color: #2f5ea4; }
+  .nvd-split-head.pend .title { color: #9a6a2f; }
+  .nvd-split-head.res .title { color: #2d7a51; }
 
   .state-chip {
     display: inline-flex;
@@ -371,6 +382,10 @@
   .nvd-split-block.split-dia {
     border-color: #d9e4f8;
     background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  }
+  .nvd-split-block.split-solic {
+    border-color: #f1dfc3;
+    background: linear-gradient(180deg, #ffffff 0%, #fffaf3 100%);
   }
   .nvd-split-block.split-pend {
     border-color: #f1e2c6;
@@ -500,27 +515,32 @@
   }
   .agente-filtro-box {
     min-width: 0;
-    flex: 0 1 auto;
+    flex: 1 1 auto;
     max-width: 100%;
     display: grid;
-    gap: 3px;
+    gap: 5px;
+    background: linear-gradient(180deg, #f9fbff 0%, #f3f7ff 100%);
+    border: 1px solid #dce6f6;
+    border-radius: 10px;
+    padding: 6px;
   }
   .agente-filtro-label {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 800;
-    color: #5b789f;
+    color: #3f628f;
     letter-spacing: 0.02em;
+    text-transform: uppercase;
   }
   .agente-filtro-scroll {
     border: 1px solid #d9e4f4;
     border-radius: 8px;
     background: linear-gradient(180deg, #f9fcff 0%, #f1f6ff 100%);
-    padding: 3px 4px;
+    padding: 5px;
     overflow-x: auto;
     overflow-y: hidden;
     white-space: nowrap;
-    width: fit-content;
-    max-width: min(100%, 1040px);
+    width: 100%;
+    max-width: 100%;
   }
   .agente-filtro-list {
     display: inline-flex;
@@ -531,8 +551,8 @@
   .agente-chip {
     border: 1px solid var(--chip-bd, #cad8ef);
     border-radius: 999px;
-    padding: 2px 9px;
-    font-size: 11px;
+    padding: 3px 10px;
+    font-size: 12px;
     font-weight: 800;
     color: var(--chip-tx, #355a89);
     background: var(--chip-bg, #fff);
@@ -639,6 +659,40 @@
     display: none;
     gap: 8px;
   }
+  .pend-toolbar {
+    display: grid;
+    gap: 7px;
+    padding: 7px;
+    border: 1px solid #dce6f6;
+    border-radius: 10px;
+    background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+  }
+  .pend-respuesta-legend {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .split-legend {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: -2px;
+  }
+  .split-tag {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    padding: 2px 9px;
+    font-size: 11px;
+    font-weight: 900;
+    white-space: nowrap;
+  }
+  .split-tag.dia { border-color: #cdddfa; background: #eaf1ff; color: #305b9c; }
+  .split-tag.solic { border-color: #ecd8be; background: #fff4e8; color: #9b642a; }
   .hist-box.open { display: grid; }
 
   .gestion-modal {
@@ -899,6 +953,7 @@
     .aux-row { flex-direction: column; align-items: flex-start; gap: 8px; }
     .agente-filtro-box { width: 100%; }
     .agente-filtro-scroll { overflow-x: auto; }
+    .pend-respuesta-legend { justify-content: flex-start; }
     .table-wrap { overflow-x: auto; }
     .tbl { font-size: 11px; }
     .tbl th, .tbl td { padding: 6px 8px; }
@@ -1079,23 +1134,34 @@
       </div>
     </div>
 
-    <div class="aux-row aux-row-top">
-      <div class="agente-filtro-box">
-        <div class="agente-filtro-label">Filtro rapido por agente</div>
-        <div class="agente-filtro-scroll">
-          <div id="agenteFiltroList" class="agente-filtro-list"></div>
+    <div class="pend-toolbar">
+      <div class="aux-row aux-row-top">
+        <div class="agente-filtro-box">
+          <div class="agente-filtro-label">Filtro rapido por agente</div>
+          <div class="agente-filtro-scroll">
+            <div id="agenteFiltroList" class="agente-filtro-list"></div>
+          </div>
+        </div>
+        <button id="btnRecargarDia" type="button" class="btn-soft">Recargar dia</button>
+      </div>
+      <div class="pend-respuesta-legend">
+        <div class="split-legend">
+          <span class="split-tag dia">Tareas asignadas</span>
+          <span class="split-tag solic">Solicitudes / novedades</span>
+        </div>
+        <div class="aux-row" style="padding-top:0;">
+          <span class="btn-inline row-gestion turn-tu-respuesta" style="cursor:default;">Rojo: te toca responder</span>
+          <span class="btn-inline row-gestion turn-esperando" style="cursor:default;">Verde: esperando respuesta</span>
         </div>
       </div>
-      <button id="btnRecargarDia" type="button" class="btn-soft">Recargar dia</button>
-    </div>
-    <div class="aux-row" style="padding-top:0;">
-      <span class="btn-inline row-gestion turn-tu-respuesta" style="cursor:default;">Rojo: te toca responder</span>
-      <span class="btn-inline row-gestion turn-esperando" style="cursor:default;">Verde: esperando respuesta</span>
     </div>
 
     <div id="nvdSplitWrap" class="nvd-split-grid">
       <div class="nvd-split-block split-dia">
-        <div class="nvd-split-head dia">Tareas asignadas</div>
+        <div class="nvd-split-head dia">
+          <span class="title">Tareas asignadas</span>
+          <span class="sub">Seguimiento operativo de tareas con sede, deposito y responsable.</span>
+        </div>
         <div class="table-wrap" style="max-height:220px;">
           <table class="tbl">
             <thead>
@@ -1117,7 +1183,10 @@
       </div>
 
       <div class="nvd-split-block split-solic">
-        <div class="nvd-split-head pend">Solicitudes / novedades recibidas</div>
+        <div class="nvd-split-head pend">
+          <span class="title">Solicitudes / novedades recibidas</span>
+          <span class="sub">Pedidos y novedades del dia que requieren gestion o respuesta.</span>
+        </div>
         <div class="table-wrap" style="max-height:220px;">
           <table class="tbl">
             <thead>
