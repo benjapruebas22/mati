@@ -1,6 +1,5 @@
 import unicodedata
 from datetime import date, datetime
-from statistics import median
 
 from flask import request, redirect, url_for, flash, render_template, session
 
@@ -22,6 +21,17 @@ def register_vehiculos_control(bp, get_db_connection, ensure_cols, rebuild_event
         txt = unicodedata.normalize("NFKD", txt)
         txt = "".join(ch for ch in txt if not unicodedata.combining(ch))
         return " ".join(txt.split())
+
+    def _find_chofer_id_by_name(chofer_rows, *candidates):
+        normalized_candidates = [_normalize_text(c) for c in candidates if str(c or "").strip()]
+        normalized_candidates = [c for c in normalized_candidates if c]
+        if not normalized_candidates:
+            return None
+        for row in chofer_rows:
+            nombre = _normalize_text(row["agente"] if "agente" in row.keys() else row.get("agente"))
+            if nombre in normalized_candidates:
+                return row["id"] if "id" in row.keys() else row.get("id")
+        return None
 
     def _current_user_chofer_id(conn):
         full_name = (session.get("full_name") or "").strip()
@@ -197,7 +207,10 @@ def register_vehiculos_control(bp, get_db_connection, ensure_cols, rebuild_event
         """).fetchall()
 
         user_chofer_id = None
+        default_chofer_id = None
+        default_chofer_nombre = ""
         user_name = (session.get("full_name") or session.get("username") or "").strip()
+        username = (session.get("username") or "").strip()
         if is_autorizado:
             user_chofer_id = _current_user_chofer_id(conn)
             if user_chofer_id:
@@ -205,6 +218,16 @@ def register_vehiculos_control(bp, get_db_connection, ensure_cols, rebuild_event
                     "SELECT id, agente FROM agentes_intendencia WHERE id = ?",
                     (user_chofer_id,),
                 ).fetchall()
+            default_chofer_id = user_chofer_id
+        else:
+            default_chofer_id = _find_chofer_id_by_name(choferes, user_name, username)
+
+        if default_chofer_id:
+            for c in choferes:
+                cid = c["id"] if "id" in c.keys() else c.get("id")
+                if str(cid) == str(default_chofer_id):
+                    default_chofer_nombre = c["agente"] if "agente" in c.keys() else c.get("agente") or ""
+                    break
 
         personal = conn.execute("""
             SELECT
@@ -236,6 +259,8 @@ def register_vehiculos_control(bp, get_db_connection, ensure_cols, rebuild_event
                     conn.close()
                     return redirect(url_for("access_denied"))
                 chofer_id = str(user_chofer_id)
+            elif not chofer_id and default_chofer_id:
+                chofer_id = str(default_chofer_id)
             destino_id = request.form.get("destino_id") or None
             personal_id = request.form.get("personal_id") or None
 
@@ -367,43 +392,83 @@ def register_vehiculos_control(bp, get_db_connection, ensure_cols, rebuild_event
             "ignacio baroni",
         }
 
-        refs_destino = {}
-        refs_vehiculo = {}
-        refs_vehiculo_destino = {}
-        for v in viajes:
-            estado_u = (v.get("estado") or "").strip().upper()
-            if estado_u != "CERRADO":
-                continue
-            destino = (v.get("destino_nombre") or "").strip()
-            if not destino:
-                continue
-            try:
-                km_v = float(v.get("recorrido_km") or 0)
-            except Exception:
-                km_v = 0.0
-            if km_v <= 0:
-                continue
-            pat = (v.get("patente") or "").strip().upper()
-            dkey = _normalize_text(destino)
-            refs_destino.setdefault(dkey, []).append(km_v)
-            if pat:
-                refs_vehiculo.setdefault(pat, []).append(km_v)
-                refs_vehiculo_destino.setdefault((pat, dkey), []).append(km_v)
+        REFERENCIAS_KM = {
+            "san salvador de jujuy": {
+                "centro": {"kmMin": 2, "kmMax": 10, "tipo": "urbano"},
+                "alto comedero": {"kmMin": 14, "kmMax": 30, "tipo": "urbano"},
+                "palpala": {"kmMin": 26, "kmMax": 40, "tipo": "cercano"},
+                "perico": {"kmMin": 50, "kmMax": 70, "tipo": "cercano"},
+                "san pedro": {"kmMin": 130, "kmMax": 150, "tipo": "ramal"},
+                "ledesma": {"kmMin": 230, "kmMax": 260, "tipo": "ramal"},
+                "libertador gral. san martin": {"kmMin": 230, "kmMax": 260, "tipo": "ramal"},
+                "tilcara": {"kmMin": 170, "kmMax": 190, "tipo": "quebrada"},
+                "humahuaca": {"kmMin": 240, "kmMax": 270, "tipo": "quebrada"},
+                "abra pampa": {"kmMin": 310, "kmMax": 350, "tipo": "quebrada"},
+                "la quiaca": {"kmMin": 560, "kmMax": 620, "tipo": "quebrada"},
+                "susques": {"kmMin": 420, "kmMax": 470, "tipo": "puna"},
+                "salta": {"kmMin": 240, "kmMax": 280, "tipo": "externo"},
+            },
+            "san pedro": {
+                "san pedro": {"kmMin": 2, "kmMax": 12, "tipo": "urbano"},
+                "la mendieta": {"kmMin": 20, "kmMax": 40, "tipo": "ramal"},
+                "rodeito": {"kmMin": 30, "kmMax": 50, "tipo": "ramal"},
+                "chalican": {"kmMin": 50, "kmMax": 80, "tipo": "ramal"},
+                "ledesma": {"kmMin": 60, "kmMax": 90, "tipo": "ramal"},
+                "libertador gral. san martin": {"kmMin": 60, "kmMax": 90, "tipo": "ramal"},
+                "libertador gral san martin": {"kmMin": 60, "kmMax": 90, "tipo": "ramal"},
+                "yuto": {"kmMin": 100, "kmMax": 130, "tipo": "ramal"},
+                "santa clara": {"kmMin": 120, "kmMax": 150, "tipo": "ramal"},
+                "el talar": {"kmMin": 180, "kmMax": 220, "tipo": "ramal"},
+                "palma sola": {"kmMin": 160, "kmMax": 210, "tipo": "ramal"},
+                "san salvador de jujuy": {"kmMin": 130, "kmMax": 150, "tipo": "interurbano"},
+                "centro": {"kmMin": 130, "kmMax": 150, "tipo": "interurbano"},
+            },
+        }
 
-        def _build_stats(src):
-            out = {}
-            for key, vals in src.items():
-                if not vals:
-                    continue
-                out[key] = {
-                    "km_ref": float(median(vals)),
-                    "muestras": len(vals),
-                }
-            return out
+        def normalizeDestino(destino):
+            txt = _normalize_text(destino or "")
+            txt = txt.replace(",", " ").strip()
+            txt = " ".join(txt.split())
+            alias = {
+                "san salvador": "centro",
+                "san salvador de jujuy": "centro",
+                "centro": "centro",
+                "palpala": "palpala",
+                "chalican": "chalican",
+            }
+            return alias.get(txt, txt)
 
-        ref_stats_destino = _build_stats(refs_destino)
-        ref_stats_vehiculo = _build_stats(refs_vehiculo)
-        ref_stats_vehiculo_destino = _build_stats(refs_vehiculo_destino)
+        def normalizeOrigen(origen):
+            txt = _normalize_text(origen or "")
+            if txt in {"san pedro", "s. pedro"}:
+                return "san pedro"
+            return "san salvador de jujuy"
+
+        def obtenerOrigenVehiculo(vehiculo):
+            pat = (_normalize_text((vehiculo or {}).get("patente") or "") or "").replace(" ", "")
+            cod = (_normalize_text((vehiculo or {}).get("codigo_interno") or "") or "").replace(" ", "")
+            if pat == "ae856ge" or cod in {"g-02", "g02"}:
+                return "san pedro"
+            if pat in {"ae856gd", "af277oa", "ag846fr", "ab946vk"} or cod in {"g-01", "g01", "g-03", "g03", "g-04", "g04", "n-01", "n01"}:
+                return "san salvador de jujuy"
+            return "san salvador de jujuy"
+
+        def obtenerReferenciaKm(origen, destino):
+            okey = normalizeOrigen(origen)
+            dkey = normalizeDestino(destino)
+            return (REFERENCIAS_KM.get(okey) or {}).get(dkey)
+
+        def evaluarKm(difKm, origen, destino):
+            ref = obtenerReferenciaKm(origen, destino)
+            if not ref:
+                return ("Sin ref", "km-none", "Sin referencia para origen/destino")
+            km_min = float(ref.get("kmMin") or 0)
+            km_max = float(ref.get("kmMax") or 0)
+            if difKm < km_min:
+                return ("Bajo", "km-low", f"ref {km_min:.1f}-{km_max:.1f} km")
+            if difKm > km_max:
+                return ("Alto", "km-high", f"ref {km_min:.1f}-{km_max:.1f} km")
+            return ("Razonable", "km-ok", f"ref {km_min:.1f}-{km_max:.1f} km")
 
         for v in viajes:
             v["km_check_label"] = "-"
@@ -411,6 +476,7 @@ def register_vehiculos_control(bp, get_db_connection, ensure_cols, rebuild_event
             v["km_check_hint"] = ""
             v["km_ref"] = None
             v["km_ref_n"] = 0
+            v["km_ref_txt"] = "ref --"
 
             estado_u = (v.get("estado") or "").strip().upper()
             if estado_u != "CERRADO":
@@ -430,47 +496,18 @@ def register_vehiculos_control(bp, get_db_connection, ensure_cols, rebuild_event
                 v["km_check_label"] = "Sin km"
                 continue
 
-            pat = (v.get("patente") or "").strip().upper()
-            dkey = _normalize_text(destino)
-            ref = None
-            ref_from = ""
-            if pat:
-                r_vd = ref_stats_vehiculo_destino.get((pat, dkey))
-                if r_vd and int(r_vd.get("muestras") or 0) >= 2:
-                    ref = r_vd
-                    ref_from = "vehiculo+destino"
-            if ref is None and pat:
-                r_v = ref_stats_vehiculo.get(pat)
-                if r_v and int(r_v.get("muestras") or 0) >= 3:
-                    ref = r_v
-                    ref_from = "vehiculo"
-            if ref is None:
-                r_d = ref_stats_destino.get(dkey)
-                if r_d and int(r_d.get("muestras") or 0) >= 2:
-                    ref = r_d
-                    ref_from = "destino"
-            if not ref:
-                v["km_check_label"] = "Sin base"
-                v["km_check_hint"] = "Sin historial suficiente para comparar"
-                continue
-
-            km_ref = float(ref.get("km_ref") or 0)
-            muestras = int(ref.get("muestras") or 0)
-            v["km_ref"] = km_ref
-            v["km_ref_n"] = muestras
-            low = max(0.0, km_ref * 0.55)
-            high = max(km_ref * 1.60, km_ref + 6.0)
-
-            if km_real < low:
-                v["km_check_label"] = "Bajo"
-                v["km_check_class"] = "km-low"
-            elif km_real > high:
-                v["km_check_label"] = "Alto"
-                v["km_check_class"] = "km-high"
-            else:
-                v["km_check_label"] = "Razonable"
-                v["km_check_class"] = "km-ok"
-            v["km_check_hint"] = f"Real {km_real:.1f} km | Ref {km_ref:.1f} km ({muestras}, {ref_from})"
+            origen = obtenerOrigenVehiculo(v)
+            label, css, hint = evaluarKm(km_real, origen, destino)
+            ref = obtenerReferenciaKm(origen, destino)
+            v["km_check_label"] = label
+            v["km_check_class"] = css
+            v["km_check_hint"] = hint
+            if ref:
+                km_min = float(ref.get("kmMin") or 0)
+                km_max = float(ref.get("kmMax") or 0)
+                v["km_ref"] = (km_min + km_max) / 2.0
+                v["km_ref_n"] = 0
+                v["km_ref_txt"] = f"ref {km_min:.1f}-{km_max:.1f} km"
 
         kpi_sql = """
             SELECT
@@ -554,6 +591,8 @@ def register_vehiculos_control(bp, get_db_connection, ensure_cols, rebuild_event
             documentos_vinculados_vehiculos=documentos_vinculados_vehiculos,
             is_autorizado=is_autorizado,
             user_chofer_id=user_chofer_id,
+            default_chofer_id=default_chofer_id,
+            default_chofer_nombre=default_chofer_nombre,
             show_km_razonable=show_km_razonable,
         )
 

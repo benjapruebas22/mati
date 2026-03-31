@@ -425,12 +425,14 @@
 
     <div>
       <label style="font-size:12px;color:#64748b">Chofer</label>
-      {% if is_autorizado %}
-      <input type="text" value="{{ session.full_name }}" disabled
+      {% if is_autorizado or default_chofer_id %}
+      <input type="text" value="{{ default_chofer_nombre or session.full_name or session.username }}" disabled
         style="width:100%;padding:10px;border-radius:10px;border:1px solid #e5e7eb;background:#f8fafc">
-      <input type="hidden" name="chofer_id" value="{{ user_chofer_id }}">
+      <input type="hidden" name="chofer_id" value="{{ default_chofer_id or user_chofer_id }}">
       {% else %}
-      <select name="chofer_id" required style="width:100%;padding:10px;border-radius:10px;border:1px solid #e5e7eb">
+      <input id="choferSearch" type="text" placeholder="Buscar chofer (ej: perez / marcos)" autocomplete="off"
+        style="width:100%;padding:8px 10px;border-radius:10px;border:1px solid #dbe3ef;margin-bottom:6px">
+      <select id="choferSelect" name="chofer_id" required style="width:100%;padding:10px;border-radius:10px;border:1px solid #e5e7eb">
         <option value="">-- seleccionar --</option>
         {% for c in choferes %}
         <option value="{{ c.id }}">{{ c.agente }}</option>
@@ -453,7 +455,9 @@
 
     <div>
       {% if is_autorizado %}<label style="font-size:12px;color:#64748b">Agente trasladado</label>{% else %}<label style="font-size:12px;color:#64748b">Agente del traslado (Personal)</label>{% endif %}
-      <select name="personal_id" required style="width:100%;padding:10px;border-radius:10px;border:1px solid #e5e7eb">
+      <input id="personalSearch" type="text" placeholder="Buscar agente por apellido, nombre o dependencia" autocomplete="off"
+        style="width:100%;padding:8px 10px;border-radius:10px;border:1px solid #dbe3ef;margin-bottom:6px">
+      <select id="personalSelect" name="personal_id" required style="width:100%;padding:10px;border-radius:10px;border:1px solid #e5e7eb">
         <option value="">-- seleccionar --</option>
         {% for p in personal %}
         <option value="{{ p.id }}">{{ p.nombre_apellido }} — {{ p.dependencia }}</option>
@@ -992,6 +996,58 @@
     filtroChofer = "";
     applyFiltros();
   }
+
+  function normalizeSearch(txt) {
+    return String(txt || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
+  }
+
+  function enableSelectQuickSearch(inputId, selectId) {
+    const input = document.getElementById(inputId);
+    const select = document.getElementById(selectId);
+    if (!input || !select) return;
+
+    const allOptions = Array.from(select.options).map((opt, idx) => ({
+      value: opt.value,
+      text: opt.text,
+      isPlaceholder: idx === 0 && !opt.value,
+    }));
+
+    function renderFiltered() {
+      const term = normalizeSearch(input.value);
+      const prevValue = select.value;
+      select.innerHTML = "";
+
+      let added = 0;
+      allOptions.forEach((item) => {
+        const matches = !term || item.isPlaceholder || normalizeSearch(item.text).includes(term);
+        if (!matches) return;
+        const opt = document.createElement("option");
+        opt.value = item.value;
+        opt.text = item.text;
+        if (item.value === prevValue) opt.selected = true;
+        select.appendChild(opt);
+        if (!item.isPlaceholder) added += 1;
+      });
+
+      if (added === 0) {
+        const noneOpt = document.createElement("option");
+        noneOpt.value = "";
+        noneOpt.text = "-- sin coincidencias --";
+        noneOpt.selected = true;
+        select.appendChild(noneOpt);
+      }
+    }
+
+    input.addEventListener("input", renderFiltered);
+    renderFiltered();
+  }
+
+  enableSelectQuickSearch("choferSearch", "choferSelect");
+  enableSelectQuickSearch("personalSearch", "personalSelect");
 </script>
 
 {% endblock %}
