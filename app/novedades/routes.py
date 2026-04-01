@@ -3,6 +3,7 @@ from datetime import date, datetime
 import unicodedata
 
 from flask import render_template, request, jsonify, session, current_app
+from werkzeug.security import generate_password_hash
 
 from . import bp
 from . import helpers as nvd_h
@@ -12,6 +13,7 @@ SEDE_ESTADO_VARS = nvd_h.SEDE_ESTADO_VARS
 SEDE_ESTADO_LABELS = nvd_h.SEDE_ESTADO_LABELS
 NVD_TIPO_SUBTIPOS = nvd_h.NVD_TIPO_SUBTIPOS
 NVD_ESTADOS = nvd_h.NVD_ESTADOS
+NVD_COFFEE_ESTADOS = nvd_h.NVD_COFFEE_ESTADOS
 
 _table_exists = nvd_h._table_exists
 _table_cols = nvd_h._table_cols
@@ -20,6 +22,8 @@ _ensure_novedades_catalogo_table = nvd_h._ensure_novedades_catalogo_table
 _nvd_tipos_subtipos = nvd_h._nvd_tipos_subtipos
 _ensure_novedades_diarias_table = nvd_h._ensure_novedades_diarias_table
 _ensure_novedades_diarias_chat_table = nvd_h._ensure_novedades_diarias_chat_table
+_ensure_coffee_insumos_table = nvd_h._ensure_coffee_insumos_table
+_ensure_coffee_logistica_table = nvd_h._ensure_coffee_logistica_table
 _safe_today = nvd_h._safe_today
 _norm_nvd_estado = nvd_h._norm_nvd_estado
 _novedades_resumen = nvd_h._novedades_resumen
@@ -82,6 +86,26 @@ NVD_HERRAMIENTA_ACCIONES = {
     "vuelve": "Traer de vuelta",
     "queda": "Queda en sede",
 }
+NVD_TIPO_COFFEE = "Coffee institucional"
+NVD_COFFEE_SUBTIPOS = ["Reunion interna", "Evento", "Capacitacion"]
+NVD_COFFEE_INSUMOS_DEFAULT = [
+    "Cafe",
+    "Azucar",
+    "Edulcorante",
+    "Vasos",
+    "Servilletas",
+    "Agua",
+    "Otros",
+]
+NVD_COFFEE_ESTADO_ABIERTOS = {"pendiente", "aprobado", "en preparacion", "enviado"}
+NVD_COFFEE_ESTADO_CERRADOS = {"finalizado", "rechazado", "cancelado"}
+NVD_LUCIANA_USERNAMES = {"lfernandez", "luciana.fernandez", "lucianafernandez"}
+NVD_LUCIANA_FULLNAMES = {"luciana fernandez"}
+NVD_COFFEE_TURNO_PERSONAL = {
+    "manana": ["Miriam Tejerina", "Micaela Aima"],
+    "tarde": ["Yolanda Solis", "Mabel Alejo"],
+}
+NVD_COFFEE_DECISION_COMPRA = {"pendiente", "comprar", "no_necesario"}
 
 
 def _norm_ci(value):
@@ -188,6 +212,216 @@ def _is_francisco_actor(username, full_name):
     return norm_user in FRANCISCO_USERNAMES or norm_name == "francisco savio"
 
 
+def _is_luciana_actor(username, full_name):
+    norm_user = _norm_ci(username)
+    norm_name = _norm_ci(full_name)
+    return norm_user in NVD_LUCIANA_USERNAMES or norm_name in NVD_LUCIANA_FULLNAMES
+
+
+def _is_coffee_tipo(tipo):
+    return _norm_ci(tipo) == _norm_ci(NVD_TIPO_COFFEE)
+
+
+def _norm_coffee_estado(raw):
+    v = _norm_ci(raw)
+    if v == "pendiente":
+        return "Pendiente"
+    if v == "aprobado":
+        return "Aprobado"
+    if v == "rechazado":
+        return "Rechazado"
+    if v in {"en preparacion"}:
+        return "En preparacion"
+    if v == "enviado":
+        return "Enviado"
+    if v == "finalizado":
+        return "Finalizado"
+    if v == "cancelado":
+        return "Cancelado"
+    return "Pendiente"
+
+
+def _coffee_calc_estado(cantidad_necesaria, stock_disponible):
+    try:
+        cant = int(cantidad_necesaria or 0)
+    except Exception:
+        cant = 0
+    try:
+        stock = int(stock_disponible or 0)
+    except Exception:
+        stock = 0
+    return "hay_stock" if stock >= cant else "falta_comprar"
+
+
+def _coffee_norm_turno(raw):
+    v = _norm_ci(raw)
+    if v in {"manana", "m"}:
+        return "manana"
+    if v in {"tarde", "t"}:
+        return "tarde"
+    return ""
+
+
+def _is_novedad_abierta(tipo, estado):
+    est = _norm_ci(estado)
+    if _is_coffee_tipo(tipo):
+        return est in NVD_COFFEE_ESTADO_ABIERTOS
+    return est in {"informado", "en revision", "en proceso"}
+
+
+def _is_novedad_cerrada(tipo, estado):
+    est = _norm_ci(estado)
+    if _is_coffee_tipo(tipo):
+        return est in NVD_COFFEE_ESTADO_CERRADOS
+    return est in {"resuelto", "cerrado"}
+
+
+def _can_edit_coffee_estado(actor, estado_objetivo):
+    est = _norm_ci(estado_objetivo)
+    is_admin = _can_admin_novedades(actor)
+    is_matias = bool(actor.get("is_matias"))
+    is_francisco = bool(actor.get("is_francisco"))
+    if est in {"aprobado", "rechazado"}:
+        return is_admin
+    if est in {"enviado", "finalizado"}:
+        return is_matias
+    if est == "en preparacion":
+        return bool(is_admin or is_francisco)
+    if est in {"pendiente", "cancelado"}:
+        return bool(is_admin or is_matias)
+    return False
+
+
+def _ensure_coffee_special_users(con):
+    if not _table_exists(con, "usuarios"):
+        return
+    try:
+        row = con.execute(
+            "SELECT 1 FROM usuarios WHERE LOWER(COALESCE(username,''))='lfernandez' LIMIT 1"
+        ).fetchone()
+        if row:
+            return
+        cols = _table_cols(con, "usuarios")
+        data = {
+            "username": "lfernandez",
+            "full_name": "Luciana Fernandez",
+            "role": "dashboard_solo",
+            "password_hash": generate_password_hash("654321"),
+            "must_change": 1,
+            "activo": 1,
+        }
+        if "rol" in cols:
+            data["rol"] = "operador"
+        if "password" in cols:
+            data["password"] = "654321"
+        fields = [k for k in data.keys() if k in cols]
+        if not fields:
+            return
+        placeholders = ",".join(["?"] * len(fields))
+        values = [data[k] for k in fields]
+        con.execute(
+            f"INSERT INTO usuarios({','.join(fields)}) VALUES ({placeholders})",
+            tuple(values),
+        )
+        con.commit()
+    except Exception:
+        pass
+
+
+def _ensure_coffee_defaults_for_novedad(con, novedad_id):
+    _ensure_coffee_insumos_table(con)
+    _ensure_coffee_logistica_table(con)
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    for item in NVD_COFFEE_INSUMOS_DEFAULT:
+        con.execute(
+            """
+            INSERT OR IGNORE INTO coffee_insumos
+                (novedad_id, item, cantidad_necesaria, stock_disponible, estado, decision_compra, recibido, actualizado_en, actualizado_por)
+            VALUES (?, ?, 0, 0, 'hay_stock', 'pendiente', 0, ?, 'Sistema')
+            """,
+            (novedad_id, item, ts),
+        )
+    con.execute(
+        """
+        INSERT OR IGNORE INTO coffee_logistica
+            (novedad_id, chofer, personal, turno, aprobado, aprobado_por, aprobado_en, actualizado_en, actualizado_por)
+        VALUES (?, '', '', '', 0, '', '', ?, 'Sistema')
+        """,
+        (novedad_id, ts),
+    )
+
+
+def _coffee_read_insumos(con, novedad_id):
+    _ensure_coffee_defaults_for_novedad(con, novedad_id)
+    rows = con.execute(
+        """
+        SELECT
+            id,
+            COALESCE(item,'') AS item,
+            COALESCE(cantidad_necesaria,0) AS cantidad_necesaria,
+            COALESCE(stock_disponible,0) AS stock_disponible,
+            COALESCE(estado,'hay_stock') AS estado,
+            COALESCE(decision_compra,'pendiente') AS decision_compra,
+            COALESCE(recibido,0) AS recibido,
+            COALESCE(actualizado_en,'') AS actualizado_en,
+            COALESCE(actualizado_por,'') AS actualizado_por
+        FROM coffee_insumos
+        WHERE novedad_id=?
+        ORDER BY id ASC
+        """,
+        (novedad_id,),
+    ).fetchall()
+    out = []
+    for r in rows:
+        out.append({
+            "id": int(_row_value(r, "id", 0) or 0),
+            "item": (_row_value(r, "item", "") or "").strip(),
+            "cantidad_necesaria": int(_row_value(r, "cantidad_necesaria", 0) or 0),
+            "stock_disponible": int(_row_value(r, "stock_disponible", 0) or 0),
+            "estado": (_row_value(r, "estado", "hay_stock") or "hay_stock").strip(),
+            "decision_compra": (_row_value(r, "decision_compra", "pendiente") or "pendiente").strip(),
+            "recibido": int(_row_value(r, "recibido", 0) or 0) == 1,
+            "actualizado_en": (_row_value(r, "actualizado_en", "") or "").strip(),
+            "actualizado_por": (_row_value(r, "actualizado_por", "") or "").strip(),
+        })
+    return out
+
+
+def _coffee_read_logistica(con, novedad_id):
+    _ensure_coffee_defaults_for_novedad(con, novedad_id)
+    row = con.execute(
+        """
+        SELECT
+            id,
+            COALESCE(chofer,'') AS chofer,
+            COALESCE(personal,'') AS personal,
+            COALESCE(turno,'') AS turno,
+            COALESCE(aprobado,0) AS aprobado,
+            COALESCE(aprobado_por,'') AS aprobado_por,
+            COALESCE(aprobado_en,'') AS aprobado_en,
+            COALESCE(actualizado_en,'') AS actualizado_en,
+            COALESCE(actualizado_por,'') AS actualizado_por
+        FROM coffee_logistica
+        WHERE novedad_id=?
+        LIMIT 1
+        """,
+        (novedad_id,),
+    ).fetchone()
+    if not row:
+        return {}
+    return {
+        "id": int(_row_value(row, "id", 0) or 0),
+        "chofer": (_row_value(row, "chofer", "") or "").strip(),
+        "personal": (_row_value(row, "personal", "") or "").strip(),
+        "turno": (_row_value(row, "turno", "") or "").strip(),
+        "aprobado": int(_row_value(row, "aprobado", 0) or 0) == 1,
+        "aprobado_por": (_row_value(row, "aprobado_por", "") or "").strip(),
+        "aprobado_en": (_row_value(row, "aprobado_en", "") or "").strip(),
+        "actualizado_en": (_row_value(row, "actualizado_en", "") or "").strip(),
+        "actualizado_por": (_row_value(row, "actualizado_por", "") or "").strip(),
+    }
+
+
 def _is_tarea_chat_team_actor(actor):
     if not actor:
         return False
@@ -225,6 +459,7 @@ def _session_actor():
         "is_matias": _is_matias_actor(username, full_name),
         "is_novedades_admin": _is_novedades_admin_actor(username, full_name),
         "is_francisco": _is_francisco_actor(username, full_name),
+        "is_luciana": _is_luciana_actor(username, full_name),
     }
 
 
@@ -242,6 +477,8 @@ def _actor_can_view_gestion(actor, agente_novedad, agente_tarea="", tipo=""):
     if not actor:
         return False
     if _can_admin_novedades(actor):
+        return True
+    if _is_coffee_tipo(tipo) and bool(actor.get("is_luciana")):
         return True
     if _norm_ci(tipo) == _norm_ci(NVD_TIPO_TAREA) and _is_tarea_chat_team_actor(actor):
         return True
@@ -372,6 +609,11 @@ def register_novedades(bp, get_db):
                 COALESCE(tarea_asignado_por_username,'') AS tarea_asignado_por_username,
                 COALESCE(tarea_asignado_en,'') AS tarea_asignado_en,
                 COALESCE(tarea_actualizado_en,'') AS tarea_actualizado_en,
+                COALESCE(coffee_cantidad_personas,0) AS coffee_cantidad_personas,
+                COALESCE(coffee_fecha_evento,'') AS coffee_fecha_evento,
+                COALESCE(coffee_horario_evento,'') AS coffee_horario_evento,
+                COALESCE(coffee_sede_destino,'') AS coffee_sede_destino,
+                COALESCE(coffee_logistica_aprobada,0) AS coffee_logistica_aprobada,
                 COALESCE((
                     SELECT c.autor
                     FROM novedades_diarias_chat c
@@ -543,11 +785,14 @@ def register_novedades(bp, get_db):
 
     def _serialize_novedad(row, actor):
         tipo = (_row_value(row, "tipo", "") or "").strip()
+        is_coffee = _is_coffee_tipo(tipo)
         agente = (_row_value(row, "agente", "") or "").strip()
         tarea_agente = (_row_value(row, "tarea_agente", "") or "").strip()
         tarea_general = _is_tarea_general_target(tarea_agente)
         tarea_herramientas = _parse_tarea_herramientas(_row_value(row, "tarea_herramientas_json", "") or "")
         tarea_herramientas_resumen = _herramientas_resumen(tarea_herramientas)
+        estado_raw = _row_value(row, "estado", "Informado") or "Informado"
+        estado_norm = _norm_coffee_estado(estado_raw) if is_coffee else _norm_nvd_estado(estado_raw)
         es_privada = _is_private_novedad_row(row)
         es_duenio_privada = _actor_can_manage_private_novedad(actor, row)
         puede_ver_novedad = _actor_can_view_novedad(actor, row)
@@ -570,6 +815,9 @@ def register_novedades(bp, get_db):
         puede_gestionar_tarea = bool(
             puede_ver_novedad and (_can_admin_novedades(actor) or (es_privada and es_duenio_privada))
         )
+        if is_coffee and _norm_ci(estado_norm) != "aprobado":
+            puede_gestionar_tarea = False
+            can_autoassign = False
         chat_ult_autor = (_row_value(row, "chat_ult_autor", "") or "").strip()
         chat_ult_autor_username = (_row_value(row, "chat_ult_autor_username", "") or "").strip()
         chat_ult_creado_en = (_row_value(row, "chat_ult_creado_en", "") or "").strip()
@@ -588,6 +836,21 @@ def register_novedades(bp, get_db):
             else:
                 gestion_turno = "tu_respuesta"
                 gestion_turno_label = "Tu respuesta"
+        can_estado_coffee = bool(
+            is_coffee
+            and (bool(actor.get("is_matias")) or bool(actor.get("is_francisco")) or _can_admin_novedades(actor))
+        )
+        can_insumos_edit = bool(
+            is_coffee and (bool(actor.get("is_francisco")) or bool(actor.get("is_matias")) or _can_admin_novedades(actor))
+        )
+        can_compra_decision = bool(
+            is_coffee and (bool(actor.get("is_luciana")) or bool(actor.get("is_matias")) or _can_admin_novedades(actor))
+        )
+        can_mark_recibido = bool(is_coffee and bool(actor.get("is_francisco")))
+        can_logistica_edit = bool(
+            is_coffee and (bool(actor.get("is_francisco")) or bool(actor.get("is_matias")) or _can_admin_novedades(actor))
+        )
+        can_logistica_approve = bool(is_coffee and bool(actor.get("is_matias")))
         return {
             "id": int(_row_value(row, "id", 0) or 0),
             "fecha": (_row_value(row, "fecha", "") or "").strip(),
@@ -595,9 +858,16 @@ def register_novedades(bp, get_db):
             "agente": agente,
             "sede_codigo": (_row_value(row, "sede_codigo", "") or "").strip().upper(),
             "tipo": tipo,
+            "es_coffee": is_coffee,
             "subtipo": (_row_value(row, "subtipo", "") or "").strip(),
             "observacion": (_row_value(row, "observacion", "") or "").strip(),
-            "estado": _norm_nvd_estado(_row_value(row, "estado", "Informado") or "Informado"),
+            "estado": estado_norm,
+            "estados_disponibles": (list(NVD_COFFEE_ESTADOS) if is_coffee else list(NVD_ESTADOS)),
+            "coffee_cantidad_personas": int(_row_value(row, "coffee_cantidad_personas", 0) or 0),
+            "coffee_fecha_evento": (_row_value(row, "coffee_fecha_evento", "") or "").strip(),
+            "coffee_horario_evento": (_row_value(row, "coffee_horario_evento", "") or "").strip(),
+            "coffee_sede_destino": (_row_value(row, "coffee_sede_destino", "") or "").strip(),
+            "coffee_logistica_aprobada": int(_row_value(row, "coffee_logistica_aprobada", 0) or 0) == 1,
             "tarea_asignada": (_row_value(row, "tarea_asignada", "") or "").strip(),
             "tarea_estado": (_row_value(row, "tarea_estado", "") or "").strip(),
             "tarea_sede_codigo": (_row_value(row, "tarea_sede_codigo", "") or "").strip().upper(),
@@ -621,10 +891,15 @@ def register_novedades(bp, get_db):
             "privado_owner_nombre": (_row_value(row, "privado_owner_nombre", "") or "").strip(),
             "gestion_habilitada": gestion_habilitada,
             "puede_ver_gestion": puede_ver_gestion,
-            "puede_cambiar_estado": (puede_gestionar_tarea if gestion_habilitada else True),
-            "puede_cerrar": (puede_gestionar_tarea if gestion_habilitada else True),
+            "puede_cambiar_estado": (can_estado_coffee if is_coffee else (puede_gestionar_tarea if gestion_habilitada else True)),
+            "puede_cerrar": (can_estado_coffee if is_coffee else (puede_gestionar_tarea if gestion_habilitada else True)),
             "puede_asignar_tarea": (puede_gestionar_tarea if gestion_habilitada else False),
             "puede_autoasignar": can_autoassign,
+            "puede_editar_coffee_insumos": can_insumos_edit,
+            "puede_decidir_compra": can_compra_decision,
+            "puede_marcar_recibido": can_mark_recibido,
+            "puede_editar_logistica": can_logistica_edit,
+            "puede_aprobar_logistica": can_logistica_approve,
         }
 
     def _novedades_resumen_visible(con, fecha_iso, actor):
@@ -632,6 +907,7 @@ def register_novedades(bp, get_db):
         try:
             rows = con.execute("""
                 SELECT
+                    COALESCE(tipo,'') AS tipo,
                     LOWER(COALESCE(estado,'informado')) AS estado,
                     COALESCE(privado_flag,0) AS privado_flag,
                     COALESCE(privado_owner_username,'') AS privado_owner_username,
@@ -643,12 +919,22 @@ def register_novedades(bp, get_db):
                 if not _actor_can_view_novedad(actor, r):
                     continue
                 est = (_row_value(r, "estado", "") or "").strip()
+                est_norm = _norm_ci(est)
+                tipo = (_row_value(r, "tipo", "") or "").strip()
                 out["total"] += 1
-                if est in ("informado",):
+                if _is_coffee_tipo(tipo):
+                    if est_norm in {"pendiente"}:
+                        out["informado"] += 1
+                    elif est_norm in {"aprobado", "en preparacion", "enviado"}:
+                        out["en_proceso"] += 1
+                    elif est_norm in {"finalizado", "rechazado", "cancelado"}:
+                        out["resuelto"] += 1
+                    continue
+                if est_norm in {"informado"}:
                     out["informado"] += 1
-                elif est in ("en revision", "en revisión", "en proceso", "proceso"):
+                elif est_norm in {"en revision", "en proceso", "proceso"}:
                     out["en_proceso"] += 1
-                elif est in ("resuelto", "cerrado"):
+                elif est_norm in {"resuelto", "cerrado"}:
                     out["resuelto"] += 1
         except Exception:
             pass
@@ -676,6 +962,9 @@ def register_novedades(bp, get_db):
         try:
             _ensure_novedades_diarias_table(con)
             _ensure_novedades_catalogo_table(con)
+            _ensure_coffee_insumos_table(con)
+            _ensure_coffee_logistica_table(con)
+            _ensure_coffee_special_users(con)
             sedes = _dashboard_sedes_opts(con)
             agentes = _dashboard_agentes_opts(con)
             tipos_subtipos = _nvd_tipos_subtipos(con)
@@ -706,11 +995,13 @@ def register_novedades(bp, get_db):
                 "is_matias": bool(actor.get("is_matias")),
                 "is_novedades_admin": bool(actor.get("is_novedades_admin")),
                 "is_francisco": bool(actor.get("is_francisco")),
+                "is_luciana": bool(actor.get("is_luciana")),
             },
             "is_full": bool(actor.get("is_full")),
             "is_matias": bool(actor.get("is_matias")),
             "is_novedades_admin": bool(actor.get("is_novedades_admin")),
             "is_francisco": bool(actor.get("is_francisco")),
+            "is_luciana": bool(actor.get("is_luciana")),
             "puede_editar_agente": _can_admin_novedades(actor),
             "sedes": sedes,
             "agentes": agentes,
@@ -787,13 +1078,13 @@ def register_novedades(bp, get_db):
                 FROM novedades_diarias
                 WHERE (
                         date(fecha) = date(?)
-                        AND LOWER(COALESCE(estado,'')) IN ('informado', 'en revision', 'en proceso')
+                        AND LOWER(COALESCE(estado,'')) IN ('informado', 'en revision', 'en proceso', 'pendiente', 'aprobado', 'en preparacion', 'en preparación', 'enviado')
                     )
                    OR (
                         date(fecha) < date(?)
-                        AND LOWER(COALESCE(estado,'')) IN ('informado', 'en revision', 'en proceso')
+                        AND LOWER(COALESCE(estado,'')) IN ('informado', 'en revision', 'en proceso', 'pendiente', 'aprobado', 'en preparacion', 'en preparación', 'enviado')
                     )
-                   OR LOWER(COALESCE(estado,'')) IN ('resuelto', 'cerrado')
+                   OR LOWER(COALESCE(estado,'')) IN ('resuelto', 'cerrado', 'finalizado', 'cancelado', 'rechazado')
                 ORDER BY date(fecha) DESC, COALESCE(hora,'') DESC, id DESC
                 LIMIT 800
             """, (fecha, fecha)).fetchall()
@@ -808,8 +1099,7 @@ def register_novedades(bp, get_db):
             tareas_asignadas = []
             solicitudes_recibidas = []
             for it in base_items:
-                est = (it.get("estado") or "").strip().lower()
-                es_pendiente = est in ("informado", "en proceso")
+                es_pendiente = _is_novedad_abierta(it.get("tipo") or "", it.get("estado") or "")
                 if es_pendiente:
                     if (it.get("fecha") or "") == fecha:
                         pendientes_dia.append(it)
@@ -882,7 +1172,7 @@ def register_novedades(bp, get_db):
                     COALESCE(privado_owner_nombre,'') AS privado_owner_nombre
                 FROM novedades_diarias
                 WHERE 1=1
-                  AND LOWER(COALESCE(estado,'')) IN ('resuelto', 'cerrado')
+                  AND LOWER(COALESCE(estado,'')) IN ('resuelto', 'cerrado', 'finalizado', 'cancelado', 'rechazado')
             """
             params = []
             if desde:
@@ -915,7 +1205,11 @@ def register_novedades(bp, get_db):
                     "tipo": (_row_value(r, "tipo", "") or "").strip(),
                     "subtipo": (_row_value(r, "subtipo", "") or "").strip(),
                     "observacion": (_row_value(r, "observacion", "") or "").strip(),
-                    "estado": _norm_nvd_estado(_row_value(r, "estado", "Informado") or "Informado"),
+                    "estado": (
+                        _norm_coffee_estado(_row_value(r, "estado", "Pendiente") or "Pendiente")
+                        if _is_coffee_tipo(_row_value(r, "tipo", "") or "")
+                        else _norm_nvd_estado(_row_value(r, "estado", "Informado") or "Informado")
+                    ),
                 })
         except Exception as e:
             con.close()
@@ -980,9 +1274,20 @@ def register_novedades(bp, get_db):
         tipo = (payload.get("tipo") or "").strip()
         subtipo = (payload.get("subtipo") or "").strip()
         observacion = (payload.get("observacion") or "").strip()
+        coffee_cantidad_personas_raw = payload.get("cantidad_personas")
+        coffee_fecha_evento = (payload.get("fecha_evento") or "").strip()
+        coffee_horario_evento = (payload.get("horario_evento") or "").strip()
+        coffee_sede_destino = (payload.get("sede_destino") or "").strip().upper()
         actor = _session_actor()
         if len(observacion) > 240:
             observacion = observacion[:240]
+        try:
+            coffee_cantidad_personas = int(coffee_cantidad_personas_raw or 0)
+        except Exception:
+            coffee_cantidad_personas = 0
+        coffee_cantidad_personas = max(0, coffee_cantidad_personas)
+        if len(coffee_horario_evento) > 40:
+            coffee_horario_evento = coffee_horario_evento[:40]
 
         try:
             datetime.strptime(fecha, "%Y-%m-%d")
@@ -998,6 +1303,9 @@ def register_novedades(bp, get_db):
             _ensure_novedades_diarias_table(con)
             _ensure_novedades_catalogo_table(con)
             _ensure_novedades_diarias_chat_table(con)
+            _ensure_coffee_insumos_table(con)
+            _ensure_coffee_logistica_table(con)
+            _ensure_coffee_special_users(con)
             tipos_subtipos = _nvd_tipos_subtipos(con)
             if tipo not in tipos_subtipos:
                 con.close()
@@ -1007,6 +1315,35 @@ def register_novedades(bp, get_db):
             if subtipo not in (tipos_subtipos.get(tipo) or []):
                 con.close()
                 return jsonify({"ok": False, "error": "Subtipo invalido para el tipo elegido"}), 400
+            is_coffee = _is_coffee_tipo(tipo)
+            if is_coffee:
+                if subtipo not in NVD_COFFEE_SUBTIPOS:
+                    con.close()
+                    return jsonify({"ok": False, "error": "Subtipo invalido para Coffee institucional"}), 400
+                if coffee_cantidad_personas <= 0:
+                    con.close()
+                    return jsonify({"ok": False, "error": "Cantidad de personas obligatoria para Coffee"}), 400
+                if not coffee_fecha_evento:
+                    con.close()
+                    return jsonify({"ok": False, "error": "Fecha del evento obligatoria para Coffee"}), 400
+                try:
+                    datetime.strptime(coffee_fecha_evento, "%Y-%m-%d")
+                except Exception:
+                    con.close()
+                    return jsonify({"ok": False, "error": "Fecha del evento invalida"}), 400
+                if not coffee_horario_evento:
+                    con.close()
+                    return jsonify({"ok": False, "error": "Horario del evento obligatorio para Coffee"}), 400
+                if not coffee_sede_destino:
+                    coffee_sede_destino = sede_codigo
+                if not coffee_sede_destino:
+                    con.close()
+                    return jsonify({"ok": False, "error": "Sede destino obligatoria para Coffee"}), 400
+            else:
+                coffee_cantidad_personas = 0
+                coffee_fecha_evento = ""
+                coffee_horario_evento = ""
+                coffee_sede_destino = ""
             existing = None
             if nov_id > 0:
                 existing = _fetch_novedad(con, nov_id)
@@ -1016,9 +1353,10 @@ def register_novedades(bp, get_db):
                 if not _actor_can_view_novedad(actor, existing):
                     con.close()
                     return jsonify({"ok": False, "error": "No autorizado para editar esta novedad"}), 403
-                estado = _norm_nvd_estado(_row_value(existing, "estado", "Informado") or "Informado")
+                estado_prev = _row_value(existing, "estado", "Informado") or "Informado"
+                estado = (_norm_coffee_estado(estado_prev) if is_coffee else _norm_nvd_estado(estado_prev))
             else:
-                estado = "Informado"
+                estado = "Pendiente" if is_coffee else "Informado"
 
             if not _can_admin_novedades(actor):
                 if nov_id > 0:
@@ -1042,17 +1380,54 @@ def register_novedades(bp, get_db):
                         subtipo=?,
                         observacion=?,
                         estado=?,
+                        coffee_cantidad_personas=?,
+                        coffee_fecha_evento=?,
+                        coffee_horario_evento=?,
+                        coffee_sede_destino=?,
                         actualizado_en=?
                     WHERE id=?
-                """, (fecha, agente, sede_codigo, tipo, subtipo, observacion, estado, ts, nov_id))
+                """, (
+                    fecha,
+                    agente,
+                    sede_codigo,
+                    tipo,
+                    subtipo,
+                    observacion,
+                    estado,
+                    coffee_cantidad_personas,
+                    coffee_fecha_evento,
+                    coffee_horario_evento,
+                    coffee_sede_destino,
+                    ts,
+                    nov_id,
+                ))
                 rid = nov_id
             else:
                 cur = con.execute("""
                     INSERT INTO novedades_diarias
-                        (fecha, hora, agente, sede_codigo, tipo, subtipo, observacion, estado, creado_en, actualizado_en)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (fecha, hora, agente, sede_codigo, tipo, subtipo, observacion, estado, ts, ts))
+                        (fecha, hora, agente, sede_codigo, tipo, subtipo, observacion, estado,
+                         coffee_cantidad_personas, coffee_fecha_evento, coffee_horario_evento, coffee_sede_destino,
+                         creado_en, actualizado_en)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    fecha,
+                    hora,
+                    agente,
+                    sede_codigo,
+                    tipo,
+                    subtipo,
+                    observacion,
+                    estado,
+                    coffee_cantidad_personas,
+                    coffee_fecha_evento,
+                    coffee_horario_evento,
+                    coffee_sede_destino,
+                    ts,
+                    ts,
+                ))
                 rid = int(cur.lastrowid or 0)
+            if is_coffee and rid > 0:
+                _ensure_coffee_defaults_for_novedad(con, rid)
             con.commit()
         except Exception as e:
             con.close()
@@ -1172,7 +1547,7 @@ def register_novedades(bp, get_db):
     def api_dashboard_novedades_diarias_estado():
         payload = request.get_json(silent=True) or {}
         nov_id = int(payload.get("id") or 0)
-        estado = _norm_nvd_estado(payload.get("estado") or "Informado")
+        estado_raw = payload.get("estado") or "Informado"
         if nov_id <= 0:
             return jsonify({"ok": False, "error": "ID invalido"}), 400
         actor = _session_actor()
@@ -1180,6 +1555,7 @@ def register_novedades(bp, get_db):
         try:
             _ensure_novedades_diarias_table(con)
             _ensure_novedades_diarias_chat_table(con)
+            _ensure_coffee_logistica_table(con)
             row = _fetch_novedad(con, nov_id)
             if not row:
                 con.close()
@@ -1187,18 +1563,68 @@ def register_novedades(bp, get_db):
             if not _actor_can_view_novedad(actor, row):
                 con.close()
                 return jsonify({"ok": False, "error": "No autorizado para ver esta novedad"}), 403
+            tipo_row = _row_value(row, "tipo", "") or ""
+            is_coffee = _is_coffee_tipo(tipo_row)
+            estado = _norm_coffee_estado(estado_raw) if is_coffee else _norm_nvd_estado(estado_raw)
             gestion_habilitada = _tipo_tiene_gestion(_row_value(row, "tipo", "") or "")
             can_manage_private = _actor_can_manage_private_novedad(actor, row)
-            if gestion_habilitada and not (_can_admin_novedades(actor) or can_manage_private):
+            if is_coffee:
+                if not _can_edit_coffee_estado(actor, estado):
+                    con.close()
+                    return jsonify({"ok": False, "error": "No autorizado para ese estado Coffee"}), 403
+                if _norm_ci(estado) in {"enviado", "finalizado"}:
+                    log_row = con.execute(
+                        "SELECT COALESCE(aprobado,0) AS aprobado FROM coffee_logistica WHERE novedad_id=? LIMIT 1",
+                        (nov_id,),
+                    ).fetchone()
+                    aprobado = int(_row_value(log_row, "aprobado", 0) or 0) == 1
+                    if not aprobado:
+                        con.close()
+                        return jsonify({"ok": False, "error": "Primero Matias debe aprobar la logistica"}), 400
+            elif gestion_habilitada and not (_can_admin_novedades(actor) or can_manage_private):
                 con.close()
                 return jsonify({"ok": False, "error": "No autorizado para cambiar estado en esta novedad"}), 403
-            estado_prev = _norm_nvd_estado(_row_value(row, "estado", "Informado") or "Informado")
+            estado_prev_raw = _row_value(row, "estado", "Informado") or "Informado"
+            estado_prev = _norm_coffee_estado(estado_prev_raw) if is_coffee else _norm_nvd_estado(estado_prev_raw)
             ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             con.execute("""
                 UPDATE novedades_diarias
                 SET estado=?, actualizado_en=?
                 WHERE id=?
             """, (estado, ts, nov_id))
+            if is_coffee and estado == "Aprobado":
+                sede_destino = (_row_value(row, "coffee_sede_destino", "") or "").strip().upper()
+                if not sede_destino:
+                    sede_destino = (_row_value(row, "sede_codigo", "") or "").strip().upper()
+                tarea_actual = (_row_value(row, "tarea_asignada", "") or "").strip()
+                if not tarea_actual:
+                    subtipo = (_row_value(row, "subtipo", "") or "").strip() or "General"
+                    cant = int(_row_value(row, "coffee_cantidad_personas", 0) or 0)
+                    tarea_actual = f"Coffee institucional - {subtipo} - {cant} personas"
+                con.execute("""
+                    UPDATE novedades_diarias
+                    SET tarea_asignada=?,
+                        tarea_estado='Pendiente',
+                        tarea_sede_codigo=?,
+                        tarea_deposito_codigo='',
+                        tarea_deposito_nombre='',
+                        tarea_agente='Francisco Savio',
+                        tarea_asignado_por=?,
+                        tarea_asignado_por_username=?,
+                        tarea_asignado_en=?,
+                        tarea_actualizado_en=?,
+                        actualizado_en=?
+                    WHERE id=?
+                """, (
+                    tarea_actual,
+                    sede_destino,
+                    actor.get("display") or actor.get("username") or "Sistema",
+                    actor.get("username") or "",
+                    ts,
+                    ts,
+                    ts,
+                    nov_id,
+                ))
             if gestion_habilitada and estado_prev != estado:
                 actor_name = (actor.get("display") or "Sistema").strip() or "Sistema"
                 con.execute("""
@@ -1206,6 +1632,42 @@ def register_novedades(bp, get_db):
                         (novedad_id, autor, autor_username, mensaje, es_sistema, creado_en)
                     VALUES (?, 'Sistema', ?, ?, 1, ?)
                 """, (nov_id, actor.get("username") or "", f"{actor_name} cambio el estado a '{estado}'.", ts))
+                if is_coffee and estado == "Aprobado":
+                    con.execute("""
+                        INSERT INTO novedades_diarias_chat
+                            (novedad_id, autor, autor_username, mensaje, es_sistema, creado_en)
+                        VALUES (?, 'Sistema', ?, ?, 1, ?)
+                    """, (
+                        nov_id,
+                        actor.get("username") or "",
+                        "Asignacion automatica Coffee: tarea derivada a Francisco Savio.",
+                        ts,
+                    ))
+                if is_coffee and estado == "Enviado":
+                    sede_dest = (_row_value(row, "coffee_sede_destino", "") or "").strip().upper()
+                    if not sede_dest:
+                        sede_dest = (_row_value(row, "sede_codigo", "") or "").strip().upper() or "-"
+                    con.execute("""
+                        INSERT INTO novedades_diarias_chat
+                            (novedad_id, autor, autor_username, mensaje, es_sistema, creado_en)
+                        VALUES (?, 'Sistema', ?, ?, 1, ?)
+                    """, (
+                        nov_id,
+                        actor.get("username") or "",
+                        f"Coffee enviado a sede {sede_dest}.",
+                        ts,
+                    ))
+                if is_coffee and estado == "Finalizado":
+                    con.execute("""
+                        INSERT INTO novedades_diarias_chat
+                            (novedad_id, autor, autor_username, mensaje, es_sistema, creado_en)
+                        VALUES (?, 'Sistema', ?, ?, 1, ?)
+                    """, (
+                        nov_id,
+                        actor.get("username") or "",
+                        "Coffee institucional finalizado.",
+                        ts,
+                    ))
             con.commit()
         except Exception as e:
             con.close()
@@ -1221,6 +1683,9 @@ def register_novedades(bp, get_db):
             _ensure_novedades_diarias_table(con)
             _ensure_novedades_diarias_chat_table(con)
             _ensure_novedades_catalogo_table(con)
+            _ensure_coffee_insumos_table(con)
+            _ensure_coffee_logistica_table(con)
+            _ensure_coffee_special_users(con)
             row = _fetch_novedad(con, nov_id)
             if not row:
                 con.close()
@@ -1275,6 +1740,11 @@ def register_novedades(bp, get_db):
                 agentes.insert(0, user_name)
             sede_tarea = (item.get("tarea_sede_codigo") or item.get("sede_codigo") or "").strip().upper()
             depositos = _depositos_por_sede(con, sede_tarea)
+            coffee_insumos = []
+            coffee_logistica = {}
+            if bool(item.get("es_coffee")):
+                coffee_insumos = _coffee_read_insumos(con, nov_id)
+                coffee_logistica = _coffee_read_logistica(con, nov_id)
         except Exception as e:
             con.close()
             return jsonify({"ok": False, "error": str(e)}), 500
@@ -1287,10 +1757,14 @@ def register_novedades(bp, get_db):
             "is_full": bool(actor.get("is_full")),
             "is_matias": bool(actor.get("is_matias")),
             "is_novedades_admin": bool(actor.get("is_novedades_admin")),
-            "estados": list(NVD_ESTADOS),
+            "is_luciana": bool(actor.get("is_luciana")),
+            "estados": (item.get("estados_disponibles") or list(NVD_ESTADOS)),
             "sedes": sedes,
             "agentes": agentes,
             "depositos_sede": depositos,
+            "coffee_insumos": coffee_insumos,
+            "coffee_logistica": coffee_logistica,
+            "coffee_turnos_personal": dict(NVD_COFFEE_TURNO_PERSONAL),
         })
 
     @bp.route("/api/dashboard/novedades_depositos_por_sede", methods=["GET"], endpoint="api_dashboard_novedades_depositos_por_sede")
@@ -1367,11 +1841,12 @@ def register_novedades(bp, get_db):
     def api_dashboard_novedades_diarias_gestion_estado(nov_id):
         actor = _session_actor()
         payload = request.get_json(silent=True) or {}
-        estado = _norm_nvd_estado(payload.get("estado") or "Informado")
+        estado_raw = payload.get("estado") or "Informado"
         con = get_db()
         try:
             _ensure_novedades_diarias_table(con)
             _ensure_novedades_diarias_chat_table(con)
+            _ensure_coffee_logistica_table(con)
             row = _fetch_novedad(con, nov_id)
             if not row:
                 con.close()
@@ -1383,16 +1858,67 @@ def register_novedades(bp, get_db):
             if not bool(item.get("gestion_habilitada")):
                 con.close()
                 return jsonify({"ok": False, "error": "La novedad no tiene gestion interna"}), 400
-            if not bool(item.get("puede_cambiar_estado")):
+            is_coffee = bool(item.get("es_coffee"))
+            estado = _norm_coffee_estado(estado_raw) if is_coffee else _norm_nvd_estado(estado_raw)
+            if is_coffee:
+                if not _can_edit_coffee_estado(actor, estado):
+                    con.close()
+                    return jsonify({"ok": False, "error": "No autorizado para ese estado Coffee"}), 403
+                if _norm_ci(estado) in {"enviado", "finalizado"}:
+                    log_row = con.execute(
+                        "SELECT COALESCE(aprobado,0) AS aprobado FROM coffee_logistica WHERE novedad_id=? LIMIT 1",
+                        (nov_id,),
+                    ).fetchone()
+                    aprobado = int(_row_value(log_row, "aprobado", 0) or 0) == 1
+                    if not aprobado:
+                        con.close()
+                        return jsonify({"ok": False, "error": "Primero Matias debe aprobar la logistica"}), 400
+            elif not bool(item.get("puede_cambiar_estado")):
                 con.close()
                 return jsonify({"ok": False, "error": "No autorizado para cambiar estado"}), 403
-            estado_prev = _norm_nvd_estado(_row_value(row, "estado", "Informado") or "Informado")
+            estado_prev = (
+                _norm_coffee_estado(_row_value(row, "estado", "Pendiente") or "Pendiente")
+                if is_coffee else _norm_nvd_estado(_row_value(row, "estado", "Informado") or "Informado")
+            )
             ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             con.execute("""
                 UPDATE novedades_diarias
                 SET estado=?, actualizado_en=?
                 WHERE id=?
             """, (estado, ts, nov_id))
+            if is_coffee and estado == "Aprobado":
+                sede_destino = (_row_value(row, "coffee_sede_destino", "") or "").strip().upper()
+                if not sede_destino:
+                    sede_destino = (_row_value(row, "sede_codigo", "") or "").strip().upper()
+                tarea_actual = (_row_value(row, "tarea_asignada", "") or "").strip()
+                if not tarea_actual:
+                    subtipo = (_row_value(row, "subtipo", "") or "").strip() or "General"
+                    cant = int(_row_value(row, "coffee_cantidad_personas", 0) or 0)
+                    tarea_actual = f"Coffee institucional - {subtipo} - {cant} personas"
+                con.execute("""
+                    UPDATE novedades_diarias
+                    SET tarea_asignada=?,
+                        tarea_estado='Pendiente',
+                        tarea_sede_codigo=?,
+                        tarea_deposito_codigo='',
+                        tarea_deposito_nombre='',
+                        tarea_agente='Francisco Savio',
+                        tarea_asignado_por=?,
+                        tarea_asignado_por_username=?,
+                        tarea_asignado_en=?,
+                        tarea_actualizado_en=?,
+                        actualizado_en=?
+                    WHERE id=?
+                """, (
+                    tarea_actual,
+                    sede_destino,
+                    actor.get("display") or actor.get("username") or "Sistema",
+                    actor.get("username") or "",
+                    ts,
+                    ts,
+                    ts,
+                    nov_id,
+                ))
             if estado_prev != estado:
                 actor_name = (actor.get("display") or actor.get("username") or "Sistema").strip() or "Sistema"
                 con.execute("""
@@ -1400,6 +1926,42 @@ def register_novedades(bp, get_db):
                         (novedad_id, autor, autor_username, mensaje, es_sistema, creado_en)
                     VALUES (?, 'Sistema', ?, ?, 1, ?)
                 """, (nov_id, actor.get("username") or "", f"{actor_name} cambio el estado a '{estado}'.", ts))
+                if is_coffee and estado == "Aprobado":
+                    con.execute("""
+                        INSERT INTO novedades_diarias_chat
+                            (novedad_id, autor, autor_username, mensaje, es_sistema, creado_en)
+                        VALUES (?, 'Sistema', ?, ?, 1, ?)
+                    """, (
+                        nov_id,
+                        actor.get("username") or "",
+                        "Asignacion automatica Coffee: tarea derivada a Francisco Savio.",
+                        ts,
+                    ))
+                if is_coffee and estado == "Enviado":
+                    sede_dest = (_row_value(row, "coffee_sede_destino", "") or "").strip().upper()
+                    if not sede_dest:
+                        sede_dest = (_row_value(row, "sede_codigo", "") or "").strip().upper() or "-"
+                    con.execute("""
+                        INSERT INTO novedades_diarias_chat
+                            (novedad_id, autor, autor_username, mensaje, es_sistema, creado_en)
+                        VALUES (?, 'Sistema', ?, ?, 1, ?)
+                    """, (
+                        nov_id,
+                        actor.get("username") or "",
+                        f"Coffee enviado a sede {sede_dest}.",
+                        ts,
+                    ))
+                if is_coffee and estado == "Finalizado":
+                    con.execute("""
+                        INSERT INTO novedades_diarias_chat
+                            (novedad_id, autor, autor_username, mensaje, es_sistema, creado_en)
+                        VALUES (?, 'Sistema', ?, ?, 1, ?)
+                    """, (
+                        nov_id,
+                        actor.get("username") or "",
+                        "Coffee institucional finalizado.",
+                        ts,
+                    ))
             con.commit()
         except Exception as e:
             con.close()
@@ -1450,6 +2012,10 @@ def register_novedades(bp, get_db):
             if not bool(item.get("gestion_habilitada")):
                 con.close()
                 return jsonify({"ok": False, "error": "La novedad no tiene gestion interna"}), 400
+            is_coffee = bool(item.get("es_coffee"))
+            if is_coffee and _norm_ci(item.get("estado") or "") != "aprobado":
+                con.close()
+                return jsonify({"ok": False, "error": "La tarea Coffee solo se puede asignar cuando esta Aprobado"}), 400
             can_tools_only = bool(item.get("puede_ver_gestion")) and bool((item.get("tarea_asignada") or "").strip())
             can_autoassign = bool(item.get("puede_autoasignar"))
             preserve_assignador = False
@@ -1488,12 +2054,19 @@ def register_novedades(bp, get_db):
             if not limpiar and not solo_herramientas:
                 if _norm_ci(tarea_agente) in {"__equipo__", "equipo operativo", "equipo", "general", "todos"}:
                     tarea_agente = NVD_TAREA_GENERAL_LABEL
-                if not tarea_sede_codigo:
-                    tarea_sede_codigo = (item.get("sede_codigo") or "").strip().upper()
-                if es_privada_propia:
-                    tarea_agente = (actor.get("display") or actor.get("full_name") or actor.get("username") or "").strip()
-                elif not tarea_agente:
-                    tarea_agente = (item.get("agente") or "").strip()
+                if is_coffee:
+                    tarea_agente = "Francisco Savio"
+                    if not tarea_sede_codigo:
+                        tarea_sede_codigo = (item.get("coffee_sede_destino") or item.get("sede_codigo") or "").strip().upper()
+                    tarea_deposito_codigo = ""
+                    tarea_deposito_nombre = ""
+                else:
+                    if not tarea_sede_codigo:
+                        tarea_sede_codigo = (item.get("sede_codigo") or "").strip().upper()
+                    if es_privada_propia:
+                        tarea_agente = (actor.get("display") or actor.get("full_name") or actor.get("username") or "").strip()
+                    elif not tarea_agente:
+                        tarea_agente = (item.get("agente") or "").strip()
                 if not tarea_sede_codigo:
                     con.close()
                     return jsonify({"ok": False, "error": "Selecciona sede para la tarea"}), 400
@@ -1501,7 +2074,7 @@ def register_novedades(bp, get_db):
                     con.close()
                     return jsonify({"ok": False, "error": "Selecciona agente asignado"}), 400
                 deps = _depositos_por_sede(con, tarea_sede_codigo)
-                if deps:
+                if deps and not is_coffee:
                     if not tarea_deposito_codigo:
                         con.close()
                         return jsonify({"ok": False, "error": "Selecciona deposito de la sede"}), 400
@@ -1592,6 +2165,248 @@ def register_novedades(bp, get_db):
             "solo_herramientas": solo_herramientas,
             "auto_asignar": auto_asignar,
         })
+
+    @bp.route("/api/dashboard/novedades_diarias_gestion/<int:nov_id>/coffee_insumos", methods=["POST"], endpoint="api_dashboard_novedades_diarias_gestion_coffee_insumos")
+    def api_dashboard_novedades_diarias_gestion_coffee_insumos(nov_id):
+        actor = _session_actor()
+        payload = request.get_json(silent=True) or {}
+        insumos_payload = payload.get("insumos")
+        if not isinstance(insumos_payload, list):
+            single = payload.get("insumo")
+            if isinstance(single, dict):
+                insumos_payload = [single]
+            else:
+                return jsonify({"ok": False, "error": "Insumos invalidos"}), 400
+        con = get_db()
+        try:
+            _ensure_novedades_diarias_table(con)
+            _ensure_novedades_diarias_chat_table(con)
+            _ensure_coffee_insumos_table(con)
+            row = _fetch_novedad(con, nov_id)
+            if not row:
+                con.close()
+                return jsonify({"ok": False, "error": "Novedad inexistente"}), 404
+            item = _serialize_novedad(row, actor)
+            if not bool(item.get("es_coffee")):
+                con.close()
+                return jsonify({"ok": False, "error": "La novedad no es Coffee institucional"}), 400
+            if not bool(item.get("puede_ver_gestion")):
+                con.close()
+                return jsonify({"ok": False, "error": "No autorizado"}), 403
+            can_edit_base = bool(item.get("puede_editar_coffee_insumos"))
+            can_decide = bool(item.get("puede_decidir_compra"))
+            can_recibir = bool(item.get("puede_marcar_recibido"))
+            if not (can_edit_base or can_decide or can_recibir):
+                con.close()
+                return jsonify({"ok": False, "error": "No autorizado para actualizar insumos"}), 403
+            actuales = _coffee_read_insumos(con, nov_id)
+            by_id = {int(x.get("id") or 0): x for x in actuales if int(x.get("id") or 0) > 0}
+            ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            changed_base = False
+            changed_decision = False
+            changed_recibido = False
+            for ent in insumos_payload:
+                if not isinstance(ent, dict):
+                    continue
+                iid = int(ent.get("id") or 0)
+                if iid <= 0 or iid not in by_id:
+                    continue
+                old = by_id[iid]
+                item_txt = str(old.get("item") or "").strip()
+                cant = int(old.get("cantidad_necesaria") or 0)
+                stock = int(old.get("stock_disponible") or 0)
+                decision = str(old.get("decision_compra") or "pendiente").strip().lower()
+                recibido = 1 if bool(old.get("recibido")) else 0
+                if can_edit_base:
+                    item_txt = str(ent.get("item") or item_txt).strip()[:80] or item_txt
+                    try:
+                        cant = max(0, int(ent.get("cantidad_necesaria")))
+                    except Exception:
+                        cant = max(0, cant)
+                    try:
+                        stock = max(0, int(ent.get("stock_disponible")))
+                    except Exception:
+                        stock = max(0, stock)
+                    changed_base = True
+                if can_decide:
+                    dec_in = _norm_ci(ent.get("decision_compra") or decision).replace(" ", "_")
+                    if dec_in in NVD_COFFEE_DECISION_COMPRA:
+                        decision = dec_in
+                        changed_decision = True
+                if can_recibir:
+                    recibido_in = str(ent.get("recibido") or "").strip().lower() in {"1", "true", "si", "yes", "on"}
+                    if recibido_in:
+                        recibido = 1
+                        changed_recibido = True
+                estado_stock = _coffee_calc_estado(cant, stock)
+                con.execute("""
+                    UPDATE coffee_insumos
+                    SET item=?,
+                        cantidad_necesaria=?,
+                        stock_disponible=?,
+                        estado=?,
+                        decision_compra=?,
+                        recibido=?,
+                        actualizado_en=?,
+                        actualizado_por=?
+                    WHERE id=? AND novedad_id=?
+                """, (
+                    item_txt,
+                    cant,
+                    stock,
+                    estado_stock,
+                    decision,
+                    recibido,
+                    ts,
+                    actor.get("display") or actor.get("username") or "Sistema",
+                    iid,
+                    nov_id,
+                ))
+            msg = ""
+            actor_name = (actor.get("display") or actor.get("username") or "Sistema").strip() or "Sistema"
+            if changed_recibido:
+                msg = f"{actor_name} marco recepcion de insumos Coffee."
+            elif changed_decision:
+                msg = f"{actor_name} marco decision de compra para Coffee."
+            elif changed_base:
+                msg = f"{actor_name} cargo/actualizo insumos Coffee."
+            if msg:
+                con.execute("""
+                    INSERT INTO novedades_diarias_chat
+                        (novedad_id, autor, autor_username, mensaje, es_sistema, creado_en)
+                    VALUES (?, 'Sistema', ?, ?, 1, ?)
+                """, (nov_id, actor.get("username") or "", msg, ts))
+            con.commit()
+            result = _coffee_read_insumos(con, nov_id)
+        except Exception as e:
+            con.close()
+            return jsonify({"ok": False, "error": str(e)}), 500
+        con.close()
+        return jsonify({"ok": True, "insumos": result})
+
+    @bp.route("/api/dashboard/novedades_diarias_gestion/<int:nov_id>/coffee_logistica", methods=["POST"], endpoint="api_dashboard_novedades_diarias_gestion_coffee_logistica")
+    def api_dashboard_novedades_diarias_gestion_coffee_logistica(nov_id):
+        actor = _session_actor()
+        payload = request.get_json(silent=True) or {}
+        con = get_db()
+        try:
+            _ensure_novedades_diarias_table(con)
+            _ensure_novedades_diarias_chat_table(con)
+            _ensure_coffee_logistica_table(con)
+            row = _fetch_novedad(con, nov_id)
+            if not row:
+                con.close()
+                return jsonify({"ok": False, "error": "Novedad inexistente"}), 404
+            item = _serialize_novedad(row, actor)
+            if not bool(item.get("es_coffee")):
+                con.close()
+                return jsonify({"ok": False, "error": "La novedad no es Coffee institucional"}), 400
+            if not bool(item.get("puede_ver_gestion")):
+                con.close()
+                return jsonify({"ok": False, "error": "No autorizado"}), 403
+            can_edit = bool(item.get("puede_editar_logistica"))
+            can_approve = bool(item.get("puede_aprobar_logistica"))
+            if not can_edit and not can_approve:
+                con.close()
+                return jsonify({"ok": False, "error": "No autorizado para logistica"}), 403
+
+            actual = _coffee_read_logistica(con, nov_id)
+            chofer = str(actual.get("chofer") or "").strip()
+            personal = str(actual.get("personal") or "").strip()
+            turno = str(actual.get("turno") or "").strip()
+            aprobado = 1 if bool(actual.get("aprobado")) else 0
+            aprobado_por = str(actual.get("aprobado_por") or "").strip()
+            aprobado_en = str(actual.get("aprobado_en") or "").strip()
+            changed_data = False
+            changed_approve = False
+
+            if can_edit:
+                if "chofer" in payload:
+                    chofer = str(payload.get("chofer") or "").strip()[:80]
+                    changed_data = True
+                if "turno" in payload:
+                    t = _coffee_norm_turno(payload.get("turno"))
+                    turno = t
+                    changed_data = True
+                if "personal" in payload:
+                    personal = str(payload.get("personal") or "").strip()[:80]
+                    changed_data = True
+                if turno and personal:
+                    validos = NVD_COFFEE_TURNO_PERSONAL.get(turno, [])
+                    if personal not in validos:
+                        con.close()
+                        return jsonify({"ok": False, "error": "Personal no valido para el turno seleccionado"}), 400
+
+            if "aprobar" in payload:
+                aprobar = str(payload.get("aprobar") or "").strip().lower() in {"1", "true", "si", "yes", "on"}
+                if aprobar:
+                    if not can_approve:
+                        con.close()
+                        return jsonify({"ok": False, "error": "Solo Matias puede aprobar logistica"}), 403
+                    if not chofer or not personal or not turno:
+                        con.close()
+                        return jsonify({"ok": False, "error": "Completa chofer, personal y turno antes de aprobar"}), 400
+                    aprobado = 1
+                    aprobado_por = actor.get("display") or actor.get("username") or "Matias Calderari"
+                    aprobado_en = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    changed_approve = True
+                elif can_approve:
+                    aprobado = 0
+                    aprobado_por = ""
+                    aprobado_en = ""
+                    changed_approve = True
+
+            ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            con.execute("""
+                UPDATE coffee_logistica
+                SET chofer=?,
+                    personal=?,
+                    turno=?,
+                    aprobado=?,
+                    aprobado_por=?,
+                    aprobado_en=?,
+                    actualizado_en=?,
+                    actualizado_por=?
+                WHERE novedad_id=?
+            """, (
+                chofer,
+                personal,
+                turno,
+                aprobado,
+                aprobado_por,
+                aprobado_en,
+                ts,
+                actor.get("display") or actor.get("username") or "Sistema",
+                nov_id,
+            ))
+            con.execute("""
+                UPDATE novedades_diarias
+                SET coffee_logistica_aprobada=?,
+                    actualizado_en=?
+                WHERE id=?
+            """, (aprobado, ts, nov_id))
+
+            actor_name = (actor.get("display") or actor.get("username") or "Sistema").strip() or "Sistema"
+            msg = ""
+            if changed_approve and aprobado == 1:
+                msg = f"{actor_name} aprobo logistica Coffee."
+            elif changed_approve and aprobado == 0:
+                msg = f"{actor_name} desmarco aprobacion de logistica Coffee."
+            elif changed_data:
+                msg = f"{actor_name} actualizo logistica Coffee (turno {turno or '-'})."
+            if msg:
+                con.execute("""
+                    INSERT INTO novedades_diarias_chat
+                        (novedad_id, autor, autor_username, mensaje, es_sistema, creado_en)
+                    VALUES (?, 'Sistema', ?, ?, 1, ?)
+                """, (nov_id, actor.get("username") or "", msg, ts))
+            con.commit()
+            result = _coffee_read_logistica(con, nov_id)
+        except Exception as e:
+            con.close()
+            return jsonify({"ok": False, "error": str(e)}), 500
+        con.close()
+        return jsonify({"ok": True, "logistica": result})
 
     @bp.route("/api/dashboard/turnos_choferes_cfg_save", methods=["POST"], endpoint="api_dashboard_turnos_choferes_cfg_save")
     def api_dashboard_turnos_choferes_cfg_save():

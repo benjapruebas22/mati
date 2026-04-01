@@ -65,10 +65,20 @@ NVD_TIPO_SUBTIPOS = {
         "Otro",
     ],
     "Aviso general": ["Novedad diaria", "Reorganizacion", "Cambio operativo", "Otro"],
+    "Coffee institucional": ["Reunion interna", "Evento", "Capacitacion"],
     "Otro": ["General"],
 }
 
 NVD_ESTADOS = ["Informado", "En proceso", "Resuelto"]
+NVD_COFFEE_ESTADOS = [
+    "Pendiente",
+    "Aprobado",
+    "Rechazado",
+    "En preparacion",
+    "Enviado",
+    "Finalizado",
+    "Cancelado",
+]
 
 
 def _table_exists(con, table_name):
@@ -198,6 +208,11 @@ def _ensure_novedades_diarias_table(con):
             privado_flag INTEGER DEFAULT 0,
             privado_owner_username TEXT DEFAULT '',
             privado_owner_nombre TEXT DEFAULT '',
+            coffee_cantidad_personas INTEGER DEFAULT 0,
+            coffee_fecha_evento TEXT DEFAULT '',
+            coffee_horario_evento TEXT DEFAULT '',
+            coffee_sede_destino TEXT DEFAULT '',
+            coffee_logistica_aprobada INTEGER DEFAULT 0,
             creado_en TEXT,
             actualizado_en TEXT
         )
@@ -224,6 +239,11 @@ def _ensure_novedades_diarias_table(con):
         ("privado_flag", "INTEGER DEFAULT 0"),
         ("privado_owner_username", "TEXT DEFAULT ''"),
         ("privado_owner_nombre", "TEXT DEFAULT ''"),
+        ("coffee_cantidad_personas", "INTEGER DEFAULT 0"),
+        ("coffee_fecha_evento", "TEXT DEFAULT ''"),
+        ("coffee_horario_evento", "TEXT DEFAULT ''"),
+        ("coffee_sede_destino", "TEXT DEFAULT ''"),
+        ("coffee_logistica_aprobada", "INTEGER DEFAULT 0"),
         ("creado_en", "TEXT"),
         ("actualizado_en", "TEXT"),
     ):
@@ -272,12 +292,105 @@ def _ensure_novedades_diarias_chat_table(con):
     con.commit()
 
 
+def _ensure_coffee_insumos_table(con):
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS coffee_insumos(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            novedad_id INTEGER NOT NULL,
+            item TEXT NOT NULL,
+            cantidad_necesaria INTEGER DEFAULT 0,
+            stock_disponible INTEGER DEFAULT 0,
+            estado TEXT DEFAULT 'hay_stock',
+            decision_compra TEXT DEFAULT 'pendiente',
+            recibido INTEGER DEFAULT 0,
+            actualizado_en TEXT,
+            actualizado_por TEXT,
+            UNIQUE(novedad_id, item)
+        )
+    """)
+    cols = _table_cols(con, "coffee_insumos")
+    for name, sql_type in (
+        ("novedad_id", "INTEGER NOT NULL"),
+        ("item", "TEXT NOT NULL"),
+        ("cantidad_necesaria", "INTEGER DEFAULT 0"),
+        ("stock_disponible", "INTEGER DEFAULT 0"),
+        ("estado", "TEXT DEFAULT 'hay_stock'"),
+        ("decision_compra", "TEXT DEFAULT 'pendiente'"),
+        ("recibido", "INTEGER DEFAULT 0"),
+        ("actualizado_en", "TEXT"),
+        ("actualizado_por", "TEXT"),
+    ):
+        if name not in cols:
+            try:
+                con.execute(f"ALTER TABLE coffee_insumos ADD COLUMN {name} {sql_type}")
+            except Exception:
+                pass
+    con.execute("""
+        CREATE INDEX IF NOT EXISTS idx_coffee_insumos_novedad
+        ON coffee_insumos(novedad_id, id)
+    """)
+    con.commit()
+
+
+def _ensure_coffee_logistica_table(con):
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS coffee_logistica(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            novedad_id INTEGER NOT NULL UNIQUE,
+            chofer TEXT DEFAULT '',
+            personal TEXT DEFAULT '',
+            turno TEXT DEFAULT '',
+            aprobado INTEGER DEFAULT 0,
+            aprobado_por TEXT DEFAULT '',
+            aprobado_en TEXT DEFAULT '',
+            actualizado_en TEXT,
+            actualizado_por TEXT
+        )
+    """)
+    cols = _table_cols(con, "coffee_logistica")
+    for name, sql_type in (
+        ("novedad_id", "INTEGER NOT NULL UNIQUE"),
+        ("chofer", "TEXT DEFAULT ''"),
+        ("personal", "TEXT DEFAULT ''"),
+        ("turno", "TEXT DEFAULT ''"),
+        ("aprobado", "INTEGER DEFAULT 0"),
+        ("aprobado_por", "TEXT DEFAULT ''"),
+        ("aprobado_en", "TEXT DEFAULT ''"),
+        ("actualizado_en", "TEXT"),
+        ("actualizado_por", "TEXT"),
+    ):
+        if name not in cols:
+            try:
+                con.execute(f"ALTER TABLE coffee_logistica ADD COLUMN {name} {sql_type}")
+            except Exception:
+                pass
+    con.execute("""
+        CREATE INDEX IF NOT EXISTS idx_coffee_logistica_novedad
+        ON coffee_logistica(novedad_id)
+    """)
+    con.commit()
+
+
 def _safe_today():
     return date.today().isoformat()
 
 
 def _norm_nvd_estado(raw):
     v = (raw or "").strip().lower()
+    if v in ("pendiente",):
+        return "Pendiente"
+    if v in ("aprobado",):
+        return "Aprobado"
+    if v in ("rechazado",):
+        return "Rechazado"
+    if v in ("en preparacion", "en preparación", "preparacion", "preparación"):
+        return "En preparacion"
+    if v in ("enviado",):
+        return "Enviado"
+    if v in ("finalizado",):
+        return "Finalizado"
+    if v in ("cancelado",):
+        return "Cancelado"
     if v in ("resuelto", "cerrado"):
         return "Resuelto"
     if v in ("en revision", "en revisión", "revision", "revisión", "en proceso", "proceso"):
@@ -298,14 +411,14 @@ def _novedades_resumen(con, fecha_iso):
         """, (fecha_iso,)).fetchall()
         total = 0
         for r in rows:
-            est = (_row_value(r, "estado", "") or "").strip()
+            est = (_row_value(r, "estado", "") or "").strip().lower()
             n = int(_row_value(r, "n", 0) or 0)
             total += n
-            if est in ("informado",):
+            if est in ("informado", "pendiente"):
                 out["informado"] += n
-            elif est in ("en revision", "en revisión", "en proceso", "proceso"):
+            elif est in ("en revision", "en proceso", "proceso", "aprobado", "en preparacion", "enviado"):
                 out["en_proceso"] += n
-            elif est in ("resuelto", "cerrado"):
+            elif est in ("resuelto", "cerrado", "finalizado", "cancelado", "rechazado"):
                 out["resuelto"] += n
         out["total"] = total
     except Exception:
