@@ -1023,6 +1023,28 @@
   .task-alert-main {
     font-weight: 800;
   }
+  .task-alert-tag {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 9px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    margin-right: 6px;
+  }
+  .task-alert-tag.task {
+    background: #eef5ff;
+    border-color: #c9dcf6;
+    color: #2b5b95;
+  }
+  .task-alert-tag.reply {
+    background: #fff1f1;
+    border-color: #f3c7c7;
+    color: #ad2f2f;
+  }
 
   @media (max-width: 1220px) {
     .nvd-form-grid {
@@ -1095,7 +1117,7 @@
 
   <article id="taskAlertCard" class="control-card card-task-alert" style="display:none;">
     <div class="card-head">
-      <h2>Tareas asignadas por Matias</h2>
+      <h2 id="taskAlertTitle">Alertas personales</h2>
     </div>
     <ul id="taskAlertList" class="task-alert-list"></ul>
   </article>
@@ -1607,6 +1629,7 @@
       alertas: document.getElementById("alertasList"),
       alertasCard: document.getElementById("alertasCard"),
       taskAlertCard: document.getElementById("taskAlertCard"),
+      taskAlertTitle: document.getElementById("taskAlertTitle"),
       taskAlertList: document.getElementById("taskAlertList"),
       registroBox: document.getElementById("registroNvdBox"),
       histTop: document.getElementById("btnHistorialTop"),
@@ -2201,8 +2224,19 @@
         el.taskAlertList.innerHTML = "";
         return;
       }
+      var countReply = rows.filter(function (r) { return String(r.alerta_tipo || "") === "respuesta"; }).length;
+      if (el.taskAlertTitle) {
+        var ttl = "Alertas personales (" + rows.length + ")";
+        if (countReply > 0) ttl += " - " + countReply + " por responder";
+        el.taskAlertTitle.textContent = ttl;
+      }
       el.taskAlertCard.style.display = "grid";
       el.taskAlertList.innerHTML = rows.map(function (r) {
+        var alertType = String(r.alerta_tipo || "tarea");
+        var isReply = alertType === "respuesta";
+        var tagCls = isReply ? "reply" : "task";
+        var tagTxt = isReply ? "Responder chat" : "Tarea asignada";
+        var actionTxt = isReply ? "Responder" : gestionButtonLabel();
         var sede = String(r.sede_codigo || "-");
         var dep = String(r.deposito_codigo || "");
         var depNom = String(r.deposito_nombre || "");
@@ -2210,8 +2244,8 @@
         var txt = sede + depTxt + " - " + String(r.tarea || "-") + " (" + String(r.estado || "Pendiente") + ")";
         return (
           "<li>" +
-            '<span class="task-alert-main">' + escapeHtml(txt) + "</span>" +
-            '<button type="button" class="btn-inline task-open-gestion" data-id="' + String(r.novedad_id || 0) + '">' + gestionButtonLabel() + "</button>" +
+            '<span class="task-alert-main"><span class="task-alert-tag ' + tagCls + '">' + tagTxt + '</span>' + escapeHtml(txt) + "</span>" +
+            '<button type="button" class="btn-inline task-open-gestion" data-id="' + String(r.novedad_id || 0) + '">' + actionTxt + "</button>" +
           "</li>"
         );
       }).join("");

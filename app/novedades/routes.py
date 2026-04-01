@@ -440,11 +440,12 @@ def register_novedades(bp, get_db):
         return out
 
     def _alertas_tareas_agente(con, actor):
-        if not actor or _can_admin_novedades(actor):
+        if not actor:
             return []
         out = []
         try:
             _ensure_novedades_diarias_table(con)
+            _ensure_novedades_diarias_chat_table(con)
             rows = con.execute("""
                 SELECT
                     id,
@@ -461,6 +462,22 @@ def register_novedades(bp, get_db):
                     COALESCE(tarea_asignado_por,'') AS tarea_asignado_por,
                     COALESCE(tarea_asignado_por_username,'') AS tarea_asignado_por_username,
                     COALESCE(tarea_asignado_en,'') AS tarea_asignado_en,
+                    COALESCE((
+                        SELECT c.autor
+                        FROM novedades_diarias_chat c
+                        WHERE c.novedad_id = novedades_diarias.id
+                          AND COALESCE(c.es_sistema,0)=0
+                        ORDER BY c.id DESC
+                        LIMIT 1
+                    ),'') AS chat_ult_autor,
+                    COALESCE((
+                        SELECT c.autor_username
+                        FROM novedades_diarias_chat c
+                        WHERE c.novedad_id = novedades_diarias.id
+                          AND COALESCE(c.es_sistema,0)=0
+                        ORDER BY c.id DESC
+                        LIMIT 1
+                    ),'') AS chat_ult_autor_username,
                     COALESCE(privado_flag,0) AS privado_flag,
                     COALESCE(privado_owner_username,'') AS privado_owner_username,
                     COALESCE(privado_owner_nombre,'') AS privado_owner_nombre
@@ -469,6 +486,7 @@ def register_novedades(bp, get_db):
                 ORDER BY date(COALESCE(tarea_asignado_en, actualizado_en, fecha)) DESC, id DESC
                 LIMIT 500
             """).fetchall()
+            actor_user = _norm_ci(actor.get("username") or "")
             for r in rows:
                 if not _actor_can_view_novedad(actor, r):
                     continue
@@ -490,7 +508,7 @@ def register_novedades(bp, get_db):
                 tarea_estado = (_row_value(r, "tarea_estado", "") or "").strip() or "Pendiente"
                 if _norm_ci(tarea_estado) in {"completada", "resuelto", "cerrado"}:
                     continue
-                out.append({
+                base_item = {
                     "novedad_id": int(_row_value(r, "id", 0) or 0),
                     "fecha": (_row_value(r, "fecha", "") or "").strip(),
                     "tipo": (_row_value(r, "tipo", "") or "").strip(),
@@ -500,8 +518,24 @@ def register_novedades(bp, get_db):
                     "deposito_codigo": (_row_value(r, "tarea_deposito_codigo", "") or "").strip().upper(),
                     "deposito_nombre": (_row_value(r, "tarea_deposito_nombre", "") or "").strip(),
                     "asignado_en": (_row_value(r, "tarea_asignado_en", "") or "").strip(),
+                }
+                out.append({
+                    **base_item,
+                    "alerta_tipo": "tarea",
                 })
-                if len(out) >= 12:
+                chat_ult_autor = (_row_value(r, "chat_ult_autor", "") or "").strip()
+                chat_ult_autor_username = (_row_value(r, "chat_ult_autor_username", "") or "").strip()
+                es_chat_propio = False
+                if chat_ult_autor_username and _norm_ci(chat_ult_autor_username) == actor_user:
+                    es_chat_propio = True
+                elif chat_ult_autor and _actor_match_name(actor, chat_ult_autor):
+                    es_chat_propio = True
+                if (chat_ult_autor or chat_ult_autor_username) and not es_chat_propio:
+                    out.append({
+                        **base_item,
+                        "alerta_tipo": "respuesta",
+                    })
+                if len(out) >= 20:
                     break
         except Exception:
             return []
