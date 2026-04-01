@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
 <section style="max-width:960px;margin:auto;display:grid;gap:14px">
   <style>
     .drv-card {
@@ -124,6 +125,45 @@
       padding: 14px;
       box-shadow: 0 20px 44px rgba(15, 23, 42, .24);
     }
+    .select2-container {
+      width: 100% !important;
+    }
+    .select2-container--default .select2-selection--single {
+      height: 42px;
+      border: 1px solid #dbe3ef;
+      border-radius: 10px;
+      padding: 6px 10px;
+      box-sizing: border-box;
+      background: #fff;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+      line-height: 28px;
+      color: #0f172a;
+      padding-left: 0;
+      padding-right: 22px;
+      font-size: 14px;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+      height: 40px;
+      right: 8px;
+    }
+    .select2-dropdown {
+      border: 1px solid #dbe3ef;
+      border-radius: 10px;
+      overflow: hidden;
+      z-index: 1200;
+    }
+    .select2-search--dropdown .select2-search__field {
+      border: 1px solid #dbe3ef;
+      border-radius: 8px;
+      padding: 7px 8px;
+      font-size: 13px;
+      box-sizing: border-box;
+    }
+    .select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
+      background-color: #0f172a;
+      color: #fff;
+    }
     @media (max-width: 800px) {
       .drv-grid {
         grid-template-columns: 1fr;
@@ -241,8 +281,8 @@
       </div>
       <div>
         <label class="drv-label">Persona trasladada</label>
-        <select class="drv-select" name="personal_id" required {% if not can_start %}disabled{% endif %}>
-          <option value="">-- seleccionar persona --</option>
+        <select id="personalSelect2" class="drv-select" name="personal_id" required {% if not can_start %}disabled{% endif %}>
+          <option value=""></option>
           {% for p in personal %}
           <option value="{{ p.id }}">{{ p.nombre_apellido }} - {{ p.dependencia }}</option>
           {% endfor %}
@@ -250,8 +290,8 @@
       </div>
       <div>
         <label class="drv-label">Destino</label>
-        <select class="drv-select" name="destino_id" required {% if not can_start %}disabled{% endif %}>
-          <option value="">-- seleccionar destino --</option>
+        <select id="destinoSelect2" class="drv-select" name="destino_id" required {% if not can_start %}disabled{% endif %}>
+          <option value=""></option>
           {% for d in destinos %}
           <option value="{{ d.id }}">{{ d.nombre }}</option>
           {% endfor %}
@@ -303,7 +343,41 @@
 </div>
 {% endif %}
 
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
+  (function initSelect2() {
+    if (!window.jQuery || !window.jQuery.fn || !window.jQuery.fn.select2) return;
+    const $ = window.jQuery;
+    $(function() {
+      const personal = $("#personalSelect2");
+      if (personal.length) {
+        personal.select2({
+          width: "100%",
+          placeholder: "Seleccionar persona",
+          allowClear: true,
+          language: {
+            noResults: () => "Sin resultados",
+            searching: () => "Buscando..."
+          }
+        });
+      }
+
+      const destino = $("#destinoSelect2");
+      if (destino.length) {
+        destino.select2({
+          width: "100%",
+          placeholder: "Seleccionar destino",
+          allowClear: true,
+          language: {
+            noResults: () => "Sin resultados",
+            searching: () => "Buscando..."
+          }
+        });
+      }
+    });
+  })();
+
   const finishModal = document.getElementById("finishModal");
   function openFinishModal() {
     if (!finishModal) return;
