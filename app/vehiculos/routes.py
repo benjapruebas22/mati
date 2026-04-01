@@ -12,7 +12,6 @@ def register_vehiculos_control(bp, get_db_connection, ensure_cols, rebuild_event
     ROLE_CHOFER_AUTORIZADO = "chofer_autorizado"
     ROLE_CHOFER_INTENDENCIA = "chofer_intendencia"
     CHOFER_ROLES = {ROLE_CHOFER_AUTORIZADO, ROLE_CHOFER_INTENDENCIA}
-    DRIVER_FLOW_EXTRA_ROLES = {"full", "admin", "int_vehiculos"}
 
     def _ensure_viajes_operativo_cols(conn):
         ensure_cols(conn, "viajes", [
@@ -37,8 +36,9 @@ def register_vehiculos_control(bp, get_db_connection, ensure_cols, rebuild_event
         return (session.get("role") or "").strip() in CHOFER_ROLES
 
     def _can_access_driver_flow():
-        role = (session.get("role") or "").strip()
-        return role in CHOFER_ROLES or role in DRIVER_FLOW_EXTRA_ROLES
+        # El acceso real al modulo ya lo controla enforce_auth (legacy_app.py)
+        # segun permisos por rol. Aqui solo exigimos sesion activa.
+        return bool(session.get("user_id"))
 
     def _is_open_state(value):
         val = _normalize_text(value or "").replace("_", " ")
