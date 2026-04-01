@@ -37,6 +37,10 @@
     gap: 12px;
   }
 
+  .control-header {
+    display: grid;
+    gap: 10px;
+  }
   .control-header h1 {
     margin: 0;
     font-size: 21px;
@@ -51,10 +55,74 @@
     gap: 8px;
     flex-wrap: wrap;
   }
-  .control-header p {
-    margin: 6px 0 0;
+  .control-header-intro {
+    margin: 0;
     color: #5f7898;
     font-size: 14px;
+  }
+  .workspace-context {
+    border: 1px solid #d8e4f6;
+    border-radius: 12px;
+    padding: 10px 12px;
+    background: linear-gradient(180deg, #ffffff 0%, #f6faff 100%);
+    display: grid;
+    gap: 4px;
+  }
+  .workspace-current {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    border: 1px solid #cadbf3;
+    border-radius: 999px;
+    padding: 3px 10px;
+    background: #eef4ff;
+    color: #2f5ea4;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+  .workspace-context-title {
+    margin: 0;
+    color: #1d3a61;
+    font-size: 18px;
+    font-weight: 900;
+    line-height: 1.2;
+  }
+  .workspace-context-sub {
+    margin: 0;
+    color: #5f7898;
+    font-size: 13px;
+    line-height: 1.35;
+  }
+  .workspace-tabs {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .workspace-tab {
+    border: 1px solid #cad8ef;
+    border-radius: 11px;
+    min-height: 44px;
+    background: linear-gradient(180deg, #f8fbff 0%, #eff5ff 100%);
+    color: #355a89;
+    font-size: 13px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: border-color .14s ease, background .14s ease, color .14s ease, transform .1s ease;
+  }
+  .workspace-tab:hover {
+    transform: translateY(-1px);
+  }
+  .workspace-tab.active {
+    border-color: #2f5ea4;
+    background: linear-gradient(180deg, #2f5ea4 0%, #264d86 100%);
+    color: #ffffff;
+    box-shadow: 0 8px 16px rgba(47, 94, 164, 0.22);
+  }
+  .workspace-tab:focus-visible {
+    outline: 3px solid rgba(59, 130, 246, 0.32);
+    outline-offset: 1px;
   }
 
   .control-card {
@@ -67,6 +135,9 @@
     box-shadow: 0 8px 18px rgba(23, 53, 92, 0.04);
     position: relative;
     overflow: hidden;
+  }
+  .control-workspace-hidden {
+    display: none !important;
   }
   .control-card::before {
     content: "";
@@ -1089,17 +1160,42 @@
   }
 
   @media (max-width: 1220px) {
+    .workspace-tabs {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
     .nvd-form-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
   @media (max-width: 980px) {
+    .workspace-tabs {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .workspace-context {
+      padding: 9px 10px;
+    }
+    .workspace-context-title {
+      font-size: 17px;
+    }
     .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .veh-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .card-head { flex-wrap: wrap; align-items: flex-start; }
     .nvd-form-grid { grid-template-columns: 1fr 1fr; }
   }
   @media (max-width: 640px) {
+    .workspace-tabs {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .workspace-tab {
+      min-height: 46px;
+      font-size: 12px;
+    }
+    .workspace-context-title {
+      font-size: 16px;
+    }
+    .workspace-context-sub {
+      font-size: 12px;
+    }
     .veh-grid { grid-template-columns: 1fr; }
     .nvd-form-grid { grid-template-columns: 1fr; }
     .control-header h1 { font-size: 19px; }
@@ -1111,7 +1207,6 @@
     .card-vehiculos { order: 5; }
     .card-historial { order: 6; }
     #registroNvdBox > summary { display: none; }
-    #btnHistorialTop { display: none; }
     .kpi-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
     .card-head { flex-wrap: wrap; gap: 6px; }
     .card-head-actions { width: 100%; justify-content: flex-start; }
@@ -1160,17 +1255,29 @@
       <h1>Centro de control operativo - Intendencia</h1>
       <a class="btn-soft" href="{{ url_for('dashboard_sede_estado_manual') }}">Progreso sedes</a>
     </div>
-    <p>Registro de novedades diarias, alertas automaticas y estado operativo de recursos.</p>
+    <p class="control-header-intro">Registro de novedades diarias, alertas automaticas y estado operativo de recursos.</p>
+    <div class="workspace-context" aria-live="polite">
+      <span id="workspaceCurrentLabel" class="workspace-current">Operacion activa: Resumen</span>
+      <div id="workspaceContextTitle" class="workspace-context-title">Resumen operativo del dia</div>
+      <p id="workspaceContextSub" class="workspace-context-sub">Panorama rapido de pendientes, alertas y estado de recursos para definir prioridades.</p>
+    </div>
+    <nav class="workspace-tabs" aria-label="Operaciones del centro operativo">
+      <button type="button" class="workspace-tab active" data-workspace-tab="resumen" aria-pressed="true">Resumen</button>
+      <button type="button" class="workspace-tab" data-workspace-tab="registro" aria-pressed="false">Registro</button>
+      <button type="button" class="workspace-tab" data-workspace-tab="gestion" aria-pressed="false">Gestion</button>
+      <button type="button" class="workspace-tab" data-workspace-tab="historial" aria-pressed="false">Historial</button>
+      <button type="button" class="workspace-tab" data-workspace-tab="recursos" aria-pressed="false">Recursos</button>
+    </nav>
   </header>
 
-  <article id="taskAlertCard" class="control-card card-task-alert" style="display:none;">
+  <article id="taskAlertCard" class="control-card control-workspace-section card-task-alert" data-workspaces="resumen" style="display:none;">
     <div class="card-head">
       <h2 id="taskAlertTitle">Alertas personales</h2>
     </div>
     <ul id="taskAlertList" class="task-alert-list"></ul>
   </article>
 
-  <article class="control-card card-resumen">
+  <article class="control-card control-workspace-section card-resumen" data-workspaces="resumen">
     <div class="card-head">
       <h2>1. Resumen del dia</h2>
       <div class="card-head-actions">
@@ -1217,7 +1324,7 @@
     </div>
   </article>
 
-  <article class="control-card card-registro">
+  <article class="control-card control-workspace-section card-registro" data-workspaces="registro">
     <div class="card-head">
       <h2>2. Registrar novedad</h2>
       <div class="card-head-actions">
@@ -1313,7 +1420,7 @@
     </details>
   </article>
 
-  <article class="control-card card-operativa">
+  <article class="control-card control-workspace-section card-operativa" data-workspaces="gestion">
     <div class="card-head">
       <h2>3. Pendientes activos</h2>
       <div class="card-head-actions">
@@ -1423,7 +1530,7 @@
     <div class="nvd-footnote">Resueltos e informados se muestran solo en Historial.</div>
   </article>
 
-  <article class="control-card card-historial">
+  <article class="control-card control-workspace-section card-historial" data-workspaces="historial">
     <div class="card-head">
       <h2>Historial operativo</h2>
       <div class="card-head-actions">
@@ -1469,7 +1576,7 @@
     </div>
   </article>
 
-  <article id="alertasCard" class="control-card card-alertas no-alertas">
+  <article id="alertasCard" class="control-card control-workspace-section card-alertas no-alertas" data-workspaces="resumen recursos">
     <div class="card-head">
       <h2>4. Alertas criticas</h2>
     </div>
@@ -1478,7 +1585,7 @@
     </ul>
   </article>
 
-  <article class="control-card card-vehiculos">
+  <article class="control-card control-workspace-section card-vehiculos" data-workspaces="recursos">
     <div class="card-head">
       <h2>5. Estado de vehiculos</h2>
       <a class="btn-soft" href="{{ url_for('vehiculos_control_diario') }}">Ir a modulo vehiculos</a>
@@ -1619,6 +1726,35 @@
     var RAW_SOLIC = [];
     var RESUMEN_BASE = { total: 0, informado: 0, en_proceso: 0, resuelto: 0 };
     var HIDE_PENDIENTES_NO_CERRADOS = true;
+    var WORKSPACE_DEFAULT = "resumen";
+    var WORKSPACE_ACTIVE = WORKSPACE_DEFAULT;
+    var WORKSPACE_META = {
+      resumen: {
+        label: "Resumen",
+        title: "Resumen operativo del dia",
+        subtitle: "Panorama rapido de pendientes, alertas y estado de recursos para definir prioridades.",
+      },
+      registro: {
+        label: "Registro",
+        title: "Registro de novedad o tarea",
+        subtitle: "Carga novedades con datos claros para que la gestion posterior sea mas agil y trazable.",
+      },
+      gestion: {
+        label: "Gestion",
+        title: "Pendientes activos",
+        subtitle: "Seguimiento operativo de tareas y solicitudes abiertas con foco en respuesta y cierre.",
+      },
+      historial: {
+        label: "Historial",
+        title: "Historial operativo",
+        subtitle: "Consulta de novedades finalizadas por rango de fechas para auditoria y control.",
+      },
+      recursos: {
+        label: "Recursos",
+        title: "Estado de recursos",
+        subtitle: "Visual de vehiculos y alertas para sostener continuidad operativa diaria.",
+      },
+    };
     var TAREA_ESTADOS = ["Pendiente", "En curso", "Completada"];
     var HERRAMIENTAS_PRESET = ["Hidrolavadora", "Cortadora de pasto", "Desmalezadora", "Taladro", "Amoladora", "Soldadora", "Escalera", "Pala", "Carretilla"];
     var IS_MATIAS = false;
@@ -1691,6 +1827,11 @@
 
     var el = {
       shell: document.querySelector(".control-shell"),
+      workspaceLabel: document.getElementById("workspaceCurrentLabel"),
+      workspaceTitle: document.getElementById("workspaceContextTitle"),
+      workspaceSub: document.getElementById("workspaceContextSub"),
+      workspaceTabs: Array.prototype.slice.call(document.querySelectorAll(".workspace-tab[data-workspace-tab]")),
+      workspaceSections: Array.prototype.slice.call(document.querySelectorAll(".control-workspace-section[data-workspaces]")),
       id: document.getElementById("nvdId"),
       modo: document.getElementById("nvdModo"),
       modoWrap: document.getElementById("nvdModoWrap"),
@@ -1811,6 +1952,69 @@
       if (!el.gestionMsg) return;
       el.gestionMsg.textContent = txt || "";
       el.gestionMsg.style.color = isErr ? "#9e4459" : "#5c789c";
+    }
+
+    function resolveWorkspace(raw) {
+      var key = String(raw || "").toLowerCase().trim();
+      if (WORKSPACE_META[key]) return key;
+      return WORKSPACE_DEFAULT;
+    }
+
+    function sectionMatchesWorkspace(node, workspace) {
+      var raw = String((node && node.getAttribute("data-workspaces")) || "").trim();
+      if (!raw) return true;
+      return raw.split(/\s+/g).indexOf(workspace) >= 0;
+    }
+
+    function setWorkspace(nextWorkspace) {
+      var workspace = resolveWorkspace(nextWorkspace);
+      var meta = WORKSPACE_META[workspace] || WORKSPACE_META[WORKSPACE_DEFAULT];
+      WORKSPACE_ACTIVE = workspace;
+
+      if (el.workspaceLabel) {
+        el.workspaceLabel.textContent = "Operacion activa: " + String(meta.label || "Resumen");
+      }
+      if (el.workspaceTitle) {
+        el.workspaceTitle.textContent = String(meta.title || "");
+      }
+      if (el.workspaceSub) {
+        el.workspaceSub.textContent = String(meta.subtitle || "");
+      }
+      if (Array.isArray(el.workspaceTabs)) {
+        el.workspaceTabs.forEach(function (btn) {
+          if (!btn) return;
+          var isActive = String(btn.getAttribute("data-workspace-tab") || "") === workspace;
+          btn.classList.toggle("active", isActive);
+          btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+        });
+      }
+      if (Array.isArray(el.workspaceSections)) {
+        el.workspaceSections.forEach(function (section) {
+          if (!section) return;
+          if (sectionMatchesWorkspace(section, workspace)) section.classList.remove("control-workspace-hidden");
+          else section.classList.add("control-workspace-hidden");
+        });
+      }
+      if (workspace === "historial" && el.histBox) {
+        var wasOpen = el.histBox.classList.contains("open");
+        el.histBox.classList.add("open");
+        if (!wasOpen) loadHistorial();
+      }
+      if (workspace === "registro" && window.innerWidth <= 640 && el.registroBox) {
+        el.registroBox.open = true;
+      }
+    }
+
+    function initWorkspace() {
+      if (Array.isArray(el.workspaceTabs)) {
+        el.workspaceTabs.forEach(function (btn) {
+          if (!btn) return;
+          btn.addEventListener("click", function () {
+            setWorkspace(btn.getAttribute("data-workspace-tab") || WORKSPACE_DEFAULT);
+          });
+        });
+      }
+      setWorkspace(WORKSPACE_DEFAULT);
     }
 
     function canUseTaskMode() {
@@ -3229,8 +3433,9 @@
     }
 
     function openHistorial() {
-      el.histBox.classList.add("open");
-      loadHistorial();
+      var alreadyOpen = !!(el.histBox && el.histBox.classList.contains("open"));
+      setWorkspace("historial");
+      if (alreadyOpen) loadHistorial();
       if (el.histBox && el.histBox.scrollIntoView) {
         el.histBox.scrollIntoView({ behavior: "smooth", block: "start" });
       }
@@ -3652,9 +3857,7 @@
       }
     });
 
-    if (window.innerWidth <= 640 && el.registroBox) {
-      el.registroBox.open = true;
-    }
+    initWorkspace();
     loadControl();
   })();
 </script>
