@@ -830,6 +830,39 @@
     grid-template-columns: repeat(4, minmax(0, 1fr));
     align-items: end;
   }
+  .gestion-grupo-wrap {
+    grid-column: span 2;
+    display: grid;
+    gap: 6px;
+    align-items: end;
+  }
+  .gestion-grupo-add {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 6px;
+    align-items: end;
+  }
+  .gestion-grupo-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .gestion-grupo-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid #c9dcf5;
+    border-radius: 999px;
+    background: #eef5ff;
+    color: #2f527f;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 8px;
+  }
+  .gestion-grupo-chip .btn-mini {
+    padding: 1px 6px;
+    min-width: auto;
+  }
   .gestion-tools-row {
     margin: 8px 12px 0;
     border: 1px dashed #d8e4f5;
@@ -1391,6 +1424,14 @@
         <label for="gestionTareaAgente" style="font-size:11px;color:#59799e;font-weight:800;">Agente asignado</label>
         <select id="gestionTareaAgente" class="ctl-sel"></select>
       </div>
+      <div id="gestionGrupoWrap" class="gestion-grupo-wrap" style="display:none;">
+        <label for="gestionGrupoAgente" style="font-size:11px;color:#59799e;font-weight:800;">Grupo (2 a 4 agentes)</label>
+        <div class="gestion-grupo-add">
+          <select id="gestionGrupoAgente" class="ctl-sel"></select>
+          <button id="gestionGrupoAdd" type="button" class="btn-inline">Agregar al grupo</button>
+        </div>
+        <div id="gestionGrupoList" class="gestion-grupo-list"></div>
+      </div>
       <div>
         <label for="gestionTareaSede" style="font-size:11px;color:#59799e;font-weight:800;">Sede</label>
         <select id="gestionTareaSede" class="ctl-sel"></select>
@@ -1465,6 +1506,7 @@
     var GESTION_OPEN_ID = 0;
     var GESTION_DATA = null;
     var GESTION_HERRAMIENTAS = [];
+    var GESTION_GRUPO_AGENTES = [];
     var TAREA_AGENTE_GENERAL_VALUE = "__equipo__";
     var TAREA_AGENTE_GENERAL_LABEL = "Equipo operativo";
     var SEDES_ASSIGN = [];
@@ -1480,6 +1522,8 @@
       "Mauro Vea Murguia",
       "Emilino P de la Puente",
       "Luis Cardozo",
+      "Marcos Sorbello",
+      "Maximiliano Abatedaga",
     ];
     var AGENTES_ALIAS = {
       "emiliano p de la puente": "Emilino P de la Puente",
@@ -1495,6 +1539,13 @@
       "mauro vea murguia": "Mauro Vea Murguia",
       "emilino p de la puente": "Emilino P de la Puente",
       "luis cardozo": "Luis Cardozo",
+      "marcos sorbello": "Marcos Sorbello",
+      "maximiliano abatedaga": "Maximiliano Abatedaga",
+      "maxi abatedaga": "Maximiliano Abatedaga",
+      "mabatedaga": "Maximiliano Abatedaga",
+      "msorbell": "Marcos Sorbello",
+      "msorbllo": "Marcos Sorbello",
+      "msorbello": "Marcos Sorbello",
     };
     var AGENTE_COLORS = {
       "matias calderari": { bg: "#e8f1ff", bd: "#c8d9f6", tx: "#2f5ea4", abg: "#2f5ea4", abd: "#2f5ea4" },
@@ -1509,6 +1560,8 @@
       "emiliano p de la puente": { bg: "#eaf7f6", bd: "#cdeae7", tx: "#1e7d79", abg: "#1e7d79", abd: "#1e7d79" },
       "emiliano perez de la puente": { bg: "#eaf7f6", bd: "#cdeae7", tx: "#1e7d79", abg: "#1e7d79", abd: "#1e7d79" },
       "luis cardozo": { bg: "#edf7ec", bd: "#d4e9d2", tx: "#2f7a43", abg: "#2f7a43", abd: "#2f7a43" },
+      "marcos sorbello": { bg: "#eef6f1", bd: "#d3e7da", tx: "#2f7c5f", abg: "#2f7c5f", abd: "#2f7c5f" },
+      "maximiliano abatedaga": { bg: "#f6f0ff", bd: "#dfd3f8", tx: "#6b4fa8", abg: "#6b4fa8", abd: "#6b4fa8" },
     };
 
     var el = {
@@ -1584,6 +1637,10 @@
       gestionTareaEstado: document.getElementById("gestionTareaEstado"),
       gestionTareaSede: document.getElementById("gestionTareaSede"),
       gestionTareaAgente: document.getElementById("gestionTareaAgente"),
+      gestionGrupoWrap: document.getElementById("gestionGrupoWrap"),
+      gestionGrupoAgente: document.getElementById("gestionGrupoAgente"),
+      gestionGrupoAdd: document.getElementById("gestionGrupoAdd"),
+      gestionGrupoList: document.getElementById("gestionGrupoList"),
       gestionTareaDeposito: document.getElementById("gestionTareaDeposito"),
       gestionTareaGuardar: document.getElementById("gestionTareaGuardar"),
       gestionAutoasignar: document.getElementById("gestionAutoasignar"),
@@ -1680,6 +1737,76 @@
     function normalizarAgente(v) {
       var n = normTxt(v);
       return AGENTES_ALIAS[n] || String(v || "").trim();
+    }
+
+    function splitGrupoAgentes(raw) {
+      var txt = String(raw || "").trim();
+      if (!txt || normTxt(txt) === normTxt(TAREA_AGENTE_GENERAL_LABEL)) return [];
+      var parts = txt.split(/\s*\+\s*|\s*\|\s*|\s*;\s*/g);
+      if (!parts.length) return [];
+      var out = [];
+      var seen = {};
+      parts.forEach(function (p) {
+        var ag = normalizarAgente(p);
+        var key = normTxt(ag);
+        if (!ag || !key || seen[key]) return;
+        seen[key] = true;
+        out.push(ag);
+      });
+      return out;
+    }
+
+    function setGestionGrupoAgentes(list) {
+      var src = Array.isArray(list) ? list : [];
+      var out = [];
+      var seen = {};
+      src.forEach(function (v) {
+        var ag = normalizarAgente(v);
+        var key = normTxt(ag);
+        if (!ag || !key || seen[key]) return;
+        seen[key] = true;
+        out.push(ag);
+      });
+      GESTION_GRUPO_AGENTES = out.slice(0, 4);
+    }
+
+    function addGestionGrupoAgente(v) {
+      var ag = normalizarAgente(v);
+      if (!ag || normTxt(ag) === normTxt(TAREA_AGENTE_GENERAL_LABEL)) return;
+      var current = Array.isArray(GESTION_GRUPO_AGENTES) ? GESTION_GRUPO_AGENTES.slice() : [];
+      if (current.length >= 4) return;
+      var key = normTxt(ag);
+      for (var i = 0; i < current.length; i += 1) {
+        if (normTxt(current[i]) === key) return;
+      }
+      current.push(ag);
+      GESTION_GRUPO_AGENTES = current;
+    }
+
+    function renderGestionGrupoAgentes(canEdit) {
+      if (!el.gestionGrupoWrap || !el.gestionGrupoList || !el.gestionGrupoAgente || !el.gestionGrupoAdd) return;
+      var enabled = !!canEdit;
+      var isEquipo = String((el.gestionTareaAgente && el.gestionTareaAgente.value) || "") === TAREA_AGENTE_GENERAL_VALUE;
+      el.gestionGrupoWrap.style.display = enabled && isEquipo ? "grid" : "none";
+      el.gestionGrupoAgente.disabled = !(enabled && isEquipo);
+      el.gestionGrupoAdd.disabled = !(enabled && isEquipo);
+      if (!(enabled && isEquipo)) {
+        el.gestionGrupoList.innerHTML = "";
+        return;
+      }
+      var arr = Array.isArray(GESTION_GRUPO_AGENTES) ? GESTION_GRUPO_AGENTES : [];
+      if (!arr.length) {
+        el.gestionGrupoList.innerHTML = '<span class="gestion-tools-help">Sin grupo seleccionado.</span>';
+        return;
+      }
+      el.gestionGrupoList.innerHTML = arr.map(function (ag, idx) {
+        return (
+          '<span class="gestion-grupo-chip">' +
+            '<span>' + escapeHtml(ag) + '</span>' +
+            '<button type="button" class="btn-mini grupo-del" data-idx="' + idx + '">x</button>' +
+          '</span>'
+        );
+      }).join("");
     }
 
     function normalizarHerramienta(v) {
@@ -2148,6 +2275,7 @@
       GESTION_OPEN_ID = 0;
       GESTION_DATA = null;
       GESTION_HERRAMIENTAS = [];
+      GESTION_GRUPO_AGENTES = [];
       if (el.gestionModal) {
         el.gestionModal.classList.remove("open");
         el.gestionModal.setAttribute("aria-hidden", "true");
@@ -2226,6 +2354,21 @@
         } else if (agSel) {
           el.gestionTareaAgente.value = agSel;
         }
+        var grupoActual = splitGrupoAgentes(agSel);
+        if (grupoActual.length >= 2) {
+          setGestionGrupoAgentes(grupoActual);
+          el.gestionTareaAgente.value = TAREA_AGENTE_GENERAL_VALUE;
+        } else {
+          setGestionGrupoAgentes([]);
+        }
+      } else {
+        setGestionGrupoAgentes([]);
+      }
+      if (el.gestionGrupoAgente) {
+        var grupoOpts = (Array.isArray(p.agentes) && p.agentes.length ? p.agentes : AGENTES_ASSIGN).filter(function (x) {
+          return normTxt(x) !== normTxt(TAREA_AGENTE_GENERAL_LABEL);
+        });
+        fillSelect(el.gestionGrupoAgente, grupoOpts, true, "Agregar agente al grupo");
       }
       if (el.gestionTareaSede) {
         var sedesRef = Array.isArray(p.sedes) && p.sedes.length ? p.sedes : SEDES_ASSIGN;
@@ -2320,6 +2463,7 @@
         el.gestionAutoasignar.style.display = nov.puede_autoasignar ? "" : "none";
         el.gestionAutoasignar.disabled = !nov.puede_autoasignar;
       }
+      renderGestionGrupoAgentes(!!nov.puede_asignar_tarea);
       if (el.gestionToolInput) el.gestionToolInput.disabled = !canToolsEdit;
       if (el.gestionToolAccion) el.gestionToolAccion.disabled = !canToolsEdit;
       if (el.gestionToolAdd) el.gestionToolAdd.disabled = !canToolsEdit;
@@ -2405,7 +2549,14 @@
       var tarea = String((el.gestionTarea && el.gestionTarea.value) || "").trim();
       var estado = String((el.gestionTareaEstado && el.gestionTareaEstado.value) || "Pendiente");
       var agente = String((el.gestionTareaAgente && el.gestionTareaAgente.value) || "").trim();
-      if (agente === TAREA_AGENTE_GENERAL_VALUE) agente = TAREA_AGENTE_GENERAL_VALUE;
+      var grupo = Array.isArray(GESTION_GRUPO_AGENTES) ? GESTION_GRUPO_AGENTES.slice(0, 4) : [];
+      if (agente === TAREA_AGENTE_GENERAL_VALUE) {
+        if (!limpiar && grupo.length) {
+          agente = grupo.join(" + ");
+        } else {
+          agente = TAREA_AGENTE_GENERAL_VALUE;
+        }
+      }
       var sede = String((el.gestionTareaSede && el.gestionTareaSede.value) || "").trim().toUpperCase();
       var depositoCodigo = String((el.gestionTareaDeposito && el.gestionTareaDeposito.value) || "").trim().toUpperCase();
       var depositoNombre = "";
@@ -2425,6 +2576,12 @@
       if (!limpiar && !agente) {
         setGestionMsg("Selecciona el agente asignado.", true);
         return;
+      }
+      if (!limpiar && String((el.gestionTareaAgente && el.gestionTareaAgente.value) || "").trim() === TAREA_AGENTE_GENERAL_VALUE) {
+        if (grupo.length > 0 && grupo.length < 2) {
+          setGestionMsg("Para grupo, selecciona al menos 2 agentes.", true);
+          return;
+        }
       }
       if (!limpiar && !sede) {
         setGestionMsg("Selecciona la sede de la tarea.", true);
@@ -2974,6 +3131,40 @@
     if (el.gestionTareaSede) {
       el.gestionTareaSede.addEventListener("change", function () {
         refreshGestionDepositos("");
+      });
+    }
+    if (el.gestionTareaAgente) {
+      el.gestionTareaAgente.addEventListener("change", function () {
+        renderGestionGrupoAgentes(!!(GESTION_DATA && GESTION_DATA.novedad && GESTION_DATA.novedad.puede_asignar_tarea));
+      });
+    }
+    if (el.gestionGrupoAdd) {
+      el.gestionGrupoAdd.addEventListener("click", function () {
+        var ag = String((el.gestionGrupoAgente && el.gestionGrupoAgente.value) || "").trim();
+        if (!ag) {
+          setGestionMsg("Selecciona un agente para agregar al grupo.", true);
+          return;
+        }
+        if (Array.isArray(GESTION_GRUPO_AGENTES) && GESTION_GRUPO_AGENTES.length >= 4) {
+          setGestionMsg("El grupo admite hasta 4 agentes.", true);
+          return;
+        }
+        addGestionGrupoAgente(ag);
+        renderGestionGrupoAgentes(!!(GESTION_DATA && GESTION_DATA.novedad && GESTION_DATA.novedad.puede_asignar_tarea));
+        setGestionMsg("", false);
+      });
+    }
+    if (el.gestionGrupoList) {
+      el.gestionGrupoList.addEventListener("click", function (ev) {
+        var tgt = ev.target;
+        if (!tgt || !tgt.classList || !tgt.classList.contains("grupo-del")) return;
+        var idx = Number(tgt.getAttribute("data-idx") || -1);
+        if (idx < 0) return;
+        var arr = Array.isArray(GESTION_GRUPO_AGENTES) ? GESTION_GRUPO_AGENTES.slice() : [];
+        if (idx >= arr.length) return;
+        arr.splice(idx, 1);
+        GESTION_GRUPO_AGENTES = arr;
+        renderGestionGrupoAgentes(!!(GESTION_DATA && GESTION_DATA.novedad && GESTION_DATA.novedad.puede_asignar_tarea));
       });
     }
     if (el.gestionTareaLimpiar) {
