@@ -53,6 +53,13 @@ NVD_ADMIN_FULLNAMES = {
     "maxi abatedaga",
 }
 NVD_ADMIN_USERNAME_PREFIXES = ("mcalderari", "msorb", "mabatedag")
+NVD_CHAT_TEAM_USERNAMES = {"mduran", "cvidaurre", "nguerrero", "mflores"}
+NVD_CHAT_TEAM_FULLNAMES = {
+    "marcos duran",
+    "carlos vidaurre",
+    "nestor guerrero",
+    "manuel flores",
+}
 NVD_HERRAMIENTAS_PRESET = [
     "Hidrolavadora",
     "Cortadora de pasto",
@@ -180,6 +187,14 @@ def _is_francisco_actor(username, full_name):
     return norm_user in FRANCISCO_USERNAMES or norm_name == "francisco savio"
 
 
+def _is_tarea_chat_team_actor(actor):
+    if not actor:
+        return False
+    norm_user = _norm_ci(actor.get("username") or "")
+    norm_name = _norm_ci(actor.get("full_name") or actor.get("display") or "")
+    return (norm_user in NVD_CHAT_TEAM_USERNAMES) or (norm_name in NVD_CHAT_TEAM_FULLNAMES)
+
+
 def _session_actor():
     username = (session.get("username") or "").strip()
     full_name = (session.get("full_name") or "").strip()
@@ -208,10 +223,12 @@ def _can_admin_novedades(actor):
     return bool(actor.get("is_novedades_admin"))
 
 
-def _actor_can_view_gestion(actor, agente_novedad, agente_tarea=""):
+def _actor_can_view_gestion(actor, agente_novedad, agente_tarea="", tipo=""):
     if not actor:
         return False
     if _can_admin_novedades(actor):
+        return True
+    if _norm_ci(tipo) == _norm_ci(NVD_TIPO_TAREA) and _is_tarea_chat_team_actor(actor):
         return True
     # Permitir por coincidencia flexible de nombre/usuario para evitar bloqueos
     # cuando el nombre de tarea no coincide 1:1 con el nombre completo del login.
@@ -443,11 +460,11 @@ def register_novedades(bp, get_db):
                 tarea_agente = (_row_value(r, "tarea_agente", "") or "").strip()
                 if not _actor_match_name(actor, tarea_agente):
                     continue
-                by_user = _norm_ci(_row_value(r, "tarea_asignado_por_username", "") or "")
-                by_name = _norm_ci(_row_value(r, "tarea_asignado_por", "") or "")
-                by_matias = (by_user == "mcalderari" or by_name == "matias calderari")
+                by_user = _row_value(r, "tarea_asignado_por_username", "") or ""
+                by_name = _row_value(r, "tarea_asignado_por", "") or ""
+                by_admin = _is_novedades_admin_actor(by_user, by_name)
                 by_self_private = (_is_private_novedad_row(r) and _actor_can_manage_private_novedad(actor, r))
-                if not by_matias and not by_self_private:
+                if not by_admin and not by_self_private:
                     continue
                 tarea_estado = (_row_value(r, "tarea_estado", "") or "").strip() or "Pendiente"
                 if _norm_ci(tarea_estado) in {"completada", "resuelto", "cerrado"}:
@@ -482,7 +499,7 @@ def register_novedades(bp, get_db):
         puede_ver_gestion = (
             bool(puede_ver_novedad)
             and gestion_habilitada
-            and _actor_can_view_gestion(actor, agente, tarea_agente)
+            and _actor_can_view_gestion(actor, agente, tarea_agente, tipo)
         )
         es_matias = bool(actor.get("is_matias"))
         puede_gestionar_tarea = bool(
@@ -735,8 +752,11 @@ def register_novedades(bp, get_db):
                     resueltos_informados.append(it)
                 tipo_norm = _norm_ci(it.get("tipo") or "")
                 tiene_tarea = bool((it.get("tarea_asignada") or "").strip())
-                by_matias = _norm_ci(it.get("tarea_asignado_por_username") or "") == "mcalderari"
-                es_tarea = (tipo_norm == _norm_ci(NVD_TIPO_TAREA)) or (tiene_tarea and by_matias)
+                by_admin = _is_novedades_admin_actor(
+                    it.get("tarea_asignado_por_username") or "",
+                    it.get("tarea_asignado_por") or "",
+                )
+                es_tarea = (tipo_norm == _norm_ci(NVD_TIPO_TAREA)) or (tiene_tarea and by_admin)
                 if not es_pendiente:
                     continue
                 if es_tarea:
