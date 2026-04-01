@@ -158,10 +158,10 @@
     display: grid;
     gap: 7px;
   }
-  .sede-card.ok { border-left-color: #5cbf87; background: linear-gradient(180deg, #fcfffd 0%, #f3fbf6 100%); }
-  .sede-card.warn { border-left-color: #f58a3e; background: linear-gradient(180deg, #fffefb 0%, #fff7f1 100%); }
-  .sede-card.bad { border-left-color: #d85656; background: linear-gradient(180deg, #fffdfd 0%, #fff3f3 100%); }
-  .sede-card.na { border-left-color: #a6b3c8; background: linear-gradient(180deg, #ffffff 0%, #f5f7fb 100%); }
+  .sede-card.ok { background: linear-gradient(180deg, #fcfffd 0%, #f3fbf6 100%); }
+  .sede-card.warn { background: linear-gradient(180deg, #fffefb 0%, #fff7f1 100%); }
+  .sede-card.bad { background: linear-gradient(180deg, #fffdfd 0%, #fff3f3 100%); }
+  .sede-card.na { background: linear-gradient(180deg, #ffffff 0%, #f5f7fb 100%); }
   .sede-top {
     display: flex;
     justify-content: space-between;
@@ -253,13 +253,9 @@
     display: block;
     height: 100%;
     width: var(--pct, 0%);
-    background: var(--bar, #8cb8ef);
+    background: var(--fuero, #8cb8ef);
     border-radius: 999px;
   }
-  .sede-card.ok .sede-score-bar span { --bar: #56b682; }
-  .sede-card.warn .sede-score-bar span { --bar: #f58a3e; }
-  .sede-card.bad .sede-score-bar span { --bar: #d85f5f; }
-  .sede-card.na .sede-score-bar span { --bar: #9caac1; }
   .sede-meta {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
