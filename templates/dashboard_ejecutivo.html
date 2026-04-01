@@ -146,12 +146,12 @@
 
   .sedes-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 9px;
   }
   .sede-card {
     border: 1px solid #e3ebf7;
-    border-left: 4px solid #cdd9ec;
+    border-left: 4px solid var(--fuero, #cdd9ec);
     border-radius: 12px;
     background: #fbfdff;
     padding: 8px;
@@ -170,7 +170,7 @@
   }
   .sede-title {
     font-weight: 900;
-    color: #1a365f;
+    color: var(--fuero, #1a365f);
     font-size: 12px;
     line-height: 1.2;
   }
@@ -216,6 +216,20 @@
   .sede-alerta.warn { background: #fff8ea; color: #9a5600; border-color: #f3d08c; }
   .sede-alerta.bad { background: #fff1f1; color: #b42318; border-color: #f7c3c3; }
   .sede-alerta.na { background: #f1f5f9; color: #475569; border-color: #d8e0ed; }
+  .sede-fuero {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--fuero-bd, #d8e0ed);
+    color: var(--fuero, #4d4d4d);
+    background: var(--fuero-soft, #f5f7fb);
+    border-radius: 999px;
+    padding: 2px 7px;
+    font-size: 9px;
+    font-weight: 900;
+    line-height: 1.1;
+    width: fit-content;
+    max-width: 100%;
+  }
   .sede-score {
     display: grid;
     gap: 4px;
@@ -514,11 +528,13 @@
     .obras-grid { grid-template-columns: 1fr; }
     .sedes-resumen { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .sede-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .sedes-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
   @media (max-width: 520px) {
     .kpi-grid { grid-template-columns: 1fr; }
     .sedes-resumen { grid-template-columns: 1fr; }
     .sede-kpis { grid-template-columns: 1fr; }
+    .sedes-grid { grid-template-columns: 1fr; }
   }
 </style>
 
@@ -601,12 +617,34 @@
         {% elif s.idx_class == 'ok' %}
           {% set semaforo = 'Estable' %}
         {% endif %}
+        {% set fu = (s.fuero or '')|lower %}
+        {% set fu_color = '#4D4D4D' %}
+        {% set fu_soft = '#f3f6fb' %}
+        {% set fu_bd = '#dce4f1' %}
+        {% if 'administracion' in fu or 'violencia' in fu %}
+          {% set fu_color = '#f58a3e' %}
+          {% set fu_soft = '#fff4ea' %}
+          {% set fu_bd = '#f5d1b9' %}
+        {% elif 'juridico social' in fu %}
+          {% set fu_color = '#F14B94' %}
+          {% set fu_soft = '#fff0f7' %}
+          {% set fu_bd = '#f7c6de' %}
+        {% elif 'menores e incapaces' in fu and 'juridico social' not in fu %}
+          {% set fu_color = '#65BFF4' %}
+          {% set fu_soft = '#edf7ff' %}
+          {% set fu_bd = '#c8e5f8' %}
+        {% elif 'penal' in fu %}
+          {% set fu_color = '#6666CC' %}
+          {% set fu_soft = '#f1f1ff' %}
+          {% set fu_bd = '#d6d6f5' %}
+        {% endif %}
         {% set score = s.idx_general if s.idx_general is not none else 0 %}
-        <article class="sede-card {{ s.idx_class }}">
+        <article class="sede-card {{ s.idx_class }}" style="--fuero: {{ fu_color }}; --fuero-soft: {{ fu_soft }}; --fuero-bd: {{ fu_bd }};">
           <div class="sede-top">
             <div>
               <div class="sede-title">{{ s.codigo }} - {{ s.nombre }}</div>
               <div class="sede-sub">{{ s.direccion }} - {{ s.ciudad }}</div>
+              <span class="sede-fuero">{{ s.fuero if s.fuero else 'Sin fuero' }}</span>
               <span class="sede-alerta {{ s.idx_class }}">{{ semaforo }}</span>
             </div>
             <span class="sede-chip {{ s.idx_class }}">{{ s.idx_general if s.idx_general is not none else '-' }}%</span>

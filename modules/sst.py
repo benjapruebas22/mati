@@ -3597,7 +3597,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             sedes_cards = []
             if _table_exists(con, "sedes_mpd"):
                 rows_sedes = con.execute("""
-                    SELECT codigo, nombre, ciudad, direccion
+                    SELECT codigo, nombre, ciudad, direccion, fuero
                     FROM sedes_mpd
                     WHERE TRIM(COALESCE(codigo,'')) <> ''
                     ORDER BY codigo
@@ -3784,6 +3784,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                         "nombre": _row_value(s, "nombre", "") or "",
                         "ciudad": _row_value(s, "ciudad", "") or "",
                         "direccion": _row_value(s, "direccion", "") or "",
+                        "fuero": _row_value(s, "fuero", "") or "",
                         "personal": _safe_int(_row_value(per_kpi, "personas", 0)),
                         "puestos": puestos_trabajo,
                         "depositos": depositos_kpi or 0,
@@ -3861,7 +3862,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             sst_estado=sst_estado,
             sst_estado_cls=sst_estado_cls,
             sst_etapa=sst_etapa,
-            sedes_cards=sedes_cards[:8],
+            sedes_cards=sedes_cards[:6],
             sedes_total=len(sedes_cards),
             obras_avance_pct=obras_avance_pct,
             obras_total=obras_total,
