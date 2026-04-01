@@ -114,19 +114,54 @@
     letter-spacing: .03em;
   }
 
+  .sedes-resumen {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .sedes-resumen .it {
+    border: 1px solid #dbe4f6;
+    border-radius: 10px;
+    background: #f8fbff;
+    padding: 6px 8px;
+    display: grid;
+    gap: 2px;
+  }
+  .sedes-resumen .it b {
+    font-size: 17px;
+    color: #123863;
+    line-height: 1;
+  }
+  .sedes-resumen .it span {
+    font-size: 10px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: #43648d;
+  }
+  .sedes-resumen .it.bad { background: #fff3f3; border-color: #f3caca; }
+  .sedes-resumen .it.warn { background: #fff9ef; border-color: #f5dcaa; }
+  .sedes-resumen .it.ok { background: #f0faf4; border-color: #bde8d0; }
+  .sedes-resumen .it.na { background: #f3f6fb; border-color: #dce4f1; }
+
   .sedes-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 6px;
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    gap: 9px;
   }
   .sede-card {
     border: 1px solid #e3ebf7;
+    border-left: 4px solid #cdd9ec;
     border-radius: 12px;
     background: #fbfdff;
-    padding: 7px;
+    padding: 8px;
     display: grid;
-    gap: 6px;
+    gap: 7px;
   }
+  .sede-card.ok { border-left-color: #5cbf87; background: linear-gradient(180deg, #fcfffd 0%, #f3fbf6 100%); }
+  .sede-card.warn { border-left-color: #d39a37; background: linear-gradient(180deg, #fffefb 0%, #fff8ee 100%); }
+  .sede-card.bad { border-left-color: #d85656; background: linear-gradient(180deg, #fffdfd 0%, #fff3f3 100%); }
+  .sede-card.na { border-left-color: #a6b3c8; background: linear-gradient(180deg, #ffffff 0%, #f5f7fb 100%); }
   .sede-top {
     display: flex;
     justify-content: space-between;
@@ -135,31 +170,82 @@
   }
   .sede-title {
     font-weight: 900;
-    color: #1d355f;
-    font-size: 11px;
+    color: #1a365f;
+    font-size: 12px;
+    line-height: 1.2;
   }
   .sede-sub {
     font-size: 10px;
     color: #5b6f88;
     font-weight: 700;
+    margin-top: 2px;
+    line-height: 1.25;
   }
   .sede-chip {
-    width: 42px;
-    height: 42px;
+    min-width: 58px;
+    height: 46px;
     display: grid;
     place-items: center;
-    border-radius: 999px;
-    font-size: 9px;
+    border-radius: 10px;
+    font-size: 11px;
     font-weight: 900;
     border: 1px solid transparent;
     text-transform: uppercase;
     text-align: center;
     line-height: 1;
+    padding: 2px 4px;
   }
   .sede-chip.ok { background: #edf9f3; color: #0f6b5a; border-color: #9edfcc; }
   .sede-chip.warn { background: #fff8ea; color: #9a5600; border-color: #f3d08c; }
   .sede-chip.bad { background: #fff1f1; color: #b42318; border-color: #f7c3c3; }
   .sede-chip.na { background: #f1f5f9; color: #475569; border-color: #d8e0ed; }
+  .sede-alerta {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    padding: 2px 7px;
+    font-size: 9px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    width: fit-content;
+  }
+  .sede-alerta.ok { background: #edf9f3; color: #0f6b5a; border-color: #9edfcc; }
+  .sede-alerta.warn { background: #fff8ea; color: #9a5600; border-color: #f3d08c; }
+  .sede-alerta.bad { background: #fff1f1; color: #b42318; border-color: #f7c3c3; }
+  .sede-alerta.na { background: #f1f5f9; color: #475569; border-color: #d8e0ed; }
+  .sede-score {
+    display: grid;
+    gap: 4px;
+  }
+  .sede-score-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    font-size: 10px;
+    font-weight: 900;
+    color: #34567e;
+  }
+  .sede-score-bar {
+    height: 7px;
+    border-radius: 999px;
+    background: #e5edf8;
+    overflow: hidden;
+  }
+  .sede-score-bar span {
+    display: block;
+    height: 100%;
+    width: var(--pct, 0%);
+    background: var(--bar, #8cb8ef);
+    border-radius: 999px;
+  }
+  .sede-card.ok .sede-score-bar span { --bar: #56b682; }
+  .sede-card.warn .sede-score-bar span { --bar: #d6a14a; }
+  .sede-card.bad .sede-score-bar span { --bar: #d85f5f; }
+  .sede-card.na .sede-score-bar span { --bar: #9caac1; }
   .sede-meta {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -167,6 +253,31 @@
     font-size: 10px;
     color: #3b5a7e;
     font-weight: 700;
+  }
+  .sede-kpis {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .sede-kpi {
+    border: 1px solid #dfe7f4;
+    border-radius: 8px;
+    background: #ffffff;
+    padding: 5px 6px;
+    display: grid;
+    gap: 2px;
+  }
+  .sede-kpi span {
+    font-size: 9px;
+    font-weight: 900;
+    text-transform: uppercase;
+    color: #6481a4;
+    letter-spacing: .02em;
+  }
+  .sede-kpi b {
+    font-size: 12px;
+    color: #163b66;
+    line-height: 1;
   }
   .sede-actions {
     display: flex;
@@ -401,9 +512,13 @@
   @media (max-width: 720px) {
     .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .obras-grid { grid-template-columns: 1fr; }
+    .sedes-resumen { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .sede-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
   @media (max-width: 520px) {
     .kpi-grid { grid-template-columns: 1fr; }
+    .sedes-resumen { grid-template-columns: 1fr; }
+    .sede-kpis { grid-template-columns: 1fr; }
   }
 </style>
 
@@ -458,23 +573,78 @@
       <h2>Sedes (prioridad)</h2>
       <a class="exec-btn" href="{{ url_for('sede_ficha', codigo='S01', home=1) }}">Ver todas las sedes ({{ sedes_total }})</a>
     </div>
+    {% set ns = namespace(ok=0, warn=0, bad=0, na=0) %}
+    {% for s in sedes_cards %}
+      {% if s.idx_class == 'bad' %}
+        {% set ns.bad = ns.bad + 1 %}
+      {% elif s.idx_class == 'warn' %}
+        {% set ns.warn = ns.warn + 1 %}
+      {% elif s.idx_class == 'ok' %}
+        {% set ns.ok = ns.ok + 1 %}
+      {% else %}
+        {% set ns.na = ns.na + 1 %}
+      {% endif %}
+    {% endfor %}
+    <div class="sedes-resumen">
+      <div class="it bad"><span>Criticas</span><b>{{ ns.bad }}</b></div>
+      <div class="it warn"><span>En atencion</span><b>{{ ns.warn }}</b></div>
+      <div class="it ok"><span>Estables</span><b>{{ ns.ok }}</b></div>
+      <div class="it na"><span>Sin indice</span><b>{{ ns.na }}</b></div>
+    </div>
     <div class="sedes-grid">
       {% for s in sedes_cards %}
-        <article class="sede-card">
+        {% set semaforo = 'Sin dato' %}
+        {% if s.idx_class == 'bad' %}
+          {% set semaforo = 'Critica' %}
+        {% elif s.idx_class == 'warn' %}
+          {% set semaforo = 'Atencion' %}
+        {% elif s.idx_class == 'ok' %}
+          {% set semaforo = 'Estable' %}
+        {% endif %}
+        {% set score = s.idx_general if s.idx_general is not none else 0 %}
+        <article class="sede-card {{ s.idx_class }}">
           <div class="sede-top">
             <div>
               <div class="sede-title">{{ s.codigo }} - {{ s.nombre }}</div>
               <div class="sede-sub">{{ s.direccion }} - {{ s.ciudad }}</div>
+              <span class="sede-alerta {{ s.idx_class }}">{{ semaforo }}</span>
             </div>
             <span class="sede-chip {{ s.idx_class }}">{{ s.idx_general if s.idx_general is not none else '-' }}%</span>
           </div>
-          <div class="sede-meta">
-            <span>Personal: {{ s.personal }}</span>
-            <span>Puestos: {{ s.puestos }}</span>
-            <span>Depositos: {{ s.depositos }}</span>
-            <span>Ocupacion: {{ s.ocupacion_pct if s.ocupacion_pct is not none else '-' }}%</span>
-            <span>Ocupacion m2/p: {{ s.m2pp if s.m2pp is not none else '-' }}</span>
-            <span>Densidad: {{ s.ppo if s.ppo is not none else '-' }}</span>
+          <div class="sede-score">
+            <div class="sede-score-line">
+              <span>Indice general de sede</span>
+              <strong>{{ s.idx_general if s.idx_general is not none else '-' }}%</strong>
+            </div>
+            <div class="sede-score-bar" style="--pct: {{ score }}%;">
+              <span></span>
+            </div>
+          </div>
+          <div class="sede-kpis">
+            <div class="sede-kpi">
+              <span>Personal</span>
+              <b>{{ s.personal }}</b>
+            </div>
+            <div class="sede-kpi">
+              <span>Puestos</span>
+              <b>{{ s.puestos }}</b>
+            </div>
+            <div class="sede-kpi">
+              <span>Depositos</span>
+              <b>{{ s.depositos }}</b>
+            </div>
+            <div class="sede-kpi">
+              <span>Ocupacion</span>
+              <b>{{ s.ocupacion_pct if s.ocupacion_pct is not none else '-' }}%</b>
+            </div>
+            <div class="sede-kpi">
+              <span>m2 por persona</span>
+              <b>{{ s.m2pp if s.m2pp is not none else '-' }}</b>
+            </div>
+            <div class="sede-kpi">
+              <span>Densidad</span>
+              <b>{{ s.ppo if s.ppo is not none else '-' }}</b>
+            </div>
           </div>
           <div class="sede-actions">
             <a href="{{ url_for('sede_ficha', codigo=s.codigo, home=1) }}">Ver detalle</a>
