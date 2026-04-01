@@ -1,0 +1,377 @@
+{% extends "base.html" %}
+{% block content %}
+<section style="max-width:960px;margin:auto;display:grid;gap:14px">
+  <style>
+    .drv-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      background: #fff;
+      padding: 14px;
+      box-shadow: 0 6px 16px rgba(15, 23, 42, .06);
+    }
+    .drv-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .drv-label {
+      font-size: 12px;
+      color: #64748b;
+      margin: 0 0 6px 0;
+      display: block;
+    }
+    .drv-input,
+    .drv-select {
+      width: 100%;
+      border: 1px solid #dbe3ef;
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 14px;
+      background: #fff;
+      box-sizing: border-box;
+    }
+    .drv-input[readonly] {
+      background: #f8fafc;
+    }
+    .drv-alert {
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .drv-alert.warn {
+      background: #fff7ed;
+      color: #9a3412;
+      border: 1px solid #fdba74;
+    }
+    .drv-alert.info {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #93c5fd;
+    }
+    .drv-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .drv-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid #93c5fd;
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-weight: 800;
+      font-size: 12px;
+      border-radius: 999px;
+      padding: 4px 10px;
+    }
+    .drv-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .drv-btn {
+      border-radius: 999px;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      color: #0f172a;
+      font-weight: 800;
+      font-size: 13px;
+      padding: 10px 16px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .drv-btn.sm {
+      font-size: 12px;
+      padding: 8px 12px;
+    }
+    .drv-btn.primary {
+      background: #0f172a;
+      color: #fff;
+      border-color: #0f172a;
+    }
+    .drv-btn.success {
+      background: #166534;
+      color: #fff;
+      border-color: #166534;
+    }
+    .drv-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, .55);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .drv-modal.show {
+      display: flex;
+    }
+    .drv-modal-box {
+      width: 100%;
+      max-width: 420px;
+      border-radius: 14px;
+      border: 1px solid #e5e7eb;
+      background: #fff;
+      padding: 14px;
+      box-shadow: 0 20px 44px rgba(15, 23, 42, .24);
+    }
+    @media (max-width: 800px) {
+      .drv-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+
+  <header class="drv-card">
+    <div class="drv-row">
+      <div>
+        <h2 style="margin:0 0 4px 0">Viajes de chofer</h2>
+        <p style="margin:0;color:#64748b;font-size:13px">
+          Flujo QR para iniciar y finalizar viajes de camionetas.
+        </p>
+      </div>
+      <span class="drv-pill">Chofer: {{ chofer_nombre }}</span>
+    </div>
+  </header>
+
+  <div class="drv-card">
+    <form method="get" class="drv-grid" style="align-items:end">
+      <div>
+        <label class="drv-label">Camioneta</label>
+        {% if patente_seleccionada %}
+        <input class="drv-input" value="{{ patente_seleccionada }}" readonly>
+        <input type="hidden" name="patente" value="{{ patente_seleccionada }}">
+        {% else %}
+        <select class="drv-select" name="patente" required>
+          <option value="">-- seleccionar camioneta --</option>
+          {% for v in vehiculos %}
+          <option value="{{ v.patente }}">{{ v.codigo_interno or '-' }} - {{ v.patente }}</option>
+          {% endfor %}
+        </select>
+        {% endif %}
+      </div>
+      <div class="drv-actions">
+        {% if not patente_seleccionada %}
+        <button type="submit" class="drv-btn primary">Usar camioneta</button>
+        {% else %}
+        <a class="drv-btn" href="{{ url_for('vehiculos.viajes_chofer') }}">Cambiar camioneta</a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+
+  {% if viaje_abierto_chofer and (not viaje_abierto_actual or viaje_abierto_chofer.id != viaje_abierto_actual.id) %}
+  <div class="drv-alert info">
+    Tienes un viaje abierto en {{ viaje_abierto_chofer.patente }}.
+    <a href="{{ url_for('vehiculos.viajes_chofer', patente=viaje_abierto_chofer.patente) }}" style="color:inherit;text-decoration:underline">
+      Ir a finalizar
+    </a>
+  </div>
+  {% endif %}
+
+  {% if bloqueo_inicio %}
+  <div class="drv-alert warn">{{ bloqueo_inicio }}</div>
+  {% endif %}
+
+  {% if viaje_abierto_actual %}
+  <section class="drv-card">
+    <div class="drv-row" style="margin-bottom:10px">
+      <h3 style="margin:0">Viaje en curso</h3>
+      <span class="drv-pill">Camioneta {{ viaje_abierto_actual.patente }}</span>
+    </div>
+    <div class="drv-grid">
+      <div>
+        <span class="drv-label">KM inicial</span>
+        <input class="drv-input" value="{{ '%.1f'|format((viaje_abierto_actual.km_ini or 0)|float) }}" readonly>
+      </div>
+      <div>
+        <span class="drv-label">Destino</span>
+        <input class="drv-input" value="{{ viaje_abierto_actual.destino_nombre or '-' }}" readonly>
+      </div>
+      <div>
+        <span class="drv-label">Persona</span>
+        <input class="drv-input" value="{{ viaje_abierto_actual.personal_nombre or '-' }}" readonly>
+      </div>
+      <div>
+        <span class="drv-label">Fecha</span>
+        <input class="drv-input" value="{{ viaje_abierto_actual.fecha or '-' }}" readonly>
+      </div>
+    </div>
+    <div class="drv-actions" style="margin-top:12px">
+      <button type="button" class="drv-btn success" onclick="openFinishModal()">Finalizar viaje</button>
+    </div>
+  </section>
+  {% elif patente_seleccionada %}
+  <section class="drv-card">
+    <h3 style="margin:0 0 10px 0">Iniciar viaje</h3>
+    <form method="post" action="{{ url_for('vehiculos.viajes_chofer_iniciar') }}" class="drv-grid">
+      <input type="hidden" name="patente" value="{{ patente_seleccionada }}">
+
+      <div>
+        <label class="drv-label">Chofer</label>
+        <input class="drv-input" value="{{ chofer_nombre }}" readonly>
+      </div>
+      <div>
+        <label class="drv-label">KM inicial (ultimo cierre)</label>
+        <input type="hidden" id="kmIniReportedValue" name="km_ini_reportado_valor" value="">
+        <input
+          id="kmIniDisplay"
+          class="drv-input"
+          value="{{ '%.1f'|format(km_ini_sugerido|float) }}"
+          data-sugerido="{{ '%.1f'|format(km_ini_sugerido|float) }}"
+          readonly
+        >
+        <div class="drv-actions" style="margin-top:8px">
+          <button type="button" class="drv-btn sm" onclick="openKmReportModal()" {% if not can_start %}disabled{% endif %}>
+            Informar diferencia
+          </button>
+          <button type="button" class="drv-btn sm" onclick="resetKmReport()" {% if not can_start %}disabled{% endif %}>
+            Restablecer sugerido
+          </button>
+        </div>
+      </div>
+      <div>
+        <label class="drv-label">Persona trasladada</label>
+        <select class="drv-select" name="personal_id" required {% if not can_start %}disabled{% endif %}>
+          <option value="">-- seleccionar persona --</option>
+          {% for p in personal %}
+          <option value="{{ p.id }}">{{ p.nombre_apellido }} - {{ p.dependencia }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="drv-label">Destino</label>
+        <select class="drv-select" name="destino_id" required {% if not can_start %}disabled{% endif %}>
+          <option value="">-- seleccionar destino --</option>
+          {% for d in destinos %}
+          <option value="{{ d.id }}">{{ d.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="drv-actions" style="grid-column:1 / -1">
+        <button type="submit" class="drv-btn primary" {% if not can_start %}disabled{% endif %}>
+          Iniciar viaje
+        </button>
+      </div>
+    </form>
+  </section>
+  {% endif %}
+</section>
+
+{% if viaje_abierto_actual %}
+<div id="finishModal" class="drv-modal" aria-hidden="true">
+  <div class="drv-modal-box">
+    <h3 style="margin:0 0 8px 0">Finalizar viaje</h3>
+    <p style="margin:0 0 12px 0;color:#64748b;font-size:13px">
+      Ingresa los KM finales de la camioneta para cerrar el viaje.
+    </p>
+    <form method="post" action="{{ url_for('vehiculos.viajes_chofer_finalizar', viaje_id=viaje_abierto_actual.id) }}">
+      <label class="drv-label">KM final</label>
+      <input class="drv-input" type="number" step="0.1" min="0" name="km_fin" required autofocus>
+      <div class="drv-actions" style="margin-top:12px">
+        <button type="submit" class="drv-btn success">Confirmar cierre</button>
+        <button type="button" class="drv-btn" onclick="closeFinishModal()">Cancelar</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+{% if (not viaje_abierto_actual) and patente_seleccionada %}
+<div id="kmReportModal" class="drv-modal" aria-hidden="true">
+  <div class="drv-modal-box">
+    <h3 style="margin:0 0 8px 0">Informar KM real</h3>
+    <p style="margin:0 0 12px 0;color:#64748b;font-size:13px">
+      Ingresa los KM actuales de la camioneta para corregir el KM inicial de este viaje.
+    </p>
+    <label class="drv-label">KM actual de la camioneta</label>
+    <input id="kmActualInput" class="drv-input" type="number" step="0.1" min="0">
+    <div class="drv-actions" style="margin-top:12px">
+      <button type="button" class="drv-btn primary" onclick="applyKmReport()">Aplicar</button>
+      <button type="button" class="drv-btn" onclick="closeKmReportModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<script>
+  const finishModal = document.getElementById("finishModal");
+  function openFinishModal() {
+    if (!finishModal) return;
+    finishModal.classList.add("show");
+    finishModal.setAttribute("aria-hidden", "false");
+  }
+  function closeFinishModal() {
+    if (!finishModal) return;
+    finishModal.classList.remove("show");
+    finishModal.setAttribute("aria-hidden", "true");
+  }
+
+  const kmReportModal = document.getElementById("kmReportModal");
+  const kmActualInput = document.getElementById("kmActualInput");
+  const kmIniDisplay = document.getElementById("kmIniDisplay");
+  const kmIniReportedValue = document.getElementById("kmIniReportedValue");
+
+  function openKmReportModal() {
+    if (!kmReportModal) return;
+    if (kmActualInput && kmIniDisplay) {
+      kmActualInput.value = kmIniDisplay.value || "";
+      window.setTimeout(() => kmActualInput.focus(), 50);
+    }
+    kmReportModal.classList.add("show");
+    kmReportModal.setAttribute("aria-hidden", "false");
+  }
+
+  function closeKmReportModal() {
+    if (!kmReportModal) return;
+    kmReportModal.classList.remove("show");
+    kmReportModal.setAttribute("aria-hidden", "true");
+  }
+
+  function applyKmReport() {
+    if (!kmActualInput || !kmIniDisplay || !kmIniReportedValue) return;
+    const value = String(kmActualInput.value || "").trim();
+    const num = Number(value);
+    if (!value || Number.isNaN(num) || num < 0) {
+      alert("Ingresa un KM valido.");
+      return;
+    }
+    const normalized = num.toFixed(1);
+    kmIniDisplay.value = normalized;
+    kmIniReportedValue.value = normalized;
+    closeKmReportModal();
+  }
+
+  function resetKmReport() {
+    if (!kmIniDisplay || !kmIniReportedValue) return;
+    const sugerido = kmIniDisplay.dataset.sugerido || kmIniDisplay.defaultValue || "";
+    kmIniDisplay.value = sugerido;
+    kmIniReportedValue.value = "";
+  }
+
+  const closeOnBackdrop = (modal, closeFn) => {
+    if (!modal) return;
+    modal.addEventListener("click", (ev) => {
+      if (ev.target === modal) closeFn();
+    });
+  };
+
+  closeOnBackdrop(finishModal, closeFinishModal);
+  closeOnBackdrop(kmReportModal, closeKmReportModal);
+
+  window.addEventListener("keydown", (ev) => {
+    if (ev.key !== "Escape") return;
+    closeFinishModal();
+    closeKmReportModal();
+  });
+</script>
+{% endblock %}

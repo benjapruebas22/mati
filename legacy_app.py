@@ -1695,7 +1695,10 @@ def enforce_auth():
             pass
 
     if not session.get("user_id"):
-        return redirect(url_for("login", next=request.path))
+        next_url = request.full_path if request.query_string else request.path
+        if next_url.endswith("?"):
+            next_url = next_url[:-1]
+        return redirect(url_for("login", next=next_url))
 
     if session.get("must_change") and request.endpoint not in {"password_change", "auth.password_change"}:
         return redirect(url_for("password_change"))

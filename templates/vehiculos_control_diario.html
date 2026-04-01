@@ -69,6 +69,22 @@
     .km-check.km-high { background:#fff1f2; border-color:#fda4af; color:#be123c; }
     .km-check.km-low { background:#fffbeb; border-color:#fcd34d; color:#a16207; }
     .km-check.km-none { background:#f8fafc; border-color:#cbd5e1; color:#475569; }
+    .km-alert {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 2px;
+      padding: 1px 6px;
+      border-radius: 999px;
+      border: 1px solid #fdba74;
+      background: #fff7ed;
+      color: #9a3412;
+      font-size: 9px;
+      font-weight: 800;
+      line-height: 1.05;
+      white-space: nowrap;
+      cursor: help;
+    }
 
     @media (max-width: 1100px) {
       .vd-kpis { grid-template-columns:1fr 1fr; }
@@ -129,6 +145,13 @@
     .th-dif,
     .td-dif {
       text-align: center !important;
+    }
+    .th-km-ini,
+    .td-km-ini {
+      white-space: normal !important;
+      overflow: visible !important;
+      text-overflow: clip !important;
+      line-height: 1.15;
     }
     .col-text {
       white-space: normal !important;
@@ -582,7 +605,7 @@
           <th style="padding:10px;border-bottom:1px solid #e5e7eb">Fecha</th>
           <th style="padding:10px;border-bottom:1px solid #e5e7eb">Vehículo</th>
           <th style="padding:10px;border-bottom:1px solid #e5e7eb">Chofer</th>
-          <th style="padding:10px;border-bottom:1px solid #e5e7eb">KM inicial</th>
+          <th class="th-km-ini" style="padding:10px;border-bottom:1px solid #e5e7eb">KM inicial</th>
           <th style="padding:10px;border-bottom:1px solid #e5e7eb">KM final</th>
           <th class="th-dif" style="padding:10px;border-bottom:1px solid #e5e7eb">Dif Km</th>
           {% if show_km_razonable %}
@@ -614,7 +637,20 @@
             <span class="chofer-txt">{{ v.chofer_nombre or "-" }}</span>
           </td>
 
-          <td style="padding:10px;border-bottom:1px solid #eef2f7">{{ v.km_ini or 0 }}</td>
+          <td class="td-km-ini" style="padding:10px;border-bottom:1px solid #eef2f7">
+            <div style="display:grid;gap:4px;justify-items:start">
+              <span>{{ v.km_ini or 0 }}</span>
+            {% if (v.km_ini_informado or 0)|int == 1 %}
+              {% set km_orig_txt = ('%.1f'|format(v.km_ini_original|float)) if v.km_ini_original is not none else '-' %}
+              <span
+                class="km-alert"
+                title="KM inicial informado. Sugerido: {{ km_orig_txt }}. Chofer viaje anterior: {{ v.km_ini_prev_chofer_nombre or 'Sin dato' }}. Fecha informe: {{ v.km_ini_informe_en or '-' }}"
+              >
+                ! KM inf.
+              </span>
+            {% endif %}
+            </div>
+          </td>
           <td style="padding:10px;border-bottom:1px solid #eef2f7">{{ v.km_fin or 0 }}</td>
 
           <td class="td-dif" style="padding:10px;border-bottom:1px solid #eef2f7;font-weight:800;color:#0f172a;background:#eef2ff">
@@ -713,7 +749,18 @@
       </div>
 
       <div class="vd-card-grid">
-        <div>KM ini: <strong>{{ v.km_ini or 0 }}</strong></div>
+        <div>
+          KM ini: <strong>{{ v.km_ini or 0 }}</strong>
+          {% if (v.km_ini_informado or 0)|int == 1 %}
+            {% set km_orig_txt = ('%.1f'|format(v.km_ini_original|float)) if v.km_ini_original is not none else '-' %}
+            <span
+              class="km-alert"
+              title="KM inicial informado. Sugerido: {{ km_orig_txt }}. Chofer viaje anterior: {{ v.km_ini_prev_chofer_nombre or 'Sin dato' }}. Fecha informe: {{ v.km_ini_informe_en or '-' }}"
+            >
+              ! KM inf.
+            </span>
+          {% endif %}
+        </div>
         <div>KM fin: <strong>{{ v.km_fin or 0 }}</strong></div>
         <div>Dif: <strong>{{ v.recorrido_km or 0 }}</strong></div>
         {% if show_km_razonable %}

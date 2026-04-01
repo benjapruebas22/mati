@@ -1,18 +1,29 @@
+import io
 import unicodedata
 from datetime import date, datetime
 
-from flask import request, redirect, url_for, flash, render_template, session
+import qrcode
+from flask import request, redirect, url_for, flash, render_template, session, send_file
 
 from . import bp
 
 
 def register_vehiculos_control(bp, get_db_connection, ensure_cols, rebuild_eventos_vehiculos):
     ROLE_CHOFER_AUTORIZADO = "chofer_autorizado"
+    ROLE_CHOFER_INTENDENCIA = "chofer_intendencia"
+    CHOFER_ROLES = {ROLE_CHOFER_AUTORIZADO, ROLE_CHOFER_INTENDENCIA}
+    DRIVER_FLOW_EXTRA_ROLES = {"full", "admin", "int_vehiculos"}
 
     def _ensure_viajes_operativo_cols(conn):
         ensure_cols(conn, "viajes", [
             ("hora_salida", "TEXT"),
             ("hora_regreso_estimada", "TEXT"),
+            ("km_ini_informado", "INTEGER DEFAULT 0"),
+            ("km_ini_original", "REAL"),
+            ("km_ini_informe_en", "TEXT"),
+            ("km_ini_informe_por", "INTEGER"),
+            ("km_ini_prev_viaje_id", "INTEGER"),
+            ("km_ini_prev_chofer_id", "INTEGER"),
         ])
         conn.commit()
 
@@ -21,6 +32,135 @@ def register_vehiculos_control(bp, get_db_connection, ensure_cols, rebuild_event
         txt = unicodedata.normalize("NFKD", txt)
         txt = "".join(ch for ch in txt if not unicodedata.combining(ch))
         return " ".join(txt.split())
+
+    def _is_driver_role():
+        return (session.get("role") or "").strip() in CHOFER_ROLES
+
+    def _can_access_driver_flow():
+        role = (session.get("role") or "").strip()
+        return role in CHOFER_ROLES or role in DRIVER_FLOW_EXTRA_ROLES
+
+    def _is_open_state(value):
+        val = _normalize_text(value or "").replace("_", " ")
+        return val in {"abierto", "en curso"}
+
+    def _parse_float_local(value):
+        txt = str(value or "").strip()
+        if not txt:
+            return None
+        txt = txt.replace(",", ".")
+        try:
+            return float(txt)
+        except Exception:
+            return None
+
+    def _open_estado_sql(alias):
+        return f"UPPER(REPLACE(TRIM(COALESCE({alias}.estado,'')), '_', ' ')) IN ('ABIERTO', 'EN CURSO')"
+
+    def _get_open_trip_by_patente(conn, patente):
+        p = str(patente or "").strip().upper()
+        if not p:
+            return None
+        return conn.execute(
+            f"""
+            SELECT
+                vc.id,
+                vc.fecha,
+                vc.patente,
+                vc.chofer_id,
+                vc.personal_id,
+                vc.destino_id,
+                vc.km_ini,
+                vc.km_fin,
+                vc.estado,
+                v.codigo_interno,
+                c.agente AS chofer_nombre,
+                ps.nombre_apellido AS personal_nombre,
+                d.nombre AS destino_nombre
+            FROM viajes vc
+            LEFT JOIN vehiculos v ON v.patente = vc.patente
+            LEFT JOIN agentes_intendencia c ON c.id = vc.chofer_id
+            LEFT JOIN personal_sede ps ON ps.id = vc.personal_id
+            LEFT JOIN destinos d ON d.id = vc.destino_id
+            WHERE UPPER(TRIM(vc.patente)) = ?
+              AND {_open_estado_sql("vc")}
+            ORDER BY date(vc.fecha) DESC, vc.id DESC
+            LIMIT 1
+            """,
+            (p,),
+        ).fetchone()
+
+    def _get_open_trip_by_chofer(conn, chofer_id):
+        if not chofer_id:
+            return None
+        return conn.execute(
+            f"""
+            SELECT
+                vc.id,
+                vc.fecha,
+                vc.patente,
+                vc.chofer_id,
+                vc.personal_id,
+                vc.destino_id,
+                vc.km_ini,
+                vc.km_fin,
+                vc.estado,
+                v.codigo_interno,
+                c.agente AS chofer_nombre,
+                ps.nombre_apellido AS personal_nombre,
+                d.nombre AS destino_nombre
+            FROM viajes vc
+            LEFT JOIN vehiculos v ON v.patente = vc.patente
+            LEFT JOIN agentes_intendencia c ON c.id = vc.chofer_id
+            LEFT JOIN personal_sede ps ON ps.id = vc.personal_id
+            LEFT JOIN destinos d ON d.id = vc.destino_id
+            WHERE vc.chofer_id = ?
+              AND {_open_estado_sql("vc")}
+            ORDER BY date(vc.fecha) DESC, vc.id DESC
+            LIMIT 1
+            """,
+            (chofer_id,),
+        ).fetchone()
+
+    def _get_km_ini_from_last_closed(conn, patente):
+        p = str(patente or "").strip().upper()
+        if not p:
+            return 0.0
+        row = conn.execute(
+            """
+            SELECT km_fin, km_ini
+            FROM viajes
+            WHERE UPPER(TRIM(patente)) = ?
+              AND UPPER(REPLACE(TRIM(COALESCE(estado,'')), '_', ' ')) = 'CERRADO'
+            ORDER BY date(fecha) DESC, id DESC
+            LIMIT 1
+            """,
+            (p,),
+        ).fetchone()
+        if not row:
+            return 0.0
+        km_fin = _parse_float_local(row["km_fin"])
+        if km_fin is not None and km_fin >= 0:
+            return km_fin
+        km_ini = _parse_float_local(row["km_ini"])
+        if km_ini is not None and km_ini >= 0:
+            return km_ini
+        return 0.0
+
+    def _get_last_trip_before_current(conn, patente):
+        p = str(patente or "").strip().upper()
+        if not p:
+            return None
+        return conn.execute(
+            """
+            SELECT id, chofer_id
+            FROM viajes
+            WHERE UPPER(TRIM(patente)) = ?
+            ORDER BY date(fecha) DESC, id DESC
+            LIMIT 1
+            """,
+            (p,),
+        ).fetchone()
 
     def _find_chofer_id_by_name(chofer_rows, *candidates):
         normalized_candidates = [_normalize_text(c) for c in candidates if str(c or "").strip()]
@@ -66,7 +206,7 @@ def register_vehiculos_control(bp, get_db_connection, ensure_cols, rebuild_event
 
     def _deny_if_not_owner(conn, viaje_id):
         role = session.get("role") or ""
-        if role != ROLE_CHOFER_AUTORIZADO:
+        if role not in CHOFER_ROLES:
             return None
         user_cid = _current_user_chofer_id(conn)
         user_name = (session.get("full_name") or session.get("username") or "").strip()
@@ -106,7 +246,7 @@ def register_vehiculos_control(bp, get_db_connection, ensure_cols, rebuild_event
 
     @bp.route("/vehiculos/viaje/<int:viaje_id>/eliminar", methods=["POST"], endpoint="viaje_eliminar")
     def viaje_eliminar(viaje_id):
-        if (session.get("role") or "") == ROLE_CHOFER_AUTORIZADO:
+        if _is_driver_role():
             return redirect(url_for("access_denied"))
         conn = get_db_connection()
 
@@ -182,12 +322,466 @@ def register_vehiculos_control(bp, get_db_connection, ensure_cols, rebuild_event
         flash("Cierre manual deshabilitado: usa Editar y completa KM final.", "info")
         return redirect(url_for("viaje_editar", viaje_id=viaje_id, fecha=viaje["fecha"]))
 
-    @bp.route("/vehiculos/control_diario", methods=["GET", "POST"], endpoint="vehiculos_control_diario")
-    def vehiculos_control_diario():
+    @bp.route("/vehiculos/viajes/chofer", methods=["GET"], endpoint="viajes_chofer")
+    def viajes_chofer():
+        if not _can_access_driver_flow():
+            return redirect(url_for("access_denied"))
+
         conn = get_db_connection()
         _ensure_viajes_operativo_cols(conn)
+
+        user_chofer_id = _current_user_chofer_id(conn)
+        if not user_chofer_id:
+            conn.close()
+            return redirect(url_for("access_denied"))
+
+        chofer_row = conn.execute(
+            "SELECT id, agente FROM agentes_intendencia WHERE id = ?",
+            (user_chofer_id,),
+        ).fetchone()
+        chofer_nombre = (
+            (chofer_row["agente"] if chofer_row else "")
+            or (session.get("full_name") or session.get("username") or "")
+        ).strip()
+
+        vehiculos_rows = conn.execute(
+            """
+            SELECT patente, codigo_interno
+            FROM vehiculos
+            WHERE COALESCE(activo,1)=1
+            ORDER BY codigo_interno, patente
+            """
+        ).fetchall()
+        vehiculos = [dict(v) for v in vehiculos_rows]
+
+        personal_rows = conn.execute(
+            """
+            SELECT
+                id,
+                nombre_apellido,
+                dependencia,
+                COALESCE(NULLIF(TRIM(sede_texto),''), codigo_sede, '') AS sede
+            FROM personal_sede
+            WHERE COALESCE(activo,1)=1
+            ORDER BY nombre_apellido
+            """
+        ).fetchall()
+        personal = [dict(p) for p in personal_rows]
+
+        destinos_rows = conn.execute(
+            """
+            SELECT id, nombre
+            FROM destinos
+            WHERE COALESCE(activo,1)=1
+            ORDER BY nombre
+            """
+        ).fetchall()
+        destinos = [dict(d) for d in destinos_rows]
+
+        patentes_activas = {str(v["patente"] or "").strip().upper() for v in vehiculos}
+        patente = (request.args.get("patente") or "").strip().upper()
+        if patente and patente not in patentes_activas:
+            flash("La camioneta seleccionada no esta activa.", "warning")
+            patente = ""
+
+        viaje_abierto_chofer = _get_open_trip_by_chofer(conn, user_chofer_id)
+        viaje_abierto_chofer = dict(viaje_abierto_chofer) if viaje_abierto_chofer else None
+
+        if not patente and viaje_abierto_chofer:
+            patente = str(viaje_abierto_chofer.get("patente") or "").strip().upper()
+
+        viaje_abierto_patente = _get_open_trip_by_patente(conn, patente) if patente else None
+        viaje_abierto_patente = dict(viaje_abierto_patente) if viaje_abierto_patente else None
+
+        viaje_abierto_actual = None
+        bloqueo_inicio = ""
+
+        if viaje_abierto_patente:
+            if str(viaje_abierto_patente.get("chofer_id") or "") == str(user_chofer_id):
+                viaje_abierto_actual = viaje_abierto_patente
+            else:
+                chofer_ocupado = (viaje_abierto_patente.get("chofer_nombre") or "otro chofer").strip()
+                bloqueo_inicio = f"La camioneta {patente} ya esta ocupada por {chofer_ocupado}."
+
+        if not bloqueo_inicio and viaje_abierto_chofer:
+            patente_abierta = str(viaje_abierto_chofer.get("patente") or "").strip().upper()
+            if patente and patente_abierta and patente_abierta != patente:
+                bloqueo_inicio = f"Tenes un viaje abierto en {patente_abierta}. Finalizalo para iniciar otro."
+
+        km_ini_sugerido = 0.0
+        if viaje_abierto_actual:
+            km_ini_sugerido = _parse_float_local(viaje_abierto_actual.get("km_ini")) or 0.0
+        elif patente:
+            km_ini_sugerido = _get_km_ini_from_last_closed(conn, patente)
+
+        can_start = bool(patente) and not viaje_abierto_actual and not bloqueo_inicio
+
+        conn.close()
+        return render_template(
+            "vehiculos_viaje_chofer.html",
+            chofer_id=user_chofer_id,
+            chofer_nombre=chofer_nombre,
+            vehiculos=vehiculos,
+            personal=personal,
+            destinos=destinos,
+            patente_seleccionada=patente,
+            km_ini_sugerido=km_ini_sugerido,
+            bloqueo_inicio=bloqueo_inicio,
+            can_start=can_start,
+            viaje_abierto_actual=viaje_abierto_actual,
+            viaje_abierto_chofer=viaje_abierto_chofer,
+        )
+
+    @bp.route("/vehiculos/viajes/chofer/iniciar", methods=["POST"], endpoint="viajes_chofer_iniciar")
+    def viajes_chofer_iniciar():
+        if not _can_access_driver_flow():
+            return redirect(url_for("access_denied"))
+
+        patente = (request.form.get("patente") or "").strip().upper()
+        personal_id_txt = (request.form.get("personal_id") or "").strip()
+        destino_id_txt = (request.form.get("destino_id") or "").strip()
+
+        conn = get_db_connection()
+        _ensure_viajes_operativo_cols(conn)
+
+        user_chofer_id = _current_user_chofer_id(conn)
+        if not user_chofer_id:
+            conn.close()
+            return redirect(url_for("access_denied"))
+
+        if not patente:
+            conn.close()
+            flash("Selecciona una camioneta para iniciar el viaje.", "warning")
+            return redirect(url_for("vehiculos.viajes_chofer"))
+
+        vehiculo = conn.execute(
+            """
+            SELECT patente, codigo_interno
+            FROM vehiculos
+            WHERE UPPER(TRIM(patente)) = ?
+              AND COALESCE(activo,1)=1
+            LIMIT 1
+            """,
+            (patente,),
+        ).fetchone()
+        if not vehiculo:
+            conn.close()
+            flash("La camioneta seleccionada no esta activa.", "warning")
+            return redirect(url_for("vehiculos.viajes_chofer"))
+
+        if not personal_id_txt or not destino_id_txt:
+            conn.close()
+            flash("Debes seleccionar persona y destino.", "warning")
+            return redirect(url_for("vehiculos.viajes_chofer", patente=patente))
+
+        try:
+            personal_id = int(personal_id_txt)
+            destino_id = int(destino_id_txt)
+        except Exception:
+            conn.close()
+            flash("Persona o destino invalido.", "warning")
+            return redirect(url_for("vehiculos.viajes_chofer", patente=patente))
+
+        personal_row = conn.execute(
+            """
+            SELECT
+                id,
+                dependencia,
+                COALESCE(NULLIF(TRIM(sede_texto),''), codigo_sede, '') AS sede
+            FROM personal_sede
+            WHERE id = ?
+              AND COALESCE(activo,1)=1
+            LIMIT 1
+            """,
+            (personal_id,),
+        ).fetchone()
+        if not personal_row:
+            conn.close()
+            flash("La persona seleccionada no esta disponible.", "warning")
+            return redirect(url_for("vehiculos.viajes_chofer", patente=patente))
+
+        destino_row = conn.execute(
+            """
+            SELECT id
+            FROM destinos
+            WHERE id = ?
+              AND COALESCE(activo,1)=1
+            LIMIT 1
+            """,
+            (destino_id,),
+        ).fetchone()
+        if not destino_row:
+            conn.close()
+            flash("El destino seleccionado no esta disponible.", "warning")
+            return redirect(url_for("vehiculos.viajes_chofer", patente=patente))
+
+        abierto_patente = _get_open_trip_by_patente(conn, patente)
+        if abierto_patente:
+            abierto_patente = dict(abierto_patente)
+            if str(abierto_patente.get("chofer_id") or "") == str(user_chofer_id):
+                flash("Ya tienes un viaje abierto con esta camioneta.", "warning")
+            else:
+                chofer_ocupado = (abierto_patente.get("chofer_nombre") or "otro chofer").strip()
+                flash(f"La camioneta {patente} esta ocupada por {chofer_ocupado}.", "warning")
+            conn.close()
+            return redirect(url_for("vehiculos.viajes_chofer", patente=patente))
+
+        abierto_chofer = _get_open_trip_by_chofer(conn, user_chofer_id)
+        if abierto_chofer:
+            abierto_chofer = dict(abierto_chofer)
+            patente_abierta = str(abierto_chofer.get("patente") or "").strip().upper()
+            conn.close()
+            flash(f"Ya tienes un viaje abierto en {patente_abierta}. Finalizalo primero.", "warning")
+            return redirect(url_for("vehiculos.viajes_chofer", patente=patente_abierta or patente))
+
+        km_ini_sugerido = _get_km_ini_from_last_closed(conn, patente)
+        km_ini = km_ini_sugerido
+        km_ini_informado = 0
+        km_ini_original = None
+        km_ini_informe_en = None
+        km_ini_informe_por = None
+        km_ini_prev_viaje_id = None
+        km_ini_prev_chofer_id = None
+
+        km_ini_reportado_txt = (request.form.get("km_ini_reportado_valor") or "").strip()
+        if km_ini_reportado_txt:
+            km_ini_reportado = _parse_float_local(km_ini_reportado_txt)
+            if km_ini_reportado is None or km_ini_reportado < 0:
+                conn.close()
+                flash("KM informado invalido.", "warning")
+                return redirect(url_for("vehiculos.viajes_chofer", patente=patente))
+            km_ini = km_ini_reportado
+            if abs(km_ini_reportado - (km_ini_sugerido or 0.0)) > 0.0001:
+                prev_trip = _get_last_trip_before_current(conn, patente)
+                km_ini_informado = 1
+                km_ini_original = km_ini_sugerido
+                km_ini_informe_en = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                km_ini_informe_por = user_chofer_id
+                km_ini_prev_viaje_id = prev_trip["id"] if prev_trip else None
+                km_ini_prev_chofer_id = prev_trip["chofer_id"] if prev_trip else None
+
+        fecha = date.today().strftime("%Y-%m-%d")
+
+        row_tramo = conn.execute(
+            """
+            SELECT MAX(tramo) AS t
+            FROM viajes
+            WHERE fecha = ? AND patente = ?
+            """,
+            (fecha, patente),
+        ).fetchone()
+        ultimo_tramo = row_tramo["t"] if row_tramo and row_tramo["t"] is not None else 0
+        tramo = int(ultimo_tramo) + 1
+
+        dependencia = personal_row["dependencia"] or ""
+        sector = personal_row["sede"] or ""
+        obs = (request.form.get("observaciones") or "").strip()
+
+        conn.execute(
+            """
+            INSERT INTO viajes
+            (fecha, patente, chofer_id, destino_id,
+             personal_id, sector, dependencia,
+             km_ini, km_fin, recorrido_km,
+             observaciones, estado, tramo,
+             hora_salida, hora_regreso_estimada,
+             km_ini_informado, km_ini_original,
+             km_ini_informe_en, km_ini_informe_por,
+             km_ini_prev_viaje_id, km_ini_prev_chofer_id)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                fecha,
+                patente,
+                user_chofer_id,
+                destino_id,
+                personal_id,
+                sector,
+                dependencia,
+                km_ini,
+                None,
+                0.0,
+                obs,
+                "ABIERTO",
+                tramo,
+                datetime.now().strftime("%H:%M"),
+                "",
+                km_ini_informado,
+                km_ini_original,
+                km_ini_informe_en,
+                km_ini_informe_por,
+                km_ini_prev_viaje_id,
+                km_ini_prev_chofer_id,
+            ),
+        )
+
+        conn.commit()
+        conn.close()
+        rebuild_eventos_vehiculos()
+
+        flash("Viaje iniciado.", "success")
+        return redirect(url_for("vehiculos.viajes_chofer", patente=patente))
+
+    @bp.route(
+        "/vehiculos/viajes/chofer/<int:viaje_id>/finalizar",
+        methods=["POST"],
+        endpoint="viajes_chofer_finalizar",
+    )
+    def viajes_chofer_finalizar(viaje_id):
+        if not _can_access_driver_flow():
+            return redirect(url_for("access_denied"))
+
+        conn = get_db_connection()
+        _ensure_viajes_operativo_cols(conn)
+
+        deny = _deny_if_not_owner(conn, viaje_id)
+        if deny:
+            conn.close()
+            return deny
+
+        viaje = conn.execute(
+            """
+            SELECT
+                vc.id,
+                vc.fecha,
+                vc.patente,
+                vc.chofer_id,
+                vc.km_ini,
+                vc.estado,
+                v.codigo_interno
+            FROM viajes vc
+            LEFT JOIN vehiculos v ON v.patente = vc.patente
+            WHERE vc.id = ?
+            """,
+            (viaje_id,),
+        ).fetchone()
+        if not viaje:
+            conn.close()
+            flash("Viaje no encontrado.", "error")
+            return redirect(url_for("vehiculos.viajes_chofer"))
+
+        patente = str(viaje["patente"] or "").strip().upper()
+        if not _is_open_state(viaje["estado"]):
+            conn.close()
+            flash("El viaje ya se encuentra cerrado.", "info")
+            return redirect(url_for("vehiculos.viajes_chofer", patente=patente))
+
+        km_fin = _parse_float_local(request.form.get("km_fin") or "")
+        if km_fin is None or km_fin <= 0:
+            conn.close()
+            flash("KM final obligatorio.", "error")
+            return redirect(url_for("vehiculos.viajes_chofer", patente=patente))
+
+        km_ini = _parse_float_local(viaje["km_ini"]) or 0.0
+        if km_fin < km_ini:
+            conn.close()
+            flash("KM final no puede ser menor que KM inicial.", "error")
+            return redirect(url_for("vehiculos.viajes_chofer", patente=patente))
+
+        recorrido = km_fin - km_ini
+        conn.execute(
+            """
+            UPDATE viajes
+            SET km_fin = ?, recorrido_km = ?, estado = 'CERRADO'
+            WHERE id = ?
+            """,
+            (km_fin, recorrido, viaje_id),
+        )
+        conn.commit()
+        conn.close()
+        rebuild_eventos_vehiculos()
+
+        flash(f"Viaje finalizado. Dif KM: {recorrido:.1f}", "success")
+        return redirect(url_for("vehiculos.viajes_chofer", patente=patente))
+
+    @bp.route("/vehiculos/qr", methods=["GET"], endpoint="vehiculos_qr")
+    def vehiculos_qr():
+        if _is_driver_role():
+            return redirect(url_for("access_denied"))
+
+        conn = get_db_connection()
+        vehiculos_rows = conn.execute(
+            """
+            SELECT patente, codigo_interno
+            FROM vehiculos
+            WHERE COALESCE(activo,1)=1
+            ORDER BY codigo_interno, patente
+            """
+        ).fetchall()
+        conn.close()
+
+        qr_items = []
+        for row in vehiculos_rows:
+            patente = str(row["patente"] or "").strip().upper()
+            if not patente:
+                continue
+            qr_items.append(
+                {
+                    "patente": patente,
+                    "codigo_interno": row["codigo_interno"] or "-",
+                    "target_url": url_for("vehiculos.viajes_chofer", patente=patente, _external=True),
+                    "qr_png_url": url_for("vehiculos.vehiculos_qr_png", patente=patente),
+                }
+            )
+
+        return render_template("vehiculos_qr.html", qr_items=qr_items)
+
+    @bp.route("/vehiculos/qr/<patente>.png", methods=["GET"], endpoint="vehiculos_qr_png")
+    def vehiculos_qr_png(patente):
+        if _is_driver_role():
+            return redirect(url_for("access_denied"))
+
+        patente_norm = str(patente or "").strip().upper()
+        conn = get_db_connection()
+        row = conn.execute(
+            """
+            SELECT patente
+            FROM vehiculos
+            WHERE UPPER(TRIM(patente)) = ?
+              AND COALESCE(activo,1)=1
+            LIMIT 1
+            """,
+            (patente_norm,),
+        ).fetchone()
+        conn.close()
+
+        if not row:
+            flash("La camioneta solicitada no existe o no esta activa.", "warning")
+            return redirect(url_for("vehiculos.vehiculos_qr"))
+
+        target_url = url_for("vehiculos.viajes_chofer", patente=patente_norm, _external=True)
+        qr = qrcode.QRCode(
+            version=2,
+            error_correction=qrcode.constants.ERROR_CORRECT_M,
+            box_size=8,
+            border=2,
+        )
+        qr.add_data(target_url)
+        qr.make(fit=True)
+        image = qr.make_image(fill_color="black", back_color="white")
+
+        stream = io.BytesIO()
+        image.save(stream, format="PNG")
+        stream.seek(0)
+        return send_file(
+            stream,
+            mimetype="image/png",
+            as_attachment=False,
+            download_name=f"qr_{patente_norm}.png",
+        )
+
+    @bp.route("/vehiculos/control_diario", methods=["GET", "POST"], endpoint="vehiculos_control_diario")
+    def vehiculos_control_diario():
         role = session.get("role") or ""
-        is_autorizado = role == ROLE_CHOFER_AUTORIZADO
+        if role in CHOFER_ROLES:
+            patente_redirect = (request.values.get("patente") or "").strip().upper()
+            if patente_redirect:
+                return redirect(url_for("vehiculos.viajes_chofer", patente=patente_redirect))
+            return redirect(url_for("vehiculos.viajes_chofer"))
+
+        conn = get_db_connection()
+        _ensure_viajes_operativo_cols(conn)
+        is_autorizado = role in CHOFER_ROLES
 
         fecha_param = (request.args.get("fecha") or date.today().strftime("%Y-%m-%d")).strip()
 
@@ -363,10 +957,16 @@ def register_vehiculos_control(bp, get_db_connection, ensure_cols, rebuild_event
                 d.nombre AS destino_nombre,
                 vc.km_ini, vc.km_fin,
                 COALESCE(vc.recorrido_km, 0) AS recorrido_km,
-                vc.estado, vc.tramo
+                vc.estado, vc.tramo,
+                COALESCE(vc.km_ini_informado, 0) AS km_ini_informado,
+                vc.km_ini_original,
+                vc.km_ini_informe_en,
+                vc.km_ini_prev_chofer_id,
+                cprev.agente AS km_ini_prev_chofer_nombre
             FROM viajes vc
             LEFT JOIN vehiculos v ON v.patente = vc.patente
             LEFT JOIN agentes_intendencia c ON c.id = vc.chofer_id
+            LEFT JOIN agentes_intendencia cprev ON cprev.id = vc.km_ini_prev_chofer_id
             LEFT JOIN personal_sede ps ON ps.id = vc.personal_id
             LEFT JOIN destinos d ON d.id = vc.destino_id
         """
