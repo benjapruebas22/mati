@@ -622,28 +622,16 @@
           </div>
           <div class="sede-kpis">
             <div class="sede-kpi">
-              <span>Personal</span>
+              <span>Personas</span>
               <b>{{ s.personal }}</b>
             </div>
             <div class="sede-kpi">
-              <span>Puestos</span>
-              <b>{{ s.puestos }}</b>
-            </div>
-            <div class="sede-kpi">
-              <span>Depositos</span>
-              <b>{{ s.depositos }}</b>
+              <span>M2</span>
+              <b>{{ s.m2pp if s.m2pp is not none else '-' }}</b>
             </div>
             <div class="sede-kpi">
               <span>Ocupacion</span>
               <b>{{ s.ocupacion_pct if s.ocupacion_pct is not none else '-' }}%</b>
-            </div>
-            <div class="sede-kpi">
-              <span>m2 por persona</span>
-              <b>{{ s.m2pp if s.m2pp is not none else '-' }}</b>
-            </div>
-            <div class="sede-kpi">
-              <span>Densidad</span>
-              <b>{{ s.ppo if s.ppo is not none else '-' }}</b>
             </div>
           </div>
           <div class="sede-actions">
