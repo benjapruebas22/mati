@@ -60,6 +60,7 @@ NVD_CHAT_TEAM_FULLNAMES = {
     "nestor guerrero",
     "manuel flores",
 }
+NVD_TAREA_GENERAL_LABEL = "Equipo operativo"
 NVD_HERRAMIENTAS_PRESET = [
     "Hidrolavadora",
     "Cortadora de pasto",
@@ -193,6 +194,20 @@ def _is_tarea_chat_team_actor(actor):
     norm_user = _norm_ci(actor.get("username") or "")
     norm_name = _norm_ci(actor.get("full_name") or actor.get("display") or "")
     return (norm_user in NVD_CHAT_TEAM_USERNAMES) or (norm_name in NVD_CHAT_TEAM_FULLNAMES)
+
+
+def _is_tarea_general_target(raw_name):
+    norm = _norm_ci(raw_name)
+    return norm in {
+        "",
+        "equipo operativo",
+        "equipo",
+        "general",
+        "todos",
+        "varios",
+        "grupo",
+        "cuadrilla",
+    }
 
 
 def _session_actor():
@@ -458,7 +473,13 @@ def register_novedades(bp, get_db):
                 if not _actor_can_view_novedad(actor, r):
                     continue
                 tarea_agente = (_row_value(r, "tarea_agente", "") or "").strip()
+                is_general = _is_tarea_general_target(tarea_agente)
                 if not _actor_match_name(actor, tarea_agente):
+                    if not (is_general and _is_tarea_chat_team_actor(actor)):
+                        continue
+                if is_general:
+                    tarea_agente = NVD_TAREA_GENERAL_LABEL
+                if not tarea_agente:
                     continue
                 by_user = _row_value(r, "tarea_asignado_por_username", "") or ""
                 by_name = _row_value(r, "tarea_asignado_por", "") or ""
@@ -490,6 +511,7 @@ def register_novedades(bp, get_db):
         tipo = (_row_value(row, "tipo", "") or "").strip()
         agente = (_row_value(row, "agente", "") or "").strip()
         tarea_agente = (_row_value(row, "tarea_agente", "") or "").strip()
+        tarea_general = _is_tarea_general_target(tarea_agente)
         tarea_herramientas = _parse_tarea_herramientas(_row_value(row, "tarea_herramientas_json", "") or "")
         tarea_herramientas_resumen = _herramientas_resumen(tarea_herramientas)
         es_privada = _is_private_novedad_row(row)
@@ -502,6 +524,15 @@ def register_novedades(bp, get_db):
             and _actor_can_view_gestion(actor, agente, tarea_agente, tipo)
         )
         es_matias = bool(actor.get("is_matias"))
+        is_team_actor = _is_tarea_chat_team_actor(actor)
+        can_autoassign = bool(
+            puede_ver_novedad
+            and not es_privada
+            and _norm_ci(tipo) == _norm_ci(NVD_TIPO_TAREA)
+            and is_team_actor
+            and bool((_row_value(row, "tarea_asignada", "") or "").strip())
+            and tarea_general
+        )
         puede_gestionar_tarea = bool(
             puede_ver_novedad and (_can_admin_novedades(actor) or (es_privada and es_duenio_privada))
         )
@@ -538,7 +569,8 @@ def register_novedades(bp, get_db):
             "tarea_sede_codigo": (_row_value(row, "tarea_sede_codigo", "") or "").strip().upper(),
             "tarea_deposito_codigo": (_row_value(row, "tarea_deposito_codigo", "") or "").strip().upper(),
             "tarea_deposito_nombre": (_row_value(row, "tarea_deposito_nombre", "") or "").strip(),
-            "tarea_agente": tarea_agente,
+            "tarea_agente": (NVD_TAREA_GENERAL_LABEL if tarea_general else tarea_agente),
+            "tarea_general": tarea_general,
             "tarea_herramientas": tarea_herramientas,
             "tarea_herramientas_resumen": tarea_herramientas_resumen,
             "tarea_asignado_por": (_row_value(row, "tarea_asignado_por", "") or "").strip(),
@@ -558,6 +590,7 @@ def register_novedades(bp, get_db):
             "puede_cambiar_estado": (puede_gestionar_tarea if gestion_habilitada else True),
             "puede_cerrar": (puede_gestionar_tarea if gestion_habilitada else True),
             "puede_asignar_tarea": (puede_gestionar_tarea if gestion_habilitada else False),
+            "puede_autoasignar": can_autoassign,
         }
 
     def _novedades_resumen_visible(con, fecha_iso, actor):
@@ -763,7 +796,11 @@ def register_novedades(bp, get_db):
                     if not tiene_tarea:
                         continue
                     agente_obj = (it.get("tarea_agente") or it.get("agente") or "").strip()
-                    if _can_admin_novedades(actor) or _actor_match_name(actor, agente_obj):
+                    is_general = _is_tarea_general_target(agente_obj)
+                    if _can_admin_novedades(actor) or _actor_match_name(actor, agente_obj) or (is_general and _is_tarea_chat_team_actor(actor)):
+                        if is_general:
+                            it = dict(it)
+                            it["tarea_agente"] = NVD_TAREA_GENERAL_LABEL
                         tareas_asignadas.append(it)
                 else:
                     if _can_admin_novedades(actor) or _actor_match_name(actor, it.get("agente") or ""):
@@ -999,6 +1036,7 @@ def register_novedades(bp, get_db):
             return jsonify({"ok": False, "error": "No autorizado para crear tareas asignadas"}), 403
         fecha = (payload.get("fecha") or "").strip() or _safe_today()
         agente = (payload.get("agente") or payload.get("agente_asignado") or "").strip()
+        agente_norm = _norm_ci(agente)
         sede_codigo = (payload.get("sede_codigo") or "").strip().upper()
         deposito_codigo = (payload.get("deposito_codigo") or "").strip().upper()
         deposito_nombre = (payload.get("deposito_nombre") or "").strip()
@@ -1008,6 +1046,8 @@ def register_novedades(bp, get_db):
         privado_owner_nombre = (actor.get("display") or "").strip() if privado_flag else ""
         if privado_flag:
             agente = (actor.get("display") or actor.get("full_name") or actor.get("username") or "").strip()
+        elif agente_norm in {"__equipo__", "equipo operativo", "equipo", "general", "todos"}:
+            agente = NVD_TAREA_GENERAL_LABEL
         if len(tarea) > 280:
             tarea = tarea[:280]
         if not agente:
@@ -1347,6 +1387,7 @@ def register_novedades(bp, get_db):
             payload.get("herramientas") or payload.get("tarea_herramientas") or []
         )
         solo_herramientas = str(payload.get("solo_herramientas") or "").strip().lower() in {"1", "true", "si", "yes"}
+        auto_asignar = str(payload.get("auto_asignar") or "").strip().lower() in {"1", "true", "si", "yes"}
         limpiar = str(payload.get("limpiar") or "").strip().lower() in {"1", "true", "si", "yes"}
         if len(tarea) > 280:
             tarea = tarea[:280]
@@ -1376,22 +1417,43 @@ def register_novedades(bp, get_db):
                 con.close()
                 return jsonify({"ok": False, "error": "La novedad no tiene gestion interna"}), 400
             can_tools_only = bool(item.get("puede_ver_gestion")) and bool((item.get("tarea_asignada") or "").strip())
+            can_autoassign = bool(item.get("puede_autoasignar"))
+            preserve_assignador = False
             if solo_herramientas:
                 if not can_tools_only:
                     con.close()
                     return jsonify({"ok": False, "error": "No autorizado para actualizar herramientas"}), 403
                 limpiar = False
+                preserve_assignador = True
                 tarea = (item.get("tarea_asignada") or "").strip()
                 tarea_estado = (item.get("tarea_estado") or "").strip() or "Pendiente"
                 tarea_sede_codigo = (item.get("tarea_sede_codigo") or item.get("sede_codigo") or "").strip().upper()
                 tarea_agente = (item.get("tarea_agente") or item.get("agente") or "").strip()
                 tarea_deposito_codigo = (item.get("tarea_deposito_codigo") or "").strip().upper()
                 tarea_deposito_nombre = (item.get("tarea_deposito_nombre") or "").strip()
+            elif auto_asignar:
+                if not can_autoassign:
+                    con.close()
+                    return jsonify({"ok": False, "error": "No autorizado para autoasignarte esta tarea"}), 403
+                limpiar = False
+                preserve_assignador = True
+                tarea = (item.get("tarea_asignada") or "").strip()
+                if not tarea:
+                    con.close()
+                    return jsonify({"ok": False, "error": "La tarea no tiene contenido para autoasignar"}), 400
+                tarea_estado = (item.get("tarea_estado") or "").strip() or "Pendiente"
+                tarea_sede_codigo = (item.get("tarea_sede_codigo") or item.get("sede_codigo") or "").strip().upper()
+                tarea_deposito_codigo = (item.get("tarea_deposito_codigo") or "").strip().upper()
+                tarea_deposito_nombre = (item.get("tarea_deposito_nombre") or "").strip()
+                tarea_herramientas = _parse_tarea_herramientas(item.get("tarea_herramientas") or [])
+                tarea_agente = (actor.get("display") or actor.get("full_name") or actor.get("username") or "").strip()
             elif not bool(item.get("puede_asignar_tarea")):
                 con.close()
                 return jsonify({"ok": False, "error": "No autorizado para editar tarea"}), 403
             es_privada_propia = _actor_can_manage_private_novedad(actor, row)
             if not limpiar and not solo_herramientas:
+                if _norm_ci(tarea_agente) in {"__equipo__", "equipo operativo", "equipo", "general", "todos"}:
+                    tarea_agente = NVD_TAREA_GENERAL_LABEL
                 if not tarea_sede_codigo:
                     tarea_sede_codigo = (item.get("sede_codigo") or "").strip().upper()
                 if es_privada_propia:
@@ -1442,9 +1504,9 @@ def register_novedades(bp, get_db):
                 tarea_deposito_nombre,
                 tarea_agente,
                 _dump_tarea_herramientas(tarea_herramientas),
-                ((item.get("tarea_asignado_por") or "") if solo_herramientas else ((actor.get("display") or actor.get("username") or "Sistema") if tarea else "")),
-                ((item.get("tarea_asignado_por_username") or "") if solo_herramientas else ((actor.get("username") or "") if tarea else "")),
-                ((item.get("tarea_asignado_en") or "") if solo_herramientas else (ts if not limpiar else "")),
+                ((item.get("tarea_asignado_por") or "") if preserve_assignador else ((actor.get("display") or actor.get("username") or "Sistema") if tarea else "")),
+                ((item.get("tarea_asignado_por_username") or "") if preserve_assignador else ((actor.get("username") or "") if tarea else "")),
+                ((item.get("tarea_asignado_en") or "") if preserve_assignador else (ts if not limpiar else "")),
                 ts,
                 ts,
                 nov_id,
@@ -1459,6 +1521,11 @@ def register_novedades(bp, get_db):
                         msg = f"{actor_name} actualizo herramientas de la tarea: {tools_txt}."
                     else:
                         msg = f"{actor_name} limpio el listado de herramientas de la tarea."
+                elif auto_asignar:
+                    msg = (
+                        f"{actor_name} se autoasigno la tarea: {tarea} "
+                        f"(Sede {sede_txt} / Deposito {dep_txt} / Estado {tarea_estado})."
+                    )
                 else:
                     msg = (
                         f"{actor_name} asigno tarea a {tarea_agente}: {tarea} "
@@ -1489,6 +1556,7 @@ def register_novedades(bp, get_db):
             "herramientas": tarea_herramientas,
             "herramientas_resumen": _herramientas_resumen(tarea_herramientas),
             "solo_herramientas": solo_herramientas,
+            "auto_asignar": auto_asignar,
         })
 
     @bp.route("/api/dashboard/turnos_choferes_cfg_save", methods=["POST"], endpoint="api_dashboard_turnos_choferes_cfg_save")

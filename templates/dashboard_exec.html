@@ -765,9 +765,10 @@
     border: 1px solid #d8e3f4;
     border-radius: 14px;
     box-shadow: 0 20px 36px rgba(17, 36, 69, 0.2);
-    display: grid;
-    grid-template-rows: auto auto auto 1fr auto;
-    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
   .gestion-head {
     display: flex;
@@ -898,7 +899,7 @@
     background: linear-gradient(180deg, #fbfdff 0%, #f8fbff 100%);
     padding: 10px;
     overflow: auto;
-    min-height: 220px;
+    min-height: 140px;
     max-height: 360px;
     display: grid;
     gap: 8px;
@@ -1407,6 +1408,7 @@
         <select id="gestionTareaEstado" class="ctl-sel"></select>
       </div>
       <button id="gestionTareaGuardar" type="button" class="btn-inline">Guardar tarea</button>
+      <button id="gestionAutoasignar" type="button" class="btn-inline" style="display:none;">Autoasignarme</button>
       <button id="gestionTareaLimpiar" type="button" class="btn-inline">Limpiar</button>
     </div>
     <div id="gestionToolsTitle" class="gestion-section-title" style="display:none;">Herramientas y equipos</div>
@@ -1463,6 +1465,8 @@
     var GESTION_OPEN_ID = 0;
     var GESTION_DATA = null;
     var GESTION_HERRAMIENTAS = [];
+    var TAREA_AGENTE_GENERAL_VALUE = "__equipo__";
+    var TAREA_AGENTE_GENERAL_LABEL = "Equipo operativo";
     var SEDES_ASSIGN = [];
     var AGENTES_ASSIGN = [];
     var AGENTES_PERMITIDOS = [
@@ -1582,6 +1586,7 @@
       gestionTareaAgente: document.getElementById("gestionTareaAgente"),
       gestionTareaDeposito: document.getElementById("gestionTareaDeposito"),
       gestionTareaGuardar: document.getElementById("gestionTareaGuardar"),
+      gestionAutoasignar: document.getElementById("gestionAutoasignar"),
       gestionTareaLimpiar: document.getElementById("gestionTareaLimpiar"),
       gestionTareaView: document.getElementById("gestionTareaView"),
       gestionToolsRow: document.getElementById("gestionToolsRow"),
@@ -1845,6 +1850,21 @@
       }
       if (el.estado) el.estado.value = "Informado";
       if (isTask) {
+        if (CAN_EDIT_AGENTE && !isPrivateTaskOwner() && el.agente) {
+          var hasGeneral = false;
+          for (var i = 0; i < el.agente.options.length; i += 1) {
+            if (String(el.agente.options[i].value || "").trim() === TAREA_AGENTE_GENERAL_VALUE) {
+              hasGeneral = true;
+              break;
+            }
+          }
+          if (!hasGeneral) {
+            var op = document.createElement("option");
+            op.value = TAREA_AGENTE_GENERAL_VALUE;
+            op.textContent = TAREA_AGENTE_GENERAL_LABEL + " (autoasignable)";
+            el.agente.insertBefore(op, el.agente.firstChild);
+          }
+        }
         refreshFormDepositos("");
       }
     }
@@ -2164,10 +2184,10 @@
         el.gestionStatusTitle.style.display = nov.puede_cambiar_estado ? "block" : "none";
       }
       if (el.gestionTareaRow) {
-        el.gestionTareaRow.style.display = nov.puede_asignar_tarea ? "grid" : "none";
+        el.gestionTareaRow.style.display = (nov.puede_asignar_tarea || nov.puede_autoasignar) ? "grid" : "none";
       }
       if (el.gestionTareaTitle) {
-        el.gestionTareaTitle.style.display = nov.puede_asignar_tarea ? "block" : "none";
+        el.gestionTareaTitle.style.display = (nov.puede_asignar_tarea || nov.puede_autoasignar) ? "block" : "none";
       }
       var canToolsEdit = !!(nov.puede_asignar_tarea || (nov.puede_ver_gestion && nov.tarea_asignada));
       if (el.gestionToolsRow) {
@@ -2185,8 +2205,27 @@
       if (el.gestionTareaAgente) {
         var agentesRef = Array.isArray(p.agentes) && p.agentes.length ? p.agentes : AGENTES_ASSIGN;
         fillSelect(el.gestionTareaAgente, agentesRef, false);
+        if (nov.puede_asignar_tarea) {
+          var hasGeneralTask = false;
+          for (var gi = 0; gi < el.gestionTareaAgente.options.length; gi += 1) {
+            if (String(el.gestionTareaAgente.options[gi].value || "").trim() === TAREA_AGENTE_GENERAL_VALUE) {
+              hasGeneralTask = true;
+              break;
+            }
+          }
+          if (!hasGeneralTask) {
+            var gop = document.createElement("option");
+            gop.value = TAREA_AGENTE_GENERAL_VALUE;
+            gop.textContent = TAREA_AGENTE_GENERAL_LABEL + " (autoasignable)";
+            el.gestionTareaAgente.insertBefore(gop, el.gestionTareaAgente.firstChild);
+          }
+        }
         var agSel = String(nov.tarea_agente || nov.agente || "");
-        if (agSel) el.gestionTareaAgente.value = agSel;
+        if (normTxt(agSel) === normTxt(TAREA_AGENTE_GENERAL_LABEL)) {
+          el.gestionTareaAgente.value = TAREA_AGENTE_GENERAL_VALUE;
+        } else if (agSel) {
+          el.gestionTareaAgente.value = agSel;
+        }
       }
       if (el.gestionTareaSede) {
         var sedesRef = Array.isArray(p.sedes) && p.sedes.length ? p.sedes : SEDES_ASSIGN;
@@ -2270,6 +2309,17 @@
       if (el.gestionEnviar) el.gestionEnviar.disabled = !canReply;
       if (el.gestionTareaGuardar) el.gestionTareaGuardar.disabled = !nov.puede_asignar_tarea;
       if (el.gestionTareaLimpiar) el.gestionTareaLimpiar.disabled = !nov.puede_asignar_tarea;
+      if (el.gestionTareaGuardar) el.gestionTareaGuardar.style.display = nov.puede_asignar_tarea ? "" : "none";
+      if (el.gestionTareaLimpiar) el.gestionTareaLimpiar.style.display = nov.puede_asignar_tarea ? "" : "none";
+      if (el.gestionTareaAgente) el.gestionTareaAgente.disabled = !(nov.puede_asignar_tarea);
+      if (el.gestionTareaSede) el.gestionTareaSede.disabled = !(nov.puede_asignar_tarea);
+      if (el.gestionTareaDeposito) el.gestionTareaDeposito.disabled = !(nov.puede_asignar_tarea);
+      if (el.gestionTarea) el.gestionTarea.disabled = !(nov.puede_asignar_tarea);
+      if (el.gestionTareaEstado) el.gestionTareaEstado.disabled = !(nov.puede_asignar_tarea);
+      if (el.gestionAutoasignar) {
+        el.gestionAutoasignar.style.display = nov.puede_autoasignar ? "" : "none";
+        el.gestionAutoasignar.disabled = !nov.puede_autoasignar;
+      }
       if (el.gestionToolInput) el.gestionToolInput.disabled = !canToolsEdit;
       if (el.gestionToolAccion) el.gestionToolAccion.disabled = !canToolsEdit;
       if (el.gestionToolAdd) el.gestionToolAdd.disabled = !canToolsEdit;
@@ -2355,6 +2405,7 @@
       var tarea = String((el.gestionTarea && el.gestionTarea.value) || "").trim();
       var estado = String((el.gestionTareaEstado && el.gestionTareaEstado.value) || "Pendiente");
       var agente = String((el.gestionTareaAgente && el.gestionTareaAgente.value) || "").trim();
+      if (agente === TAREA_AGENTE_GENERAL_VALUE) agente = TAREA_AGENTE_GENERAL_VALUE;
       var sede = String((el.gestionTareaSede && el.gestionTareaSede.value) || "").trim().toUpperCase();
       var depositoCodigo = String((el.gestionTareaDeposito && el.gestionTareaDeposito.value) || "").trim().toUpperCase();
       var depositoNombre = "";
@@ -2401,6 +2452,25 @@
         })
         .catch(function (e) {
           setGestionMsg(e.message || "No se pudo guardar la tarea", true);
+        });
+    }
+
+    function autoasignarmeGestion() {
+      var novId = Number(GESTION_OPEN_ID || 0);
+      if (novId <= 0) return;
+      fetch("/api/dashboard/novedades_diarias_gestion/" + encodeURIComponent(String(novId)) + "/tarea", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ auto_asignar: true }),
+      })
+        .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, b: b || {} }; }); })
+        .then(function (x) {
+          if (!x.ok || !x.b.ok) throw new Error(x.b.error || "No se pudo autoasignar la tarea");
+          setGestionMsg("Te autoasignaste la tarea.", false);
+          return loadGestion(novId).then(function () { return loadDay(); });
+        })
+        .catch(function (e) {
+          setGestionMsg(e.message || "No se pudo autoasignar", true);
         });
     }
 
@@ -2592,7 +2662,7 @@
           privado: isPrivateTaskOwner(),
         };
         url = "/api/dashboard/tareas_asignadas_save";
-        if (!payload.fecha || !payload.agente || !payload.sede_codigo || !payload.tarea) {
+        if (!payload.fecha || !payload.sede_codigo || !payload.tarea) {
           setMsg("Completa fecha, agente asignado, sede y tarea.", true);
           return;
         }
@@ -2894,6 +2964,11 @@
     if (el.gestionTareaGuardar) {
       el.gestionTareaGuardar.addEventListener("click", function () {
         saveGestionTarea(false);
+      });
+    }
+    if (el.gestionAutoasignar) {
+      el.gestionAutoasignar.addEventListener("click", function () {
+        autoasignarmeGestion();
       });
     }
     if (el.gestionTareaSede) {
