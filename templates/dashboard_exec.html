@@ -2241,7 +2241,7 @@
       var show = !isTaskMode() && isCoffeeTipo(el.tipo ? el.tipo.value : "");
       var nodes = document.querySelectorAll(".mode-coffee");
       nodes.forEach(function (n) {
-        n.style.display = show ? "" : "none";
+        n.style.display = show ? "grid" : "none";
       });
       if (show && el.coffeeSedeDestino && el.sede && !el.coffeeSedeDestino.value) {
         el.coffeeSedeDestino.value = String(el.sede.value || "").trim().toUpperCase();
