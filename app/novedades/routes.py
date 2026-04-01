@@ -1090,7 +1090,7 @@ def register_novedades(bp, get_db):
                      tarea_agente, tarea_herramientas_json, tarea_asignado_por, tarea_asignado_por_username, tarea_asignado_en, tarea_actualizado_en,
                      privado_flag, privado_owner_username, privado_owner_nombre, creado_en, actualizado_en)
                 VALUES (?, ?, ?, ?, ?, ?, ?, 'Informado',
-                        ?, 'Pendiente', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        ?, 'Pendiente', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 fecha,
                 hora,
