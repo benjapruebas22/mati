@@ -1041,7 +1041,7 @@
     </div>
     <div class="sst-head-right">
       <div class="sst-fast-links">
-        <a class="btn outline-slate cu" href="{{ url_for('sst_cuadro_unico') }}">Estado general</a>
+        <a class="btn outline-slate cu" href="{{ url_for('sst_general') }}">Estado general</a>
         <a class="btn outline-slate ergo" href="{{ url_for('sst_ergonomia_panel') }}">Gestion de riesgos</a>
         <a class="btn outline-slate gantt" href="{{ url_for('sst_plan_gantt') }}">Cronograma SST</a>
         <a class="btn outline-slate sedes" href="{{ url_for('sede_ficha', codigo='S01', home=1) }}">Sedes</a>
@@ -1132,7 +1132,7 @@
     <p class="sst-section-label">Menu principal</p>
 
     <div class="sst-op-grid" aria-label="Accesos operativos">
-      <a class="sst-op-card primary" href="{{ url_for('sst_cuadro_unico') }}">
+      <a class="sst-op-card primary" href="{{ url_for('sst_visitas') }}">
         <div class="sst-op-top">
           <svg class="sst-op-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 21h18"></path><path d="M5 21V7l7-4 7 4v14"></path><path d="M9 21v-8h6v8"></path></svg>
           <p class="sst-op-title">Visitas a sedes</p>

@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+  .license-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .license-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .license-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
+    padding: 14px 16px;
+  }
+
+  .license-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .license-grid .full { grid-column: 1 / -1; }
+
+  .license-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .license-field label {
+    font-size: 12px;
+    color: #64748b;
+  }
+
+  .license-field input,
+  .license-field select,
+  .license-field textarea {
+    font-size: 13px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+  }
+
+  .license-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+
+  .hint {
+    font-size: 12px;
+    color: #64748b;
+    margin: 0;
+  }
+
+  .soft-note {
+    border-radius: 12px;
+    border: 1px solid #dbe4f2;
+    background: #f8fafc;
+    padding: 10px 12px;
+    color: #334155;
+    font-size: 12px;
+  }
+
+  @media (max-width: 720px) {
+    .license-grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<section class="license-shell">
+  <header class="license-head">
+    <div>
+      <h1 style="margin:0;">Subir formulario / documento SST</h1>
+      <p class="hint">Pegue enlace Drive o suba PDF/JPG/PNG. Puede asociarlo a una visita.</p>
+    </div>
+    <div class="license-actions" style="margin:0;">
+      <a class="btn" href="{{ url_for('sst_visitas') }}">Volver a sedes</a>
+      <a class="btn" href="{{ url_for('sst_general') }}">Volver a SG-SST</a>
+    </div>
+  </header>
+
+  <form class="license-card" method="post" enctype="multipart/form-data" action="{{ url_for('sst_doc_subir', sede=pre_sede or None, visita_id=pre_visita_id or None) }}">
+    <div class="soft-note" style="margin-bottom:12px;">
+      Recomendado: cargar <strong>DEC_351_79</strong> y <strong>RGRL</strong> por sede para que el semaforo quede completo.
+    </div>
+
+    <div class="license-grid">
+      <div class="license-field">
+        <label>Sede</label>
+        <select name="sede_codigo" required>
+          <option value="">Seleccione...</option>
+          {% for s in sedes %}
+          <option value="{{ s.codigo }}" {% if pre_sede and pre_sede == s.codigo %}selected{% endif %}>
+            {{ s.codigo }} - {{ s.nombre }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="license-field">
+        <label>Tipo de documento</label>
+        <select name="tipo" required>
+          <option value="">Seleccione...</option>
+          {% for t in tipos %}
+          <option value="{{ t }}">{{ t }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="license-field">
+        <label>Fecha del documento</label>
+        <input type="date" name="fecha_documento" />
+      </div>
+
+      <div class="license-field">
+        <label>Estado de revision</label>
+        <select name="estado_revision">
+          <option value="">(Opcional)</option>
+          {% for e in estados_revision %}
+          <option value="{{ e }}">{{ e|capitalize }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="license-field full">
+        <label>Visita asociada (ID)</label>
+        <input name="visita_id" value="{{ pre_visita_id or '' }}" placeholder="Opcional (ej: 12)" />
+      </div>
+
+      <div class="license-field full">
+        <label>Enlace Drive</label>
+        <input name="drive_url" placeholder="https://drive.google.com/..." />
+      </div>
+
+      <div class="license-field full">
+        <label>Archivo (PDF/JPG/PNG)</label>
+        <input type="file" name="archivo" />
+      </div>
+
+      <div class="license-field full">
+        <label>Notas</label>
+        <textarea name="notas" rows="3" placeholder="Recomendaciones, observaciones, etc."></textarea>
+      </div>
+    </div>
+
+    <div class="license-actions">
+      <button class="btn primary" type="submit">Guardar documento</button>
+    </div>
+  </form>
+</section>
+
+{% endblock %}
+

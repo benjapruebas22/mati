@@ -5,14 +5,26 @@ import csv
 import io
 import os
 import json
+import uuid
 
-from flask import render_template, request, redirect, url_for, flash, Response, jsonify, session
+from flask import render_template, request, redirect, url_for, flash, Response, jsonify, session, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 
 
 def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, ensure_auth_tables, default_redirect_for_role=None):
     default_redirect_for_role_fn = default_redirect_for_role if callable(default_redirect_for_role) else None
     CAL_COLORS = cal_colors
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    SST_DOCS_FOLDER = os.path.join(BASE_DIR, "uploads", "sst_documentacion")
+    os.makedirs(SST_DOCS_FOLDER, exist_ok=True)
+    ALLOWED_SST_DOC_EXT = {"pdf", "jpg", "jpeg", "png"}
+
+    def allowed_sst_doc(filename: str) -> bool:
+        if not filename or "." not in filename:
+            return False
+        ext = filename.rsplit(".", 1)[1].lower()
+        return ext in ALLOWED_SST_DOC_EXT
     SEDE_ESTADO_VARS = [
         "relevamiento",
         "obra_terminada",
@@ -90,6 +102,65 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             ("fecha_objetivo", "TEXT"),
             ("fecha_cierre", "TEXT"),
         ])
+        con.commit()
+
+    SST_VISITA_TIPOS = [
+        "ART",
+        "Interna",
+        "Seguimiento",
+        "Relevamiento inicial",
+    ]
+    SST_VISITA_ESTADOS = [
+        "SIN_OBS",
+        "CON_OBS",
+        "REQUIERE_CORRECCION",
+        "PEND_ANALISIS",
+    ]
+    SST_DOC_TIPOS = [
+        "DEC_351_79",
+        "RGRL",
+        "RAR",
+        "ACTA",
+        "FOTO",
+        "OTRO",
+    ]
+    SST_DOC_ESTADOS_REVISION = [
+        "PENDIENTE",
+        "REVISADO",
+    ]
+
+    def ensure_sst_visitas_docs_tables(con):
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS sst_visitas(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                sede_codigo TEXT NOT NULL,
+                fecha TEXT NOT NULL,
+                tipo_visita TEXT,
+                responsable TEXT,
+                estado TEXT,
+                observaciones TEXT,
+                creado_en TEXT DEFAULT (datetime('now'))
+            )
+        """)
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS sst_documentos(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                sede_codigo TEXT NOT NULL,
+                visita_id INTEGER,
+                tipo TEXT NOT NULL,
+                fecha_documento TEXT,
+                fecha_carga TEXT DEFAULT (date('now')),
+                archivo TEXT,
+                drive_url TEXT,
+                estado_revision TEXT,
+                notas TEXT,
+                creado_en TEXT DEFAULT (datetime('now')),
+                FOREIGN KEY(visita_id) REFERENCES sst_visitas(id)
+            )
+        """)
+        con.execute("CREATE INDEX IF NOT EXISTS idx_sst_visitas_sede_fecha ON sst_visitas(sede_codigo, fecha)")
+        con.execute("CREATE INDEX IF NOT EXISTS idx_sst_documentos_sede_tipo ON sst_documentos(sede_codigo, tipo)")
+        con.execute("CREATE INDEX IF NOT EXISTS idx_sst_documentos_visita ON sst_documentos(visita_id)")
         con.commit()
 
     def ensure_sst_plan_tables(con):
@@ -6088,6 +6159,368 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
     def sst_cuadro_unico():
         context = build_sst_plan_context(show_carga=False, sst_view="cuadro")
         return render_template("sst_plan.html", **context)
+
+    def _sst_fmt_fecha(s):
+        if not s:
+            return "—"
+        try:
+            if "-" in s and len(s) >= 10:
+                return f"{s[8:10]}/{s[5:7]}/{s[0:4]}"
+        except Exception:
+            pass
+        return s
+
+    def _sst_sede_estado_label(estado_code):
+        e = (estado_code or "").strip().upper()
+        if e == "SIN_OBS":
+            return "Sin obs."
+        if e == "CON_OBS":
+            return "Con obs."
+        if e == "REQUIERE_CORRECCION":
+            return "Requiere correccion"
+        if e == "PEND_ANALISIS":
+            return "Pend. analisis"
+        return estado_code or "—"
+
+    def _sst_calc_semaforo(has_visita, docs_ok, docs_pend, pend_hallazgos):
+        if not has_visita:
+            return ("danger", "Sin visita")
+        if not docs_ok:
+            return ("pending", "Docs pendientes")
+        if docs_pend:
+            return ("pending", "En revision")
+        if (pend_hallazgos or 0) > 0:
+            return ("pending", "En seguimiento")
+        return ("complete", "Al dia")
+
+    @app.route("/sst/visitas", methods=["GET"], endpoint="sst_visitas")
+    def sst_visitas():
+        con = get_db()
+        ensure_sst_visitas_docs_tables(con)
+        ensure_sst_general_table(con)
+
+        q = (request.args.get("q") or "").strip().lower()
+        q_estado = (request.args.get("estado") or "").strip().lower()
+
+        sedes_rows = con.execute("""
+            SELECT codigo, nombre
+            FROM sedes_mpd
+            ORDER BY codigo
+        """).fetchall()
+
+        last_visita = {}
+        for r in con.execute("""
+            SELECT id, sede_codigo, fecha, tipo_visita, responsable, estado, observaciones
+            FROM sst_visitas
+            ORDER BY fecha DESC, id DESC
+        """).fetchall():
+            sc = (r["sede_codigo"] or "").strip().upper()
+            if sc and sc not in last_visita:
+                last_visita[sc] = r
+
+        docs_latest = defaultdict(dict)  # docs_latest[sede][tipo] = row
+        for r in con.execute("""
+            SELECT id, sede_codigo, tipo, fecha_documento, fecha_carga, archivo, drive_url, estado_revision
+            FROM sst_documentos
+            ORDER BY COALESCE(fecha_documento, fecha_carga) DESC, id DESC
+        """).fetchall():
+            sc = (r["sede_codigo"] or "").strip().upper()
+            tp = (r["tipo"] or "").strip().upper()
+            if not sc or not tp:
+                continue
+            if tp not in docs_latest[sc]:
+                docs_latest[sc][tp] = r
+
+        pend_hallazgos = {}
+        for r in con.execute("""
+            SELECT sede_codigo, COUNT(*) AS cnt
+            FROM sst_general
+            WHERE tipo = 'no_conformidad'
+              AND COALESCE(estado,'') <> 'CERRADO'
+              AND sede_codigo IS NOT NULL
+              AND TRIM(COALESCE(sede_codigo,'')) <> ''
+            GROUP BY sede_codigo
+        """).fetchall():
+            pend_hallazgos[(r["sede_codigo"] or "").strip().upper()] = int(r["cnt"] or 0)
+
+        sedes = []
+        stats_total = 0
+        stats_sin_visita = 0
+        stats_docs_pend = 0
+        stats_en_seguimiento = 0
+
+        for s in sedes_rows:
+            codigo = (s["codigo"] or "").strip().upper()
+            nombre = (s["nombre"] or "").strip()
+            v = last_visita.get(codigo)
+            v_fecha = v["fecha"] if v else None
+            v_estado = v["estado"] if v else None
+
+            d351 = docs_latest.get(codigo, {}).get("DEC_351_79")
+            drgrl = docs_latest.get(codigo, {}).get("RGRL")
+            d351_ok = bool(d351 and (d351["drive_url"] or d351["archivo"]))
+            drgrl_ok = bool(drgrl and (drgrl["drive_url"] or drgrl["archivo"]))
+            docs_ok = d351_ok and drgrl_ok
+            docs_pend = False
+            if d351 and (str(d351["estado_revision"] or "").strip().upper() == "PENDIENTE"):
+                docs_pend = True
+            if drgrl and (str(drgrl["estado_revision"] or "").strip().upper() == "PENDIENTE"):
+                docs_pend = True
+
+            pend = int(pend_hallazgos.get(codigo, 0) or 0)
+            sem_cls, sem_label = _sst_calc_semaforo(bool(v), docs_ok, docs_pend, pend)
+
+            item = {
+                "codigo": codigo,
+                "nombre": nombre,
+                "ultima_visita": _sst_fmt_fecha(v_fecha),
+                "ultima_visita_estado": _sst_sede_estado_label(v_estado),
+                "doc_351": d351,
+                "doc_rgrl": drgrl,
+                "docs_ok": docs_ok,
+                "docs_pend": docs_pend,
+                "pend_hallazgos": pend,
+                "semaforo_cls": sem_cls,
+                "semaforo_label": sem_label,
+            }
+
+            hay_texto = f"{codigo} {nombre}".lower()
+            if q and q not in hay_texto:
+                continue
+            if q_estado and q_estado not in (sem_label or "").lower() and q_estado != sem_cls.lower():
+                continue
+
+            stats_total += 1
+            if not v:
+                stats_sin_visita += 1
+            if not docs_ok or docs_pend:
+                stats_docs_pend += 1
+            if pend > 0:
+                stats_en_seguimiento += 1
+
+            sedes.append(item)
+
+        con.close()
+
+        return render_template(
+            "sst_visitas.html",
+            sedes=sedes,
+            q=q,
+            q_estado=q_estado,
+            stats_total=stats_total,
+            stats_sin_visita=stats_sin_visita,
+            stats_docs_pend=stats_docs_pend,
+            stats_en_seguimiento=stats_en_seguimiento,
+        )
+
+    @app.route("/sst/visitas/cargar", methods=["GET", "POST"], endpoint="sst_visita_cargar")
+    def sst_visita_cargar():
+        con = get_db()
+        ensure_sst_visitas_docs_tables(con)
+
+        sedes = con.execute("""
+            SELECT codigo, nombre
+            FROM sedes_mpd
+            ORDER BY codigo
+        """).fetchall()
+
+        pre_sede = (request.args.get("sede") or "").strip().upper()
+        if request.method == "POST":
+            sede_codigo = (request.form.get("sede_codigo") or "").strip().upper()
+            fecha = (request.form.get("fecha") or "").strip()
+            tipo_visita = (request.form.get("tipo_visita") or "").strip()
+            responsable = (request.form.get("responsable") or "").strip()
+            estado = (request.form.get("estado") or "").strip()
+            observaciones = (request.form.get("observaciones") or "").strip()
+
+            if not sede_codigo or not fecha:
+                flash("Sede y fecha son obligatorios.", "error")
+                con.close()
+                return redirect(url_for("sst_visita_cargar", sede=pre_sede or None))
+
+            con.execute("""
+                INSERT INTO sst_visitas (sede_codigo, fecha, tipo_visita, responsable, estado, observaciones)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (
+                sede_codigo,
+                fecha,
+                (tipo_visita or None),
+                (responsable or None),
+                (estado or None),
+                (observaciones or None),
+            ))
+            con.commit()
+            con.close()
+            flash("Visita cargada.", "success")
+            return redirect(url_for("sst_sede_ficha", codigo=sede_codigo))
+
+        con.close()
+        return render_template(
+            "sst_visita_form.html",
+            sedes=sedes,
+            pre_sede=pre_sede,
+            tipos=SST_VISITA_TIPOS,
+            estados=SST_VISITA_ESTADOS,
+        )
+
+    @app.route("/sst/docs/subir", methods=["GET", "POST"], endpoint="sst_doc_subir")
+    def sst_doc_subir():
+        con = get_db()
+        ensure_sst_visitas_docs_tables(con)
+
+        sedes = con.execute("""
+            SELECT codigo, nombre
+            FROM sedes_mpd
+            ORDER BY codigo
+        """).fetchall()
+
+        pre_sede = (request.args.get("sede") or "").strip().upper()
+        pre_visita_id = (request.args.get("visita_id") or "").strip()
+
+        if request.method == "POST":
+            sede_codigo = (request.form.get("sede_codigo") or "").strip().upper()
+            visita_id_raw = (request.form.get("visita_id") or "").strip()
+            doc_tipo = (request.form.get("tipo") or "").strip().upper()
+            fecha_documento = (request.form.get("fecha_documento") or "").strip()
+            drive_url = (request.form.get("drive_url") or "").strip()
+            estado_revision = (request.form.get("estado_revision") or "").strip().upper()
+            notas = (request.form.get("notas") or "").strip()
+
+            visita_id = int(visita_id_raw) if visita_id_raw.isdigit() else None
+            archivo_name = None
+
+            file = request.files.get("archivo")
+            if file and getattr(file, "filename", ""):
+                if not allowed_sst_doc(file.filename):
+                    flash("Archivo no permitido. Use PDF/JPG/PNG.", "error")
+                    con.close()
+                    return redirect(url_for("sst_doc_subir", sede=pre_sede or None))
+                safe = secure_filename(file.filename)
+                unique = f"{sede_codigo}_{doc_tipo}_{uuid.uuid4().hex}_{safe}"
+                file.save(os.path.join(SST_DOCS_FOLDER, unique))
+                archivo_name = unique
+
+            if not sede_codigo or not doc_tipo:
+                flash("Sede y tipo de documento son obligatorios.", "error")
+                con.close()
+                return redirect(url_for("sst_doc_subir", sede=pre_sede or None))
+
+            if not drive_url and not archivo_name:
+                flash("Pegue un enlace Drive o suba un archivo.", "error")
+                con.close()
+                return redirect(url_for("sst_doc_subir", sede=pre_sede or None))
+
+            con.execute("""
+                INSERT INTO sst_documentos (
+                    sede_codigo, visita_id, tipo,
+                    fecha_documento, archivo, drive_url,
+                    estado_revision, notas
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                sede_codigo,
+                visita_id,
+                doc_tipo,
+                (fecha_documento or None),
+                archivo_name,
+                (drive_url or None),
+                (estado_revision or None),
+                (notas or None),
+            ))
+            con.commit()
+            con.close()
+            flash("Documento cargado.", "success")
+            return redirect(url_for("sst_sede_ficha", codigo=sede_codigo))
+
+        con.close()
+        return render_template(
+            "sst_doc_form.html",
+            sedes=sedes,
+            pre_sede=pre_sede,
+            pre_visita_id=pre_visita_id,
+            tipos=SST_DOC_TIPOS,
+            estados_revision=SST_DOC_ESTADOS_REVISION,
+        )
+
+    @app.route("/sst/docs/archivo/<path:filename>", methods=["GET"], endpoint="sst_doc_archivo")
+    def sst_doc_archivo(filename):
+        return send_from_directory(SST_DOCS_FOLDER, filename, as_attachment=False)
+
+    @app.route("/sst/sedes/<codigo>", methods=["GET"], endpoint="sst_sede_ficha")
+    def sst_sede_ficha(codigo):
+        codigo = (codigo or "").strip().upper()
+        con = get_db()
+        ensure_sst_visitas_docs_tables(con)
+        ensure_sst_general_table(con)
+
+        sede = con.execute("""
+            SELECT codigo, nombre
+            FROM sedes_mpd
+            WHERE codigo = ?
+        """, (codigo,)).fetchone()
+        if not sede:
+            con.close()
+            flash("Sede no encontrada.", "warning")
+            return redirect(url_for("sst_visitas"))
+
+        visitas = con.execute("""
+            SELECT id, fecha, tipo_visita, responsable, estado, observaciones
+            FROM sst_visitas
+            WHERE sede_codigo = ?
+            ORDER BY fecha DESC, id DESC
+        """, (codigo,)).fetchall()
+
+        docs = con.execute("""
+            SELECT id, tipo, fecha_documento, fecha_carga, archivo, drive_url, estado_revision, notas, visita_id
+            FROM sst_documentos
+            WHERE sede_codigo = ?
+            ORDER BY COALESCE(fecha_documento, fecha_carga) DESC, id DESC
+        """, (codigo,)).fetchall()
+
+        pend = con.execute("""
+            SELECT COUNT(*) AS cnt
+            FROM sst_general
+            WHERE tipo = 'no_conformidad'
+              AND COALESCE(estado,'') <> 'CERRADO'
+              AND sede_codigo = ?
+        """, (codigo,)).fetchone()
+        pend_hallazgos = int((pend["cnt"] if pend else 0) or 0)
+
+        last_v = visitas[0] if visitas else None
+        docs_map = {}
+        for d in docs:
+            tp = (d["tipo"] or "").strip().upper()
+            if tp and tp not in docs_map:
+                docs_map[tp] = d
+        d351 = docs_map.get("DEC_351_79")
+        drgrl = docs_map.get("RGRL")
+        d351_ok = bool(d351 and (d351["drive_url"] or d351["archivo"]))
+        drgrl_ok = bool(drgrl and (drgrl["drive_url"] or drgrl["archivo"]))
+        docs_ok = d351_ok and drgrl_ok
+        docs_pend = False
+        if d351 and (str(d351["estado_revision"] or "").strip().upper() == "PENDIENTE"):
+            docs_pend = True
+        if drgrl and (str(drgrl["estado_revision"] or "").strip().upper() == "PENDIENTE"):
+            docs_pend = True
+
+        sem_cls, sem_label = _sst_calc_semaforo(bool(last_v), docs_ok, docs_pend, pend_hallazgos)
+        con.close()
+
+        return render_template(
+            "sst_sede_ficha.html",
+            sede=sede,
+            visitas=visitas,
+            docs=docs,
+            pend_hallazgos=pend_hallazgos,
+            d351=d351,
+            drgrl=drgrl,
+            docs_ok=docs_ok,
+            docs_pend=docs_pend,
+            semaforo_cls=sem_cls,
+            semaforo_label=sem_label,
+            fmt_fecha=_sst_fmt_fecha,
+            fmt_estado_visita=_sst_sede_estado_label,
+        )
 
     @app.route("/sst/ergonomia", methods=["GET"], endpoint="sst_ergonomia_panel")
     def sst_ergonomia_panel():

@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+  .sst-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .sst-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .sst-head h1 {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.1;
+  }
+
+  .sst-sub {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: #64748b;
+  }
+
+  .sst-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
+    padding: 12px 14px;
+  }
+
+  .sst-grid2 {
+    display: grid;
+    grid-template-columns: 1.1fr .9fr;
+    gap: 12px;
+  }
+
+  .sede-summary {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .sede-summary::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: #cbd5e1;
+  }
+
+  .sede-summary.complete { background: #f2fbf6; border-color: #bfe8cf; }
+  .sede-summary.complete::before { background: #22c55e; }
+  .sede-summary.pending { background: #fff7ed; border-color: #fed7aa; }
+  .sede-summary.pending::before { background: #f59e0b; }
+  .sede-summary.danger { background: #fff1f2; border-color: #fecdd3; }
+  .sede-summary.danger::before { background: #ef4444; }
+
+  .sede-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .sede-id {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .sede-code {
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    border: 1px solid rgba(15, 23, 42, .08);
+    background: rgba(255, 255, 255, .7);
+    display: grid;
+    place-items: center;
+    font-weight: 900;
+    letter-spacing: .02em;
+  }
+
+  .sede-name {
+    font-weight: 900;
+    font-size: 15px;
+    color: #0f172a;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 520px;
+  }
+
+  .sst-chip {
+    display: inline-flex;
+    align-items: center;
+    height: 22px;
+    padding: 0 10px;
+    border-radius: 999px;
+    border: 1px solid #e5e7eb;
+    font-size: 11px;
+    font-weight: 900;
+    white-space: nowrap;
+    background: rgba(255, 255, 255, .7);
+  }
+  .sst-chip.complete { background: #eaf8ef; border-color: #9fe8b8; color: #166534; }
+  .sst-chip.pending { background: #fff7e9; border-color: #f3d08c; color: #92400e; }
+  .sst-chip.danger { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
+
+  .meta {
+    margin-top: 10px;
+    display: grid;
+    gap: 6px;
+    font-size: 12px;
+    color: #334155;
+  }
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .meta-k { font-weight: 900; color: #475569; }
+
+  .btn-soft {
+    background: rgba(255, 255, 255, .74);
+    border: 1px solid rgba(15, 23, 42, .12);
+    color: #0f172a;
+    text-decoration: none;
+    border-radius: 999px;
+    height: 30px;
+    padding: 0 10px;
+    font-size: 11px;
+    font-weight: 900;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .btn-soft:hover { background: rgba(255, 255, 255, .92); }
+
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .table th, .table td {
+    border-bottom: 1px solid #eef2f7;
+    padding: 8px 8px;
+    text-align: left;
+    font-size: 12px;
+    vertical-align: top;
+  }
+  .table th {
+    font-size: 11px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: .02em;
+  }
+  .table td small { color: #64748b; }
+
+  .sec-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+  }
+  .sec-title {
+    font-weight: 900;
+    color: #0f172a;
+    margin: 0;
+  }
+
+  @media (max-width: 980px) {
+    .sst-grid2 { grid-template-columns: 1fr; }
+    .sede-name { max-width: 320px; }
+  }
+</style>
+
+<section class="sst-shell">
+  <header class="sst-head">
+    <div>
+      <h1>Sede SST: {{ sede.codigo }} - {{ sede.nombre }}</h1>
+      <p class="sst-sub">
+        <a href="{{ url_for('sst_visitas') }}">Sedes SST</a>
+        &nbsp;·&nbsp;
+        <a href="{{ url_for('sst_general') }}">SG-SST</a>
+      </p>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+      <a class="btn-soft" href="{{ url_for('sst_visita_cargar', sede=sede.codigo) }}">+ Cargar visita</a>
+      <a class="btn-soft" href="{{ url_for('sst_doc_subir', sede=sede.codigo) }}">+ Subir documento</a>
+      <a class="btn-soft" href="{{ url_for('sst_general', view='operativa', sede=sede.codigo, tipo='no_conformidad') }}#sst-operativa-head">
+        Ver hallazgos ({{ pend_hallazgos or 0 }})
+      </a>
+    </div>
+  </header>
+
+  <div class="sst-grid2">
+    <div class="sst-card sede-summary {{ semaforo_cls }}">
+      <div class="sede-top">
+        <div class="sede-id">
+          <div class="sede-code">{{ sede.codigo }}</div>
+          <div style="min-width:0;">
+            <p class="sede-name" title="{{ sede.nombre }}">{{ sede.nombre }}</p>
+            <div style="margin-top:6px;">
+              <span class="sst-chip {{ semaforo_cls }}">{{ semaforo_label }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {% set last_v = (visitas[0] if visitas and visitas|length > 0 else None) %}
+      <div class="meta">
+        <div class="meta-row">
+          <span class="meta-k">Ultima visita</span>
+          <span>{% if last_v %}{{ fmt_fecha(last_v.fecha) }} · {{ fmt_estado_visita(last_v.estado) }}{% else %}—{% endif %}</span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-k">Docs ART</span>
+          <span>
+            351/79: {% if d351 %}{{ fmt_fecha(d351.fecha_documento or d351.fecha_carga) }}{% else %}—{% endif %}
+            &nbsp;·&nbsp;
+            RGRL: {% if drgrl %}{{ fmt_fecha(drgrl.fecha_documento or drgrl.fecha_carga) }}{% else %}—{% endif %}
+          </span>
+        </div>
+        <div class="meta-row">
+          <span class="meta-k">Hallazgos abiertos</span>
+          <span style="font-weight:900;">{{ pend_hallazgos or 0 }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sst-card">
+      <p class="sec-title" style="margin:0 0 8px;">Accesos rapidos</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <a class="btn-soft" href="{{ url_for('sst_visitas') }}">Volver a tarjetas</a>
+        <a class="btn-soft" href="{{ url_for('sst_general', panel='art') }}#sst-art-collapse">Panel ART</a>
+        <a class="btn-soft" href="{{ url_for('sst_plan_gantt') }}">Cronograma</a>
+        <a class="btn-soft" href="{{ url_for('sst_ergonomia_gestion_riesgo') }}">Riesgos</a>
+      </div>
+
+      <div style="margin-top:10px;">
+        <p class="sec-title" style="margin:0 0 6px;">Documentos clave</p>
+        <div class="meta" style="margin-top:0;">
+          <div class="meta-row">
+            <span class="meta-k">DEC_351_79</span>
+            <span>
+              {% if d351 %}
+                {% if d351.drive_url %}<a class="btn-soft" target="_blank" href="{{ d351.drive_url }}">Abrir</a>{% endif %}
+                {% if d351.archivo %}<a class="btn-soft" target="_blank" href="{{ url_for('sst_doc_archivo', filename=d351.archivo) }}">Ver archivo</a>{% endif %}
+              {% else %}—{% endif %}
+            </span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-k">RGRL</span>
+            <span>
+              {% if drgrl %}
+                {% if drgrl.drive_url %}<a class="btn-soft" target="_blank" href="{{ drgrl.drive_url }}">Abrir</a>{% endif %}
+                {% if drgrl.archivo %}<a class="btn-soft" target="_blank" href="{{ url_for('sst_doc_archivo', filename=drgrl.archivo) }}">Ver archivo</a>{% endif %}
+              {% else %}—{% endif %}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sst-card">
+    <div class="sec-head">
+      <p class="sec-title">Visitas</p>
+      <a class="btn-soft" href="{{ url_for('sst_visita_cargar', sede=sede.codigo) }}">+ Nueva visita</a>
+    </div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Tipo</th>
+          <th>Estado</th>
+          <th>Responsable</th>
+          <th>Obs.</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in visitas %}
+        <tr>
+          <td style="white-space:nowrap;">{{ fmt_fecha(v.fecha) }}</td>
+          <td>{{ v.tipo_visita or '-' }}</td>
+          <td>{{ fmt_estado_visita(v.estado) }}</td>
+          <td>{{ v.responsable or '-' }}</td>
+          <td>{{ v.observaciones or '-' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5"><small>Sin visitas cargadas.</small></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sst-card">
+    <div class="sec-head">
+      <p class="sec-title">Documentos</p>
+      <a class="btn-soft" href="{{ url_for('sst_doc_subir', sede=sede.codigo) }}">+ Subir documento</a>
+    </div>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Tipo</th>
+          <th>Fecha</th>
+          <th>Archivo / enlace</th>
+          <th>Revision</th>
+          <th>Notas</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in docs %}
+        <tr>
+          <td style="white-space:nowrap;"><strong>{{ d.tipo }}</strong></td>
+          <td style="white-space:nowrap;">{{ fmt_fecha(d.fecha_documento or d.fecha_carga) }}</td>
+          <td>
+            {% if d.drive_url %}<a class="btn-soft" target="_blank" href="{{ d.drive_url }}">Abrir Drive</a>{% endif %}
+            {% if d.archivo %}<a class="btn-soft" target="_blank" href="{{ url_for('sst_doc_archivo', filename=d.archivo) }}">Ver archivo</a>{% endif %}
+            {% if not d.drive_url and not d.archivo %}-{% endif %}
+          </td>
+          <td>{{ d.estado_revision or '-' }}</td>
+          <td>{{ d.notas or '-' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5"><small>Sin documentos cargados.</small></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+{% endblock %}
+
