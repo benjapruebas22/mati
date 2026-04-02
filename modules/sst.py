@@ -67,11 +67,30 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             fecha TEXT NOT NULL,          -- YYYY-MM-DD
             sede_codigo TEXT,             -- S01, S02, ...
             tipo TEXT NOT NULL,           -- prevencion / no_conformidad / informe
+            categoria TEXT,
+            area TEXT,
             titulo TEXT,
             detalle TEXT,
-            estado TEXT                   -- ABIERTO / CERRADO / EN_REVISION
+            estado TEXT,                  -- ABIERTO / CERRADO / EN_REVISION
+            prioridad TEXT,
+            responsable TEXT,
+            accion_correctiva TEXT,
+            evidencia_url TEXT,
+            fecha_objetivo TEXT,
+            fecha_cierre TEXT
         )
         """)
+        ensure_cols(con, "sst_general", [
+            ("categoria", "TEXT"),
+            ("area", "TEXT"),
+            ("prioridad", "TEXT"),
+            ("responsable", "TEXT"),
+            ("accion_correctiva", "TEXT"),
+            ("evidencia_url", "TEXT"),
+            ("fecha_objetivo", "TEXT"),
+            ("fecha_cierre", "TEXT"),
+        ])
+        con.commit()
 
     def ensure_sst_plan_tables(con):
         con.execute("""
@@ -4602,9 +4621,17 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             fecha = (request.form.get("fecha") or "").strip()
             sede_codigo = (request.form.get("sede_codigo") or "").strip().upper()
             tipo = (request.form.get("tipo") or "").strip()
+            categoria = (request.form.get("categoria") or "").strip()
+            area = (request.form.get("area") or "").strip()
             titulo = (request.form.get("titulo") or "").strip()
             detalle = (request.form.get("detalle") or "").strip()
             estado = (request.form.get("estado") or "").strip()
+            prioridad = (request.form.get("prioridad") or "").strip()
+            responsable = (request.form.get("responsable") or "").strip()
+            accion_correctiva = (request.form.get("accion_correctiva") or "").strip()
+            evidencia_url = (request.form.get("evidencia_url") or "").strip()
+            fecha_objetivo = (request.form.get("fecha_objetivo") or "").strip()
+            fecha_cierre = (request.form.get("fecha_cierre") or "").strip()
 
             if not fecha or not tipo:
                 flash("Fecha y tipo son obligatorios.", "error")
@@ -4614,21 +4641,93 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 sede_codigo = None
 
             con.execute("""
-                INSERT INTO sst_general (fecha, sede_codigo, tipo, titulo, detalle, estado)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (fecha, sede_codigo, tipo, titulo, detalle, estado))
+                INSERT INTO sst_general (
+                    fecha, sede_codigo, tipo,
+                    categoria, area,
+                    titulo, detalle,
+                    estado, prioridad, responsable,
+                    accion_correctiva, evidencia_url,
+                    fecha_objetivo, fecha_cierre
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                fecha,
+                sede_codigo,
+                tipo,
+                categoria or None,
+                area or None,
+                titulo or None,
+                detalle or None,
+                estado or None,
+                prioridad or None,
+                responsable or None,
+                accion_correctiva or None,
+                evidencia_url or None,
+                fecha_objetivo or None,
+                fecha_cierre or None,
+            ))
             con.commit()
             con.close()
+            rebuild_eventos_sst()
             flash("Registro SST guardado.", "success")
             return redirect(url_for("sst_general"))
 
-        sst_registros = con.execute("""
-            SELECT s.id, s.fecha, s.sede_codigo, s.tipo, s.titulo, s.detalle, s.estado,
-                   sm.nombre AS sede_nombre
+        where = []
+        params = []
+        if q_sede:
+            where.append("s.sede_codigo = ?")
+            params.append(q_sede)
+        if q_tipo:
+            where.append("s.tipo = ?")
+            params.append(q_tipo)
+        if q_estado:
+            where.append("s.estado = ?")
+            params.append(q_estado)
+        if q_categoria:
+            where.append("s.categoria = ?")
+            params.append(q_categoria)
+        if q_prioridad:
+            where.append("s.prioridad = ?")
+            params.append(q_prioridad)
+        if q_buscar:
+            like = f"%{q_buscar}%"
+            where.append("""
+                (
+                  COALESCE(s.titulo,'') LIKE ?
+                  OR COALESCE(s.detalle,'') LIKE ?
+                  OR COALESCE(s.responsable,'') LIKE ?
+                  OR COALESCE(s.accion_correctiva,'') LIKE ?
+                )
+            """)
+            params.extend([like, like, like, like])
+
+        sql = """
+            SELECT
+                s.id, s.fecha, s.sede_codigo, s.tipo,
+                s.categoria, s.area,
+                s.titulo, s.detalle,
+                s.estado, s.prioridad, s.responsable,
+                s.accion_correctiva, s.evidencia_url,
+                s.fecha_objetivo, s.fecha_cierre,
+                sm.nombre AS sede_nombre
             FROM sst_general s
             LEFT JOIN sedes_mpd sm ON sm.codigo = s.sede_codigo
-            ORDER BY s.fecha DESC, s.id DESC
-        """).fetchall()
+        """
+        if where:
+            sql += " WHERE " + " AND ".join(where)
+        sql += " ORDER BY s.fecha DESC, s.id DESC"
+
+        sst_registros = con.execute(sql, params).fetchall()
+
+        sst_ops_pendientes = 0
+        for r in sst_registros:
+            try:
+                t = (r["tipo"] or "").strip().lower()
+                e = (r["estado"] or "").strip().upper()
+            except Exception:
+                t, e = "", ""
+            if t == "no_conformidad" and e != "CERRADO":
+                sst_ops_pendientes += 1
 
         con.close()
 
@@ -4651,6 +4750,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             sst_pct_alcance=sst_pct_alcance,
             sst_pct_riesgo=sst_pct_riesgo,
             sst_pct_documental=sst_pct_documental,
+            sst_ops_pendientes=sst_ops_pendientes,
             q_buscar=q_buscar,
         )
 

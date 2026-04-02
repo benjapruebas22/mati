@@ -153,6 +153,11 @@
     display: flex;
     gap: var(--sst-gap);
     flex-wrap: wrap;
+    padding: 4px 6px;
+    border: 1px solid #dbe4f2;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, .86);
+    box-shadow: 0 3px 10px rgba(89, 116, 157, .06);
   }
   .sst-fast-links .btn {
     border-radius: 999px;
@@ -311,6 +316,29 @@
     justify-content: flex-end;
   }
 
+  .sst-doc-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--sst-gap);
+    flex-wrap: wrap;
+  }
+
+  .sst-intro-doc-toggle {
+    border: 1px solid #dbe4f2;
+    background: #f8fbff;
+    color: #1f3557;
+    border-radius: 999px;
+    padding: 2px 10px;
+    font-size: 9px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .sst-intro-doc-toggle:hover {
+    border-color: #c7d8ef;
+    background: #eef5ff;
+  }
+
   .sst-intro-legal-toggle,
   .sst-intro-present-toggle {
     border: 1px solid #c7d2fe;
@@ -332,6 +360,12 @@
   .sst-intro-panels {
     display: grid;
     gap: 5px;
+  }
+
+  .sst-doc-lower {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid #dbe4f2;
   }
 
   .sst-intro-legal-panel,
@@ -459,32 +493,158 @@
     margin: 0 0 4px;
   }
 
-  .sst-mini-item {
-    border: 1px solid #d6e5f8;
+  .sst-section-label {
+    margin: 4px 0 4px;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .10em;
+    text-transform: uppercase;
+    color: #375a84;
+    text-align: center;
+  }
+
+  .sst-op-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    margin: 0 0 4px;
+  }
+
+  .sst-op-card {
+    border: 1px solid #dbe4f2;
     border-radius: var(--sst-radius);
-    background: #f5f9ff;
-    padding: 8px 9px;
-    min-height: 72px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    padding: 9px 10px;
+    min-height: 88px;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
     box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+    transform: translateY(0);
+    transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease;
+  }
+
+  .sst-op-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(15, 23, 42, .06);
+  }
+
+  .sst-op-card:not(.primary):not(.ok):not(.warn):not(.bad):not(.info):hover {
+    border-color: #c7d8ef;
+    background: linear-gradient(180deg, #ffffff 0%, #eef5ff 100%);
+  }
+
+  .sst-op-card:focus-visible {
+    outline: 2px solid rgba(59, 130, 246, .45);
+    outline-offset: 2px;
+  }
+
+  .sst-op-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .sst-op-icon {
+    width: 16px;
+    height: 16px;
+    color: #2d5486;
+    flex: 0 0 auto;
+  }
+
+  .sst-op-title {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 900;
+    color: #1f3557;
+    line-height: 1.1;
+  }
+
+  .sst-op-pill {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 9px;
+    font-weight: 900;
+    line-height: 1;
+    padding: 3px 9px;
+    border-radius: 999px;
+    border: 1px solid #c7d6ee;
+    background: rgba(255, 255, 255, .95);
+    color: #4b6890;
+    white-space: nowrap;
+  }
+
+  .sst-op-pill::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: currentColor;
+    opacity: .85;
+  }
+
+  .sst-op-sub {
+    margin: 0;
+    font-size: 9px;
+    line-height: 1.25;
+    color: #4f6789;
+    font-weight: 700;
+  }
+
+  .sst-op-card.primary { border-color: #65BFF4; background: linear-gradient(180deg, #ffffff 0%, #e8f3ff 100%); }
+  .sst-op-card.primary:hover { background: linear-gradient(180deg, #ffffff 0%, #dcebff 100%); }
+
+  .sst-op-card.ok { border-color: #9fe8b8; background: linear-gradient(180deg, #ffffff 0%, #eaf8ef 100%); }
+  .sst-op-card.warn { border-color: #f3d08c; background: linear-gradient(180deg, #ffffff 0%, #fff7e9 100%); }
+  .sst-op-card.bad { border-color: #fecaca; background: linear-gradient(180deg, #ffffff 0%, #fee2e2 100%); }
+  .sst-op-card.info { border-color: #c7d2fe; background: linear-gradient(180deg, #ffffff 0%, #eef2ff 100%); }
+
+  .sst-op-card.ok .sst-op-icon,
+  .sst-op-card.ok .sst-op-pill { color: #0d6f45; border-color: #9fe8b8; }
+  .sst-op-card.warn .sst-op-icon,
+  .sst-op-card.warn .sst-op-pill { color: #9a5600; border-color: #f3d08c; }
+  .sst-op-card.bad .sst-op-icon,
+  .sst-op-card.bad .sst-op-pill { color: #b91c1c; border-color: #fecaca; }
+  .sst-op-card.info .sst-op-icon,
+  .sst-op-card.info .sst-op-pill { color: #3730a3; border-color: #c7d2fe; }
+
+  .sst-mini-item {
+    border: 1px solid #dbe4f2;
+    border-radius: var(--sst-radius);
+    background: linear-gradient(180deg, #ffffff 0%, #f5f9ff 100%);
+    padding: 10px 11px;
+    min-height: 84px;
+    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+    transform: translateY(0);
+    transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease;
+  }
+
+  .sst-mini-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 22px rgba(15, 23, 42, .06);
   }
 
   .sst-mini-item.complete {
-    background: #eaf8ef;
+    background: linear-gradient(180deg, #ffffff 0%, #eaf8ef 100%);
     border-color: #9fe8b8;
   }
 
   .sst-mini-item.pending {
-    background: #fff7e9;
+    background: linear-gradient(180deg, #ffffff 0%, #fff7e9 100%);
     border-color: #f3d08c;
   }
 
   .sst-mini-item.dev {
-    background: #eef5ff;
+    background: linear-gradient(180deg, #ffffff 0%, #eef5ff 100%);
     border-color: #c6d7f0;
   }
 
   .sst-mini-item.linked {
-    background: #e9f8f4;
+    background: linear-gradient(180deg, #ffffff 0%, #e9f8f4 100%);
     border-color: #9edfcc;
   }
 
@@ -496,7 +656,11 @@
 
   .sst-mini-pct {
     margin-left: auto;
-    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 11px;
     font-weight: 900;
     line-height: 1;
     padding: 4px 10px;
@@ -506,8 +670,16 @@
     color: #4b6890;
     white-space: nowrap;
     min-width: 56px;
-    text-align: center;
     letter-spacing: .2px;
+  }
+
+  .sst-mini-pct::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: currentColor;
+    opacity: .85;
   }
 
   .sst-mini-item.complete .sst-mini-pct { color: #0d6f45; border-color: #9fe8b8; }
@@ -530,9 +702,9 @@
   .sst-mini-item.dev .sst-mini-v { color: #1d4f84; }
   .sst-mini-item.linked .sst-mini-v { color: #0f6b5a; }
 
-  .sst-mini-k { margin: 0; font-size: 11px; color: #2d5486; font-weight: 800; line-height: 1.12; }
-  .sst-mini-v { margin: 2px 0 0; font-size: 16px; color: #0e2f57; font-weight: 900; line-height: 1.05; }
-  .sst-mini-sub { margin: 2px 0 0; font-size: 9px; color: #4b6890; line-height: 1.2; font-weight: 700; }
+  .sst-mini-k { margin: 0; font-size: 10px; color: #2d5486; font-weight: 900; line-height: 1.12; text-transform: uppercase; letter-spacing: .04em; }
+  .sst-mini-v { margin: 3px 0 0; font-size: 17px; color: #0e2f57; font-weight: 900; line-height: 1.05; }
+  .sst-mini-sub { margin: 2px 0 0; font-size: 9px; color: #4f6789; line-height: 1.2; font-weight: 800; }
 
   .sst-mini-note {
     margin: 0 0 4px;
@@ -835,6 +1007,7 @@
   @media (max-width: 1100px) {
     .sst-intro-grid { grid-template-columns: 1fr 1fr; }
     .sst-mini-board { grid-template-columns: 1fr 1fr; }
+    .sst-op-grid { grid-template-columns: 1fr 1fr; }
     .sst-head-right { width: 100%; justify-content: flex-start; margin-top: 0; }
     .sst-main-logo { width: 84px; height: 84px; }
   }
@@ -848,6 +1021,7 @@
   @media (max-width: 760px) {
     .sst-intro-grid { grid-template-columns: 1fr; }
     .sst-mini-board { grid-template-columns: 1fr; }
+    .sst-op-grid { grid-template-columns: 1fr; }
     .sst-main-brand { min-width: 0; flex: 1 1 100%; }
     .sst-head-right { width: 100%; justify-content: space-between; align-items: center; }
     .sst-main-logo { width: 72px; height: 72px; }
@@ -882,31 +1056,39 @@
         <p class="sst-intro-sub">Politica, plan, roles y lineamientos operativos.</p>
       </div>
       <div class="sst-intro-actions">
-        <button type="button" class="sst-intro-legal-toggle" onclick="toggleSstIntroLegal()">Fundamentos y obligaciones legales</button>
-        <button type="button" class="sst-intro-present-toggle" onclick="toggleSstIntroPresent()">Presentacion institucional</button>
+        <button type="button" id="sstDocBtn" class="sst-intro-doc-toggle" onclick="toggleSstDocs()">Ver documentacion</button>
+        <div id="sst-doc-actions" class="sst-doc-actions" hidden>
+          <button type="button" class="sst-intro-legal-toggle" onclick="toggleSstIntroLegal()">Fundamentos y obligaciones legales</button>
+          <button type="button" class="sst-intro-present-toggle" onclick="toggleSstIntroPresent()">Presentacion institucional</button>
+        </div>
       </div>
     </div>
 
-    <div class="sst-intro-panels">
-      <div id="sst-intro-legal-panel" class="sst-intro-legal-panel">
-        <h4>Fundamentos y obligaciones legales</h4>
-        <p>El SG-SST se sustenta en la Ley 19.587, la Ley 24.557 y normativa complementaria aplicable. El empleador debe identificar riesgos, aplicar medidas preventivas, registrar evidencias y sostener seguimiento continuo. La articulacion con la ART y las areas tecnicas competentes garantiza cumplimiento y mejora operativa del sistema.</p>
-        <div class="sst-drive-wrap" data-drive-key="fundamentos_legales">
-          <input class="sst-drive-input" type="url" placeholder="Pegar enlace Drive (https://...)" />
-          <button type="button" class="sst-drive-btn save">Guardar</button>
-          <button type="button" class="sst-drive-btn open">Abrir</button>
+    <div id="sst-doc-top" hidden>
+      <div class="sst-intro-panels">
+        <div id="sst-intro-legal-panel" class="sst-intro-legal-panel">
+          <h4>Fundamentos y obligaciones legales</h4>
+          <p>El SG-SST se sustenta en la Ley 19.587, la Ley 24.557 y normativa complementaria aplicable. El empleador debe identificar riesgos, aplicar medidas preventivas, registrar evidencias y sostener seguimiento continuo. La articulacion con la ART y las areas tecnicas competentes garantiza cumplimiento y mejora operativa del sistema.</p>
+          <div class="sst-drive-wrap" data-drive-key="fundamentos_legales">
+            <input class="sst-drive-input" type="url" placeholder="Pegar enlace Drive (https://...)" />
+            <button type="button" class="sst-drive-btn save">Guardar</button>
+            <button type="button" class="sst-drive-btn open">Abrir</button>
+          </div>
         </div>
-      </div>
-      <div id="sst-intro-present-panel" class="sst-intro-present-panel">
-        <h4>Presentacion institucional</h4>
-        <p>Resumen institucional del SG-SST: alcance operativo, lineamientos de gestion, responsables y avance de implementacion en el MPD.</p>
-        <div class="sst-drive-wrap" data-drive-key="presentacion_institucional">
-          <input class="sst-drive-input" type="url" placeholder="Pegar enlace Drive (https://...)" />
-          <button type="button" class="sst-drive-btn save">Guardar</button>
-          <button type="button" class="sst-drive-btn open">Abrir</button>
+        <div id="sst-intro-present-panel" class="sst-intro-present-panel">
+          <h4>Presentacion institucional</h4>
+          <p>Resumen institucional del SG-SST: alcance operativo, lineamientos de gestion, responsables y avance de implementacion en el MPD.</p>
+          <div class="sst-drive-wrap" data-drive-key="presentacion_institucional">
+            <input class="sst-drive-input" type="url" placeholder="Pegar enlace Drive (https://...)" />
+            <button type="button" class="sst-drive-btn save">Guardar</button>
+            <button type="button" class="sst-drive-btn open">Abrir</button>
+          </div>
         </div>
       </div>
     </div>
+
+    {% set _sst_pend = (sst_ops_pendientes|default(0)) %}
+    {% set _sst_pend_cls = 'warn' if (_sst_pend|int > 0) else 'ok' %}
 
     <div class="sst-mini-board">
       <article class="sst-mini-item complete">
@@ -915,7 +1097,8 @@
           <p class="sst-mini-k">Alcance</p>
           <span class="sst-mini-pct">{{ sst_pct_alcance }}</span>
         </div>
-        <p class="sst-mini-v">Personal MPD</p>
+        <p class="sst-mini-v">{{ sst_total_personal or 0 }} personas</p>
+        <p class="sst-mini-sub">Personal MPD (en sistema)</p>
       </article>
       <article class="sst-mini-item pending">
         <div class="sst-mini-top">
@@ -923,9 +1106,8 @@
           <p class="sst-mini-k">Riesgo activo</p>
           <span class="sst-mini-pct">{{ sst_pct_riesgo }}</span>
         </div>
-        <p class="sst-mini-v">Ergonomia</p>
-        <p class="sst-mini-sub">Avance relevamientos puesto trabajo</p>
-        <p class="sst-mini-sub">Avance relevamiento</p>
+        <p class="sst-mini-v">{{ sst_relevados_personal or 0 }}/{{ sst_total_personal or 0 }}</p>
+        <p class="sst-mini-sub">Relevamientos ergonomia</p>
       </article>
       <article class="sst-mini-item dev">
         <div class="sst-mini-top">
@@ -933,48 +1115,110 @@
           <p class="sst-mini-k">Estado documental</p>
           <span class="sst-mini-pct" id="sst-doc-pct">{{ sst_pct_documental }}</span>
         </div>
-        <p class="sst-mini-v">En desarrollo</p>
+        <p class="sst-mini-v"><span id="sst-doc-count">0/2</span></p>
+        <p class="sst-mini-sub">Enlaces cargados</p>
       </article>
-      <article class="sst-mini-item linked">
+      <article class="sst-mini-item {{ 'pending' if (_sst_pend|int > 0) else 'complete' }}">
         <div class="sst-mini-top">
           <svg class="sst-mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M8 12.5l2.5 2.5L16 9.5"></path></svg>
           <p class="sst-mini-k">Seguimiento operativo</p>
+          <span class="sst-mini-pct">{{ _sst_pend }} pend.</span>
         </div>
-        <p class="sst-mini-v">Activo</p>
+        <p class="sst-mini-v">{{ 'Al dia' if (_sst_pend|int <= 0) else 'En seguimiento' }}</p>
+        <p class="sst-mini-sub">No conformidades abiertas</p>
       </article>
     </div>
 
-    <p class="sst-mini-note">Sistema implementado en desarrollo progresivo conforme a las Directrices Nacionales de Sistemas de Gestion de Seguridad y Salud en el Trabajo (Resolucion SRT 523/2007).</p>
+    <p class="sst-section-label">Menu principal</p>
 
-    <div class="sst-scope-resp-row">
-      <div class="sst-scope-note">
-        <h4>Alcance del sistema</h4>
-        <p class="sst-scope-compact">Aplicacion del SG-SST en actividades operativas del MPD con foco inicial en Intendencia, registro de incidentes, acciones preventivas y medidas correctivas del personal.</p>
-        <div id="sst-scope-extra" class="sst-scope-extra">
-          <p>El Sistema de Gestion de Seguridad y Salud en el Trabajo (SG-SST) se aplica a las actividades operativas del Ministerio Publico de la Defensa, con foco inicial en el area de Intendencia.</p>
-          <p style="margin-top:5px;">El sistema permite registrar incidentes, acciones preventivas, riesgos laborales y medidas correctivas que puedan afectar al personal del organismo. La gestion tecnica especifica de cada riesgo puede corresponder a las areas competentes o a la Aseguradora de Riesgos del Trabajo (ART) conforme a la normativa vigente.</p>
+    <div class="sst-op-grid" aria-label="Accesos operativos">
+      <a class="sst-op-card primary" href="{{ url_for('sst_cuadro_unico') }}">
+        <div class="sst-op-top">
+          <svg class="sst-op-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 21h18"></path><path d="M5 21V7l7-4 7 4v14"></path><path d="M9 21v-8h6v8"></path></svg>
+          <p class="sst-op-title">Visitas a sedes</p>
+          <span class="sst-op-pill">{{ sedes|length }} sedes</span>
         </div>
-        <button type="button" class="sst-scope-toggle" onclick="toggleSstScopeMore(this)">Ver mas</button>
-      </div>
+        <p class="sst-op-sub">Tarjetas por sede + semaforo operativo.</p>
+      </a>
 
-      <div class="sst-responsable-note">
-        <h4>Responsables tecnicos del sistema</h4>
-        <div class="sst-responsable-grid">
-          <div class="sst-responsable-item">
-            <b>Responsable tecnico SG-SST</b><br>
-            Lic. Matias Calderari<br>
-            Licenciado en Higiene y Seguridad en el Trabajo
-          </div>
-          <div class="sst-responsable-item">
-            <b>Apoyo tecnico operativo</b><br>
-            Mauro Vega Murguia<br>
-            Tecnico en Higiene y Seguridad en el Trabajo
-          </div>
+      <a class="sst-op-card info" href="{{ url_for('sst_general', panel='art') }}#sst-art-collapse">
+        <div class="sst-op-top">
+          <svg class="sst-op-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M8 13h8"></path><path d="M8 17h8"></path><path d="M8 9h2"></path></svg>
+          <p class="sst-op-title">Formularios ART</p>
+          <span class="sst-op-pill">RGRL / 351</span>
         </div>
-      </div>
+        <p class="sst-op-sub">Documentacion requerida y seguimiento.</p>
+      </a>
+
+      <a class="sst-op-card {{ _sst_pend_cls }}" href="{{ url_for('sst_general', view='operativa', tipo='no_conformidad') }}#sst-operativa-head">
+        <div class="sst-op-top">
+          <svg class="sst-op-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+          <p class="sst-op-title">Hallazgos / Observaciones</p>
+          <span class="sst-op-pill">{{ _sst_pend }} pend.</span>
+        </div>
+        <p class="sst-op-sub">No conformidades y acciones preventivas.</p>
+      </a>
+
+      <a class="sst-op-card ok" href="{{ url_for('sst_plan') }}">
+        <div class="sst-op-top">
+          <svg class="sst-op-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>
+          <p class="sst-op-title">Plan de accion</p>
+          <span class="sst-op-pill">Objetivos</span>
+        </div>
+        <p class="sst-op-sub">Acciones, responsables y fechas objetivo.</p>
+      </a>
+
+      <a class="sst-op-card info" href="{{ url_for('sst_general', view='agentes') }}#sst-agentes-box">
+        <div class="sst-op-top">
+          <svg class="sst-op-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M12 8v4"></path><path d="M12 16h.01"></path></svg>
+          <p class="sst-op-title">Incidentes / EPP</p>
+          <span class="sst-op-pill">{{ agentes_sst|length }} agentes</span>
+        </div>
+        <p class="sst-op-sub">Registrar incidentes y entregas de EPP.</p>
+      </a>
+
+      <a class="sst-op-card" href="{{ url_for('calendario') }}">
+        <div class="sst-op-top">
+          <svg class="sst-op-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h18"></path><path d="M8 14h2"></path><path d="M14 14h2"></path><path d="M8 18h2"></path><path d="M14 18h2"></path></svg>
+          <p class="sst-op-title">Calendario SST</p>
+          <span class="sst-op-pill">Agenda</span>
+        </div>
+        <p class="sst-op-sub">Recordatorios, pedidos y seguimiento semanal.</p>
+      </a>
     </div>
 
-    <div class="sst-intro-grid">
+    <div id="sst-doc-lower" class="sst-doc-lower" hidden>
+      <p class="sst-mini-note">Sistema implementado en desarrollo progresivo conforme a las Directrices Nacionales de Sistemas de Gestion de Seguridad y Salud en el Trabajo (Resolucion SRT 523/2007).</p>
+
+      <div class="sst-scope-resp-row">
+        <div class="sst-scope-note">
+          <h4>Alcance del sistema</h4>
+          <p class="sst-scope-compact">Aplicacion del SG-SST en actividades operativas del MPD con foco inicial en Intendencia, registro de incidentes, acciones preventivas y medidas correctivas del personal.</p>
+          <div id="sst-scope-extra" class="sst-scope-extra">
+            <p>El Sistema de Gestion de Seguridad y Salud en el Trabajo (SG-SST) se aplica a las actividades operativas del Ministerio Publico de la Defensa, con foco inicial en el area de Intendencia.</p>
+            <p style="margin-top:5px;">El sistema permite registrar incidentes, acciones preventivas, riesgos laborales y medidas correctivas que puedan afectar al personal del organismo. La gestion tecnica especifica de cada riesgo puede corresponder a las areas competentes o a la Aseguradora de Riesgos del Trabajo (ART) conforme a la normativa vigente.</p>
+          </div>
+          <button type="button" class="sst-scope-toggle" onclick="toggleSstScopeMore(this)">Ver mas</button>
+        </div>
+
+        <div class="sst-responsable-note">
+          <h4>Responsables tecnicos del sistema</h4>
+          <div class="sst-responsable-grid">
+            <div class="sst-responsable-item">
+              <b>Responsable tecnico SG-SST</b><br>
+              Lic. Matias Calderari<br>
+              Licenciado en Higiene y Seguridad en el Trabajo
+            </div>
+            <div class="sst-responsable-item">
+              <b>Apoyo tecnico operativo</b><br>
+              Mauro Vega Murguia<br>
+              Tecnico en Higiene y Seguridad en el Trabajo
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sst-intro-grid">
       <article class="sst-intro-card">
         <h4>1. Politica de gestion</h4>
         <ul>
@@ -1064,9 +1308,9 @@
           <button type="button" class="sst-drive-btn open">Abrir</button>
         </div>
       </article>
-    </div>
+      </div>
 
-    <div class="sst-collapse-grid">
+      <div class="sst-collapse-grid">
       <div class="sst-collapse" id="sst-legal-collapse">
         <button type="button" class="sst-collapse-head" onclick="toggleSstCollapse('legal')">
           <div>
@@ -1119,6 +1363,7 @@
             <a href="#" target="_blank" rel="noopener">Resumen ejecutivo</a>
           </div>
         </div>
+      </div>
       </div>
     </div>
   </section>
@@ -1520,6 +1765,30 @@
     }
   }
 
+  function setSstDocsOpen(open) {
+    var btn = document.getElementById('sstDocBtn');
+    var actions = document.getElementById('sst-doc-actions');
+    var top = document.getElementById('sst-doc-top');
+    var lower = document.getElementById('sst-doc-lower');
+
+    if (actions) actions.hidden = !open;
+    if (top) top.hidden = !open;
+    if (lower) lower.hidden = !open;
+
+    if (btn) btn.textContent = open ? 'Ocultar documentacion' : 'Ver documentacion';
+  }
+
+  function toggleSstDocs() {
+    var lower = document.getElementById('sst-doc-lower');
+    var open = lower ? !lower.hidden : false;
+    var nextOpen = !open;
+    setSstDocsOpen(nextOpen);
+    if (nextOpen) {
+      var anchor = document.getElementById('sst-doc-lower') || document.getElementById('sst-doc-top');
+      if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
   function toggleSstIntroLegal() {
     var panel = document.getElementById('sst-intro-legal-panel');
     var other = document.getElementById('sst-intro-present-panel');
@@ -1609,12 +1878,65 @@
     btn.textContent = visible ? 'Ocultar cuadro' : 'Ver cuadro';
   })();
 
+  (function initSstDeepLinks(){
+    try {
+      if (!window.URLSearchParams) return;
+      var params = new URLSearchParams(window.location.search || '');
+      var view = String(params.get('view') || '').trim().toLowerCase();
+      var panel = String(params.get('panel') || '').trim().toLowerCase();
+      var hash = String(window.location.hash || '').replace('#', '').trim().toLowerCase();
+
+      var wantsDocs = (
+        panel === 'legal' ||
+        panel === 'art' ||
+        view === 'docs' ||
+        view === 'documental' ||
+        hash === 'sst-legal-collapse' ||
+        hash === 'sst-art-collapse'
+      );
+      if (wantsDocs) {
+        setSstDocsOpen(true);
+      }
+
+      if (panel === 'legal' || panel === 'art') {
+        var legalWrap = document.getElementById('sst-legal-collapse');
+        var artWrap = document.getElementById('sst-art-collapse');
+        if (legalWrap && artWrap) {
+          if (panel === 'legal') {
+            legalWrap.classList.add('open');
+            artWrap.classList.remove('open');
+          } else {
+            artWrap.classList.add('open');
+            legalWrap.classList.remove('open');
+          }
+        }
+
+        var targetId = panel === 'legal' ? 'sst-legal-collapse' : 'sst-art-collapse';
+        var target = document.getElementById(targetId);
+        if (target) {
+          setTimeout(function(){
+            try { target.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch(e) {}
+          }, 60);
+        }
+      }
+
+      if (view === 'operativa') {
+        goSstCuadro(true);
+      } else if (view === 'agentes') {
+        toggleSstAgentes(true);
+      } else if (view === 'carga') {
+        toggleSstCarga(true);
+      }
+    } catch(e) {}
+  })();
+
   (function setupSstDriveLinks(){
     var wraps = document.querySelectorAll('[data-drive-key]');
     if (!wraps || !wraps.length) return;
 
     function updateDocPct() {
       var target = document.getElementById('sst-doc-pct');
+      var countTarget = document.getElementById('sst-doc-count');
       if (!target) return;
       var keys = ['fundamentos_legales', 'presentacion_institucional'];
       var loaded = 0;
@@ -1626,6 +1948,7 @@
       });
       var pct = keys.length ? Math.round((loaded * 100) / keys.length) : 0;
       target.textContent = String(pct) + '%';
+      if (countTarget) countTarget.textContent = String(loaded) + '/' + String(keys.length);
     }
 
     wraps.forEach(function(w){
