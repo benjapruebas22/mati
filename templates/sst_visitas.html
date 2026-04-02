@@ -119,10 +119,12 @@
   }
 
   .sede-card {
+    --fuero-accent: #cbd5e1;
     position: relative;
     border-radius: 18px;
     border: 1px solid #e5e7eb;
-    background: #fff;
+    background: color-mix(in srgb, var(--fuero-accent) 10%, #ffffff);
+    border-color: color-mix(in srgb, var(--fuero-accent) 24%, #e5e7eb);
     box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
     padding: 12px 12px 10px;
     overflow: hidden;
@@ -140,11 +142,8 @@
     background: #cbd5e1;
   }
 
-  .sede-card.complete { background: #f2fbf6; border-color: #bfe8cf; }
   .sede-card.complete::before { background: #22c55e; }
-  .sede-card.pending { background: #fff7ed; border-color: #fed7aa; }
   .sede-card.pending::before { background: #f59e0b; }
-  .sede-card.danger { background: #fff1f2; border-color: #fecdd3; }
   .sede-card.danger::before { background: #ef4444; }
 
   .sede-top {
@@ -165,12 +164,13 @@
     width: 46px;
     height: 46px;
     border-radius: 16px;
-    border: 1px solid rgba(15, 23, 42, .08);
-    background: rgba(255, 255, 255, .7);
+    border: 1px solid color-mix(in srgb, var(--fuero-accent) 28%, #e5e7eb);
+    background: color-mix(in srgb, var(--fuero-accent) 10%, #ffffff);
     display: grid;
     place-items: center;
     font-weight: 900;
     letter-spacing: .02em;
+    color: color-mix(in srgb, var(--fuero-accent) 82%, #0f172a);
   }
 
   .sede-name {
@@ -333,7 +333,7 @@
 
   <div class="sst-grid" aria-label="Sedes SST">
     {% for s in sedes %}
-    <article class="sede-card {{ s.semaforo_cls }}">
+    <article class="sede-card {{ s.semaforo_cls }} sst-fuero-{{ s.fuero_class }}" style="--fuero-accent: {{ s.fuero_color }};">
       <div class="sede-top">
         <div class="sede-id">
           <div class="sede-code">{{ s.codigo }}</div>
@@ -381,4 +381,3 @@
 </section>
 
 {% endblock %}
-

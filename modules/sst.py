@@ -6193,6 +6193,22 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             return ("pending", "En seguimiento")
         return ("complete", "Al dia")
 
+    def _sst_fuero_style(fuero_raw):
+        fu = str(fuero_raw or "").strip().lower()
+        if not fu:
+            return ("otro", "#64748b")
+        if "administr" in fu or "violencia" in fu:
+            return ("administracion", "#f58a5e")
+        if "menor" in fu or "incap" in fu:
+            return ("menores_incapaces", "#65BFF4")
+        if "jurid" in fu or "social" in fu or "civil" in fu:
+            return ("juridico_social", "#F14B94")
+        if "penal" in fu:
+            return ("penal", "#6666cc")
+        if "equipo" in fu or "interdiscip" in fu:
+            return ("equipo_interdisciplinario", "#4D4D4D")
+        return ("otro", "#64748b")
+
     @app.route("/sst/visitas", methods=["GET"], endpoint="sst_visitas")
     def sst_visitas():
         con = get_db()
@@ -6203,7 +6219,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         q_estado = (request.args.get("estado") or "").strip().lower()
 
         sedes_rows = con.execute("""
-            SELECT codigo, nombre
+            SELECT codigo, nombre, fuero
             FROM sedes_mpd
             ORDER BY codigo
         """).fetchall()
@@ -6252,6 +6268,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         for s in sedes_rows:
             codigo = (s["codigo"] or "").strip().upper()
             nombre = (s["nombre"] or "").strip()
+            fuero = (s["fuero"] or "").strip()
+            fuero_class, fuero_color = _sst_fuero_style(fuero)
             v = last_visita.get(codigo)
             v_fecha = v["fecha"] if v else None
             v_estado = v["estado"] if v else None
@@ -6273,6 +6291,9 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             item = {
                 "codigo": codigo,
                 "nombre": nombre,
+                "fuero": fuero,
+                "fuero_class": fuero_class,
+                "fuero_color": fuero_color,
                 "ultima_visita": _sst_fmt_fecha(v_fecha),
                 "ultima_visita_estado": _sst_sede_estado_label(v_estado),
                 "doc_351": d351,
@@ -6454,7 +6475,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         ensure_sst_general_table(con)
 
         sede = con.execute("""
-            SELECT codigo, nombre
+            SELECT codigo, nombre, fuero
             FROM sedes_mpd
             WHERE codigo = ?
         """, (codigo,)).fetchone()
@@ -6504,11 +6525,14 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             docs_pend = True
 
         sem_cls, sem_label = _sst_calc_semaforo(bool(last_v), docs_ok, docs_pend, pend_hallazgos)
+        fuero_class, fuero_color = _sst_fuero_style((sede["fuero"] if sede else None) or "")
         con.close()
 
         return render_template(
             "sst_sede_ficha.html",
             sede=sede,
+            fuero_class=fuero_class,
+            fuero_color=fuero_color,
             visitas=visitas,
             docs=docs,
             pend_hallazgos=pend_hallazgos,

@@ -44,8 +44,11 @@
   }
 
   .sede-summary {
+    --fuero-accent: #cbd5e1;
     position: relative;
     overflow: hidden;
+    background: color-mix(in srgb, var(--fuero-accent) 10%, #ffffff);
+    border-color: color-mix(in srgb, var(--fuero-accent) 24%, #e5e7eb);
   }
 
   .sede-summary::before {
@@ -58,11 +61,8 @@
     background: #cbd5e1;
   }
 
-  .sede-summary.complete { background: #f2fbf6; border-color: #bfe8cf; }
   .sede-summary.complete::before { background: #22c55e; }
-  .sede-summary.pending { background: #fff7ed; border-color: #fed7aa; }
   .sede-summary.pending::before { background: #f59e0b; }
-  .sede-summary.danger { background: #fff1f2; border-color: #fecdd3; }
   .sede-summary.danger::before { background: #ef4444; }
 
   .sede-top {
@@ -83,12 +83,13 @@
     width: 48px;
     height: 48px;
     border-radius: 16px;
-    border: 1px solid rgba(15, 23, 42, .08);
-    background: rgba(255, 255, 255, .7);
+    border: 1px solid color-mix(in srgb, var(--fuero-accent) 28%, #e5e7eb);
+    background: color-mix(in srgb, var(--fuero-accent) 10%, #ffffff);
     display: grid;
     place-items: center;
     font-weight: 900;
     letter-spacing: .02em;
+    color: color-mix(in srgb, var(--fuero-accent) 82%, #0f172a);
   }
 
   .sede-name {
@@ -209,7 +210,7 @@
   </header>
 
   <div class="sst-grid2">
-    <div class="sst-card sede-summary {{ semaforo_cls }}">
+    <div class="sst-card sede-summary {{ semaforo_cls }} sst-fuero-{{ fuero_class }}" style="--fuero-accent: {{ fuero_color }};">
       <div class="sede-top">
         <div class="sede-id">
           <div class="sede-code">{{ sede.codigo }}</div>
@@ -346,4 +347,3 @@
 </section>
 
 {% endblock %}
-
