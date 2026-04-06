@@ -10,6 +10,7 @@
 {% set a = auto_estado or {} %}
 {% set cls = a.cls or 'pending' %}
 {% set badge = 'is-' ~ ('complete' if cls == 'complete' else ('dev' if cls == 'dev' else 'pending')) %}
+{% set estado_doc = ((d.get('estado') or 'BORRADOR')|replace('_',' ')|lower|title) %}
 
 <section class="sgsst-shell">
   <header class="sgsst-hero">
@@ -53,7 +54,7 @@
       </div>
       <div class="sgsst-kpi k2">
         <div class="l">Estado (documento)</div>
-        <div class="v">{{ d.get('estado') or 'BORRADOR' }}</div>
+        <div class="v v-state">{{ estado_doc }}</div>
         <div class="s">Workflow interno</div>
       </div>
       <div class="sgsst-kpi k3">
@@ -86,4 +87,3 @@
 </section>
 
 {% endblock %}
-

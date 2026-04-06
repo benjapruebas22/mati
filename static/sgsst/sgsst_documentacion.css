@@ -133,6 +133,11 @@
   word-break: break-word;
 }
 
+.sgsst-kpi .v.v-state {
+  font-size: clamp(14px, 1.35vw, 18px);
+  letter-spacing: .08px;
+}
+
 .sgsst-kpi .s {
   font-size: 11px;
   color: #5f7698;
