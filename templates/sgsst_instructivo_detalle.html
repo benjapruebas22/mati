@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='sgsst/sgsst_documentacion.css') }}">
+{% endblock %}
+
+{% block content %}
+
+{% set i = instructivo or {} %}
+
+<section class="sgsst-shell">
+  <header class="sgsst-hero">
+    <div class="sgsst-head">
+      <div>
+        <h1>{{ i.get('titulo', 'Instructivo') }}</h1>
+        <p class="sgsst-sub">
+          <b>{{ i.get('codigo', '') }}</b> · {{ i.get('categoria', '') }}
+        </p>
+      </div>
+
+      <div class="sgsst-actions">
+        <a class="sgsst-action-link" href="{{ url_for('sgsst_instructivos') }}">
+          <span class="t">Volver</span>
+          <span class="s">Listado de instructivos</span>
+        </a>
+        <a class="sgsst-action-link" href="{{ url_for('sgsst_instructivo_editar', id=i.get('id')) }}">
+          <span class="t">Editar</span>
+          <span class="s">Actualizar instructivo</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="sgsst-kpis">
+      <div class="sgsst-kpi k1">
+        <div class="l">Estado</div>
+        <div class="v">{{ i.get('estado') or 'BORRADOR' }}</div>
+        <div class="s">{{ 'Activo' if (i.get('activo', 0)|int == 1) else 'Inactivo' }}</div>
+      </div>
+      <div class="sgsst-kpi k2">
+        <div class="l">Responsable</div>
+        <div class="v">{{ i.get('responsable') or '—' }}</div>
+        <div class="s">Asignación</div>
+      </div>
+      <div class="sgsst-kpi k3">
+        <div class="l">Actualización</div>
+        <div class="v">{{ i.get('fecha_actualizacion') or '—' }}</div>
+        <div class="s">Fecha/hora</div>
+      </div>
+      <div class="sgsst-kpi k4">
+        <div class="l">Categoría</div>
+        <div class="v">{{ i.get('categoria') or '—' }}</div>
+        <div class="s">Clasificación</div>
+      </div>
+    </div>
+  </header>
+
+  <article class="sgsst-panel">
+    {% if i.get('descripcion_corta') %}
+      <p class="sub"><b>Descripción corta:</b> {{ i.get('descripcion_corta') }}</p>
+    {% endif %}
+
+    <h2 class="sgsst-section-title">Contenido</h2>
+    <div class="sgsst-content">{{ i.get('contenido') or '—' }}</div>
+
+    <h2 class="sgsst-section-title">Uso aplicable</h2>
+    <div class="sgsst-content">{{ i.get('uso_aplicable') or '—' }}</div>
+  </article>
+</section>
+
+{% endblock %}

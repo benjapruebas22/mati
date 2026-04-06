@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='ordenes/ordenes.css') }}">
+
+<section class="sedes-section">
+  <div class="om-head">
+    <div>
+      <h2 class="om-title">Gestion orden #{{ order.id }}</h2>
+      <div class="om-subtitle">{{ order.title }}</div>
+    </div>
+    <div class="om-actions">
+      <a class="btn outline-slate" href="{{ url_for('ordenes_mantenimiento_list') }}">Volver</a>
+    </div>
+  </div>
+
+  <div class="om-card">
+    <div class="om-kv">
+      <div class="om-kv-item"><b>Estado</b>{{ order.status }}</div>
+      <div class="om-kv-item"><b>Prioridad</b>{{ order.priority }}</div>
+      <div class="om-kv-item"><b>Sede</b>{{ order.sede_id or '-' }}</div>
+      <div class="om-kv-item"><b>Depos./Local</b>{{ order.deposito_id or '-' }}</div>
+      <div class="om-kv-item"><b>Asignacion</b>{% if order.assign_type == 'INDIVIDUAL' %}{{ order.assigned_user or '-' }}{% else %}{{ order.group_name or '-' }}{% endif %}</div>
+      <div class="om-kv-item"><b>Vence</b>{{ order.due_date or '-' }}</div>
+      <div class="om-kv-item"><b>Creada por</b>{{ order.created_by or '-' }}</div>
+      <div class="om-kv-item"><b>Actualizada</b>{{ order.updated_at or '-' }}</div>
+    </div>
+    {% if order.detail %}
+    <div class="om-detail"><b>Detalle:</b> {{ order.detail }}</div>
+    {% endif %}
+  </div>
+
+  <form method="post" enctype="multipart/form-data" class="om-card om-block">
+    <div class="om-form-grid">
+      <div>
+        <label>Comentario corto</label>
+        <textarea class="in" name="comentario" rows="3" placeholder="Ej: avance realizado / directiva / novedad"></textarea>
+      </div>
+      <div>
+        <label>Adjunto (foto/pdf opcional)</label>
+        <input class="in" type="file" name="attachment" accept=".jpg,.jpeg,.png,.webp,.pdf">
+        <div class="om-block">
+          <label>Motivo bloqueo (obligatorio solo si toca Bloqueado)</label>
+          <div class="om-radio-line">
+            <label><input type="radio" name="motivo_bloqueo" value="LLUVIA"> Lluvia</label>
+            <label><input type="radio" name="motivo_bloqueo" value="FALTA_MATERIAL"> Falta material</label>
+            <label><input type="radio" name="motivo_bloqueo" value="SIN_AUTORIZACION"> Sin autorizacion</label>
+            <label><input type="radio" name="motivo_bloqueo" value="OTRO"> Otro</label>
+          </div>
+          <input class="in" name="motivo_otro" placeholder="Si eligio Otro, completar aqui">
+        </div>
+      </div>
+    </div>
+
+    <div class="om-action-grid">
+      <button class="btn om-action-btn om-action-avance" type="submit" name="accion" value="AVANCE">Avance</button>
+      <button class="btn om-action-btn om-action-bloq" type="submit" name="accion" value="BLOQUEADO">Bloqueado</button>
+      <button class="btn om-action-btn om-action-fm" type="submit" name="accion" value="FALTA_MATERIAL">Falta material</button>
+      <button class="btn om-action-btn om-action-dejo" type="submit" name="accion" value="DEJO_MATERIAL">Deje material</button>
+      <button class="btn om-action-btn om-action-term" type="submit" name="accion" value="TERMINADO">Terminado</button>
+    </div>
+
+    {% if is_admin %}
+    <div class="om-form-actions">
+      <button class="btn om-action-btn om-action-cerrar" type="submit" name="accion" value="CERRAR">Cerrar orden (admin)</button>
+    </div>
+    {% endif %}
+  </form>
+
+  <div class="om-history">
+    <table class="om-table">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Autor</th>
+          <th>Tipo</th>
+          <th>Mensaje</th>
+          <th>Adjunto</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ev in events %}
+        <tr>
+          <td>{{ ev.created_at }}</td>
+          <td>{{ ev.author }}</td>
+          <td>{{ ev.event_type }}</td>
+          <td>{{ ev.message or '-' }}</td>
+          <td>
+            {% if ev.attachment_url %}
+            <a class="btn outline-slate" target="_blank" href="{{ ev.attachment_url }}">Ver</a>
+            {% else %}
+            -
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="om-empty">Sin movimientos aun.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

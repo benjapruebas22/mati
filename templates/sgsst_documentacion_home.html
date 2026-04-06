@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='sgsst/sgsst_documentacion.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<section class="sgsst-shell">
+  <header class="sgsst-hero">
+    <div class="sgsst-head">
+      <div>
+        <h1>Bloque documental SG-SST</h1>
+        <p class="sgsst-sub">
+          Gestión interna de documentos base del SG-SST, editable y trazable dentro del sistema, sin depender de Google Drive ni PDFs externos.
+        </p>
+      </div>
+
+      <div class="sgsst-actions">
+        <a class="sgsst-action-link" href="{{ url_for('sst_general') }}">
+          <span class="t">Volver a SG-SST</span>
+          <span class="s">Panel principal</span>
+        </a>
+        <a class="sgsst-action-link" href="{{ url_for('sgsst_protocolos') }}">
+          <span class="t">Protocolos</span>
+          <span class="s">Listado y edición</span>
+        </a>
+        <a class="sgsst-action-link" href="{{ url_for('sgsst_instructivos') }}">
+          <span class="t">Instructivos</span>
+          <span class="s">Listado y edición</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="sgsst-kpis">
+      <div class="sgsst-kpi k1">
+        <div class="l">Bloques activos</div>
+        <div class="v">{{ kpi_bloques_activos or 0 }}</div>
+        <div class="s">Sobre 6 bloques base</div>
+      </div>
+      <div class="sgsst-kpi k2">
+        <div class="l">Protocolos activos</div>
+        <div class="v">{{ kpi_protocolos_activos or 0 }}</div>
+        <div class="s">Base: {{ (estado_protocolos.detalle if estado_protocolos else '') }}</div>
+      </div>
+      <div class="sgsst-kpi k3">
+        <div class="l">Instructivos activos</div>
+        <div class="v">{{ kpi_instructivos_activos or 0 }}</div>
+        <div class="s">Base: {{ (estado_instructivos.detalle if estado_instructivos else '') }}</div>
+      </div>
+      <div class="sgsst-kpi k4">
+        <div class="l">Pendientes</div>
+        <div class="v">{{ kpi_pendientes or 0 }}</div>
+        <div class="s">Pendientes de completar</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="sgsst-flow" aria-label="Relación conceptual entre bloques">
+    <p class="h">Relación conceptual</p>
+    <div class="sgsst-flow-row">
+      <span class="sgsst-flow-item">Política</span>
+      <span class="sgsst-flow-arrow">↓</span>
+      <span class="sgsst-flow-item">Plan de acción</span>
+      <span class="sgsst-flow-arrow">↓</span>
+      <span class="sgsst-flow-item">Roles</span>
+      <span class="sgsst-flow-arrow">↓</span>
+      <span class="sgsst-flow-item">Protocolos + Instructivos</span>
+      <span class="sgsst-flow-arrow">↓</span>
+      <span class="sgsst-flow-item">Gestión de riesgos</span>
+    </div>
+  </div>
+
+  <div class="sgsst-grid">
+    {% for b in (bloques or []) %}
+      {% set doc = b.doc or {} %}
+      {% set auto = b.auto or {} %}
+      {% set cls = auto.cls or 'pending' %}
+      {% set badge = 'is-' ~ ('complete' if cls == 'complete' else ('dev' if cls == 'dev' else 'pending')) %}
+
+      <article class="sgsst-card">
+        <div class="sgsst-card-top">
+          <div>
+            <h3 class="sgsst-card-title">{{ doc.get('titulo', '') }}</h3>
+            {% if doc.get('subtitulo') %}
+              <p class="sgsst-card-sub">{{ doc.get('subtitulo') }}</p>
+            {% else %}
+              <p class="sgsst-card-sub">{{ doc.get('descripcion_corta', '') }}</p>
+            {% endif %}
+          </div>
+
+          <span class="sgsst-badge {{ badge }}">
+            {{ auto.label or 'Pendiente' }}{% if auto.detalle %} ({{ auto.detalle }}){% endif %}
+          </span>
+        </div>
+
+        {% if doc.get('descripcion_corta') %}
+          <p class="sgsst-card-sub">{{ doc.get('descripcion_corta') }}</p>
+        {% endif %}
+
+        <div class="sgsst-meta">
+          <span class="tag">Bloque: {{ (b.bloque or '')|replace('_',' ') }}</span>
+          <span class="tag">Responsable: {{ doc.get('responsable') or '—' }}</span>
+          <span class="tag">Actualización: {{ doc.get('fecha_actualizacion') or '—' }}</span>
+        </div>
+
+        <div class="sgsst-card-actions">
+          <a class="btn xs outline-slate" href="{{ url_for('sgsst_documento_detalle', bloque=b.bloque) }}">Abrir</a>
+          <a class="btn xs outline-amber" href="{{ url_for('sgsst_documento_editar', bloque=b.bloque) }}">Editar</a>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+
+{% endblock %}

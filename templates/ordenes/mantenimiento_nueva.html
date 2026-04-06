@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block content %}
+{% set f = form or {} %}
+<link rel="stylesheet" href="{{ url_for('static', filename='ordenes/ordenes.css') }}">
+
+<section class="sedes-section">
+  <div class="om-head">
+    <h2 class="om-title">Nueva orden - Mantenimiento</h2>
+    <a class="btn outline-slate" href="{{ url_for('ordenes_mantenimiento_list') }}">Volver</a>
+  </div>
+
+  <form method="post" class="om-card">
+    <div class="om-grid">
+      <div class="om-field">
+        <label>Sede</label>
+        {% if sedes %}
+        <select class="in" name="sede_id" id="sede_id_select" required>
+          <option value="">Seleccionar</option>
+          {% for s in sedes %}
+          {% set sid = s.id %}
+          <option value="{{ sid }}" {% if (f.get('sede_id') or '') == sid %}selected{% endif %}>{{ s.label }}</option>
+          {% endfor %}
+        </select>
+        {% else %}
+        <input class="in" name="sede_id" id="sede_id_select" value="{{ f.get('sede_id','') }}" required placeholder="Ej: S08">
+        {% endif %}
+      </div>
+
+      <div class="om-field">
+        <label>Depos./Local (opcional)</label>
+        {% set dep_selected = f.get('deposito_id','') %}
+        <select class="in" name="deposito_id" id="deposito_id_select" data-current="{{ dep_selected }}">
+          <option value="">Seleccionar (opcional)</option>
+          {% if depositos %}
+            {% for d in depositos %}
+            <option value="{{ d.deposito_id }}" {% if dep_selected == d.deposito_id %}selected{% endif %}>{{ d.label }}</option>
+            {% endfor %}
+          {% else %}
+            <option value="" selected>(sin depositos cargados)</option>
+          {% endif %}
+        </select>
+      </div>
+
+      <div class="om-field">
+        <label>Titulo</label>
+        <input class="in" name="title" maxlength="140" required value="{{ f.get('title','') }}" placeholder="Ej: Cambio luminaria pasillo">
+      </div>
+
+      <div class="om-field">
+        <label>Prioridad</label>
+        <select class="in" name="priority">
+          {% for p in ["BAJA","MEDIA","ALTA"] %}
+          <option value="{{ p }}" {% if (f.get('priority','MEDIA')).upper()==p %}selected{% endif %}>{{ p }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="om-field">
+        <label>Fecha objetivo (opcional)</label>
+        <input class="in" type="date" name="due_date" value="{{ f.get('due_date','') }}">
+      </div>
+
+      <div class="om-field om-row-full">
+        <label>Detalle (opcional)</label>
+        <textarea class="in" name="detail" rows="3" placeholder="Detalle breve...">{{ f.get('detail','') }}</textarea>
+      </div>
+
+      <div class="om-row-full om-assign-box">
+        <label><b>Asignado a</b></label>
+        {% set mode = (f.get('assign_mode') or 'GRUPO').upper() %}
+        <div class="om-radio-line">
+          <label><input type="radio" name="assign_mode" value="GRUPO" {% if mode!='INDIVIDUAL' %}checked{% endif %}> Equipo/Grupo</label>
+          <label><input type="radio" name="assign_mode" value="INDIVIDUAL" {% if mode=='INDIVIDUAL' %}checked{% endif %}> Individual</label>
+        </div>
+
+        <div class="om-grid">
+          <div class="om-field">
+            <label>Grupo</label>
+            <select class="in" name="assigned_group_id">
+              {% for g in groups %}
+              <option value="{{ g.id }}" {% if (f.get('assigned_group_id')|string)==(g.id|string) %}selected{% endif %}>
+                {{ g.name }} ({{ g.members }} miembros)
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="om-field">
+            <label>Usuario individual</label>
+            <select class="in" name="assigned_user">
+              <option value="">Seleccionar usuario</option>
+              {% for u in users %}
+              <option value="{{ u.username }}" {% if (f.get('assigned_user') or '') == u.username %}selected{% endif %}>
+                {{ u.full_name }} ({{ u.username }})
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="om-form-actions">
+      <a class="btn outline-slate" href="{{ url_for('ordenes_mantenimiento_list') }}">Cancelar</a>
+      <button class="btn btn-mpd om-btn-main" type="submit">Asignar orden</button>
+    </div>
+  </form>
+</section>
+<script>
+  (function() {
+    const sedeEl = document.getElementById('sede_id_select');
+    const depEl = document.getElementById('deposito_id_select');
+    if (!sedeEl || !depEl) return;
+
+    function setOptions(items, selectedValue) {
+      depEl.innerHTML = '';
+      const base = document.createElement('option');
+      base.value = '';
+      base.textContent = 'Seleccionar (opcional)';
+      depEl.appendChild(base);
+
+      if (!Array.isArray(items) || items.length === 0) {
+        const empty = document.createElement('option');
+        empty.value = '';
+        empty.textContent = '(sin depositos cargados)';
+        depEl.appendChild(empty);
+        depEl.value = '';
+        return;
+      }
+
+      items.forEach(function(it) {
+        const op = document.createElement('option');
+        op.value = (it.deposito_id || '').trim();
+        op.textContent = (it.label || it.deposito_id || '').trim();
+        depEl.appendChild(op);
+      });
+      depEl.value = selectedValue || '';
+    }
+
+    async function loadDepositos(keepSelected) {
+      const sede = (sedeEl.value || '').trim();
+      if (!sede) {
+        setOptions([], '');
+        return;
+      }
+      try {
+        const resp = await fetch('/ordenes/api/depositos?sede_id=' + encodeURIComponent(sede), {
+          headers: { 'Accept': 'application/json' }
+        });
+        const data = await resp.json();
+        const selected = keepSelected ? (depEl.getAttribute('data-current') || depEl.value || '') : '';
+        setOptions((data && data.items) || [], selected);
+      } catch (_e) {
+        setOptions([], '');
+      }
+    }
+
+    sedeEl.addEventListener('change', function() {
+      depEl.setAttribute('data-current', '');
+      loadDepositos(false);
+    });
+
+    loadDepositos(true);
+  })();
+</script>
+{% endblock %}

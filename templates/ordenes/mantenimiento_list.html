@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='ordenes/ordenes.css') }}">
+
+<section class="sedes-section">
+  <div class="om-head">
+    <div>
+      <h2 class="om-title">Ordenes de mantenimiento</h2>
+      <div class="om-subtitle">Semana 1 - asignaciones y gestion operativa.</div>
+    </div>
+    <div class="om-actions">
+      <span class="om-badge-alert">Alertas falta material abiertas: {{ alerta_count }}</span>
+      <a class="btn btn-mpd om-btn-main" href="{{ url_for('ordenes_mantenimiento_nueva') }}">Asignar mantenimiento</a>
+    </div>
+  </div>
+
+  <form method="get" class="form-soft om-form">
+    <div class="om-filters">
+      <div class="om-field">
+        <label>Estado</label>
+        <select class="in" name="status">
+          <option value="">Todos</option>
+          {% for st in ["NUEVA","EN_CURSO","BLOQUEADA","EN_VERIFICACION","CERRADA"] %}
+          <option value="{{ st }}" {% if status_f==st %}selected{% endif %}>{{ st }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="om-field">
+        <label>Sede</label>
+        <select class="in" name="sede_id">
+          <option value="">Todas</option>
+          {% for s in sedes %}
+          <option value="{{ s.id }}" {% if sede_f==s.id %}selected{% endif %}>{{ s.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="om-field">
+        <label>Prioridad</label>
+        <select class="in" name="priority">
+          <option value="">Todas</option>
+          {% for p in ["BAJA","MEDIA","ALTA"] %}
+          <option value="{{ p }}" {% if priority_f==p %}selected{% endif %}>{{ p }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="om-field">
+        <label>Asignado (usuario o grupo)</label>
+        <input class="in" type="text" name="assigned" value="{{ assigned_f or '' }}" placeholder="ej: mflores o equipo">
+      </div>
+    </div>
+    <div class="om-form-actions">
+      <button class="btn btn-mpd" type="submit">Filtrar</button>
+      <a class="btn outline-slate" href="{{ url_for('ordenes_mantenimiento_list') }}">Limpiar</a>
+      <a class="btn btn-mpd om-btn-main" href="{{ url_for('ordenes_mantenimiento_nueva') }}">Asignar mantenimiento</a>
+    </div>
+  </form>
+
+  <div class="om-table-wrap">
+    <table class="om-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Estado</th>
+          <th>Prioridad</th>
+          <th>Sede</th>
+          <th>Depos./Local</th>
+          <th>Titulo</th>
+          <th>Asignado</th>
+          <th>Vence</th>
+          <th>Ultimo movimiento</th>
+          <th>Accion</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in orders %}
+        <tr>
+          <td>#{{ o.id }}</td>
+          <td><span class="om-pill">{{ o.status }}</span></td>
+          <td>{{ o.priority }}</td>
+          <td>{{ o.sede_id or '-' }}</td>
+          <td>{{ o.deposito_id or '-' }}</td>
+          <td>{{ o.title }}</td>
+          <td>
+            {% if o.assign_type == 'INDIVIDUAL' %}
+              {{ o.assigned_user or '-' }}
+            {% else %}
+              {{ o.group_name or 'Grupo' }}
+            {% endif %}
+          </td>
+          <td>{{ o.due_date or '-' }}</td>
+          <td>
+            <div><b>{{ o.last_event_type or '-' }}</b> - {{ o.last_event_at or '-' }}</div>
+            <div class="text-muted">{{ o.last_event_message or '' }}</div>
+          </td>
+          <td><a class="btn btn-mpd" href="{{ url_for('ordenes_mantenimiento_detalle', order_id=o.id) }}">Gestion</a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="10" class="om-empty">Sin ordenes para los filtros seleccionados.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

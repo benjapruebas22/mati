@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='sgsst/sgsst_documentacion.css') }}">
+{% endblock %}
+
+{% block content %}
+
+{% set p = protocolo or {} %}
+{% set titulo_pagina = 'Nuevo protocolo' if is_new else 'Editar protocolo' %}
+
+<section class="sgsst-shell">
+  <header class="sgsst-hero">
+    <div class="sgsst-head">
+      <div>
+        <h1>{{ titulo_pagina }}</h1>
+        <p class="sgsst-sub">
+          {% if is_new %}Alta de protocolo operativo específico del SG-SST.{% else %}Edición y control de vigencia del protocolo.{% endif %}
+        </p>
+      </div>
+
+      <div class="sgsst-actions">
+        <a class="sgsst-action-link" href="{{ url_for('sgsst_protocolos') }}">
+          <span class="t">Volver</span>
+          <span class="s">Listado de protocolos</span>
+        </a>
+        {% if not is_new %}
+        <a class="sgsst-action-link" href="{{ url_for('sgsst_protocolo_detalle', id=p.get('id')) }}">
+          <span class="t">Detalle</span>
+          <span class="s">Ver protocolo</span>
+        </a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <article class="sgsst-panel">
+    <form method="post" class="sgsst-form">
+      <div class="sgsst-form-grid">
+        <label for="codigo">Código</label>
+        <input id="codigo" name="codigo" type="text" value="{{ p.get('codigo','') }}" placeholder="Ej: PROT-SST-09" required>
+
+        <label for="titulo">Título</label>
+        <input id="titulo" name="titulo" type="text" value="{{ p.get('titulo','') }}" required>
+
+        <label for="categoria">Categoría</label>
+        <input id="categoria" name="categoria" type="text" value="{{ p.get('categoria','') }}" placeholder="Ej: Relevamientos" required>
+
+        <label for="estado">Estado</label>
+        {% set est_sel = (p.get('estado') or 'BORRADOR') %}
+        <select id="estado" name="estado">
+          {% for e in (estados or []) %}
+            <option value="{{ e }}" {{ 'selected' if e == est_sel else '' }}>{{ e|replace('_',' ') }}</option>
+          {% endfor %}
+        </select>
+
+        <label for="orden_visual">Orden visual</label>
+        <input id="orden_visual" name="orden_visual" type="number" min="0" value="{{ p.get('orden_visual', 0) }}">
+
+        <label>Activo</label>
+        <div class="sgsst-checkrow">
+          <input id="activo" name="activo" type="checkbox" {{ 'checked' if (p.get('activo', 1)|int == 1) else '' }}>
+          <label for="activo">Vigente</label>
+        </div>
+
+        <label>Integrado al SGI</label>
+        <div class="sgsst-checkrow">
+          <input id="integrado_sgi" name="integrado_sgi" type="checkbox" {{ 'checked' if (p.get('integrado_sgi', 1)|int == 1) else '' }}>
+          <label for="integrado_sgi">Sí</label>
+        </div>
+
+        <label for="responsable">Responsable</label>
+        <input id="responsable" name="responsable" type="text" value="{{ p.get('responsable','') }}" placeholder="Ej: Intendencia / Responsable técnico SG-SST">
+
+        <label for="frecuencia">Frecuencia</label>
+        <input id="frecuencia" name="frecuencia" type="text" value="{{ p.get('frecuencia','') }}" placeholder="Ej: Mensual / por criticidad">
+
+        <div class="full">
+          <label for="descripcion_corta">Descripción corta</label>
+          <textarea id="descripcion_corta" name="descripcion_corta" rows="2">{{ p.get('descripcion_corta','') }}</textarea>
+        </div>
+
+        <div class="full">
+          <label for="registro_asociado">Registro asociado</label>
+          <textarea id="registro_asociado" name="registro_asociado" rows="2">{{ p.get('registro_asociado','') }}</textarea>
+        </div>
+
+        <div class="full">
+          <label for="objetivo">Objetivo</label>
+          <textarea id="objetivo" name="objetivo" rows="5">{{ p.get('objetivo','') }}</textarea>
+        </div>
+
+        <div class="full">
+          <label for="alcance">Alcance</label>
+          <textarea id="alcance" name="alcance" rows="5">{{ p.get('alcance','') }}</textarea>
+        </div>
+
+        <div class="full">
+          <label for="procedimiento">Procedimiento</label>
+          <textarea id="procedimiento" name="procedimiento" rows="10">{{ p.get('procedimiento','') }}</textarea>
+        </div>
+      </div>
+
+      <div class="sgsst-form-actions">
+        <button type="submit" class="btn outline-amber">Guardar</button>
+        <a class="btn outline-slate" href="{{ url_for('sgsst_protocolos') }}">Cancelar</a>
+      </div>
+    </form>
+  </article>
+</section>
+
+{% endblock %}

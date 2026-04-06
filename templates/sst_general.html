@@ -991,6 +991,11 @@
     font-weight: 800;
     padding: 0 8px;
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    line-height: 1;
   }
 
   .sst-drive-btn.open {
@@ -1219,94 +1224,131 @@
       </div>
 
       <div class="sst-intro-grid">
+      {% set sgsst = sgsst_cards|default({}) %}
       <article class="sst-intro-card">
+        {% set c = sgsst.get('politica', {}) %}
         <h4>1. Politica de gestion</h4>
         <ul>
           <li>Gestion preventiva y trazable del area de Intendencia.</li>
           <li>Proteccion de la integridad psicofisica del personal.</li>
         </ul>
         <div class="sst-card-extra"><ul><li>Alinear operacion diaria con estandares de higiene y seguridad laboral.</li><li>Base para auditorias internas y mejora continua.</li></ul></div>
-        <div class="sst-card-foot"><span class="sst-card-status complete">Estado: Completo</span><button type="button" class="sst-card-more" onclick="toggleSstCardMore(this)">Ver mas -></button></div>
-        <div class="sst-drive-wrap" data-drive-key="politica_gestion">
-          <input class="sst-drive-input" type="url" placeholder="Pegar enlace Drive (https://...)" />
-          <button type="button" class="sst-drive-btn save">Guardar</button>
-          <button type="button" class="sst-drive-btn open">Abrir</button>
+        <div class="sst-card-foot">
+          <span class="sst-card-status {{ c.get('estado_cls', 'pending') }}">Estado: {{ c.get('estado_label', 'Pendiente') }}</span>
+          <button type="button" class="sst-card-more" onclick="toggleSstCardMore(this)">Ver mas -></button>
         </div>
+        <form class="sst-drive-wrap" method="post" action="{{ url_for('sgsst_documento_editar', bloque='politica') }}">
+          <input class="sst-drive-input" type="text" name="responsable" value="{{ c.get('responsable', '') }}" placeholder="Responsable (opcional)" />
+          <input type="hidden" name="quick" value="1" />
+          <input type="hidden" name="return_to" value="sst" />
+          <button type="submit" class="sst-drive-btn save">Guardar</button>
+          <a class="sst-drive-btn open" href="{{ url_for('sgsst_documento_detalle', bloque='politica') }}">Abrir</a>
+        </form>
       </article>
 
       <article class="sst-intro-card">
+        {% set c = sgsst.get('plan_accion', {}) %}
         <h4>2. Plan de accion e implementacion</h4>
         <ul>
           <li>Diagnostico inicial por sede y proceso.</li>
           <li>Priorizacion de riesgos y no conformidades criticas.</li>
         </ul>
         <div class="sst-card-extra"><ul><li>Ejecucion de acciones, seguimiento y cierre con evidencia.</li><li>Metas anuales y cronograma macro por etapa.</li></ul></div>
-        <div class="sst-card-foot"><span class="sst-card-status pending">Estado: Pendiente</span><button type="button" class="sst-card-more" onclick="toggleSstCardMore(this)">Ver mas -></button></div>
-        <div class="sst-drive-wrap" data-drive-key="plan_accion">
-          <input class="sst-drive-input" type="url" placeholder="Pegar enlace Drive (https://...)" />
-          <button type="button" class="sst-drive-btn save">Guardar</button>
-          <button type="button" class="sst-drive-btn open">Abrir</button>
+        <div class="sst-card-foot">
+          <span class="sst-card-status {{ c.get('estado_cls', 'pending') }}">Estado: {{ c.get('estado_label', 'Pendiente') }}</span>
+          <button type="button" class="sst-card-more" onclick="toggleSstCardMore(this)">Ver mas -></button>
         </div>
+        <form class="sst-drive-wrap" method="post" action="{{ url_for('sgsst_documento_editar', bloque='plan_accion') }}">
+          <input class="sst-drive-input" type="text" name="responsable" value="{{ c.get('responsable', '') }}" placeholder="Responsable (opcional)" />
+          <input type="hidden" name="quick" value="1" />
+          <input type="hidden" name="return_to" value="sst" />
+          <button type="submit" class="sst-drive-btn save">Guardar</button>
+          <a class="sst-drive-btn open" href="{{ url_for('sgsst_documento_detalle', bloque='plan_accion') }}">Abrir</a>
+        </form>
       </article>
 
       <article class="sst-intro-card">
+        {% set c = sgsst.get('roles', {}) %}
         <h4>3. Roles y responsabilidades</h4>
         <ul>
           <li>Choferes: traslados, documentacion y checklists operativos.</li>
           <li>Mantenimiento: obras, movimientos, desinfecciones y soporte.</li>
         </ul>
         <div class="sst-card-extra"><ul><li>Inventario/matafuegos: trazabilidad de recargas y control.</li><li>Higiene y seguridad: relevamientos, alertas y mejoras.</li></ul></div>
-        <div class="sst-card-foot"><span class="sst-card-status dev">Estado: En desarrollo</span><button type="button" class="sst-card-more" onclick="toggleSstCardMore(this)">Ver mas -></button></div>
-        <div class="sst-drive-wrap" data-drive-key="roles_resp">
-          <input class="sst-drive-input" type="url" placeholder="Pegar enlace Drive (https://...)" />
-          <button type="button" class="sst-drive-btn save">Guardar</button>
-          <button type="button" class="sst-drive-btn open">Abrir</button>
+        <div class="sst-card-foot">
+          <span class="sst-card-status {{ c.get('estado_cls', 'pending') }}">Estado: {{ c.get('estado_label', 'Pendiente') }}</span>
+          <button type="button" class="sst-card-more" onclick="toggleSstCardMore(this)">Ver mas -></button>
         </div>
+        <form class="sst-drive-wrap" method="post" action="{{ url_for('sgsst_documento_editar', bloque='roles') }}">
+          <input class="sst-drive-input" type="text" name="responsable" value="{{ c.get('responsable', '') }}" placeholder="Responsable (opcional)" />
+          <input type="hidden" name="quick" value="1" />
+          <input type="hidden" name="return_to" value="sst" />
+          <button type="submit" class="sst-drive-btn save">Guardar</button>
+          <a class="sst-drive-btn open" href="{{ url_for('sgsst_documento_detalle', bloque='roles') }}">Abrir</a>
+        </form>
       </article>
 
       <article class="sst-intro-card">
+        {% set c = sgsst.get('protocolos', {}) %}
         <h4>4. Protocolos operativos</h4>
         <ul>
           <li>Limpieza y desinfeccion por sede.</li>
           <li>Ergonomia y adecuacion de puestos.</li>
         </ul>
         <div class="sst-card-extra"><ul><li>Evacuacion y respuesta inicial ante emergencias.</li><li>Protocolos normalizados y versionados por sede.</li></ul></div>
-        <div class="sst-card-foot"><span class="sst-card-status pending">Estado: Pendiente</span><button type="button" class="sst-card-more" onclick="toggleSstCardMore(this)">Ver mas -></button></div>
-        <div class="sst-drive-wrap" data-drive-key="protocolos">
-          <input class="sst-drive-input" type="url" placeholder="Pegar enlace Drive (https://...)" />
-          <button type="button" class="sst-drive-btn save">Guardar</button>
-          <button type="button" class="sst-drive-btn open">Abrir</button>
+        <div class="sst-card-foot">
+          <span class="sst-card-status {{ c.get('estado_cls', 'pending') }}">Estado: {{ c.get('estado_label', 'Pendiente') }}{% if c.get('estado_detalle') %} ({{ c.get('estado_detalle') }}){% endif %}</span>
+          <button type="button" class="sst-card-more" onclick="toggleSstCardMore(this)">Ver mas -></button>
         </div>
+        <form class="sst-drive-wrap" method="post" action="{{ url_for('sgsst_documento_editar', bloque='protocolos') }}">
+          <input class="sst-drive-input" type="text" name="responsable" value="{{ c.get('responsable', '') }}" placeholder="Responsable (opcional)" />
+          <input type="hidden" name="quick" value="1" />
+          <input type="hidden" name="return_to" value="sst" />
+          <button type="submit" class="sst-drive-btn save">Guardar</button>
+          <a class="sst-drive-btn open" href="{{ url_for('sgsst_documento_detalle', bloque='protocolos') }}">Abrir</a>
+        </form>
       </article>
 
       <article class="sst-intro-card">
+        {% set c = sgsst.get('instructivos', {}) %}
         <h4>5. Instructivos y documentacion</h4>
         <ul>
           <li>Instructivo de carga de novedades y evidencias.</li>
           <li>Instructivo de seguimiento de acciones correctivas.</li>
         </ul>
         <div class="sst-card-extra"><ul><li>Instructivo de cierre y control de cumplimiento.</li><li>Guia breve de uso por rol operativo.</li></ul></div>
-        <div class="sst-card-foot"><span class="sst-card-status dev">Estado: En desarrollo</span><button type="button" class="sst-card-more" onclick="toggleSstCardMore(this)">Ver mas -></button></div>
-        <div class="sst-drive-wrap" data-drive-key="instructivos">
-          <input class="sst-drive-input" type="url" placeholder="Pegar enlace Drive (https://...)" />
-          <button type="button" class="sst-drive-btn save">Guardar</button>
-          <button type="button" class="sst-drive-btn open">Abrir</button>
+        <div class="sst-card-foot">
+          <span class="sst-card-status {{ c.get('estado_cls', 'pending') }}">Estado: {{ c.get('estado_label', 'Pendiente') }}{% if c.get('estado_detalle') %} ({{ c.get('estado_detalle') }}){% endif %}</span>
+          <button type="button" class="sst-card-more" onclick="toggleSstCardMore(this)">Ver mas -></button>
         </div>
+        <form class="sst-drive-wrap" method="post" action="{{ url_for('sgsst_documento_editar', bloque='instructivos') }}">
+          <input class="sst-drive-input" type="text" name="responsable" value="{{ c.get('responsable', '') }}" placeholder="Responsable (opcional)" />
+          <input type="hidden" name="quick" value="1" />
+          <input type="hidden" name="return_to" value="sst" />
+          <button type="submit" class="sst-drive-btn save">Guardar</button>
+          <a class="sst-drive-btn open" href="{{ url_for('sgsst_documento_detalle', bloque='instructivos') }}">Abrir</a>
+        </form>
       </article>
 
       <article class="sst-intro-card">
+        {% set c = sgsst.get('riesgos', {}) %}
         <h4>6. Proceso de gestion de riesgos</h4>
         <ul>
           <li>Identificacion y valoracion (matriz IPER complementaria).</li>
           <li>Definicion de controles y responsables.</li>
         </ul>
         <div class="sst-card-extra"><ul><li>Reevaluacion periodica y mejora continua.</li><li>Seguimiento de desvios y cierre por criticidad.</li></ul></div>
-        <div class="sst-card-foot"><span class="sst-card-status linked">Estado: Con enlace cargado</span><button type="button" class="sst-card-more" onclick="toggleSstCardMore(this)">Ver mas -></button></div>
-        <div class="sst-drive-wrap" data-drive-key="proceso_riesgos">
-          <input class="sst-drive-input" type="url" placeholder="Pegar enlace Drive (https://...)" />
-          <button type="button" class="sst-drive-btn save">Guardar</button>
-          <button type="button" class="sst-drive-btn open">Abrir</button>
+        <div class="sst-card-foot">
+          <span class="sst-card-status {{ c.get('estado_cls', 'pending') }}">Estado: {{ c.get('estado_label', 'Pendiente') }}</span>
+          <button type="button" class="sst-card-more" onclick="toggleSstCardMore(this)">Ver mas -></button>
         </div>
+        <form class="sst-drive-wrap" method="post" action="{{ url_for('sgsst_documento_editar', bloque='riesgos') }}">
+          <input class="sst-drive-input" type="text" name="responsable" value="{{ c.get('responsable', '') }}" placeholder="Responsable (opcional)" />
+          <input type="hidden" name="quick" value="1" />
+          <input type="hidden" name="return_to" value="sst" />
+          <button type="submit" class="sst-drive-btn save">Guardar</button>
+          <a class="sst-drive-btn open" href="{{ url_for('sgsst_documento_detalle', bloque='riesgos') }}">Abrir</a>
+        </form>
       </article>
       </div>
 

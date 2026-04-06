@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='sgsst/sgsst_documentacion.css') }}">
+{% endblock %}
+
+{% block content %}
+
+{% set d = doc or {} %}
+
+<section class="sgsst-shell">
+  <header class="sgsst-hero">
+    <div class="sgsst-head">
+      <div>
+        <h1>Editar bloque documental</h1>
+        <p class="sgsst-sub">
+          {{ d.get('titulo', '') }} ({{ (bloque or '')|replace('_',' ') }})
+        </p>
+      </div>
+
+      <div class="sgsst-actions">
+        <a class="sgsst-action-link" href="{{ url_for('sgsst_documento_detalle', bloque=bloque) }}">
+          <span class="t">Volver</span>
+          <span class="s">Detalle del bloque</span>
+        </a>
+        <a class="sgsst-action-link" href="{{ url_for('sgsst_documentacion_home') }}">
+          <span class="t">Inicio</span>
+          <span class="s">Bloque documental</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <article class="sgsst-panel">
+    <form method="post" class="sgsst-form">
+      <div class="sgsst-form-grid">
+        <label>Código</label>
+        <input type="text" value="{{ d.get('codigo', '') }}" readonly>
+
+        <label>Bloque</label>
+        <input type="text" value="{{ (bloque or '')|replace('_',' ') }}" readonly>
+
+        <label for="titulo">Título</label>
+        <input id="titulo" name="titulo" type="text" value="{{ d.get('titulo', '') }}" required>
+
+        <label for="subtitulo">Subtítulo</label>
+        <input id="subtitulo" name="subtitulo" type="text" value="{{ d.get('subtitulo', '') }}">
+
+        <label for="descripcion_corta">Descripción corta</label>
+        <input id="descripcion_corta" name="descripcion_corta" type="text" value="{{ d.get('descripcion_corta', '') }}">
+
+        <label for="responsable">Responsable</label>
+        <input id="responsable" name="responsable" type="text" value="{{ d.get('responsable', '') }}" placeholder="Responsable (opcional)">
+
+        <label for="estado">Estado (documento)</label>
+        {% set est_sel = (d.get('estado') or 'BORRADOR') %}
+        <select id="estado" name="estado">
+          {% for e in (estados or []) %}
+            <option value="{{ e }}" {{ 'selected' if e == est_sel else '' }}>{{ e|replace('_',' ') }}</option>
+          {% endfor %}
+        </select>
+
+        <label for="orden_visual">Orden visual</label>
+        <input id="orden_visual" name="orden_visual" type="number" min="0" value="{{ d.get('orden_visual', 0) }}">
+
+        <label>Activo</label>
+        <div class="sgsst-checkrow">
+          <input id="activo" name="activo" type="checkbox" {{ 'checked' if (d.get('activo', 0)|int == 1) else '' }}>
+          <label for="activo">Visible en el sistema</label>
+        </div>
+
+        <div class="full">
+          <label for="observaciones">Observaciones</label>
+          <textarea id="observaciones" name="observaciones" rows="3" placeholder="Notas internas (opcional)">{{ d.get('observaciones', '') }}</textarea>
+        </div>
+
+        <div class="full">
+          <label for="contenido">Contenido</label>
+          <textarea id="contenido" name="contenido" rows="16" placeholder="Contenido institucional del bloque (texto interno).">{{ d.get('contenido', '') }}</textarea>
+        </div>
+      </div>
+
+      <div class="sgsst-form-actions">
+        <button type="submit" class="btn outline-amber">Guardar cambios</button>
+        <a class="btn outline-slate" href="{{ url_for('sgsst_documento_detalle', bloque=bloque) }}">Cancelar</a>
+      </div>
+    </form>
+  </article>
+</section>
+
+{% endblock %}

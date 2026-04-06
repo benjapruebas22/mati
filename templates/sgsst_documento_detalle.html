@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='sgsst/sgsst_documentacion.css') }}">
+{% endblock %}
+
+{% block content %}
+
+{% set d = doc or {} %}
+{% set a = auto_estado or {} %}
+{% set cls = a.cls or 'pending' %}
+{% set badge = 'is-' ~ ('complete' if cls == 'complete' else ('dev' if cls == 'dev' else 'pending')) %}
+
+<section class="sgsst-shell">
+  <header class="sgsst-hero">
+    <div class="sgsst-head">
+      <div>
+        <h1>{{ d.get('titulo', 'Documento SG-SST') }}</h1>
+        <p class="sgsst-sub">
+          {{ d.get('subtitulo') or d.get('descripcion_corta') or '' }}
+        </p>
+      </div>
+
+      <div class="sgsst-actions">
+        <a class="sgsst-action-link" href="{{ url_for('sgsst_documentacion_home') }}">
+          <span class="t">Volver</span>
+          <span class="s">Bloque documental</span>
+        </a>
+        <a class="sgsst-action-link" href="{{ url_for('sgsst_documento_editar', bloque=bloque) }}">
+          <span class="t">Editar</span>
+          <span class="s">Actualizar contenido</span>
+        </a>
+        {% if bloque == 'protocolos' %}
+        <a class="sgsst-action-link" href="{{ url_for('sgsst_protocolos') }}">
+          <span class="t">Ver protocolos</span>
+          <span class="s">Listado específico</span>
+        </a>
+        {% endif %}
+        {% if bloque == 'instructivos' %}
+        <a class="sgsst-action-link" href="{{ url_for('sgsst_instructivos') }}">
+          <span class="t">Ver instructivos</span>
+          <span class="s">Listado específico</span>
+        </a>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="sgsst-kpis">
+      <div class="sgsst-kpi k1">
+        <div class="l">Estado automático</div>
+        <div class="v">{{ a.label or 'Pendiente' }}</div>
+        <div class="s">{% if a.detalle %}Base: {{ a.detalle }}{% else %}Según contenido y activo{% endif %}</div>
+      </div>
+      <div class="sgsst-kpi k2">
+        <div class="l">Estado (documento)</div>
+        <div class="v">{{ d.get('estado') or 'BORRADOR' }}</div>
+        <div class="s">Workflow interno</div>
+      </div>
+      <div class="sgsst-kpi k3">
+        <div class="l">Responsable</div>
+        <div class="v">{{ d.get('responsable') or '—' }}</div>
+        <div class="s">Asignación actual</div>
+      </div>
+      <div class="sgsst-kpi k4">
+        <div class="l">Actualización</div>
+        <div class="v">{{ d.get('fecha_actualizacion') or '—' }}</div>
+        <div class="s">Fecha/hora</div>
+      </div>
+    </div>
+  </header>
+
+  <article class="sgsst-panel">
+    <div class="sgsst-meta">
+      <span class="sgsst-badge {{ badge }}">Estado: {{ a.label or 'Pendiente' }}{% if a.detalle %} ({{ a.detalle }}){% endif %}</span>
+      <span class="tag">Código: {{ d.get('codigo') or '—' }}</span>
+      <span class="tag">Bloque: {{ (bloque or '')|replace('_', ' ') }}</span>
+      <span class="tag">Activo: {{ 'Sí' if (d.get('activo', 0)|int == 1) else 'No' }}</span>
+    </div>
+
+    {% if d.get('observaciones') %}
+      <p class="sub"><b>Observaciones:</b> {{ d.get('observaciones') }}</p>
+    {% endif %}
+
+    <div class="sgsst-content">{{ d.get('contenido') or 'Sin contenido cargado.' }}</div>
+  </article>
+</section>
+
+{% endblock %}
+

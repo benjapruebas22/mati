@@ -195,6 +195,8 @@ def module_from_path(path: str) -> str:
         return "obras"
     if path.startswith("/sst"):
         return "sst"
+    if path.startswith("/sgsst"):
+        return "sst"
     if path.startswith("/agentes"):
         return "agentes"
     if path.startswith("/sedes") or path.startswith("/sede"):

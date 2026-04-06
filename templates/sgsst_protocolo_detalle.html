@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='sgsst/sgsst_documentacion.css') }}">
+{% endblock %}
+
+{% block content %}
+
+{% set p = protocolo or {} %}
+
+<section class="sgsst-shell">
+  <header class="sgsst-hero">
+    <div class="sgsst-head">
+      <div>
+        <h1>{{ p.get('titulo', 'Protocolo') }}</h1>
+        <p class="sgsst-sub">
+          <b>{{ p.get('codigo', '') }}</b> · {{ p.get('categoria', '') }}
+        </p>
+      </div>
+
+      <div class="sgsst-actions">
+        <a class="sgsst-action-link" href="{{ url_for('sgsst_protocolos') }}">
+          <span class="t">Volver</span>
+          <span class="s">Listado de protocolos</span>
+        </a>
+        <a class="sgsst-action-link" href="{{ url_for('sgsst_protocolo_editar', id=p.get('id')) }}">
+          <span class="t">Editar</span>
+          <span class="s">Actualizar protocolo</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="sgsst-kpis">
+      <div class="sgsst-kpi k1">
+        <div class="l">Estado</div>
+        <div class="v">{{ p.get('estado') or 'BORRADOR' }}</div>
+        <div class="s">{{ 'Activo' if (p.get('activo', 0)|int == 1) else 'Inactivo' }}</div>
+      </div>
+      <div class="sgsst-kpi k2">
+        <div class="l">Responsable</div>
+        <div class="v">{{ p.get('responsable') or '—' }}</div>
+        <div class="s">Asignación</div>
+      </div>
+      <div class="sgsst-kpi k3">
+        <div class="l">Frecuencia</div>
+        <div class="v">{{ p.get('frecuencia') or '—' }}</div>
+        <div class="s">Planificación</div>
+      </div>
+      <div class="sgsst-kpi k4">
+        <div class="l">Actualización</div>
+        <div class="v">{{ p.get('fecha_actualizacion') or '—' }}</div>
+        <div class="s">Fecha/hora</div>
+      </div>
+    </div>
+  </header>
+
+  <article class="sgsst-panel">
+    {% if p.get('descripcion_corta') %}
+      <p class="sub"><b>Descripción corta:</b> {{ p.get('descripcion_corta') }}</p>
+    {% endif %}
+
+    <div class="sgsst-meta">
+      <span class="tag">Integrado al SGI: {{ 'Sí' if (p.get('integrado_sgi', 1)|int == 1) else 'No' }}</span>
+      <span class="tag">Registro asociado: {{ p.get('registro_asociado') or '—' }}</span>
+    </div>
+
+    <h2 class="sgsst-section-title">Objetivo</h2>
+    <div class="sgsst-content">{{ p.get('objetivo') or '—' }}</div>
+
+    <h2 class="sgsst-section-title">Alcance</h2>
+    <div class="sgsst-content">{{ p.get('alcance') or '—' }}</div>
+
+    <h2 class="sgsst-section-title">Procedimiento</h2>
+    <div class="sgsst-content">{{ p.get('procedimiento') or '—' }}</div>
+  </article>
+</section>
+
+{% endblock %}

@@ -297,6 +297,550 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         con.execute("CREATE INDEX IF NOT EXISTS idx_doc_destino_dest ON documentos_destino(destino)")
         con.commit()
 
+    # ============================================================
+    # SG-SST - Bloque documental interno (sin Drive)
+    # ============================================================
+
+    SGSST_BLOQUES_VALIDOS = [
+        "politica",
+        "plan_accion",
+        "roles",
+        "protocolos",
+        "instructivos",
+        "riesgos",
+    ]
+
+    SGSST_DOCS_SEED = [
+        {
+            "codigo": "SGSST-POL-01",
+            "bloque": "politica",
+            "orden_visual": 1,
+            "titulo": "Política de gestión de intendencia y seguridad y salud en el trabajo",
+            "subtitulo": "Declaración de compromiso institucional",
+            "descripcion_corta": "Marco general de compromiso, principios, alcance, responsabilidades y mejora continua del SGI + SG-SST.",
+            "contenido": "\n".join([
+                "POLÍTICA DE GESTIÓN DE INTENDENCIA Y SEGURIDAD Y SALUD EN EL TRABAJO (SGI + SG-SST)",
+                "",
+                "1) Declaración de compromiso",
+                "La Administración General y el Área de Intendencia del MPD asumen el compromiso de proteger la integridad psicofísica del personal y de promover condiciones de trabajo seguras y saludables en todas sus sedes.",
+                "",
+                "2) Propósito",
+                "Establecer el marco institucional para gestionar la prevención, la identificación y control de riesgos laborales, el cumplimiento normativo aplicable y la mejora continua del desempeño en Seguridad y Salud en el Trabajo (SG-SST), integrado al Sistema de Gestión de Intendencia (SGI).",
+                "",
+                "3) Alcance",
+                "Aplica a las sedes del MPD y a las actividades habituales de Intendencia (mantenimiento, logística, traslados, limpieza, soporte operativo, relevamientos y controles asociados).",
+                "",
+                "4) Marco general",
+                "El SG-SST se implementa como un componente integrado al SGI: se planifica, ejecuta, registra y hace seguimiento dentro de la operatoria habitual, sin generar estructuras paralelas ni operativos exclusivos.",
+                "",
+                "5) Principios de gestión",
+                "- Prevención como criterio rector.",
+                "- Cumplimiento de requisitos legales y otros requisitos aplicables.",
+                "- Participación del personal y consulta permanente.",
+                "- Registro, evidencia y trazabilidad en el sistema.",
+                "- Priorización por criticidad y mejora progresiva por sede.",
+                "- Revisión periódica y mejora continua.",
+                "",
+                "6) Objetivos generales",
+                "- Identificar peligros y evaluar riesgos, con prioridad ergonómica.",
+                "- Estandarizar controles (protocolos) e instructivos de carga y registro.",
+                "- Reducir incidentes, no conformidades y condiciones inseguras.",
+                "- Fortalecer la comunicación interna y la cultura preventiva.",
+                "",
+                "7) Responsabilidades",
+                "- Alta Dirección / Administración General: definir lineamientos, asignar recursos y revisar el desempeño del sistema.",
+                "- Intendencia: planificar, ejecutar y registrar acciones SG-SST dentro de las tareas habituales.",
+                "- Responsables técnicos SG-SST: asesorar, relevar, proponer medidas y verificar evidencias/cierres.",
+                "- Personal operativo y de apoyo: colaborar, cumplir procedimientos, utilizar EPP cuando aplique y reportar desvíos.",
+                "",
+                "8) Comunicación",
+                "Se garantizará la comunicación interna de la política, los riesgos relevantes, los protocolos/instructivos vigentes y las medidas preventivas mediante canales institucionales y registros trazables en el sistema.",
+                "",
+                "9) Revisión y mejora continua",
+                "La política y documentos asociados se revisarán periódicamente y ante cambios significativos (sedes, procesos, incidentes o normativa), actualizando objetivos, acciones y controles para asegurar la mejora continua del SGI + SG-SST.",
+            ]),
+        },
+        {
+            "codigo": "SGSST-PLA-01",
+            "bloque": "plan_accion",
+            "orden_visual": 2,
+            "titulo": "Plan de acción e implementación",
+            "subtitulo": "Implementación progresiva del SG-SST integrada al SGI",
+            "descripcion_corta": "Plan operativo para implementar el SG-SST en las sedes del MPD.",
+            "contenido": "\n".join([
+                "PLAN DE ACCIÓN E IMPLEMENTACIÓN (SG-SST INTEGRADO AL SGI)",
+                "",
+                "1) Objetivo",
+                "Implementar el SG-SST de manera progresiva e integrada al SGI, incorporando controles, registros y seguimiento dentro de las tareas habituales de Intendencia.",
+                "",
+                "2) Alcance",
+                "Aplica a sedes del MPD y a procesos operativos (mantenimiento, logística, limpieza, traslados, relevamientos, control de condiciones y seguimiento de desvíos).",
+                "",
+                "3) Modalidad de implementación (integración al SGI)",
+                "- No genera operativos exclusivos: se ejecuta en el marco de la operatoria habitual.",
+                "- Acompaña recorridas y controles existentes de Intendencia, agregando criterios preventivos y trazabilidad.",
+                "- Integra evidencias y resultados en el sistema (registro unificado).",
+                "",
+                "4) Relevamiento inicial",
+                "- Diagnóstico por sede y proceso (condiciones generales, instalaciones, seguridad contra incendios, sanitarios, señalización, orden y limpieza).",
+                "- Relevamiento ergonómico y condiciones del puesto de trabajo (prioridad).",
+                "",
+                "5) Detección de desvíos",
+                "- Registro de hallazgos, incidentes y no conformidades.",
+                "- Clasificación por criticidad y definición de responsables/plazos.",
+                "",
+                "6) Gestión de riesgos",
+                "- Identificación de peligros y evaluación inicial.",
+                "- Definición de controles preventivos/correctivos y criterios de verificación.",
+                "",
+                "7) Acciones preventivas",
+                "- Controles periódicos según protocolos vigentes.",
+                "- Entrega y control de EPP cuando corresponda.",
+                "- Comunicación interna de medidas y criterios preventivos.",
+                "",
+                "8) Planificación operativa",
+                "- Cronograma macro por sede (etapas) y planificación mensual/semanal según agenda real de Intendencia.",
+                "- Priorización por criticidad y factibilidad operativa.",
+                "",
+                "9) Seguimiento",
+                "- Registro de avances, evidencias, verificaciones y cierres.",
+                "- Indicadores mínimos: controles realizados, desvíos abiertos/cerrados, incidentes, EPP entregado, hallazgos recurrentes.",
+                "",
+                "10) Mejora continua",
+                "El plan se revisa y ajusta en función de resultados, incidentes, auditorías internas y cambios operativos, asegurando evolución sostenida del SG-SST dentro del SGI.",
+            ]),
+        },
+        {
+            "codigo": "SGSST-ROL-01",
+            "bloque": "roles",
+            "orden_visual": 3,
+            "titulo": "Roles y responsabilidades",
+            "subtitulo": "Participación del personal del área de Intendencia",
+            "descripcion_corta": "Definición de roles operativos, técnicos y apoyo del sistema.",
+            "contenido": "\n".join([
+                "ROLES Y RESPONSABILIDADES (SGI + SG-SST)",
+                "",
+                "1) Alta Dirección / Administración General",
+                "- Definir lineamientos institucionales del SGI + SG-SST.",
+                "- Asegurar recursos para la implementación progresiva (tiempos, insumos, priorizaciones).",
+                "- Revisar indicadores y resultados del sistema; impulsar mejora continua.",
+                "",
+                "2) Administración general (gestión y coordinación)",
+                "- Alinear prioridades institucionales con la planificación operativa.",
+                "- Facilitar coordinación interáreas cuando se requieran acciones correctivas.",
+                "",
+                "3) Responsables operativos (Intendencia / procesos)",
+                "- Integrar acciones SG-SST al trabajo habitual (sin estructuras paralelas).",
+                "- Ejecutar controles/relevamientos según protocolos vigentes.",
+                "- Registrar evidencias y resultados en el sistema para trazabilidad.",
+                "- Reportar desvíos, incidentes y condiciones inseguras.",
+                "",
+                "4) Responsables técnicos (SG-SST)",
+                "- Asesorar técnicamente y proponer medidas preventivas/correctivas.",
+                "- Realizar verificaciones y apoyar la evaluación de riesgos (prioridad ergonómica).",
+                "- Verificar cierres y eficacia de acciones implementadas.",
+                "",
+                "5) Personal de apoyo",
+                "- Colaborar en la coordinación de actividades por sede.",
+                "- Apoyar carga de registros cuando corresponda y asegurar consistencia documental.",
+                "",
+                "6) Participación del equipo de Intendencia",
+                "- Participar en relevamientos y controles operativos.",
+                "- Sostener buenas prácticas (orden, limpieza, señalización, uso de EPP cuando aplique).",
+                "",
+                "7) Responsabilidades generales (registro, control, colaboración y reporte)",
+                "- Registrar: fecha, sede, responsable, hallazgos, evidencia y acciones.",
+                "- Controlar: condiciones básicas y cumplimiento de protocolos/instructivos.",
+                "- Colaborar: con áreas involucradas para resolver desvíos.",
+                "- Reportar: incidentes/no conformidades y oportunidades de mejora.",
+            ]),
+        },
+        {
+            "codigo": "SGSST-PRO-01",
+            "bloque": "protocolos",
+            "orden_visual": 4,
+            "titulo": "Protocolos operativos",
+            "subtitulo": "Procedimientos básicos del SG-SST",
+            "descripcion_corta": "Protocolos operativos aplicables a relevamientos, controles, incidentes, EPP y no conformidades.",
+            "contenido": "\n".join([
+                "PROTOCOLOS OPERATIVOS (SG-SST INTEGRADO AL SGI)",
+                "",
+                "Este bloque consolida el conjunto de protocolos operativos específicos del SG-SST, integrados al Sistema de Gestión de Intendencia (SGI).",
+                "",
+                "Concepto",
+                "Los protocolos estandarizan controles y tareas preventivas, definiendo criterios mínimos de registro y evidencia para asegurar consistencia entre sedes.",
+                "",
+                "Integración al SGI",
+                "Las acciones del SG-SST se integran al Sistema de Gestión de Intendencia (SGI), realizándose en el marco de las tareas operativas habituales, sin generar estructuras paralelas ni operativos exclusivos.",
+                "",
+                "Qué incluye cada protocolo",
+                "- Objetivo y alcance.",
+                "- Procedimiento mínimo (pasos y criterios).",
+                "- Registro asociado y evidencia requerida.",
+                "- Frecuencia y responsable.",
+                "",
+                "Protocolos base (iniciales)",
+                "- PROT-SST-01: Relevamiento de sedes.",
+                "- PROT-SST-02: Control de matafuegos.",
+                "- PROT-SST-03: Control de condiciones eléctricas básicas.",
+                "- PROT-SST-04: Control de condiciones sanitarias.",
+                "- PROT-SST-05: Entrega y control de EPP.",
+                "- PROT-SST-06: Detección y registro de riesgos.",
+                "- PROT-SST-07: Gestión de no conformidades.",
+                "- PROT-SST-08: Incidentes.",
+            ]),
+        },
+        {
+            "codigo": "SGSST-INS-01",
+            "bloque": "instructivos",
+            "orden_visual": 5,
+            "titulo": "Instructivos y documentación",
+            "subtitulo": "Documentación de apoyo operativo",
+            "descripcion_corta": "Instructivos simples para ejecución, registro y trazabilidad de acciones SG-SST.",
+            "contenido": "\n".join([
+                "INSTRUCTIVOS Y DOCUMENTACIÓN",
+                "",
+                "Concepto general",
+                "Los instructivos son guías breves, operativas y claras para estandarizar la ejecución y la carga de registros vinculados al SG-SST dentro del SGI.",
+                "",
+                "Instructivos breves (uso operativo)",
+                "- Indican qué cargar, cuándo, con qué criterio y qué evidencia registrar.",
+                "- Reducen variabilidad entre sedes y roles, mejorando consistencia documental.",
+                "",
+                "Vinculación con registros",
+                "Cada instructivo se asocia a registros del sistema (relevamientos, incidentes, EPP, no conformidades, acciones preventivas), asegurando que la información quede trazable y verificable.",
+                "",
+                "Trazabilidad en el sistema",
+                "El sistema permite seguimiento de avances, control de cumplimiento y trazabilidad histórica por sede, fecha y responsable.",
+            ]),
+        },
+        {
+            "codigo": "SGSST-RIE-01",
+            "bloque": "riesgos",
+            "orden_visual": 6,
+            "titulo": "Proceso de gestión de riesgos",
+            "subtitulo": "Identificación, evaluación y seguimiento de riesgos",
+            "descripcion_corta": "Proceso base para gestión de riesgos, con prioridad ergonómica y enfoque preventivo.",
+            "contenido": "\n".join([
+                "PROCESO DE GESTIÓN DE RIESGOS",
+                "",
+                "1) Concepto general de riesgo laboral",
+                "El riesgo laboral combina probabilidad y severidad. Se gestiona identificando peligros, evaluando criticidad y aplicando controles preventivos/correctivos verificables.",
+                "",
+                "2) Prioridad ergonómica",
+                "Se priorizan riesgos ergonómicos por su impacto y recurrencia (adecuación de puestos, posturas, movimientos repetitivos, carga física y pausas).",
+                "",
+                "3) Identificación de peligros",
+                "- Relevamientos por sede y proceso.",
+                "- Observación directa y consulta al personal.",
+                "- Análisis de incidentes y no conformidades.",
+                "",
+                "4) Evaluación inicial",
+                "- Valoración de criticidad (probabilidad/severidad) y definición de prioridades.",
+                "- Identificación de controles existentes y brechas.",
+                "",
+                "5) Medidas preventivas y correctivas",
+                "- Eliminación/sustitución cuando sea posible.",
+                "- Controles de ingeniería y administrativos.",
+                "- Señalización, orden y limpieza, mantenimiento preventivo.",
+                "- EPP como última barrera cuando aplique.",
+                "",
+                "6) Seguimiento",
+                "- Registro de acciones, responsables, plazos y evidencias.",
+                "- Verificación de eficacia y cierre documentado.",
+                "",
+                "7) Mejora continua",
+                "La gestión de riesgos se revisa periódicamente y ante cambios (obras, mudanzas, incidentes, normativa), actualizando criterios y priorizaciones.",
+            ]),
+        },
+    ]
+
+    SGSST_PROTOCOLOS_BASE = [
+        {"codigo": "PROT-SST-01", "titulo": "Protocolo de relevamiento de sedes", "categoria": "Relevamientos", "orden": 1},
+        {"codigo": "PROT-SST-02", "titulo": "Protocolo de control de matafuegos", "categoria": "Seguridad contra incendios", "orden": 2},
+        {"codigo": "PROT-SST-03", "titulo": "Protocolo de control de condiciones eléctricas básicas", "categoria": "Instalaciones", "orden": 3},
+        {"codigo": "PROT-SST-04", "titulo": "Protocolo de control de condiciones sanitarias", "categoria": "Condiciones generales", "orden": 4},
+        {"codigo": "PROT-SST-05", "titulo": "Protocolo de entrega y control de EPP", "categoria": "EPP", "orden": 5},
+        {"codigo": "PROT-SST-06", "titulo": "Protocolo de detección y registro de riesgos", "categoria": "Gestión de riesgos", "orden": 6},
+        {"codigo": "PROT-SST-07", "titulo": "Protocolo de gestión de no conformidades", "categoria": "No conformidades", "orden": 7},
+        {"codigo": "PROT-SST-08", "titulo": "Protocolo de incidentes", "categoria": "Incidentes", "orden": 8},
+    ]
+
+    SGSST_INSTRUCTIVOS_BASE = [
+        {"codigo": "INS-SST-01", "titulo": "Instructivo de carga de relevamientos de sede", "categoria": "Relevamientos", "orden": 1},
+        {"codigo": "INS-SST-02", "titulo": "Instructivo de registro de incidentes", "categoria": "Incidentes", "orden": 2},
+        {"codigo": "INS-SST-03", "titulo": "Instructivo de carga de entrega de EPP", "categoria": "EPP", "orden": 3},
+        {"codigo": "INS-SST-04", "titulo": "Instructivo de registro de no conformidades", "categoria": "No conformidades", "orden": 4},
+        {"codigo": "INS-SST-05", "titulo": "Instructivo de seguimiento de acciones preventivas", "categoria": "Seguimiento", "orden": 5},
+    ]
+
+    _SGSST_INTEGRACION_SGI_FRASE = (
+        "Las acciones del SG-SST se integran al Sistema de Gestión de Intendencia (SGI), "
+        "realizándose en el marco de las tareas operativas habituales, sin generar estructuras paralelas "
+        "ni operativos exclusivos."
+    )
+
+    def _sgsst_now_ts() -> str:
+        return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    def ensure_sgsst_documentacion_tables(con):
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS sgsst_documentos(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                codigo TEXT UNIQUE NOT NULL,
+                bloque TEXT NOT NULL,
+                titulo TEXT NOT NULL,
+                subtitulo TEXT,
+                descripcion_corta TEXT,
+                contenido TEXT,
+                estado TEXT DEFAULT 'BORRADOR',
+                orden_visual INTEGER DEFAULT 0,
+                activo INTEGER DEFAULT 1,
+                fecha_actualizacion TEXT,
+                responsable TEXT,
+                observaciones TEXT
+            )
+        """)
+        ensure_cols(con, "sgsst_documentos", [
+            ("subtitulo", "TEXT"),
+            ("descripcion_corta", "TEXT"),
+            ("contenido", "TEXT"),
+            ("estado", "TEXT DEFAULT 'BORRADOR'"),
+            ("orden_visual", "INTEGER DEFAULT 0"),
+            ("activo", "INTEGER DEFAULT 1"),
+            ("fecha_actualizacion", "TEXT"),
+            ("responsable", "TEXT"),
+            ("observaciones", "TEXT"),
+        ])
+        con.execute("CREATE INDEX IF NOT EXISTS idx_sgsst_documentos_bloque ON sgsst_documentos(bloque)")
+        con.execute("CREATE INDEX IF NOT EXISTS idx_sgsst_documentos_activo ON sgsst_documentos(activo)")
+
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS sgsst_protocolos(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                codigo TEXT UNIQUE NOT NULL,
+                titulo TEXT NOT NULL,
+                categoria TEXT NOT NULL,
+                descripcion_corta TEXT,
+                objetivo TEXT,
+                alcance TEXT,
+                procedimiento TEXT,
+                registro_asociado TEXT,
+                frecuencia TEXT,
+                responsable TEXT,
+                estado TEXT DEFAULT 'BORRADOR',
+                orden_visual INTEGER DEFAULT 0,
+                activo INTEGER DEFAULT 1,
+                fecha_actualizacion TEXT,
+                integrado_sgi INTEGER DEFAULT 1
+            )
+        """)
+        ensure_cols(con, "sgsst_protocolos", [
+            ("descripcion_corta", "TEXT"),
+            ("objetivo", "TEXT"),
+            ("alcance", "TEXT"),
+            ("procedimiento", "TEXT"),
+            ("registro_asociado", "TEXT"),
+            ("frecuencia", "TEXT"),
+            ("responsable", "TEXT"),
+            ("estado", "TEXT DEFAULT 'BORRADOR'"),
+            ("orden_visual", "INTEGER DEFAULT 0"),
+            ("activo", "INTEGER DEFAULT 1"),
+            ("fecha_actualizacion", "TEXT"),
+            ("integrado_sgi", "INTEGER DEFAULT 1"),
+        ])
+        con.execute("CREATE INDEX IF NOT EXISTS idx_sgsst_protocolos_categoria ON sgsst_protocolos(categoria)")
+        con.execute("CREATE INDEX IF NOT EXISTS idx_sgsst_protocolos_activo ON sgsst_protocolos(activo)")
+
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS sgsst_instructivos(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                codigo TEXT UNIQUE NOT NULL,
+                titulo TEXT NOT NULL,
+                categoria TEXT NOT NULL,
+                descripcion_corta TEXT,
+                contenido TEXT,
+                uso_aplicable TEXT,
+                responsable TEXT,
+                estado TEXT DEFAULT 'BORRADOR',
+                orden_visual INTEGER DEFAULT 0,
+                activo INTEGER DEFAULT 1,
+                fecha_actualizacion TEXT
+            )
+        """)
+        ensure_cols(con, "sgsst_instructivos", [
+            ("descripcion_corta", "TEXT"),
+            ("contenido", "TEXT"),
+            ("uso_aplicable", "TEXT"),
+            ("responsable", "TEXT"),
+            ("estado", "TEXT DEFAULT 'BORRADOR'"),
+            ("orden_visual", "INTEGER DEFAULT 0"),
+            ("activo", "INTEGER DEFAULT 1"),
+            ("fecha_actualizacion", "TEXT"),
+        ])
+        con.execute("CREATE INDEX IF NOT EXISTS idx_sgsst_instructivos_categoria ON sgsst_instructivos(categoria)")
+        con.execute("CREATE INDEX IF NOT EXISTS idx_sgsst_instructivos_activo ON sgsst_instructivos(activo)")
+        con.commit()
+
+    def seed_sgsst_documentacion(con):
+        ensure_sgsst_documentacion_tables(con)
+
+        row = con.execute("SELECT COUNT(1) AS n FROM sgsst_documentos").fetchone()
+        n_docs = int((row["n"] if row else 0) or 0)
+        if n_docs == 0:
+            now = _sgsst_now_ts()
+            for d in SGSST_DOCS_SEED:
+                con.execute(
+                    """
+                    INSERT INTO sgsst_documentos (
+                        codigo, bloque, titulo, subtitulo, descripcion_corta, contenido,
+                        estado, orden_visual, activo, fecha_actualizacion, responsable, observaciones
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        d["codigo"],
+                        d["bloque"],
+                        d["titulo"],
+                        d.get("subtitulo"),
+                        d.get("descripcion_corta"),
+                        d.get("contenido"),
+                        "BORRADOR",
+                        int(d.get("orden_visual") or 0),
+                        1,
+                        now,
+                        "",
+                        "",
+                    ),
+                )
+            con.commit()
+
+        row = con.execute("SELECT COUNT(1) AS n FROM sgsst_protocolos").fetchone()
+        n_prot = int((row["n"] if row else 0) or 0)
+        if n_prot == 0:
+            now = _sgsst_now_ts()
+            for p in SGSST_PROTOCOLOS_BASE:
+                titulo = p["titulo"]
+                objetivo = "\n".join([
+                    f"Objetivo: estandarizar y registrar \"{titulo}\".",
+                    _SGSST_INTEGRACION_SGI_FRASE,
+                ])
+                alcance = "Alcance: sedes del MPD y tareas habituales de Intendencia vinculadas al tema."
+                procedimiento = "\n".join([
+                    "Procedimiento mínimo:",
+                    "1. Planificar (sede, fecha, responsable).",
+                    "2. Ejecutar el control/relevamiento.",
+                    "3. Registrar evidencias y hallazgos.",
+                    "4. Definir acciones ante desvíos y hacer seguimiento.",
+                    "5. Verificar cierre y documentar.",
+                    "",
+                    _SGSST_INTEGRACION_SGI_FRASE,
+                ])
+                registro_asociado = "Registro asociado: carga y evidencia en el sistema (checklist/relevamiento/incidente/no conformidad/acciones)."
+                con.execute(
+                    """
+                    INSERT INTO sgsst_protocolos (
+                        codigo, titulo, categoria, descripcion_corta, objetivo, alcance, procedimiento,
+                        registro_asociado, frecuencia, responsable, estado, orden_visual, activo,
+                        fecha_actualizacion, integrado_sgi
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        p["codigo"],
+                        titulo,
+                        p["categoria"],
+                        f"Protocolo operativo: {p['categoria']}.",
+                        objetivo,
+                        alcance,
+                        procedimiento,
+                        registro_asociado,
+                        "Según planificación operativa (mínimo mensual o por criticidad).",
+                        "Intendencia / Responsable técnico SG-SST",
+                        "BORRADOR",
+                        int(p.get("orden") or 0),
+                        1,
+                        now,
+                        1,
+                    ),
+                )
+            con.commit()
+
+        row = con.execute("SELECT COUNT(1) AS n FROM sgsst_instructivos").fetchone()
+        n_ins = int((row["n"] if row else 0) or 0)
+        if n_ins == 0:
+            now = _sgsst_now_ts()
+            for i in SGSST_INSTRUCTIVOS_BASE:
+                contenido = "\n".join([
+                    i["titulo"].upper(),
+                    "",
+                    "Objetivo: guiar la carga correcta, consistente y trazable de registros en el sistema.",
+                    "",
+                    "Pasos mínimos:",
+                    "1. Ingresar al módulo correspondiente.",
+                    "2. Completar campos obligatorios y validar datos.",
+                    "3. Registrar evidencias cuando aplique.",
+                    "4. Guardar y verificar el registro.",
+                    "5. Actualizar estado y cerrar cuando corresponda.",
+                ])
+                uso_aplicable = "\n".join([
+                    f"Uso aplicable: categoría \"{i['categoria']}\".",
+                    _SGSST_INTEGRACION_SGI_FRASE,
+                ])
+                con.execute(
+                    """
+                    INSERT INTO sgsst_instructivos (
+                        codigo, titulo, categoria, descripcion_corta, contenido, uso_aplicable,
+                        responsable, estado, orden_visual, activo, fecha_actualizacion
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        i["codigo"],
+                        i["titulo"],
+                        i["categoria"],
+                        f"Instructivo breve: {i['categoria']}.",
+                        contenido,
+                        uso_aplicable,
+                        "Intendencia / Responsable operativo",
+                        "BORRADOR",
+                        int(i.get("orden") or 0),
+                        1,
+                        now,
+                    ),
+                )
+            con.commit()
+
+    def _sgsst_estado_bloque(contenido: str, activo: int) -> dict:
+        txt = (contenido or "").strip()
+        if int(activo or 0) != 1:
+            return {"label": "Pendiente", "cls": "pending"}
+        if not txt:
+            return {"label": "Pendiente", "cls": "pending"}
+        if len(txt) < 650:
+            return {"label": "En desarrollo", "cls": "dev"}
+        return {"label": "Completo", "cls": "complete"}
+
+    def _sgsst_estado_por_base(con, table: str, codigos_base):
+        codigos = [str(x or "").strip() for x in (codigos_base or []) if str(x or "").strip()]
+        if not codigos:
+            return {"label": "Pendiente", "cls": "pending", "detalle": "", "n_act": 0, "total": 0}
+        placeholders = ",".join(["?"] * len(codigos))
+        row = con.execute(
+            f"""
+            SELECT COUNT(1) AS n
+            FROM {table}
+            WHERE COALESCE(activo, 1) = 1
+              AND codigo IN ({placeholders})
+            """,
+            codigos,
+        ).fetchone()
+        n_act = int((row["n"] if row else 0) or 0)
+        total = len(codigos)
+        detalle = f"{n_act}/{total}"
+        if n_act <= 0:
+            return {"label": "Pendiente", "cls": "pending", "detalle": detalle, "n_act": n_act, "total": total}
+        if n_act < total:
+            return {"label": "En desarrollo", "cls": "dev", "detalle": detalle, "n_act": n_act, "total": total}
+        return {"label": "Completo", "cls": "complete", "detalle": detalle, "n_act": n_act, "total": total}
+
     def _split_doc_tags(raw):
         chunks = []
         seen = set()
@@ -4311,6 +4855,641 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             q_tag=q_tag,
         )
 
+    # ============================================================
+    # SG-SST - Bloque documental interno (rutas)
+    # ============================================================
+
+    def _sgsst_norm_bloque(bloque: str):
+        b = (bloque or "").strip().lower()
+        return b if b in SGSST_BLOQUES_VALIDOS else None
+
+    def _sgsst_doc_por_bloque(con, bloque: str):
+        return con.execute(
+            """
+            SELECT *
+            FROM sgsst_documentos
+            WHERE bloque = ?
+            ORDER BY orden_visual, id
+            LIMIT 1
+            """,
+            (bloque,),
+        ).fetchone()
+
+    def _sgsst_build_bloques_home(con):
+        placeholders = ",".join(["?"] * len(SGSST_BLOQUES_VALIDOS))
+        rows = con.execute(
+            f"""
+            SELECT *
+            FROM sgsst_documentos
+            WHERE bloque IN ({placeholders})
+            ORDER BY orden_visual, id
+            """,
+            SGSST_BLOQUES_VALIDOS,
+        ).fetchall()
+        by_bloque = {}
+        for r in rows:
+            b = (r["bloque"] or "").strip().lower()
+            if b and b not in by_bloque:
+                by_bloque[b] = dict(r)
+
+        base_prot_codigos = [x["codigo"] for x in SGSST_PROTOCOLOS_BASE]
+        base_ins_codigos = [x["codigo"] for x in SGSST_INSTRUCTIVOS_BASE]
+        estado_prot = _sgsst_estado_por_base(con, "sgsst_protocolos", base_prot_codigos)
+        estado_ins = _sgsst_estado_por_base(con, "sgsst_instructivos", base_ins_codigos)
+
+        bloques = []
+        seed_by_bloque = {d["bloque"]: d for d in SGSST_DOCS_SEED}
+        for b in SGSST_BLOQUES_VALIDOS:
+            doc = by_bloque.get(b) or dict(seed_by_bloque.get(b) or {"bloque": b})
+            if b == "protocolos":
+                auto = estado_prot
+            elif b == "instructivos":
+                auto = estado_ins
+            else:
+                auto = _sgsst_estado_bloque(doc.get("contenido"), doc.get("activo", 0))
+            bloques.append({"bloque": b, "doc": doc, "auto": auto})
+        return bloques, estado_prot, estado_ins
+
+    @app.route("/sgsst/documentacion", endpoint="sgsst_documentacion_home")
+    def sgsst_documentacion_home():
+        con = get_db()
+        try:
+            seed_sgsst_documentacion(con)
+            bloques, estado_prot, estado_ins = _sgsst_build_bloques_home(con)
+
+            bloques_activos = 0
+            pendientes_bloques = 0
+            for b in bloques:
+                doc = b.get("doc") or {}
+                auto = b.get("auto") or {}
+                if int(doc.get("activo", 0) or 0) == 1:
+                    bloques_activos += 1
+                if (b.get("bloque") in ("politica", "plan_accion", "roles", "riesgos")) and auto.get("label") != "Completo":
+                    pendientes_bloques += 1
+
+            row = con.execute("SELECT COUNT(1) AS n FROM sgsst_protocolos WHERE COALESCE(activo, 1) = 1").fetchone()
+            protocolos_activos = int((row["n"] if row else 0) or 0)
+            row = con.execute("SELECT COUNT(1) AS n FROM sgsst_instructivos WHERE COALESCE(activo, 1) = 1").fetchone()
+            instructivos_activos = int((row["n"] if row else 0) or 0)
+
+            prot_act = int((estado_prot.get("n_act") or 0) or 0)
+            prot_tot = int((estado_prot.get("total") or 0) or 0)
+            ins_act = int((estado_ins.get("n_act") or 0) or 0)
+            ins_tot = int((estado_ins.get("total") or 0) or 0)
+            pendientes_total = pendientes_bloques + max(0, prot_tot - prot_act) + max(0, ins_tot - ins_act)
+        finally:
+            try:
+                con.close()
+            except Exception:
+                pass
+
+        return render_template(
+            "sgsst_documentacion_home.html",
+            bloques=bloques,
+            kpi_bloques_activos=bloques_activos,
+            kpi_protocolos_activos=protocolos_activos,
+            kpi_instructivos_activos=instructivos_activos,
+            kpi_pendientes=pendientes_total,
+            estado_protocolos=estado_prot,
+            estado_instructivos=estado_ins,
+        )
+
+    @app.route("/sgsst/documentacion/<bloque>", endpoint="sgsst_documento_detalle")
+    def sgsst_documento_detalle(bloque):
+        b = _sgsst_norm_bloque(bloque)
+        if not b:
+            return "Bloque no válido.", 404
+
+        con = get_db()
+        try:
+            seed_sgsst_documentacion(con)
+            row = _sgsst_doc_por_bloque(con, b)
+            if not row:
+                return "Documento no encontrado.", 404
+            doc = dict(row)
+
+            if b == "protocolos":
+                auto = _sgsst_estado_por_base(con, "sgsst_protocolos", [x["codigo"] for x in SGSST_PROTOCOLOS_BASE])
+            elif b == "instructivos":
+                auto = _sgsst_estado_por_base(con, "sgsst_instructivos", [x["codigo"] for x in SGSST_INSTRUCTIVOS_BASE])
+            else:
+                auto = _sgsst_estado_bloque(doc.get("contenido"), doc.get("activo", 0))
+        finally:
+            try:
+                con.close()
+            except Exception:
+                pass
+
+        return render_template(
+            "sgsst_documento_detalle.html",
+            doc=doc,
+            bloque=b,
+            auto_estado=auto,
+        )
+
+    @app.route("/sgsst/documentacion/<bloque>/editar", methods=["GET", "POST"], endpoint="sgsst_documento_editar")
+    def sgsst_documento_editar(bloque):
+        b = _sgsst_norm_bloque(bloque)
+        if not b:
+            return "Bloque no válido.", 404
+
+        con = get_db()
+        try:
+            seed_sgsst_documentacion(con)
+            row = _sgsst_doc_por_bloque(con, b)
+            if not row:
+                return "Documento no encontrado.", 404
+            doc = dict(row)
+
+            if request.method == "POST":
+                now = _sgsst_now_ts()
+                quick = (request.form.get("quick") or "").strip()
+                if quick == "1":
+                    responsable = (request.form.get("responsable") or "").strip()
+                    con.execute(
+                        "UPDATE sgsst_documentos SET responsable = ?, fecha_actualizacion = ? WHERE id = ?",
+                        (responsable, now, int(doc["id"])),
+                    )
+                    con.commit()
+                    return_to = (request.form.get("return_to") or "").strip().lower()
+                    if return_to == "sst":
+                        return redirect(url_for("sst_general"))
+                    return redirect(url_for("sgsst_documento_detalle", bloque=b))
+
+                titulo = (request.form.get("titulo") or "").strip()
+                subtitulo = (request.form.get("subtitulo") or "").strip()
+                descripcion_corta = (request.form.get("descripcion_corta") or "").strip()
+                contenido = (request.form.get("contenido") or "").strip()
+                estado = (request.form.get("estado") or "BORRADOR").strip().upper()
+                responsable = (request.form.get("responsable") or "").strip()
+                observaciones = (request.form.get("observaciones") or "").strip()
+
+                activo = 1 if (request.form.get("activo") or "").strip() in ("1", "on", "true", "si") else 0
+                try:
+                    orden_visual = int((request.form.get("orden_visual") or doc.get("orden_visual") or 0) or 0)
+                except Exception:
+                    orden_visual = int(doc.get("orden_visual") or 0)
+
+                if not titulo:
+                    titulo = doc.get("titulo") or ""
+
+                con.execute(
+                    """
+                    UPDATE sgsst_documentos
+                    SET titulo = ?,
+                        subtitulo = ?,
+                        descripcion_corta = ?,
+                        contenido = ?,
+                        estado = ?,
+                        orden_visual = ?,
+                        activo = ?,
+                        fecha_actualizacion = ?,
+                        responsable = ?,
+                        observaciones = ?
+                    WHERE id = ?
+                    """,
+                    (
+                        titulo,
+                        subtitulo or None,
+                        descripcion_corta or None,
+                        contenido or None,
+                        estado,
+                        orden_visual,
+                        activo,
+                        now,
+                        responsable or None,
+                        observaciones or None,
+                        int(doc["id"]),
+                    ),
+                )
+                con.commit()
+                return redirect(url_for("sgsst_documento_detalle", bloque=b))
+        finally:
+            try:
+                con.close()
+            except Exception:
+                pass
+
+        return render_template(
+            "sgsst_documento_form.html",
+            doc=doc,
+            bloque=b,
+            estados=["BORRADOR", "EN_DESARROLLO", "COMPLETO", "ARCHIVADO"],
+        )
+
+    # -------------------------
+    # Protocolos (CRUD)
+    # -------------------------
+
+    @app.route("/sgsst/protocolos", endpoint="sgsst_protocolos")
+    def sgsst_protocolos():
+        con = get_db()
+        try:
+            seed_sgsst_documentacion(con)
+            protocolos = con.execute(
+                """
+                SELECT *
+                FROM sgsst_protocolos
+                ORDER BY COALESCE(categoria, ''), orden_visual, COALESCE(titulo, '')
+                """
+            ).fetchall()
+            protocolos = [dict(r) for r in (protocolos or [])]
+        finally:
+            try:
+                con.close()
+            except Exception:
+                pass
+        return render_template("sgsst_protocolos.html", protocolos=protocolos)
+
+    @app.route("/sgsst/protocolos/<int:id>", endpoint="sgsst_protocolo_detalle")
+    def sgsst_protocolo_detalle(id):
+        con = get_db()
+        try:
+            seed_sgsst_documentacion(con)
+            row = con.execute("SELECT * FROM sgsst_protocolos WHERE id = ?", (int(id),)).fetchone()
+            if not row:
+                return "Protocolo no encontrado.", 404
+            protocolo = dict(row)
+        finally:
+            try:
+                con.close()
+            except Exception:
+                pass
+        return render_template("sgsst_protocolo_detalle.html", protocolo=protocolo)
+
+    @app.route("/sgsst/protocolos/nuevo", methods=["GET", "POST"], endpoint="sgsst_protocolo_nuevo")
+    def sgsst_protocolo_nuevo():
+        con = get_db()
+        try:
+            seed_sgsst_documentacion(con)
+            if request.method == "POST":
+                now = _sgsst_now_ts()
+                codigo = (request.form.get("codigo") or "").strip().upper()
+                titulo = (request.form.get("titulo") or "").strip()
+                categoria = (request.form.get("categoria") or "").strip()
+                descripcion_corta = (request.form.get("descripcion_corta") or "").strip()
+                objetivo = (request.form.get("objetivo") or "").strip()
+                alcance = (request.form.get("alcance") or "").strip()
+                procedimiento = (request.form.get("procedimiento") or "").strip()
+                registro_asociado = (request.form.get("registro_asociado") or "").strip()
+                frecuencia = (request.form.get("frecuencia") or "").strip()
+                responsable = (request.form.get("responsable") or "").strip()
+                estado = (request.form.get("estado") or "BORRADOR").strip().upper()
+                activo = 1 if (request.form.get("activo") or "").strip() in ("1", "on", "true", "si") else 0
+                integrado_sgi = 1 if (request.form.get("integrado_sgi") or "").strip() in ("1", "on", "true", "si") else 0
+                try:
+                    orden_visual = int((request.form.get("orden_visual") or 0) or 0)
+                except Exception:
+                    orden_visual = 0
+
+                if not codigo or not titulo or not categoria:
+                    flash("Código, título y categoría son obligatorios.", "error")
+                else:
+                    try:
+                        con.execute(
+                            """
+                            INSERT INTO sgsst_protocolos (
+                                codigo, titulo, categoria, descripcion_corta, objetivo, alcance, procedimiento,
+                                registro_asociado, frecuencia, responsable, estado, orden_visual, activo,
+                                fecha_actualizacion, integrado_sgi
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            """,
+                            (
+                                codigo, titulo, categoria,
+                                descripcion_corta or None,
+                                objetivo or None,
+                                alcance or None,
+                                procedimiento or None,
+                                registro_asociado or None,
+                                frecuencia or None,
+                                responsable or None,
+                                estado,
+                                orden_visual,
+                                activo,
+                                now,
+                                integrado_sgi,
+                            ),
+                        )
+                        con.commit()
+                        new_id = con.execute("SELECT last_insert_rowid() AS id").fetchone()["id"]
+                        return redirect(url_for("sgsst_protocolo_detalle", id=int(new_id)))
+                    except sqlite3.IntegrityError:
+                        flash("Ya existe un protocolo con ese código.", "error")
+        finally:
+            try:
+                con.close()
+            except Exception:
+                pass
+
+        return render_template(
+            "sgsst_protocolo_form.html",
+            protocolo={},
+            is_new=True,
+            estados=["BORRADOR", "EN_DESARROLLO", "COMPLETO", "ARCHIVADO"],
+        )
+
+    @app.route("/sgsst/protocolos/<int:id>/editar", methods=["GET", "POST"], endpoint="sgsst_protocolo_editar")
+    def sgsst_protocolo_editar(id):
+        con = get_db()
+        try:
+            seed_sgsst_documentacion(con)
+            row = con.execute("SELECT * FROM sgsst_protocolos WHERE id = ?", (int(id),)).fetchone()
+            if not row:
+                return "Protocolo no encontrado.", 404
+            protocolo = dict(row)
+
+            if request.method == "POST":
+                now = _sgsst_now_ts()
+                codigo = (request.form.get("codigo") or "").strip().upper()
+                titulo = (request.form.get("titulo") or "").strip()
+                categoria = (request.form.get("categoria") or "").strip()
+                descripcion_corta = (request.form.get("descripcion_corta") or "").strip()
+                objetivo = (request.form.get("objetivo") or "").strip()
+                alcance = (request.form.get("alcance") or "").strip()
+                procedimiento = (request.form.get("procedimiento") or "").strip()
+                registro_asociado = (request.form.get("registro_asociado") or "").strip()
+                frecuencia = (request.form.get("frecuencia") or "").strip()
+                responsable = (request.form.get("responsable") or "").strip()
+                estado = (request.form.get("estado") or "BORRADOR").strip().upper()
+                activo = 1 if (request.form.get("activo") or "").strip() in ("1", "on", "true", "si") else 0
+                integrado_sgi = 1 if (request.form.get("integrado_sgi") or "").strip() in ("1", "on", "true", "si") else 0
+                try:
+                    orden_visual = int((request.form.get("orden_visual") or 0) or 0)
+                except Exception:
+                    orden_visual = int(protocolo.get("orden_visual") or 0)
+
+                if not codigo or not titulo or not categoria:
+                    flash("Código, título y categoría son obligatorios.", "error")
+                else:
+                    try:
+                        con.execute(
+                            """
+                            UPDATE sgsst_protocolos
+                            SET codigo = ?,
+                                titulo = ?,
+                                categoria = ?,
+                                descripcion_corta = ?,
+                                objetivo = ?,
+                                alcance = ?,
+                                procedimiento = ?,
+                                registro_asociado = ?,
+                                frecuencia = ?,
+                                responsable = ?,
+                                estado = ?,
+                                orden_visual = ?,
+                                activo = ?,
+                                fecha_actualizacion = ?,
+                                integrado_sgi = ?
+                            WHERE id = ?
+                            """,
+                            (
+                                codigo, titulo, categoria,
+                                descripcion_corta or None,
+                                objetivo or None,
+                                alcance or None,
+                                procedimiento or None,
+                                registro_asociado or None,
+                                frecuencia or None,
+                                responsable or None,
+                                estado,
+                                orden_visual,
+                                activo,
+                                now,
+                                integrado_sgi,
+                                int(id),
+                            ),
+                        )
+                        con.commit()
+                        return redirect(url_for("sgsst_protocolo_detalle", id=int(id)))
+                    except sqlite3.IntegrityError:
+                        flash("Ya existe un protocolo con ese código.", "error")
+        finally:
+            try:
+                con.close()
+            except Exception:
+                pass
+
+        return render_template(
+            "sgsst_protocolo_form.html",
+            protocolo=protocolo,
+            is_new=False,
+            estados=["BORRADOR", "EN_DESARROLLO", "COMPLETO", "ARCHIVADO"],
+        )
+
+    @app.route("/sgsst/protocolos/<int:id>/eliminar", methods=["POST"], endpoint="sgsst_protocolo_eliminar")
+    def sgsst_protocolo_eliminar(id):
+        con = get_db()
+        try:
+            seed_sgsst_documentacion(con)
+            now = _sgsst_now_ts()
+            con.execute(
+                "UPDATE sgsst_protocolos SET activo = 0, fecha_actualizacion = ? WHERE id = ?",
+                (now, int(id)),
+            )
+            con.commit()
+        finally:
+            try:
+                con.close()
+            except Exception:
+                pass
+        return redirect(url_for("sgsst_protocolos"))
+
+    # -------------------------
+    # Instructivos (CRUD)
+    # -------------------------
+
+    @app.route("/sgsst/instructivos", endpoint="sgsst_instructivos")
+    def sgsst_instructivos():
+        con = get_db()
+        try:
+            seed_sgsst_documentacion(con)
+            instructivos = con.execute(
+                """
+                SELECT *
+                FROM sgsst_instructivos
+                ORDER BY COALESCE(categoria, ''), orden_visual, COALESCE(titulo, '')
+                """
+            ).fetchall()
+            instructivos = [dict(r) for r in (instructivos or [])]
+        finally:
+            try:
+                con.close()
+            except Exception:
+                pass
+        return render_template("sgsst_instructivos.html", instructivos=instructivos)
+
+    @app.route("/sgsst/instructivos/<int:id>", endpoint="sgsst_instructivo_detalle")
+    def sgsst_instructivo_detalle(id):
+        con = get_db()
+        try:
+            seed_sgsst_documentacion(con)
+            row = con.execute("SELECT * FROM sgsst_instructivos WHERE id = ?", (int(id),)).fetchone()
+            if not row:
+                return "Instructivo no encontrado.", 404
+            instructivo = dict(row)
+        finally:
+            try:
+                con.close()
+            except Exception:
+                pass
+        return render_template("sgsst_instructivo_detalle.html", instructivo=instructivo)
+
+    @app.route("/sgsst/instructivos/nuevo", methods=["GET", "POST"], endpoint="sgsst_instructivo_nuevo")
+    def sgsst_instructivo_nuevo():
+        con = get_db()
+        try:
+            seed_sgsst_documentacion(con)
+            if request.method == "POST":
+                now = _sgsst_now_ts()
+                codigo = (request.form.get("codigo") or "").strip().upper()
+                titulo = (request.form.get("titulo") or "").strip()
+                categoria = (request.form.get("categoria") or "").strip()
+                descripcion_corta = (request.form.get("descripcion_corta") or "").strip()
+                contenido = (request.form.get("contenido") or "").strip()
+                uso_aplicable = (request.form.get("uso_aplicable") or "").strip()
+                responsable = (request.form.get("responsable") or "").strip()
+                estado = (request.form.get("estado") or "BORRADOR").strip().upper()
+                activo = 1 if (request.form.get("activo") or "").strip() in ("1", "on", "true", "si") else 0
+                try:
+                    orden_visual = int((request.form.get("orden_visual") or 0) or 0)
+                except Exception:
+                    orden_visual = 0
+
+                if not codigo or not titulo or not categoria:
+                    flash("Código, título y categoría son obligatorios.", "error")
+                else:
+                    try:
+                        con.execute(
+                            """
+                            INSERT INTO sgsst_instructivos (
+                                codigo, titulo, categoria, descripcion_corta, contenido, uso_aplicable,
+                                responsable, estado, orden_visual, activo, fecha_actualizacion
+                            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            """,
+                            (
+                                codigo, titulo, categoria,
+                                descripcion_corta or None,
+                                contenido or None,
+                                uso_aplicable or None,
+                                responsable or None,
+                                estado,
+                                orden_visual,
+                                activo,
+                                now,
+                            ),
+                        )
+                        con.commit()
+                        new_id = con.execute("SELECT last_insert_rowid() AS id").fetchone()["id"]
+                        return redirect(url_for("sgsst_instructivo_detalle", id=int(new_id)))
+                    except sqlite3.IntegrityError:
+                        flash("Ya existe un instructivo con ese código.", "error")
+        finally:
+            try:
+                con.close()
+            except Exception:
+                pass
+
+        return render_template(
+            "sgsst_instructivo_form.html",
+            instructivo={},
+            is_new=True,
+            estados=["BORRADOR", "EN_DESARROLLO", "COMPLETO", "ARCHIVADO"],
+        )
+
+    @app.route("/sgsst/instructivos/<int:id>/editar", methods=["GET", "POST"], endpoint="sgsst_instructivo_editar")
+    def sgsst_instructivo_editar(id):
+        con = get_db()
+        try:
+            seed_sgsst_documentacion(con)
+            row = con.execute("SELECT * FROM sgsst_instructivos WHERE id = ?", (int(id),)).fetchone()
+            if not row:
+                return "Instructivo no encontrado.", 404
+            instructivo = dict(row)
+
+            if request.method == "POST":
+                now = _sgsst_now_ts()
+                codigo = (request.form.get("codigo") or "").strip().upper()
+                titulo = (request.form.get("titulo") or "").strip()
+                categoria = (request.form.get("categoria") or "").strip()
+                descripcion_corta = (request.form.get("descripcion_corta") or "").strip()
+                contenido = (request.form.get("contenido") or "").strip()
+                uso_aplicable = (request.form.get("uso_aplicable") or "").strip()
+                responsable = (request.form.get("responsable") or "").strip()
+                estado = (request.form.get("estado") or "BORRADOR").strip().upper()
+                activo = 1 if (request.form.get("activo") or "").strip() in ("1", "on", "true", "si") else 0
+                try:
+                    orden_visual = int((request.form.get("orden_visual") or 0) or 0)
+                except Exception:
+                    orden_visual = int(instructivo.get("orden_visual") or 0)
+
+                if not codigo or not titulo or not categoria:
+                    flash("Código, título y categoría son obligatorios.", "error")
+                else:
+                    try:
+                        con.execute(
+                            """
+                            UPDATE sgsst_instructivos
+                            SET codigo = ?,
+                                titulo = ?,
+                                categoria = ?,
+                                descripcion_corta = ?,
+                                contenido = ?,
+                                uso_aplicable = ?,
+                                responsable = ?,
+                                estado = ?,
+                                orden_visual = ?,
+                                activo = ?,
+                                fecha_actualizacion = ?
+                            WHERE id = ?
+                            """,
+                            (
+                                codigo, titulo, categoria,
+                                descripcion_corta or None,
+                                contenido or None,
+                                uso_aplicable or None,
+                                responsable or None,
+                                estado,
+                                orden_visual,
+                                activo,
+                                now,
+                                int(id),
+                            ),
+                        )
+                        con.commit()
+                        return redirect(url_for("sgsst_instructivo_detalle", id=int(id)))
+                    except sqlite3.IntegrityError:
+                        flash("Ya existe un instructivo con ese código.", "error")
+        finally:
+            try:
+                con.close()
+            except Exception:
+                pass
+
+        return render_template(
+            "sgsst_instructivo_form.html",
+            instructivo=instructivo,
+            is_new=False,
+            estados=["BORRADOR", "EN_DESARROLLO", "COMPLETO", "ARCHIVADO"],
+        )
+
+    @app.route("/sgsst/instructivos/<int:id>/eliminar", methods=["POST"], endpoint="sgsst_instructivo_eliminar")
+    def sgsst_instructivo_eliminar(id):
+        con = get_db()
+        try:
+            seed_sgsst_documentacion(con)
+            now = _sgsst_now_ts()
+            con.execute(
+                "UPDATE sgsst_instructivos SET activo = 0, fecha_actualizacion = ? WHERE id = ?",
+                (now, int(id)),
+            )
+            con.commit()
+        finally:
+            try:
+                con.close()
+            except Exception:
+                pass
+        return redirect(url_for("sgsst_instructivos"))
+
     @app.route("/dashboard/materiales-historial", endpoint="dashboard_materiales_historial")
     def dashboard_materiales_historial():
         return render_template("dashboard_materiales_historial.html")
@@ -4800,6 +5979,55 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             if t == "no_conformidad" and e != "CERRADO":
                 sst_ops_pendientes += 1
 
+        # SG-SST documental interno (6 tarjetas)
+        sgsst_cards = {}
+        try:
+            seed_sgsst_documentacion(con)
+            placeholders = ",".join(["?"] * len(SGSST_BLOQUES_VALIDOS))
+            rows_docs = con.execute(
+                f"""
+                SELECT bloque, contenido, activo, responsable
+                FROM sgsst_documentos
+                WHERE bloque IN ({placeholders})
+                ORDER BY orden_visual, id
+                """,
+                SGSST_BLOQUES_VALIDOS,
+            ).fetchall()
+            by_bloque = {}
+            for rr in rows_docs or []:
+                bb = (rr["bloque"] or "").strip().lower()
+                if bb and bb not in by_bloque:
+                    by_bloque[bb] = rr
+
+            estado_prot = _sgsst_estado_por_base(con, "sgsst_protocolos", [x["codigo"] for x in SGSST_PROTOCOLOS_BASE])
+            estado_ins = _sgsst_estado_por_base(con, "sgsst_instructivos", [x["codigo"] for x in SGSST_INSTRUCTIVOS_BASE])
+
+            for bb in SGSST_BLOQUES_VALIDOS:
+                rr = by_bloque.get(bb)
+                responsable_card = ""
+                contenido_card = ""
+                activo_card = 0
+                if rr:
+                    responsable_card = (rr["responsable"] or "").strip()
+                    contenido_card = rr["contenido"]
+                    activo_card = rr["activo"]
+
+                if bb == "protocolos":
+                    auto = estado_prot
+                elif bb == "instructivos":
+                    auto = estado_ins
+                else:
+                    auto = _sgsst_estado_bloque(contenido_card, activo_card)
+
+                sgsst_cards[bb] = {
+                    "responsable": responsable_card,
+                    "estado_label": auto.get("label") or "Pendiente",
+                    "estado_cls": auto.get("cls") or "pending",
+                    "estado_detalle": auto.get("detalle") or "",
+                }
+        except Exception:
+            sgsst_cards = {}
+
         con.close()
 
         return render_template(
@@ -4823,6 +6051,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             sst_pct_documental=sst_pct_documental,
             sst_ops_pendientes=sst_ops_pendientes,
             q_buscar=q_buscar,
+            sgsst_cards=sgsst_cards,
         )
 
     @app.route("/sst/<int:sst_id>/eliminar", methods=["POST"], endpoint="sst_general_eliminar")

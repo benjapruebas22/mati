@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block head_extra %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='sgsst/sgsst_documentacion.css') }}">
+{% endblock %}
+
+{% block content %}
+
+{% set ns = namespace(activos=0) %}
+{% for i in (instructivos or []) %}
+  {% if (i.get('activo', 0)|int == 1) %}{% set ns.activos = ns.activos + 1 %}{% endif %}
+{% endfor %}
+
+<section class="sgsst-shell">
+  <header class="sgsst-hero">
+    <div class="sgsst-head">
+      <div>
+        <h1>Instructivos y documentación SG-SST</h1>
+        <p class="sgsst-sub">
+          Instructivos breves para estandarizar la ejecución y la carga de registros, asegurando trazabilidad operativa dentro del sistema.
+        </p>
+      </div>
+
+      <div class="sgsst-actions">
+        <a class="sgsst-action-link" href="{{ url_for('sgsst_documentacion_home') }}">
+          <span class="t">Volver</span>
+          <span class="s">Bloque documental</span>
+        </a>
+        <a class="sgsst-action-link" href="{{ url_for('sgsst_instructivo_nuevo') }}">
+          <span class="t">Nuevo instructivo</span>
+          <span class="s">Alta</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="sgsst-kpis">
+      <div class="sgsst-kpi k3">
+        <div class="l">Instructivos</div>
+        <div class="v">{{ (instructivos|length) if instructivos else 0 }}</div>
+        <div class="s">Total registrados</div>
+      </div>
+      <div class="sgsst-kpi k4">
+        <div class="l">Activos</div>
+        <div class="v">{{ ns.activos }}</div>
+        <div class="s">Visibles / vigentes</div>
+      </div>
+      <div class="sgsst-kpi k1">
+        <div class="l">Base sugerida</div>
+        <div class="v">5</div>
+        <div class="s">Instructivos iniciales</div>
+      </div>
+      <div class="sgsst-kpi k2">
+        <div class="l">Acción</div>
+        <div class="v">CRUD</div>
+        <div class="s">Alta / edición / baja lógica</div>
+      </div>
+    </div>
+  </header>
+
+  <article class="sgsst-panel">
+    <div class="sgsst-table-wrap">
+      <table class="sgsst-table">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Título</th>
+            <th>Categoría</th>
+            <th>Estado</th>
+            <th>Responsable</th>
+            <th>Actualización</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for i in (instructivos or []) %}
+            {% set activo = (i.get('activo', 0)|int == 1) %}
+            <tr>
+              <td><b>{{ i.get('codigo', '') }}</b></td>
+              <td>{{ i.get('titulo', '') }}</td>
+              <td class="muted">{{ i.get('categoria', '') }}</td>
+              <td>
+                <span class="sgsst-badge {{ 'is-complete' if activo else 'is-pending' }}">
+                  {{ i.get('estado') or 'BORRADOR' }}{% if not activo %} (Inactivo){% endif %}
+                </span>
+              </td>
+              <td class="muted">{{ i.get('responsable') or '—' }}</td>
+              <td class="muted">{{ i.get('fecha_actualizacion') or '—' }}</td>
+              <td>
+                <div class="sgsst-row-actions">
+                  <a class="btn xs outline-slate" href="{{ url_for('sgsst_instructivo_detalle', id=i.get('id')) }}">Ver</a>
+                  <a class="btn xs outline-amber" href="{{ url_for('sgsst_instructivo_editar', id=i.get('id')) }}">Editar</a>
+                  {% if activo %}
+                  <form method="post" action="{{ url_for('sgsst_instructivo_eliminar', id=i.get('id')) }}" class="sgsst-inlineform">
+                    <button class="btn xs outline-red" type="submit">Baja</button>
+                  </form>
+                  {% else %}
+                    <span class="muted">—</span>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="7" class="muted">No hay instructivos cargados.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+</section>
+
+{% endblock %}
