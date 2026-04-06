@@ -105,7 +105,7 @@ def ensure_auth_tables(con):
         ("fsavio", "Francisco Savio", ROLE_FULL),
         ("francisco", "Francisco Savio", ROLE_FULL),
         ("mvea", "Mauro Vea Murguia", ROLE_INT_VEHICULOS),
-        ("eperez", "Emiliano Perez de la Puente", ROLE_OPERATIVO_CLAVE),
+        ("eperez", "Emiliano Perez de la Puente", ROLE_FULL),
         ("cvidaurre", "Carlos Vidaurre", ROLE_DASH_SOLO),
         ("mduran", "Marcos Duran", ROLE_DASH_VEHICULOS),
         ("nguerrero", "Nestor Guerrero", ROLE_DASH_SOLO),
