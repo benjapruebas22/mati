@@ -4,14 +4,14 @@
 <section class="veh-doc">
   <header class="veh-doc-head">
     <div>
-      <h2>Documentacion vehiculos</h2>
+      <h2>Documentación de vehículos</h2>
       <p>Control de vencimientos y fechas clave. Todo queda en el calendario general.</p>
     </div>
     <div class="veh-doc-actions">
-      <a class="btn btn-mpd" href="{{ url_for('vehiculos_control_diario') }}">Control diario</a>
-      <a class="btn btn-mpd" href="{{ url_for('vehiculos_combustible') }}">Combustible</a>
-      <a class="btn btn-mpd" href="{{ url_for('vehiculos_estadisticas') }}">Estadisticas</a>
-      <a class="btn btn-mpd" href="{{ url_for('vehiculos_bd_home') }}">Base de datos</a>
+      <a class="btn btn-mpd veh-nav-btn" data-veh="control" href="{{ url_for('vehiculos_control_diario') }}">Control diario</a>
+      <a class="btn btn-mpd veh-nav-btn" data-veh="combustible" href="{{ url_for('vehiculos_combustible') }}">Combustible</a>
+      <a class="btn btn-mpd veh-nav-btn" data-veh="estadisticas" href="{{ url_for('vehiculos_estadisticas') }}">Estadísticas</a>
+      <a class="btn btn-mpd veh-nav-btn" data-veh="basedatos" href="{{ url_for('vehiculos_bd_home') }}">Base de datos</a>
     </div>
   </header>
 

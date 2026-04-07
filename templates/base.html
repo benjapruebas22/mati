@@ -192,6 +192,50 @@
       border-color: #c2d3ea;
     }
 
+    /* =====================================================
+       VEHICULOS: NAV PASTEL (botones de módulo)
+       ===================================================== */
+    .btn.btn-mpd.veh-nav-btn {
+      --veh-accent: #94a3b8;
+      padding: 10px 14px;
+      min-height: 36px;
+      font-weight: 900;
+      letter-spacing: .2px;
+      border-color: color-mix(in srgb, var(--veh-accent) 38%, var(--border) 62%);
+      background: color-mix(in srgb, var(--card) 82%, var(--veh-accent) 18%);
+      color: var(--text);
+      box-shadow: 0 6px 16px rgba(15, 23, 42, .08);
+      white-space: nowrap;
+      transition: background .15s ease, border-color .15s ease, box-shadow .15s ease, transform .05s ease;
+    }
+
+    .btn.btn-mpd.veh-nav-btn:hover {
+      background: color-mix(in srgb, var(--card) 78%, var(--veh-accent) 22%);
+      border-color: color-mix(in srgb, var(--veh-accent) 50%, var(--border) 50%);
+      box-shadow: 0 10px 22px rgba(15, 23, 42, .10);
+    }
+
+    .btn.btn-mpd.veh-nav-btn:active {
+      transform: translateY(1px);
+    }
+
+    .btn.btn-mpd.veh-nav-btn:focus-visible {
+      outline: 2px solid color-mix(in srgb, var(--veh-accent) 55%, transparent);
+      outline-offset: 2px;
+    }
+
+    .btn.btn-mpd.veh-nav-btn[aria-current="page"] {
+      background: color-mix(in srgb, var(--card) 74%, var(--veh-accent) 26%);
+      border-color: color-mix(in srgb, var(--veh-accent) 62%, var(--border) 38%);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--veh-accent) 18%, transparent);
+    }
+
+    .btn.btn-mpd.veh-nav-btn[data-veh="control"] { --veh-accent: #0ea5e9; }
+    .btn.btn-mpd.veh-nav-btn[data-veh="combustible"] { --veh-accent: #22c55e; }
+    .btn.btn-mpd.veh-nav-btn[data-veh="documentacion"] { --veh-accent: #a855f7; }
+    .btn.btn-mpd.veh-nav-btn[data-veh="estadisticas"] { --veh-accent: #6366f1; }
+    .btn.btn-mpd.veh-nav-btn[data-veh="basedatos"] { --veh-accent: #f59e0b; }
+
     .btn.btn-mpd.btn-sst {
       background: linear-gradient(180deg, #f8fbff 0%, #edf4ff 100%);
       border-color: #c7d8ef;
