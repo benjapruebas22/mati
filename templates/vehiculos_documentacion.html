@@ -122,34 +122,46 @@
   <div class="card" id="tabla-doc" style="margin-top:12px;">
     <div class="card-head">
       <h3>Estado por vehiculo</h3>
-      <p>Vista simple: service y ultimo lavado.</p>
+      <p>Click en la tarjeta para ir cambiando (Seguro / RTV / Lavado / Service).</p>
     </div>
     <div class="doc-kpi-wrap">
       <div class="doc-kpi-group">
-        <div class="doc-kpi-title">Seguros</div>
+        <div class="doc-kpi-title">Tarjetas</div>
         <div class="doc-kpi-row">
           {% for r in estados %}
-          <button type="button" class="doc-kpi-card {{ r.seguro_top.estado }}" onclick="openDocForPatente('{{ r.patente }}', 'seguro')">
-            <strong>{{ r.patente }}</strong>
-            <span class="doc-kpi-sub">{{ r.codigo_interno }}</span>
-            <span>Vigente hasta</span>
-            <b>{{ r.seguro_top.fecha or '-' }}</b>
-          </button>
+          <div
+            class="doc-kpi-card doc-kpi-cycle {{ r.seguro_top.estado }}"
+            role="button"
+            tabindex="0"
+            data-patente="{{ r.patente }}"
+            data-codigo="{{ r.codigo_interno }}"
+            data-doc-index="0"
+            data-doc-type="seguro"
+            data-seguro-fecha="{{ r.seguro_top.fecha or '' }}"
+            data-seguro-estado="{{ r.seguro_top.estado }}"
+            data-rtv-fecha="{{ r.rtv_top.fecha or '' }}"
+            data-rtv-estado="{{ r.rtv_top.estado }}"
+            data-lavado-fecha="{{ r.proximo_lavado.fecha or '' }}"
+            data-lavado-estado="{{ r.proximo_lavado.estado }}"
+            data-service-fecha="{{ r.proximo_service.fecha or '' }}"
+            data-service-estado="{{ r.proximo_service.estado }}"
+            onclick="cycleVehDocCard(event, this)"
+            onkeydown="vehDocCardKey(event, this)"
+          >
+            <div class="doc-kpi-toprow">
+              <div class="doc-kpi-topmeta">
+                <strong>{{ r.patente }}</strong>
+                <span class="doc-kpi-sub">{{ r.codigo_interno }}</span>
+              </div>
+              <button type="button" class="doc-kpi-edit" onclick="openVehDocCard(event, this.closest('.doc-kpi-cycle'))">Cargar</button>
+            </div>
+            <span data-doc-role="kind">Seguro</span>
+            <span data-doc-role="label">Vigente hasta</span>
+            <b data-doc-role="date">{{ r.seguro_top.fecha or '-' }}</b>
+          </div>
           {% endfor %}
         </div>
-      </div>
-      <div class="doc-kpi-group">
-        <div class="doc-kpi-title">RTV / VTV</div>
-        <div class="doc-kpi-row">
-          {% for r in estados %}
-          <button type="button" class="doc-kpi-card {{ r.rtv_top.estado }}" onclick="openDocForPatente('{{ r.patente }}', 'rtv')">
-            <strong>{{ r.patente }}</strong>
-            <span class="doc-kpi-sub">{{ r.codigo_interno }}</span>
-            <span>Vigente hasta</span>
-            <b>{{ r.rtv_top.fecha or '-' }}</b>
-          </button>
-          {% endfor %}
-        </div>
+        <div class="doc-kpi-hint">Click cambia tarjeta. Botón “Cargar” abre el formulario en ese bloque.</div>
       </div>
     </div>
     <div class="table-wrap">
@@ -397,6 +409,55 @@
     cursor: pointer;
   }
 
+  .doc-kpi-cycle {
+    --doc-accent: #64748b;
+    border-left: 6px solid var(--doc-accent);
+    padding-left: 10px;
+    user-select: none;
+  }
+
+  .doc-kpi-cycle:focus {
+    outline: 2px solid rgba(15, 23, 42, 0.25);
+    outline-offset: 2px;
+  }
+
+  .doc-kpi-cycle[data-doc-type="service"] { --doc-accent: #ef4444; }
+  .doc-kpi-cycle[data-doc-type="lavado"] { --doc-accent: #3b82f6; }
+  .doc-kpi-cycle[data-doc-type="seguro"] { --doc-accent: #f59e0b; }
+  .doc-kpi-cycle[data-doc-type="rtv"] { --doc-accent: #a855f7; }
+
+  .doc-kpi-toprow {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .doc-kpi-edit {
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 10px;
+    font-weight: 900;
+    color: #0f172a;
+    cursor: pointer;
+  }
+
+  .doc-kpi-edit:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+  }
+
+  .doc-kpi-cycle [data-doc-role="kind"] {
+    color: var(--doc-accent);
+  }
+
+  .doc-kpi-hint {
+    font-size: 11px;
+    color: #64748b;
+  }
+
   .doc-kpi-card strong {
     font-size: 12px;
     color: #0f172a;
@@ -427,9 +488,20 @@
     border-color: #86efac;
   }
 
+  .doc-kpi-card.pronto {
+    background: #fef3c7;
+    border-color: #fcd34d;
+  }
+
   .doc-kpi-card.vencido {
     background: #fee2e2;
     border-color: #fecaca;
+  }
+
+  .doc-kpi-cycle.ok,
+  .doc-kpi-cycle.pronto,
+  .doc-kpi-cycle.vencido {
+    border-left-color: var(--doc-accent);
   }
 
   .table-soft {
@@ -500,6 +572,80 @@
     if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
+  var VEH_DOC_ORDER = ['seguro', 'rtv', 'lavado', 'service'];
+  var VEH_DOC_META = {
+    seguro: { title: 'Seguro', label: 'Vigente hasta', fechaKey: 'seguroFecha', estadoKey: 'seguroEstado' },
+    rtv: { title: 'RTV / VTV', label: 'Vigente hasta', fechaKey: 'rtvFecha', estadoKey: 'rtvEstado' },
+    lavado: { title: 'Lavado', label: 'Proximo', fechaKey: 'lavadoFecha', estadoKey: 'lavadoEstado' },
+    service: { title: 'Service', label: 'Proximo', fechaKey: 'serviceFecha', estadoKey: 'serviceEstado' }
+  };
+  var VEH_DOC_STATE_CLASSES = ['ok', 'pronto', 'vencido'];
+
+  function renderVehDocCard(card) {
+    if (!card) return;
+    var idx = parseInt(card.dataset.docIndex || '0', 10);
+    if (isNaN(idx) || idx < 0) idx = 0;
+    idx = idx % VEH_DOC_ORDER.length;
+
+    var key = VEH_DOC_ORDER[idx] || 'seguro';
+    var meta = VEH_DOC_META[key] || VEH_DOC_META.seguro;
+    card.dataset.docType = key;
+
+    var estado = (card.dataset[meta.estadoKey] || '').trim();
+    VEH_DOC_STATE_CLASSES.forEach(function (cls) { card.classList.remove(cls); });
+    if (estado && VEH_DOC_STATE_CLASSES.indexOf(estado) >= 0) {
+      card.classList.add(estado);
+    }
+
+    var fecha = (card.dataset[meta.fechaKey] || '').trim();
+    var kindEl = card.querySelector('[data-doc-role="kind"]');
+    var labelEl = card.querySelector('[data-doc-role="label"]');
+    var dateEl = card.querySelector('[data-doc-role="date"]');
+    if (kindEl) kindEl.textContent = meta.title;
+    if (labelEl) labelEl.textContent = meta.label;
+    if (dateEl) dateEl.textContent = fecha ? fecha : '-';
+  }
+
+  function cycleVehDocCard(ev, card) {
+    if (ev) ev.preventDefault();
+    if (!card) return;
+    var idx = parseInt(card.dataset.docIndex || '0', 10);
+    if (isNaN(idx) || idx < 0) idx = 0;
+    idx = (idx + 1) % VEH_DOC_ORDER.length;
+    card.dataset.docIndex = String(idx);
+    renderVehDocCard(card);
+  }
+
+  function openVehDocCard(ev, card) {
+    if (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+    }
+    if (!card) return;
+    var key = (card.dataset.docType || '').trim();
+    if (!key) {
+      var idx = parseInt(card.dataset.docIndex || '0', 10);
+      if (isNaN(idx) || idx < 0) idx = 0;
+      key = VEH_DOC_ORDER[idx] || 'seguro';
+    }
+    openDocForPatente(card.dataset.patente || '', key);
+  }
+
+  function vehDocCardKey(ev, card) {
+    if (!ev) return;
+    if (ev.key === 'Enter' || ev.key === ' ') {
+      cycleVehDocCard(ev, card);
+    }
+  }
+
+  function initVehDocCards() {
+    var cards = document.querySelectorAll('.doc-kpi-cycle');
+    cards.forEach(function (card) {
+      if (!card.dataset.docIndex) card.dataset.docIndex = '0';
+      renderVehDocCard(card);
+    });
+  }
+
   function setDocSection(section) {
     var groups = document.querySelectorAll('.doc-section');
     var buttons = document.querySelectorAll('.doc-mini-btn');
@@ -544,6 +690,7 @@
     form.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
+  initVehDocCards();
   setDocSection('all');
 </script>
 

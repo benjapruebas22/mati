@@ -452,14 +452,14 @@ def register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combu
                 conn.execute(
                     """
                     UPDATE vehiculo_estado
-                    SET ultimo_service=?,
-                        proximo_service=?,
-                        ultimo_lavado=?,
-                        proximo_lavado=?,
-                        seguro_inicio=?,
-                        seguro_vencimiento=?,
-                        rtv_inicio=?,
-                        rtv_vencimiento=?
+                    SET ultimo_service=COALESCE(?, ultimo_service),
+                        proximo_service=COALESCE(?, proximo_service),
+                        ultimo_lavado=COALESCE(?, ultimo_lavado),
+                        proximo_lavado=COALESCE(?, proximo_lavado),
+                        seguro_inicio=COALESCE(?, seguro_inicio),
+                        seguro_vencimiento=COALESCE(?, seguro_vencimiento),
+                        rtv_inicio=COALESCE(?, rtv_inicio),
+                        rtv_vencimiento=COALESCE(?, rtv_vencimiento)
                     WHERE patente=?
                     """,
                     (
