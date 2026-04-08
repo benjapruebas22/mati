@@ -1,10 +1,13 @@
 import json
 from datetime import date, datetime
+import os
 import sqlite3
 import unicodedata
+import uuid
 
-from flask import render_template, request, jsonify, session, current_app
+from flask import render_template, request, jsonify, session, current_app, redirect, send_from_directory
 from werkzeug.security import generate_password_hash
+from werkzeug.utils import secure_filename
 
 from . import bp
 from . import helpers as nvd_h
@@ -366,9 +369,11 @@ def _coffee_read_insumos(con, novedad_id):
             COALESCE(item,'') AS item,
             COALESCE(cantidad_necesaria,0) AS cantidad_necesaria,
             COALESCE(stock_disponible,0) AS stock_disponible,
+            COALESCE(stock_final,0) AS stock_final,
             COALESCE(estado,'hay_stock') AS estado,
             COALESCE(decision_compra,'pendiente') AS decision_compra,
             COALESCE(recibido,0) AS recibido,
+            COALESCE(remito_archivo,'') AS remito_archivo,
             COALESCE(actualizado_en,'') AS actualizado_en,
             COALESCE(actualizado_por,'') AS actualizado_por
         FROM coffee_insumos
@@ -384,9 +389,11 @@ def _coffee_read_insumos(con, novedad_id):
             "item": (_row_value(r, "item", "") or "").strip(),
             "cantidad_necesaria": int(_row_value(r, "cantidad_necesaria", 0) or 0),
             "stock_disponible": int(_row_value(r, "stock_disponible", 0) or 0),
+            "stock_final": int(_row_value(r, "stock_final", 0) or 0),
             "estado": (_row_value(r, "estado", "hay_stock") or "hay_stock").strip(),
             "decision_compra": (_row_value(r, "decision_compra", "pendiente") or "pendiente").strip(),
             "recibido": int(_row_value(r, "recibido", 0) or 0) == 1,
+            "remito_archivo": (_row_value(r, "remito_archivo", "") or "").strip(),
             "actualizado_en": (_row_value(r, "actualizado_en", "") or "").strip(),
             "actualizado_por": (_row_value(r, "actualizado_por", "") or "").strip(),
         })
@@ -585,6 +592,42 @@ def register_novedades(bp, get_db):
     if getattr(bp, "_novedades_registered", False):
         return bp
     bp._novedades_registered = True
+
+    MAX_COFFEE_REMITO_IMG_BYTES = 4 * 1024 * 1024
+    ALLOWED_COFFEE_REMITO_IMG_EXT = {"jpg", "jpeg", "png", "webp"}
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    COFFEE_REMITOS_UPLOAD_DIR = os.path.join(BASE_DIR, "uploads", "coffee_remitos")
+    os.makedirs(COFFEE_REMITOS_UPLOAD_DIR, exist_ok=True)
+
+    def _save_coffee_remito_image_from_request(req):
+        file_obj = req.files.get("remito_file")
+        if not file_obj or not getattr(file_obj, "filename", ""):
+            return None
+        filename = secure_filename(file_obj.filename or "")
+        ext = (filename.rsplit(".", 1)[-1].lower() if "." in filename else "")
+        if ext not in ALLOWED_COFFEE_REMITO_IMG_EXT:
+            raise ValueError("Formato de imagen no valido. Usar JPG, PNG o WEBP.")
+        raw = file_obj.read() or b""
+        if not raw:
+            raise ValueError("La imagen del remito esta vacia.")
+        if len(raw) > MAX_COFFEE_REMITO_IMG_BYTES:
+            raise ValueError("Imagen muy pesada. Maximo permitido: 4 MB.")
+        out_name = f"coffee_remito_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}.{ext}"
+        out_path = os.path.join(COFFEE_REMITOS_UPLOAD_DIR, out_name)
+        with open(out_path, "wb") as fh:
+            fh.write(raw)
+        return out_name
+
+    @bp.route("/dashboard/coffee/remitos/<path:filename>", endpoint="coffee_remito_ver")
+    def coffee_remito_ver(filename):
+        if str(filename or "").startswith(("http://", "https://")):
+            return redirect(filename)
+        safe = secure_filename(filename or "")
+        if safe:
+            abs_path = os.path.join(COFFEE_REMITOS_UPLOAD_DIR, safe)
+            if os.path.isfile(abs_path):
+                return send_from_directory(COFFEE_REMITOS_UPLOAD_DIR, safe, as_attachment=False)
+        return ("Remito inexistente", 404)
 
     @bp.route("/", endpoint="dashboard")
     @bp.route("/dashboard", endpoint="dashboard_exec")
@@ -2239,6 +2282,7 @@ def register_novedades(bp, get_db):
             can_edit_base = bool(item.get("puede_editar_coffee_insumos"))
             can_decide = bool(item.get("puede_decidir_compra"))
             can_recibir = bool(item.get("puede_marcar_recibido"))
+            can_final = bool(can_recibir or bool(actor.get("is_matias")) or _can_admin_novedades(actor))
             if not (can_edit_base or can_decide or can_recibir):
                 con.close()
                 return jsonify({"ok": False, "error": "No autorizado para actualizar insumos"}), 403
@@ -2319,8 +2363,10 @@ def register_novedades(bp, get_db):
                               COALESCE(item,'') AS item,
                               COALESCE(cantidad_necesaria,0) AS cantidad_necesaria,
                               COALESCE(stock_disponible,0) AS stock_disponible,
+                              COALESCE(stock_final,0) AS stock_final,
                               COALESCE(decision_compra,'pendiente') AS decision_compra,
-                              COALESCE(recibido,0) AS recibido
+                              COALESCE(recibido,0) AS recibido,
+                              COALESCE(remito_archivo,'') AS remito_archivo
                             FROM coffee_insumos
                             WHERE id=? AND novedad_id=?
                             LIMIT 1
@@ -2334,8 +2380,10 @@ def register_novedades(bp, get_db):
                             "item": (_row_value(old, "item", "") or "").strip(),
                             "cantidad_necesaria": int(_row_value(old, "cantidad_necesaria", 0) or 0),
                             "stock_disponible": int(_row_value(old, "stock_disponible", 0) or 0),
+                            "stock_final": int(_row_value(old, "stock_final", 0) or 0),
                             "decision_compra": (_row_value(old, "decision_compra", "pendiente") or "pendiente").strip(),
                             "recibido": int(_row_value(old, "recibido", 0) or 0) == 1,
+                            "remito_archivo": (_row_value(old, "remito_archivo", "") or "").strip(),
                         }
                         by_id[iid] = old
                     else:
@@ -2347,6 +2395,12 @@ def register_novedades(bp, get_db):
                             stock = max(0, int(ent.get("stock_disponible") or 0))
                         except Exception:
                             stock = 0
+                        stock_final = 0
+                        if can_final:
+                            try:
+                                stock_final = max(0, int(ent.get("stock_final") or 0))
+                            except Exception:
+                                stock_final = 0
                         decision = "pendiente"
                         if can_decide:
                             dec_in = _norm_ci(ent.get("decision_compra") or decision).replace(" ", "_")
@@ -2356,21 +2410,21 @@ def register_novedades(bp, get_db):
                         recibido = 0
                         if can_recibir:
                             recibido_in = str(ent.get("recibido") or "").strip().lower() in {"1", "true", "si", "yes", "on"}
-                            if recibido_in:
-                                recibido = 1
-                                changed_recibido = True
+                            recibido = 1 if recibido_in else 0
+                            changed_recibido = bool(recibido)
                         estado_stock = _coffee_calc_estado(cant, stock)
                         con.execute(
                             """
                             INSERT INTO coffee_insumos
-                                (novedad_id, item, cantidad_necesaria, stock_disponible, estado, decision_compra, recibido, activo, actualizado_en, actualizado_por)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+                                (novedad_id, item, cantidad_necesaria, stock_disponible, stock_final, estado, decision_compra, recibido, activo, actualizado_en, actualizado_por)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
                             """,
                             (
                                 nov_id,
                                 item_txt,
                                 cant,
                                 stock,
+                                stock_final,
                                 estado_stock,
                                 decision,
                                 recibido,
@@ -2387,6 +2441,7 @@ def register_novedades(bp, get_db):
                 item_txt = str(old.get("item") or "").strip()
                 cant = int(old.get("cantidad_necesaria") or 0)
                 stock = int(old.get("stock_disponible") or 0)
+                stock_final = int(old.get("stock_final") or 0)
                 decision = str(old.get("decision_compra") or "pendiente").strip().lower()
                 recibido = 1 if bool(old.get("recibido")) else 0
                 if can_edit_base:
@@ -2400,6 +2455,12 @@ def register_novedades(bp, get_db):
                     except Exception:
                         stock = max(0, stock)
                     changed_base = True
+                if can_final:
+                    try:
+                        stock_final = max(0, int(ent.get("stock_final")))
+                        changed_base = True
+                    except Exception:
+                        stock_final = max(0, stock_final)
                 if can_decide:
                     dec_in = _norm_ci(ent.get("decision_compra") or decision).replace(" ", "_")
                     if dec_in in NVD_COFFEE_DECISION_COMPRA:
@@ -2407,8 +2468,9 @@ def register_novedades(bp, get_db):
                         changed_decision = True
                 if can_recibir:
                     recibido_in = str(ent.get("recibido") or "").strip().lower() in {"1", "true", "si", "yes", "on"}
-                    if recibido_in:
-                        recibido = 1
+                    new_rec = 1 if recibido_in else 0
+                    if new_rec != recibido:
+                        recibido = new_rec
                         changed_recibido = True
                 estado_stock = _coffee_calc_estado(cant, stock)
                 con.execute("""
@@ -2416,6 +2478,7 @@ def register_novedades(bp, get_db):
                     SET item=?,
                         cantidad_necesaria=?,
                         stock_disponible=?,
+                        stock_final=?,
                         estado=?,
                         decision_compra=?,
                         recibido=?,
@@ -2427,6 +2490,7 @@ def register_novedades(bp, get_db):
                     item_txt,
                     cant,
                     stock,
+                    stock_final,
                     estado_stock,
                     decision,
                     recibido,
@@ -2437,7 +2501,7 @@ def register_novedades(bp, get_db):
                 ))
             msg = ""
             if changed_recibido:
-                msg = f"{actor_name} marco recepcion de insumos Coffee."
+                msg = f"{actor_name} actualizo recepcion de insumos Coffee."
             elif changed_decision:
                 msg = f"{actor_name} marco decision de compra para Coffee."
             elif changed_base:
@@ -2456,6 +2520,94 @@ def register_novedades(bp, get_db):
             if "coffee_insumos" in msg and "UNIQUE" in msg.upper():
                 return jsonify({"ok": False, "error": "Ya existe un insumo con ese nombre."}), 400
             return jsonify({"ok": False, "error": msg or "Datos invalidos"}), 400
+        except Exception as e:
+            con.close()
+            return jsonify({"ok": False, "error": str(e)}), 500
+        con.close()
+        return jsonify({"ok": True, "insumos": result})
+
+    @bp.route(
+        "/api/dashboard/novedades_diarias_gestion/<int:nov_id>/coffee_insumos/<int:insumo_id>/remito",
+        methods=["POST"],
+        endpoint="api_dashboard_novedades_diarias_gestion_coffee_insumo_remito",
+    )
+    def api_dashboard_novedades_diarias_gestion_coffee_insumo_remito(nov_id, insumo_id):
+        actor = _session_actor()
+        con = get_db()
+        try:
+            _ensure_novedades_diarias_table(con)
+            _ensure_novedades_diarias_chat_table(con)
+            _ensure_coffee_insumos_table(con)
+            row = _fetch_novedad(con, nov_id)
+            if not row:
+                con.close()
+                return jsonify({"ok": False, "error": "Novedad inexistente"}), 404
+            item = _serialize_novedad(row, actor)
+            if not bool(item.get("es_coffee")):
+                con.close()
+                return jsonify({"ok": False, "error": "La novedad no es Coffee institucional"}), 400
+            if not bool(item.get("puede_ver_gestion")):
+                con.close()
+                return jsonify({"ok": False, "error": "No autorizado"}), 403
+            can_upload = bool(item.get("puede_marcar_recibido") or bool(actor.get("is_matias")) or _can_admin_novedades(actor))
+            if not can_upload:
+                con.close()
+                return jsonify({"ok": False, "error": "No autorizado para cargar remitos"}), 403
+            r = con.execute(
+                """
+                SELECT id, COALESCE(item,'') AS item
+                FROM coffee_insumos
+                WHERE id=? AND novedad_id=? AND COALESCE(activo,1)=1
+                LIMIT 1
+                """,
+                (insumo_id, nov_id),
+            ).fetchone()
+            if not r:
+                con.close()
+                return jsonify({"ok": False, "error": "Insumo inexistente"}), 404
+
+            out_name = _save_coffee_remito_image_from_request(request)
+            if not out_name:
+                con.close()
+                return jsonify({"ok": False, "error": "Falta archivo de remito"}), 400
+
+            ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            actor_name = (actor.get("display") or actor.get("username") or "Sistema").strip() or "Sistema"
+            con.execute(
+                """
+                UPDATE coffee_insumos
+                SET remito_archivo=?,
+                    actualizado_en=?,
+                    actualizado_por=?
+                WHERE id=? AND novedad_id=?
+                """,
+                (out_name, ts, actor_name, insumo_id, nov_id),
+            )
+            if bool(item.get("puede_marcar_recibido")):
+                con.execute(
+                    "UPDATE coffee_insumos SET recibido=1 WHERE id=? AND novedad_id=?",
+                    (insumo_id, nov_id),
+                )
+
+            insumo_name = (_row_value(r, "item", "") or "").strip() or "Insumo"
+            con.execute(
+                """
+                INSERT INTO novedades_diarias_chat
+                    (novedad_id, autor, autor_username, mensaje, es_sistema, creado_en)
+                VALUES (?, 'Sistema', ?, ?, 1, ?)
+                """,
+                (
+                    nov_id,
+                    actor.get("username") or "",
+                    f"{actor_name} subio remito de {insumo_name}.",
+                    ts,
+                ),
+            )
+            con.commit()
+            result = _coffee_read_insumos(con, nov_id)
+        except ValueError as e:
+            con.close()
+            return jsonify({"ok": False, "error": str(e)}), 400
         except Exception as e:
             con.close()
             return jsonify({"ok": False, "error": str(e)}), 500

@@ -1161,6 +1161,69 @@
   .coffee-pill.stock-ok{ background:#ecfdf5; border-color:#bbf7d0; color:#166534; }
   .coffee-pill.stock-falta{ background:#fff7ed; border-color:#fed7aa; color:#9a3412; }
   .coffee-pill.stock-otro{ background:#eff6ff; border-color:#bfdbfe; color:#1e40af; }
+  .ci-stock-stack{
+    display:grid;
+    gap: 4px;
+    align-content: start;
+  }
+  .ci-stock-stack .ctl-inp{
+    width: 100%;
+  }
+  .ci-final{
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    color: #334155;
+    font-weight: 800;
+  }
+  .ci-rec{
+    display:grid;
+    gap: 4px;
+    align-content: start;
+  }
+  .ci-rec-label{
+    display:flex;
+    align-items:center;
+    gap: 6px;
+    font-size: 12px;
+    color: #2f4f73;
+    font-weight: 800;
+    margin: 0;
+  }
+  .ci-remito-row{
+    display:flex;
+    align-items:center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .ci-remito-miss{
+    border: 1px dashed #d1dbe9;
+    background: #f7fbff;
+    color: #6c84a4;
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 10px;
+    font-weight: 900;
+    white-space: nowrap;
+  }
+  .ci-remito-view{
+    text-decoration: none;
+    border-color: #bfdbfe;
+    background: #eff6ff;
+    color: #1d4ed8;
+  }
+  .ci-remito-view:hover{
+    background: #dbeafe;
+    border-color: #93c5fd;
+  }
+  .ci-remito-up{
+    border-color: #ddd6fe;
+    background: #f5f3ff;
+    color: #5b21b6;
+  }
+  .ci-remito-up:hover{
+    background: #ede9fe;
+    border-color: #c4b5fd;
+  }
   .ci-del{
     background: #fff;
     border: 1px solid #fecaca;
@@ -1976,6 +2039,7 @@
       </div>
       <div class="gestion-coffee-foot">Luciana define compra. Francisco confirma recepcion.</div>
     </div>
+    <input id="coffeeRemitoFile" type="file" accept="image/*" style="display:none;">
     <div id="gestionCoffeeLogTitle" class="gestion-section-title" style="display:none;">Logistica</div>
     <div id="gestionCoffeeLogRow" class="gestion-coffee-row" style="display:none;">
       <div class="gestion-coffee-log-grid">
@@ -2110,6 +2174,7 @@
     var GESTION_COFFEE_INSUMOS = [];
     var GESTION_COFFEE_INSUMOS_BORRAR = [];
     var GESTION_COFFEE_LOGISTICA = {};
+    var COFFEE_REMITO_TARGET_ID = 0;
     var COFFEE_LAYOUTS = [
       {
         code: "mesa_completa",
@@ -2293,6 +2358,7 @@
       gestionCoffeeInsumoAdd: document.getElementById("gestionCoffeeInsumoAdd"),
       gestionCoffeeInsumosList: document.getElementById("gestionCoffeeInsumosList"),
       gestionCoffeeInsumosGuardar: document.getElementById("gestionCoffeeInsumosGuardar"),
+      coffeeRemitoFile: document.getElementById("coffeeRemitoFile"),
       gestionCoffeeLogTitle: document.getElementById("gestionCoffeeLogTitle"),
       gestionCoffeeLogRow: document.getElementById("gestionCoffeeLogRow"),
       gestionCoffeeChofer: document.getElementById("gestionCoffeeChofer"),
@@ -2690,9 +2756,11 @@
         item: raw,
         cantidad_necesaria: 0,
         stock_disponible: 0,
+        stock_final: 0,
         estado: "hay_stock",
         decision_compra: "pendiente",
         recibido: false,
+        remito_archivo: "",
       });
       GESTION_COFFEE_INSUMOS = next;
       el.gestionCoffeeInsumoNuevo.value = "";
@@ -2706,6 +2774,7 @@
       var canEditBase = !!(nov && nov.puede_editar_coffee_insumos);
       var canDecide = !!(nov && nov.puede_decidir_compra);
       var canRecibir = !!(nov && nov.puede_marcar_recibido);
+      var canFinal = !!(canRecibir || IS_MATIAS || CAN_EDIT_AGENTE);
       if (el.gestionCoffeeInsumosAddRow) {
         el.gestionCoffeeInsumosAddRow.style.display = canEditBase ? "grid" : "none";
       }
@@ -2725,7 +2794,7 @@
         '<div class="coffee-insumo-head" aria-hidden="true">' +
           "<div>Insumo</div>" +
           "<div>Necesario</div>" +
-          "<div>Stock</div>" +
+          "<div>Stock / Final</div>" +
           "<div>Compra</div>" +
           "<div>Estado</div>" +
           "<div>Recibido</div>" +
@@ -2739,6 +2808,22 @@
         var estLabel = (estado ? estado.replace(/_/g, " ") : "-");
         var estClass = (estKey === "hay_stock") ? "stock-ok" : ((estKey === "falta_comprar") ? "stock-falta" : "stock-otro");
         var itemVal = String(it.item || "-");
+        var needed = Number(it.cantidad_necesaria || 0);
+        var stock = Number(it.stock_disponible || 0);
+        var faltan = Math.max(0, (needed - stock));
+        var estTitle = "Necesario: " + String(needed) + " / Stock: " + String(stock) + (faltan ? (" / Faltan: " + String(faltan)) : "");
+        var remito = String(it.remito_archivo || "").trim();
+        var remitoUrl = "";
+        if (remito) {
+          remitoUrl = (remito.indexOf("http://") === 0 || remito.indexOf("https://") === 0)
+            ? remito
+            : ("/dashboard/coffee/remitos/" + encodeURIComponent(remito));
+        }
+        var rid = Number(it.id || 0);
+        var remitoRow = "";
+        if (remitoUrl) remitoRow += '<a class="btn-mini ci-remito-view" href="' + escapeHtml(remitoUrl) + '" target="_blank" rel="noopener">Ver remito</a>';
+        else remitoRow += '<span class="ci-remito-miss">Sin remito</span>';
+        if (canRecibir && rid > 0) remitoRow += '<button type="button" class="btn-mini ci-remito-up" data-insumo-id="' + String(rid) + '">Remito</button>';
         return (
           '<div class="gestion-coffee-insumo" data-idx="' + idx + '">' +
             (canEditBase
@@ -2746,17 +2831,23 @@
               : ('<div class="item">' + escapeHtml(itemVal) + "</div>")
             ) +
             '<input class="ctl-inp ci-cant" type="number" min="0" step="1" value="' + String(it.cantidad_necesaria || 0) + '"' + (canEditBase ? "" : " disabled") + ">" +
-            '<input class="ctl-inp ci-stock" type="number" min="0" step="1" value="' + String(it.stock_disponible || 0) + '"' + (canEditBase ? "" : " disabled") + ">" +
+            '<div class="ci-stock-stack">' +
+              '<input class="ctl-inp ci-stock" type="number" min="0" step="1" value="' + String(it.stock_disponible || 0) + '"' + (canEditBase ? "" : " disabled") + ' title="Stock disponible">' +
+              '<input class="ctl-inp ci-final" type="number" min="0" step="1" value="' + String(it.stock_final || 0) + '"' + (canFinal ? "" : " disabled") + ' placeholder="Final" title="Stock final (despues del evento)">' +
+            "</div>" +
             '<select class="ctl-sel ci-decision"' + (canDecide ? "" : " disabled") + ">" +
               '<option value="pendiente"' + ((it.decision_compra || "") === "pendiente" ? " selected" : "") + '>Pendiente</option>' +
               '<option value="comprar"' + ((it.decision_compra || "") === "comprar" ? " selected" : "") + '>Comprar</option>' +
               '<option value="no_necesario"' + ((it.decision_compra || "") === "no_necesario" ? " selected" : "") + '>No necesario</option>' +
             "</select>" +
-            '<span class="coffee-pill ' + estClass + '">' + escapeHtml(estLabel || "-") + "</span>" +
-            '<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#2f4f73;font-weight:800;">' +
-              '<input class="ci-recibido" type="checkbox" ' + (it.recibido ? "checked " : "") + (canRecibir ? "" : "disabled ") + '/>' +
-              "Recibido" +
-            "</label>" +
+            '<span class="coffee-pill ' + estClass + '" title="' + escapeHtml(estTitle) + '">' + escapeHtml(estLabel || "-") + "</span>" +
+            '<div class="ci-rec">' +
+              '<label class="ci-rec-label">' +
+                '<input class="ci-recibido" type="checkbox" ' + (it.recibido ? "checked " : "") + (canRecibir ? "" : "disabled ") + "/>" +
+                "Recibido" +
+              "</label>" +
+              '<div class="ci-remito-row">' + remitoRow + "</div>" +
+            "</div>" +
             (canEditBase ? '<button type="button" class="btn-mini ci-del">Quitar</button>' : "<span></span>") +
           "</div>"
         );
@@ -2842,6 +2933,7 @@
         var itemEl = row.querySelector(".ci-item");
         var cantEl = row.querySelector(".ci-cant");
         var stockEl = row.querySelector(".ci-stock");
+        var finalEl = row.querySelector(".ci-final");
         var decEl = row.querySelector(".ci-decision");
         var recEl = row.querySelector(".ci-recibido");
         out.push({
@@ -2849,6 +2941,7 @@
           item: String((itemEl && itemEl.value) || base.item || ""),
           cantidad_necesaria: Number((cantEl && cantEl.value) || base.cantidad_necesaria || 0),
           stock_disponible: Number((stockEl && stockEl.value) || base.stock_disponible || 0),
+          stock_final: Number((finalEl && finalEl.value) || base.stock_final || 0),
           decision_compra: String((decEl && decEl.value) || base.decision_compra || "pendiente"),
           recibido: !!(recEl && recEl.checked),
         });
@@ -3317,6 +3410,8 @@
       GESTION_COFFEE_INSUMOS = [];
       GESTION_COFFEE_INSUMOS_BORRAR = [];
       GESTION_COFFEE_LOGISTICA = {};
+      COFFEE_REMITO_TARGET_ID = 0;
+      if (el.coffeeRemitoFile) el.coffeeRemitoFile.value = "";
       if (el.gestionModal) {
         el.gestionModal.classList.remove("open");
         el.gestionModal.setAttribute("aria-hidden", "true");
@@ -4506,7 +4601,20 @@
     if (el.gestionCoffeeInsumosList) {
       el.gestionCoffeeInsumosList.addEventListener("click", function (ev) {
         var tgt = ev.target;
-        if (!tgt || !tgt.classList || !tgt.classList.contains("ci-del")) return;
+        if (!tgt || !tgt.classList) return;
+        if (tgt.classList.contains("ci-remito-up")) {
+          var insId = Number(tgt.getAttribute("data-insumo-id") || 0);
+          if (!insId) return;
+          COFFEE_REMITO_TARGET_ID = insId;
+          if (el.coffeeRemitoFile) {
+            el.coffeeRemitoFile.value = "";
+            el.coffeeRemitoFile.click();
+          } else {
+            setGestionMsg("No se pudo abrir selector de archivo.", true);
+          }
+          return;
+        }
+        if (!tgt.classList.contains("ci-del")) return;
         var row = tgt.closest(".gestion-coffee-insumo");
         if (!row) return;
         var idx = Number(row.getAttribute("data-idx") || -1);
@@ -4520,6 +4628,45 @@
         GESTION_COFFEE_INSUMOS = (GESTION_COFFEE_INSUMOS || []).filter(function (_it, i) { return i !== idx; });
         renderGestionCoffeeInsumos(GESTION_DATA && GESTION_DATA.novedad);
         setGestionMsg("Insumo quitado (guardá para aplicar).", false);
+      });
+    }
+    if (el.coffeeRemitoFile) {
+      el.coffeeRemitoFile.addEventListener("change", function () {
+        var novId = Number(GESTION_OPEN_ID || 0);
+        var insumoId = Number(COFFEE_REMITO_TARGET_ID || 0);
+        var file = el.coffeeRemitoFile.files && el.coffeeRemitoFile.files[0];
+        if (!file) {
+          COFFEE_REMITO_TARGET_ID = 0;
+          if (el.coffeeRemitoFile) el.coffeeRemitoFile.value = "";
+          return;
+        }
+        if (!novId || !insumoId) {
+          COFFEE_REMITO_TARGET_ID = 0;
+          if (el.coffeeRemitoFile) el.coffeeRemitoFile.value = "";
+          setGestionMsg("No se pudo asociar el remito al insumo.", true);
+          return;
+        }
+        var fd = new FormData();
+        fd.append("remito_file", file, file.name || "remito");
+        setGestionMsg("Subiendo remito...", false);
+        fetch("/api/dashboard/novedades_diarias_gestion/" + encodeURIComponent(String(novId)) + "/coffee_insumos/" + encodeURIComponent(String(insumoId)) + "/remito", {
+          method: "POST",
+          body: fd,
+        })
+          .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, b: b || {} }; }); })
+          .then(function (x) {
+            if (!x.ok || !x.b.ok) throw new Error(x.b.error || "No se pudo subir el remito");
+            GESTION_COFFEE_INSUMOS = Array.isArray(x.b.insumos) ? x.b.insumos : [];
+            renderGestionCoffeeInsumos(GESTION_DATA && GESTION_DATA.novedad);
+            setGestionMsg("Remito subido.", false);
+          })
+          .catch(function (e) {
+            setGestionMsg(e.message || "No se pudo subir el remito", true);
+          })
+          .then(function () {
+            COFFEE_REMITO_TARGET_ID = 0;
+            if (el.coffeeRemitoFile) el.coffeeRemitoFile.value = "";
+          });
       });
     }
     if (el.gestionCoffeeInsumosGuardar) {
