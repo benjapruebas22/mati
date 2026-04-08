@@ -111,8 +111,26 @@ NVD_COFFEE_ESTADO_CERRADOS = {"finalizado", "rechazado", "cancelado"}
 NVD_LUCIANA_USERNAMES = {"lfernandez", "luciana.fernandez", "lucianafernandez"}
 NVD_LUCIANA_FULLNAMES = {"luciana fernandez"}
 NVD_COFFEE_TURNO_PERSONAL = {
-    "manana": ["Miriam Tejerina", "Micaela Aima"],
-    "tarde": ["Yolanda Solis", "Mabel Alejo"],
+    "manana": [
+        "Beatriz Castillo",
+        "Miriam Tejerina",
+        "Yolanda Solis",
+        "Mabel Alejo",
+        "Miguel Saldaño",
+        "Flavia Gutierrez",
+        "Micaela Aima",
+        "Bustamante",
+    ],
+    "tarde": [
+        "Beatriz Castillo",
+        "Miriam Tejerina",
+        "Yolanda Solis",
+        "Mabel Alejo",
+        "Miguel Saldaño",
+        "Flavia Gutierrez",
+        "Micaela Aima",
+        "Bustamante",
+    ],
 }
 NVD_COFFEE_DECISION_COMPRA = {"pendiente", "comprar", "no_necesario"}
 
