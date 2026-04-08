@@ -555,6 +555,51 @@
   .estado-en-revision { background: #fff1f5; border-color: #f4d8e3; color: #9d4e68; }
   .estado-en-proceso { background: #fff1f5; border-color: #f4d8e3; color: #9d4e68; }
   .estado-resuelto { background: var(--ok-bg); border-color: var(--ok-bd); color: var(--ok-tx); }
+  .tipo-pill {
+    --t-accent: #64748b;
+    --t-bg: #f1f5f9;
+    --t-bd: #e2e8f0;
+    --t-tx: #334155;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 999px;
+    border: 1px solid var(--t-bd);
+    background: var(--t-bg);
+    color: var(--t-tx);
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 900;
+    white-space: nowrap;
+    user-select: none;
+  }
+  .tipo-pill .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--t-accent);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
+    flex: 0 0 auto;
+  }
+  .tipo-coffee { --t-accent: #a855f7; --t-bg: #f5f3ff; --t-bd: #ddd6fe; --t-tx: #5b21b6; }
+  .tipo-materiales { --t-accent: #0ea5e9; --t-bg: #eff6ff; --t-bd: #bfdbfe; --t-tx: #1e40af; }
+  .tipo-mantenimiento { --t-accent: #f97316; --t-bg: #fff7ed; --t-bd: #fed7aa; --t-tx: #9a3412; }
+  .tipo-tarea { --t-accent: #22c55e; --t-bg: #ecfdf5; --t-bd: #bbf7d0; --t-tx: #166534; }
+  .tipo-aviso { --t-accent: #2563eb; --t-bg: #eff6ff; --t-bd: #bfdbfe; --t-tx: #1e40af; }
+  .tipo-vehiculos { --t-accent: #10b981; --t-bg: #ecfdf5; --t-bd: #bbf7d0; --t-tx: #065f46; }
+  .tipo-salon { --t-accent: #06b6d4; --t-bg: #ecfeff; --t-bd: #a5f3fc; --t-tx: #0e7490; }
+  .tipo-operativa { --t-accent: #8b5cf6; --t-bg: #f5f3ff; --t-bd: #ddd6fe; --t-tx: #5b21b6; }
+  .tipo-otro { --t-accent: #64748b; --t-bg: #f8fafc; --t-bd: #e2e8f0; --t-tx: #334155; }
+  .tipo-sub {
+    margin-top: 2px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #5c7aa5;
+    line-height: 1.2;
+  }
+  .tbl tbody tr.tipo-row td:first-child {
+    box-shadow: inset 4px 0 0 var(--t-accent, #64748b);
+  }
   .tarea-pill {
     display: inline-flex;
     align-items: center;
@@ -857,19 +902,83 @@
     color: #1f3a61;
   }
   .gestion-meta {
+    padding: 8px 12px 0;
+  }
+  .gestion-meta-card {
+    --meta-bd: #dbe5f4;
+    --meta-bg1: #f8fbff;
+    --meta-bg2: #f1f6ff;
+    border: 1px solid var(--meta-bd);
+    border-radius: 14px;
+    background: linear-gradient(180deg, var(--meta-bg1) 0%, var(--meta-bg2) 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    padding: 10px;
+    display: grid;
+    gap: 8px;
+  }
+  .gestion-meta-card.tipo-coffee { --meta-bd: #ddd6fe; --meta-bg1: #faf8ff; --meta-bg2: #f5f3ff; }
+  .gestion-meta-card.tipo-materiales { --meta-bd: #bfdbfe; --meta-bg1: #f8fbff; --meta-bg2: #eff6ff; }
+  .gestion-meta-card.tipo-mantenimiento { --meta-bd: #fed7aa; --meta-bg1: #fffaf3; --meta-bg2: #fff7ed; }
+  .gestion-meta-card.tipo-tarea { --meta-bd: #bbf7d0; --meta-bg1: #f3fef7; --meta-bg2: #ecfdf5; }
+  .gestion-meta-card.tipo-aviso { --meta-bd: #bfdbfe; --meta-bg1: #f8fbff; --meta-bg2: #eff6ff; }
+  .gestion-meta-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .gestion-meta-left,
+  .gestion-meta-right {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+  }
+  .gestion-meta-actions {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    padding: 8px 12px 0;
+    margin-left: auto;
   }
-  .gestion-meta-item {
-    border: 1px solid #dbe5f4;
+  .gestion-meta-actions .btn-mini {
     border-radius: 999px;
-    background: #f6f9ff;
-    color: #37567e;
+    padding: 3px 10px;
     font-size: 11px;
-    font-weight: 700;
-    padding: 3px 8px;
+    font-weight: 900;
+  }
+  .gestion-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .gestion-meta-kpi {
+    border: 1px solid rgba(219, 230, 245, 0.9);
+    border-radius: 12px;
+    background: #ffffff;
+    padding: 6px 8px;
+    min-width: 0;
+  }
+  .gestion-meta-kpi .k {
+    font-size: 10px;
+    font-weight: 900;
+    color: #4f6f98;
+    text-transform: uppercase;
+    letter-spacing: 0.25px;
+  }
+  .gestion-meta-kpi .v {
+    margin-top: 2px;
+    font-size: 12px;
+    font-weight: 900;
+    color: #0f172a;
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .gestion-meta-kpi .v.muted {
+    color: #64748b;
+    font-weight: 800;
   }
   .gestion-section-title {
     margin: 8px 12px 0;
@@ -1068,7 +1177,7 @@
   }
   .gestion-coffee-log-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(120px, 1fr));
+    grid-template-columns: repeat(5, minmax(120px, 1fr));
     gap: 6px;
     align-items: end;
   }
@@ -1422,6 +1531,9 @@
     }
     .tool-row {
       grid-template-columns: 1fr;
+    }
+    .gestion-meta-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
     .gestion-coffee-insumo {
       grid-template-columns: 1fr;
@@ -1869,7 +1981,7 @@
       <div class="gestion-coffee-log-grid">
         <div>
           <label for="gestionCoffeeChofer" style="font-size:11px;color:#59799e;font-weight:800;">Chofer</label>
-          <input id="gestionCoffeeChofer" class="ctl-inp" type="text" maxlength="80" placeholder="Chofer asignado">
+          <input id="gestionCoffeeChofer" class="ctl-inp" type="text" maxlength="80" placeholder="Chofer asignado" list="coffeeChoferesList">
         </div>
         <div>
           <label for="gestionCoffeeTurno" style="font-size:11px;color:#59799e;font-weight:800;">Turno</label>
@@ -1883,11 +1995,29 @@
           <label for="gestionCoffeePersonal" style="font-size:11px;color:#59799e;font-weight:800;">Personal</label>
           <select id="gestionCoffeePersonal" class="ctl-sel"></select>
         </div>
+        <div>
+          <label for="gestionCoffeeArmadoSalon" style="font-size:11px;color:#59799e;font-weight:800;">Armado salon</label>
+          <input id="gestionCoffeeArmadoSalon" class="ctl-inp" type="text" maxlength="80" placeholder="Responsable (mantenimiento)" list="coffeeMantenimientoList">
+        </div>
         <div class="aux-row" style="margin:0;">
           <button id="gestionCoffeeLogGuardar" type="button" class="btn-inline">Guardar logistica</button>
           <button id="gestionCoffeeLogAprobar" type="button" class="btn-inline">Aprobar logistica</button>
         </div>
       </div>
+      <datalist id="coffeeChoferesList">
+        <option value="Francisco Savio"></option>
+        <option value="Ignacio Baroni"></option>
+        <option value="Mauro Vea Murguia"></option>
+        <option value="Emilino P de la Puente"></option>
+        <option value="Nahuel Amado"></option>
+        <option value="Luis Cardozo"></option>
+      </datalist>
+      <datalist id="coffeeMantenimientoList">
+        <option value="Carlos Vidaurre"></option>
+        <option value="Marcos Duran"></option>
+        <option value="Nestor Guerrero"></option>
+        <option value="Manuel Flores"></option>
+      </datalist>
       <details id="gestionCoffeeLayoutDetails" class="coffee-layout-details">
         <summary class="coffee-layout-summary">
           <span>Distribucion del salon</span>
@@ -2168,6 +2298,7 @@
       gestionCoffeeChofer: document.getElementById("gestionCoffeeChofer"),
       gestionCoffeeTurno: document.getElementById("gestionCoffeeTurno"),
       gestionCoffeePersonal: document.getElementById("gestionCoffeePersonal"),
+      gestionCoffeeArmadoSalon: document.getElementById("gestionCoffeeArmadoSalon"),
       gestionCoffeeLogGuardar: document.getElementById("gestionCoffeeLogGuardar"),
       gestionCoffeeLogAprobar: document.getElementById("gestionCoffeeLogAprobar"),
       gestionCoffeeLayoutDetails: document.getElementById("gestionCoffeeLayoutDetails"),
@@ -2285,6 +2416,44 @@
       if (s === "informado" || s === "pendiente") return "estado-informado";
       if (s === "en revision" || s === "en proceso" || s === "aprobado" || s === "en preparacion" || s === "enviado") return "estado-en-proceso";
       return "estado-resuelto";
+    }
+
+    function tipoClass(v) {
+      var t = normTxt(v);
+      if (t === "coffee institucional") return "tipo-coffee";
+      if (t === "pedido de materiales") return "tipo-materiales";
+      if (t === "reclamo / mantenimiento") return "tipo-mantenimiento";
+      if (t === "asignacion de tareas") return "tipo-tarea";
+      if (t === "aviso general") return "tipo-aviso";
+      if (t === "uso de salon") return "tipo-salon";
+      if (t === "gestion operativa") return "tipo-operativa";
+      if (t === "vehiculo" || t === "vehiculos") return "tipo-vehiculos";
+      return "tipo-otro";
+    }
+
+    function tipoShortLabel(v) {
+      var t = normTxt(v);
+      if (t === "coffee institucional") return "Coffee";
+      if (t === "pedido de materiales") return "Materiales";
+      if (t === "reclamo / mantenimiento") return "Mantenimiento";
+      if (t === "asignacion de tareas") return "Tarea";
+      if (t === "aviso general") return "Aviso";
+      if (t === "uso de salon") return "Salon";
+      if (t === "gestion operativa") return "Gestion";
+      if (t === "vehiculo" || t === "vehiculos") return "Vehiculos";
+      return String(v || "-");
+    }
+
+    function tipoPill(v) {
+      var full = String(v || "-");
+      var cls = tipoClass(full);
+      var short = tipoShortLabel(full);
+      return (
+        '<span class="tipo-pill ' + cls + '" title="' + escapeHtml(full) + '">' +
+          '<span class="dot" aria-hidden="true"></span>' +
+          escapeHtml(short) +
+        "</span>"
+      );
     }
 
     function estadoSelectClass(v) {
@@ -2611,6 +2780,10 @@
       if (el.gestionCoffeePersonal) {
         el.gestionCoffeePersonal.disabled = !canEdit;
       }
+      if (el.gestionCoffeeArmadoSalon) {
+        el.gestionCoffeeArmadoSalon.value = String(log.armado_salon || "");
+        el.gestionCoffeeArmadoSalon.disabled = !canEdit;
+      }
       if (el.gestionCoffeeLogGuardar) {
         el.gestionCoffeeLogGuardar.disabled = !canEdit;
       }
@@ -2705,6 +2878,7 @@
         chofer: String((el.gestionCoffeeChofer && el.gestionCoffeeChofer.value) || ""),
         turno: String((el.gestionCoffeeTurno && el.gestionCoffeeTurno.value) || ""),
         personal: String((el.gestionCoffeePersonal && el.gestionCoffeePersonal.value) || ""),
+        armado_salon: String((el.gestionCoffeeArmadoSalon && el.gestionCoffeeArmadoSalon.value) || ""),
         salon_layout: String((GESTION_COFFEE_LOGISTICA && GESTION_COFFEE_LOGISTICA.salon_layout) || ""),
       };
       if (aprobar) payload.aprobar = true;
@@ -3150,6 +3324,159 @@
       setGestionMsg("", false);
     }
 
+    function metaKpi(label, value, muted) {
+      var txt = String(value == null ? "" : value).trim();
+      if (!txt) txt = "-";
+      return (
+        '<div class="gestion-meta-kpi">' +
+          '<div class="k">' + escapeHtml(label) + "</div>" +
+          '<div class="v' + (muted ? " muted" : "") + '">' + escapeHtml(txt) + "</div>" +
+        "</div>"
+      );
+    }
+
+    function coffeeLayoutMeta(code) {
+      var c = String(code || "").trim();
+      if (!c) return null;
+      var arr = Array.isArray(COFFEE_LAYOUTS) ? COFFEE_LAYOUTS : [];
+      for (var i = 0; i < arr.length; i += 1) {
+        var it = arr[i];
+        if (it && String(it.code || "") === c) return it;
+      }
+      return null;
+    }
+
+    function renderGestionMetaCard(nov, coffeeLogistica, coffeeInsumos) {
+      var item = nov || {};
+      var tipo = String(item.tipo || "Novedad").trim();
+      var isCoffee = !!item.es_coffee;
+      var tCls = tipoClass(tipo);
+      var estado = String(item.estado || "Informado").trim() || "Informado";
+      var subtipo = String(item.subtipo || "").trim();
+      var agente = String(item.agente || "").trim();
+      var sede = String(item.sede_codigo || "").trim();
+      var left = tipoPill(tipo) + '<span class="estado-pill ' + estadoClass(estado) + '">' + escapeHtml(estado) + "</span>";
+      if (subtipo) left += '<span class="tipo-pill tipo-otro" title="Subtipo"><span class="dot" aria-hidden="true"></span>' + escapeHtml(subtipo) + "</span>";
+
+      var right = "";
+      if (agente) right += agenteCell(agente);
+      if (sede) right += '<span class="tipo-pill tipo-otro" title="Sede"><span class="dot" aria-hidden="true"></span>' + escapeHtml(sede) + "</span>";
+
+      var actions = "";
+      if (isCoffee) {
+        actions =
+          '<div class="gestion-meta-actions">' +
+            '<button type="button" class="btn-mini" data-meta-act="compras">Compras</button>' +
+            '<button type="button" class="btn-mini" data-meta-act="salon">Salón</button>' +
+            '<button type="button" class="btn-mini" data-meta-act="chofer">Chofer</button>' +
+          "</div>";
+      }
+
+      var top = (
+        '<div class="gestion-meta-top">' +
+          '<div class="gestion-meta-left">' + left + "</div>" +
+          '<div class="gestion-meta-right">' + right + actions + "</div>" +
+        "</div>"
+      );
+
+      var grid = "";
+      if (isCoffee) {
+        var log = coffeeLogistica || {};
+        var fechaEv = fmtIsoDate(item.coffee_fecha_evento || "");
+        var horaEv = String(item.coffee_horario_evento || "").trim();
+        var evento = (fechaEv || horaEv) ? ((fechaEv || "-") + (horaEv ? (" " + horaEv) : "")) : "-";
+        var destino = String(item.coffee_sede_destino || "").trim() || "-";
+        var cant = Number(item.coffee_cantidad_personas || 0);
+        var logOk = !!item.coffee_logistica_aprobada;
+        var layout = coffeeLayoutMeta(log.salon_layout || "");
+        var plano = layout ? String(layout.label || layout.code) : (String(log.salon_layout || "").trim() || "-");
+        var armado = String(log.armado_salon || "").trim() || "-";
+        var chofer = String(log.chofer || "").trim() || "-";
+        var limpieza = String(log.personal || "").trim() || "-";
+        var ins = Array.isArray(coffeeInsumos) ? coffeeInsumos : [];
+        var faltaComprar = ins.some(function (x) { return normTxt(x && x.estado) === "falta_comprar"; });
+        var compraPend = ins.some(function (x) { return normTxt(x && x.decision_compra) === "pendiente"; });
+        var compraTxt = faltaComprar ? "Falta comprar" : (compraPend ? "Pendiente" : "OK");
+        grid =
+          '<div class="gestion-meta-grid">' +
+            metaKpi("Evento", evento, false) +
+            metaKpi("Personas", cant ? String(cant) : "-", !cant) +
+            metaKpi("Destino", destino, destino === "-") +
+            metaKpi("Logística", logOk ? "Aprobada" : "Pendiente", !logOk) +
+            metaKpi("Plano", plano, plano === "-") +
+            metaKpi("Armado salón", armado, armado === "-") +
+            metaKpi("Chofer", chofer, chofer === "-") +
+            metaKpi("Compras", compraTxt, compraTxt !== "OK") +
+            metaKpi("Limpieza", limpieza, limpieza === "-") +
+          "</div>";
+      } else {
+        grid =
+          '<div class="gestion-meta-grid">' +
+            metaKpi("Sede", sede || "-", !sede) +
+            metaKpi("Subtipo", subtipo || "-", !subtipo) +
+            metaKpi("Detalle", String(item.observacion || "").trim() || "-", !String(item.observacion || "").trim()) +
+            metaKpi("Último chat", String(item.chat_ult_creado_en || "").trim() || "Sin mensajes", !String(item.chat_ult_creado_en || "").trim()) +
+          "</div>";
+      }
+      return '<div class="gestion-meta-card ' + tCls + '">' + top + grid + "</div>";
+    }
+
+    function setGestionCompose(msg) {
+      if (!el.gestionTexto) return;
+      el.gestionTexto.value = String(msg || "");
+      el.gestionTexto.focus();
+      try {
+        el.gestionTexto.scrollIntoView({ block: "center", behavior: "smooth" });
+      } catch (_e) {
+        // noop
+      }
+    }
+
+    function buildCoffeeQuickMessage(act) {
+      var nov = (GESTION_DATA && GESTION_DATA.novedad) ? (GESTION_DATA.novedad || {}) : {};
+      var log = GESTION_COFFEE_LOGISTICA || (GESTION_DATA && GESTION_DATA.coffee_logistica) || {};
+      var id = String(nov.id || "").trim();
+      var subtipo = String(nov.subtipo || "Coffee").trim();
+      var fechaEv = fmtIsoDate(nov.coffee_fecha_evento || "");
+      var horaEv = String(nov.coffee_horario_evento || "").trim();
+      var destino = String(nov.coffee_sede_destino || "").trim();
+      var cant = Number(nov.coffee_cantidad_personas || 0);
+      var layout = coffeeLayoutMeta(log.salon_layout || "");
+      var plano = layout ? String(layout.label || layout.code) : String(log.salon_layout || "").trim();
+      var lines = [];
+      if (act === "compras") lines.push("[COMPRAS] Revisar compra Coffee #" + (id || "-") + " (" + subtipo + ")");
+      else if (act === "salon") lines.push("[SALÓN] Armado de salón Coffee #" + (id || "-") + " (" + subtipo + ")");
+      else if (act === "chofer") lines.push("[CHOFER] Logística / traslado Coffee #" + (id || "-") + " (" + subtipo + ")");
+      else lines.push("Coffee #" + (id || "-") + " (" + subtipo + ")");
+
+      var baseBits = [];
+      if (fechaEv || horaEv) baseBits.push("Evento: " + (fechaEv || "-") + (horaEv ? (" " + horaEv) : ""));
+      if (cant) baseBits.push("Personas: " + String(cant));
+      if (destino) baseBits.push("Destino: " + destino);
+      if (baseBits.length) lines.push(baseBits.join(" · "));
+
+      var logBits = [];
+      var armado = String(log.armado_salon || "").trim();
+      var chofer = String(log.chofer || "").trim();
+      var limpieza = String(log.personal || "").trim();
+      var turno = coffeeTurnoLabel(log.turno || "");
+      if (plano) logBits.push("Plano: " + plano);
+      if (armado) logBits.push("Armado salón: " + armado);
+      if (chofer) logBits.push("Chofer: " + chofer);
+      if (turno) logBits.push("Turno: " + (turno === "manana" ? "Mañana" : "Tarde"));
+      if (limpieza) logBits.push("Limpieza: " + limpieza);
+      if (logBits.length) lines.push("Logística: " + logBits.join(" · "));
+
+      if (act === "compras") {
+        lines.push("Marcar decisión de compra en Control de insumos.");
+      } else if (act === "salon") {
+        lines.push("Confirmar armado según el plano seleccionado.");
+      } else if (act === "chofer") {
+        lines.push("Confirmar chofer / traslado y cargas necesarias.");
+      }
+      return lines.join("\n");
+    }
+
     function renderGestion(payload) {
       var p = payload || {};
       var nov = p.novedad || {};
@@ -3159,24 +3486,7 @@
         el.gestionTitle.textContent = "Gestion interna #"+ String(nov.id || "-") + " - " + String(nov.tipo || "Novedad");
       }
       if (el.gestionMeta) {
-        var tags = [];
-        tags.push("Agente: " + String(nov.agente || "-"));
-        tags.push("Sede: " + String(nov.sede_codigo || "-"));
-        tags.push("Estado: " + String(nov.estado || "Informado"));
-        tags.push("Subtipo: " + String(nov.subtipo || "General"));
-        if (isCoffee) {
-          var fechaEv = fmtIsoDate(nov.coffee_fecha_evento || "");
-          var horaEv = String(nov.coffee_horario_evento || "").trim();
-          var destino = String(nov.coffee_sede_destino || "").trim();
-          var cant = Number(nov.coffee_cantidad_personas || 0);
-          if (fechaEv || horaEv) tags.push("Evento: " + (fechaEv || "-") + (horaEv ? (" " + horaEv) : ""));
-          if (cant) tags.push("Personas: " + String(cant));
-          if (destino) tags.push("Destino: " + destino);
-          tags.push("Logistica: " + (nov.coffee_logistica_aprobada ? "Aprobada" : "Pendiente"));
-        }
-        el.gestionMeta.innerHTML = tags.map(function (t) {
-          return '<span class="gestion-meta-item">' + escapeHtml(t) + "</span>";
-        }).join("");
+        el.gestionMeta.innerHTML = renderGestionMetaCard(nov, p.coffee_logistica || {}, p.coffee_insumos || []);
       }
 
       var estados = Array.isArray(p.estados) && p.estados.length ? p.estados : (isCoffee ? COFFEE_ESTADOS : ESTADOS);
@@ -3610,7 +3920,7 @@
         var sede = String((r && r.tarea_sede_codigo) || (r && r.sede_codigo) || "").trim().toUpperCase() || "-";
         var tareaEstado = String((r && r.tarea_estado) || "Pendiente").trim();
         return (
-          "<tr>" +
+          "<tr class=\"tipo-row tipo-tarea\">" +
             "<td>" + (r.fecha || "-") + "</td>" +
             "<td>" + agenteCell(ag) + "</td>" +
             "<td>" + sede + "</td>" +
@@ -3630,12 +3940,26 @@
         return;
       }
       target.innerHTML = rows.map(function (r) {
+        var tipoFull = String((r && r.tipo) || "").trim();
+        var tCls = tipoClass(tipoFull);
+        var extra = "";
+        if (normTxt(tipoFull) === "coffee institucional") {
+          var fechaEv = fmtIsoDate(r.coffee_fecha_evento || "");
+          var horaEv = String(r.coffee_horario_evento || "").trim();
+          var destino = String(r.coffee_sede_destino || "").trim();
+          var cant = Number(r.coffee_cantidad_personas || 0);
+          var bits = [];
+          if (fechaEv || horaEv) bits.push("Evento: " + (fechaEv || "-") + (horaEv ? (" " + horaEv) : ""));
+          if (cant) bits.push(String(cant) + " pers.");
+          if (destino) bits.push("Destino: " + destino);
+          if (bits.length) extra = '<div class="tipo-sub">' + escapeHtml(bits.join(" · ")) + "</div>";
+        }
         return (
-          "<tr>" +
+          "<tr class=\"tipo-row " + tCls + "\">" +
             "<td>" + (r.fecha || "-") + "</td>" +
             "<td>" + agenteCell(r.agente) + "</td>" +
             "<td>" + (r.sede_codigo || "-") + "</td>" +
-            "<td>" + (r.tipo || "-") + "</td>" +
+            "<td>" + tipoPill(tipoFull || "-") + extra + "</td>" +
             "<td>" + (r.subtipo || "-") + "</td>" +
             "<td>" + (r.observacion || "-") + "</td>" +
             "<td><span class=\"estado-pill " + estadoClass(r.estado) + "\">" + (r.estado || "Informado") + "</span></td>" +
@@ -4223,6 +4547,16 @@
         GESTION_COFFEE_LOGISTICA.salon_layout = code;
         renderGestionCoffeeLogistica(GESTION_DATA && GESTION_DATA.novedad);
         setGestionMsg("Plano seleccionado. Guardá logística para confirmar.", false);
+      });
+    }
+    if (el.gestionMeta) {
+      el.gestionMeta.addEventListener("click", function (ev) {
+        var btn = ev.target && ev.target.closest ? ev.target.closest("[data-meta-act]") : null;
+        if (!btn) return;
+        var act = String(btn.getAttribute("data-meta-act") || "").trim();
+        if (!act) return;
+        setGestionCompose(buildCoffeeQuickMessage(act));
+        setGestionMsg("Mensaje listo en el chat (podés editarlo y enviarlo).", false);
       });
     }
     if (el.taskAlertList) {

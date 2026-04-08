@@ -350,8 +350,8 @@ def _ensure_coffee_defaults_for_novedad(con, novedad_id):
     con.execute(
         """
         INSERT OR IGNORE INTO coffee_logistica
-            (novedad_id, chofer, personal, turno, salon_layout, aprobado, aprobado_por, aprobado_en, actualizado_en, actualizado_por)
-        VALUES (?, '', '', '', '', 0, '', '', ?, 'Sistema')
+            (novedad_id, chofer, personal, turno, salon_layout, armado_salon, aprobado, aprobado_por, aprobado_en, actualizado_en, actualizado_por)
+        VALUES (?, '', '', '', '', '', 0, '', '', ?, 'Sistema')
         """,
         (novedad_id, ts),
     )
@@ -403,6 +403,7 @@ def _coffee_read_logistica(con, novedad_id):
             COALESCE(personal,'') AS personal,
             COALESCE(turno,'') AS turno,
             COALESCE(salon_layout,'') AS salon_layout,
+            COALESCE(armado_salon,'') AS armado_salon,
             COALESCE(aprobado,0) AS aprobado,
             COALESCE(aprobado_por,'') AS aprobado_por,
             COALESCE(aprobado_en,'') AS aprobado_en,
@@ -422,6 +423,7 @@ def _coffee_read_logistica(con, novedad_id):
         "personal": (_row_value(row, "personal", "") or "").strip(),
         "turno": (_row_value(row, "turno", "") or "").strip(),
         "salon_layout": (_row_value(row, "salon_layout", "") or "").strip(),
+        "armado_salon": (_row_value(row, "armado_salon", "") or "").strip(),
         "aprobado": int(_row_value(row, "aprobado", 0) or 0) == 1,
         "aprobado_por": (_row_value(row, "aprobado_por", "") or "").strip(),
         "aprobado_en": (_row_value(row, "aprobado_en", "") or "").strip(),
@@ -487,7 +489,10 @@ def _actor_can_view_gestion(actor, agente_novedad, agente_tarea="", tipo=""):
     if _can_admin_novedades(actor):
         return True
     if _is_coffee_tipo(tipo) and (
-        bool(actor.get("is_luciana")) or bool(actor.get("is_francisco")) or bool(actor.get("is_matias"))
+        bool(actor.get("is_luciana"))
+        or bool(actor.get("is_francisco"))
+        or bool(actor.get("is_matias"))
+        or _is_tarea_chat_team_actor(actor)
     ):
         return True
     if _norm_ci(tipo) == _norm_ci(NVD_TIPO_TAREA) and _is_tarea_chat_team_actor(actor):
@@ -1065,6 +1070,11 @@ def register_novedades(bp, get_db):
                     COALESCE(subtipo,'') AS subtipo,
                     COALESCE(observacion,'') AS observacion,
                     COALESCE(estado,'Informado') AS estado,
+                    COALESCE(coffee_cantidad_personas,0) AS coffee_cantidad_personas,
+                    COALESCE(coffee_fecha_evento,'') AS coffee_fecha_evento,
+                    COALESCE(coffee_horario_evento,'') AS coffee_horario_evento,
+                    COALESCE(coffee_sede_destino,'') AS coffee_sede_destino,
+                    COALESCE(coffee_logistica_aprobada,0) AS coffee_logistica_aprobada,
                     COALESCE(tarea_asignada,'') AS tarea_asignada,
                     COALESCE(tarea_estado,'') AS tarea_estado,
                     COALESCE(tarea_sede_codigo,'') AS tarea_sede_codigo,
@@ -1156,6 +1166,8 @@ def register_novedades(bp, get_db):
                         tareas_asignadas.append(it)
                 else:
                     if _can_admin_novedades(actor) or _actor_match_name(actor, it.get("agente") or ""):
+                        solicitudes_recibidas.append(it)
+                    elif bool(it.get("puede_ver_gestion")):
                         solicitudes_recibidas.append(it)
             resumen = _novedades_resumen_visible(con, fecha, actor)
         except Exception as e:
@@ -2481,6 +2493,7 @@ def register_novedades(bp, get_db):
             personal = str(actual.get("personal") or "").strip()
             turno = str(actual.get("turno") or "").strip()
             salon_layout = str(actual.get("salon_layout") or "").strip()
+            armado_salon = str(actual.get("armado_salon") or "").strip()
             aprobado = 1 if bool(actual.get("aprobado")) else 0
             aprobado_por = str(actual.get("aprobado_por") or "").strip()
             aprobado_en = str(actual.get("aprobado_en") or "").strip()
@@ -2509,6 +2522,9 @@ def register_novedades(bp, get_db):
                     else:
                         con.close()
                         return jsonify({"ok": False, "error": "Plano de salon invalido"}), 400
+                if "armado_salon" in payload:
+                    armado_salon = str(payload.get("armado_salon") or "").strip()[:80]
+                    changed_data = True
                 if turno and personal:
                     validos = NVD_COFFEE_TURNO_PERSONAL.get(turno, [])
                     if personal not in validos:
@@ -2541,6 +2557,7 @@ def register_novedades(bp, get_db):
                     personal=?,
                     turno=?,
                     salon_layout=?,
+                    armado_salon=?,
                     aprobado=?,
                     aprobado_por=?,
                     aprobado_en=?,
@@ -2552,6 +2569,7 @@ def register_novedades(bp, get_db):
                 personal,
                 turno,
                 salon_layout,
+                armado_salon,
                 aprobado,
                 aprobado_por,
                 aprobado_en,
