@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" role="img" aria-label="Plano solo sillas">
+  <defs>
+    <style>
+      .room{fill:#ffffff;stroke:#94a3b8;stroke-width:6;rx:18;ry:18}
+      .chair{fill:#334155;opacity:.92;rx:8;ry:8}
+      .mesa{fill:#7bb7b0;stroke:#0f766e;stroke-width:4;rx:10;ry:10}
+      .accent{fill:#e2e8f0}
+    </style>
+  </defs>
+
+  <rect x="18" y="14" width="364" height="212" class="room" rx="22" ry="22"/>
+
+  <rect x="34" y="88" width="48" height="64" class="mesa"/>
+
+  <g>
+    <rect x="138" y="58" width="28" height="22" class="chair" rx="8" ry="8"/>
+    <rect x="182" y="58" width="28" height="22" class="chair" rx="8" ry="8"/>
+    <rect x="226" y="58" width="28" height="22" class="chair" rx="8" ry="8"/>
+    <rect x="270" y="58" width="28" height="22" class="chair" rx="8" ry="8"/>
+
+    <rect x="138" y="92" width="28" height="22" class="chair" rx="8" ry="8"/>
+    <rect x="182" y="92" width="28" height="22" class="chair" rx="8" ry="8"/>
+    <rect x="226" y="92" width="28" height="22" class="chair" rx="8" ry="8"/>
+    <rect x="270" y="92" width="28" height="22" class="chair" rx="8" ry="8"/>
+
+    <rect x="138" y="126" width="28" height="22" class="chair" rx="8" ry="8"/>
+    <rect x="182" y="126" width="28" height="22" class="chair" rx="8" ry="8"/>
+    <rect x="226" y="126" width="28" height="22" class="chair" rx="8" ry="8"/>
+    <rect x="270" y="126" width="28" height="22" class="chair" rx="8" ry="8"/>
+
+    <rect x="138" y="160" width="28" height="22" class="chair" rx="8" ry="8"/>
+    <rect x="182" y="160" width="28" height="22" class="chair" rx="8" ry="8"/>
+    <rect x="226" y="160" width="28" height="22" class="chair" rx="8" ry="8"/>
+    <rect x="270" y="160" width="28" height="22" class="chair" rx="8" ry="8"/>
+  </g>
+
+  <rect x="320" y="30" width="34" height="180" class="accent" rx="10" ry="10"/>
+</svg>
+

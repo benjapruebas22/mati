@@ -303,6 +303,7 @@ def _ensure_coffee_insumos_table(con):
             estado TEXT DEFAULT 'hay_stock',
             decision_compra TEXT DEFAULT 'pendiente',
             recibido INTEGER DEFAULT 0,
+            activo INTEGER DEFAULT 1,
             actualizado_en TEXT,
             actualizado_por TEXT,
             UNIQUE(novedad_id, item)
@@ -317,6 +318,7 @@ def _ensure_coffee_insumos_table(con):
         ("estado", "TEXT DEFAULT 'hay_stock'"),
         ("decision_compra", "TEXT DEFAULT 'pendiente'"),
         ("recibido", "INTEGER DEFAULT 0"),
+        ("activo", "INTEGER DEFAULT 1"),
         ("actualizado_en", "TEXT"),
         ("actualizado_por", "TEXT"),
     ):
@@ -340,6 +342,7 @@ def _ensure_coffee_logistica_table(con):
             chofer TEXT DEFAULT '',
             personal TEXT DEFAULT '',
             turno TEXT DEFAULT '',
+            salon_layout TEXT DEFAULT '',
             aprobado INTEGER DEFAULT 0,
             aprobado_por TEXT DEFAULT '',
             aprobado_en TEXT DEFAULT '',
@@ -353,6 +356,7 @@ def _ensure_coffee_logistica_table(con):
         ("chofer", "TEXT DEFAULT ''"),
         ("personal", "TEXT DEFAULT ''"),
         ("turno", "TEXT DEFAULT ''"),
+        ("salon_layout", "TEXT DEFAULT ''"),
         ("aprobado", "INTEGER DEFAULT 0"),
         ("aprobado_por", "TEXT DEFAULT ''"),
         ("aprobado_en", "TEXT DEFAULT ''"),

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 240" role="img" aria-label="Plano mesa chica">
+  <defs>
+    <style>
+      .room{fill:#ffffff;stroke:#94a3b8;stroke-width:6;rx:18;ry:18}
+      .table{fill:#7bb7b0;stroke:#0f766e;stroke-width:4;rx:10;ry:10}
+      .chair{fill:#334155;opacity:.9;rx:8;ry:8}
+      .accent{fill:#e2e8f0}
+    </style>
+  </defs>
+
+  <rect x="26" y="18" width="348" height="204" class="room" rx="22" ry="22"/>
+
+  <rect x="140" y="88" width="120" height="64" class="table"/>
+
+  <rect x="186" y="62" width="28" height="22" class="chair" rx="8" ry="8"/>
+  <rect x="186" y="156" width="28" height="22" class="chair" rx="8" ry="8"/>
+  <rect x="112" y="108" width="28" height="22" class="chair" rx="8" ry="8"/>
+  <rect x="260" y="108" width="28" height="22" class="chair" rx="8" ry="8"/>
+
+  <rect x="44" y="46" width="34" height="148" class="accent" rx="10" ry="10"/>
+  <rect x="322" y="46" width="34" height="148" class="accent" rx="10" ry="10"/>
+</svg>
+

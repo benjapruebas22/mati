@@ -988,24 +988,45 @@
   }
   .gestion-coffee-row {
     margin: 0 12px;
-    border: 1px dashed #d8e5f7;
-    border-radius: 10px;
-    background: #f8fbff;
-    padding: 8px;
+    border: 1px solid #d6e6ff;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #ffffff 0%, #f6f9ff 100%);
+    padding: 10px;
     display: grid;
     gap: 8px;
+  }
+  .gestion-coffee-add{
+    display:grid;
+    grid-template-columns: 1fr auto;
+    gap: 6px;
+    align-items: end;
   }
   .gestion-coffee-insumos {
     display: grid;
     gap: 6px;
   }
+  .coffee-insumo-head{
+    display:grid;
+    grid-template-columns: minmax(140px, 1fr) 96px 96px 140px 110px 96px 70px;
+    gap: 6px;
+    align-items: center;
+    padding: 6px 8px;
+    border-radius: 10px;
+    border: 1px solid #dbeafe;
+    background: #eff6ff;
+    font-size: 10px;
+    font-weight: 900;
+    color: #35507a;
+    letter-spacing: .3px;
+    text-transform: uppercase;
+  }
   .gestion-coffee-insumo {
     border: 1px solid #d9e5f6;
-    border-radius: 8px;
+    border-radius: 10px;
     background: #fff;
     padding: 6px;
     display: grid;
-    grid-template-columns: minmax(120px, 1fr) 110px 110px 130px 120px 96px;
+    grid-template-columns: minmax(140px, 1fr) 96px 96px 140px 110px 96px 70px;
     gap: 6px;
     align-items: center;
   }
@@ -1013,6 +1034,32 @@
     font-size: 12px;
     font-weight: 700;
     color: #244565;
+  }
+  .coffee-pill{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding: 4px 8px;
+    border-radius: 999px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 900;
+    white-space: nowrap;
+    user-select: none;
+  }
+  .coffee-pill.stock-ok{ background:#ecfdf5; border-color:#bbf7d0; color:#166534; }
+  .coffee-pill.stock-falta{ background:#fff7ed; border-color:#fed7aa; color:#9a3412; }
+  .coffee-pill.stock-otro{ background:#eff6ff; border-color:#bfdbfe; color:#1e40af; }
+  .ci-del{
+    background: #fff;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+  }
+  .ci-del:hover{
+    background: #fff1f2;
+    border-color: #fca5a5;
   }
   .gestion-coffee-foot {
     font-size: 11px;
@@ -1024,6 +1071,142 @@
     grid-template-columns: repeat(4, minmax(120px, 1fr));
     gap: 6px;
     align-items: end;
+  }
+
+  .coffee-layout-details{
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #ffffff;
+    overflow: hidden;
+  }
+  .coffee-layout-summary{
+    list-style: none;
+    cursor: pointer;
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    font-weight: 900;
+    color: #0f172a;
+    background: linear-gradient(180deg,#f8fafc,#ffffff);
+  }
+  .coffee-layout-summary::-webkit-details-marker{ display:none; }
+  .coffee-layout-badge{
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 900;
+    white-space: nowrap;
+  }
+  .coffee-layout-body{
+    padding: 10px 12px 12px;
+    display:grid;
+    gap: 10px;
+    background: linear-gradient(180deg,#ffffff,#f7fbff);
+  }
+  .coffee-layout-preview{
+    display:flex;
+    gap: 10px;
+    align-items: center;
+    border: 1px solid #dbeafe;
+    border-radius: 12px;
+    background: #ffffff;
+    padding: 8px;
+  }
+  .coffee-layout-empty{
+    width: 190px;
+    height: 118px;
+    border-radius: 10px;
+    border: 1px dashed #cbd5e1;
+    background: #f8fafc;
+    display:grid;
+    place-items:center;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 900;
+    text-align:center;
+    padding: 8px;
+    flex: 0 0 auto;
+  }
+  .coffee-layout-preview-img{
+    width: 190px;
+    height: 118px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    object-fit: contain;
+    flex: 0 0 auto;
+  }
+  .coffee-layout-preview-meta{
+    display:flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .coffee-layout-preview-title{
+    font-size: 13px;
+    font-weight: 900;
+    color: #0f172a;
+  }
+  .coffee-layout-preview-desc{
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 700;
+  }
+  .coffee-layout-options{
+    display:grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .coffee-layout-option{
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #ffffff;
+    padding: 8px;
+    display:flex;
+    flex-direction: column;
+    gap: 6px;
+    text-align:left;
+    cursor:pointer;
+  }
+  .coffee-layout-option:hover{
+    border-color: #cbd5e1;
+    box-shadow: 0 10px 22px rgba(15,23,42,.08);
+  }
+  .coffee-layout-option:active{
+    transform: translateY(1px);
+  }
+  .coffee-layout-option[aria-pressed="true"]{
+    border-color: #a855f7;
+    background: #f5f3ff;
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, .14);
+  }
+  .coffee-layout-option img{
+    width: 100%;
+    height: 96px;
+    object-fit: contain;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+  }
+  .coffee-layout-option .title{
+    font-size: 12px;
+    font-weight: 900;
+    color: #0f172a;
+  }
+  .coffee-layout-option .desc{
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 700;
+  }
+  .coffee-layout-note{
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 700;
   }
   .mode-coffee {
     display: none;
@@ -1243,9 +1426,15 @@
     .gestion-coffee-insumo {
       grid-template-columns: 1fr;
     }
+    .coffee-insumo-head { display:none; }
+    .gestion-coffee-add { grid-template-columns: 1fr; }
     .gestion-coffee-log-grid {
       grid-template-columns: 1fr;
     }
+    .coffee-layout-options { grid-template-columns: 1fr; }
+    .coffee-layout-preview { flex-direction: column; align-items: stretch; }
+    .coffee-layout-empty,
+    .coffee-layout-preview-img { width: 100%; height: 140px; }
   }
 </style>
 
@@ -1665,6 +1854,10 @@
     </div>
     <div id="gestionCoffeeInsumosTitle" class="gestion-section-title" style="display:none;">Control de insumos</div>
     <div id="gestionCoffeeInsumosRow" class="gestion-coffee-row" style="display:none;">
+      <div id="gestionCoffeeInsumosAddRow" class="gestion-coffee-add">
+        <input id="gestionCoffeeInsumoNuevo" class="ctl-inp" type="text" maxlength="80" placeholder="Agregar insumo (ej: Facturas / Leche / Jugo)">
+        <button id="gestionCoffeeInsumoAdd" type="button" class="btn-inline">Agregar</button>
+      </div>
       <div id="gestionCoffeeInsumosList" class="gestion-coffee-insumos"></div>
       <div class="aux-row" style="margin:0;">
         <button id="gestionCoffeeInsumosGuardar" type="button" class="btn-inline">Guardar insumos</button>
@@ -1695,6 +1888,24 @@
           <button id="gestionCoffeeLogAprobar" type="button" class="btn-inline">Aprobar logistica</button>
         </div>
       </div>
+      <details id="gestionCoffeeLayoutDetails" class="coffee-layout-details">
+        <summary class="coffee-layout-summary">
+          <span>Distribucion del salon</span>
+          <span id="gestionCoffeeLayoutBadge" class="coffee-layout-badge">Sin seleccionar</span>
+        </summary>
+        <div class="coffee-layout-body">
+          <div class="coffee-layout-preview">
+            <div id="gestionCoffeeLayoutPreviewEmpty" class="coffee-layout-empty">Sin plano seleccionado</div>
+            <img id="gestionCoffeeLayoutPreview" class="coffee-layout-preview-img" alt="Plano seleccionado" style="display:none;">
+            <div class="coffee-layout-preview-meta">
+              <div id="gestionCoffeeLayoutTitle" class="coffee-layout-preview-title">Elegir plano</div>
+              <div id="gestionCoffeeLayoutDesc" class="coffee-layout-preview-desc">Elegí una opcion para que Logistica arme el salon.</div>
+            </div>
+          </div>
+          <div id="gestionCoffeeLayoutOptions" class="coffee-layout-options"></div>
+          <div class="coffee-layout-note">Guardá logística para confirmar el plano elegido.</div>
+        </div>
+      </details>
     </div>
     <div id="gestionTareaView" class="gestion-tarea-view">Sin tarea asignada.</div>
     <div class="gestion-section-title">Conversacion interna</div>
@@ -1767,7 +1978,28 @@
     var GESTION_HERRAMIENTAS = [];
     var GESTION_GRUPO_AGENTES = [];
     var GESTION_COFFEE_INSUMOS = [];
+    var GESTION_COFFEE_INSUMOS_BORRAR = [];
     var GESTION_COFFEE_LOGISTICA = {};
+    var COFFEE_LAYOUTS = [
+      {
+        code: "mesa_completa",
+        label: "Mesa completa (reunion)",
+        desc: "Reunion / mesa grande + coffee.",
+        img: "{{ url_for('static', filename='salon_layouts/mesa_completa.svg') }}",
+      },
+      {
+        code: "solo_sillas",
+        label: "Solo sillas (jura / curso)",
+        desc: "Capacitaciones y juras: filas de sillas.",
+        img: "{{ url_for('static', filename='salon_layouts/solo_sillas.svg') }}",
+      },
+      {
+        code: "mesa_chica",
+        label: "Mesa chica",
+        desc: "Reunion corta: mesa chica + sillas.",
+        img: "{{ url_for('static', filename='salon_layouts/mesa_chica.svg') }}",
+      },
+    ];
     var TAREA_AGENTE_GENERAL_VALUE = "__equipo__";
     var TAREA_AGENTE_GENERAL_LABEL = "Equipo operativo";
     var SEDES_ASSIGN = [];
@@ -1926,6 +2158,9 @@
       gestionToolsList: document.getElementById("gestionToolsList"),
       gestionCoffeeInsumosTitle: document.getElementById("gestionCoffeeInsumosTitle"),
       gestionCoffeeInsumosRow: document.getElementById("gestionCoffeeInsumosRow"),
+      gestionCoffeeInsumosAddRow: document.getElementById("gestionCoffeeInsumosAddRow"),
+      gestionCoffeeInsumoNuevo: document.getElementById("gestionCoffeeInsumoNuevo"),
+      gestionCoffeeInsumoAdd: document.getElementById("gestionCoffeeInsumoAdd"),
       gestionCoffeeInsumosList: document.getElementById("gestionCoffeeInsumosList"),
       gestionCoffeeInsumosGuardar: document.getElementById("gestionCoffeeInsumosGuardar"),
       gestionCoffeeLogTitle: document.getElementById("gestionCoffeeLogTitle"),
@@ -1935,6 +2170,13 @@
       gestionCoffeePersonal: document.getElementById("gestionCoffeePersonal"),
       gestionCoffeeLogGuardar: document.getElementById("gestionCoffeeLogGuardar"),
       gestionCoffeeLogAprobar: document.getElementById("gestionCoffeeLogAprobar"),
+      gestionCoffeeLayoutDetails: document.getElementById("gestionCoffeeLayoutDetails"),
+      gestionCoffeeLayoutBadge: document.getElementById("gestionCoffeeLayoutBadge"),
+      gestionCoffeeLayoutOptions: document.getElementById("gestionCoffeeLayoutOptions"),
+      gestionCoffeeLayoutPreview: document.getElementById("gestionCoffeeLayoutPreview"),
+      gestionCoffeeLayoutPreviewEmpty: document.getElementById("gestionCoffeeLayoutPreviewEmpty"),
+      gestionCoffeeLayoutTitle: document.getElementById("gestionCoffeeLayoutTitle"),
+      gestionCoffeeLayoutDesc: document.getElementById("gestionCoffeeLayoutDesc"),
     };
     if (HIDE_PENDIENTES_NO_CERRADOS && el.shell) {
       el.shell.classList.add("hide-no-cerrados");
@@ -2076,6 +2318,13 @@
       } catch (_e) {
         return String(v || "").toLowerCase().trim();
       }
+    }
+
+    function fmtIsoDate(iso) {
+      var s = String(iso || "").trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+      var p = s.split("-");
+      return p[2] + "/" + p[1] + "/" + p[0];
     }
 
     function normalizarAgente(v) {
@@ -2251,21 +2500,82 @@
       }
     }
 
+    function addGestionCoffeeInsumo() {
+      if (!el.gestionCoffeeInsumoNuevo) return;
+      var raw = String(el.gestionCoffeeInsumoNuevo.value || "").trim();
+      if (!raw) {
+        setGestionMsg("Escribí un insumo para agregar.", true);
+        return;
+      }
+      if (raw.length > 80) raw = raw.slice(0, 80);
+      var exists = (Array.isArray(GESTION_COFFEE_INSUMOS) ? GESTION_COFFEE_INSUMOS : []).some(function (it) {
+        return normTxt(it && it.item) === normTxt(raw);
+      });
+      if (exists) {
+        setGestionMsg("Ese insumo ya está en la lista.", true);
+        return;
+      }
+      var next = Array.isArray(GESTION_COFFEE_INSUMOS) ? GESTION_COFFEE_INSUMOS.slice() : [];
+      next.push({
+        id: 0,
+        item: raw,
+        cantidad_necesaria: 0,
+        stock_disponible: 0,
+        estado: "hay_stock",
+        decision_compra: "pendiente",
+        recibido: false,
+      });
+      GESTION_COFFEE_INSUMOS = next;
+      el.gestionCoffeeInsumoNuevo.value = "";
+      renderGestionCoffeeInsumos(GESTION_DATA && GESTION_DATA.novedad);
+      setGestionMsg("", false);
+    }
+
     function renderGestionCoffeeInsumos(nov) {
       if (!el.gestionCoffeeInsumosList) return;
       var arr = Array.isArray(GESTION_COFFEE_INSUMOS) ? GESTION_COFFEE_INSUMOS : [];
+      var canEditBase = !!(nov && nov.puede_editar_coffee_insumos);
+      var canDecide = !!(nov && nov.puede_decidir_compra);
+      var canRecibir = !!(nov && nov.puede_marcar_recibido);
+      if (el.gestionCoffeeInsumosAddRow) {
+        el.gestionCoffeeInsumosAddRow.style.display = canEditBase ? "grid" : "none";
+      }
+      if (el.gestionCoffeeInsumoNuevo) {
+        el.gestionCoffeeInsumoNuevo.disabled = !canEditBase;
+      }
+      if (el.gestionCoffeeInsumoAdd) {
+        el.gestionCoffeeInsumoAdd.disabled = !canEditBase;
+      }
+
       if (!arr.length) {
         el.gestionCoffeeInsumosList.innerHTML = '<div class="gestion-tools-help">Sin insumos cargados.</div>';
         return;
       }
-      var canEditBase = !!(nov && nov.puede_editar_coffee_insumos);
-      var canDecide = !!(nov && nov.puede_decidir_compra);
-      var canRecibir = !!(nov && nov.puede_marcar_recibido);
-      el.gestionCoffeeInsumosList.innerHTML = arr.map(function (it, idx) {
+
+      var head = (
+        '<div class="coffee-insumo-head" aria-hidden="true">' +
+          "<div>Insumo</div>" +
+          "<div>Necesario</div>" +
+          "<div>Stock</div>" +
+          "<div>Compra</div>" +
+          "<div>Estado</div>" +
+          "<div>Recibido</div>" +
+          "<div></div>" +
+        "</div>"
+      );
+
+      el.gestionCoffeeInsumosList.innerHTML = head + arr.map(function (it, idx) {
         var estado = String(it.estado || "");
+        var estKey = normTxt(estado).replace(/\s+/g, "_");
+        var estLabel = (estado ? estado.replace(/_/g, " ") : "-");
+        var estClass = (estKey === "hay_stock") ? "stock-ok" : ((estKey === "falta_comprar") ? "stock-falta" : "stock-otro");
+        var itemVal = String(it.item || "-");
         return (
           '<div class="gestion-coffee-insumo" data-idx="' + idx + '">' +
-            '<div class="item">' + escapeHtml(it.item || "-") + "</div>" +
+            (canEditBase
+              ? ('<input class="ctl-inp ci-item" type="text" maxlength="80" value="' + escapeHtml(itemVal) + '">')
+              : ('<div class="item">' + escapeHtml(itemVal) + "</div>")
+            ) +
             '<input class="ctl-inp ci-cant" type="number" min="0" step="1" value="' + String(it.cantidad_necesaria || 0) + '"' + (canEditBase ? "" : " disabled") + ">" +
             '<input class="ctl-inp ci-stock" type="number" min="0" step="1" value="' + String(it.stock_disponible || 0) + '"' + (canEditBase ? "" : " disabled") + ">" +
             '<select class="ctl-sel ci-decision"' + (canDecide ? "" : " disabled") + ">" +
@@ -2273,11 +2583,12 @@
               '<option value="comprar"' + ((it.decision_compra || "") === "comprar" ? " selected" : "") + '>Comprar</option>' +
               '<option value="no_necesario"' + ((it.decision_compra || "") === "no_necesario" ? " selected" : "") + '>No necesario</option>' +
             "</select>" +
-            '<span class="btn-inline" style="cursor:default;">' + escapeHtml(estado || "-") + "</span>" +
-            '<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#2f4f73;font-weight:700;">' +
+            '<span class="coffee-pill ' + estClass + '">' + escapeHtml(estLabel || "-") + "</span>" +
+            '<label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#2f4f73;font-weight:800;">' +
               '<input class="ci-recibido" type="checkbox" ' + (it.recibido ? "checked " : "") + (canRecibir ? "" : "disabled ") + '/>' +
               "Recibido" +
             "</label>" +
+            (canEditBase ? '<button type="button" class="btn-mini ci-del">Quitar</button>' : "<span></span>") +
           "</div>"
         );
       }).join("");
@@ -2306,25 +2617,63 @@
       if (el.gestionCoffeeLogAprobar) {
         el.gestionCoffeeLogAprobar.disabled = !canApprove;
       }
+
+      if (el.gestionCoffeeLayoutBadge) {
+        var selCode = String(log.salon_layout || "");
+        var meta = (COFFEE_LAYOUTS || []).filter(function (x) { return x && x.code === selCode; })[0] || null;
+        el.gestionCoffeeLayoutBadge.textContent = meta ? meta.label : "Sin seleccionar";
+      }
+      if (el.gestionCoffeeLayoutOptions) {
+        var selected = String(log.salon_layout || "");
+        el.gestionCoffeeLayoutOptions.innerHTML = (COFFEE_LAYOUTS || []).map(function (x) {
+          if (!x || !x.code) return "";
+          var pressed = (x.code === selected);
+          return (
+            '<button type="button" class="coffee-layout-option" data-layout="' + escapeHtml(x.code) + '" aria-pressed="' + (pressed ? "true" : "false") + '"' + (canEdit ? "" : " disabled") + ">" +
+              '<img src="' + escapeHtml(x.img || "") + '" alt="">' +
+              '<div class="title">' + escapeHtml(x.label || x.code) + "</div>" +
+              '<div class="desc">' + escapeHtml(x.desc || "") + "</div>" +
+            "</button>"
+          );
+        }).join("");
+      }
+      if (el.gestionCoffeeLayoutPreview && el.gestionCoffeeLayoutPreviewEmpty && el.gestionCoffeeLayoutTitle && el.gestionCoffeeLayoutDesc) {
+        var code = String(log.salon_layout || "");
+        var meta2 = (COFFEE_LAYOUTS || []).filter(function (x) { return x && x.code === code; })[0] || null;
+        if (!meta2) {
+          el.gestionCoffeeLayoutPreview.style.display = "none";
+          el.gestionCoffeeLayoutPreviewEmpty.style.display = "grid";
+          el.gestionCoffeeLayoutTitle.textContent = "Elegir plano";
+          el.gestionCoffeeLayoutDesc.textContent = "Elegí una opcion para que Logistica arme el salon.";
+        } else {
+          el.gestionCoffeeLayoutPreview.src = meta2.img || "";
+          el.gestionCoffeeLayoutPreview.style.display = "block";
+          el.gestionCoffeeLayoutPreviewEmpty.style.display = "none";
+          el.gestionCoffeeLayoutTitle.textContent = meta2.label || meta2.code;
+          el.gestionCoffeeLayoutDesc.textContent = meta2.desc || "";
+        }
+      }
     }
 
     function saveGestionCoffeeInsumos() {
       var novId = Number(GESTION_OPEN_ID || 0);
       if (!novId || !el.gestionCoffeeInsumosList) return;
       var rows = el.gestionCoffeeInsumosList.querySelectorAll(".gestion-coffee-insumo");
-      if (!rows || !rows.length) return;
+      var hasDeletes = Array.isArray(GESTION_COFFEE_INSUMOS_BORRAR) && GESTION_COFFEE_INSUMOS_BORRAR.length;
+      if ((!rows || !rows.length) && !hasDeletes) return;
       var out = [];
       rows.forEach(function (row) {
         var idx = Number(row.getAttribute("data-idx") || -1);
         if (idx < 0 || !GESTION_COFFEE_INSUMOS[idx]) return;
         var base = GESTION_COFFEE_INSUMOS[idx] || {};
+        var itemEl = row.querySelector(".ci-item");
         var cantEl = row.querySelector(".ci-cant");
         var stockEl = row.querySelector(".ci-stock");
         var decEl = row.querySelector(".ci-decision");
         var recEl = row.querySelector(".ci-recibido");
         out.push({
           id: Number(base.id || 0),
-          item: String(base.item || ""),
+          item: String((itemEl && itemEl.value) || base.item || ""),
           cantidad_necesaria: Number((cantEl && cantEl.value) || base.cantidad_necesaria || 0),
           stock_disponible: Number((stockEl && stockEl.value) || base.stock_disponible || 0),
           decision_compra: String((decEl && decEl.value) || base.decision_compra || "pendiente"),
@@ -2334,12 +2683,13 @@
       fetch("/api/dashboard/novedades_diarias_gestion/" + encodeURIComponent(String(novId)) + "/coffee_insumos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ insumos: out }),
+        body: JSON.stringify({ insumos: out, borrar_ids: Array.isArray(GESTION_COFFEE_INSUMOS_BORRAR) ? GESTION_COFFEE_INSUMOS_BORRAR : [] }),
       })
         .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, b: b || {} }; }); })
         .then(function (x) {
           if (!x.ok || !x.b.ok) throw new Error(x.b.error || "No se pudo guardar insumos");
           GESTION_COFFEE_INSUMOS = Array.isArray(x.b.insumos) ? x.b.insumos : [];
+          GESTION_COFFEE_INSUMOS_BORRAR = [];
           renderGestionCoffeeInsumos(GESTION_DATA && GESTION_DATA.novedad);
           setGestionMsg("Insumos Coffee actualizados.", false);
         })
@@ -2355,6 +2705,7 @@
         chofer: String((el.gestionCoffeeChofer && el.gestionCoffeeChofer.value) || ""),
         turno: String((el.gestionCoffeeTurno && el.gestionCoffeeTurno.value) || ""),
         personal: String((el.gestionCoffeePersonal && el.gestionCoffeePersonal.value) || ""),
+        salon_layout: String((GESTION_COFFEE_LOGISTICA && GESTION_COFFEE_LOGISTICA.salon_layout) || ""),
       };
       if (aprobar) payload.aprobar = true;
       fetch("/api/dashboard/novedades_diarias_gestion/" + encodeURIComponent(String(novId)) + "/coffee_logistica", {
@@ -2789,6 +3140,9 @@
       GESTION_DATA = null;
       GESTION_HERRAMIENTAS = [];
       GESTION_GRUPO_AGENTES = [];
+      GESTION_COFFEE_INSUMOS = [];
+      GESTION_COFFEE_INSUMOS_BORRAR = [];
+      GESTION_COFFEE_LOGISTICA = {};
       if (el.gestionModal) {
         el.gestionModal.classList.remove("open");
         el.gestionModal.setAttribute("aria-hidden", "true");
@@ -2810,6 +3164,16 @@
         tags.push("Sede: " + String(nov.sede_codigo || "-"));
         tags.push("Estado: " + String(nov.estado || "Informado"));
         tags.push("Subtipo: " + String(nov.subtipo || "General"));
+        if (isCoffee) {
+          var fechaEv = fmtIsoDate(nov.coffee_fecha_evento || "");
+          var horaEv = String(nov.coffee_horario_evento || "").trim();
+          var destino = String(nov.coffee_sede_destino || "").trim();
+          var cant = Number(nov.coffee_cantidad_personas || 0);
+          if (fechaEv || horaEv) tags.push("Evento: " + (fechaEv || "-") + (horaEv ? (" " + horaEv) : ""));
+          if (cant) tags.push("Personas: " + String(cant));
+          if (destino) tags.push("Destino: " + destino);
+          tags.push("Logistica: " + (nov.coffee_logistica_aprobada ? "Aprobada" : "Pendiente"));
+        }
         el.gestionMeta.innerHTML = tags.map(function (t) {
           return '<span class="gestion-meta-item">' + escapeHtml(t) + "</span>";
         }).join("");
@@ -2929,6 +3293,7 @@
       setGestionHerramientas(nov.tarea_herramientas || []);
       renderGestionHerramientas();
       GESTION_COFFEE_INSUMOS = Array.isArray(p.coffee_insumos) ? p.coffee_insumos : [];
+      GESTION_COFFEE_INSUMOS_BORRAR = [];
       GESTION_COFFEE_LOGISTICA = p.coffee_logistica || {};
       if (p.coffee_turnos_personal) {
         COFFEE_TURNOS_PERSONAL = p.coffee_turnos_personal;
@@ -3801,6 +4166,38 @@
         refreshCoffeePersonalOptions(el.gestionCoffeeTurno.value, "");
       });
     }
+    if (el.gestionCoffeeInsumoAdd) {
+      el.gestionCoffeeInsumoAdd.addEventListener("click", function () {
+        addGestionCoffeeInsumo();
+      });
+    }
+    if (el.gestionCoffeeInsumoNuevo) {
+      el.gestionCoffeeInsumoNuevo.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter") {
+          ev.preventDefault();
+          addGestionCoffeeInsumo();
+        }
+      });
+    }
+    if (el.gestionCoffeeInsumosList) {
+      el.gestionCoffeeInsumosList.addEventListener("click", function (ev) {
+        var tgt = ev.target;
+        if (!tgt || !tgt.classList || !tgt.classList.contains("ci-del")) return;
+        var row = tgt.closest(".gestion-coffee-insumo");
+        if (!row) return;
+        var idx = Number(row.getAttribute("data-idx") || -1);
+        if (idx < 0 || !GESTION_COFFEE_INSUMOS[idx]) return;
+        var base = GESTION_COFFEE_INSUMOS[idx] || {};
+        var id = Number(base.id || 0);
+        if (id > 0) {
+          if (!Array.isArray(GESTION_COFFEE_INSUMOS_BORRAR)) GESTION_COFFEE_INSUMOS_BORRAR = [];
+          if (GESTION_COFFEE_INSUMOS_BORRAR.indexOf(id) < 0) GESTION_COFFEE_INSUMOS_BORRAR.push(id);
+        }
+        GESTION_COFFEE_INSUMOS = (GESTION_COFFEE_INSUMOS || []).filter(function (_it, i) { return i !== idx; });
+        renderGestionCoffeeInsumos(GESTION_DATA && GESTION_DATA.novedad);
+        setGestionMsg("Insumo quitado (guardá para aplicar).", false);
+      });
+    }
     if (el.gestionCoffeeInsumosGuardar) {
       el.gestionCoffeeInsumosGuardar.addEventListener("click", function () {
         saveGestionCoffeeInsumos();
@@ -3814,6 +4211,18 @@
     if (el.gestionCoffeeLogAprobar) {
       el.gestionCoffeeLogAprobar.addEventListener("click", function () {
         saveGestionCoffeeLogistica(true);
+      });
+    }
+    if (el.gestionCoffeeLayoutOptions) {
+      el.gestionCoffeeLayoutOptions.addEventListener("click", function (ev) {
+        var btn = ev.target && ev.target.closest ? ev.target.closest(".coffee-layout-option") : null;
+        if (!btn || btn.disabled) return;
+        var code = String(btn.getAttribute("data-layout") || "").trim();
+        if (!code) return;
+        if (!GESTION_COFFEE_LOGISTICA) GESTION_COFFEE_LOGISTICA = {};
+        GESTION_COFFEE_LOGISTICA.salon_layout = code;
+        renderGestionCoffeeLogistica(GESTION_DATA && GESTION_DATA.novedad);
+        setGestionMsg("Plano seleccionado. Guardá logística para confirmar.", false);
       });
     }
     if (el.taskAlertList) {
