@@ -524,6 +524,7 @@
   .registro-summary {
     list-style: none;
     cursor: pointer;
+    display: none;
     padding: 10px 12px;
     font-size: 13px;
     font-weight: 900;
@@ -883,6 +884,80 @@
   .split-tag.dia { border-color: #cdddfa; background: #eaf1ff; color: #305b9c; }
   .split-tag.solic { border-color: #ecd8be; background: #fff4e8; color: #9b642a; }
   .hist-box.open { display: grid; }
+
+  .gestion-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .gestion-rubro-tabs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .gestion-rubro-tab {
+    border: 1px solid #cfe0f6;
+    background: linear-gradient(180deg, #ffffff 0%, #f6f9ff 100%);
+    color: #294a73;
+    border-radius: 12px;
+    padding: 9px 12px;
+    font-weight: 900;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .gestion-rubro-tab.active {
+    border-color: #1d4ed8;
+    box-shadow: 0 10px 18px rgba(29, 78, 216, 0.18);
+    color: #1d4ed8;
+  }
+  .tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 18px;
+    padding: 0 6px;
+    border-radius: 999px;
+    border: 1px solid #d6e2f4;
+    background: #ffffff;
+    color: #355a89;
+    font-size: 11px;
+    font-weight: 900;
+  }
+  .gestion-filtros-box {
+    border: 1px solid #dce6f6;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+    padding: 6px 8px;
+  }
+  .gestion-filtros-box > summary {
+    list-style: none;
+    cursor: pointer;
+  }
+  .gestion-filtros-box > summary::-webkit-details-marker { display: none; }
+  .gestion-filtros-grid {
+    margin-top: 8px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    align-items: end;
+  }
+  .gestion-filtros-grid .agente-filtro-scroll {
+    border: 1px dashed #cfdbed;
+    border-radius: 10px;
+    padding: 6px;
+    background: #fbfdff;
+  }
+
+  .gestion-panels .gestion-panel { display: none; }
+  .gestion-panels[data-active-tab="mantenimiento"] .gestion-panel[data-panel="mantenimiento"] { display: block; }
+  .gestion-panels[data-active-tab="choferes"] .gestion-panel[data-panel="choferes"] { display: block; }
+  .gestion-panels[data-active-tab="administrativo"] .gestion-panel[data-panel="administrativo"] { display: block; }
 
   .gestion-modal {
     position: fixed;
@@ -1629,6 +1704,7 @@
     .veh-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .card-head { flex-wrap: wrap; align-items: flex-start; }
     .nvd-form-grid { grid-template-columns: 1fr 1fr; }
+    .gestion-filtros-grid { grid-template-columns: 1fr 1fr; }
   }
   @media (max-width: 640px) {
     .workspace-tabs {
@@ -1646,6 +1722,7 @@
     }
     .veh-grid { grid-template-columns: 1fr; }
     .nvd-form-grid { grid-template-columns: 1fr; }
+    .gestion-filtros-grid { grid-template-columns: 1fr; }
     .control-header h1 { font-size: 19px; }
     .control-shell { display: flex; flex-direction: column; }
     .card-resumen { order: 1; }
@@ -1710,21 +1787,13 @@
   <header class="control-header">
     <div class="control-header-top">
       <h1>Centro de control operativo - Intendencia</h1>
-      <a class="btn-soft" href="{{ url_for('dashboard_sede_estado_manual') }}">Progreso sedes</a>
+      <div class="card-head-actions">
+        <button id="btnCargarTop" type="button" class="btn-dark">+ Cargar</button>
+        <a class="btn-soft" href="{{ url_for('vehiculos_bd_home') }}">Base de datos</a>
+        <a class="btn-soft" href="{{ url_for('dashboard_sede_estado_manual') }}">Progreso sedes</a>
+      </div>
     </div>
-    <p class="control-header-intro">Registro de novedades diarias, alertas automaticas y estado operativo de recursos.</p>
-    <div class="workspace-context" aria-live="polite">
-      <span id="workspaceCurrentLabel" class="workspace-current">Operacion activa: Resumen</span>
-      <div id="workspaceContextTitle" class="workspace-context-title">Resumen operativo del dia</div>
-      <p id="workspaceContextSub" class="workspace-context-sub">Panorama rapido de pendientes, alertas y estado de recursos para definir prioridades.</p>
-    </div>
-    <nav class="workspace-tabs" aria-label="Operaciones del centro operativo">
-      <button type="button" class="workspace-tab active" data-workspace-tab="resumen" aria-pressed="true">Resumen</button>
-      <button type="button" class="workspace-tab" data-workspace-tab="registro" aria-pressed="false">Registro</button>
-      <button type="button" class="workspace-tab" data-workspace-tab="gestion" aria-pressed="false">Gestion</button>
-      <button type="button" class="workspace-tab" data-workspace-tab="historial" aria-pressed="false">Historial</button>
-      <button type="button" class="workspace-tab" data-workspace-tab="recursos" aria-pressed="false">Recursos</button>
-    </nav>
+    <p class="control-header-intro">Pendientes activos y acceso rapido a la gestion interna (chat, estados, fotos y trazabilidad).</p>
   </header>
 
   <article id="taskAlertCard" class="control-card control-workspace-section card-task-alert" data-workspaces="resumen" style="display:none;">
@@ -1734,12 +1803,9 @@
     <ul id="taskAlertList" class="task-alert-list"></ul>
   </article>
 
-  <article class="control-card control-workspace-section card-resumen" data-workspaces="resumen">
+  <article class="control-card control-workspace-section card-resumen" data-workspaces="gestion">
     <div class="card-head">
-      <h2>1. Resumen del dia</h2>
-      <div class="card-head-actions">
-        <a class="btn-soft" href="{{ url_for('vehiculos_bd_home') }}">Base de datos</a>
-      </div>
+      <h2>Situacion operativa actual</h2>
     </div>
 
     <div class="kpi-grid resumen-base">
@@ -1762,16 +1828,16 @@
     </div>
 
     <div class="kpi-grid operativa">
-      <div class="kpi pending-old">
-        <div class="k-label">Pendientes no cerrados (anteriores)</div>
-        <div class="k-val" id="kpiPendPrev">0</div>
-      </div>
       <div class="kpi today-open">
-        <div class="k-label">Pendientes del dia</div>
+        <div class="k-label">Pendientes totales</div>
         <div class="k-val" id="kpiPendDia">0</div>
       </div>
+      <div class="kpi pending-old">
+        <div class="k-label">Pendientes criticos (tu respuesta)</div>
+        <div class="k-val" id="kpiPendPrev">0</div>
+      </div>
       <div class="kpi assign-open">
-        <div class="k-label">Asignaciones abiertas</div>
+        <div class="k-label">En curso / en gestion</div>
         <div class="k-val" id="kpiAsigOpen">0</div>
       </div>
       <div class="kpi matias-open">
@@ -1781,18 +1847,22 @@
     </div>
   </article>
 
-  <article class="control-card control-workspace-section card-registro" data-workspaces="registro">
+  <article class="control-card control-workspace-section card-registro" data-workspaces="gestion">
     <div class="card-head">
-      <h2>2. Registrar novedad</h2>
+      <h2>Cargar</h2>
       <div class="card-head-actions">
         <span class="state-chip soft">Carga manual</span>
       </div>
     </div>
 
     <details id="registroNvdBox" class="registro-box">
-      <summary class="registro-summary">+ Registrar novedad</summary>
+      <summary class="registro-summary">Formulario de carga</summary>
 
       <div class="registro-body">
+        <div class="aux-row" style="margin:0 0 6px;">
+          <div style="font-weight:900;color:#1f3a61;">Carga rapida</div>
+          <button id="btnCerrarCarga" type="button" class="btn-soft">Ocultar</button>
+        </div>
         <input id="nvdId" type="hidden" value="0">
         <div class="nvd-form-grid">
           <div id="nvdModoWrap" class="f-group">
@@ -1879,51 +1949,82 @@
 
   <article class="control-card control-workspace-section card-operativa" data-workspaces="gestion">
     <div class="card-head">
-      <h2>3. Pendientes activos</h2>
+      <h2>Gestion</h2>
       <div class="card-head-actions">
-        <span class="state-chip">Situacion operativa actual</span>
-      </div>
-    </div>
-
-    <div class="pend-toolbar">
-      <div class="aux-row aux-row-top">
-        <div class="agente-filtro-box">
-          <div class="agente-filtro-label">Filtros rapidos</div>
-          <div id="agenteGrupoFiltroList" class="agente-grupo-list" aria-label="Filtro por equipo"></div>
-          <div class="agente-filtro-scroll" aria-label="Filtro por agente">
-            <div id="agenteFiltroList" class="agente-filtro-list"></div>
-          </div>
-        </div>
         <button id="btnRecargarDia" type="button" class="btn-soft">Recargar dia</button>
       </div>
-      <div class="pend-respuesta-legend">
-        <div class="split-legend">
-          <span class="split-tag dia">Tareas asignadas</span>
-          <span class="split-tag solic">Solicitudes / novedades</span>
+    </div>
+    <div class="nvd-footnote" style="margin-top:-6px;">El panel solo ordena y filtra: toda la trazabilidad ocurre dentro de “Abrir gestion”.</div>
+
+    <div class="gestion-topbar">
+      <div id="gestionRubroTabs" class="gestion-rubro-tabs" role="tablist" aria-label="Rubros de gestion">
+        <button type="button" class="gestion-rubro-tab active" data-rubro="mantenimiento" aria-selected="true">
+          Mantenimiento <span id="badgeMantenimiento" class="tab-badge">0</span>
+        </button>
+        <button type="button" class="gestion-rubro-tab" data-rubro="choferes" aria-selected="false">
+          Choferes <span id="badgeChoferes" class="tab-badge">0</span>
+        </button>
+        <button type="button" class="gestion-rubro-tab" data-rubro="administrativo" aria-selected="false">
+          Administrativo <span id="badgeAdministrativo" class="tab-badge">0</span>
+        </button>
+      </div>
+
+      <details id="gestionFiltrosBox" class="gestion-filtros-box">
+        <summary class="btn-soft">Mostrar filtros</summary>
+        <div class="gestion-filtros-grid">
+          <div class="f-group">
+            <label for="gestionFiltroSede">Sede</label>
+            <select id="gestionFiltroSede" class="ctl-sel"></select>
+          </div>
+          <div class="f-group">
+            <label for="gestionFiltroEstado">Estado</label>
+            <select id="gestionFiltroEstado" class="ctl-sel">
+              <option value="">Todos</option>
+              <option value="pendiente">Pendiente / Informado</option>
+              <option value="en_curso">En curso / En proceso</option>
+            </select>
+          </div>
+          <div class="f-group">
+            <label for="gestionFiltroPrioridad">Prioridad</label>
+            <select id="gestionFiltroPrioridad" class="ctl-sel">
+              <option value="">Todas</option>
+              <option value="critico">Critico (tu respuesta)</option>
+              <option value="esperando">Esperando respuesta</option>
+            </select>
+          </div>
+          <div class="f-group" style="grid-column: span 4;">
+            <label>Agente</label>
+            <div class="agente-filtro-scroll" aria-label="Filtro por agente">
+              <div id="agenteFiltroList" class="agente-filtro-list"></div>
+            </div>
+          </div>
         </div>
-        <div class="aux-row" style="padding-top:0;">
-          <span class="btn-inline row-gestion turn-tu-respuesta" style="cursor:default;">Rojo: te toca responder</span>
-          <span class="btn-inline row-gestion turn-esperando" style="cursor:default;">Verde: esperando respuesta</span>
-        </div>
+      </details>
+    </div>
+
+    <div class="pend-respuesta-legend" style="margin-top:-2px;">
+      <div class="aux-row" style="padding-top:0;">
+        <span class="btn-inline row-gestion turn-tu-respuesta" style="cursor:default;">Rojo: te toca responder</span>
+        <span class="btn-inline row-gestion turn-esperando" style="cursor:default;">Verde: esperando respuesta</span>
       </div>
     </div>
 
-    <div id="nvdSplitWrap" class="nvd-split-grid">
-      <div class="nvd-split-block split-dia">
+    <div id="nvdSplitWrap" class="nvd-split-grid gestion-panels" data-active-tab="mantenimiento">
+      <div class="nvd-split-block split-dia gestion-panel" data-panel="mantenimiento">
         <div class="nvd-split-head dia">
-          <span class="title">Tareas asignadas</span>
-          <span class="sub">Seguimiento operativo de tareas con sede, deposito y responsable.</span>
+          <span class="title">Mantenimiento</span>
+          <span class="sub">Tareas operativas asignadas al equipo tecnico.</span>
         </div>
-        <div class="table-wrap" style="max-height:220px;">
+        <div class="table-wrap" style="max-height:320px;">
           <table class="tbl">
             <thead>
               <tr>
                 <th>Fecha</th>
-                <th>Agente</th>
+                <th>Agente asignado</th>
                 <th>Sede</th>
                 <th>Depos./Local</th>
                 <th>Tarea</th>
-                <th>Estado tarea</th>
+                <th>Estado</th>
                 <th>Accion</th>
               </tr>
             </thead>
@@ -1934,12 +2035,36 @@
         </div>
       </div>
 
-      <div class="nvd-split-block split-solic">
-        <div class="nvd-split-head pend">
-          <span class="title">Solicitudes / novedades recibidas</span>
-          <span class="sub">Pedidos y novedades del dia que requieren gestion o respuesta.</span>
+      <div class="nvd-split-block split-dia gestion-panel" data-panel="choferes">
+        <div class="nvd-split-head dia">
+          <span class="title">Choferes</span>
+          <span class="sub">Traslados, viajes y logistica asignada.</span>
         </div>
-        <div class="table-wrap" style="max-height:220px;">
+        <div class="table-wrap" style="max-height:320px;">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Chofer</th>
+                <th>Sede / destino</th>
+                <th>Motivo / tarea</th>
+                <th>Estado</th>
+                <th>Accion</th>
+              </tr>
+            </thead>
+            <tbody id="nvdBodyChofer">
+              <tr><td colspan="6" style="color:#6f86a5;">Sin tareas asignadas.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="nvd-split-block split-solic gestion-panel" data-panel="administrativo">
+        <div class="nvd-split-head pend">
+          <span class="title">Administrativo</span>
+          <span class="sub">Solicitudes y novedades que requieren gestion o respuesta.</span>
+        </div>
+        <div class="table-wrap" style="max-height:320px;">
           <table class="tbl">
             <thead>
               <tr>
@@ -1959,33 +2084,7 @@
           </table>
         </div>
       </div>
-
-      <div class="nvd-split-block split-pend">
-        <div class="nvd-split-head pend">Pendientes no cerrados</div>
-        <div class="table-wrap" style="max-height:220px;">
-          <table class="tbl">
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Hora</th>
-                <th>Agente</th>
-                <th>Sede</th>
-                <th>Tipo</th>
-                <th>Subtipo</th>
-                <th>Observacion</th>
-                <th>Estado</th>
-                <th>Tarea</th>
-                <th>Accion</th>
-              </tr>
-            </thead>
-            <tbody id="nvdBodyPend">
-              <tr><td colspan="10" style="color:#6f86a5;">Sin pendientes acumulados.</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
     </div>
-    <div class="nvd-footnote">Resueltos e informados se muestran solo en Historial.</div>
   </article>
 
   <article class="control-card control-workspace-section card-historial" data-workspaces="historial">
@@ -2216,8 +2315,12 @@
     var RAW_SOLIC = [];
     var RESUMEN_BASE = { total: 0, informado: 0, en_proceso: 0, resuelto: 0 };
     var AGENTE_GRUPO_FILTRO_ACTIVO = "";
+    var GESTION_RUBRO_ACTIVO = "mantenimiento"; // mantenimiento | choferes | administrativo
+    var GESTION_FILTRO_SEDE = "";
+    var GESTION_FILTRO_ESTADO = "";
+    var GESTION_FILTRO_PRIORIDAD = "";
     var HIDE_PENDIENTES_NO_CERRADOS = true;
-    var WORKSPACE_DEFAULT = "resumen";
+    var WORKSPACE_DEFAULT = "gestion";
     var WORKSPACE_ACTIVE = WORKSPACE_DEFAULT;
     var WORKSPACE_META = {
       resumen: {
@@ -2371,6 +2474,7 @@
 
     var el = {
       shell: document.querySelector(".control-shell"),
+      btnCargarTop: document.getElementById("btnCargarTop"),
       workspaceLabel: document.getElementById("workspaceCurrentLabel"),
       workspaceTitle: document.getElementById("workspaceContextTitle"),
       workspaceSub: document.getElementById("workspaceContextSub"),
@@ -2402,11 +2506,20 @@
       cancelar: document.getElementById("nvdCancelarEdit"),
       msg: document.getElementById("nvdMsg"),
       msgRow: document.getElementById("nvdMsgRow"),
+      cerrarCarga: document.getElementById("btnCerrarCarga"),
+      rubroTabs: document.getElementById("gestionRubroTabs"),
+      badgeMantenimiento: document.getElementById("badgeMantenimiento"),
+      badgeChoferes: document.getElementById("badgeChoferes"),
+      badgeAdministrativo: document.getElementById("badgeAdministrativo"),
+      filtroSede: document.getElementById("gestionFiltroSede"),
+      filtroEstado: document.getElementById("gestionFiltroEstado"),
+      filtroPrioridad: document.getElementById("gestionFiltroPrioridad"),
       agenteGrupoFiltroList: document.getElementById("agenteGrupoFiltroList"),
       agenteFiltroList: document.getElementById("agenteFiltroList"),
       recargar: document.getElementById("btnRecargarDia"),
       splitWrap: document.getElementById("nvdSplitWrap"),
       bodyDia: document.getElementById("nvdBodyDia"),
+      bodyChofer: document.getElementById("nvdBodyChofer"),
       bodySolic: document.getElementById("nvdBodySolic"),
       bodyPend: document.getElementById("nvdBodyPend"),
       kTotal: document.getElementById("kpiTotal"),
@@ -2569,6 +2682,34 @@
         });
       }
       setWorkspace(WORKSPACE_DEFAULT);
+    }
+
+    function setGestionRubro(nextKey) {
+      var key = String(nextKey || "").trim();
+      if (["mantenimiento", "choferes", "administrativo"].indexOf(key) < 0) key = "mantenimiento";
+      GESTION_RUBRO_ACTIVO = key;
+      if (el.splitWrap) el.splitWrap.setAttribute("data-active-tab", key);
+      if (el.rubroTabs) {
+        var btns = el.rubroTabs.querySelectorAll(".gestion-rubro-tab");
+        btns.forEach(function (b) {
+          var isActive = String(b.getAttribute("data-rubro") || "") === key;
+          b.classList.toggle("active", isActive);
+          b.setAttribute("aria-selected", isActive ? "true" : "false");
+        });
+      }
+    }
+
+    function toggleCarga(forceOpen) {
+      if (!el.registroBox) return;
+      var next = (forceOpen == null) ? (!el.registroBox.open) : !!forceOpen;
+      el.registroBox.open = next;
+      if (next) {
+        try {
+          el.registroBox.scrollIntoView({ behavior: "smooth", block: "start" });
+        } catch (_e) {
+          // noop
+        }
+      }
     }
 
     function canUseTaskMode() {
@@ -3215,6 +3356,46 @@
       return String(v || "").trim();
     }
 
+    function sedeFiltroValor(r) {
+      if (!r) return "";
+      var v = "";
+      if (r.tarea_sede_codigo != null && String(r.tarea_sede_codigo).trim()) v = r.tarea_sede_codigo;
+      else v = r.sede_codigo != null ? r.sede_codigo : "";
+      return String(v || "").trim().toUpperCase();
+    }
+
+    function estadoFiltroValor(r) {
+      if (!r) return "";
+      if (r.tarea_asignada != null && String(r.tarea_asignada).trim()) {
+        return String((r && r.tarea_estado) || "Pendiente").trim();
+      }
+      return String((r && r.estado) || "Informado").trim();
+    }
+
+    function filaPasaFiltroEstado(r) {
+      var f = String(GESTION_FILTRO_ESTADO || "").trim();
+      if (!f) return true;
+      var tieneTarea = !!(r && r.tarea_asignada != null && String(r.tarea_asignada).trim());
+      var est = normTxt(estadoFiltroValor(r));
+      if (f === "pendiente") {
+        return tieneTarea ? (est === "pendiente") : (est === "informado" || est === "pendiente");
+      }
+      if (f === "en_curso") {
+        if (tieneTarea) return (est === "en curso" || est === "en proceso");
+        return estadoClass(estadoFiltroValor(r)) === "estado-en-proceso";
+      }
+      return true;
+    }
+
+    function filaPasaFiltroPrioridad(r) {
+      var f = String(GESTION_FILTRO_PRIORIDAD || "").trim();
+      if (!f) return true;
+      var turno = String((r && r.gestion_turno) || "").trim();
+      if (f === "critico") return turno === "tu_respuesta";
+      if (f === "esperando") return turno === "esperando";
+      return true;
+    }
+
     function filaPerteneceGrupo(r, grupoKey) {
       var key = String(grupoKey || "").trim();
       if (!key) return true;
@@ -3246,6 +3427,9 @@
     function filaPasaFiltros(r) {
       if (AGENTE_GRUPO_FILTRO_ACTIVO && !filaPerteneceGrupo(r, AGENTE_GRUPO_FILTRO_ACTIVO)) return false;
       if (AGENTE_FILTRO_ACTIVO && !filaPerteneceAgente(r, normTxt(AGENTE_FILTRO_ACTIVO))) return false;
+      if (GESTION_FILTRO_SEDE && sedeFiltroValor(r) !== String(GESTION_FILTRO_SEDE).toUpperCase()) return false;
+      if (!filaPasaFiltroEstado(r)) return false;
+      if (!filaPasaFiltroPrioridad(r)) return false;
       return true;
     }
 
@@ -3378,14 +3562,24 @@
     }
 
     function renderKpisOperativos() {
-      var pendientesPrev = aplicarFiltroAgente(RAW_PEND).length;
-      var pendientesDia = aplicarFiltroAgente(RAW_DIA).length;
-      var asignacionesAbiertas = aplicarFiltroAgente(RAW_TASK).length;
-      var pendientesMatias = aplicarFiltroAgente(RAW_SOLIC).length;
-      if (el.kPendPrev) el.kPendPrev.textContent = String(pendientesPrev);
-      if (el.kPendDia) el.kPendDia.textContent = String(pendientesDia);
-      if (el.kAsigOpen) el.kAsigOpen.textContent = String(asignacionesAbiertas);
-      if (el.kPendMatias) el.kPendMatias.textContent = String(pendientesMatias);
+      var tasks = aplicarFiltroAgente(RAW_TASK);
+      var solic = aplicarFiltroAgente(RAW_SOLIC);
+      var total = tasks.length + solic.length;
+      var criticos = tasks.concat(solic).filter(function (r) {
+        return String((r && r.gestion_turno) || "").trim() === "tu_respuesta";
+      }).length;
+      var enCurso = 0;
+      tasks.forEach(function (r) {
+        var est = normTxt((r && r.tarea_estado) || "");
+        if (est === "en curso" || est === "en proceso") enCurso += 1;
+      });
+      solic.forEach(function (r) {
+        if (estadoClass((r && r.estado) || "") === "estado-en-proceso") enCurso += 1;
+      });
+      if (el.kPendDia) el.kPendDia.textContent = String(total);
+      if (el.kPendPrev) el.kPendPrev.textContent = String(criticos);
+      if (el.kAsigOpen) el.kAsigOpen.textContent = String(enCurso);
+      if (el.kPendMatias) el.kPendMatias.textContent = String(solic.length);
       if (el.kPendMatiasLabel) {
         el.kPendMatiasLabel.textContent = IS_MATIAS ? "Pendientes de Matias" : "Mis solicitudes abiertas";
       }
@@ -4204,6 +4398,33 @@
       }).join("");
     }
 
+    function renderChoferesRows(target, items) {
+      if (!target) return;
+      var rows = Array.isArray(items) ? items : [];
+      if (!rows.length) {
+        target.innerHTML = '<tr><td colspan="6" style="color:#6f86a5;">Sin tareas asignadas.</td></tr>';
+        return;
+      }
+      target.innerHTML = rows.map(function (r) {
+        var ag = String((r && r.tarea_agente) || (r && r.agente) || "").trim();
+        var sedeBase = String((r && r.tarea_sede_codigo) || (r && r.sede_codigo) || "").trim().toUpperCase();
+        var destino = String((r && r.coffee_sede_destino) || "").trim().toUpperCase();
+        var sede = (destino || sedeBase || "-");
+        var motivo = String((r && r.tarea_asignada) || (r && r.observacion) || (r && r.tipo) || "-").trim();
+        var est = String((r && r.tarea_estado) || (r && r.estado) || "Pendiente").trim();
+        return (
+          "<tr class=\"tipo-row tipo-tarea\">" +
+            "<td>" + (r.fecha || "-") + "</td>" +
+            "<td>" + agenteCell(ag) + "</td>" +
+            "<td>" + escapeHtml(sede) + "</td>" +
+            "<td>" + escapeHtml(motivo || "-") + "</td>" +
+            '<td><span class="tarea-pill">' + escapeHtml(est) + "</span></td>" +
+            '<td style="white-space:nowrap;">' + makeRowActions(r) + "</td>" +
+          "</tr>"
+        );
+      }).join("");
+    }
+
     function renderSolicitudesRows(target, items) {
       var rows = Array.isArray(items) ? items : [];
       if (!rows.length) {
@@ -4253,17 +4474,34 @@
         return out;
       });
       RAW_TASK = tasksBase.slice();
-      var tasks = aplicarFiltroAgente(tasksBase);
+      var tareasMantenimientoBase = tasksBase.filter(function (r) { return filaPerteneceGrupo(r, "mantenimiento"); });
+      var tareasChoferesBase = tasksBase.filter(function (r) { return filaPerteneceGrupo(r, "choferes"); });
+      var tasks = aplicarFiltroAgente(tareasMantenimientoBase);
+      var tasksChoferes = aplicarFiltroAgente(tareasChoferesBase);
       var solicitudes = aplicarFiltroAgente(RAW_SOLIC);
       ITEM_INDEX = {};
       tasksBase.concat(RAW_SOLIC).forEach(function (r) {
         ITEM_INDEX[String(r.id || "")] = r;
       });
       renderTareasRows(el.bodyDia, tasks);
+      if (el.bodyChofer) renderChoferesRows(el.bodyChofer, tasksChoferes);
       if (el.bodySolic) renderSolicitudesRows(el.bodySolic, solicitudes);
       if (el.bodyPend) el.bodyPend.innerHTML = '<tr><td colspan="10" style="color:#6f86a5;">Sin pendientes acumulados.</td></tr>';
+      if (el.badgeMantenimiento) el.badgeMantenimiento.textContent = String(tasks.length);
+      if (el.badgeChoferes) el.badgeChoferes.textContent = String(tasksChoferes.length);
+      if (el.badgeAdministrativo) el.badgeAdministrativo.textContent = String(solicitudes.length);
       renderResumenSegunFiltro();
-      renderGrupoFiltros();
+    }
+
+    function rerenderGestion() {
+      renderSplitRows({
+        pendientes_dia: RAW_DIA,
+        pendientes_acumulados: RAW_PEND,
+        resueltos_informados: RAW_FINAL,
+        tareas_asignadas: RAW_TASK,
+        solicitudes_recibidas: RAW_SOLIC,
+        resumen: RESUMEN_BASE,
+      });
     }
 
     function resetForm() {
@@ -4473,6 +4711,10 @@
           });
           SEDES_ASSIGN = Array.isArray(d.sedes) ? d.sedes.slice() : [];
           fillSelect(el.sede, sedes, true, "Sede");
+          if (el.filtroSede) {
+            fillSelect(el.filtroSede, sedes, true, "Todas");
+            if (GESTION_FILTRO_SEDE) el.filtroSede.value = GESTION_FILTRO_SEDE;
+          }
           if (el.coffeeSedeDestino) {
             fillSelect(el.coffeeSedeDestino, sedes, true, "Sede destino");
           }
@@ -4850,6 +5092,41 @@
         closeGestionModal();
       }
     });
+    if (el.btnCargarTop) {
+      el.btnCargarTop.addEventListener("click", function () {
+        toggleCarga(true);
+      });
+    }
+    if (el.cerrarCarga) {
+      el.cerrarCarga.addEventListener("click", function () {
+        toggleCarga(false);
+      });
+    }
+    if (el.rubroTabs) {
+      el.rubroTabs.addEventListener("click", function (ev) {
+        var btn = ev.target && ev.target.closest ? ev.target.closest(".gestion-rubro-tab") : null;
+        if (!btn) return;
+        setGestionRubro(btn.getAttribute("data-rubro") || "mantenimiento");
+      });
+    }
+    if (el.filtroSede) {
+      el.filtroSede.addEventListener("change", function () {
+        GESTION_FILTRO_SEDE = String(el.filtroSede.value || "").trim().toUpperCase();
+        rerenderGestion();
+      });
+    }
+    if (el.filtroEstado) {
+      el.filtroEstado.addEventListener("change", function () {
+        GESTION_FILTRO_ESTADO = String(el.filtroEstado.value || "").trim();
+        rerenderGestion();
+      });
+    }
+    if (el.filtroPrioridad) {
+      el.filtroPrioridad.addEventListener("change", function () {
+        GESTION_FILTRO_PRIORIDAD = String(el.filtroPrioridad.value || "").trim();
+        rerenderGestion();
+      });
+    }
     if (el.agenteFiltroList) {
       el.agenteFiltroList.addEventListener("click", function (ev) {
         var tgt = ev.target;
@@ -4860,12 +5137,7 @@
           if (String(c.getAttribute("data-agente") || "") === AGENTE_FILTRO_ACTIVO) c.classList.add("active");
           else c.classList.remove("active");
         });
-        renderSplitRows({
-          pendientes_dia: RAW_DIA,
-          pendientes_acumulados: RAW_PEND,
-          tareas_asignadas: RAW_TASK,
-          solicitudes_recibidas: RAW_SOLIC,
-        });
+        rerenderGestion();
       });
     }
     if (el.agenteGrupoFiltroList) {
@@ -4894,6 +5166,7 @@
       }
     });
 
+    setGestionRubro(GESTION_RUBRO_ACTIVO);
     initWorkspace();
     loadControl();
   })();
