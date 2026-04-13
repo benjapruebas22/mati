@@ -5,7 +5,7 @@ import sqlite3
 import unicodedata
 import uuid
 
-from flask import render_template, request, jsonify, session, current_app, redirect, send_from_directory
+from flask import render_template, request, jsonify, session, current_app, redirect, send_from_directory, url_for
 from werkzeug.security import generate_password_hash
 from werkzeug.utils import secure_filename
 
@@ -26,6 +26,7 @@ _ensure_novedades_catalogo_table = nvd_h._ensure_novedades_catalogo_table
 _nvd_tipos_subtipos = nvd_h._nvd_tipos_subtipos
 _ensure_novedades_diarias_table = nvd_h._ensure_novedades_diarias_table
 _ensure_novedades_diarias_chat_table = nvd_h._ensure_novedades_diarias_chat_table
+_ensure_novedades_diarias_fotos_table = nvd_h._ensure_novedades_diarias_fotos_table
 _ensure_coffee_insumos_table = nvd_h._ensure_coffee_insumos_table
 _ensure_coffee_logistica_table = nvd_h._ensure_coffee_logistica_table
 _safe_today = nvd_h._safe_today
@@ -646,6 +647,120 @@ def register_novedades(bp, get_db):
             if os.path.isfile(abs_path):
                 return send_from_directory(COFFEE_REMITOS_UPLOAD_DIR, safe, as_attachment=False)
         return ("Remito inexistente", 404)
+
+    MAX_NOVEDAD_FOTO_IMG_BYTES = 4 * 1024 * 1024
+    ALLOWED_NOVEDAD_FOTO_IMG_EXT = {"jpg", "jpeg", "png", "webp"}
+    NOVEDADES_FOTOS_UPLOAD_DIR = os.path.join(BASE_DIR, "uploads", "novedades_fotos")
+    os.makedirs(NOVEDADES_FOTOS_UPLOAD_DIR, exist_ok=True)
+
+    def _save_novedad_foto_from_request(req):
+        file_obj = req.files.get("foto_file") or req.files.get("file")
+        if not file_obj or not getattr(file_obj, "filename", ""):
+            raise ValueError("Falta archivo de foto.")
+        filename = secure_filename(file_obj.filename or "")
+        ext = (filename.rsplit(".", 1)[-1].lower() if "." in filename else "")
+        if ext not in ALLOWED_NOVEDAD_FOTO_IMG_EXT:
+            raise ValueError("Formato de imagen no valido. Usar JPG, PNG o WEBP.")
+        raw = file_obj.read() or b""
+        if not raw:
+            raise ValueError("La imagen esta vacia.")
+        if len(raw) > MAX_NOVEDAD_FOTO_IMG_BYTES:
+            raise ValueError("Imagen muy pesada. Maximo permitido: 4 MB.")
+        out_name = f"nvd_foto_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:10]}.{ext}"
+        out_path = os.path.join(NOVEDADES_FOTOS_UPLOAD_DIR, out_name)
+        with open(out_path, "wb") as fh:
+            fh.write(raw)
+        return {
+            "archivo": out_name,
+            "nombre_original": (file_obj.filename or "").strip(),
+            "mime": (getattr(file_obj, "mimetype", "") or "").strip(),
+            "size_bytes": len(raw),
+        }
+
+    def _novedad_fotos_read(con, novedad_id):
+        try:
+            _ensure_novedades_diarias_fotos_table(con)
+            rows = con.execute("""
+                SELECT
+                    id,
+                    COALESCE(archivo,'') AS archivo,
+                    COALESCE(nombre_original,'') AS nombre_original,
+                    COALESCE(mime,'') AS mime,
+                    COALESCE(size_bytes,0) AS size_bytes,
+                    COALESCE(autor,'') AS autor,
+                    COALESCE(autor_username,'') AS autor_username,
+                    COALESCE(creado_en,'') AS creado_en
+                FROM novedades_diarias_fotos
+                WHERE novedad_id=? AND COALESCE(activo,1)=1
+                ORDER BY id DESC
+                LIMIT 40
+            """, (int(novedad_id or 0),)).fetchall()
+        except Exception:
+            return []
+        out = []
+        for r in rows or []:
+            fid = int(_row_value(r, "id", 0) or 0)
+            if fid <= 0:
+                continue
+            out.append({
+                "id": fid,
+                "url": url_for("novedades_foto_ver", foto_id=fid),
+                "nombre_original": (_row_value(r, "nombre_original", "") or "").strip(),
+                "mime": (_row_value(r, "mime", "") or "").strip(),
+                "size_bytes": int(_row_value(r, "size_bytes", 0) or 0),
+                "autor": (_row_value(r, "autor", "") or "").strip(),
+                "autor_username": (_row_value(r, "autor_username", "") or "").strip(),
+                "creado_en": (_row_value(r, "creado_en", "") or "").strip(),
+            })
+        return out
+
+    @bp.route("/dashboard/novedades/fotos/<int:foto_id>", endpoint="novedades_foto_ver")
+    def novedades_foto_ver(foto_id):
+        actor = _session_actor()
+        con = get_db()
+        try:
+            _ensure_novedades_diarias_table(con)
+            _ensure_novedades_diarias_fotos_table(con)
+            foto_row = con.execute("""
+                SELECT
+                    id,
+                    novedad_id,
+                    COALESCE(archivo,'') AS archivo
+                FROM novedades_diarias_fotos
+                WHERE id=? AND COALESCE(activo,1)=1
+                LIMIT 1
+            """, (int(foto_id or 0),)).fetchone()
+            if not foto_row:
+                con.close()
+                return ("Foto inexistente", 404)
+            nov_id = int(_row_value(foto_row, "novedad_id", 0) or 0)
+            archivo = (_row_value(foto_row, "archivo", "") or "").strip()
+            if not nov_id or not archivo:
+                con.close()
+                return ("Foto inexistente", 404)
+
+            nov_row = _fetch_novedad(con, nov_id)
+            if not nov_row or not _actor_can_view_novedad(actor, nov_row):
+                con.close()
+                return ("No autorizado", 403)
+            item = _serialize_novedad(nov_row, actor)
+            if not bool(item.get("gestion_habilitada")) or not bool(item.get("puede_ver_gestion")):
+                con.close()
+                return ("No autorizado", 403)
+
+            safe = secure_filename(archivo)
+            abs_path = os.path.join(NOVEDADES_FOTOS_UPLOAD_DIR, safe)
+            if not safe or not os.path.isfile(abs_path):
+                con.close()
+                return ("Foto inexistente", 404)
+            con.close()
+            return send_from_directory(NOVEDADES_FOTOS_UPLOAD_DIR, safe, as_attachment=False)
+        except Exception as e:
+            try:
+                con.close()
+            except Exception:
+                pass
+            return ("Error interno", 500)
 
     @bp.route("/", endpoint="dashboard")
     @bp.route("/dashboard", endpoint="dashboard_exec")
@@ -1780,10 +1895,12 @@ def register_novedades(bp, get_db):
     def api_dashboard_novedades_diarias_gestion(nov_id):
         actor = _session_actor()
         con = get_db()
+        fotos = []
         try:
             _ensure_novedades_diarias_table(con)
             _ensure_novedades_diarias_chat_table(con)
             _ensure_novedades_catalogo_table(con)
+            _ensure_novedades_diarias_fotos_table(con)
             _ensure_coffee_insumos_table(con)
             _ensure_coffee_logistica_table(con)
             _ensure_coffee_special_users(con)
@@ -1846,6 +1963,7 @@ def register_novedades(bp, get_db):
             if bool(item.get("es_coffee")):
                 coffee_insumos = _coffee_read_insumos(con, nov_id)
                 coffee_logistica = _coffee_read_logistica(con, nov_id)
+            fotos = _novedad_fotos_read(con, nov_id)
         except Exception as e:
             con.close()
             return jsonify({"ok": False, "error": str(e)}), 500
@@ -1854,6 +1972,7 @@ def register_novedades(bp, get_db):
             "ok": True,
             "novedad": item,
             "mensajes": mensajes,
+            "fotos": fotos,
             "herramientas_preset": list(NVD_HERRAMIENTAS_PRESET),
             "is_full": bool(actor.get("is_full")),
             "is_matias": bool(actor.get("is_matias")),
@@ -1881,6 +2000,68 @@ def register_novedades(bp, get_db):
             return jsonify({"ok": False, "error": str(e), "depositos": []}), 500
         con.close()
         return jsonify({"ok": True, "sede_codigo": sede_codigo, "depositos": depositos})
+
+    @bp.route(
+        "/api/dashboard/novedades_diarias_gestion/<int:nov_id>/fotos",
+        methods=["POST"],
+        endpoint="api_dashboard_novedades_diarias_gestion_fotos",
+    )
+    def api_dashboard_novedades_diarias_gestion_fotos(nov_id):
+        actor = _session_actor()
+        con = get_db()
+        try:
+            _ensure_novedades_diarias_table(con)
+            _ensure_novedades_diarias_fotos_table(con)
+            row = _fetch_novedad(con, nov_id)
+            if not row:
+                con.close()
+                return jsonify({"ok": False, "error": "Novedad inexistente"}), 404
+            if not _actor_can_view_novedad(actor, row):
+                con.close()
+                return jsonify({"ok": False, "error": "No autorizado para subir fotos"}), 403
+            item = _serialize_novedad(row, actor)
+            if not bool(item.get("gestion_habilitada")):
+                con.close()
+                return jsonify({"ok": False, "error": "La novedad no tiene gestion interna"}), 400
+            if not bool(item.get("puede_ver_gestion")):
+                con.close()
+                return jsonify({"ok": False, "error": "No autorizado para subir fotos"}), 403
+            autor = (actor.get("display") or actor.get("username") or "").strip()
+            if not autor:
+                con.close()
+                return jsonify({"ok": False, "error": "Usuario invalido"}), 403
+
+            meta = _save_novedad_foto_from_request(request)
+            ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            cur = con.execute("""
+                INSERT INTO novedades_diarias_fotos
+                    (novedad_id, archivo, nombre_original, mime, size_bytes, autor, autor_username, activo, creado_en)
+                VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)
+            """, (
+                int(nov_id),
+                meta.get("archivo") or "",
+                meta.get("nombre_original") or "",
+                meta.get("mime") or "",
+                int(meta.get("size_bytes") or 0),
+                autor,
+                actor.get("username") or "",
+                ts,
+            ))
+            con.commit()
+            foto_id = int(cur.lastrowid or 0)
+            fotos = _novedad_fotos_read(con, nov_id)
+        except ValueError as e:
+            con.close()
+            return jsonify({"ok": False, "error": str(e)}), 400
+        except Exception as e:
+            con.close()
+            return jsonify({"ok": False, "error": str(e)}), 500
+        con.close()
+        return jsonify({
+            "ok": True,
+            "foto_id": foto_id,
+            "fotos": fotos,
+        })
 
     @bp.route("/api/dashboard/novedades_diarias_gestion/<int:nov_id>/mensaje", methods=["POST"], endpoint="api_dashboard_novedades_diarias_gestion_mensaje")
     def api_dashboard_novedades_diarias_gestion_mensaje(nov_id):

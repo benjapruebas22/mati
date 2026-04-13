@@ -292,6 +292,45 @@ def _ensure_novedades_diarias_chat_table(con):
     con.commit()
 
 
+def _ensure_novedades_diarias_fotos_table(con):
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS novedades_diarias_fotos(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            novedad_id INTEGER NOT NULL,
+            archivo TEXT NOT NULL,
+            nombre_original TEXT DEFAULT '',
+            mime TEXT DEFAULT '',
+            size_bytes INTEGER DEFAULT 0,
+            autor TEXT DEFAULT '',
+            autor_username TEXT DEFAULT '',
+            activo INTEGER DEFAULT 1,
+            creado_en TEXT NOT NULL
+        )
+    """)
+    cols = _table_cols(con, "novedades_diarias_fotos")
+    for name, sql_type in (
+        ("novedad_id", "INTEGER NOT NULL"),
+        ("archivo", "TEXT NOT NULL"),
+        ("nombre_original", "TEXT DEFAULT ''"),
+        ("mime", "TEXT DEFAULT ''"),
+        ("size_bytes", "INTEGER DEFAULT 0"),
+        ("autor", "TEXT DEFAULT ''"),
+        ("autor_username", "TEXT DEFAULT ''"),
+        ("activo", "INTEGER DEFAULT 1"),
+        ("creado_en", "TEXT NOT NULL"),
+    ):
+        if name not in cols:
+            try:
+                con.execute(f"ALTER TABLE novedades_diarias_fotos ADD COLUMN {name} {sql_type}")
+            except Exception:
+                pass
+    con.execute("""
+        CREATE INDEX IF NOT EXISTS idx_novedades_diarias_fotos_novedad
+        ON novedades_diarias_fotos(novedad_id, id)
+    """)
+    con.commit()
+
+
 def _ensure_coffee_insumos_table(con):
     con.execute("""
         CREATE TABLE IF NOT EXISTS coffee_insumos(
