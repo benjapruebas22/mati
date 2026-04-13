@@ -1,5 +1,10 @@
 {% extends "base.html" %}
 
+{% block head_extra %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ url_for('static', filename='centro_operativo/centro_operativo.css') }}">
+{% endblock %}
+
 {% block content %}
 <style>
   :root {
@@ -1859,8 +1864,8 @@
       <summary class="registro-summary">Formulario de carga</summary>
 
       <div class="registro-body">
-        <div class="aux-row" style="margin:0 0 6px;">
-          <div style="font-weight:900;color:#1f3a61;">Carga rapida</div>
+        <div class="aux-row aux-row-tight">
+          <div class="registro-title">Carga rapida</div>
           <button id="btnCerrarCarga" type="button" class="btn-soft">Ocultar</button>
         </div>
         <input id="nvdId" type="hidden" value="0">
@@ -1936,7 +1941,7 @@
         </div>
 
         <div class="nvd-obs-row mode-solicitud">
-          <label for="nvdObs" style="font-size:11px;color:#59799e;font-weight:700;">Observacion (quien solicita / detalle / patente)</label>
+          <label for="nvdObs">Observacion (quien solicita / detalle / patente)</label>
           <input id="nvdObs" class="ctl-inp" type="text" maxlength="240" placeholder="Ej: Mauro solicita horario especial / AB946VK al mecanico">
         </div>
 
@@ -1954,7 +1959,7 @@
         <button id="btnRecargarDia" type="button" class="btn-soft">Recargar dia</button>
       </div>
     </div>
-    <div class="nvd-footnote" style="margin-top:-6px;">El panel solo ordena y filtra: toda la trazabilidad ocurre dentro de “Abrir gestion”.</div>
+    <div class="nvd-footnote">El panel solo ordena y filtra: toda la trazabilidad ocurre dentro de Abrir gestion.</div>
 
     <div class="gestion-topbar">
       <div id="gestionRubroTabs" class="gestion-rubro-tabs" role="tablist" aria-label="Rubros de gestion">
@@ -2163,19 +2168,19 @@
     <div id="gestionMeta" class="gestion-meta"></div>
     <div id="gestionStatusTitle" class="gestion-section-title" style="display:none;">Estado de novedad</div>
     <div id="gestionStatusRow" class="gestion-status-row" style="display:none;">
-      <label for="gestionEstado" style="font-size:11px;color:#59799e;font-weight:800;">Estado</label>
-      <select id="gestionEstado" class="ctl-sel" style="max-width:180px;"></select>
+      <label for="gestionEstado">Estado</label>
+      <select id="gestionEstado" class="ctl-sel"></select>
       <button id="gestionEstadoGuardar" type="button" class="btn-inline">Actualizar estado</button>
       <button id="gestionCerrar" type="button" class="btn-inline">Cerrar novedad</button>
     </div>
     <div id="gestionTareaTitle" class="gestion-section-title" style="display:none;">Asignacion de tarea</div>
     <div id="gestionTareaRow" class="gestion-tarea-row" style="display:none;">
       <div>
-        <label for="gestionTareaAgente" style="font-size:11px;color:#59799e;font-weight:800;">Agente asignado</label>
+        <label for="gestionTareaAgente">Agente asignado</label>
         <select id="gestionTareaAgente" class="ctl-sel"></select>
       </div>
       <div id="gestionGrupoWrap" class="gestion-grupo-wrap" style="display:none;">
-        <label for="gestionGrupoAgente" style="font-size:11px;color:#59799e;font-weight:800;">Grupo (2 a 4 agentes)</label>
+        <label for="gestionGrupoAgente">Grupo (2 a 4 agentes)</label>
         <div class="gestion-grupo-add">
           <select id="gestionGrupoAgente" class="ctl-sel"></select>
           <button id="gestionGrupoAdd" type="button" class="btn-inline">Agregar al grupo</button>
@@ -2183,19 +2188,19 @@
         <div id="gestionGrupoList" class="gestion-grupo-list"></div>
       </div>
       <div>
-        <label for="gestionTareaSede" style="font-size:11px;color:#59799e;font-weight:800;">Sede</label>
+        <label for="gestionTareaSede">Sede</label>
         <select id="gestionTareaSede" class="ctl-sel"></select>
       </div>
       <div>
-        <label for="gestionTareaDeposito" style="font-size:11px;color:#59799e;font-weight:800;">Deposito</label>
+        <label for="gestionTareaDeposito">Deposito</label>
         <select id="gestionTareaDeposito" class="ctl-sel"></select>
       </div>
       <div>
-        <label for="gestionTarea" style="font-size:11px;color:#59799e;font-weight:800;">Tarea asignada</label>
+        <label for="gestionTarea">Tarea asignada</label>
         <input id="gestionTarea" class="ctl-inp" type="text" maxlength="280" placeholder="Ej: Coordinar compra de luminarias para S11">
       </div>
       <div>
-        <label for="gestionTareaEstado" style="font-size:11px;color:#59799e;font-weight:800;">Estado tarea</label>
+        <label for="gestionTareaEstado">Estado tarea</label>
         <select id="gestionTareaEstado" class="ctl-sel"></select>
       </div>
       <button id="gestionTareaGuardar" type="button" class="btn-inline">Guardar tarea</button>
@@ -2209,7 +2214,7 @@
         <button id="gestionCoffeeInsumoAdd" type="button" class="btn-inline">Agregar</button>
       </div>
       <div id="gestionCoffeeInsumosList" class="gestion-coffee-insumos"></div>
-      <div class="aux-row" style="margin:0;">
+      <div class="aux-row aux-row-tight">
         <button id="gestionCoffeeInsumosGuardar" type="button" class="btn-inline">Guardar insumos</button>
       </div>
       <div class="gestion-coffee-foot">Luciana define compra. Francisco confirma recepcion.</div>
@@ -2219,11 +2224,11 @@
     <div id="gestionCoffeeLogRow" class="gestion-coffee-row" style="display:none;">
       <div class="gestion-coffee-log-grid">
         <div>
-          <label for="gestionCoffeeChofer" style="font-size:11px;color:#59799e;font-weight:800;">Chofer</label>
+          <label for="gestionCoffeeChofer">Chofer</label>
           <input id="gestionCoffeeChofer" class="ctl-inp" type="text" maxlength="80" placeholder="Chofer asignado" list="coffeeChoferesList">
         </div>
         <div>
-          <label for="gestionCoffeeTurno" style="font-size:11px;color:#59799e;font-weight:800;">Turno</label>
+          <label for="gestionCoffeeTurno">Turno</label>
           <select id="gestionCoffeeTurno" class="ctl-sel">
             <option value="">Turno</option>
             <option value="manana">Manana</option>
@@ -2231,14 +2236,14 @@
           </select>
         </div>
         <div>
-          <label for="gestionCoffeePersonal" style="font-size:11px;color:#59799e;font-weight:800;">Personal</label>
+          <label for="gestionCoffeePersonal">Personal</label>
           <select id="gestionCoffeePersonal" class="ctl-sel"></select>
         </div>
         <div>
-          <label for="gestionCoffeeArmadoSalon" style="font-size:11px;color:#59799e;font-weight:800;">Armado salon</label>
+          <label for="gestionCoffeeArmadoSalon">Armado salon</label>
           <input id="gestionCoffeeArmadoSalon" class="ctl-inp" type="text" maxlength="80" placeholder="Responsable (mantenimiento)" list="coffeeMantenimientoList">
         </div>
-        <div class="aux-row" style="margin:0;">
+        <div class="aux-row aux-row-tight">
           <button id="gestionCoffeeLogGuardar" type="button" class="btn-inline">Guardar logistica</button>
           <button id="gestionCoffeeLogAprobar" type="button" class="btn-inline">Aprobar logistica</button>
         </div>
@@ -4384,13 +4389,14 @@
         var ag = String((r && r.tarea_agente) || (r && r.agente) || "").trim();
         var sede = String((r && r.tarea_sede_codigo) || (r && r.sede_codigo) || "").trim().toUpperCase() || "-";
         var tareaEstado = String((r && r.tarea_estado) || "Pendiente").trim();
+        var tareaTxt = String((r && r.tarea_asignada) || "-");
         return (
           "<tr class=\"tipo-row tipo-tarea\">" +
             "<td>" + (r.fecha || "-") + "</td>" +
             "<td>" + agenteCell(ag) + "</td>" +
             "<td>" + sede + "</td>" +
             "<td>" + depTxt + "</td>" +
-            "<td>" + escapeHtml(String((r && r.tarea_asignada) || "-")) + "</td>" +
+            "<td><div class=\"cell-trunc\" title=\"" + escapeHtml(tareaTxt) + "\">" + escapeHtml(tareaTxt) + "</div></td>" +
             '<td><span class="tarea-pill">' + escapeHtml(tareaEstado) + "</span></td>" +
             '<td style="white-space:nowrap;">' + makeRowActions(r) + "</td>" +
           "</tr>"
@@ -4417,7 +4423,7 @@
             "<td>" + (r.fecha || "-") + "</td>" +
             "<td>" + agenteCell(ag) + "</td>" +
             "<td>" + escapeHtml(sede) + "</td>" +
-            "<td>" + escapeHtml(motivo || "-") + "</td>" +
+            "<td><div class=\"cell-trunc\" title=\"" + escapeHtml(motivo || "-") + "\">" + escapeHtml(motivo || "-") + "</div></td>" +
             '<td><span class="tarea-pill">' + escapeHtml(est) + "</span></td>" +
             '<td style="white-space:nowrap;">' + makeRowActions(r) + "</td>" +
           "</tr>"
@@ -4446,14 +4452,16 @@
           if (destino) bits.push("Destino: " + destino);
           if (bits.length) extra = '<div class="tipo-sub">' + escapeHtml(bits.join(" · ")) + "</div>";
         }
+        var subtipoTxt = String((r && r.subtipo) || "-");
+        var obsTxt = String((r && r.observacion) || "-");
         return (
           "<tr class=\"tipo-row " + tCls + "\">" +
             "<td>" + (r.fecha || "-") + "</td>" +
             "<td>" + agenteCell(r.agente) + "</td>" +
             "<td>" + (r.sede_codigo || "-") + "</td>" +
             "<td>" + tipoPill(tipoFull || "-") + extra + "</td>" +
-            "<td>" + (r.subtipo || "-") + "</td>" +
-            "<td>" + (r.observacion || "-") + "</td>" +
+            "<td><div class=\"cell-trunc\" title=\"" + escapeHtml(subtipoTxt) + "\">" + escapeHtml(subtipoTxt) + "</div></td>" +
+            "<td><div class=\"cell-trunc\" title=\"" + escapeHtml(obsTxt) + "\">" + escapeHtml(obsTxt) + "</div></td>" +
             "<td><span class=\"estado-pill " + estadoClass(r.estado) + "\">" + (r.estado || "Informado") + "</span></td>" +
             "<td style=\"white-space:nowrap;\">" + makeRowActions(r) + "</td>" +
           "</tr>"
@@ -5155,6 +5163,17 @@
           solicitudes_recibidas: RAW_SOLIC,
         });
       });
+    }
+
+    var filtrosBox = document.getElementById("gestionFiltrosBox");
+    if (filtrosBox) {
+      var filtrosSummary = filtrosBox.querySelector("summary");
+      var syncFiltrosSummary = function () {
+        if (!filtrosSummary) return;
+        filtrosSummary.textContent = filtrosBox.open ? "Ocultar filtros" : "Mostrar filtros";
+      };
+      filtrosBox.addEventListener("toggle", syncFiltrosSummary);
+      syncFiltrosSummary();
     }
 
     el.splitWrap.addEventListener("click", function (ev) {

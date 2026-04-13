@@ -1,0 +1,247 @@
+/* Centro de control operativo - Intendencia (solo UI/UX visual)
+   Mantiene intacta la lógica de gestión, filtros, chat, fotos y estados. */
+
+.control-shell .control-card.card-registro {
+  border-color: #cfe0fb;
+  background: linear-gradient(180deg, #ffffff 0%, #f4f8ff 100%);
+  box-shadow: 0 10px 26px rgba(23, 53, 92, 0.07);
+}
+.control-shell .control-card.card-registro::before {
+  background: #2563eb;
+}
+.control-shell .card-registro .state-chip.soft {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+/* Cargar: summary visible + “invita” a abrir */
+.control-shell #registroNvdBox {
+  border-style: solid;
+  border-color: #d7e3fb;
+  background: linear-gradient(180deg, #fbfdff 0%, #f6f9ff 100%);
+}
+.control-shell #registroNvdBox > summary.registro-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 12px;
+  border-bottom-color: #dbe6f7;
+}
+.control-shell #registroNvdBox > summary.registro-summary::after {
+  content: "▾";
+  font-weight: 900;
+  color: #3b82f6;
+  line-height: 1;
+  transform: rotate(0deg);
+  transition: transform .14s ease;
+}
+.control-shell #registroNvdBox[open] > summary.registro-summary::after {
+  transform: rotate(180deg);
+}
+.control-shell .registro-body {
+  padding: 12px;
+  gap: 10px;
+}
+.control-shell .card-registro .aux-row-tight {
+  margin: 0 0 6px;
+}
+.control-shell .registro-title {
+  font-weight: 900;
+  color: #1f3a61;
+  letter-spacing: -0.01em;
+}
+.control-shell .nvd-form-grid {
+  gap: 10px;
+}
+.control-shell .nvd-obs-row {
+  margin-top: 4px;
+}
+.control-shell .nvd-obs-row label {
+  font-size: 11px;
+  color: #59799e;
+  font-weight: 800;
+}
+
+/* KPIs: pastel + misma altura */
+.control-shell .card-resumen .kpi-grid.operativa {
+  gap: 12px;
+}
+.control-shell .card-resumen .kpi-grid.operativa .kpi {
+  border-radius: 14px;
+  padding: 12px 12px;
+  min-height: 92px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.control-shell .card-resumen .kpi-grid.operativa .k-label {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+  color: rgba(53, 90, 137, .85);
+}
+.control-shell .card-resumen .kpi-grid.operativa .k-val {
+  font-size: 34px;
+  letter-spacing: -0.02em;
+}
+.control-shell .kpi.today-open {
+  background: linear-gradient(180deg, #f4f9ff 0%, #eaf2ff 100%);
+  border-color: #d6e6ff;
+}
+.control-shell .kpi.pending-old {
+  background: linear-gradient(180deg, #fffaf3 0%, #fff1df 100%);
+  border-color: #f7d9b6;
+}
+.control-shell .kpi.assign-open {
+  background: linear-gradient(180deg, #fffdf2 0%, #fff3cc 100%);
+  border-color: #fde7a2;
+}
+.control-shell .kpi.matias-open {
+  background: linear-gradient(180deg, #fdf5fb 0%, #fde7f3 100%);
+  border-color: #f6b4d8;
+}
+
+/* Gestión: tabs más prolijas (segmentadas) */
+.control-shell .gestion-topbar {
+  gap: 10px;
+  align-items: flex-end;
+}
+.control-shell .gestion-rubro-tabs {
+  gap: 0;
+  padding: 4px;
+  border-radius: 14px;
+  border: 1px solid #dbe6f6;
+  background: #f7faff;
+  flex: 1 1 auto;
+}
+.control-shell .gestion-rubro-tab {
+  border: 0;
+  background: transparent;
+  border-radius: 12px;
+  padding: 9px 12px;
+  font-size: 13px;
+  color: #355a89;
+  box-shadow: none;
+  flex: 1 1 0;
+  justify-content: center;
+}
+.control-shell .gestion-rubro-tab:hover {
+  background: rgba(219, 234, 254, .35);
+}
+.control-shell .gestion-rubro-tab.active {
+  border: 1px solid #bfdbfe;
+  background: #ffffff;
+  box-shadow: 0 8px 16px rgba(29, 78, 216, 0.10);
+  color: #1d4ed8;
+}
+.control-shell .gestion-rubro-tab .tab-badge {
+  background: rgba(255, 255, 255, .85);
+  border-color: #dbe6f6;
+}
+.control-shell .gestion-rubro-tab.active .tab-badge {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+/* Acciones discretas */
+.control-shell #btnRecargarDia.btn-soft,
+.control-shell #btnCerrarCarga.btn-soft {
+  padding: 5px 10px;
+  font-size: 11px;
+}
+.control-shell #gestionFiltrosBox > summary.btn-soft {
+  padding: 5px 10px;
+  font-size: 11px;
+}
+.control-shell .gestion-filtros-box {
+  padding: 6px 8px;
+}
+.control-shell .nvd-footnote {
+  margin-top: -2px;
+  color: #5f7ea4;
+}
+
+/* Tabla: más aire + hover suave + texto legible */
+.control-shell .table-wrap {
+  border-radius: 12px;
+}
+.control-shell .tbl th,
+.control-shell .tbl td {
+  padding: 10px 10px;
+}
+.control-shell .tbl th {
+  letter-spacing: .02em;
+}
+.control-shell .tbl tbody tr:hover {
+  background: #f2f7ff;
+}
+.control-shell .tbl .btn-inline.row-gestion:not(.turn-tu-respuesta):not(.turn-esperando) {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 900;
+  padding: 4px 10px;
+}
+.control-shell .tbl .btn-inline.row-gestion:not(.turn-tu-respuesta):not(.turn-esperando):hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+.control-shell .cell-trunc {
+  display: block;
+  max-width: 520px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Modal: más “aire” y jerarquía */
+.gestion-modal .gestion-dialog {
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+}
+.gestion-modal .gestion-dialog .gestion-head {
+  padding: 12px 14px;
+}
+.gestion-modal .gestion-dialog .gestion-title {
+  font-size: 16px;
+}
+.gestion-modal .gestion-dialog .gestion-meta {
+  padding: 10px 14px 0;
+}
+.gestion-modal .gestion-dialog .gestion-section-title {
+  margin-left: 14px;
+  margin-right: 14px;
+}
+.gestion-modal .gestion-dialog .gestion-status-row,
+.gestion-modal .gestion-dialog .gestion-tarea-row,
+.gestion-modal .gestion-dialog .gestion-fotos-row,
+.gestion-modal .gestion-dialog .gestion-chat-list,
+.gestion-modal .gestion-dialog .gestion-compose,
+.gestion-modal .gestion-dialog .gestion-coffee-row {
+  margin-left: 14px;
+  margin-right: 14px;
+}
+.gestion-modal .gestion-dialog label {
+  font-size: 11px;
+  color: #59799e;
+  font-weight: 800;
+}
+.gestion-modal .gestion-dialog #gestionEstado {
+  max-width: 190px;
+}
+.gestion-modal .gestion-dialog .aux-row-tight {
+  margin: 0;
+}
+.gestion-modal .gestion-dialog .gestion-chat-list {
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+}
+.gestion-modal .gestion-dialog .chat-msg .m-body {
+  padding: 8px 10px;
+  border-radius: 12px;
+}
+.gestion-modal .gestion-dialog .gestion-compose textarea {
+  background: #ffffff;
+}
