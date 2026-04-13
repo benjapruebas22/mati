@@ -705,6 +705,12 @@
     gap: 4px;
     min-width: max-content;
   }
+  .agente-grupo-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+  }
   .agente-chip {
     border: 1px solid var(--chip-bd, #cad8ef);
     border-radius: 999px;
@@ -724,6 +730,26 @@
   .agente-chip.active {
     border-color: var(--chip-active-bd, #2f5ea4);
     background: var(--chip-active-bg, #2f5ea4);
+    color: #ffffff;
+  }
+  .agente-chip.grupo-chip {
+    padding: 3px 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .agente-chip.grupo-chip .chip-kpi {
+    font-size: 10px;
+    font-weight: 900;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(35, 67, 103, 0.14);
+    line-height: 1.2;
+  }
+  .agente-chip.grupo-chip.active .chip-kpi {
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.28);
     color: #ffffff;
   }
   .aux-msg {
@@ -825,10 +851,10 @@
     background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
   }
   .pend-toolbar .agente-filtro-box {
-    display: none;
+    display: grid;
   }
   .pend-toolbar .aux-row-top {
-    justify-content: flex-end;
+    justify-content: space-between;
   }
   .pend-respuesta-legend {
     display: flex;
@@ -1795,8 +1821,9 @@
     <div class="pend-toolbar">
       <div class="aux-row aux-row-top">
         <div class="agente-filtro-box">
-          <div class="agente-filtro-label">Filtro rapido por agente</div>
-          <div class="agente-filtro-scroll">
+          <div class="agente-filtro-label">Filtros rapidos</div>
+          <div id="agenteGrupoFiltroList" class="agente-grupo-list" aria-label="Filtro por equipo"></div>
+          <div class="agente-filtro-scroll" aria-label="Filtro por agente">
             <div id="agenteFiltroList" class="agente-filtro-list"></div>
           </div>
         </div>
@@ -2130,6 +2157,7 @@
     var RAW_TASK = [];
     var RAW_SOLIC = [];
     var RESUMEN_BASE = { total: 0, informado: 0, en_proceso: 0, resuelto: 0 };
+    var AGENTE_GRUPO_FILTRO_ACTIVO = "";
     var HIDE_PENDIENTES_NO_CERRADOS = true;
     var WORKSPACE_DEFAULT = "resumen";
     var WORKSPACE_ACTIVE = WORKSPACE_DEFAULT;
@@ -2235,6 +2263,38 @@
       "msorbllo": "Marcos Sorbello",
       "msorbello": "Marcos Sorbello",
     };
+    var AGENTE_GRUPOS = {
+      mantenimiento: {
+        label: "Mantenimiento",
+        miembros: ["Carlos Vidaurre", "Nestor Guerrero", "Marcos Duran", "Manuel Flores", TAREA_AGENTE_GENERAL_LABEL],
+        colors: { bg: "#ecf8f0", bd: "#cce9d6", tx: "#2f7b54", abg: "#2f7b54", abd: "#2f7b54" },
+      },
+      choferes: {
+        label: "Choferes",
+        miembros: ["Emilino P de la Puente", "Mauro Vea Murguia", "Luis Cardozo", "Ignacio Baroni", "Francisco Savio"],
+        colors: { bg: "#eaf7f6", bd: "#cdeae7", tx: "#1e7d79", abg: "#1e7d79", abd: "#1e7d79" },
+      },
+      administracion: {
+        label: "Administracion",
+        miembros: ["Maximiliano Abatedaga", "Marcos Sorbello"],
+        colors: { bg: "#f6f0ff", bd: "#dfd3f8", tx: "#6b4fa8", abg: "#6b4fa8", abd: "#6b4fa8" },
+      },
+    };
+    var AGENTE_GRUPO_SETS = (function () {
+      var out = {};
+      Object.keys(AGENTE_GRUPOS || {}).forEach(function (k) {
+        var cfg = AGENTE_GRUPOS[k] || {};
+        var members = Array.isArray(cfg.miembros) ? cfg.miembros : [];
+        var set = {};
+        members.forEach(function (m) {
+          var nom = normalizarAgente(m);
+          var key = normTxt(nom);
+          if (key) set[key] = true;
+        });
+        out[k] = set;
+      });
+      return out;
+    })();
     var AGENTE_COLORS = {
       "matias calderari": { bg: "#e8f1ff", bd: "#c8d9f6", tx: "#2f5ea4", abg: "#2f5ea4", abd: "#2f5ea4" },
       "marcos duran": { bg: "#ecf8f0", bd: "#cce9d6", tx: "#2f7b54", abg: "#2f7b54", abd: "#2f7b54" },
@@ -2285,6 +2345,7 @@
       cancelar: document.getElementById("nvdCancelarEdit"),
       msg: document.getElementById("nvdMsg"),
       msgRow: document.getElementById("nvdMsgRow"),
+      agenteGrupoFiltroList: document.getElementById("agenteGrupoFiltroList"),
       agenteFiltroList: document.getElementById("agenteFiltroList"),
       recargar: document.getElementById("btnRecargarDia"),
       splitWrap: document.getElementById("nvdSplitWrap"),
@@ -3141,6 +3202,89 @@
       return '<span class="agente-pill" style="--ag-bg:' + c.bg + ';--ag-bd:' + c.bd + ';--ag-tx:' + c.tx + ';" title="' + t + '">' + n + "</span>";
     }
 
+    function agenteEsGeneral(raw) {
+      var key = normTxt(raw);
+      return key === normTxt(TAREA_AGENTE_GENERAL_LABEL) ||
+        key === normTxt(TAREA_AGENTE_GENERAL_VALUE) ||
+        key === "equipo operativo" ||
+        key === "equipo" ||
+        key === "general" ||
+        key === "todos" ||
+        key === "varios" ||
+        key === "grupo" ||
+        key === "cuadrilla" ||
+        key === "__equipo__";
+    }
+
+    function splitAgentesMulti(raw) {
+      var txt = String(raw || "").trim();
+      if (!txt) return [];
+      if (agenteEsGeneral(txt)) return [TAREA_AGENTE_GENERAL_LABEL];
+      var parts = txt.split(/\s*\+\s*|\s*\|\s*|\s*;\s*/g);
+      if (!parts.length) return [];
+      var out = [];
+      var seen = {};
+      parts.forEach(function (p) {
+        var ag = normalizarAgente(p);
+        var key = normTxt(ag);
+        if (!ag || !key || seen[key]) return;
+        seen[key] = true;
+        out.push(ag);
+      });
+      return out;
+    }
+
+    function agenteFiltroValor(r) {
+      if (!r) return "";
+      var v = "";
+      if (r.tarea_agente != null && String(r.tarea_agente).trim()) v = r.tarea_agente;
+      else v = r.agente != null ? r.agente : "";
+      return String(v || "").trim();
+    }
+
+    function filaPerteneceGrupo(r, grupoKey) {
+      var key = String(grupoKey || "").trim();
+      if (!key) return true;
+      var v = agenteFiltroValor(r);
+      if (!v) return false;
+      if (agenteEsGeneral(v)) return key === "mantenimiento";
+      var tokens = splitAgentesMulti(v);
+      if (!tokens.length) return false;
+      var set = AGENTE_GRUPO_SETS[key] || {};
+      for (var i = 0; i < tokens.length; i += 1) {
+        if (set[normTxt(tokens[i])]) return true;
+      }
+      return false;
+    }
+
+    function filaPerteneceAgente(r, agenteNorm) {
+      var target = String(agenteNorm || "").trim();
+      if (!target) return true;
+      var v = agenteFiltroValor(r);
+      if (!v) return false;
+      if (normTxt(v) === target) return true;
+      var tokens = splitAgentesMulti(v);
+      for (var i = 0; i < tokens.length; i += 1) {
+        if (normTxt(tokens[i]) === target) return true;
+      }
+      return false;
+    }
+
+    function filaPasaFiltros(r) {
+      if (AGENTE_GRUPO_FILTRO_ACTIVO && !filaPerteneceGrupo(r, AGENTE_GRUPO_FILTRO_ACTIVO)) return false;
+      if (AGENTE_FILTRO_ACTIVO && !filaPerteneceAgente(r, normTxt(AGENTE_FILTRO_ACTIVO))) return false;
+      return true;
+    }
+
+    function agentesParaGrupo(lista) {
+      var src = Array.isArray(lista) ? lista : [];
+      if (!AGENTE_GRUPO_FILTRO_ACTIVO) return src;
+      var key = String(AGENTE_GRUPO_FILTRO_ACTIVO || "").trim();
+      if (!key) return src;
+      var set = AGENTE_GRUPO_SETS[key] || {};
+      return src.filter(function (a) { return !!set[normTxt(normalizarAgente(a))]; });
+    }
+
     function renderAgenteFiltros(agentes) {
       if (!el.agenteFiltroList) return;
       var arr = Array.isArray(agentes) ? agentes.filter(Boolean) : [];
@@ -3164,13 +3308,38 @@
       el.agenteFiltroList.innerHTML = html;
     }
 
+    function renderGrupoFiltros() {
+      if (!el.agenteGrupoFiltroList) return;
+      var gruposOrden = [
+        { key: "", label: "Todos", colors: { bg: "#f3f7ff", bd: "#d8e3f6", tx: "#3d5f8f", abg: "#2f5ea4", abd: "#2f5ea4" } },
+        { key: "mantenimiento", cfg: AGENTE_GRUPOS.mantenimiento },
+        { key: "choferes", cfg: AGENTE_GRUPOS.choferes },
+        { key: "administracion", cfg: AGENTE_GRUPOS.administracion },
+      ];
+      var html = gruposOrden.map(function (g) {
+        var key = String(g.key || "");
+        var cfg = g.cfg || {};
+        var label = String(g.label || cfg.label || key || "Grupo");
+        var colors = g.colors || cfg.colors || {};
+        var active = (AGENTE_GRUPO_FILTRO_ACTIVO === key) ? " active" : "";
+        var tasks = RAW_TASK.filter(function (r) { return filaPerteneceGrupo(r, key); }).length;
+        var solic = RAW_SOLIC.filter(function (r) { return filaPerteneceGrupo(r, key); }).length;
+        return (
+          '<button type="button" class="agente-chip grupo-chip' + active + '" data-grupo="' + key + '" ' +
+          'style="--chip-bg:' + (colors.bg || "#fff") + ';--chip-bd:' + (colors.bd || "#cad8ef") + ';--chip-tx:' + (colors.tx || "#355a89") + ';' +
+                 '--chip-active-bg:' + (colors.abg || colors.tx || "#2f5ea4") + ';--chip-active-bd:' + (colors.abd || colors.tx || "#2f5ea4") + ';">' +
+            '<span>' + escapeHtml(label) + "</span>" +
+            '<span class="chip-kpi" title="Tareas asignadas">T ' + String(tasks) + "</span>" +
+            '<span class="chip-kpi" title="Solicitudes">S ' + String(solic) + "</span>" +
+          "</button>"
+        );
+      }).join("");
+      el.agenteGrupoFiltroList.innerHTML = html;
+    }
+
     function aplicarFiltroAgente(rows) {
       var arr = Array.isArray(rows) ? rows : [];
-      if (!AGENTE_FILTRO_ACTIVO) return arr;
-      var target = normTxt(AGENTE_FILTRO_ACTIVO);
-      return arr.filter(function (r) {
-        return normTxt(r && r.agente) === target;
-      });
+      return arr.filter(filaPasaFiltros);
     }
 
     function loadSubtipos(pref) {
@@ -3214,21 +3383,20 @@
     }
 
     function renderResumenSegunFiltro() {
-      if (!AGENTE_FILTRO_ACTIVO) {
+      if (!AGENTE_FILTRO_ACTIVO && !AGENTE_GRUPO_FILTRO_ACTIVO) {
         renderResumen(RESUMEN_BASE);
         renderKpisOperativos();
         return;
       }
       var fechaSel = String(el.fecha.value || "");
-      var target = normTxt(AGENTE_FILTRO_ACTIVO);
       var out = { total: 0, informado: 0, en_proceso: 0, resuelto: 0 };
       RAW_DIA.forEach(function (r) {
-        if (normTxt(r && r.agente) !== target) return;
+        if (!filaPasaFiltros(r)) return;
         resumenEstadoInc(out, (r && r.estado) || "");
       });
       RAW_FINAL.forEach(function (r) {
         if ((String((r && r.fecha) || "") !== fechaSel)) return;
-        if (normTxt(r && r.agente) !== target) return;
+        if (!filaPasaFiltros(r)) return;
         resumenEstadoInc(out, (r && r.estado) || "");
       });
       out.total = out.informado + out.en_proceso + out.resuelto;
@@ -4087,6 +4255,7 @@
       if (el.bodySolic) renderSolicitudesRows(el.bodySolic, solicitudes);
       if (el.bodyPend) el.bodyPend.innerHTML = '<tr><td colspan="10" style="color:#6f86a5;">Sin pendientes acumulados.</td></tr>';
       renderResumenSegunFiltro();
+      renderGrupoFiltros();
     }
 
     function resetForm() {
@@ -4311,7 +4480,8 @@
             el.modo.value = (canUseTaskMode() && pref.modo === "tarea") ? "tarea" : "solicitud";
           }
           applyModoUI();
-          renderAgenteFiltros(agentes);
+          renderAgenteFiltros(agentesParaGrupo(agentes));
+          renderGrupoFiltros();
           if (CAN_EDIT_AGENTE && d.agente_actual) {
             var actualNorm = normalizarAgente(d.agente_actual);
             if (agentes.indexOf(actualNorm) >= 0) el.agente.value = actualNorm;
@@ -4729,6 +4899,22 @@
           if (String(c.getAttribute("data-agente") || "") === AGENTE_FILTRO_ACTIVO) c.classList.add("active");
           else c.classList.remove("active");
         });
+        renderSplitRows({
+          pendientes_dia: RAW_DIA,
+          pendientes_acumulados: RAW_PEND,
+          tareas_asignadas: RAW_TASK,
+          solicitudes_recibidas: RAW_SOLIC,
+        });
+      });
+    }
+    if (el.agenteGrupoFiltroList) {
+      el.agenteGrupoFiltroList.addEventListener("click", function (ev) {
+        var btn = ev.target && ev.target.closest ? ev.target.closest(".agente-chip.grupo-chip") : null;
+        if (!btn) return;
+        AGENTE_GRUPO_FILTRO_ACTIVO = String(btn.getAttribute("data-grupo") || "");
+        AGENTE_FILTRO_ACTIVO = "";
+        renderGrupoFiltros();
+        renderAgenteFiltros(agentesParaGrupo(AGENTES_ASSIGN));
         renderSplitRows({
           pendientes_dia: RAW_DIA,
           pendientes_acumulados: RAW_PEND,

@@ -199,6 +199,17 @@ def module_from_path(path: str) -> str:
         return "sst"
     if path.startswith("/agentes"):
         return "agentes"
+    # Rutas operativas de "Sedes" que no cuelgan de /sedes/* (panel operativo).
+    if path.startswith("/matafuegos"):
+        return "sedes"
+    if path.startswith("/luminarias"):
+        return "sedes"
+    if path.startswith("/mobiliario"):
+        return "sedes"
+    if path.startswith("/personal"):
+        return "sedes"
+    if path.startswith("/movimientos"):
+        return "sedes"
     if path.startswith("/sedes") or path.startswith("/sede"):
         return "sedes"
     if path.startswith("/eventos"):
