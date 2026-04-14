@@ -377,7 +377,8 @@
   .table-wrap {
     border: 1px solid #e2e9f4;
     border-radius: 10px;
-    overflow: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
     max-height: 340px;
     background: #fff;
   }
@@ -385,7 +386,6 @@
     width: 100%;
     border-collapse: collapse;
     font-size: 12px;
-    min-width: 920px;
   }
   .tbl th,
   .tbl td {
@@ -393,6 +393,8 @@
     padding: 7px 8px;
     text-align: left;
     vertical-align: middle;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
   .tbl th {
     background: linear-gradient(180deg, #f4f8ff 0%, #edf4ff 100%);
@@ -2020,7 +2022,7 @@
           <span class="title">Mantenimiento</span>
           <span class="sub">Tareas operativas asignadas al equipo tecnico.</span>
         </div>
-        <div class="table-wrap" style="max-height:320px;">
+        <div class="table-wrap table-wrap-full">
           <table class="tbl">
             <thead>
               <tr>
@@ -2045,7 +2047,7 @@
           <span class="title">Choferes</span>
           <span class="sub">Traslados, viajes y logistica asignada.</span>
         </div>
-        <div class="table-wrap" style="max-height:320px;">
+        <div class="table-wrap table-wrap-full">
           <table class="tbl">
             <thead>
               <tr>
@@ -2069,7 +2071,7 @@
           <span class="title">Administrativo</span>
           <span class="sub">Solicitudes y novedades que requieren gestion o respuesta.</span>
         </div>
-        <div class="table-wrap" style="max-height:320px;">
+        <div class="table-wrap table-wrap-full">
           <table class="tbl">
             <thead>
               <tr>

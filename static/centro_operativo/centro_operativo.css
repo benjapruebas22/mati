@@ -169,6 +169,13 @@
 .control-shell .table-wrap {
   border-radius: 12px;
 }
+.control-shell .table-wrap.table-wrap-full {
+  max-height: none;
+  overflow: visible;
+}
+.control-shell .table-wrap.table-wrap-full .tbl th {
+  position: static;
+}
 .control-shell .tbl th,
 .control-shell .tbl td {
   padding: 10px 10px;
@@ -190,12 +197,26 @@
   background: #dbeafe;
   border-color: #93c5fd;
 }
+/* Mostrar todo (sin barra horizontal): permitir múltiples líneas */
 .control-shell .cell-trunc {
   display: block;
-  max-width: 520px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  max-width: none;
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
+}
+.control-shell .tbl td {
+  vertical-align: top;
+}
+.control-shell .tbl .agente-pill {
+  display: inline-block;
+  max-width: none;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  line-height: 1.25;
 }
 
 /* Modal: más “aire” y jerarquía */
