@@ -1852,13 +1852,14 @@
           <span>TP: <strong id="kpiChofTp">0</strong></span>
         </div>
       </div>
-      <div class="kpi assign-open">
+      <div id="kpiCardTotal" class="kpi assign-open">
         <div class="k-label">Pendientes totales</div>
         <div class="k-val" id="kpiAsigOpen">0</div>
         <div class="k-sub" aria-label="Detalle pendientes totales">
           <span>TD: <strong id="kpiTotTd">0</strong></span>
           <span>TP: <strong id="kpiTotTp">0</strong></span>
         </div>
+        <div id="kpiTotOldNote" class="k-note" aria-live="polite" hidden></div>
       </div>
       <div id="kpiCardRecord" class="kpi matias-open kpi-click" role="button" tabindex="0" title="Ver recordatorios">
         <div class="k-label" id="kpiPendMatiasLabel">Recordatorios Matias</div>
@@ -1991,7 +1992,7 @@
         <button type="button" class="gestion-rubro-tab" data-rubro="administrativo" aria-selected="false">
           Administrativo <span id="badgeAdministrativo" class="tab-badge">0</span>
         </button>
-        <button type="button" class="gestion-rubro-tab" data-rubro="recordatorios" aria-selected="false">
+        <button id="tabRecordatorios" type="button" class="gestion-rubro-tab" data-rubro="recordatorios" aria-selected="false">
           Recordatorios <span id="badgeRecordatorios" class="tab-badge">0</span>
         </button>
       </div>
@@ -2565,6 +2566,7 @@
       badgeChoferes: document.getElementById("badgeChoferes"),
       badgeAdministrativo: document.getElementById("badgeAdministrativo"),
       badgeRecordatorios: document.getElementById("badgeRecordatorios"),
+      tabRecordatorios: document.getElementById("tabRecordatorios"),
       filtroSede: document.getElementById("gestionFiltroSede"),
       filtroEstado: document.getElementById("gestionFiltroEstado"),
       filtroPrioridad: document.getElementById("gestionFiltroPrioridad"),
@@ -2584,6 +2586,8 @@
       kPendPrev: document.getElementById("kpiPendPrev"),
       kPendDia: document.getElementById("kpiPendDia"),
       kAsigOpen: document.getElementById("kpiAsigOpen"),
+      kpiCardTotal: document.getElementById("kpiCardTotal"),
+      kTotOldNote: document.getElementById("kpiTotOldNote"),
       kPendMatiasLabel: document.getElementById("kpiPendMatiasLabel"),
       kPendMatias: document.getElementById("kpiPendMatias"),
       kMantTd: document.getElementById("kpiMantTd"),
@@ -3533,6 +3537,10 @@
       return true;
     }
 
+    function rowOwnerCls(r) {
+      return filaPerteneceAgente(r, "matias calderari") ? " row-owner-matias" : "";
+    }
+
     function agentesParaGrupo(lista) {
       var src = Array.isArray(lista) ? lista : [];
       if (!AGENTE_GRUPO_FILTRO_ACTIVO) return src;
@@ -3728,6 +3736,18 @@
       if (el.kTotTp) el.kTotTp.textContent = String(tot.tp);
       if (el.kRecTd) el.kRecTd.textContent = String(rec.td);
       if (el.kRecTp) el.kRecTp.textContent = String(rec.tp);
+
+      if (el.kTotOldNote && el.kpiCardTotal) {
+        if (tot.tp > 0) {
+          el.kTotOldNote.textContent = String(tot.tp) + " pendientes viejos";
+          el.kTotOldNote.hidden = false;
+          el.kpiCardTotal.classList.add("has-old");
+        } else {
+          el.kTotOldNote.textContent = "";
+          el.kTotOldNote.hidden = true;
+          el.kpiCardTotal.classList.remove("has-old");
+        }
+      }
 
       if (el.kPendMatiasLabel) {
         var meNorm = actorNormName();
@@ -4543,7 +4563,7 @@
         var tareaEstado = String((r && r.tarea_estado) || "Pendiente").trim();
         var tareaTxt = String((r && r.tarea_asignada) || "-");
         return (
-          "<tr class=\"tipo-row tipo-tarea\">" +
+          "<tr class=\"tipo-row tipo-tarea" + rowOwnerCls(r) + "\">" +
             "<td>" + (r.fecha || "-") + "</td>" +
             "<td>" + agenteCell(ag) + "</td>" +
             "<td>" + sede + "</td>" +
@@ -4571,7 +4591,7 @@
         var motivo = String((r && r.tarea_asignada) || (r && r.observacion) || (r && r.tipo) || "-").trim();
         var est = String((r && r.tarea_estado) || (r && r.estado) || "Pendiente").trim();
         return (
-          "<tr class=\"tipo-row tipo-tarea\">" +
+          "<tr class=\"tipo-row tipo-tarea" + rowOwnerCls(r) + "\">" +
             "<td>" + (r.fecha || "-") + "</td>" +
             "<td>" + agenteCell(ag) + "</td>" +
             "<td>" + escapeHtml(sede) + "</td>" +
@@ -4607,7 +4627,7 @@
         var subtipoTxt = String((r && r.subtipo) || "-");
         var obsTxt = String((r && r.observacion) || "-");
         return (
-          "<tr class=\"tipo-row " + tCls + "\">" +
+          "<tr class=\"tipo-row " + tCls + rowOwnerCls(r) + "\">" +
             "<td>" + (r.fecha || "-") + "</td>" +
             "<td>" + agenteCell(r.agente) + "</td>" +
             "<td>" + (r.sede_codigo || "-") + "</td>" +
@@ -4619,6 +4639,27 @@
           "</tr>"
         );
       }).join("");
+    }
+
+    function filaEnSeguimiento(r) {
+      var estT = normTxt((r && r.tarea_estado) || "");
+      if (estT === "en curso" || estT === "en proceso") return true;
+      return estadoClass((r && r.estado) || "") === "estado-en-proceso";
+    }
+
+    function turnoChip(r, estadoRaw) {
+      var turno = String((r && r.gestion_turno) || "").trim();
+      var estTxt = String(estadoRaw || "").trim();
+      if (turno === "tu_respuesta") {
+        return '<span class="turn-chip turn-tu-respuesta" title="' + escapeHtml("Pendiente · " + (estTxt || "Pendiente")) + '">Pendiente</span>';
+      }
+      if (turno === "esperando") {
+        return '<span class="turn-chip turn-esperando" title="' + escapeHtml("Esperando · " + (estTxt || "Pendiente")) + '">Esperando</span>';
+      }
+      if (filaEnSeguimiento(r)) {
+        return '<span class="turn-chip turn-seguimiento" title="' + escapeHtml("En seguimiento · " + (estTxt || "En curso")) + '">Seguimiento</span>';
+      }
+      return '<span class="turn-chip turn-tu-respuesta" title="' + escapeHtml("Pendiente · " + (estTxt || "Pendiente")) + '">Pendiente</span>';
     }
 
     function renderRecordatoriosRows(target, items) {
@@ -4633,11 +4674,11 @@
         var detalle = String((r && r.tarea_asignada) || (r && r.observacion) || "-").trim() || "-";
         var est = String((r && r.tarea_estado) || (r && r.estado) || "Pendiente").trim() || "Pendiente";
         return (
-          "<tr class=\"tipo-row tipo-tarea\">" +
+          "<tr class=\"tipo-row tipo-tarea" + rowOwnerCls(r) + "\">" +
             "<td>" + (r.fecha || "-") + "</td>" +
             "<td>" + escapeHtml(st) + "</td>" +
             "<td><div class=\"cell-trunc\" title=\"" + escapeHtml(detalle) + "\">" + escapeHtml(detalle) + "</div></td>" +
-            '<td><span class="tarea-pill">' + escapeHtml(est) + "</span></td>" +
+            "<td>" + turnoChip(r, est) + "</td>" +
             '<td style="white-space:nowrap;">' + makeRowActions(r) + "</td>" +
           "</tr>"
         );
@@ -4656,6 +4697,18 @@
         else td.push(r);
       });
       return tp.concat(td);
+    }
+
+    function contarTp(rows) {
+      var arr = Array.isArray(rows) ? rows : [];
+      var fechaSel = String((el.fecha && el.fecha.value) || "").trim();
+      if (!fechaSel) return 0;
+      var tp = 0;
+      arr.forEach(function (r) {
+        var f = String((r && r.fecha) || "").trim();
+        if (f && f < fechaSel) tp += 1;
+      });
+      return tp;
     }
 
     function renderSplitRows(payload) {
@@ -4690,6 +4743,7 @@
       if (el.badgeChoferes) el.badgeChoferes.textContent = String(tasksChoferes.length);
       if (el.badgeAdministrativo) el.badgeAdministrativo.textContent = String(solicitudes.length);
       if (el.badgeRecordatorios) el.badgeRecordatorios.textContent = String(recordatorios.length);
+      if (el.tabRecordatorios) el.tabRecordatorios.classList.toggle("has-old", contarTp(recordatorios) > 0);
       renderResumenSegunFiltro();
     }
 

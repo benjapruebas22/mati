@@ -131,6 +131,20 @@
   font-weight: 900;
   color: rgba(15, 23, 42, .92);
 }
+.control-shell .kpi .k-note {
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  color: rgba(146, 64, 14, .92);
+}
+.control-shell #kpiCardTotal.has-old {
+  border-color: #fbbf24;
+  background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
+}
+.control-shell #kpiCardTotal.has-old .k-val {
+  color: #92400e;
+}
 .control-shell .kpi.kpi-click {
   cursor: pointer;
 }
@@ -194,6 +208,16 @@
   border-color: #bfdbfe;
   color: #1d4ed8;
 }
+.control-shell .gestion-rubro-tab.has-old:not(.active) {
+  border: 1px solid #fbbf24;
+  background: #fffbeb;
+  color: #92400e;
+}
+.control-shell .gestion-rubro-tab.has-old:not(.active) .tab-badge {
+  border-color: #fbbf24;
+  background: rgba(255, 255, 255, .85);
+  color: #92400e;
+}
 
 /* Acciones discretas */
 .control-shell #btnRecargarDia.btn-soft,
@@ -233,6 +257,39 @@
 }
 .control-shell .tbl tbody tr:hover {
   background: #f2f7ff;
+}
+.control-shell .tbl tbody tr.row-owner-matias {
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.10) 0%, rgba(59, 130, 246, 0.04) 55%, rgba(255, 255, 255, 0) 100%);
+}
+.control-shell .tbl tbody tr.row-owner-matias:hover {
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.14) 0%, rgba(59, 130, 246, 0.06) 55%, rgba(255, 255, 255, 0) 100%);
+}
+.control-shell .turn-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid #cfdcf0;
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 900;
+  cursor: default;
+  user-select: none;
+  white-space: nowrap;
+}
+.control-shell .turn-chip.turn-tu-respuesta {
+  border-color: #f4c1ca;
+  background: #fff1f4;
+  color: #b4233f;
+}
+.control-shell .turn-chip.turn-esperando {
+  border-color: #b8e2c7;
+  background: #eefbf2;
+  color: #1f7a45;
+}
+.control-shell .turn-chip.turn-seguimiento {
+  border-color: #fcd34d;
+  background: #fffbeb;
+  color: #92400e;
 }
 .control-shell .tbl .btn-inline.row-gestion:not(.turn-tu-respuesta):not(.turn-esperando):not(.turn-seguimiento) {
   border-color: #bfdbfe;
