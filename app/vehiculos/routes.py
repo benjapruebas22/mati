@@ -1,4 +1,5 @@
 import io
+import re
 import unicodedata
 from datetime import date, datetime
 
@@ -26,11 +27,353 @@ def register_vehiculos_control(bp, get_db_connection, ensure_cols, rebuild_event
         ])
         conn.commit()
 
+    def _ensure_vehiculos_base_operativa_col(conn):
+        # Opcional: base operativa configurable por vehiculo (si no se usa, queda NULL).
+        ensure_cols(conn, "vehiculos", [
+            ("base_operativa", "TEXT"),
+        ])
+        conn.commit()
+
+    def _ensure_destinos_referencia_table(conn):
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS destinos_referencia (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                destino_original TEXT,
+                destino_normalizado TEXT NOT NULL,
+                destino_key TEXT NOT NULL,
+                zona_operativa TEXT NOT NULL DEFAULT '',
+                km_ref_min REAL,
+                km_ref_max REAL,
+                base_operativa TEXT NOT NULL DEFAULT '',
+                activo INTEGER NOT NULL DEFAULT 1,
+                creado_en TEXT NOT NULL DEFAULT (datetime('now'))
+            )
+            """
+        )
+        conn.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_destinos_referencia_key_base ON destinos_referencia(destino_key, base_operativa)"
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_destinos_referencia_activo ON destinos_referencia(activo)"
+        )
+        conn.commit()
+
     def _normalize_text(value):
         txt = str(value or "").strip().lower()
         txt = unicodedata.normalize("NFKD", txt)
         txt = "".join(ch for ch in txt if not unicodedata.combining(ch))
         return " ".join(txt.split())
+
+    _DESTINO_PREFIXES = {
+        "barrio",
+        "b",
+        "bo",
+        "bda",
+        "barr",
+    }
+
+    _DESTINO_ALIAS = {
+        "centro": "CENTRO",
+        "san salvador": "SAN SALVADOR DE JUJUY",
+        "san salvador de jujuy": "SAN SALVADOR DE JUJUY",
+        "palpala": "PALPALA",
+        "palpala zapla": "PALPALA",
+        "gorriti": "GORRITI",
+        "coronel arias": "CORONEL ARIAS",
+        "ciudad de nieva": "CIUDAD DE NIEVA",
+        "chijra": "CHIJRA",
+        "huaico": "HUAYCO",
+        "huayco": "HUAYCO",
+        "san cayetano": "SAN CAYETANO",
+        "mariano moreno": "MARIANO MORENO",
+        "malvinas": "MALVINAS",
+        "campo verde": "CAMPO VERDE",
+        "alto comedero": "ALTO COMEDERO",
+        "alto padilla": "ALTO PADILLA",
+        "alto la vina": "ALTO LA VINA",
+        "bajo la vina": "BAJO LA VINA",
+        "villa san martin": "VILLA SAN MARTIN",
+        "belgrano": "BELGRANO",
+        "punta diamante": "PUNTA DIAMANTE",
+        "los perales": "LOS PERALES",
+        "san pedrito": "SAN PEDRITO",
+        "alte brown": "ALTE BROWN",
+        "azopardo": "AZOPARDO",
+        "el chingo": "EL CHINGO",
+        "altos de zapla": "ALTOS DE ZAPLA",
+        "libertador": "LIBERTADOR",
+        "libertador gral san martin": "LIBERTADOR",
+        "libertador gral. san martin": "LIBERTADOR",
+        "libertador gral san martin": "LIBERTADOR",
+        "ledesma": "LEDESMA",
+        "san pedro": "SAN PEDRO",
+        "rodeito": "RODEITO",
+        "chalican": "CHALICAN",
+        "yala": "YALA",
+        "perico": "PERICO",
+        "el carmen": "EL CARMEN",
+        "monterrico": "MONTERRICO",
+        "monte rico": "MONTERRICO",
+        "lozano": "LOZANO",
+        "san antonio": "SAN ANTONIO",
+        "san pablo de reyes": "SAN PABLO DE REYES",
+        "pampa blanca": "PAMPA BLANCA",
+        "santa clara": "SANTA CLARA",
+        "palma sola": "PALMA SOLA",
+        "el talar": "EL TALAR",
+        "la mendieta": "LA MENDIETA",
+        "tilcara": "TILCARA",
+        "humahuaca": "HUMAHUACA",
+        "abra pampa": "ABRA PAMPA",
+        "la quiaca": "LA QUIACA",
+        "susques": "SUSQUES",
+        "salta": "SALTA",
+        "gueme": "GUEMES",
+        "guemes": "GUEMES",
+    }
+
+    def _clean_destino_text(value):
+        raw = str(value or "").strip()
+        base = _normalize_text(raw)
+        base = re.sub(r"[^\w\s]", " ", base)
+        base = base.replace("_", " ")
+        base = " ".join(base.split())
+        parts = base.split()
+        while parts and parts[0] in _DESTINO_PREFIXES:
+            parts = parts[1:]
+        base = " ".join(parts).strip()
+        return raw, base
+
+    def normalize_destino(destino):
+        raw, cleaned = _clean_destino_text(destino)
+        if not cleaned:
+            return {
+                "raw": raw,
+                "cleaned": "",
+                "canon": "",
+                "key": "",
+            }
+        canon = _DESTINO_ALIAS.get(cleaned)
+        if not canon:
+            if cleaned.startswith("libertador"):
+                canon = "LIBERTADOR"
+            else:
+                canon = cleaned.upper()
+        key = _normalize_text(canon)
+        return {
+            "raw": raw,
+            "cleaned": cleaned,
+            "canon": canon,
+            "key": key,
+        }
+
+    def normalize_base_operativa(origen):
+        txt = _normalize_text(origen or "").replace(".", " ").strip()
+        txt = " ".join(txt.split())
+        if txt in {"san pedro", "s pedro", "s. pedro", "san pedro de jujuy"}:
+            return "san pedro"
+        if txt in {"san salvador", "san salvador de jujuy", "ssj"}:
+            return "san salvador de jujuy"
+        if not txt:
+            return "san salvador de jujuy"
+        return txt
+
+    _DEST_ZONA_LONG = {
+        "tilcara",
+        "humahuaca",
+        "abra pampa",
+        "la quiaca",
+        "susques",
+        "salta",
+    }
+    _DEST_ZONA_RAMAL = {
+        "san pedro",
+        "ledesma",
+        "libertador",
+        "santa clara",
+        "palma sola",
+        "el talar",
+        "la mendieta",
+        "rodeito",
+        "chalican",
+        "yuto",
+    }
+    _DEST_ZONA_CERCANA = {
+        "yala",
+        "palpala",
+        "perico",
+        "el carmen",
+        "monterrico",
+        "monte rico",
+        "lozano",
+        "san antonio",
+        "san pablo de reyes",
+        "pampa blanca",
+        "altos de zapla",
+        "los alisos",
+        "guerrero",
+    }
+
+    def _guess_zona(dest_key):
+        k = _normalize_text(dest_key or "")
+        if k in _DEST_ZONA_LONG:
+            return "larga"
+        if k in _DEST_ZONA_RAMAL:
+            return "ramal"
+        if k in _DEST_ZONA_CERCANA:
+            return "cercano"
+        return "urbano"
+
+    def _guess_ref_range(base_key, dest_key):
+        b = normalize_base_operativa(base_key)
+        d = _normalize_text(dest_key or "")
+        zona = _guess_zona(d)
+
+        # Defaults por zona
+        defaults = {
+            "san salvador de jujuy": {
+                "urbano": (2.0, 12.0),
+                "cercano": (20.0, 50.0),
+                "ramal": (130.0, 200.0),
+                "larga": (180.0, 240.0),
+            },
+            "san pedro": {
+                "urbano": (2.0, 12.0),
+                "cercano": (20.0, 60.0),
+                "ramal": (60.0, 150.0),
+                "larga": (220.0, 320.0),
+            },
+        }
+
+        km_min, km_max = (defaults.get(b) or defaults["san salvador de jujuy"]).get(zona, (20.0, 50.0))
+
+        # Overrides puntuales (mejoran precisión sin romper)
+        overrides = {
+            ("san salvador de jujuy", "centro"): (2.0, 10.0, "urbano"),
+            ("san salvador de jujuy", "alto comedero"): (14.0, 30.0, "urbano"),
+            ("san salvador de jujuy", "yala"): (10.0, 25.0, "cercano"),
+            ("san salvador de jujuy", "palpala"): (26.0, 45.0, "cercano"),
+            ("san salvador de jujuy", "perico"): (50.0, 90.0, "cercano"),
+            ("san salvador de jujuy", "el carmen"): (30.0, 70.0, "cercano"),
+            ("san salvador de jujuy", "monterrico"): (50.0, 90.0, "cercano"),
+            ("san salvador de jujuy", "san pedro"): (130.0, 160.0, "ramal"),
+            ("san salvador de jujuy", "ledesma"): (230.0, 300.0, "ramal"),
+            ("san salvador de jujuy", "libertador"): (230.0, 300.0, "ramal"),
+            ("san salvador de jujuy", "tilcara"): (170.0, 200.0, "larga"),
+            ("san salvador de jujuy", "humahuaca"): (240.0, 280.0, "larga"),
+            ("san salvador de jujuy", "abra pampa"): (310.0, 360.0, "larga"),
+            ("san salvador de jujuy", "la quiaca"): (560.0, 630.0, "larga"),
+            ("san salvador de jujuy", "susques"): (420.0, 480.0, "larga"),
+            ("san salvador de jujuy", "salta"): (240.0, 290.0, "larga"),
+            ("san pedro", "san pedro"): (2.0, 12.0, "urbano"),
+            ("san pedro", "centro"): (130.0, 160.0, "interurbano"),
+            ("san pedro", "san salvador de jujuy"): (130.0, 160.0, "interurbano"),
+            ("san pedro", "la mendieta"): (20.0, 40.0, "cercano"),
+            ("san pedro", "rodeito"): (30.0, 50.0, "cercano"),
+            ("san pedro", "chalican"): (50.0, 80.0, "cercano"),
+            ("san pedro", "ledesma"): (60.0, 90.0, "ramal"),
+            ("san pedro", "libertador"): (60.0, 90.0, "ramal"),
+            ("san pedro", "santa clara"): (120.0, 150.0, "ramal"),
+            ("san pedro", "palma sola"): (160.0, 210.0, "ramal"),
+            ("san pedro", "el talar"): (180.0, 220.0, "ramal"),
+            ("san pedro", "yuto"): (100.0, 130.0, "ramal"),
+        }
+        ov = overrides.get((b, d))
+        if ov:
+            return ov[2], float(ov[0]), float(ov[1])
+        return zona, float(km_min), float(km_max)
+
+    def _sync_destinos_referencia_seed(conn):
+        """
+        Completa/estandariza referencias faltantes en destinos_referencia
+        a partir del catalogo de destinos + reglas de zona/base.
+        No pisa ediciones manuales: usa INSERT OR IGNORE.
+        """
+        try:
+            _ensure_destinos_referencia_table(conn)
+        except Exception:
+            return
+        try:
+            destinos_rows = conn.execute(
+                "SELECT nombre FROM destinos WHERE COALESCE(activo,1)=1 AND TRIM(COALESCE(nombre,'')) <> ''"
+            ).fetchall()
+        except Exception:
+            destinos_rows = []
+        bases = ["san salvador de jujuy", "san pedro"]
+        for r in destinos_rows:
+            nombre = (r["nombre"] if "nombre" in r.keys() else r.get("nombre")) or ""
+            norm = normalize_destino(nombre)
+            if not norm["key"]:
+                continue
+            for b in bases:
+                zona, km_min, km_max = _guess_ref_range(b, norm["key"])
+                try:
+                    conn.execute(
+                        """
+                        INSERT OR IGNORE INTO destinos_referencia
+                        (destino_original, destino_normalizado, destino_key, zona_operativa, km_ref_min, km_ref_max, base_operativa, activo)
+                        VALUES (?,?,?,?,?,?,?,1)
+                        """,
+                        (nombre, norm["canon"], norm["key"], zona, km_min, km_max, normalize_base_operativa(b)),
+                    )
+                except Exception:
+                    pass
+        conn.commit()
+
+    def _lookup_destino_ref(conn, base_key, dest_key):
+        b = normalize_base_operativa(base_key)
+        d = _normalize_text(dest_key or "")
+        if not d:
+            return None
+        row = conn.execute(
+            """
+            SELECT
+                destino_normalizado,
+                zona_operativa,
+                km_ref_min,
+                km_ref_max,
+                base_operativa
+            FROM destinos_referencia
+            WHERE activo=1
+              AND destino_key = ?
+              AND base_operativa = ?
+            LIMIT 1
+            """,
+            (d, b),
+        ).fetchone()
+        if row:
+            return dict(row)
+        # fallback global si existiera
+        row = conn.execute(
+            """
+            SELECT
+                destino_normalizado,
+                zona_operativa,
+                km_ref_min,
+                km_ref_max,
+                base_operativa
+            FROM destinos_referencia
+            WHERE activo=1
+              AND destino_key = ?
+              AND base_operativa = ''
+            LIMIT 1
+            """,
+            (d,),
+        ).fetchone()
+        return dict(row) if row else None
+
+    def _infer_trip_base(trip):
+        raw = (trip or {}).get("base_operativa") or ""
+        if str(raw or "").strip():
+            return normalize_base_operativa(raw)
+        pat = (_normalize_text((trip or {}).get("patente") or "") or "").replace(" ", "")
+        cod = (_normalize_text((trip or {}).get("codigo_interno") or "") or "").replace(" ", "")
+        if pat == "ae856ge" or cod in {"g-02", "g02"}:
+            return "san pedro"
+        if pat in {"ae856gd", "af277oa", "ag846fr", "ab946vk"} or cod in {"g-01", "g01", "g-03", "g03", "g-04", "g04", "n-01", "n01"}:
+            return "san salvador de jujuy"
+        return "san salvador de jujuy"
 
     def _is_driver_role():
         return (session.get("role") or "").strip() in CHOFER_ROLES
@@ -781,6 +1124,9 @@ def register_vehiculos_control(bp, get_db_connection, ensure_cols, rebuild_event
 
         conn = get_db_connection()
         _ensure_viajes_operativo_cols(conn)
+        _ensure_vehiculos_base_operativa_col(conn)
+        _ensure_destinos_referencia_table(conn)
+        _sync_destinos_referencia_seed(conn)
         is_autorizado = role in CHOFER_ROLES
 
         fecha_param = (request.args.get("fecha") or date.today().strftime("%Y-%m-%d")).strip()
@@ -950,7 +1296,7 @@ def register_vehiculos_control(bp, get_db_connection, ensure_cols, rebuild_event
             SELECT
                 vc.id,
                 ROW_NUMBER() OVER (ORDER BY date(vc.fecha) ASC, vc.id ASC) AS nro,
-                vc.fecha, v.codigo_interno, vc.patente, vc.chofer_id,
+                vc.fecha, v.codigo_interno, COALESCE(NULLIF(TRIM(v.base_operativa),''), '') AS base_operativa, vc.patente, vc.chofer_id,
                 c.agente AS chofer_nombre,
                 ps.nombre_apellido AS agente_nombre,
                 vc.sector, vc.dependencia,
@@ -992,84 +1338,24 @@ def register_vehiculos_control(bp, get_db_connection, ensure_cols, rebuild_event
             "ignacio baroni",
         }
 
-        REFERENCIAS_KM = {
-            "san salvador de jujuy": {
-                "centro": {"kmMin": 2, "kmMax": 10, "tipo": "urbano"},
-                "alto comedero": {"kmMin": 14, "kmMax": 30, "tipo": "urbano"},
-                "palpala": {"kmMin": 26, "kmMax": 40, "tipo": "cercano"},
-                "perico": {"kmMin": 50, "kmMax": 70, "tipo": "cercano"},
-                "san pedro": {"kmMin": 130, "kmMax": 150, "tipo": "ramal"},
-                "ledesma": {"kmMin": 230, "kmMax": 260, "tipo": "ramal"},
-                "libertador gral. san martin": {"kmMin": 230, "kmMax": 260, "tipo": "ramal"},
-                "tilcara": {"kmMin": 170, "kmMax": 190, "tipo": "quebrada"},
-                "humahuaca": {"kmMin": 240, "kmMax": 270, "tipo": "quebrada"},
-                "abra pampa": {"kmMin": 310, "kmMax": 350, "tipo": "quebrada"},
-                "la quiaca": {"kmMin": 560, "kmMax": 620, "tipo": "quebrada"},
-                "susques": {"kmMin": 420, "kmMax": 470, "tipo": "puna"},
-                "salta": {"kmMin": 240, "kmMax": 280, "tipo": "externo"},
-            },
-            "san pedro": {
-                "san pedro": {"kmMin": 2, "kmMax": 12, "tipo": "urbano"},
-                "la mendieta": {"kmMin": 20, "kmMax": 40, "tipo": "ramal"},
-                "rodeito": {"kmMin": 30, "kmMax": 50, "tipo": "ramal"},
-                "chalican": {"kmMin": 50, "kmMax": 80, "tipo": "ramal"},
-                "ledesma": {"kmMin": 60, "kmMax": 90, "tipo": "ramal"},
-                "libertador gral. san martin": {"kmMin": 60, "kmMax": 90, "tipo": "ramal"},
-                "libertador gral san martin": {"kmMin": 60, "kmMax": 90, "tipo": "ramal"},
-                "yuto": {"kmMin": 100, "kmMax": 130, "tipo": "ramal"},
-                "santa clara": {"kmMin": 120, "kmMax": 150, "tipo": "ramal"},
-                "el talar": {"kmMin": 180, "kmMax": 220, "tipo": "ramal"},
-                "palma sola": {"kmMin": 160, "kmMax": 210, "tipo": "ramal"},
-                "san salvador de jujuy": {"kmMin": 130, "kmMax": 150, "tipo": "interurbano"},
-                "centro": {"kmMin": 130, "kmMax": 150, "tipo": "interurbano"},
-            },
-        }
-
-        def normalizeDestino(destino):
-            txt = _normalize_text(destino or "")
-            txt = txt.replace(",", " ").strip()
-            txt = " ".join(txt.split())
-            alias = {
-                "san salvador": "centro",
-                "san salvador de jujuy": "centro",
-                "centro": "centro",
-                "palpala": "palpala",
-                "chalican": "chalican",
-            }
-            return alias.get(txt, txt)
-
-        def normalizeOrigen(origen):
-            txt = _normalize_text(origen or "")
-            if txt in {"san pedro", "s. pedro"}:
-                return "san pedro"
-            return "san salvador de jujuy"
-
-        def obtenerOrigenVehiculo(vehiculo):
-            pat = (_normalize_text((vehiculo or {}).get("patente") or "") or "").replace(" ", "")
-            cod = (_normalize_text((vehiculo or {}).get("codigo_interno") or "") or "").replace(" ", "")
-            if pat == "ae856ge" or cod in {"g-02", "g02"}:
-                return "san pedro"
-            if pat in {"ae856gd", "af277oa", "ag846fr", "ab946vk"} or cod in {"g-01", "g01", "g-03", "g03", "g-04", "g04", "n-01", "n01"}:
-                return "san salvador de jujuy"
-            return "san salvador de jujuy"
-
-        def obtenerReferenciaKm(origen, destino):
-            okey = normalizeOrigen(origen)
-            dkey = normalizeDestino(destino)
-            return (REFERENCIAS_KM.get(okey) or {}).get(dkey)
-
-        def evaluarKm(difKm, origen, destino):
-            ref = obtenerReferenciaKm(origen, destino)
-            if not ref:
+        def evaluarKm(difKm, ref_row):
+            if not ref_row:
                 return ("Sin ref", "km-none", "Sin referencia para origen/destino")
-            km_min = float(ref.get("kmMin") or 0)
-            km_max = float(ref.get("kmMax") or 0)
+            try:
+                km_min = float(ref_row.get("km_ref_min") or 0)
+                km_max = float(ref_row.get("km_ref_max") or 0)
+            except Exception:
+                km_min = 0.0
+                km_max = 0.0
+            if km_min <= 0 or km_max <= 0:
+                return ("Sin ref", "km-none", "Sin referencia para origen/destino")
             if difKm < km_min:
                 return ("Bajo", "km-low", f"ref {km_min:.1f}-{km_max:.1f} km")
             if difKm > km_max:
                 return ("Alto", "km-high", f"ref {km_min:.1f}-{km_max:.1f} km")
             return ("Razonable", "km-ok", f"ref {km_min:.1f}-{km_max:.1f} km")
 
+        did_insert_ref = False
         for v in viajes:
             v["km_check_label"] = "-"
             v["km_check_class"] = "km-none"
@@ -1077,12 +1363,69 @@ def register_vehiculos_control(bp, get_db_connection, ensure_cols, rebuild_event
             v["km_ref"] = None
             v["km_ref_n"] = 0
             v["km_ref_txt"] = "ref --"
+            v["km_ref_hint"] = ""
+            v["destino_normalizado"] = ""
+            v["zona_operativa"] = ""
+
+            destino = (v.get("destino_nombre") or "").strip()
+            base_key = _infer_trip_base(v)
+            dest_norm = normalize_destino(destino)
+            ref_row = None
+            fuente = "tabla"
+
+            if dest_norm["key"]:
+                v["destino_normalizado"] = dest_norm["canon"]
+                ref_row = _lookup_destino_ref(conn, base_key, dest_norm["key"])
+                if not ref_row:
+                    fuente = "sugerida"
+                    zona, km_min, km_max = _guess_ref_range(base_key, dest_norm["key"])
+                    ref_row = {
+                        "destino_normalizado": dest_norm["canon"],
+                        "zona_operativa": zona,
+                        "km_ref_min": km_min,
+                        "km_ref_max": km_max,
+                        "base_operativa": normalize_base_operativa(base_key),
+                    }
+                    try:
+                        conn.execute(
+                            """
+                            INSERT OR IGNORE INTO destinos_referencia
+                            (destino_original, destino_normalizado, destino_key, zona_operativa, km_ref_min, km_ref_max, base_operativa, activo)
+                            VALUES (?,?,?,?,?,?,?,1)
+                            """,
+                            (destino, dest_norm["canon"], dest_norm["key"], zona, km_min, km_max, normalize_base_operativa(base_key)),
+                        )
+                        did_insert_ref = True
+                    except Exception:
+                        pass
+
+                try:
+                    km_min = float(ref_row.get("km_ref_min") or 0)
+                    km_max = float(ref_row.get("km_ref_max") or 0)
+                except Exception:
+                    km_min = 0.0
+                    km_max = 0.0
+
+                zona_txt = str(ref_row.get("zona_operativa") or "").strip()
+                v["zona_operativa"] = zona_txt
+                if km_min > 0 and km_max > 0:
+                    v["km_ref"] = (km_min + km_max) / 2.0
+                    v["km_ref_txt"] = f"ref {km_min:.1f}-{km_max:.1f} km"
+                    parts = [
+                        f"Base: {normalize_base_operativa(base_key).upper()}",
+                        f"Destino norm: {dest_norm['canon']}",
+                    ]
+                    if zona_txt:
+                        parts.append(f"Zona: {zona_txt}")
+                    parts.append(v["km_ref_txt"])
+                    if fuente != "tabla":
+                        parts.append("Fuente: sugerida")
+                    v["km_ref_hint"] = " · ".join(parts)
 
             estado_u = (v.get("estado") or "").strip().upper()
             if estado_u != "CERRADO":
                 continue
 
-            destino = (v.get("destino_nombre") or "").strip()
             if not destino:
                 v["km_check_label"] = "Sin destino"
                 continue
@@ -1096,18 +1439,23 @@ def register_vehiculos_control(bp, get_db_connection, ensure_cols, rebuild_event
                 v["km_check_label"] = "Sin km"
                 continue
 
-            origen = obtenerOrigenVehiculo(v)
-            label, css, hint = evaluarKm(km_real, origen, destino)
-            ref = obtenerReferenciaKm(origen, destino)
+            label, css, _ = evaluarKm(km_real, ref_row)
             v["km_check_label"] = label
             v["km_check_class"] = css
-            v["km_check_hint"] = hint
-            if ref:
-                km_min = float(ref.get("kmMin") or 0)
-                km_max = float(ref.get("kmMax") or 0)
-                v["km_ref"] = (km_min + km_max) / 2.0
-                v["km_ref_n"] = 0
-                v["km_ref_txt"] = f"ref {km_min:.1f}-{km_max:.1f} km"
+            hint_parts = [f"Real: {km_real:.1f} km"]
+            if v.get("km_ref_txt") and v["km_ref_txt"] != "ref --":
+                hint_parts.append(v["km_ref_txt"])
+            if v.get("destino_normalizado"):
+                hint_parts.append(f"Destino norm: {v['destino_normalizado']}")
+            hint_parts.append(f"Base: {normalize_base_operativa(base_key).upper()}")
+            if v.get("zona_operativa"):
+                hint_parts.append(f"Zona: {v['zona_operativa']}")
+            if v.get("km_ref_hint") and "Fuente: sugerida" in v["km_ref_hint"]:
+                hint_parts.append("Fuente: sugerida")
+            v["km_check_hint"] = " · ".join(hint_parts) if label != "Sin ref" else ("Sin referencia para origen/destino · " + " · ".join(hint_parts))
+
+        if did_insert_ref:
+            conn.commit()
 
         kpi_sql = """
             SELECT
