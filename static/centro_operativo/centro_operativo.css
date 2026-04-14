@@ -92,8 +92,11 @@
   border-color: #d6e6ff;
 }
 .control-shell .kpi.pending-old {
-  background: linear-gradient(180deg, #fffaf3 0%, #fff1df 100%);
-  border-color: #f7d9b6;
+  background: linear-gradient(180deg, #f3fef7 0%, #ecfdf5 100%);
+  border-color: #bbf7d0;
+}
+.control-shell .kpi.pending-old .k-val {
+  color: #166534;
 }
 .control-shell .kpi.assign-open {
   background: linear-gradient(180deg, #fffdf2 0%, #fff3cc 100%);
@@ -102,6 +105,48 @@
 .control-shell .kpi.matias-open {
   background: linear-gradient(180deg, #fdf5fb 0%, #fde7f3 100%);
   border-color: #f6b4d8;
+}
+.control-shell .kpi .k-sub {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  color: rgba(53, 90, 137, .88);
+}
+.control-shell .kpi .k-sub span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(203, 213, 225, .75);
+  background: rgba(255, 255, 255, .78);
+}
+.control-shell .kpi .k-sub strong {
+  font-weight: 900;
+  color: rgba(15, 23, 42, .92);
+}
+.control-shell .kpi.kpi-click {
+  cursor: pointer;
+}
+.control-shell .kpi.kpi-click:focus-visible {
+  outline: 3px solid rgba(59, 130, 246, 0.28);
+  outline-offset: 2px;
+}
+.control-shell .kpi.kpi-click:hover {
+  transform: translateY(-1px);
+  transition: transform .14s ease;
+}
+
+/* Recordatorios panel */
+.control-shell .nvd-split-block.split-rec {
+  border-color: #e5d5ff;
+  background: linear-gradient(180deg, #ffffff 0%, #faf5ff 100%);
+}
+.control-shell .nvd-split-head.rec .title {
+  color: #6d28d9;
 }
 
 /* Gestión: tabs más prolijas (segmentadas) */

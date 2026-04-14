@@ -965,6 +965,7 @@
   .gestion-panels[data-active-tab="mantenimiento"] .gestion-panel[data-panel="mantenimiento"] { display: block; }
   .gestion-panels[data-active-tab="choferes"] .gestion-panel[data-panel="choferes"] { display: block; }
   .gestion-panels[data-active-tab="administrativo"] .gestion-panel[data-panel="administrativo"] { display: block; }
+  .gestion-panels[data-active-tab="recordatorios"] .gestion-panel[data-panel="recordatorios"] { display: block; }
 
   .gestion-modal {
     position: fixed;
@@ -1838,18 +1839,34 @@
       <div class="kpi pending-old">
         <div class="k-label">Mantenimiento</div>
         <div class="k-val" id="kpiPendPrev">0</div>
+        <div class="k-sub" aria-label="Detalle mantenimiento">
+          <span>TD: <strong id="kpiMantTd">0</strong></span>
+          <span>TP: <strong id="kpiMantTp">0</strong></span>
+        </div>
       </div>
       <div class="kpi today-open">
         <div class="k-label">Choferes</div>
         <div class="k-val" id="kpiPendDia">0</div>
+        <div class="k-sub" aria-label="Detalle choferes">
+          <span>TD: <strong id="kpiChofTd">0</strong></span>
+          <span>TP: <strong id="kpiChofTp">0</strong></span>
+        </div>
       </div>
       <div class="kpi assign-open">
         <div class="k-label">Pendientes totales</div>
         <div class="k-val" id="kpiAsigOpen">0</div>
+        <div class="k-sub" aria-label="Detalle pendientes totales">
+          <span>TD: <strong id="kpiTotTd">0</strong></span>
+          <span>TP: <strong id="kpiTotTp">0</strong></span>
+        </div>
       </div>
-      <div class="kpi matias-open">
-        <div class="k-label" id="kpiPendMatiasLabel">Recordatorios</div>
+      <div id="kpiCardRecord" class="kpi matias-open kpi-click" role="button" tabindex="0" title="Ver recordatorios">
+        <div class="k-label" id="kpiPendMatiasLabel">Recordatorios Matias</div>
         <div class="k-val" id="kpiPendMatias">0</div>
+        <div class="k-sub" aria-label="Detalle recordatorios">
+          <span>TD: <strong id="kpiRecTd">0</strong></span>
+          <span>TP: <strong id="kpiRecTp">0</strong></span>
+        </div>
       </div>
     </div>
   </article>
@@ -1974,6 +1991,9 @@
         <button type="button" class="gestion-rubro-tab" data-rubro="administrativo" aria-selected="false">
           Administrativo <span id="badgeAdministrativo" class="tab-badge">0</span>
         </button>
+        <button type="button" class="gestion-rubro-tab" data-rubro="recordatorios" aria-selected="false">
+          Recordatorios <span id="badgeRecordatorios" class="tab-badge">0</span>
+        </button>
       </div>
 
       <details id="gestionFiltrosBox" class="gestion-filtros-box">
@@ -2087,6 +2107,29 @@
             </thead>
             <tbody id="nvdBodySolic">
               <tr><td colspan="8" style="color:#6f86a5;">Sin solicitudes cargadas.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="nvd-split-block split-rec gestion-panel" data-panel="recordatorios">
+        <div class="nvd-split-head rec">
+          <span class="title">Recordatorios</span>
+          <span class="sub">Pendientes personales / autoasignaciones para seguimiento.</span>
+        </div>
+        <div class="table-wrap table-wrap-full">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Subtipo</th>
+                <th>Detalle</th>
+                <th>Estado</th>
+                <th>Accion</th>
+              </tr>
+            </thead>
+            <tbody id="nvdBodyRecord">
+              <tr><td colspan="5" style="color:#6f86a5;">Sin recordatorios cargados.</td></tr>
             </tbody>
           </table>
         </div>
@@ -2322,7 +2365,7 @@
     var RAW_SOLIC = [];
     var RESUMEN_BASE = { total: 0, informado: 0, en_proceso: 0, resuelto: 0 };
     var AGENTE_GRUPO_FILTRO_ACTIVO = "";
-    var GESTION_RUBRO_ACTIVO = "mantenimiento"; // mantenimiento | choferes | administrativo
+    var GESTION_RUBRO_ACTIVO = "mantenimiento"; // mantenimiento | choferes | administrativo | recordatorios
     var GESTION_FILTRO_SEDE = "";
     var GESTION_FILTRO_ESTADO = "";
     var GESTION_FILTRO_PRIORIDAD = "";
@@ -2519,6 +2562,7 @@
       badgeMantenimiento: document.getElementById("badgeMantenimiento"),
       badgeChoferes: document.getElementById("badgeChoferes"),
       badgeAdministrativo: document.getElementById("badgeAdministrativo"),
+      badgeRecordatorios: document.getElementById("badgeRecordatorios"),
       filtroSede: document.getElementById("gestionFiltroSede"),
       filtroEstado: document.getElementById("gestionFiltroEstado"),
       filtroPrioridad: document.getElementById("gestionFiltroPrioridad"),
@@ -2529,6 +2573,7 @@
       bodyDia: document.getElementById("nvdBodyDia"),
       bodyChofer: document.getElementById("nvdBodyChofer"),
       bodySolic: document.getElementById("nvdBodySolic"),
+      bodyRecord: document.getElementById("nvdBodyRecord"),
       bodyPend: document.getElementById("nvdBodyPend"),
       kTotal: document.getElementById("kpiTotal"),
       kInfo: document.getElementById("kpiInfo"),
@@ -2539,6 +2584,15 @@
       kAsigOpen: document.getElementById("kpiAsigOpen"),
       kPendMatiasLabel: document.getElementById("kpiPendMatiasLabel"),
       kPendMatias: document.getElementById("kpiPendMatias"),
+      kMantTd: document.getElementById("kpiMantTd"),
+      kMantTp: document.getElementById("kpiMantTp"),
+      kChofTd: document.getElementById("kpiChofTd"),
+      kChofTp: document.getElementById("kpiChofTp"),
+      kTotTd: document.getElementById("kpiTotTd"),
+      kTotTp: document.getElementById("kpiTotTp"),
+      kRecTd: document.getElementById("kpiRecTd"),
+      kRecTp: document.getElementById("kpiRecTp"),
+      kpiCardRecord: document.getElementById("kpiCardRecord"),
       vehWrap: document.getElementById("vehiculosWrap"),
       alertas: document.getElementById("alertasList"),
       alertasCard: document.getElementById("alertasCard"),
@@ -2694,7 +2748,7 @@
 
     function setGestionRubro(nextKey) {
       var key = String(nextKey || "").trim();
-      if (["mantenimiento", "choferes", "administrativo"].indexOf(key) < 0) key = "mantenimiento";
+      if (["mantenimiento", "choferes", "administrativo", "recordatorios"].indexOf(key) < 0) key = "mantenimiento";
       GESTION_RUBRO_ACTIVO = key;
       if (el.splitWrap) el.splitWrap.setAttribute("data-active-tab", key);
       if (el.rubroTabs) {
@@ -3441,6 +3495,30 @@
       return true;
     }
 
+    function filaPasaFiltrosSinAgente(r) {
+      if (GESTION_FILTRO_SEDE && sedeFiltroValor(r) !== String(GESTION_FILTRO_SEDE).toUpperCase()) return false;
+      if (!filaPasaFiltroEstado(r)) return false;
+      if (!filaPasaFiltroPrioridad(r)) return false;
+      return true;
+    }
+
+    function actorNormName() {
+      var n = normTxt(AGENTE_ACTUAL || "");
+      if (!n && IS_MATIAS) n = "matias calderari";
+      return n;
+    }
+
+    function filaEsRecordatorio(r) {
+      var meNorm = actorNormName();
+      if (!meNorm) return false;
+      var tieneTarea = !!(r && String((r && r.tarea_asignada) || "").trim());
+      if (!tieneTarea) return false;
+      if (!filaPerteneceAgente(r, meNorm)) return false;
+      if (filaPerteneceGrupo(r, "mantenimiento")) return false;
+      if (filaPerteneceGrupo(r, "choferes")) return false;
+      return true;
+    }
+
     function agentesParaGrupo(lista) {
       var src = Array.isArray(lista) ? lista : [];
       if (!AGENTE_GRUPO_FILTRO_ACTIVO) return src;
@@ -3570,8 +3648,9 @@
     }
 
     function renderKpisOperativos() {
-      var tasksAll = aplicarFiltroAgente(RAW_TASK);
-      var solicAll = aplicarFiltroAgente(RAW_SOLIC);
+      var fechaSel = String((el.fecha && el.fecha.value) || "").trim();
+      var tasksAll = Array.isArray(RAW_TASK) ? RAW_TASK : [];
+      var solicAll = Array.isArray(RAW_SOLIC) ? RAW_SOLIC : [];
 
       function tareaAbierta(r) {
         var est = normTxt((r && r.tarea_estado) || "");
@@ -3591,30 +3670,54 @@
         return "administrativo";
       }
 
+      function splitTdTp(rows) {
+        var td = 0;
+        var tp = 0;
+        (rows || []).forEach(function (r) {
+          var f = String((r && r.fecha) || "").trim();
+          if (!f || !fechaSel) {
+            td += 1;
+            return;
+          }
+          if (f === fechaSel) td += 1;
+          else tp += 1;
+        });
+        return { td: td, tp: tp, total: td + tp };
+      }
+
       var openTasks = tasksAll.filter(tareaAbierta);
       var openSolic = solicAll.filter(solicitudAbierta);
 
-      var countMant = openTasks.filter(function (r) { return filaPerteneceGrupo(r, "mantenimiento"); }).length +
-        openSolic.filter(function (r) { return solicitudRubro(r) === "mantenimiento"; }).length;
+      var mantRows = openTasks.filter(function (r) { return filaPerteneceGrupo(r, "mantenimiento"); })
+        .concat(openSolic.filter(function (r) { return solicitudRubro(r) === "mantenimiento"; }));
+      var chofRows = openTasks.filter(function (r) { return filaPerteneceGrupo(r, "choferes"); })
+        .concat(openSolic.filter(function (r) { return solicitudRubro(r) === "choferes"; }));
+      var totRows = openTasks.concat(openSolic);
+      var recRows = openTasks.filter(filaEsRecordatorio);
 
-      var countChofer = openTasks.filter(function (r) { return filaPerteneceGrupo(r, "choferes"); }).length +
-        openSolic.filter(function (r) { return solicitudRubro(r) === "choferes"; }).length;
+      var mant = splitTdTp(mantRows);
+      var chof = splitTdTp(chofRows);
+      var tot = splitTdTp(totRows);
+      var rec = splitTdTp(recRows);
 
-      var countTotal = openTasks.length + openSolic.length;
+      if (el.kPendPrev) el.kPendPrev.textContent = String(mant.total);
+      if (el.kPendDia) el.kPendDia.textContent = String(chof.total);
+      if (el.kAsigOpen) el.kAsigOpen.textContent = String(tot.total);
+      if (el.kPendMatias) el.kPendMatias.textContent = String(rec.total);
 
-      var meNorm = normTxt(AGENTE_ACTUAL || "");
-      if (!meNorm && IS_MATIAS) meNorm = "matias calderari";
-      var recLabel = (IS_MATIAS || meNorm === "matias calderari") ? "Recordatorios Matias" : "Mis recordatorios";
-      var countRec = 0;
-      if (meNorm) {
-        countRec = openTasks.concat(openSolic).filter(function (r) { return filaPerteneceAgente(r, meNorm); }).length;
+      if (el.kMantTd) el.kMantTd.textContent = String(mant.td);
+      if (el.kMantTp) el.kMantTp.textContent = String(mant.tp);
+      if (el.kChofTd) el.kChofTd.textContent = String(chof.td);
+      if (el.kChofTp) el.kChofTp.textContent = String(chof.tp);
+      if (el.kTotTd) el.kTotTd.textContent = String(tot.td);
+      if (el.kTotTp) el.kTotTp.textContent = String(tot.tp);
+      if (el.kRecTd) el.kRecTd.textContent = String(rec.td);
+      if (el.kRecTp) el.kRecTp.textContent = String(rec.tp);
+
+      if (el.kPendMatiasLabel) {
+        var meNorm = actorNormName();
+        el.kPendMatiasLabel.textContent = (meNorm === "matias calderari" || IS_MATIAS) ? "Recordatorios Matias" : "Mis recordatorios";
       }
-
-      if (el.kPendPrev) el.kPendPrev.textContent = String(countMant);
-      if (el.kPendDia) el.kPendDia.textContent = String(countChofer);
-      if (el.kAsigOpen) el.kAsigOpen.textContent = String(countTotal);
-      if (el.kPendMatias) el.kPendMatias.textContent = String(countRec);
-      if (el.kPendMatiasLabel) el.kPendMatiasLabel.textContent = recLabel;
     }
 
     function renderVehiculos(items) {
@@ -4496,6 +4599,29 @@
       }).join("");
     }
 
+    function renderRecordatoriosRows(target, items) {
+      if (!target) return;
+      var rows = Array.isArray(items) ? items : [];
+      if (!rows.length) {
+        target.innerHTML = '<tr><td colspan="5" style="color:#6f86a5;">Sin recordatorios cargados.</td></tr>';
+        return;
+      }
+      target.innerHTML = rows.map(function (r) {
+        var st = String((r && r.subtipo) || "-").trim() || "-";
+        var detalle = String((r && r.tarea_asignada) || (r && r.observacion) || "-").trim() || "-";
+        var est = String((r && r.tarea_estado) || (r && r.estado) || "Pendiente").trim() || "Pendiente";
+        return (
+          "<tr class=\"tipo-row tipo-tarea\">" +
+            "<td>" + (r.fecha || "-") + "</td>" +
+            "<td>" + escapeHtml(st) + "</td>" +
+            "<td><div class=\"cell-trunc\" title=\"" + escapeHtml(detalle) + "\">" + escapeHtml(detalle) + "</div></td>" +
+            '<td><span class="tarea-pill">' + escapeHtml(est) + "</span></td>" +
+            '<td style="white-space:nowrap;">' + makeRowActions(r) + "</td>" +
+          "</tr>"
+        );
+      }).join("");
+    }
+
     function renderSplitRows(payload) {
       var p = payload || {};
       RAW_DIA = Array.isArray(p.pendientes_dia) ? p.pendientes_dia.slice() : [];
@@ -4514,6 +4640,7 @@
       var tasks = aplicarFiltroAgente(tareasMantenimientoBase);
       var tasksChoferes = aplicarFiltroAgente(tareasChoferesBase);
       var solicitudes = aplicarFiltroAgente(RAW_SOLIC);
+      var recordatorios = tasksBase.filter(filaPasaFiltrosSinAgente).filter(filaEsRecordatorio);
       ITEM_INDEX = {};
       tasksBase.concat(RAW_SOLIC).forEach(function (r) {
         ITEM_INDEX[String(r.id || "")] = r;
@@ -4521,10 +4648,12 @@
       renderTareasRows(el.bodyDia, tasks);
       if (el.bodyChofer) renderChoferesRows(el.bodyChofer, tasksChoferes);
       if (el.bodySolic) renderSolicitudesRows(el.bodySolic, solicitudes);
+      if (el.bodyRecord) renderRecordatoriosRows(el.bodyRecord, recordatorios);
       if (el.bodyPend) el.bodyPend.innerHTML = '<tr><td colspan="10" style="color:#6f86a5;">Sin pendientes acumulados.</td></tr>';
       if (el.badgeMantenimiento) el.badgeMantenimiento.textContent = String(tasks.length);
       if (el.badgeChoferes) el.badgeChoferes.textContent = String(tasksChoferes.length);
       if (el.badgeAdministrativo) el.badgeAdministrativo.textContent = String(solicitudes.length);
+      if (el.badgeRecordatorios) el.badgeRecordatorios.textContent = String(recordatorios.length);
       renderResumenSegunFiltro();
     }
 
@@ -5128,6 +5257,26 @@
         closeGestionModal();
       }
     });
+
+    function openRecordatoriosTab() {
+      setGestionRubro("recordatorios");
+      try {
+        var card = document.querySelector(".card-operativa");
+        if (card) card.scrollIntoView({ behavior: "smooth", block: "start" });
+      } catch (_e) {
+        // noop
+      }
+    }
+
+    if (el.kpiCardRecord) {
+      el.kpiCardRecord.addEventListener("click", openRecordatoriosTab);
+      el.kpiCardRecord.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter" || ev.key === " ") {
+          ev.preventDefault();
+          openRecordatoriosTab();
+        }
+      });
+    }
     if (el.btnCargarTop) {
       el.btnCargarTop.addEventListener("click", function () {
         toggleCarga(true);
