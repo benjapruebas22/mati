@@ -65,6 +65,9 @@
 }
 
 /* KPIs: pastel + misma altura */
+.control-shell .card-resumen .kpi-grid.resumen-base {
+  display: none;
+}
 .control-shell .card-resumen .kpi-grid.operativa {
   gap: 12px;
 }
@@ -231,16 +234,26 @@
 .control-shell .tbl tbody tr:hover {
   background: #f2f7ff;
 }
-.control-shell .tbl .btn-inline.row-gestion:not(.turn-tu-respuesta):not(.turn-esperando) {
+.control-shell .tbl .btn-inline.row-gestion:not(.turn-tu-respuesta):not(.turn-esperando):not(.turn-seguimiento) {
   border-color: #bfdbfe;
   background: #eff6ff;
   color: #1d4ed8;
   font-weight: 900;
   padding: 4px 10px;
 }
-.control-shell .tbl .btn-inline.row-gestion:not(.turn-tu-respuesta):not(.turn-esperando):hover {
+.control-shell .tbl .btn-inline.row-gestion:not(.turn-tu-respuesta):not(.turn-esperando):not(.turn-seguimiento):hover {
   background: #dbeafe;
   border-color: #93c5fd;
+}
+.control-shell .btn-inline.row-gestion.turn-seguimiento {
+  border-color: #fcd34d;
+  background: #fffbeb;
+  color: #92400e;
+  font-weight: 900;
+}
+.control-shell .btn-inline.row-gestion.turn-seguimiento:hover {
+  background: #fef3c7;
+  border-color: #fbbf24;
 }
 /* Mostrar todo (sin barra horizontal): permitir múltiples líneas */
 .control-shell .cell-trunc {

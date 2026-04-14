@@ -2032,6 +2032,7 @@
     <div class="pend-respuesta-legend" style="margin-top:-2px;">
       <div class="aux-row" style="padding-top:0;">
         <span class="btn-inline row-gestion turn-tu-respuesta" style="cursor:default;">Rojo: te toca responder</span>
+        <span class="btn-inline row-gestion turn-seguimiento" style="cursor:default;">Amarillo: en seguimiento</span>
         <span class="btn-inline row-gestion turn-esperando" style="cursor:default;">Verde: esperando respuesta</span>
       </div>
     </div>
@@ -2406,6 +2407,7 @@
     var IS_LUCIANA = false;
     var CAN_EDIT_AGENTE = false;
     var AGENTE_ACTUAL = "";
+    var ACTOR_USERNAME = "";
     var GESTION_OPEN_ID = 0;
     var GESTION_DATA = null;
     var GESTION_FOTOS = [];
@@ -3511,9 +3513,21 @@
     function filaEsRecordatorio(r) {
       var meNorm = actorNormName();
       if (!meNorm) return false;
+      var tipo = normTxt((r && r.tipo) || "");
+      var subtipo = normTxt((r && r.subtipo) || "");
+      var marked = (tipo.indexOf("recordatorio") >= 0) || (subtipo.indexOf("recordatorio") >= 0);
       var tieneTarea = !!(r && String((r && r.tarea_asignada) || "").trim());
-      if (!tieneTarea) return false;
       if (!filaPerteneceAgente(r, meNorm)) return false;
+      if (tieneTarea) {
+        var byUserName = normTxt(String((r && r.tarea_asignado_por_username) || ""));
+        var meUserName = normTxt(String(ACTOR_USERNAME || ""));
+        var byUser = !!(byUserName && meUserName && byUserName === meUserName);
+        var byName = normTxt(String((r && r.tarea_asignado_por) || "")) === meNorm;
+        var selfAssigned = (byUser || byName);
+        if (!marked && !selfAssigned) return false;
+      } else {
+        if (!marked) return false;
+      }
       if (filaPerteneceGrupo(r, "mantenimiento")) return false;
       if (filaPerteneceGrupo(r, "choferes")) return false;
       return true;
@@ -3680,7 +3694,8 @@
             return;
           }
           if (f === fechaSel) td += 1;
-          else tp += 1;
+          else if (f < fechaSel) tp += 1;
+          else td += 1;
         });
         return { td: td, tp: tp, total: td + tp };
       }
@@ -3693,7 +3708,7 @@
       var chofRows = openTasks.filter(function (r) { return filaPerteneceGrupo(r, "choferes"); })
         .concat(openSolic.filter(function (r) { return solicitudRubro(r) === "choferes"; }));
       var totRows = openTasks.concat(openSolic);
-      var recRows = openTasks.filter(filaEsRecordatorio);
+      var recRows = openTasks.concat(openSolic).filter(filaEsRecordatorio);
 
       var mant = splitTdTp(mantRows);
       var chof = splitTdTp(chofRows);
@@ -4481,6 +4496,13 @@
           extraCls = " turn-esperando";
           label = "Esperando";
           tip = "Esperando respuesta del otro";
+        } else {
+          var estT = normTxt((r && r.tarea_estado) || "");
+          var enSeguimiento = (estT === "en curso" || estT === "en proceso") || (estadoClass((r && r.estado) || "") === "estado-en-proceso");
+          if (enSeguimiento) {
+            extraCls = " turn-seguimiento";
+            tip = "En seguimiento";
+          }
         }
         return '<button type="button" class="btn-inline row-gestion' + extraCls + '" data-id="' + r.id + '" title="' + escapeHtml(tip) + '">' + escapeHtml(label) + "</button>";
       }
@@ -4622,6 +4644,20 @@
       }).join("");
     }
 
+    function ordenarTpTd(rows) {
+      var arr = Array.isArray(rows) ? rows.slice() : [];
+      var fechaSel = String((el.fecha && el.fecha.value) || "").trim();
+      if (!fechaSel) return arr;
+      var tp = [];
+      var td = [];
+      arr.forEach(function (r) {
+        var f = String((r && r.fecha) || "").trim();
+        if (f && f < fechaSel) tp.push(r);
+        else td.push(r);
+      });
+      return tp.concat(td);
+    }
+
     function renderSplitRows(payload) {
       var p = payload || {};
       RAW_DIA = Array.isArray(p.pendientes_dia) ? p.pendientes_dia.slice() : [];
@@ -4637,10 +4673,10 @@
       RAW_TASK = tasksBase.slice();
       var tareasMantenimientoBase = tasksBase.filter(function (r) { return filaPerteneceGrupo(r, "mantenimiento"); });
       var tareasChoferesBase = tasksBase.filter(function (r) { return filaPerteneceGrupo(r, "choferes"); });
-      var tasks = aplicarFiltroAgente(tareasMantenimientoBase);
-      var tasksChoferes = aplicarFiltroAgente(tareasChoferesBase);
-      var solicitudes = aplicarFiltroAgente(RAW_SOLIC);
-      var recordatorios = tasksBase.filter(filaPasaFiltrosSinAgente).filter(filaEsRecordatorio);
+      var tasks = ordenarTpTd(aplicarFiltroAgente(tareasMantenimientoBase));
+      var tasksChoferes = ordenarTpTd(aplicarFiltroAgente(tareasChoferesBase));
+      var solicitudes = ordenarTpTd(aplicarFiltroAgente(RAW_SOLIC));
+      var recordatorios = ordenarTpTd(tasksBase.concat(RAW_SOLIC).filter(filaPasaFiltrosSinAgente).filter(filaEsRecordatorio));
       ITEM_INDEX = {};
       tasksBase.concat(RAW_SOLIC).forEach(function (r) {
         ITEM_INDEX[String(r.id || "")] = r;
@@ -4889,6 +4925,7 @@
           IS_LUCIANA = !!d.is_luciana;
           CAN_EDIT_AGENTE = !!d.puede_editar_agente;
           AGENTE_ACTUAL = normalizarAgente(d.agente_actual || "");
+          ACTOR_USERNAME = String(((d.usuario_actual || {}).username) || "").trim();
           var agentes = applyAgentePolicy(d.agentes || [], d.agente_actual || "");
           AGENTES_ASSIGN = Array.isArray(agentes) ? agentes.slice() : [];
           if (el.modo) {
