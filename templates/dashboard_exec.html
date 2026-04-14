@@ -1835,20 +1835,20 @@
     </div>
 
     <div class="kpi-grid operativa">
-      <div class="kpi today-open">
-        <div class="k-label">Pendientes totales</div>
-        <div class="k-val" id="kpiPendDia">0</div>
-      </div>
       <div class="kpi pending-old">
-        <div class="k-label">Pendientes criticos (tu respuesta)</div>
+        <div class="k-label">Mantenimiento</div>
         <div class="k-val" id="kpiPendPrev">0</div>
       </div>
+      <div class="kpi today-open">
+        <div class="k-label">Choferes</div>
+        <div class="k-val" id="kpiPendDia">0</div>
+      </div>
       <div class="kpi assign-open">
-        <div class="k-label">En curso / en gestion</div>
+        <div class="k-label">Pendientes totales</div>
         <div class="k-val" id="kpiAsigOpen">0</div>
       </div>
       <div class="kpi matias-open">
-        <div class="k-label" id="kpiPendMatiasLabel">Pendientes de Matias</div>
+        <div class="k-label" id="kpiPendMatiasLabel">Recordatorios</div>
         <div class="k-val" id="kpiPendMatias">0</div>
       </div>
     </div>
@@ -2362,6 +2362,7 @@
     var IS_FRANCISCO = false;
     var IS_LUCIANA = false;
     var CAN_EDIT_AGENTE = false;
+    var AGENTE_ACTUAL = "";
     var GESTION_OPEN_ID = 0;
     var GESTION_DATA = null;
     var GESTION_FOTOS = [];
@@ -3569,27 +3570,51 @@
     }
 
     function renderKpisOperativos() {
-      var tasks = aplicarFiltroAgente(RAW_TASK);
-      var solic = aplicarFiltroAgente(RAW_SOLIC);
-      var total = tasks.length + solic.length;
-      var criticos = tasks.concat(solic).filter(function (r) {
-        return String((r && r.gestion_turno) || "").trim() === "tu_respuesta";
-      }).length;
-      var enCurso = 0;
-      tasks.forEach(function (r) {
+      var tasksAll = aplicarFiltroAgente(RAW_TASK);
+      var solicAll = aplicarFiltroAgente(RAW_SOLIC);
+
+      function tareaAbierta(r) {
         var est = normTxt((r && r.tarea_estado) || "");
-        if (est === "en curso" || est === "en proceso") enCurso += 1;
-      });
-      solic.forEach(function (r) {
-        if (estadoClass((r && r.estado) || "") === "estado-en-proceso") enCurso += 1;
-      });
-      if (el.kPendDia) el.kPendDia.textContent = String(total);
-      if (el.kPendPrev) el.kPendPrev.textContent = String(criticos);
-      if (el.kAsigOpen) el.kAsigOpen.textContent = String(enCurso);
-      if (el.kPendMatias) el.kPendMatias.textContent = String(solic.length);
-      if (el.kPendMatiasLabel) {
-        el.kPendMatiasLabel.textContent = IS_MATIAS ? "Pendientes de Matias" : "Mis solicitudes abiertas";
+        if (!est) return true;
+        if (est === "completada" || est === "finalizada" || est === "resuelto" || est === "cerrado") return false;
+        return true;
       }
+
+      function solicitudAbierta(r) {
+        return estadoClass((r && r.estado) || "") !== "estado-resuelto";
+      }
+
+      function solicitudRubro(r) {
+        var cls = tipoClass((r && r.tipo) || "");
+        if (cls === "tipo-mantenimiento") return "mantenimiento";
+        if (cls === "tipo-coffee" || cls === "tipo-vehiculos") return "choferes";
+        return "administrativo";
+      }
+
+      var openTasks = tasksAll.filter(tareaAbierta);
+      var openSolic = solicAll.filter(solicitudAbierta);
+
+      var countMant = openTasks.filter(function (r) { return filaPerteneceGrupo(r, "mantenimiento"); }).length +
+        openSolic.filter(function (r) { return solicitudRubro(r) === "mantenimiento"; }).length;
+
+      var countChofer = openTasks.filter(function (r) { return filaPerteneceGrupo(r, "choferes"); }).length +
+        openSolic.filter(function (r) { return solicitudRubro(r) === "choferes"; }).length;
+
+      var countTotal = openTasks.length + openSolic.length;
+
+      var meNorm = normTxt(AGENTE_ACTUAL || "");
+      if (!meNorm && IS_MATIAS) meNorm = "matias calderari";
+      var recLabel = (IS_MATIAS || meNorm === "matias calderari") ? "Recordatorios Matias" : "Mis recordatorios";
+      var countRec = 0;
+      if (meNorm) {
+        countRec = openTasks.concat(openSolic).filter(function (r) { return filaPerteneceAgente(r, meNorm); }).length;
+      }
+
+      if (el.kPendPrev) el.kPendPrev.textContent = String(countMant);
+      if (el.kPendDia) el.kPendDia.textContent = String(countChofer);
+      if (el.kAsigOpen) el.kAsigOpen.textContent = String(countTotal);
+      if (el.kPendMatias) el.kPendMatias.textContent = String(countRec);
+      if (el.kPendMatiasLabel) el.kPendMatiasLabel.textContent = recLabel;
     }
 
     function renderVehiculos(items) {
@@ -4734,6 +4759,7 @@
           IS_FRANCISCO = !!d.is_francisco;
           IS_LUCIANA = !!d.is_luciana;
           CAN_EDIT_AGENTE = !!d.puede_editar_agente;
+          AGENTE_ACTUAL = normalizarAgente(d.agente_actual || "");
           var agentes = applyAgentePolicy(d.agentes || [], d.agente_actual || "");
           AGENTES_ASSIGN = Array.isArray(agentes) ? agentes.slice() : [];
           if (el.modo) {
