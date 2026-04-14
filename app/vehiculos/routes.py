@@ -1337,6 +1337,7 @@ def register_vehiculos_control(bp, get_db_connection, ensure_cols, rebuild_event
             "matias calderari",
             "ignacio baroni",
         }
+        show_km_razonable_filtros = username_now in {"mcalderari"} or full_name_now in {"matias calderari"}
 
         def evaluarKm(difKm, ref_row):
             if not ref_row:
@@ -1542,6 +1543,7 @@ def register_vehiculos_control(bp, get_db_connection, ensure_cols, rebuild_event
             default_chofer_id=default_chofer_id,
             default_chofer_nombre=default_chofer_nombre,
             show_km_razonable=show_km_razonable,
+            show_km_razonable_filtros=show_km_razonable_filtros,
         )
 
     @bp.route("/viajes/<int:viaje_id>/editar", methods=["GET", "POST"], endpoint="viaje_editar")

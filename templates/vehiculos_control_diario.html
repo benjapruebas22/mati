@@ -558,6 +558,24 @@
       {% endfor %}
     </div>
 
+    {% if show_km_razonable_filtros %}
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-left:12px">
+      <span style="font-size:12px;color:#64748b;font-weight:700">KM ref:</span>
+      <button type="button" class="chip chip-all" onclick="setKmRef('')">Todas</button>
+      <button type="button" class="chip chip-kmref" data-chip-kmref="con" onclick="setKmRef('con')">Con ref</button>
+      <button type="button" class="chip chip-kmref" data-chip-kmref="sin" onclick="setKmRef('sin')">Sin ref</button>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-left:12px">
+      <span style="font-size:12px;color:#64748b;font-weight:700">KM razonable:</span>
+      <button type="button" class="chip chip-all" onclick="setKmCheck('')">Todos</button>
+      <button type="button" class="chip chip-kmcheck" data-chip-kmcheck="ALTO" onclick="setKmCheck('ALTO')">Alto</button>
+      <button type="button" class="chip chip-kmcheck" data-chip-kmcheck="BAJO" onclick="setKmCheck('BAJO')">Bajo</button>
+      <button type="button" class="chip chip-kmcheck" data-chip-kmcheck="RAZONABLE" onclick="setKmCheck('RAZONABLE')">Razonable</button>
+      <button type="button" class="chip chip-kmcheck" data-chip-kmcheck="SIN REF" onclick="setKmCheck('SIN REF')">Sin ref</button>
+    </div>
+    {% endif %}
+
     <button type="button" class="chip chip-reset" onclick="resetFiltros()" style="margin-left:auto">
       Reset
     </button>
@@ -622,7 +640,9 @@
 
       <tbody>
         {% for v in viajes %}
-        <tr data-vehiculo="{{ v.patente or '' }}" data-chofer="{{ v.chofer_nombre or '' }}" data-estado="{{ (v.estado or '')|upper }}">
+        {% set has_ref = (v.km_ref_txt and v.km_ref_txt != 'ref --') %}
+        <tr data-vehiculo="{{ v.patente or '' }}" data-chofer="{{ v.chofer_nombre or '' }}" data-estado="{{ (v.estado or '')|upper }}"
+          data-kmref="{{ 'con' if has_ref else 'sin' }}" data-kmcheck="{{ (v.km_check_label or '-')|upper }}">
           <td style="padding:10px;border-bottom:1px solid #eef2f7">{{ v.nro or v.id }}</td>
           <td style="padding:10px;border-bottom:1px solid #eef2f7">{{ v.fecha }}</td>
 
@@ -832,6 +852,39 @@
     border-color: #0f172a;
   }
 
+  /* ===== Chips KM razonable (solo perfil Matias) ===== */
+  .chip-kmref[data-chip-kmref="con"] {
+    background: #ecfdf5;
+    border-color: #86efac;
+    color: #166534;
+  }
+  .chip-kmref[data-chip-kmref="sin"] {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #475569;
+  }
+
+  .chip-kmcheck[data-chip-kmcheck="ALTO"] {
+    background: #fff1f2;
+    border-color: #fda4af;
+    color: #be123c;
+  }
+  .chip-kmcheck[data-chip-kmcheck="BAJO"] {
+    background: #fffbeb;
+    border-color: #fcd34d;
+    color: #a16207;
+  }
+  .chip-kmcheck[data-chip-kmcheck="RAZONABLE"] {
+    background: #ecfdf5;
+    border-color: #86efac;
+    color: #166534;
+  }
+  .chip-kmcheck[data-chip-kmcheck="SIN REF"] {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+    color: #475569;
+  }
+
   /* ===== Colores en chips de patente (mismos de la tabla) ===== */
   .chip-veh[data-chip-veh="AB946VK"] {
     background: #dbeafe;
@@ -998,17 +1051,23 @@
 
   let filtroVehiculo = "";
   let filtroChofer = "";
+  let filtroKmRef = "";
+  let filtroKmCheck = "";
 
   function applyFiltros() {
     const filas = document.querySelectorAll("tbody tr[data-vehiculo]");
     filas.forEach(tr => {
       const veh = (tr.dataset.vehiculo || "");
       const ch = (tr.dataset.chofer || "");
+      const kmref = (tr.dataset.kmref || "");
+      const kmcheck = (tr.dataset.kmcheck || "");
 
       const okVeh = !filtroVehiculo || veh === filtroVehiculo;
       const okCh = !filtroChofer || ch.includes(filtroChofer);
+      const okRef = !filtroKmRef || kmref === filtroKmRef;
+      const okKm = !filtroKmCheck || kmcheck === filtroKmCheck;
 
-      tr.style.display = (okVeh && okCh) ? "" : "none";
+      tr.style.display = (okVeh && okCh && okRef && okKm) ? "" : "none";
     });
 
     // marca botones activos (vehículo)
@@ -1026,6 +1085,22 @@
         if ((b.dataset.chipCh || "") === filtroChofer) b.classList.add("active");
       });
     }
+
+    // marca botones activos (km ref)
+    document.querySelectorAll(".chip-kmref").forEach(b => b.classList.remove("active"));
+    if (filtroKmRef) {
+      document.querySelectorAll(".chip-kmref").forEach(b => {
+        if ((b.dataset.chipKmref || "") === filtroKmRef) b.classList.add("active");
+      });
+    }
+
+    // marca botones activos (km razonable)
+    document.querySelectorAll(".chip-kmcheck").forEach(b => b.classList.remove("active"));
+    if (filtroKmCheck) {
+      document.querySelectorAll(".chip-kmcheck").forEach(b => {
+        if ((b.dataset.chipKmcheck || "") === filtroKmCheck) b.classList.add("active");
+      });
+    }
   }
 
   function setVehiculo(p) {
@@ -1038,9 +1113,21 @@
     applyFiltros();
   }
 
+  function setKmRef(v) {
+    filtroKmRef = v || "";
+    applyFiltros();
+  }
+
+  function setKmCheck(v) {
+    filtroKmCheck = v || "";
+    applyFiltros();
+  }
+
   function resetFiltros() {
     filtroVehiculo = "";
     filtroChofer = "";
+    filtroKmRef = "";
+    filtroKmCheck = "";
     applyFiltros();
   }
 
