@@ -2079,6 +2079,7 @@
       <h2>Gestion</h2>
       <div class="card-head-actions">
         <button id="btnRecargarDia" type="button" class="btn-soft">Recargar dia</button>
+        <button id="btnHistorialQuick" type="button" class="btn-soft">Historial</button>
       </div>
     </div>
     <div class="nvd-footnote">El panel solo ordena y filtra: toda la trazabilidad ocurre dentro de Abrir gestion.</div>
@@ -2241,7 +2242,7 @@
     </div>
   </article>
 
-  <article class="control-card control-workspace-section card-historial" data-workspaces="historial">
+  <article class="control-card control-workspace-section card-historial" data-workspaces="gestion historial">
     <div class="card-head">
       <h2>Historial operativo</h2>
       <div class="card-head-actions">
@@ -2277,10 +2278,11 @@
               <th>Subtipo</th>
               <th>Observacion</th>
               <th>Estado</th>
+              <th>Accion</th>
             </tr>
           </thead>
           <tbody id="histBody">
-            <tr><td colspan="8" style="color:#6f86a5;">Sin historial (resueltos).</td></tr>
+            <tr><td colspan="9" style="color:#6f86a5;">Sin historial (resueltos).</td></tr>
           </tbody>
         </table>
       </div>
@@ -2746,6 +2748,7 @@
       taskAlertList: document.getElementById("taskAlertList"),
       registroBox: document.getElementById("registroNvdBox"),
       histTop: document.getElementById("btnHistorialTop"),
+      histQuick: document.getElementById("btnHistorialQuick"),
       histBox: document.getElementById("histBox"),
       histClose: document.getElementById("btnCerrarHist"),
       histDesde: document.getElementById("histDesde"),
@@ -3028,6 +3031,23 @@
       } catch (_e) {
         return String(v || "").toLowerCase().trim();
       }
+    }
+
+    function tareaEstaFinalizada(r) {
+      var est = normTxt((r && r.tarea_estado) || "");
+      if (!est) return false;
+      return (
+        est === "completada" ||
+        est === "completado" ||
+        est === "finalizada" ||
+        est === "finalizado" ||
+        est === "resuelto" ||
+        est === "cerrado"
+      );
+    }
+
+    function tareaEstaAbierta(r) {
+      return !tareaEstaFinalizada(r);
     }
 
     function fmtIsoDate(iso) {
@@ -3827,13 +3847,6 @@
       var tasksAll = Array.isArray(RAW_TASK) ? RAW_TASK : [];
       var solicAll = Array.isArray(RAW_SOLIC) ? RAW_SOLIC : [];
 
-      function tareaAbierta(r) {
-        var est = normTxt((r && r.tarea_estado) || "");
-        if (!est) return true;
-        if (est === "completada" || est === "finalizada" || est === "finalizado" || est === "resuelto" || est === "cerrado") return false;
-        return true;
-      }
-
       function solicitudAbierta(r) {
         return estadoClass((r && r.estado) || "") !== "estado-resuelto";
       }
@@ -3861,7 +3874,7 @@
         return { td: td, tp: tp, total: td + tp };
       }
 
-      var openTasks = tasksAll.filter(tareaAbierta);
+      var openTasks = tasksAll.filter(tareaEstaAbierta);
       var openSolic = solicAll.filter(solicitudAbierta);
 
       var mantRows = openTasks.filter(function (r) { return filaPerteneceGrupo(r, "mantenimiento"); })
@@ -5119,7 +5132,7 @@
         var out = Object.assign({}, r || {});
         if (!out.agente && out.tarea_agente) out.agente = out.tarea_agente;
         return out;
-      });
+      }).filter(tareaEstaAbierta);
       RAW_TASK = tasksBase.slice();
       var tareasMantenimientoBase = tasksBase.filter(function (r) { return filaPerteneceGrupo(r, "mantenimiento"); });
       var tareasChoferesBase = tasksBase.filter(function (r) { return filaPerteneceGrupo(r, "choferes"); });
@@ -5284,8 +5297,9 @@
 
     function openHistorial() {
       var alreadyOpen = !!(el.histBox && el.histBox.classList.contains("open"));
-      setWorkspace("historial");
-      if (alreadyOpen) loadHistorial();
+      if (el.histBox) el.histBox.classList.add("open");
+      if (!alreadyOpen) loadHistorial();
+      else loadHistorial();
       if (el.histBox && el.histBox.scrollIntoView) {
         el.histBox.scrollIntoView({ behavior: "smooth", block: "start" });
       }
@@ -5301,26 +5315,27 @@
         .then(function (r) { return r.json(); })
         .then(function (d) {
           if (!d || !d.ok) throw new Error((d && d.error) || "No se pudo cargar historial");
-          var rows = d.items || [];
-          if (!rows.length) {
-            el.histBody.innerHTML = '<tr><td colspan="8" style="color:#6f86a5;">Sin historial (resueltos).</td></tr>';
-            return;
-          }
-          el.histBody.innerHTML = rows.map(function (r) {
-            return (
-              "<tr>" +
-                "<td>" + (r.fecha || "-") + "</td>" +
-                "<td>" + (r.hora || "-") + "</td>" +
-                "<td>" + agenteCell(r.agente) + "</td>" +
-                "<td>" + (r.sede_codigo || "-") + "</td>" +
-                "<td>" + (r.tipo || "-") + "</td>" +
-                "<td>" + (r.subtipo || "-") + "</td>" +
-                "<td>" + (r.observacion || "-") + "</td>" +
-                '<td><span class="estado-pill ' + estadoClass(r.estado) + '">' + (r.estado || "Resuelto") + "</span></td>" +
-              "</tr>"
-            );
-          }).join("");
-        })
+           var rows = d.items || [];
+           if (!rows.length) {
+             el.histBody.innerHTML = '<tr><td colspan="9" style="color:#6f86a5;">Sin historial (resueltos).</td></tr>';
+             return;
+           }
+           el.histBody.innerHTML = rows.map(function (r) {
+             return (
+               "<tr>" +
+                 "<td>" + (r.fecha || "-") + "</td>" +
+                 "<td>" + (r.hora || "-") + "</td>" +
+                 "<td>" + agenteCell(r.agente) + "</td>" +
+                 "<td>" + (r.sede_codigo || "-") + "</td>" +
+                 "<td>" + (r.tipo || "-") + "</td>" +
+                 "<td>" + (r.subtipo || "-") + "</td>" +
+                 "<td>" + (r.observacion || "-") + "</td>" +
+                 '<td><span class="estado-pill ' + estadoClass(r.estado) + '">' + (r.estado || "Resuelto") + "</span></td>" +
+                 '<td style="white-space:nowrap;"><button type="button" class="btn-inline hist-gestion" data-id="' + String(r.id || "") + '">Abrir gestion</button></td>' +
+               "</tr>"
+             );
+           }).join("");
+         })
         .catch(function (e) {
           setMsg(e.message || "No se pudo cargar historial", true);
         });
@@ -5495,9 +5510,20 @@
       resetForm();
       loadDay();
     });
-    el.histTop.addEventListener("click", openHistorial);
+    if (el.histTop) el.histTop.addEventListener("click", openHistorial);
+    if (el.histQuick) el.histQuick.addEventListener("click", openHistorial);
     el.histClose.addEventListener("click", function () { el.histBox.classList.remove("open"); });
     el.histBuscar.addEventListener("click", loadHistorial);
+    if (el.histBody) {
+      el.histBody.addEventListener("click", function (ev) {
+        var tgt = ev.target;
+        if (!tgt) return;
+        var btn = tgt.closest ? tgt.closest(".hist-gestion") : null;
+        if (!btn) return;
+        var gid = Number(btn.getAttribute("data-id") || 0);
+        if (gid > 0) loadGestion(gid);
+      });
+    }
     if (el.gestionClose) {
       el.gestionClose.addEventListener("click", closeGestionModal);
     }

@@ -295,10 +295,10 @@ def _is_novedad_abierta(tipo, estado):
     est = _norm_ci(estado)
     if _is_coffee_tipo(tipo):
         return est in NVD_COFFEE_ESTADO_ABIERTOS
-    # Estados generales (no coffee): mantener compatibilidad con estados viejos
-    # y con la nueva estructura (Pendiente / En gestion / Esperando respuesta / Resuelto / Cerrado).
+    # Estados generales (no coffee): mantener compatibilidad con estados viejos y con la nueva
+    # estructura (Pendiente / En gestion / Esperando respuesta / Resuelto / Cerrado).
     #
-    # Nota: "Resuelto" NO se considera cerrado definitivo (se cierra con "Cerrado").
+    # En el panel operativo "Resuelto" se manda a Historial (para dejar solo pendientes activos).
     return est in {
         "informado",
         "pendiente",
@@ -307,7 +307,6 @@ def _is_novedad_abierta(tipo, estado):
         "en revision",
         "esperando respuesta",
         "esperando",
-        "resuelto",
     }
 
 
@@ -1516,12 +1515,24 @@ def register_novedades(bp, get_db):
                     COALESCE(subtipo,'') AS subtipo,
                     COALESCE(observacion,'') AS observacion,
                     COALESCE(estado,'Informado') AS estado,
+                    COALESCE(tarea_asignada,'') AS tarea_asignada,
+                    COALESCE(tarea_estado,'') AS tarea_estado,
                     COALESCE(privado_flag,0) AS privado_flag,
                     COALESCE(privado_owner_username,'') AS privado_owner_username,
                     COALESCE(privado_owner_nombre,'') AS privado_owner_nombre
                 FROM novedades_diarias
                 WHERE 1=1
-                  AND LOWER(COALESCE(estado,'')) IN ('resuelto', 'cerrado', 'finalizado', 'cancelado', 'rechazado')
+                  AND (
+                    LOWER(COALESCE(estado,'')) IN ('resuelto', 'cerrado', 'finalizado', 'cancelado', 'rechazado')
+                    OR (
+                      TRIM(COALESCE(tarea_asignada,'')) <> ''
+                      AND LOWER(COALESCE(tarea_estado,'')) IN (
+                        'finalizado', 'finalizada',
+                        'completado', 'completada',
+                        'terminado', 'terminada'
+                      )
+                    )
+                  )
             """
             params = []
             if desde:
@@ -1545,6 +1556,21 @@ def register_novedades(bp, get_db):
             for r in rows:
                 if not _actor_can_view_novedad(actor, r):
                     continue
+                tipo_row = (_row_value(r, "tipo", "") or "").strip()
+                tarea_asignada = (_row_value(r, "tarea_asignada", "") or "").strip()
+                tarea_estado = (_row_value(r, "tarea_estado", "") or "").strip()
+                tarea_estado_norm = _norm_ci(tarea_estado)
+                tarea_done = bool(
+                    tarea_asignada
+                    and tarea_estado_norm in {"finalizado", "finalizada", "completado", "completada", "terminado", "terminada"}
+                )
+                estado_base = (
+                    _norm_coffee_estado(_row_value(r, "estado", "Pendiente") or "Pendiente")
+                    if _is_coffee_tipo(tipo_row)
+                    else _norm_nvd_estado(_row_value(r, "estado", "Informado") or "Informado")
+                )
+                if tarea_done and _norm_ci(estado_base) not in {"resuelto", "cerrado", "finalizado", "cancelado", "rechazado"}:
+                    estado_base = "Resuelto"
                 items.append({
                     "id": int(_row_value(r, "id", 0) or 0),
                     "fecha": (_row_value(r, "fecha", "") or "").strip(),
@@ -1554,11 +1580,7 @@ def register_novedades(bp, get_db):
                     "tipo": (_row_value(r, "tipo", "") or "").strip(),
                     "subtipo": (_row_value(r, "subtipo", "") or "").strip(),
                     "observacion": (_row_value(r, "observacion", "") or "").strip(),
-                    "estado": (
-                        _norm_coffee_estado(_row_value(r, "estado", "Pendiente") or "Pendiente")
-                        if _is_coffee_tipo(_row_value(r, "tipo", "") or "")
-                        else _norm_nvd_estado(_row_value(r, "estado", "Informado") or "Informado")
-                    ),
+                    "estado": estado_base,
                 })
         except Exception as e:
             con.close()
