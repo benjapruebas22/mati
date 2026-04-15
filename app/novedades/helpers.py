@@ -69,7 +69,15 @@ NVD_TIPO_SUBTIPOS = {
     "Otro": ["General"],
 }
 
-NVD_ESTADOS = ["Informado", "En proceso", "Resuelto"]
+# Estados generales (operativos) para SGI Intendencia.
+# Mantener strings simples (sin tildes) para evitar problemas de encoding.
+NVD_ESTADOS = [
+    "Pendiente",
+    "En gestion",
+    "Esperando respuesta",
+    "Resuelto",
+    "Cerrado",
+]
 NVD_COFFEE_ESTADOS = [
     "Pendiente",
     "Aprobado",
@@ -213,6 +221,7 @@ def _ensure_novedades_diarias_table(con):
             coffee_horario_evento TEXT DEFAULT '',
             coffee_sede_destino TEXT DEFAULT '',
             coffee_logistica_aprobada INTEGER DEFAULT 0,
+            esperando_respuesta_de TEXT DEFAULT 'nadie',
             creado_en TEXT,
             actualizado_en TEXT
         )
@@ -244,6 +253,7 @@ def _ensure_novedades_diarias_table(con):
         ("coffee_horario_evento", "TEXT DEFAULT ''"),
         ("coffee_sede_destino", "TEXT DEFAULT ''"),
         ("coffee_logistica_aprobada", "INTEGER DEFAULT 0"),
+        ("esperando_respuesta_de", "TEXT DEFAULT 'nadie'"),
         ("creado_en", "TEXT"),
         ("actualizado_en", "TEXT"),
     ):
@@ -426,27 +436,19 @@ def _safe_today():
 
 def _norm_nvd_estado(raw):
     v = (raw or "").strip().lower()
-    if v in ("pendiente",):
+    # Compatibilidad: mapear estados viejos a la nueva estructura.
+    if v in ("informado", "pendiente"):
         return "Pendiente"
-    if v in ("aprobado",):
-        return "Aprobado"
-    if v in ("rechazado",):
-        return "Rechazado"
-    if v in ("en preparacion", "en preparación", "preparacion", "preparación"):
-        return "En preparacion"
-    if v in ("enviado",):
-        return "Enviado"
-    if v in ("finalizado",):
-        return "Finalizado"
-    if v in ("cancelado",):
-        return "Cancelado"
-    if v in ("resuelto", "cerrado"):
+    if v in ("en gestion", "en gestión", "en proceso", "proceso", "en revision", "en revisión", "revision", "revisión"):
+        return "En gestion"
+    if v in ("esperando respuesta", "esperando", "waiting", "espera"):
+        return "Esperando respuesta"
+    if v in ("resuelto", "finalizado", "completado", "completada"):
         return "Resuelto"
-    if v in ("en revision", "en revisión", "revision", "revisión", "en proceso", "proceso"):
-        return "En proceso"
-    if v in ("informado",):
-        return "Informado"
-    return "Informado"
+    if v in ("cerrado",):
+        return "Cerrado"
+    # Si llega un valor desconocido, dejarlo como pendiente para no “perder” casos.
+    return "Pendiente"
 
 
 def _novedades_resumen(con, fecha_iso):
@@ -463,9 +465,9 @@ def _novedades_resumen(con, fecha_iso):
             est = (_row_value(r, "estado", "") or "").strip().lower()
             n = int(_row_value(r, "n", 0) or 0)
             total += n
-            if est in ("informado", "pendiente"):
+            if est in ("pendiente", "informado"):
                 out["informado"] += n
-            elif est in ("en revision", "en proceso", "proceso", "aprobado", "en preparacion", "enviado"):
+            elif est in ("en gestion", "en gestión", "en proceso", "proceso", "en revision", "en revisión", "esperando respuesta", "esperando"):
                 out["en_proceso"] += n
             elif est in ("resuelto", "cerrado", "finalizado", "cancelado", "rechazado"):
                 out["resuelto"] += n

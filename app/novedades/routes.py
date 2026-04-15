@@ -1,6 +1,7 @@
 import json
 from datetime import date, datetime
 import os
+import re
 import sqlite3
 import unicodedata
 import uuid
@@ -480,6 +481,50 @@ def _is_tarea_general_target(raw_name):
     }
 
 
+def _split_tarea_agentes(raw_name: str):
+    """
+    Convierte el campo tarea_agente (string) a lista de agentes.
+    Soporta formato legacy: "A + B" / "A | B" / "A;B".
+    NO devuelve "Equipo operativo" (target general).
+    """
+    txt = (raw_name or "").strip()
+    if not txt or _is_tarea_general_target(txt):
+        return []
+    parts = re.split(r"\s*\+\s*|\s*\|\s*|\s*;\s*", txt)
+    out = []
+    seen = set()
+    for p in parts:
+        ag = (p or "").strip()
+        key = _norm_ci(ag)
+        if not ag or not key or key in seen:
+            continue
+        seen.add(key)
+        out.append(ag)
+    return out
+
+
+def _norm_esperando_respuesta_de(raw_val: str) -> str:
+    v = _norm_ci(raw_val)
+    if v in {"agente", "agent", "equipo"}:
+        return "agente"
+    if v in {"matias", "matías", "mcalderari"}:
+        return "matias"
+    return "nadie"
+
+
+def _infer_esperando_respuesta_de(row) -> str:
+    raw_db = (_row_value(row, "esperando_respuesta_de", "") or "").strip()
+    norm_db = _norm_esperando_respuesta_de(raw_db)
+    if norm_db != "nadie":
+        return norm_db
+    # Fallback (compatibilidad): inferir por Ãºltimo chat NO sistema.
+    ult_user = (_row_value(row, "chat_ult_autor_username", "") or "").strip()
+    ult_name = (_row_value(row, "chat_ult_autor", "") or "").strip()
+    if not (ult_user or ult_name):
+        return "nadie"
+    return "agente" if _is_matias_actor(ult_user, ult_name) else "matias"
+
+
 def _session_actor():
     username = (session.get("username") or "").strip()
     full_name = (session.get("full_name") or "").strip()
@@ -525,7 +570,13 @@ def _actor_can_view_gestion(actor, agente_novedad, agente_tarea="", tipo=""):
         return True
     # Permitir por coincidencia flexible de nombre/usuario para evitar bloqueos
     # cuando el nombre de tarea no coincide 1:1 con el nombre completo del login.
-    if _actor_match_name(actor, agente_novedad) or _actor_match_name(actor, agente_tarea):
+    if _actor_match_name(actor, agente_novedad):
+        return True
+    # Soportar asignacion multiple: "A + B + C"
+    for ag in _split_tarea_agentes(agente_tarea):
+        if _actor_match_name(actor, ag):
+            return True
+    if _actor_match_name(actor, agente_tarea):
         return True
     actor_user = _norm_ci(actor.get("username") or "")
     actor_name = _norm_ci(actor.get("full_name") or actor.get("display") or "")
@@ -788,7 +839,7 @@ def register_novedades(bp, get_db):
                 COALESCE(tipo,'') AS tipo,
                 COALESCE(subtipo,'') AS subtipo,
                 COALESCE(observacion,'') AS observacion,
-                COALESCE(estado,'Informado') AS estado,
+                COALESCE(estado,'Pendiente') AS estado,
                 COALESCE(tarea_asignada,'') AS tarea_asignada,
                 COALESCE(tarea_estado,'') AS tarea_estado,
                 COALESCE(tarea_sede_codigo,'') AS tarea_sede_codigo,
@@ -829,6 +880,7 @@ def register_novedades(bp, get_db):
                     ORDER BY c.id DESC
                     LIMIT 1
                 ),'') AS chat_ult_creado_en,
+                COALESCE(esperando_respuesta_de,'nadie') AS esperando_respuesta_de,
                 COALESCE(privado_flag,0) AS privado_flag,
                 COALESCE(privado_owner_username,'') AS privado_owner_username,
                 COALESCE(privado_owner_nombre,'') AS privado_owner_nombre
@@ -911,6 +963,7 @@ def register_novedades(bp, get_db):
                         ORDER BY c.id DESC
                         LIMIT 1
                     ),'') AS chat_ult_autor_username,
+                    COALESCE(esperando_respuesta_de,'nadie') AS esperando_respuesta_de,
                     COALESCE(privado_flag,0) AS privado_flag,
                     COALESCE(privado_owner_username,'') AS privado_owner_username,
                     COALESCE(privado_owner_nombre,'') AS privado_owner_nombre
@@ -924,14 +977,13 @@ def register_novedades(bp, get_db):
                 if not _actor_can_view_novedad(actor, r):
                     continue
                 tarea_agente = (_row_value(r, "tarea_agente", "") or "").strip()
-                is_general = _is_tarea_general_target(tarea_agente)
-                if not _actor_match_name(actor, tarea_agente):
-                    if not (is_general and _is_tarea_chat_team_actor(actor)):
-                        continue
-                if is_general:
-                    tarea_agente = NVD_TAREA_GENERAL_LABEL
-                if not tarea_agente:
+                agentes_asignados = _split_tarea_agentes(tarea_agente)
+                # No notificar al grupo completo (evitar ruido): solo agentes explicitamente asignados.
+                if not agentes_asignados:
                     continue
+                if not any(_actor_match_name(actor, ag) for ag in agentes_asignados):
+                    continue
+                tarea_agente = " + ".join(agentes_asignados)
                 by_user = _row_value(r, "tarea_asignado_por_username", "") or ""
                 by_name = _row_value(r, "tarea_asignado_por", "") or ""
                 by_admin = _is_novedades_admin_actor(by_user, by_name)
@@ -939,7 +991,7 @@ def register_novedades(bp, get_db):
                 if not by_admin and not by_self_private:
                     continue
                 tarea_estado = (_row_value(r, "tarea_estado", "") or "").strip() or "Pendiente"
-                if _norm_ci(tarea_estado) in {"completada", "resuelto", "cerrado"}:
+                if _norm_ci(tarea_estado) in {"completada", "finalizado", "resuelto", "cerrado"}:
                     continue
                 base_item = {
                     "novedad_id": int(_row_value(r, "id", 0) or 0),
@@ -963,11 +1015,17 @@ def register_novedades(bp, get_db):
                     es_chat_propio = True
                 elif chat_ult_autor and _actor_match_name(actor, chat_ult_autor):
                     es_chat_propio = True
-                if (chat_ult_autor or chat_ult_autor_username) and not es_chat_propio:
-                    out.append({
-                        **base_item,
-                        "alerta_tipo": "respuesta",
-                    })
+                esperando = _norm_esperando_respuesta_de(_row_value(r, "esperando_respuesta_de", "nadie") or "nadie")
+                mostrar_respuesta = False
+                if esperando == "matias" and bool(actor.get("is_matias")):
+                    mostrar_respuesta = True
+                elif esperando == "agente" and not bool(actor.get("is_matias")):
+                    mostrar_respuesta = True
+                elif (chat_ult_autor or chat_ult_autor_username) and not es_chat_propio:
+                    # fallback legacy (sin columna esperando_respuesta_de)
+                    mostrar_respuesta = True
+                if mostrar_respuesta:
+                    out.append({**base_item, "alerta_tipo": "respuesta"})
                 if len(out) >= 20:
                     break
         except Exception:
@@ -982,7 +1040,7 @@ def register_novedades(bp, get_db):
         tarea_general = _is_tarea_general_target(tarea_agente)
         tarea_herramientas = _parse_tarea_herramientas(_row_value(row, "tarea_herramientas_json", "") or "")
         tarea_herramientas_resumen = _herramientas_resumen(tarea_herramientas)
-        estado_raw = _row_value(row, "estado", "Informado") or "Informado"
+        estado_raw = _row_value(row, "estado", "Pendiente") or "Pendiente"
         estado_norm = _norm_coffee_estado(estado_raw) if is_coffee else _norm_nvd_estado(estado_raw)
         es_privada = _is_private_novedad_row(row)
         es_duenio_privada = _actor_can_manage_private_novedad(actor, row)
@@ -1012,6 +1070,7 @@ def register_novedades(bp, get_db):
         chat_ult_autor = (_row_value(row, "chat_ult_autor", "") or "").strip()
         chat_ult_autor_username = (_row_value(row, "chat_ult_autor_username", "") or "").strip()
         chat_ult_creado_en = (_row_value(row, "chat_ult_creado_en", "") or "").strip()
+        esperando_respuesta_de = _infer_esperando_respuesta_de(row)
         gestion_turno = "sin_mensajes"
         gestion_turno_label = "Sin mensajes"
         if chat_ult_autor or chat_ult_autor_username:
@@ -1032,6 +1091,8 @@ def register_novedades(bp, get_db):
             and (bool(actor.get("is_matias")) or bool(actor.get("is_francisco")) or _can_admin_novedades(actor))
         )
         is_coffee_cerrado = bool(is_coffee and _is_novedad_cerrada(tipo, estado_norm))
+        if (not is_coffee and _norm_ci(estado_norm) == "cerrado") or is_coffee_cerrado:
+            esperando_respuesta_de = "nadie"
         is_coffee_owner = bool(is_coffee and _actor_match_name(actor, agente))
         can_insumos_edit = bool(
             is_coffee
@@ -1060,6 +1121,7 @@ def register_novedades(bp, get_db):
             )
         )
         can_logistica_approve = bool(is_coffee and (not is_coffee_cerrado) and bool(actor.get("is_matias")))
+        tarea_agentes = _split_tarea_agentes(tarea_agente)
         return {
             "id": int(_row_value(row, "id", 0) or 0),
             "fecha": (_row_value(row, "fecha", "") or "").strip(),
@@ -1083,6 +1145,7 @@ def register_novedades(bp, get_db):
             "tarea_deposito_codigo": (_row_value(row, "tarea_deposito_codigo", "") or "").strip().upper(),
             "tarea_deposito_nombre": (_row_value(row, "tarea_deposito_nombre", "") or "").strip(),
             "tarea_agente": (NVD_TAREA_GENERAL_LABEL if tarea_general else tarea_agente),
+            "tarea_agentes": ([] if tarea_general else tarea_agentes),
             "tarea_general": tarea_general,
             "tarea_herramientas": tarea_herramientas,
             "tarea_herramientas_resumen": tarea_herramientas_resumen,
@@ -1093,8 +1156,10 @@ def register_novedades(bp, get_db):
             "chat_ult_autor": chat_ult_autor,
             "chat_ult_autor_username": chat_ult_autor_username,
             "chat_ult_creado_en": chat_ult_creado_en,
+            "esperando_respuesta_de": esperando_respuesta_de,
             "gestion_turno": gestion_turno,
             "gestion_turno_label": gestion_turno_label,
+            "gestion_readonly": (bool(_norm_ci(estado_norm) == "cerrado") if not is_coffee else is_coffee_cerrado),
             "es_privada": es_privada,
             "privado_owner_username": (_row_value(row, "privado_owner_username", "") or "").strip(),
             "privado_owner_nombre": (_row_value(row, "privado_owner_nombre", "") or "").strip(),
@@ -1139,9 +1204,9 @@ def register_novedades(bp, get_db):
                     elif est_norm in {"finalizado", "rechazado", "cancelado"}:
                         out["resuelto"] += 1
                     continue
-                if est_norm in {"informado"}:
+                if est_norm in {"pendiente", "informado"}:
                     out["informado"] += 1
-                elif est_norm in {"en revision", "en proceso", "proceso"}:
+                elif est_norm in {"en gestion", "en proceso", "proceso", "en revision", "esperando respuesta", "esperando"}:
                     out["en_proceso"] += 1
                 elif est_norm in {"resuelto", "cerrado"}:
                     out["resuelto"] += 1
@@ -1180,6 +1245,32 @@ def register_novedades(bp, get_db):
             vehs = _dashboard_vehiculos_simple(con, fecha)
             resumen = _novedades_resumen_visible(con, fecha, actor)
             alertas_tareas_asignadas = _alertas_tareas_agente(con, actor)
+            kpi_respuestas = {"esperando_mi_respuesta": 0, "esperando_respuesta_agente": 0}
+            if bool(actor.get("is_matias")):
+                try:
+                    rows_kpi = con.execute("""
+                        SELECT
+                            COALESCE(tipo,'') AS tipo,
+                            COALESCE(estado,'') AS estado,
+                            COALESCE(esperando_respuesta_de,'nadie') AS esperando_respuesta_de,
+                            COALESCE(privado_flag,0) AS privado_flag,
+                            COALESCE(privado_owner_username,'') AS privado_owner_username,
+                            COALESCE(privado_owner_nombre,'') AS privado_owner_nombre
+                        FROM novedades_diarias
+                        WHERE TRIM(COALESCE(tipo,'')) <> ''
+                          AND LOWER(COALESCE(estado,'')) <> 'cerrado'
+                          AND LOWER(COALESCE(esperando_respuesta_de,'nadie')) IN ('matias','agente')
+                    """).fetchall()
+                    for rr in rows_kpi:
+                        if not _actor_can_view_novedad(actor, rr):
+                            continue
+                        esp = _norm_esperando_respuesta_de(_row_value(rr, "esperando_respuesta_de", "nadie") or "nadie")
+                        if esp == "matias":
+                            kpi_respuestas["esperando_mi_respuesta"] += 1
+                        elif esp == "agente":
+                            kpi_respuestas["esperando_respuesta_agente"] += 1
+                except Exception:
+                    pass
         except Exception as e:
             con.close()
             return jsonify({"ok": False, "error": str(e)}), 500
@@ -1220,6 +1311,7 @@ def register_novedades(bp, get_db):
             "alertas": alertas,
             "alertas_tareas_asignadas": alertas_tareas_asignadas,
             "resumen_novedades": resumen,
+            "kpi_respuestas": kpi_respuestas,
         })
 
     @bp.route("/api/dashboard/novedades_diarias_list", methods=["GET"], endpoint="api_dashboard_novedades_diarias_list")
@@ -1569,10 +1661,10 @@ def register_novedades(bp, get_db):
                 if not _actor_can_view_novedad(actor, existing):
                     con.close()
                     return jsonify({"ok": False, "error": "No autorizado para editar esta novedad"}), 403
-                estado_prev = _row_value(existing, "estado", "Informado") or "Informado"
+                estado_prev = _row_value(existing, "estado", "Pendiente") or "Pendiente"
                 estado = (_norm_coffee_estado(estado_prev) if is_coffee else _norm_nvd_estado(estado_prev))
             else:
-                estado = "Pendiente" if is_coffee else "Informado"
+                estado = "Pendiente"
 
             if not _can_admin_novedades(actor):
                 if nov_id > 0:
@@ -1708,13 +1800,14 @@ def register_novedades(bp, get_db):
             else:
                 deposito_codigo = ""
                 deposito_nombre = ""
+            estado_general = "Pendiente" if privado_flag else "En gestion"
             cur = con.execute("""
                 INSERT INTO novedades_diarias
                     (fecha, hora, agente, sede_codigo, tipo, subtipo, observacion, estado,
                      tarea_asignada, tarea_estado, tarea_sede_codigo, tarea_deposito_codigo, tarea_deposito_nombre,
                      tarea_agente, tarea_herramientas_json, tarea_asignado_por, tarea_asignado_por_username, tarea_asignado_en, tarea_actualizado_en,
                      privado_flag, privado_owner_username, privado_owner_nombre, creado_en, actualizado_en)
-                VALUES (?, ?, ?, ?, ?, ?, ?, 'Informado',
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?,
                         ?, 'Pendiente', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 fecha,
@@ -1724,6 +1817,7 @@ def register_novedades(bp, get_db):
                 NVD_TIPO_TAREA,
                 ("Recordatorio personal" if privado_flag else (deposito_codigo or "General")),
                 tarea,
+                estado_general,
                 tarea,
                 sede_codigo,
                 deposito_codigo,
@@ -2026,6 +2120,9 @@ def register_novedades(bp, get_db):
             if not bool(item.get("puede_ver_gestion")):
                 con.close()
                 return jsonify({"ok": False, "error": "No autorizado para subir fotos"}), 403
+            if bool(item.get("gestion_readonly")):
+                con.close()
+                return jsonify({"ok": False, "error": "Gestion cerrada (solo lectura)"}), 400
             autor = (actor.get("display") or actor.get("username") or "").strip()
             if not autor:
                 con.close()
@@ -2090,6 +2187,9 @@ def register_novedades(bp, get_db):
             if not bool(item.get("puede_ver_gestion")):
                 con.close()
                 return jsonify({"ok": False, "error": "No autorizado para responder esta gestion"}), 403
+            if bool(item.get("gestion_readonly")):
+                con.close()
+                return jsonify({"ok": False, "error": "Gestion cerrada (solo lectura)"}), 400
             autor = (actor.get("display") or actor.get("username") or "").strip()
             if not autor:
                 con.close()
@@ -2100,6 +2200,17 @@ def register_novedades(bp, get_db):
                     (novedad_id, autor, autor_username, mensaje, es_sistema, creado_en)
                 VALUES (?, ?, ?, ?, 0, ?)
             """, (nov_id, autor, actor.get("username") or "", mensaje, ts))
+            # Control de turno de respuesta (Matias <-> agente)
+            next_wait = "agente" if bool(actor.get("is_matias")) else "matias"
+            con.execute(
+                """
+                UPDATE novedades_diarias
+                SET esperando_respuesta_de=?,
+                    actualizado_en=?
+                WHERE id=?
+                """,
+                (next_wait, ts, nov_id),
+            )
             con.commit()
             msg_id = int(cur.lastrowid or 0)
         except Exception as e:
@@ -2123,7 +2234,7 @@ def register_novedades(bp, get_db):
     def api_dashboard_novedades_diarias_gestion_estado(nov_id):
         actor = _session_actor()
         payload = request.get_json(silent=True) or {}
-        estado_raw = payload.get("estado") or "Informado"
+        estado_raw = payload.get("estado") or "Pendiente"
         con = get_db()
         try:
             _ensure_novedades_diarias_table(con)
@@ -2160,14 +2271,24 @@ def register_novedades(bp, get_db):
                 return jsonify({"ok": False, "error": "No autorizado para cambiar estado"}), 403
             estado_prev = (
                 _norm_coffee_estado(_row_value(row, "estado", "Pendiente") or "Pendiente")
-                if is_coffee else _norm_nvd_estado(_row_value(row, "estado", "Informado") or "Informado")
+                if is_coffee else _norm_nvd_estado(_row_value(row, "estado", "Pendiente") or "Pendiente")
             )
             ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            # Validacion: no permitir cerrar si hay tarea no finalizada
+            if (not is_coffee) and (_norm_ci(estado) == "cerrado"):
+                tarea_txt = (item.get("tarea_asignada") or "").strip()
+                if tarea_txt:
+                    est_t = _norm_ci(item.get("tarea_estado") or "")
+                    if est_t not in {"finalizado", "completada"}:
+                        con.close()
+                        return jsonify({"ok": False, "error": "No podes cerrar: la tarea no esta finalizada"}), 400
             con.execute("""
                 UPDATE novedades_diarias
-                SET estado=?, actualizado_en=?
+                SET estado=?,
+                    esperando_respuesta_de=(CASE WHEN LOWER(?)='cerrado' THEN 'nadie' ELSE COALESCE(esperando_respuesta_de,'nadie') END),
+                    actualizado_en=?
                 WHERE id=?
-            """, (estado, ts, nov_id))
+            """, (estado, estado, ts, nov_id))
             if is_coffee and estado == "Aprobado":
                 sede_destino = (_row_value(row, "coffee_sede_destino", "") or "").strip().upper()
                 if not sede_destino:
@@ -2203,11 +2324,14 @@ def register_novedades(bp, get_db):
                 ))
             if estado_prev != estado:
                 actor_name = (actor.get("display") or actor.get("username") or "Sistema").strip() or "Sistema"
+                msg_estado = f"{actor_name} cambio el estado a '{estado}'."
+                if (not is_coffee) and (_norm_ci(estado) == "cerrado"):
+                    msg_estado = f"{actor_name} reviso y cerro la novedad."
                 con.execute("""
                     INSERT INTO novedades_diarias_chat
                         (novedad_id, autor, autor_username, mensaje, es_sistema, creado_en)
                     VALUES (?, 'Sistema', ?, ?, 1, ?)
-                """, (nov_id, actor.get("username") or "", f"{actor_name} cambio el estado a '{estado}'.", ts))
+                """, (nov_id, actor.get("username") or "", msg_estado, ts))
                 if is_coffee and estado == "Aprobado":
                     con.execute("""
                         INSERT INTO novedades_diarias_chat
@@ -2266,6 +2390,7 @@ def register_novedades(bp, get_db):
         )
         solo_herramientas = str(payload.get("solo_herramientas") or "").strip().lower() in {"1", "true", "si", "yes"}
         auto_asignar = str(payload.get("auto_asignar") or "").strip().lower() in {"1", "true", "si", "yes"}
+        finalizar = str(payload.get("finalizar") or payload.get("finalizado") or "").strip().lower() in {"1", "true", "si", "yes"}
         limpiar = str(payload.get("limpiar") or "").strip().lower() in {"1", "true", "si", "yes"}
         if len(tarea) > 280:
             tarea = tarea[:280]
@@ -2277,7 +2402,9 @@ def register_novedades(bp, get_db):
             tarea_deposito_codigo = ""
             tarea_deposito_nombre = ""
             tarea_herramientas = []
-        if tarea and tarea_estado not in {"Pendiente", "En curso", "Completada"}:
+        if _norm_ci(tarea_estado) in {"completada", "completado"}:
+            tarea_estado = "Finalizado"
+        if tarea and tarea_estado not in {"Pendiente", "En curso", "Finalizado"}:
             tarea_estado = "Pendiente"
         con = get_db()
         try:
@@ -2294,14 +2421,41 @@ def register_novedades(bp, get_db):
             if not bool(item.get("gestion_habilitada")):
                 con.close()
                 return jsonify({"ok": False, "error": "La novedad no tiene gestion interna"}), 400
+            if bool(item.get("gestion_readonly")):
+                con.close()
+                return jsonify({"ok": False, "error": "Gestion cerrada (solo lectura)"}), 400
             is_coffee = bool(item.get("es_coffee"))
             if is_coffee and _norm_ci(item.get("estado") or "") != "aprobado":
                 con.close()
                 return jsonify({"ok": False, "error": "La tarea Coffee solo se puede asignar cuando esta Aprobado"}), 400
             can_tools_only = bool(item.get("puede_ver_gestion")) and bool((item.get("tarea_asignada") or "").strip())
             can_autoassign = bool(item.get("puede_autoasignar"))
+            can_finalize = bool(item.get("puede_ver_gestion")) and bool((item.get("tarea_asignada") or "").strip())
             preserve_assignador = False
-            if solo_herramientas:
+            if finalizar:
+                if not can_finalize:
+                    con.close()
+                    return jsonify({"ok": False, "error": "No hay tarea para finalizar"}), 400
+                # Solo el/los agentes asignados (o Matias/admin) pueden marcar Finalizado
+                asignados = _split_tarea_agentes(item.get("tarea_agente") or "")
+                if not asignados:
+                    con.close()
+                    return jsonify({"ok": False, "error": "La tarea no tiene agente asignado"}), 400
+                if not (bool(actor.get("is_matias")) or _can_admin_novedades(actor) or any(_actor_match_name(actor, ag) for ag in asignados)):
+                    con.close()
+                    return jsonify({"ok": False, "error": "No autorizado para finalizar esta tarea"}), 403
+                limpiar = False
+                solo_herramientas = False
+                auto_asignar = False
+                preserve_assignador = True
+                tarea = (item.get("tarea_asignada") or "").strip()
+                tarea_estado = "Finalizado"
+                tarea_sede_codigo = (item.get("tarea_sede_codigo") or item.get("sede_codigo") or "").strip().upper()
+                tarea_deposito_codigo = (item.get("tarea_deposito_codigo") or "").strip().upper()
+                tarea_deposito_nombre = (item.get("tarea_deposito_nombre") or "").strip()
+                tarea_herramientas = _parse_tarea_herramientas(item.get("tarea_herramientas") or [])
+                tarea_agente = (item.get("tarea_agente") or item.get("agente") or "").strip()
+            elif solo_herramientas:
                 if not can_tools_only:
                     con.close()
                     return jsonify({"ok": False, "error": "No autorizado para actualizar herramientas"}), 403
@@ -2370,6 +2524,20 @@ def register_novedades(bp, get_db):
                     tarea_deposito_codigo = ""
                     tarea_deposito_nombre = ""
             ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            # Estados derivados (sin romper compatibilidad): estado=estado_general y tarea_estado=estado_tarea
+            estado_general_next = (item.get("estado") or "Pendiente").strip() or "Pendiente"
+            esperando_next = _norm_esperando_respuesta_de(item.get("esperando_respuesta_de") or "nadie")
+            if not is_coffee and not solo_herramientas:
+                if limpiar:
+                    estado_general_next = "Pendiente"
+                    esperando_next = "nadie"
+                elif _norm_ci(tarea_estado) in {"finalizado", "completada"}:
+                    estado_general_next = "Resuelto"
+                    esperando_next = "matias"
+                else:
+                    estado_general_next = "En gestion"
+                    # al reasignar, limpiar turno viejo del chat para evitar falsos positivos
+                    esperando_next = "nadie"
             con.execute("""
                 UPDATE novedades_diarias
                 SET tarea_asignada=?,
@@ -2383,6 +2551,8 @@ def register_novedades(bp, get_db):
                     tarea_asignado_por_username=?,
                     tarea_asignado_en=?,
                     tarea_actualizado_en=?,
+                    esperando_respuesta_de=?,
+                    estado=?,
                     actualizado_en=?
                 WHERE id=?
             """, (
@@ -2397,6 +2567,8 @@ def register_novedades(bp, get_db):
                 ((item.get("tarea_asignado_por_username") or "") if preserve_assignador else ((actor.get("username") or "") if tarea else "")),
                 ((item.get("tarea_asignado_en") or "") if preserve_assignador else (ts if not limpiar else "")),
                 ts,
+                esperando_next,
+                estado_general_next,
                 ts,
                 nov_id,
             ))
@@ -2410,6 +2582,8 @@ def register_novedades(bp, get_db):
                         msg = f"{actor_name} actualizo herramientas de la tarea: {tools_txt}."
                     else:
                         msg = f"{actor_name} limpio el listado de herramientas de la tarea."
+                elif finalizar:
+                    msg = f"{actor_name} marco la tarea como Finalizado."
                 elif auto_asignar:
                     msg = (
                         f"{actor_name} se autoasigno la tarea: {tarea} "
