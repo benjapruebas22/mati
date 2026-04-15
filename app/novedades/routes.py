@@ -295,14 +295,29 @@ def _is_novedad_abierta(tipo, estado):
     est = _norm_ci(estado)
     if _is_coffee_tipo(tipo):
         return est in NVD_COFFEE_ESTADO_ABIERTOS
-    return est in {"informado", "en revision", "en proceso"}
+    # Estados generales (no coffee): mantener compatibilidad con estados viejos
+    # y con la nueva estructura (Pendiente / En gestion / Esperando respuesta / Resuelto / Cerrado).
+    #
+    # Nota: "Resuelto" NO se considera cerrado definitivo (se cierra con "Cerrado").
+    return est in {
+        "informado",
+        "pendiente",
+        "en gestion",
+        "en proceso",
+        "en revision",
+        "esperando respuesta",
+        "esperando",
+        "resuelto",
+    }
 
 
 def _is_novedad_cerrada(tipo, estado):
     est = _norm_ci(estado)
     if _is_coffee_tipo(tipo):
         return est in NVD_COFFEE_ESTADO_CERRADOS
-    return est in {"resuelto", "cerrado"}
+    # Cierre definitivo para no-coffee: solo "Cerrado".
+    # "Resuelto" queda activo hasta que Matias lo revise y cierre.
+    return est in {"cerrado"}
 
 
 def _can_edit_coffee_estado(actor, estado_objetivo):
@@ -1384,13 +1399,39 @@ def register_novedades(bp, get_db):
                 FROM novedades_diarias
                 WHERE (
                         date(fecha) = date(?)
-                        AND LOWER(COALESCE(estado,'')) IN ('informado', 'en revision', 'en proceso', 'pendiente', 'aprobado', 'en preparacion', 'en preparación', 'enviado')
+                        AND LOWER(COALESCE(estado,'')) IN (
+                            'informado',
+                            'pendiente',
+                            'en gestion',
+                            'en revision',
+                            'en proceso',
+                            'esperando respuesta',
+                            'esperando',
+                            'resuelto',
+                            'aprobado',
+                            'en preparacion',
+                            'en preparación',
+                            'enviado'
+                        )
                     )
                    OR (
                         date(fecha) < date(?)
-                        AND LOWER(COALESCE(estado,'')) IN ('informado', 'en revision', 'en proceso', 'pendiente', 'aprobado', 'en preparacion', 'en preparación', 'enviado')
+                        AND LOWER(COALESCE(estado,'')) IN (
+                            'informado',
+                            'pendiente',
+                            'en gestion',
+                            'en revision',
+                            'en proceso',
+                            'esperando respuesta',
+                            'esperando',
+                            'resuelto',
+                            'aprobado',
+                            'en preparacion',
+                            'en preparación',
+                            'enviado'
+                        )
                     )
-                   OR LOWER(COALESCE(estado,'')) IN ('resuelto', 'cerrado', 'finalizado', 'cancelado', 'rechazado')
+                   OR LOWER(COALESCE(estado,'')) IN ('cerrado', 'finalizado', 'cancelado', 'rechazado')
                 ORDER BY date(fecha) DESC, COALESCE(hora,'') DESC, id DESC
                 LIMIT 800
             """, (fecha, fecha)).fetchall()
