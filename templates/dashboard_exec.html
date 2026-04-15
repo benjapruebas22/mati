@@ -1789,6 +1789,96 @@
     .coffee-layout-empty,
     .coffee-layout-preview-img { width: 100%; height: 140px; }
   }
+
+  /* =========================
+     Modal: Planos depósito
+     ========================= */
+  .depplan-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    border-bottom: 1px solid #e4ebf7;
+    background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+  }
+  .depplan-sedes {
+    display: grid;
+    gap: 6px;
+    min-width: 260px;
+  }
+  .depplan-sede-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .depplan-sede-chip {
+    padding: 3px 10px;
+    font-size: 11px;
+  }
+  .depplan-sede-chip.active {
+    background: #1d4ed8;
+    border-color: #1d4ed8;
+    color: #fff;
+  }
+  .depplan-body {
+    padding: 10px 12px 12px;
+    display: grid;
+    gap: 10px;
+  }
+  .depplan-search-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+  .depplan-table-wrap {
+    border: 1px solid #dbe5f4;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+  }
+  table.depplan-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  table.depplan-table thead {
+    background: #f3f6ff;
+  }
+  table.depplan-table th,
+  table.depplan-table td {
+    padding: 8px;
+    border-bottom: 1px solid #e4ebf7;
+    text-align: left;
+    vertical-align: top;
+  }
+  table.depplan-table td.depplan-code {
+    width: 90px;
+    font-weight: 900;
+    color: #1f3a61;
+  }
+  table.depplan-table td.depplan-actions {
+    width: 84px;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .depplan-empty {
+    padding: 10px;
+    color: #6f86a5;
+    font-size: 12px;
+  }
+
+  @media (max-width: 640px) {
+    .depplan-toolbar { align-items: stretch; }
+    .depplan-sedes { min-width: 0; }
+    .depplan-sede-grid {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+  }
 </style>
 
 <section class="control-shell">
@@ -1876,6 +1966,7 @@
     <div class="card-head">
       <h2>Cargar</h2>
       <div class="card-head-actions">
+        <button id="btnPlanosDeposito" type="button" class="btn-soft">Planos depósito</button>
         <span class="state-chip soft">Carga manual</span>
       </div>
     </div>
@@ -2350,6 +2441,40 @@
   </div>
 </div>
 
+<div id="depositosPlanosModal" class="gestion-modal" aria-hidden="true">
+  <div class="gestion-backdrop" data-close-depplan="1"></div>
+  <div class="gestion-dialog" role="dialog" aria-modal="true" aria-labelledby="depositosPlanosTitle">
+    <div class="gestion-head">
+      <h3 id="depositosPlanosTitle" class="gestion-title">Planos depósito</h3>
+      <button id="depositosPlanosClose" type="button" class="btn-soft">Cerrar</button>
+    </div>
+
+    <div class="depplan-toolbar">
+      <div class="depplan-sedes">
+        <div class="f-group">
+          <label for="depositosPlanosSedeSelect">Sede</label>
+          <select id="depositosPlanosSedeSelect" class="ctl-sel"></select>
+        </div>
+        <div id="depositosPlanosSedeGrid" class="depplan-sede-grid" aria-label="Sedes"></div>
+      </div>
+
+      <div class="depplan-actions" style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;">
+        <a id="depositosPlanosOpenSede" class="btn-soft" target="_blank" rel="noopener">Abrir planos</a>
+      </div>
+    </div>
+
+    <div class="depplan-body">
+      <div class="depplan-search-row">
+        <input id="depositosPlanosSearch" class="ctl-inp" type="text" maxlength="50" placeholder="Buscar depósito / local (D01, etc.)">
+      </div>
+      <div id="depositosPlanosMsg" class="aux-msg" style="display:none;"></div>
+      <div id="depositosPlanosList" class="depplan-table-wrap">
+        <div class="depplan-empty">Seleccioná una sede para ver depósitos.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
   (function () {
     var CURRENT_USER = {{ (current_user or {})|tojson }};
@@ -2372,6 +2497,8 @@
     var GESTION_FILTRO_ESTADO = "";
     var GESTION_FILTRO_PRIORIDAD = "";
     var HIDE_PENDIENTES_NO_CERRADOS = true;
+    var FORM_DEPOSITO_PREFER = "";
+    var DEPPLAN_SEDE_ACTIVA = "";
     var WORKSPACE_DEFAULT = "gestion";
     var WORKSPACE_ACTIVE = WORKSPACE_DEFAULT;
     var WORKSPACE_META = {
@@ -2529,6 +2656,7 @@
     var el = {
       shell: document.querySelector(".control-shell"),
       btnCargarTop: document.getElementById("btnCargarTop"),
+      btnPlanosDeposito: document.getElementById("btnPlanosDeposito"),
       workspaceLabel: document.getElementById("workspaceCurrentLabel"),
       workspaceTitle: document.getElementById("workspaceContextTitle"),
       workspaceSub: document.getElementById("workspaceContextSub"),
@@ -2614,6 +2742,14 @@
       histBuscar: document.getElementById("btnHistBuscar"),
       histBody: document.getElementById("histBody"),
       agenteHint: document.getElementById("nvdAgenteHint"),
+      depositosPlanosModal: document.getElementById("depositosPlanosModal"),
+      depositosPlanosClose: document.getElementById("depositosPlanosClose"),
+      depositosPlanosSedeSelect: document.getElementById("depositosPlanosSedeSelect"),
+      depositosPlanosSedeGrid: document.getElementById("depositosPlanosSedeGrid"),
+      depositosPlanosSearch: document.getElementById("depositosPlanosSearch"),
+      depositosPlanosMsg: document.getElementById("depositosPlanosMsg"),
+      depositosPlanosList: document.getElementById("depositosPlanosList"),
+      depositosPlanosOpenSede: document.getElementById("depositosPlanosOpenSede"),
       gestionModal: document.getElementById("gestionModal"),
       gestionClose: document.getElementById("gestionClose"),
       gestionTitle: document.getElementById("gestionTitle"),
@@ -3353,7 +3489,9 @@
             el.agente.insertBefore(op, el.agente.firstChild);
           }
         }
-        refreshFormDepositos("");
+        var prefDep = String(FORM_DEPOSITO_PREFER || "").trim().toUpperCase();
+        FORM_DEPOSITO_PREFER = "";
+        refreshFormDepositos(prefDep);
       }
       syncCoffeeFormFields();
     }
@@ -3881,6 +4019,215 @@
         var label = c + (desc && normTxt(desc) !== normTxt(c) ? (" - " + desc) : "");
         return { value: c, label: label };
       }).filter(Boolean);
+    }
+
+    function setDepplanMsg(txt, isErr) {
+      if (!el.depositosPlanosMsg) return;
+      var t = String(txt || "").trim();
+      el.depositosPlanosMsg.textContent = t;
+      el.depositosPlanosMsg.style.color = isErr ? "#9e4459" : "#5c789c";
+      el.depositosPlanosMsg.style.display = t ? "block" : "none";
+    }
+
+    function depplanSedesOpts() {
+      var out = [];
+      var seen = {};
+      if (Array.isArray(SEDES_ASSIGN) && SEDES_ASSIGN.length) {
+        SEDES_ASSIGN.forEach(function (s) {
+          var c = String((s && (s.codigo || s.value)) || "").trim().toUpperCase();
+          if (!c || seen[c]) return;
+          seen[c] = true;
+          var n = String((s && (s.nombre || s.label)) || "").trim();
+          var label = c + (n && n !== c ? (" - " + n) : "");
+          out.push({ value: c, label: label });
+        });
+        return out;
+      }
+      if (el.sede && el.sede.options && el.sede.options.length) {
+        for (var i = 0; i < el.sede.options.length; i += 1) {
+          var op = el.sede.options[i];
+          if (!op) continue;
+          var v = String(op.value || "").trim().toUpperCase();
+          if (!v || seen[v]) continue;
+          seen[v] = true;
+          var l = String(op.textContent || v).trim();
+          out.push({ value: v, label: l });
+        }
+      }
+      return out;
+    }
+
+    function depplanRenderSedeGrid(sedes, activeSede) {
+      if (!el.depositosPlanosSedeGrid) return;
+      var act = String(activeSede || "").trim().toUpperCase();
+      var src = Array.isArray(sedes) ? sedes : [];
+      el.depositosPlanosSedeGrid.innerHTML = src.map(function (s) {
+        var c = String((s && s.value) || "").trim().toUpperCase();
+        if (!c) return "";
+        var cls = "btn-mini depplan-sede-chip" + (c === act ? " active" : "");
+        return (
+          '<button type="button" class="' + cls + '" data-depplan-sede="' + escapeHtml(c) + '"' +
+            ' title="' + escapeHtml((s && s.label) || c) + '">' +
+            escapeHtml(c) +
+          "</button>"
+        );
+      }).join("");
+    }
+
+    function depplanApplyFilter() {
+      if (!el.depositosPlanosList || !el.depositosPlanosSearch) return;
+      var q = normTxt(el.depositosPlanosSearch.value || "");
+      var rows = el.depositosPlanosList.querySelectorAll("tbody tr[data-text]");
+      rows.forEach(function (r) {
+        var t = String(r.getAttribute("data-text") || "");
+        r.style.display = (!q || t.indexOf(q) >= 0) ? "" : "none";
+      });
+    }
+
+    function depplanRenderDepositos(sedeCodigo, deps) {
+      if (!el.depositosPlanosList) return;
+      var sede = String(sedeCodigo || "").trim().toUpperCase();
+      var arr = Array.isArray(deps) ? deps : [];
+      var canUse = canUseTaskMode();
+      var rows = arr.map(function (d) {
+        var c = String((d && (d.codigo || d.deposito_id || d.value || d.codigo_local)) || "").trim().toUpperCase();
+        if (!c) return null;
+        var desc = String((d && (d.descripcion || d.label || d.nombre || d.ubicacion)) || "").trim();
+        if (desc && normTxt(desc) === normTxt(c)) desc = "";
+        var text = normTxt(c + " " + desc);
+        var actionsCell = "";
+        if (canUse) {
+          actionsCell =
+            '<td class="depplan-actions">' +
+              '<button type="button" class="btn-mini" data-depplan-use="1" data-sede="' + escapeHtml(sede) + '" data-dep="' + escapeHtml(c) + '">Usar</button>' +
+            "</td>";
+        }
+        return (
+          '<tr data-text="' + escapeHtml(text) + '">' +
+            '<td class="depplan-code">' + escapeHtml(c) + "</td>" +
+            "<td>" + (desc ? escapeHtml(desc) : "<span style=\"color:#6f86a5;\">—</span>") + "</td>" +
+            actionsCell +
+          "</tr>"
+        );
+      }).filter(Boolean);
+
+      if (!rows.length) {
+        el.depositosPlanosList.innerHTML = '<div class="depplan-empty">(sin depósitos cargados en ' + escapeHtml(sede) + ")</div>";
+        return;
+      }
+
+      el.depositosPlanosList.innerHTML = (
+        '<table class="depplan-table">' +
+          "<thead><tr>" +
+            "<th>Local</th>" +
+            "<th>Descripción</th>" +
+            (canUse ? "<th></th>" : "") +
+          "</tr></thead>" +
+          "<tbody>" + rows.join("") + "</tbody>" +
+        "</table>"
+      );
+      depplanApplyFilter();
+    }
+
+    function depplanSetSede(nextSede) {
+      var sede = String(nextSede || "").trim().toUpperCase();
+      DEPPLAN_SEDE_ACTIVA = sede;
+      if (el.depositosPlanosSedeSelect) el.depositosPlanosSedeSelect.value = sede;
+      depplanRenderSedeGrid(depplanSedesOpts(), sede);
+
+      if (el.depositosPlanosOpenSede) {
+        if (sede) {
+          el.depositosPlanosOpenSede.href = "/sedes/" + encodeURIComponent(sede) + "?tab=depositos&view=operativo";
+          el.depositosPlanosOpenSede.style.pointerEvents = "";
+          el.depositosPlanosOpenSede.style.opacity = "";
+        } else {
+          el.depositosPlanosOpenSede.removeAttribute("href");
+          el.depositosPlanosOpenSede.style.pointerEvents = "none";
+          el.depositosPlanosOpenSede.style.opacity = "0.55";
+        }
+      }
+
+      if (!el.depositosPlanosList) return;
+      if (!sede) {
+        el.depositosPlanosList.innerHTML = '<div class="depplan-empty">Seleccioná una sede para ver depósitos.</div>';
+        setDepplanMsg("", false);
+        return;
+      }
+
+      setDepplanMsg("Cargando depósitos de " + sede + "...", false);
+      el.depositosPlanosList.innerHTML = '<div class="depplan-empty">Cargando...</div>';
+      fetchDepositosBySede(sede)
+        .then(function (deps) {
+          setDepplanMsg("", false);
+          depplanRenderDepositos(sede, deps);
+        })
+        .catch(function () {
+          setDepplanMsg("No se pudieron cargar depósitos.", true);
+          el.depositosPlanosList.innerHTML = '<div class="depplan-empty">Error al cargar depósitos.</div>';
+        });
+    }
+
+    function openDepositosPlanosModal(prefSede) {
+      if (!el.depositosPlanosModal) return;
+      var sedes = depplanSedesOpts();
+      if (el.depositosPlanosSedeSelect) {
+        fillSelect(el.depositosPlanosSedeSelect, sedes, true, "Elegí sede...");
+      }
+      depplanRenderSedeGrid(sedes, "");
+
+      var sede = String(prefSede || "").trim().toUpperCase();
+      if (!sede && el.sede) sede = String(el.sede.value || "").trim().toUpperCase();
+      if (!sede && DEPPLAN_SEDE_ACTIVA) sede = DEPPLAN_SEDE_ACTIVA;
+      if (!sede && sedes.length) sede = String(sedes[0].value || "").trim().toUpperCase();
+
+      if (el.depositosPlanosSearch) el.depositosPlanosSearch.value = "";
+      setDepplanMsg("", false);
+      if (el.depositosPlanosModal) {
+        el.depositosPlanosModal.classList.add("open");
+        el.depositosPlanosModal.setAttribute("aria-hidden", "false");
+      }
+      depplanSetSede(sede);
+      try {
+        if (el.depositosPlanosSearch) el.depositosPlanosSearch.focus();
+      } catch (_e) {
+        // noop
+      }
+    }
+
+    function closeDepositosPlanosModal() {
+      if (!el.depositosPlanosModal) return;
+      el.depositosPlanosModal.classList.remove("open");
+      el.depositosPlanosModal.setAttribute("aria-hidden", "true");
+      setDepplanMsg("", false);
+    }
+
+    function depplanUseDeposito(sedeCodigo, depCodigo) {
+      var sede = String(sedeCodigo || "").trim().toUpperCase();
+      var dep = String(depCodigo || "").trim().toUpperCase();
+      if (!sede || !dep) return;
+
+      if (el.gestionModal && el.gestionModal.classList.contains("open") && el.gestionTareaSede && el.gestionTareaDeposito) {
+        el.gestionTareaSede.value = sede;
+        refreshGestionDepositos(dep);
+        closeDepositosPlanosModal();
+        return;
+      }
+
+      toggleCarga(true);
+      if (el.sede) el.sede.value = sede;
+
+      if (canUseTaskMode() && el.modo) {
+        FORM_DEPOSITO_PREFER = dep;
+        el.modo.value = "tarea";
+        applyModoUI();
+        try {
+          if (el.tareaTxt) el.tareaTxt.focus();
+          else if (el.deposito) el.deposito.focus();
+        } catch (_e) {
+          // noop
+        }
+      }
+      closeDepositosPlanosModal();
     }
 
     function refreshGestionDepositos(preferCodigo) {
@@ -5104,6 +5451,9 @@
     if (el.gestionClose) {
       el.gestionClose.addEventListener("click", closeGestionModal);
     }
+    if (el.depositosPlanosClose) {
+      el.depositosPlanosClose.addEventListener("click", closeDepositosPlanosModal);
+    }
     if (el.gestionModal) {
       el.gestionModal.addEventListener("click", function (ev) {
         var tgt = ev.target;
@@ -5112,6 +5462,34 @@
           closeGestionModal();
         }
       });
+    }
+    if (el.depositosPlanosModal) {
+      el.depositosPlanosModal.addEventListener("click", function (ev) {
+        var tgt = ev.target;
+        if (!tgt) return;
+        if (tgt.getAttribute && tgt.getAttribute("data-close-depplan") === "1") {
+          closeDepositosPlanosModal();
+          return;
+        }
+        var sedeBtn = tgt.closest && tgt.closest("[data-depplan-sede]");
+        if (sedeBtn) {
+          depplanSetSede(sedeBtn.getAttribute("data-depplan-sede") || "");
+          return;
+        }
+        var useBtn = tgt.closest && tgt.closest("[data-depplan-use]");
+        if (useBtn) {
+          depplanUseDeposito(useBtn.getAttribute("data-sede") || "", useBtn.getAttribute("data-dep") || "");
+          return;
+        }
+      });
+    }
+    if (el.depositosPlanosSedeSelect) {
+      el.depositosPlanosSedeSelect.addEventListener("change", function () {
+        depplanSetSede(el.depositosPlanosSedeSelect.value || "");
+      });
+    }
+    if (el.depositosPlanosSearch) {
+      el.depositosPlanosSearch.addEventListener("input", depplanApplyFilter);
     }
     if (el.gestionEnviar) {
       el.gestionEnviar.addEventListener("click", sendGestionMensaje);
@@ -5344,9 +5722,12 @@
       });
     }
     document.addEventListener("keydown", function (ev) {
-      if (ev.key === "Escape" && el.gestionModal && el.gestionModal.classList.contains("open")) {
-        closeGestionModal();
+      if (ev.key !== "Escape") return;
+      if (el.depositosPlanosModal && el.depositosPlanosModal.classList.contains("open")) {
+        closeDepositosPlanosModal();
+        return;
       }
+      if (el.gestionModal && el.gestionModal.classList.contains("open")) closeGestionModal();
     });
 
     function openRecordatoriosTab() {
@@ -5371,6 +5752,11 @@
     if (el.btnCargarTop) {
       el.btnCargarTop.addEventListener("click", function () {
         toggleCarga(true);
+      });
+    }
+    if (el.btnPlanosDeposito) {
+      el.btnPlanosDeposito.addEventListener("click", function () {
+        openDepositosPlanosModal(String((el.sede && el.sede.value) || ""));
       });
     }
     if (el.cerrarCarga) {
