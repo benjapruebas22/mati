@@ -304,8 +304,9 @@ def register_ordenes_mantenimiento(app: Flask) -> None:
             "local_id", "codigo_local", "local", "dpto", "dpto_def", "nombre"
         ]
         label_candidates = [
-            "label", "nombre", "descripcion", "detalle", "deposito",
-            "local", "deposito_id", "codigo_local", "codigo_deposito"
+            # Priorizar descripcion (usado en sedes_depositos) antes de nombre
+            "label", "descripcion", "nombre", "detalle", "ubicacion",
+            "deposito", "local", "deposito_id", "codigo_local", "codigo_deposito"
         ]
 
         tables = _list_tables(con)
