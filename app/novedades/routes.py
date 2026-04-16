@@ -1067,13 +1067,22 @@ def register_novedades(bp, get_db):
         )
         es_matias = bool(actor.get("is_matias"))
         is_team_actor = _is_tarea_chat_team_actor(actor)
+        tarea_txt = bool((_row_value(row, "tarea_asignada", "") or "").strip())
+        tarea_estado_norm = _norm_ci(_row_value(row, "tarea_estado", "") or "")
+        tarea_done = tarea_estado_norm in {"finalizado", "finalizada", "completado", "completada", "resuelto", "cerrado"}
+        tarea_agentes_auto = _split_tarea_agentes(tarea_agente)
+        tarea_team_only = bool(tarea_agentes_auto) and all(_norm_ci(ag) in NVD_CHAT_TEAM_FULLNAMES for ag in tarea_agentes_auto)
+        actor_ya_asignado = any(_actor_match_name(actor, ag) for ag in tarea_agentes_auto)
         can_autoassign = bool(
             puede_ver_novedad
             and not es_privada
             and _norm_ci(tipo) == _norm_ci(NVD_TIPO_TAREA)
             and is_team_actor
-            and bool((_row_value(row, "tarea_asignada", "") or "").strip())
-            and tarea_general
+            and tarea_txt
+            and (not tarea_done)
+            and (tarea_general or tarea_team_only)
+            and (len(tarea_agentes_auto) < 4)
+            and (not actor_ya_asignado)
         )
         puede_gestionar_tarea = bool(
             puede_ver_novedad and (_can_admin_novedades(actor) or (es_privada and es_duenio_privada))
@@ -2545,7 +2554,21 @@ def register_novedades(bp, get_db):
                 tarea_deposito_codigo = (item.get("tarea_deposito_codigo") or "").strip().upper()
                 tarea_deposito_nombre = (item.get("tarea_deposito_nombre") or "").strip()
                 tarea_herramientas = _parse_tarea_herramientas(item.get("tarea_herramientas") or [])
-                tarea_agente = (actor.get("display") or actor.get("full_name") or actor.get("username") or "").strip()
+                actor_name = (actor.get("full_name") or actor.get("display") or actor.get("username") or "").strip()
+                if not actor_name:
+                    con.close()
+                    return jsonify({"ok": False, "error": "No se pudo identificar el agente"}), 400
+                existentes = _split_tarea_agentes(item.get("tarea_agente") or "")
+                # Seguridad extra: autoasignacion solo aplica para el equipo
+                existentes = [ag for ag in existentes if _norm_ci(ag) in NVD_CHAT_TEAM_FULLNAMES]
+                if any(_actor_match_name(actor, ag) for ag in existentes):
+                    tarea_agente = " + ".join(existentes) if existentes else actor_name
+                else:
+                    if len(existentes) >= 4:
+                        con.close()
+                        return jsonify({"ok": False, "error": "La tarea ya tiene 4 agentes asignados"}), 400
+                    existentes.append(actor_name)
+                    tarea_agente = " + ".join(existentes)
             elif not bool(item.get("puede_asignar_tarea")):
                 con.close()
                 return jsonify({"ok": False, "error": "No autorizado para editar tarea"}), 403

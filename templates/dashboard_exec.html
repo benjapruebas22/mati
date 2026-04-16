@@ -2336,6 +2336,19 @@
       <div class="col-agentes">
         <label for="gestionTareaAgente">Agente asignado</label>
         <select id="gestionTareaAgente" class="ctl-sel"></select>
+        <button id="gestionAutoasignar" type="button" class="btn-soft btn-autoasignar" style="display:none;">Me asigno</button>
+
+        <div id="gestionGrupoWrap" class="gestion-grupo-wrap" style="display:none;margin-top:8px;">
+          <div class="gestion-grupo-add">
+            <div>
+              <label for="gestionGrupoAgente">Equipo operativo</label>
+              <select id="gestionGrupoAgente" class="ctl-sel"></select>
+            </div>
+            <button id="gestionGrupoAdd" type="button" class="btn-inline">Agregar</button>
+          </div>
+          <div id="gestionGrupoList" class="gestion-grupo-list"></div>
+          <div class="gestion-tools-help">PodÃ©s asignar 1 a 4 personas del equipo.</div>
+        </div>
       </div>
       <div>
         <label for="gestionTareaSede">Sede</label>
@@ -4959,12 +4972,6 @@
       if (!limpiar && !agente) {
         setGestionMsg("Selecciona el agente asignado.", true);
         return;
-      }
-      if (!limpiar && String((el.gestionTareaAgente && el.gestionTareaAgente.value) || "").trim() === TAREA_AGENTE_GENERAL_VALUE) {
-        if (grupo.length > 0 && grupo.length < 2) {
-          setGestionMsg("Para grupo, selecciona al menos 2 agentes.", true);
-          return;
-        }
       }
       if (!limpiar && !sede) {
         setGestionMsg("Selecciona la sede de la tarea.", true);

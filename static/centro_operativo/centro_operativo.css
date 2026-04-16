@@ -581,6 +581,17 @@
   grid-template-columns: 1.5fr 0.8fr 1fr 2fr 0.9fr;
   align-items: end;
 }
+.gestion-modal .gestion-dialog .btn-autoasignar {
+  margin-top: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+.gestion-modal .gestion-dialog .gestion-grupo-wrap {
+  border: 1px dashed #dbe6f6;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+  padding: 10px;
+}
 @media (max-width: 920px) {
   .gestion-modal .gestion-dialog .gestion-tarea-row.gestion-asignacion-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
