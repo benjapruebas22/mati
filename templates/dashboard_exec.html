@@ -2318,28 +2318,24 @@
     </div>
     <div id="gestionMeta" class="gestion-meta"></div>
     <div id="gestionTurnoBar" class="gestion-turno-bar" style="display:none;"></div>
-    <div id="gestionStatusTitle" class="gestion-section-title" style="display:none;">Estado de novedad</div>
-    <div id="gestionStatusRow" class="gestion-status-row" style="display:none;">
-      <div class="gestion-status-left">
-        <div class="gestion-status-label">Estado general</div>
-        <span id="gestionEstadoPill" class="estado-pill estado-informado">Pendiente</span>
+
+    <div id="gestionStatusTitle" class="gestion-section-title" style="display:none;">Acciones</div>
+    <div id="gestionStatusRow" class="gestion-actions-row" style="display:none;">
+      <div class="gestion-actions-main">
+        <button id="gestionTareaGuardar" type="button" class="btn-action btn-primary">Guardar</button>
+        <button id="gestionTareaFinalizar" type="button" class="btn-action btn-success">Finalizado por agente</button>
+        <button id="gestionCerrar" type="button" class="btn-action btn-danger">Revisado y cerrado</button>
       </div>
-      <div class="gestion-status-actions">
+      <div class="gestion-actions-secondary">
         <select id="gestionEstado" class="ctl-sel"></select>
-        <button id="gestionEstadoGuardar" type="button" class="btn-inline">Actualizar estado</button>
-        <button id="gestionCerrar" type="button" class="btn-inline btn-danger">Revisado y cerrado</button>
+        <button id="gestionEstadoGuardar" type="button" class="btn-soft">Actualizar estado</button>
       </div>
     </div>
     <div id="gestionTareaTitle" class="gestion-section-title" style="display:none;">Asignacion de tarea</div>
-    <div id="gestionTareaRow" class="gestion-tarea-row" style="display:none;">
+    <div id="gestionTareaRow" class="gestion-tarea-row gestion-asignacion-grid" style="display:none;">
       <div class="col-agentes">
-        <label>Agentes asignados</label>
-        <div id="gestionTareaAgentes" class="gestion-agentes-grid"></div>
-        <div class="gestion-tools-help" style="margin-top:4px;">Selecciona 1 o mas agentes.</div>
-        <div id="gestionTareaAgenteSingleWrap" style="display:none;margin-top:6px;">
-          <label for="gestionTareaAgente">Agente asignado (modo simple)</label>
-          <select id="gestionTareaAgente" class="ctl-sel"></select>
-        </div>
+        <label for="gestionTareaAgente">Agente asignado</label>
+        <select id="gestionTareaAgente" class="ctl-sel"></select>
       </div>
       <div>
         <label for="gestionTareaSede">Sede</label>
@@ -2349,17 +2345,13 @@
         <label for="gestionTareaDeposito">Deposito</label>
         <select id="gestionTareaDeposito" class="ctl-sel"></select>
       </div>
-      <div>
+      <div class="col-tarea">
         <label for="gestionTarea">Tarea asignada</label>
         <input id="gestionTarea" class="ctl-inp" type="text" maxlength="280" placeholder="Ej: Coordinar compra de luminarias para S11">
       </div>
       <div>
         <label for="gestionTareaEstado">Estado tarea</label>
         <select id="gestionTareaEstado" class="ctl-sel"></select>
-      </div>
-      <div class="gestion-tarea-actions">
-        <button id="gestionTareaGuardar" type="button" class="btn-inline btn-neutral">Guardar</button>
-        <button id="gestionTareaFinalizar" type="button" class="btn-inline btn-success">Finalizado por agente</button>
       </div>
     </div>
     <div id="gestionCoffeeInsumosTitle" class="gestion-section-title" style="display:none;">Control de insumos</div>
@@ -2436,7 +2428,6 @@
         </div>
       </details>
     </div>
-    <div id="gestionTareaView" class="gestion-tarea-view">Sin tarea asignada.</div>
     <div id="gestionFotosTitle" class="gestion-section-title">Fotos</div>
     <div id="gestionFotosRow" class="gestion-fotos-row">
       <div class="gestion-fotos-top">
@@ -4320,6 +4311,51 @@
       );
     }
 
+    function headKpi(label, value, muted) {
+      var txt = String(value == null ? "" : value).trim();
+      if (!txt) txt = "-";
+      return (
+        '<div class="gestion-head-kpi">' +
+          '<div class="k">' + escapeHtml(label) + "</div>" +
+          '<div class="v' + (muted ? " muted" : "") + '">' + escapeHtml(txt) + "</div>" +
+        "</div>"
+      );
+    }
+
+    function headKpiHtml(label, html, muted) {
+      return (
+        '<div class="gestion-head-kpi">' +
+          '<div class="k">' + escapeHtml(label) + "</div>" +
+          '<div class="v' + (muted ? " muted" : "") + '">' + String(html || "") + "</div>" +
+        "</div>"
+      );
+    }
+
+    function gestionEstadoMeta(item) {
+      var it = item || {};
+      var estGen = normTxt(it.estado || "");
+      var tareaTxt = String(it.tarea_asignada || "").trim();
+      var estTarea = normTxt(it.tarea_estado || "");
+      var readOnly = !!it.gestion_readonly;
+
+      if (readOnly || estGen === "cerrado") {
+        return { label: "Revisado y cerrado", cls: "gs-cerrado", hint: "Tarea cerrada" };
+      }
+      if (estGen === "resuelto") {
+        return { label: "Finalizado por agente", cls: "gs-finalizado", hint: "Esperando revisión" };
+      }
+      if (estGen === "en gestion" || estGen === "en proceso" || estGen === "en revision" || estGen === "esperando respuesta" || estGen === "esperando_respuesta") {
+        return { label: "En curso", cls: "gs-curso", hint: "En gestión" };
+      }
+      if (tareaTxt && (estTarea === "finalizado" || estTarea === "finalizada" || estTarea === "completado" || estTarea === "completada" || estTarea === "terminado" || estTarea === "terminada")) {
+        return { label: "Finalizado por agente", cls: "gs-finalizado", hint: "Esperando revisión" };
+      }
+      if (tareaTxt && (estTarea === "en curso" || estTarea === "en_curso")) {
+        return { label: "En curso", cls: "gs-curso", hint: "En ejecución por agente" };
+      }
+      return { label: "Pendiente", cls: "gs-pendiente", hint: tareaTxt ? "Pendiente de ejecución" : "Pendiente" };
+    }
+
     function coffeeLayoutMeta(code) {
       var c = String(code || "").trim();
       if (!c) return null;
@@ -4338,6 +4374,36 @@
       var tCls = tipoClass(tipo);
       var estado = String(item.estado || "Informado").trim() || "Informado";
       var subtipo = String(item.subtipo || "").trim();
+
+      if (!isCoffee) {
+        var sedeT = String(item.tarea_sede_codigo || item.sede_codigo || "").trim() || "-";
+        var depCode = String(item.tarea_deposito_codigo || "").trim().toUpperCase();
+        var depName = String(item.tarea_deposito_nombre || "").trim();
+        var depTxt = depCode ? (depCode + (depName ? (" - " + depName) : "")) : "-";
+        var agenteAsig = String(item.tarea_agente || item.agente || "").trim();
+        var ultimaAct = String(item.chat_ult_creado_en || "").trim() || "Sin mensajes";
+        var tipoLbl = tipoShortLabel(tipo) || (tipo || "Tarea");
+        var estMeta = gestionEstadoMeta(item);
+        var estHtml =
+          '<div class="gestion-state-badge ' + escapeHtml(estMeta.cls || "") + '">' + escapeHtml(estMeta.label || "Pendiente") + "</div>" +
+          '<div class="gestion-state-hint">' + escapeHtml(estMeta.hint || "") + "</div>";
+
+        var head =
+          '<div class="gestion-head-grid">' +
+            headKpi("Tipo", tipoLbl, !tipoLbl) +
+            headKpiHtml("Estado actual", estHtml, false) +
+            headKpi("Sede", sedeT, sedeT === "-") +
+            headKpi("Depósito", depTxt, depTxt === "-") +
+            headKpi("Subtipo", subtipo || "-", !subtipo) +
+            headKpiHtml("Agente asignado", agenteAsig ? agenteCell(agenteAsig) : '<span class="muted">-</span>', !agenteAsig) +
+            headKpi("Última actividad", ultimaAct, ultimaAct === "Sin mensajes") +
+          "</div>";
+
+        var detalle = String(item.observacion || "").trim();
+        var detalleHtml = '<div class="gestion-detail"><div class="k">Detalle</div><div class="v' + (!detalle ? " muted" : "") + '">' + escapeHtml(detalle || "-") + "</div></div>";
+
+        return '<div class="gestion-meta-card ' + tCls + ' meta-task">' + head + detalleHtml + "</div>";
+      }
       var agente = String(item.agente || "").trim();
       var sede = String(item.sede_codigo || "").trim();
       var left = tipoPill(tipo) + '<span class="estado-pill ' + estadoClass(estado) + '">' + escapeHtml(estado) + "</span>";
@@ -4580,14 +4646,14 @@
       }
       if (el.gestionCerrar) {
         el.gestionCerrar.textContent = isCoffee ? "Cerrar novedad" : "Revisado y cerrado";
-        el.gestionCerrar.classList.toggle("btn-danger", !isCoffee);
-        el.gestionCerrar.disabled = !!nov.gestion_readonly;
+        el.gestionCerrar.disabled = !!nov.gestion_readonly || (!isCoffee && !nov.puede_cerrar);
       }
+      var showActionsRow = isCoffee ? (showEstadoControls || !!nov.puede_cerrar) : true;
       if (el.gestionEstadoRow) {
-        el.gestionEstadoRow.style.display = (showEstadoControls || (!isCoffee && !!nov.puede_cerrar)) ? "flex" : "none";
+        el.gestionEstadoRow.style.display = showActionsRow ? "flex" : "none";
       }
       if (el.gestionStatusTitle) {
-        el.gestionStatusTitle.style.display = (showEstadoControls || (!isCoffee && !!nov.puede_cerrar)) ? "block" : "none";
+        el.gestionStatusTitle.style.display = showActionsRow ? "block" : "none";
       }
       var hasTarea = !!String(nov.tarea_asignada || "").trim();
       var showTareaRow = !!(nov.puede_asignar_tarea || (nov.puede_ver_gestion && hasTarea));
@@ -4745,9 +4811,17 @@
       }
       if (el.gestionEnviar) el.gestionEnviar.disabled = !canReply;
       if (el.gestionFotoAdd) el.gestionFotoAdd.disabled = !canReply;
-      if (el.gestionTareaGuardar) el.gestionTareaGuardar.disabled = !nov.puede_asignar_tarea;
+      var tareaEstNorm = normTxt(nov.tarea_estado || "");
+      var tareaDone = tareaEstNorm === "finalizado" || tareaEstNorm === "finalizada" || tareaEstNorm === "completado" || tareaEstNorm === "completada" || tareaEstNorm === "terminado" || tareaEstNorm === "terminada";
+      if (el.gestionTareaGuardar) {
+        el.gestionTareaGuardar.disabled = isCoffee || !nov.puede_asignar_tarea;
+        el.gestionTareaGuardar.style.display = isCoffee ? "none" : "";
+      }
+      if (el.gestionTareaFinalizar) {
+        el.gestionTareaFinalizar.disabled = isCoffee || !!nov.gestion_readonly || !hasTarea || tareaDone;
+        el.gestionTareaFinalizar.style.display = isCoffee ? "none" : "";
+      }
       if (el.gestionTareaLimpiar) el.gestionTareaLimpiar.disabled = !nov.puede_asignar_tarea;
-      if (el.gestionTareaGuardar) el.gestionTareaGuardar.style.display = nov.puede_asignar_tarea ? "" : "none";
       if (el.gestionTareaLimpiar) el.gestionTareaLimpiar.style.display = nov.puede_asignar_tarea ? "" : "none";
       if (el.gestionTareaAgente) el.gestionTareaAgente.disabled = !(nov.puede_asignar_tarea) || isCoffee;
       if (el.gestionTareaSede) el.gestionTareaSede.disabled = !(nov.puede_asignar_tarea);
@@ -4830,6 +4904,25 @@
         })
         .catch(function (e) {
           setGestionMsg(e.message || "No se pudo actualizar estado", true);
+        });
+    }
+
+    function finalizarGestionTarea() {
+      var novId = Number(GESTION_OPEN_ID || 0);
+      if (novId <= 0) return;
+      fetch("/api/dashboard/novedades_diarias_gestion/" + encodeURIComponent(String(novId)) + "/tarea", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ finalizar: true }),
+      })
+        .then(function (r) { return r.json().then(function (b) { return { ok: r.ok, b: b || {} }; }); })
+        .then(function (x) {
+          if (!x.ok || !x.b.ok) throw new Error(x.b.error || "No se pudo finalizar la tarea");
+          setGestionMsg("Marcado como finalizado por agente.", false);
+          return loadGestion(novId).then(function () { return loadDay(); });
+        })
+        .catch(function (e) {
+          setGestionMsg(e.message || "No se pudo finalizar la tarea", true);
         });
     }
 
@@ -5598,8 +5691,13 @@
     }
     if (el.gestionCerrar) {
       el.gestionCerrar.addEventListener("click", function () {
-        var targetEstado = (GESTION_DATA && GESTION_DATA.novedad && GESTION_DATA.novedad.es_coffee) ? "Finalizado" : "Resuelto";
+        var targetEstado = (GESTION_DATA && GESTION_DATA.novedad && GESTION_DATA.novedad.es_coffee) ? "Finalizado" : "Cerrado";
         saveGestionEstado(targetEstado);
+      });
+    }
+    if (el.gestionTareaFinalizar) {
+      el.gestionTareaFinalizar.addEventListener("click", function () {
+        finalizarGestionTarea();
       });
     }
     if (el.gestionTareaGuardar) {
