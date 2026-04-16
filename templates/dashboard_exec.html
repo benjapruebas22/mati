@@ -2320,14 +2320,19 @@
     <div id="gestionTurnoBar" class="gestion-turno-bar" style="display:none;"></div>
     <div id="gestionStatusTitle" class="gestion-section-title" style="display:none;">Estado de novedad</div>
     <div id="gestionStatusRow" class="gestion-status-row" style="display:none;">
-      <label for="gestionEstado">Estado general</label>
-      <select id="gestionEstado" class="ctl-sel"></select>
-      <button id="gestionEstadoGuardar" type="button" class="btn-inline">Actualizar estado</button>
-      <button id="gestionCerrar" type="button" class="btn-inline">Revisado y cerrado</button>
+      <div class="gestion-status-left">
+        <div class="gestion-status-label">Estado general</div>
+        <span id="gestionEstadoPill" class="estado-pill estado-informado">Pendiente</span>
+      </div>
+      <div class="gestion-status-actions">
+        <select id="gestionEstado" class="ctl-sel"></select>
+        <button id="gestionEstadoGuardar" type="button" class="btn-inline">Actualizar estado</button>
+        <button id="gestionCerrar" type="button" class="btn-inline btn-danger">Revisado y cerrado</button>
+      </div>
     </div>
     <div id="gestionTareaTitle" class="gestion-section-title" style="display:none;">Asignacion de tarea</div>
     <div id="gestionTareaRow" class="gestion-tarea-row" style="display:none;">
-      <div>
+      <div class="col-agentes">
         <label>Agentes asignados</label>
         <div id="gestionTareaAgentes" class="gestion-agentes-grid"></div>
         <div class="gestion-tools-help" style="margin-top:4px;">Selecciona 1 o mas agentes.</div>
@@ -2352,8 +2357,10 @@
         <label for="gestionTareaEstado">Estado tarea</label>
         <select id="gestionTareaEstado" class="ctl-sel"></select>
       </div>
-      <button id="gestionTareaGuardar" type="button" class="btn-inline">Guardar</button>
-      <button id="gestionTareaFinalizar" type="button" class="btn-inline">Finalizado por agente</button>
+      <div class="gestion-tarea-actions">
+        <button id="gestionTareaGuardar" type="button" class="btn-inline btn-neutral">Guardar</button>
+        <button id="gestionTareaFinalizar" type="button" class="btn-inline btn-success">Finalizado por agente</button>
+      </div>
     </div>
     <div id="gestionCoffeeInsumosTitle" class="gestion-section-title" style="display:none;">Control de insumos</div>
     <div id="gestionCoffeeInsumosRow" class="gestion-coffee-row" style="display:none;">
@@ -2436,6 +2443,7 @@
         <button id="gestionFotoAdd" type="button" class="btn-inline">Agregar foto</button>
         <div class="gestion-fotos-note">JPG / PNG / WEBP - max 4 MB</div>
       </div>
+      <div id="gestionFotosMsg" class="aux-msg" style="display:none;"></div>
       <input id="gestionFotoFile" type="file" accept="image/*" style="display:none;">
       <div id="gestionFotosList" class="gestion-fotos-list"></div>
     </div>
