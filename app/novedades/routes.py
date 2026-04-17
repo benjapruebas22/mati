@@ -305,8 +305,6 @@ def _is_novedad_abierta(tipo, estado):
         "en revision",
         "esperando respuesta",
         "esperando",
-        # "Resuelto" = finalizado por agente / pendiente de revision Matias (sigue activo hasta "Cerrado")
-        "resuelto",
     }
 
 
@@ -1547,7 +1545,7 @@ def register_novedades(bp, get_db):
                 FROM novedades_diarias
                 WHERE 1=1
                   AND (
-                    LOWER(COALESCE(estado,'')) IN ('cerrado', 'finalizado', 'cancelado', 'rechazado')
+                    LOWER(COALESCE(estado,'')) IN ('resuelto', 'cerrado', 'finalizado', 'cancelado', 'rechazado')
                   )
             """
             params = []
