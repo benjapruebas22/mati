@@ -767,7 +767,7 @@ def register_novedades(bp, get_db):
                 continue
             out.append({
                 "id": fid,
-                "url": url_for("novedades_foto_ver", foto_id=fid),
+                "url": url_for("novedades.novedades_foto_ver", foto_id=fid),
                 "nombre_original": (_row_value(r, "nombre_original", "") or "").strip(),
                 "mime": (_row_value(r, "mime", "") or "").strip(),
                 "size_bytes": int(_row_value(r, "size_bytes", 0) or 0),
