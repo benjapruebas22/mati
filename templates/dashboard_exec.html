@@ -1894,7 +1894,7 @@
     <p class="control-header-intro">Pendientes activos y acceso rapido a la gestion interna (chat, estados, fotos y trazabilidad).</p>
   </header>
 
-  <article id="taskAlertCard" class="control-card control-workspace-section card-task-alert" data-workspaces="resumen" style="display:none;">
+  <article id="taskAlertCard" class="control-card control-workspace-section card-task-alert" data-workspaces="gestion" style="display:none;">
     <div class="card-head">
       <h2 id="taskAlertTitle">Alertas personales</h2>
     </div>
@@ -3859,17 +3859,6 @@
       var tasksAll = Array.isArray(RAW_TASK) ? RAW_TASK : [];
       var solicAll = Array.isArray(RAW_SOLIC) ? RAW_SOLIC : [];
 
-      function solicitudAbierta(r) {
-        return estadoClass((r && r.estado) || "") !== "estado-resuelto";
-      }
-
-      function solicitudRubro(r) {
-        var cls = tipoClass((r && r.tipo) || "");
-        if (cls === "tipo-mantenimiento") return "mantenimiento";
-        if (cls === "tipo-coffee" || cls === "tipo-vehiculos") return "choferes";
-        return "administrativo";
-      }
-
       function splitTdTp(rows) {
         var td = 0;
         var tp = 0;
@@ -3886,15 +3875,17 @@
         return { td: td, tp: tp, total: td + tp };
       }
 
-      var openTasks = tasksAll.filter(tareaEstaAbierta);
-      var openSolic = solicAll.filter(solicitudAbierta);
+      // RAW_TASK/RAW_SOLIC ya vienen "abiertos" desde backend. No filtrar por estado_tarea para no ocultar
+      // tareas "Finalizadas por agente" (quedan abiertas hasta que Matias cierre).
+      var openTasks = tasksAll;
+      var openSolic = solicAll;
 
       var mantRows = openTasks.filter(function (r) { return filaPerteneceGrupo(r, "mantenimiento"); })
-        .concat(openSolic.filter(function (r) { return solicitudRubro(r) === "mantenimiento"; }));
+        .concat(openSolic.filter(function (r) { return filaPerteneceGrupo(r, "mantenimiento"); }));
       var chofRows = openTasks.filter(function (r) { return filaPerteneceGrupo(r, "choferes"); })
-        .concat(openSolic.filter(function (r) { return solicitudRubro(r) === "choferes"; }));
+        .concat(openSolic.filter(function (r) { return filaPerteneceGrupo(r, "choferes"); }));
       var totRows = openTasks.concat(openSolic);
-      var recRows = openTasks.concat(openSolic).filter(filaEsRecordatorio);
+      var recRows = totRows.filter(filaEsRecordatorio);
 
       var mant = splitTdTp(mantRows);
       var chof = splitTdTp(chofRows);
@@ -5240,13 +5231,17 @@
         var out = Object.assign({}, r || {});
         if (!out.agente && out.tarea_agente) out.agente = out.tarea_agente;
         return out;
-      }).filter(tareaEstaAbierta);
+      });
       RAW_TASK = tasksBase.slice();
       var tareasMantenimientoBase = tasksBase.filter(function (r) { return filaPerteneceGrupo(r, "mantenimiento"); });
       var tareasChoferesBase = tasksBase.filter(function (r) { return filaPerteneceGrupo(r, "choferes"); });
+      var solicitudesChoferesBase = RAW_SOLIC.filter(function (r) { return filaPerteneceGrupo(r, "choferes"); });
+      var solicitudesAdministrativoBase = RAW_SOLIC.filter(function (r) {
+        return !filaPerteneceGrupo(r, "choferes") && !filaPerteneceGrupo(r, "mantenimiento");
+      });
       var tasks = ordenarTpTd(aplicarFiltroAgente(tareasMantenimientoBase));
-      var tasksChoferes = ordenarTpTd(aplicarFiltroAgente(tareasChoferesBase));
-      var solicitudes = ordenarTpTd(aplicarFiltroAgente(RAW_SOLIC));
+      var tasksChoferes = ordenarTpTd(aplicarFiltroAgente(tareasChoferesBase.concat(solicitudesChoferesBase)));
+      var solicitudes = ordenarTpTd(aplicarFiltroAgente(solicitudesAdministrativoBase));
       var recordatorios = ordenarTpTd(tasksBase.concat(RAW_SOLIC).filter(filaPasaFiltrosSinAgente).filter(filaEsRecordatorio));
       ITEM_INDEX = {};
       tasksBase.concat(RAW_SOLIC).forEach(function (r) {

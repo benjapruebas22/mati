@@ -297,8 +297,6 @@ def _is_novedad_abierta(tipo, estado):
         return est in NVD_COFFEE_ESTADO_ABIERTOS
     # Estados generales (no coffee): mantener compatibilidad con estados viejos y con la nueva
     # estructura (Pendiente / En gestion / Esperando respuesta / Resuelto / Cerrado).
-    #
-    # En el panel operativo "Resuelto" se manda a Historial (para dejar solo pendientes activos).
     return est in {
         "informado",
         "pendiente",
@@ -307,6 +305,8 @@ def _is_novedad_abierta(tipo, estado):
         "en revision",
         "esperando respuesta",
         "esperando",
+        # "Resuelto" = finalizado por agente / pendiente de revision Matias (sigue activo hasta "Cerrado")
+        "resuelto",
     }
 
 
@@ -992,12 +992,20 @@ def register_novedades(bp, get_db):
                     continue
                 tarea_agente = (_row_value(r, "tarea_agente", "") or "").strip()
                 agentes_asignados = _split_tarea_agentes(tarea_agente)
-                # No notificar al grupo completo (evitar ruido): solo agentes explicitamente asignados.
-                if not agentes_asignados:
+                is_general = _is_tarea_general_target(tarea_agente)
+                # Alertas personales:
+                # - Si la tarea tiene agentes explicitamente asignados: solo notificar a esos agentes.
+                # - Si la tarea es "Equipo operativo" (target general): notificar solo al equipo operativo (4 agentes).
+                if not agentes_asignados and not is_general:
                     continue
-                if not any(_actor_match_name(actor, ag) for ag in agentes_asignados):
-                    continue
-                tarea_agente = " + ".join(agentes_asignados)
+                if is_general:
+                    if not _is_tarea_chat_team_actor(actor):
+                        continue
+                    tarea_agente = NVD_TAREA_GENERAL_LABEL
+                else:
+                    if not any(_actor_match_name(actor, ag) for ag in agentes_asignados):
+                        continue
+                    tarea_agente = " + ".join(agentes_asignados)
                 by_user = _row_value(r, "tarea_asignado_por_username", "") or ""
                 by_name = _row_value(r, "tarea_asignado_por", "") or ""
                 by_admin = _is_novedades_admin_actor(by_user, by_name)
@@ -1476,7 +1484,14 @@ def register_novedades(bp, get_db):
                         continue
                     agente_obj = (it.get("tarea_agente") or it.get("agente") or "").strip()
                     is_general = _is_tarea_general_target(agente_obj)
-                    if _can_admin_novedades(actor) or _actor_match_name(actor, agente_obj) or (is_general and _is_tarea_chat_team_actor(actor)):
+                    agentes_multi = _split_tarea_agentes(agente_obj)
+                    team_only = bool(agentes_multi) and all(_norm_ci(ag) in NVD_CHAT_TEAM_FULLNAMES for ag in agentes_multi)
+                    is_team_actor = _is_tarea_chat_team_actor(actor)
+                    if (
+                        _can_admin_novedades(actor)
+                        or _actor_match_name(actor, agente_obj)
+                        or ((is_general or team_only) and is_team_actor)
+                    ):
                         if is_general:
                             it = dict(it)
                             it["tarea_agente"] = NVD_TAREA_GENERAL_LABEL
@@ -1532,15 +1547,7 @@ def register_novedades(bp, get_db):
                 FROM novedades_diarias
                 WHERE 1=1
                   AND (
-                    LOWER(COALESCE(estado,'')) IN ('resuelto', 'cerrado', 'finalizado', 'cancelado', 'rechazado')
-                    OR (
-                      TRIM(COALESCE(tarea_asignada,'')) <> ''
-                      AND LOWER(COALESCE(tarea_estado,'')) IN (
-                        'finalizado', 'finalizada',
-                        'completado', 'completada',
-                        'terminado', 'terminada'
-                      )
-                    )
+                    LOWER(COALESCE(estado,'')) IN ('cerrado', 'finalizado', 'cancelado', 'rechazado')
                   )
             """
             params = []
