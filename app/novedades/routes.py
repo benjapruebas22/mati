@@ -1454,6 +1454,90 @@ def register_novedades(bp, get_db):
                 if not _actor_can_view_novedad(actor, r):
                     continue
                 base_items.append(_serialize_novedad(r, actor))
+
+            # Programadas / futuras: traer tareas abiertas con fecha mayor al dia seleccionado.
+            programadas_futuras = []
+            try:
+                rows_fut = con.execute("""
+                    SELECT
+                        id,
+                        COALESCE(fecha,'') AS fecha,
+                        COALESCE(hora,'') AS hora,
+                        COALESCE(agente,'') AS agente,
+                        COALESCE(sede_codigo,'') AS sede_codigo,
+                        COALESCE(tipo,'') AS tipo,
+                        COALESCE(subtipo,'') AS subtipo,
+                        COALESCE(observacion,'') AS observacion,
+                        COALESCE(estado,'Informado') AS estado,
+                        COALESCE(coffee_cantidad_personas,0) AS coffee_cantidad_personas,
+                        COALESCE(coffee_fecha_evento,'') AS coffee_fecha_evento,
+                        COALESCE(coffee_horario_evento,'') AS coffee_horario_evento,
+                        COALESCE(coffee_sede_destino,'') AS coffee_sede_destino,
+                        COALESCE(coffee_logistica_aprobada,0) AS coffee_logistica_aprobada,
+                        COALESCE(tarea_asignada,'') AS tarea_asignada,
+                        COALESCE(tarea_estado,'') AS tarea_estado,
+                        COALESCE(tarea_sede_codigo,'') AS tarea_sede_codigo,
+                        COALESCE(tarea_deposito_codigo,'') AS tarea_deposito_codigo,
+                        COALESCE(tarea_deposito_nombre,'') AS tarea_deposito_nombre,
+                        COALESCE(tarea_agente,'') AS tarea_agente,
+                        COALESCE(tarea_herramientas_json,'') AS tarea_herramientas_json,
+                        COALESCE(tarea_asignado_por,'') AS tarea_asignado_por,
+                        COALESCE(tarea_asignado_por_username,'') AS tarea_asignado_por_username,
+                        COALESCE(tarea_asignado_en,'') AS tarea_asignado_en,
+                        COALESCE(tarea_actualizado_en,'') AS tarea_actualizado_en,
+                        COALESCE((
+                            SELECT c.autor
+                            FROM novedades_diarias_chat c
+                            WHERE c.novedad_id = novedades_diarias.id
+                              AND COALESCE(c.es_sistema,0)=0
+                            ORDER BY c.id DESC
+                            LIMIT 1
+                        ),'') AS chat_ult_autor,
+                        COALESCE((
+                            SELECT c.autor_username
+                            FROM novedades_diarias_chat c
+                            WHERE c.novedad_id = novedades_diarias.id
+                              AND COALESCE(c.es_sistema,0)=0
+                            ORDER BY c.id DESC
+                            LIMIT 1
+                        ),'') AS chat_ult_autor_username,
+                        COALESCE((
+                            SELECT c.creado_en
+                            FROM novedades_diarias_chat c
+                            WHERE c.novedad_id = novedades_diarias.id
+                              AND COALESCE(c.es_sistema,0)=0
+                            ORDER BY c.id DESC
+                            LIMIT 1
+                        ),'') AS chat_ult_creado_en,
+                        COALESCE(privado_flag,0) AS privado_flag,
+                        COALESCE(privado_owner_username,'') AS privado_owner_username,
+                        COALESCE(privado_owner_nombre,'') AS privado_owner_nombre
+                    FROM novedades_diarias
+                    WHERE date(fecha) > date(?)
+                      AND LOWER(COALESCE(estado,'')) IN (
+                        'informado',
+                        'pendiente',
+                        'en gestion',
+                        'en revision',
+                        'en proceso',
+                        'esperando respuesta',
+                        'esperando',
+                        'aprobado',
+                        'en preparacion',
+                        'en preparación',
+                        'enviado'
+                      )
+                    ORDER BY date(fecha) ASC, COALESCE(hora,'') ASC, id ASC
+                    LIMIT 250
+                """, (fecha,)).fetchall()
+                for rr in rows_fut or []:
+                    if not _actor_can_view_novedad(actor, rr):
+                        continue
+                    it_fut = _serialize_novedad(rr, actor)
+                    if _is_novedad_abierta(it_fut.get("tipo") or "", it_fut.get("estado") or ""):
+                        programadas_futuras.append(it_fut)
+            except Exception:
+                programadas_futuras = []
             pendientes_dia = []
             pendientes_acumulados = []
             resueltos_informados = []
@@ -1513,6 +1597,7 @@ def register_novedades(bp, get_db):
             "resueltos_informados": resueltos_informados,
             "tareas_asignadas": tareas_asignadas,
             "solicitudes_recibidas": solicitudes_recibidas,
+            "programadas_futuras": programadas_futuras,
             "resumen": resumen,
         })
 

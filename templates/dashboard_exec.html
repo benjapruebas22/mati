@@ -966,6 +966,7 @@
   .gestion-panels[data-active-tab="choferes"] .gestion-panel[data-panel="choferes"] { display: block; }
   .gestion-panels[data-active-tab="administrativo"] .gestion-panel[data-panel="administrativo"] { display: block; }
   .gestion-panels[data-active-tab="recordatorios"] .gestion-panel[data-panel="recordatorios"] { display: block; }
+  .gestion-panels[data-active-tab="programadas"] .gestion-panel[data-panel="programadas"] { display: block; }
 
   .nvd-admin-stack {
     display: grid;
@@ -2110,6 +2111,9 @@
         <button id="tabRecordatorios" type="button" class="gestion-rubro-tab" data-rubro="recordatorios" aria-selected="false">
           Recordatorios <span id="badgeRecordatorios" class="tab-badge">0</span>
         </button>
+        <button id="tabProgramadas" type="button" class="gestion-rubro-tab" data-rubro="programadas" aria-selected="false">
+          Programadas <span id="badgeProgramadas" class="tab-badge">0</span>
+        </button>
       </div>
 
       <details id="gestionFiltrosBox" class="gestion-filtros-box">
@@ -2270,6 +2274,31 @@
             </thead>
             <tbody id="nvdBodyRecord">
               <tr><td colspan="5" style="color:#6f86a5;">Sin recordatorios cargados.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="nvd-split-block split-prog gestion-panel" data-panel="programadas">
+        <div class="nvd-split-head prog">
+          <span class="title">Programadas / futuras</span>
+          <span class="sub">Tareas y solicitudes con fecha posterior al dia seleccionado.</span>
+        </div>
+        <div class="table-wrap table-wrap-full">
+          <table class="tbl">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Rubro</th>
+                <th>Agente</th>
+                <th>Sede / destino</th>
+                <th>Detalle</th>
+                <th>Estado</th>
+                <th>Accion</th>
+              </tr>
+            </thead>
+            <tbody id="nvdBodyProgramadas">
+              <tr><td colspan="7" style="color:#6f86a5;">Sin programadas.</td></tr>
             </tbody>
           </table>
         </div>
@@ -2547,9 +2576,10 @@
     var RAW_FINAL = [];
     var RAW_TASK = [];
     var RAW_SOLIC = [];
+    var RAW_PROG = [];
     var RESUMEN_BASE = { total: 0, informado: 0, en_proceso: 0, resuelto: 0 };
     var AGENTE_GRUPO_FILTRO_ACTIVO = "";
-    var GESTION_RUBRO_ACTIVO = "mantenimiento"; // mantenimiento | choferes | administrativo | recordatorios
+    var GESTION_RUBRO_ACTIVO = "mantenimiento"; // mantenimiento | choferes | administrativo | recordatorios | programadas
     var GESTION_FILTRO_SEDE = "";
     var GESTION_FILTRO_ESTADO = "";
     var GESTION_FILTRO_PRIORIDAD = "";
@@ -2752,6 +2782,8 @@
       badgeAdministrativo: document.getElementById("badgeAdministrativo"),
       badgeRecordatorios: document.getElementById("badgeRecordatorios"),
       tabRecordatorios: document.getElementById("tabRecordatorios"),
+      badgeProgramadas: document.getElementById("badgeProgramadas"),
+      tabProgramadas: document.getElementById("tabProgramadas"),
       filtroSede: document.getElementById("gestionFiltroSede"),
       filtroEstado: document.getElementById("gestionFiltroEstado"),
       filtroPrioridad: document.getElementById("gestionFiltroPrioridad"),
@@ -2764,6 +2796,7 @@
       bodySolic: document.getElementById("nvdBodySolic"),
       bodyAdminTasks: document.getElementById("nvdBodyAdminTasks"),
       bodyRecord: document.getElementById("nvdBodyRecord"),
+      bodyProgramadas: document.getElementById("nvdBodyProgramadas"),
       bodyPend: document.getElementById("nvdBodyPend"),
       kTotal: document.getElementById("kpiTotal"),
       kInfo: document.getElementById("kpiInfo"),
@@ -2956,7 +2989,7 @@
 
     function setGestionRubro(nextKey) {
       var key = String(nextKey || "").trim();
-      if (["mantenimiento", "choferes", "administrativo", "recordatorios"].indexOf(key) < 0) key = "mantenimiento";
+      if (["mantenimiento", "choferes", "administrativo", "recordatorios", "programadas"].indexOf(key) < 0) key = "mantenimiento";
       GESTION_RUBRO_ACTIVO = key;
       if (el.splitWrap) el.splitWrap.setAttribute("data-active-tab", key);
       if (el.rubroTabs) {
@@ -5230,6 +5263,53 @@
       }).join("");
     }
 
+    function renderProgramadasRows(target, items) {
+      if (!target) return;
+      var rows = Array.isArray(items) ? items : [];
+      if (!rows.length) {
+        target.innerHTML = '<tr><td colspan="7" style="color:#6f86a5;">Sin programadas.</td></tr>';
+        return;
+      }
+
+      function rubroLabel(r) {
+        if (filaPerteneceGrupo(r, "mantenimiento")) return "Mantenimiento";
+        if (filaPerteneceGrupo(r, "choferes")) return "Choferes";
+        if (filaPerteneceGrupo(r, "administracion")) return "Administrativo";
+        var cls = tipoClass((r && r.tipo) || "");
+        if (cls === "tipo-mantenimiento") return "Mantenimiento";
+        if (cls === "tipo-coffee" || cls === "tipo-vehiculos") return "Choferes";
+        return "Administrativo";
+      }
+
+      target.innerHTML = rows.map(function (r) {
+        var tieneTarea = !!String((r && r.tarea_asignada) || "").trim();
+        var ag = String((r && (tieneTarea ? r.tarea_agente : r.agente)) || "").trim();
+        var sedeBase = String((r && r.tarea_sede_codigo) || (r && r.sede_codigo) || "").trim().toUpperCase();
+        var destino = String((r && r.coffee_sede_destino) || "").trim().toUpperCase();
+        var sede = destino || sedeBase || "-";
+        var detalle = "";
+        if (tieneTarea) {
+          detalle = String((r && r.tarea_asignada) || "-").trim() || "-";
+        } else {
+          var st = String((r && r.subtipo) || "").trim();
+          var obs = String((r && r.observacion) || "").trim();
+          detalle = (st ? (st + (obs ? " - " : "")) : "") + (obs || (r && r.tipo) || "-");
+        }
+        var est = String((r && (tieneTarea ? (r.tarea_estado || "Pendiente") : (r.estado || "Informado"))) || "Pendiente").trim();
+        return (
+          "<tr class=\"tipo-row" + (tieneTarea ? " tipo-tarea" : (" " + tipoClass((r && r.tipo) || ""))) + rowOwnerCls(r) + "\">" +
+            "<td>" + (r.fecha || "-") + "</td>" +
+            "<td>" + escapeHtml(rubroLabel(r)) + "</td>" +
+            "<td>" + agenteCell(ag) + "</td>" +
+            "<td>" + escapeHtml(sede) + "</td>" +
+            "<td><div class=\"cell-trunc\" title=\"" + escapeHtml(detalle) + "\">" + escapeHtml(detalle) + "</div></td>" +
+            "<td>" + turnoChip(r, est) + "</td>" +
+            '<td style="white-space:nowrap;">' + makeRowActions(r) + "</td>" +
+          "</tr>"
+        );
+      }).join("");
+    }
+
     function ordenarTpTd(rows) {
       var arr = Array.isArray(rows) ? rows.slice() : [];
       var fechaSel = String((el.fecha && el.fecha.value) || "").trim();
@@ -5256,12 +5336,27 @@
       return tp;
     }
 
+    function ordenarPorFechaAsc(rows) {
+      var arr = Array.isArray(rows) ? rows.slice() : [];
+      arr.sort(function (a, b) {
+        var fa = String((a && a.fecha) || "");
+        var fb = String((b && b.fecha) || "");
+        if (fa < fb) return -1;
+        if (fa > fb) return 1;
+        var ia = Number((a && a.id) || 0);
+        var ib = Number((b && b.id) || 0);
+        return ia - ib;
+      });
+      return arr;
+    }
+
     function renderSplitRows(payload) {
       var p = payload || {};
       RAW_DIA = Array.isArray(p.pendientes_dia) ? p.pendientes_dia.slice() : [];
       RAW_PEND = Array.isArray(p.pendientes_acumulados) ? p.pendientes_acumulados.slice() : [];
       RAW_FINAL = Array.isArray(p.resueltos_informados) ? p.resueltos_informados.slice() : RAW_FINAL;
       RAW_SOLIC = Array.isArray(p.solicitudes_recibidas) ? p.solicitudes_recibidas.slice() : [];
+      RAW_PROG = Array.isArray(p.programadas_futuras) ? p.programadas_futuras.slice() : [];
       if (p.resumen) RESUMEN_BASE = p.resumen;
       var tasksBase = (Array.isArray(p.tareas_asignadas) ? p.tareas_asignadas : []).map(function (r) {
         var out = Object.assign({}, r || {});
@@ -5281,6 +5376,7 @@
       var tasksAdministrativo = ordenarTpTd(aplicarFiltroAgente(tareasAdministrativoBase));
       var solicitudes = ordenarTpTd(aplicarFiltroAgente(solicitudesAdministrativoBase));
       var recordatorios = ordenarTpTd(tasksBase.concat(RAW_SOLIC).filter(filaPasaFiltrosSinAgente).filter(filaEsRecordatorio));
+      var programadas = ordenarPorFechaAsc(aplicarFiltroAgente(RAW_PROG));
       ITEM_INDEX = {};
       tasksBase.concat(RAW_SOLIC).forEach(function (r) {
         ITEM_INDEX[String(r.id || "")] = r;
@@ -5290,11 +5386,13 @@
       if (el.bodyAdminTasks) renderTareasRows(el.bodyAdminTasks, tasksAdministrativo);
       if (el.bodySolic) renderSolicitudesRows(el.bodySolic, solicitudes);
       if (el.bodyRecord) renderRecordatoriosRows(el.bodyRecord, recordatorios);
+      if (el.bodyProgramadas) renderProgramadasRows(el.bodyProgramadas, programadas);
       if (el.bodyPend) el.bodyPend.innerHTML = '<tr><td colspan="10" style="color:#6f86a5;">Sin pendientes acumulados.</td></tr>';
       if (el.badgeMantenimiento) el.badgeMantenimiento.textContent = String(tasks.length);
       if (el.badgeChoferes) el.badgeChoferes.textContent = String(tasksChoferes.length);
       if (el.badgeAdministrativo) el.badgeAdministrativo.textContent = String(tasksAdministrativo.length + solicitudes.length);
       if (el.badgeRecordatorios) el.badgeRecordatorios.textContent = String(recordatorios.length);
+      if (el.badgeProgramadas) el.badgeProgramadas.textContent = String(programadas.length);
       if (el.tabRecordatorios) el.tabRecordatorios.classList.toggle("has-old", contarTp(recordatorios) > 0);
       renderResumenSegunFiltro();
     }
@@ -5306,6 +5404,7 @@
         resueltos_informados: RAW_FINAL,
         tareas_asignadas: RAW_TASK,
         solicitudes_recibidas: RAW_SOLIC,
+        programadas_futuras: RAW_PROG,
         resumen: RESUMEN_BASE,
       });
     }
