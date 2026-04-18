@@ -5406,7 +5406,7 @@
           if (!x.ok || !x.b.ok) throw new Error(x.b.error || "No se pudo guardar");
           setMsg(
             isTask
-              ? (isPrivateTaskOwner() ? "Recordatorio privado guardado." : "Tarea asignada.")
+              ? (x.b.duplicado ? "La tarea ya estaba cargada (se evitó duplicado)." : (isPrivateTaskOwner() ? "Recordatorio privado guardado." : "Tarea asignada."))
               : (payload.id > 0 ? "Novedad actualizada." : "Novedad registrada."),
             false
           );

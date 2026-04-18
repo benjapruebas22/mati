@@ -1877,6 +1877,52 @@ def register_novedades(bp, get_db):
             else:
                 deposito_codigo = ""
                 deposito_nombre = ""
+
+            # Evitar duplicados por doble carga (click repetido / reconexion):
+            # si existe una tarea IDENTICA creada por el mismo usuario hace muy poco, devolver esa.
+            try:
+                actor_user = (actor.get("username") or "").strip()
+                if actor_user:
+                    dup_row = con.execute("""
+                        SELECT
+                            id,
+                            COALESCE(creado_en,'') AS creado_en
+                        FROM novedades_diarias
+                        WHERE date(fecha) = date(?)
+                          AND LOWER(COALESCE(tipo,'')) = LOWER(?)
+                          AND LOWER(COALESCE(agente,'')) = LOWER(?)
+                          AND UPPER(COALESCE(sede_codigo,'')) = UPPER(?)
+                          AND UPPER(COALESCE(tarea_deposito_codigo,'')) = UPPER(?)
+                          AND TRIM(COALESCE(tarea_asignada,'')) = TRIM(?)
+                          AND LOWER(COALESCE(tarea_asignado_por_username,'')) = LOWER(?)
+                          AND COALESCE(privado_flag,0) = ?
+                          AND LOWER(COALESCE(estado,'')) <> 'cerrado'
+                        ORDER BY id DESC
+                        LIMIT 1
+                    """, (
+                        fecha,
+                        NVD_TIPO_TAREA,
+                        agente,
+                        sede_codigo,
+                        deposito_codigo,
+                        tarea,
+                        actor_user,
+                        int(privado_flag),
+                    )).fetchone()
+                    if dup_row:
+                        dup_id = int(_row_value(dup_row, "id", 0) or 0)
+                        dup_ts = (_row_value(dup_row, "creado_en", "") or "").strip()
+                        if dup_id > 0 and dup_ts:
+                            try:
+                                dup_dt = datetime.strptime(dup_ts, "%Y-%m-%d %H:%M:%S")
+                                if (now - dup_dt).total_seconds() <= 120:
+                                    con.close()
+                                    return jsonify({"ok": True, "id": dup_id, "duplicado": True})
+                            except Exception:
+                                pass
+            except Exception:
+                pass
+
             estado_general = "Pendiente" if privado_flag else "En gestion"
             cur = con.execute("""
                 INSERT INTO novedades_diarias
