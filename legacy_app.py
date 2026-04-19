@@ -6288,7 +6288,21 @@ def admin_usuarios_edit(uid):
     
     # Actualizamos el rol si se proporcionó
     if new_role:
-        con.execute("UPDATE usuarios SET role = ?, rol = ? WHERE id = ?", (new_role, new_role, uid))
+        cols = [r["name"] for r in con.execute("PRAGMA table_info(usuarios)").fetchall()]
+        has_role = "role" in cols
+        has_rol = "rol" in cols  # legacy (admin/operador) with CHECK constraint in some DBs
+        legacy_role = "admin" if new_role in [ROLE_FULL, "admin"] else "operador"
+
+        if has_role and has_rol:
+            # Guardamos el rol moderno en `role` y el rol legacy compatible en `rol`.
+            con.execute(
+                "UPDATE usuarios SET role = ?, rol = ? WHERE id = ?",
+                (new_role, legacy_role, uid),
+            )
+        elif has_role:
+            con.execute("UPDATE usuarios SET role = ? WHERE id = ?", (new_role, uid))
+        elif has_rol:
+            con.execute("UPDATE usuarios SET rol = ? WHERE id = ?", (legacy_role, uid))
     
     # Actualizamos la contraseña solo si se proporcionó una nueva
     if new_password:
