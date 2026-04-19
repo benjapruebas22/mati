@@ -2657,31 +2657,32 @@
     var AGENTES_ASSIGN = [];
     var AGENTES_PERMITIDOS = [
       "Matias Calderari",
+      "Carlos Vidaurre",
+      "Manuel Flores",
       "Marcos Duran",
       "Nestor Guerrero",
-      "Manuel Flores",
-      "Francisco Savio",
-      "Carlos Vidaurre",
-      "Ignacio Baroni",
+      "Emiliano Perez de la Puente",
       "Mauro Vea Murguia",
-      "Emilino P de la Puente",
       "Luis Cardozo",
       "Marcos Sorbello",
       "Maximiliano Abatedaga",
+      "Francisco Savio",
     ];
     var AGENTES_ALIAS = {
-      "emiliano p de la puente": "Emilino P de la Puente",
-      "emiliano perez de la puente": "Emilino P de la Puente",
+      "emiliano p de la puente": "Emiliano Perez de la Puente",
+      "emilino p de la puente": "Emiliano Perez de la Puente",
+      "emiliano perez de la puente": "Emiliano Perez de la Puente",
       "matias calderari": "Matias Calderari",
       "marcos duran": "Marcos Duran",
       "nestor guerrero": "Nestor Guerrero",
       "manuel flores": "Manuel Flores",
       "francisco savio": "Francisco Savio",
+      "francisco savio intendencia": "Francisco Savio",
       "carlos vidaurre": "Carlos Vidaurre",
       "carlos vidaurrre": "Carlos Vidaurre",
-      "ignacio baroni": "Ignacio Baroni",
+      "admi": "Maximiliano Abatedaga",
       "mauro vea murguia": "Mauro Vea Murguia",
-      "emilino p de la puente": "Emilino P de la Puente",
+      "emiliano perez de la puente": "Emiliano Perez de la Puente",
       "luis cardozo": "Luis Cardozo",
       "marcos sorbello": "Marcos Sorbello",
       "maximiliano abatedaga": "Maximiliano Abatedaga",
@@ -2694,12 +2695,12 @@
     var AGENTE_GRUPOS = {
       mantenimiento: {
         label: "Mantenimiento",
-        miembros: ["Carlos Vidaurre", "Nestor Guerrero", "Marcos Duran", "Manuel Flores", TAREA_AGENTE_GENERAL_LABEL],
+        miembros: [TAREA_AGENTE_GENERAL_LABEL, "Carlos Vidaurre", "Nestor Guerrero", "Marcos Duran", "Manuel Flores"],
         colors: { bg: "#ecf8f0", bd: "#cce9d6", tx: "#2f7b54", abg: "#2f7b54", abd: "#2f7b54" },
       },
       choferes: {
         label: "Choferes",
-        miembros: ["Emilino P de la Puente", "Mauro Vea Murguia", "Luis Cardozo", "Ignacio Baroni", "Francisco Savio"],
+        miembros: ["Emiliano Perez de la Puente", "Mauro Vea Murguia", "Francisco Savio", "Luis Cardozo"],
         colors: { bg: "#eaf7f6", bd: "#cdeae7", tx: "#1e7d79", abg: "#1e7d79", abd: "#1e7d79" },
       },
       administracion: {
@@ -3104,6 +3105,75 @@
         var l = String((o && o.label != null) ? o.label : v).trim();
         return '<option value="' + v.replace(/"/g, "&quot;") + '">' + l + "</option>";
       }).join("");
+    }
+
+    function fillSelectAgentesAsignacion(target, agenteActualRaw) {
+      if (!target) return;
+
+      var groups = [
+        { label: (AGENTE_GRUPOS.mantenimiento && AGENTE_GRUPOS.mantenimiento.label) || "Mantenimiento", items: (AGENTE_GRUPOS.mantenimiento && AGENTE_GRUPOS.mantenimiento.miembros) || [] },
+        { label: (AGENTE_GRUPOS.choferes && AGENTE_GRUPOS.choferes.label) || "Choferes", items: (AGENTE_GRUPOS.choferes && AGENTE_GRUPOS.choferes.miembros) || [] },
+        { label: (AGENTE_GRUPOS.administracion && AGENTE_GRUPOS.administracion.label) || "Administracion", items: (AGENTE_GRUPOS.administracion && AGENTE_GRUPOS.administracion.miembros) || [] },
+      ];
+
+      function isGeneralName(v) {
+        return normTxt(v) === normTxt(TAREA_AGENTE_GENERAL_LABEL);
+      }
+
+      function optionHtml(v) {
+        var raw = String(v || "").trim();
+        if (!raw) return "";
+        if (isGeneralName(raw)) {
+          return '<option value="' + escapeHtml(TAREA_AGENTE_GENERAL_VALUE) + '">' + escapeHtml(TAREA_AGENTE_GENERAL_LABEL + " (autoasignable)") + "</option>";
+        }
+        var nom = normalizarAgente(raw);
+        return '<option value="' + escapeHtml(nom) + '">' + escapeHtml(nom) + "</option>";
+      }
+
+      var baseKeys = {};
+      groups.forEach(function (g) {
+        var items = Array.isArray(g.items) ? g.items : [];
+        items.forEach(function (x) {
+          var nom = isGeneralName(x) ? TAREA_AGENTE_GENERAL_LABEL : normalizarAgente(x);
+          var k = normTxt(nom);
+          if (k) baseKeys[k] = true;
+        });
+      });
+
+      var extras = [];
+      var rawSel = String(agenteActualRaw || "").trim();
+      if (rawSel) {
+        if (isGeneralName(rawSel)) {
+          // ya esta en grupos
+        } else {
+          var toks = splitGrupoAgentes(rawSel);
+          if (!toks.length) toks = [normalizarAgente(rawSel)];
+          toks.forEach(function (t) {
+            var nom = normalizarAgente(t);
+            var k = normTxt(nom);
+            if (!k || baseKeys[k]) return;
+            baseKeys[k] = true;
+            extras.push(nom);
+          });
+        }
+      }
+      if (extras.length) {
+        groups.push({ label: "Otros", items: extras });
+      }
+
+      target.innerHTML = groups.map(function (g) {
+        var items = Array.isArray(g.items) ? g.items : [];
+        var seen = {};
+        var opts = items.map(function (x) {
+          var nom = isGeneralName(x) ? TAREA_AGENTE_GENERAL_LABEL : normalizarAgente(x);
+          var k = normTxt(nom);
+          if (!k || seen[k]) return "";
+          seen[k] = true;
+          return optionHtml(nom);
+        }).filter(Boolean).join("");
+        if (!opts) return "";
+        return '<optgroup label="' + escapeHtml(g.label || "Agentes") + '">' + opts + "</optgroup>";
+      }).filter(Boolean).join("");
     }
 
     function normTxt(v) {
@@ -4763,28 +4833,12 @@
         el.gestionTareaEstado.value = tareaEstadoActual;
       }
       if (el.gestionTareaAgente) {
-        var agentesRef = Array.isArray(p.agentes) && p.agentes.length ? p.agentes : AGENTES_ASSIGN;
-        fillSelect(el.gestionTareaAgente, agentesRef, false);
-        if (nov.puede_asignar_tarea && !isCoffee) {
-          var hasGeneralTask = false;
-          for (var gi = 0; gi < el.gestionTareaAgente.options.length; gi += 1) {
-            if (String(el.gestionTareaAgente.options[gi].value || "").trim() === TAREA_AGENTE_GENERAL_VALUE) {
-              hasGeneralTask = true;
-              break;
-            }
-          }
-          if (!hasGeneralTask) {
-            var gop = document.createElement("option");
-            gop.value = TAREA_AGENTE_GENERAL_VALUE;
-            gop.textContent = TAREA_AGENTE_GENERAL_LABEL + " (autoasignable)";
-            el.gestionTareaAgente.insertBefore(gop, el.gestionTareaAgente.firstChild);
-          }
-        }
         var agSel = String(nov.tarea_agente || nov.agente || "");
+        fillSelectAgentesAsignacion(el.gestionTareaAgente, agSel);
         if (normTxt(agSel) === normTxt(TAREA_AGENTE_GENERAL_LABEL)) {
           el.gestionTareaAgente.value = TAREA_AGENTE_GENERAL_VALUE;
         } else if (agSel) {
-          el.gestionTareaAgente.value = agSel;
+          el.gestionTareaAgente.value = normalizarAgente(agSel);
         }
         var grupoActual = splitGrupoAgentes(agSel);
         if (grupoActual.length >= 2) {
@@ -4797,8 +4851,8 @@
         setGestionGrupoAgentes([]);
       }
       if (el.gestionGrupoAgente) {
-        var grupoOpts = (Array.isArray(p.agentes) && p.agentes.length ? p.agentes : AGENTES_ASSIGN).filter(function (x) {
-          return normTxt(x) !== normTxt(TAREA_AGENTE_GENERAL_LABEL);
+        var grupoOpts = ((AGENTE_GRUPOS.mantenimiento && AGENTE_GRUPOS.mantenimiento.miembros) || []).filter(function (x) {
+          return normTxt(normalizarAgente(x)) !== normTxt(TAREA_AGENTE_GENERAL_LABEL) && normTxt(x) !== normTxt(TAREA_AGENTE_GENERAL_LABEL);
         });
         fillSelect(el.gestionGrupoAgente, grupoOpts, true, "Agregar agente al grupo");
       }
