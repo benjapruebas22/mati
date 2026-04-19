@@ -273,14 +273,14 @@ def default_redirect_for_role(role: str):
     if role == ROLE_INT_OBRAS:
         return _first_url("obras_home", "dashboard", "dashboard_exec")
     if role == ROLE_INT_OBRAS_RELEV:
-        return url_for("obras_home")
+        return _first_url("obras_home", "dashboard", "dashboard_exec", "novedades.dashboard_exec", "dashboard_ejecutivo")
     if role == ROLE_INT_OBRAS_SEDES:
-        return url_for("obras_home")
+        return _first_url("obras_home", "dashboard", "dashboard_exec", "novedades.dashboard_exec", "dashboard_ejecutivo")
     if role == ROLE_CHOFER_INTENDENCIA or role == ROLE_CHOFER_AUTORIZADO:
-        return url_for("vehiculos_control_diario")
+        return _first_url("vehiculos_control_diario", "vehiculos.vehiculos_control_diario", "dashboard", "dashboard_exec")
     if role == ROLE_INT_VEHICULOS:
-        return url_for("vehiculos_control_diario")
-    return url_for("dashboard")
+        return _first_url("vehiculos_control_diario", "vehiculos.vehiculos_control_diario", "dashboard", "dashboard_exec")
+    return _first_url("dashboard", "novedades.dashboard", "dashboard_exec", "novedades.dashboard_exec", "dashboard_ejecutivo")
 
 
 # =========================
