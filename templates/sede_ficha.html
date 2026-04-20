@@ -3439,6 +3439,7 @@
 
 
     width: 100%;
+    position: relative;
 
 
 
@@ -4035,6 +4036,35 @@
     border-radius: 50%;
     background: #2563eb;
   }
+  /* Badge sobre el plano cuando hay local seleccionado */
+  .plan-img.selected {
+    border-color: #93c5fd;
+    box-shadow: 0 14px 26px rgba(37, 99, 235, 0.12);
+  }
+  .plan-img .plan-selected {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.86);
+    border: 1px solid rgba(37, 99, 235, 0.18);
+    color: #0f172a;
+    font-size: 12px;
+    font-weight: 800;
+    max-width: calc(100% - 20px);
+    backdrop-filter: blur(6px);
+  }
+  .plan-img .plan-selected .desc {
+    font-weight: 600;
+    color: #334155;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
 
 </style>
@@ -4049,7 +4079,7 @@
 
 
 
-{% set local = request.args.get('local','') %}
+{% set local = (local or request.args.get('local','')) %}
 
 
 
@@ -6907,14 +6937,15 @@
 
 
 
-        <div class="plan-img">
-
-
-
+        <div class="plan-img{% if local %} selected{% endif %}">
+          {% if local %}
+          {% set _ldesc = (locales_desc.get(local) if locales_desc is defined else '') %}
+          <div class="plan-selected" {% if _ldesc %}title="{{ _ldesc }}"{% endif %}>
+            Local <strong>{{ local }}</strong>
+            {% if _ldesc %}<span class="desc">— {{ _ldesc }}</span>{% endif %}
+          </div>
+          {% endif %}
           <img src="{{ plano_url }}" alt="Plano {{ sede.codigo }} {{ piso }}">
-
-
-
         </div>
 
 
@@ -6940,9 +6971,7 @@
 
 
         <a class="loc {% if local==d %}active{% endif %}"
-
-
-
+          title="{{ (locales_desc.get(d) if locales_desc is defined else '') }}"
           href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=d, tab=tab, view=view) }}">{{ d }}</a>
 
 

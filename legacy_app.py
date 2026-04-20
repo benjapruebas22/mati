@@ -4175,19 +4175,47 @@ def sede_ficha(codigo):
                 out.append(c)
         return out
 
+    locales_desc = {}
     try:
         locales_rows = db.execute("""
-            SELECT codigo_local
+            SELECT codigo_local, descripcion
             FROM sedes_depositos
             WHERE codigo_sede = ?
             ORDER BY codigo_local
         """, (codigo,)).fetchall()
-        _locales_all = sorted(
-            {normalize_local_code(r["codigo_local"]) for r in locales_rows if r["codigo_local"]},
-            key=local_sort_key,
-        )
     except Exception:
-        _locales_all = []
+        try:
+            # Fallback: si la columna descripcion no existe en algún deploy, no rompemos la vista.
+            locales_rows = db.execute("""
+                SELECT codigo_local, NULL AS descripcion
+                FROM sedes_depositos
+                WHERE codigo_sede = ?
+                ORDER BY codigo_local
+            """, (codigo,)).fetchall()
+        except Exception:
+            locales_rows = []
+
+    _locales_all = sorted(
+        {normalize_local_code(r["codigo_local"]) for r in locales_rows if r["codigo_local"]},
+        key=local_sort_key,
+    )
+    for r in (locales_rows or []):
+        try:
+            code_raw = r["codigo_local"]
+        except Exception:
+            code_raw = None
+        code = normalize_local_code(code_raw) if code_raw else ""
+        if not code:
+            continue
+        try:
+            desc_raw = r["descripcion"]
+        except Exception:
+            desc_raw = None
+        desc = (desc_raw or "").strip()
+        if code not in locales_desc:
+            locales_desc[code] = desc
+        elif desc and not locales_desc.get(code):
+            locales_desc[code] = desc
 
     # Para sedes específicas con planta PB/P1/P2, filtramos la lista de locales según el piso seleccionado.
     locales = _filtrar_locales_por_piso(codigo, piso, _locales_all)
@@ -4851,6 +4879,7 @@ def sede_ficha(codigo):
         piso_sel=piso,
         plano_url=plano_url,
         locales=locales,
+        locales_desc=locales_desc,
         tab=tab,
         local=local,
         fecha_45d=fecha_45d,
