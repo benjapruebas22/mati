@@ -1513,7 +1513,15 @@ def register_novedades(bp, get_db):
                         COALESCE(privado_owner_username,'') AS privado_owner_username,
                         COALESCE(privado_owner_nombre,'') AS privado_owner_nombre
                     FROM novedades_diarias
-                    WHERE date(fecha) > date(?)
+                    WHERE date(
+                        CASE
+                            -- Coffee institucional: la "fecha" de operación es la fecha del evento (no la fecha de carga)
+                            WHEN LOWER(COALESCE(tipo,'')) = LOWER(?)
+                                 AND NULLIF(TRIM(COALESCE(coffee_fecha_evento,'')),'') IS NOT NULL
+                                THEN coffee_fecha_evento
+                            ELSE fecha
+                        END
+                    ) > date(?)
                       AND LOWER(COALESCE(estado,'')) IN (
                         'informado',
                         'pendiente',
@@ -1527,13 +1535,31 @@ def register_novedades(bp, get_db):
                         'en preparación',
                         'enviado'
                       )
-                    ORDER BY date(fecha) ASC, COALESCE(hora,'') ASC, id ASC
+                    ORDER BY date(
+                        CASE
+                            WHEN LOWER(COALESCE(tipo,'')) = LOWER(?)
+                                 AND NULLIF(TRIM(COALESCE(coffee_fecha_evento,'')),'') IS NOT NULL
+                                THEN coffee_fecha_evento
+                            ELSE fecha
+                        END
+                    ) ASC, COALESCE(hora,'') ASC, id ASC
                     LIMIT 250
-                """, (fecha,)).fetchall()
+                """, (NVD_TIPO_COFFEE, fecha, NVD_TIPO_COFFEE)).fetchall()
                 for rr in rows_fut or []:
                     if not _actor_can_view_novedad(actor, rr):
                         continue
                     it_fut = _serialize_novedad(rr, actor)
+                    # Para el tablero "Programadas": mostrar/ordenar Coffee por fecha del evento.
+                    try:
+                        if _norm_ci(it_fut.get("tipo") or "") == _norm_ci(NVD_TIPO_COFFEE):
+                            f_ev = (it_fut.get("coffee_fecha_evento") or "").strip()
+                            if f_ev:
+                                it_fut["fecha"] = f_ev
+                            h_ev = (it_fut.get("coffee_horario_evento") or "").strip()
+                            if h_ev:
+                                it_fut["hora"] = h_ev
+                    except Exception:
+                        pass
                     if _is_novedad_abierta(it_fut.get("tipo") or "", it_fut.get("estado") or ""):
                         programadas_futuras.append(it_fut)
             except Exception:

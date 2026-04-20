@@ -5402,6 +5402,9 @@
       target.innerHTML = rows.map(function (r) {
         var tieneTarea = !!String((r && r.tarea_asignada) || "").trim();
         var ag = String((r && (tieneTarea ? r.tarea_agente : r.agente)) || "").trim();
+        var fechaTxt = String((r && r.fecha) || "-").trim() || "-";
+        var horaTxt = String((r && r.hora) || "").trim();
+        var fechaShow = escapeHtml(fechaTxt + (horaTxt ? (" " + horaTxt) : ""));
         var sedeBase = String((r && r.tarea_sede_codigo) || (r && r.sede_codigo) || "").trim().toUpperCase();
         var destino = String((r && r.coffee_sede_destino) || "").trim().toUpperCase();
         var sede = destino || sedeBase || "-";
@@ -5416,7 +5419,7 @@
         var est = String((r && (tieneTarea ? (r.tarea_estado || "Pendiente") : (r.estado || "Informado"))) || "Pendiente").trim();
         return (
           "<tr class=\"tipo-row" + (tieneTarea ? " tipo-tarea" : (" " + tipoClass((r && r.tipo) || ""))) + rowOwnerCls(r) + "\">" +
-            "<td>" + (r.fecha || "-") + "</td>" +
+            "<td>" + fechaShow + "</td>" +
             "<td>" + escapeHtml(rubroLabel(r)) + "</td>" +
             "<td>" + agenteCell(ag) + "</td>" +
             "<td>" + escapeHtml(sede) + "</td>" +
