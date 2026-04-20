@@ -4005,6 +4005,37 @@
     .sede-analisis-tools { width: 100%; align-items: flex-start; }
   }
 
+  /* Resalte del local seleccionado (chips Dxx bajo el plano) */
+  .locals .loc {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease;
+  }
+  .locals .loc:hover {
+    background: #f3f7ff;
+    border-color: #c7d2fe;
+  }
+  .locals .loc:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.22);
+    outline-offset: 2px;
+  }
+  .locals .loc.active {
+    background: linear-gradient(180deg, #ffffff 0%, #eaf1ff 100%);
+    border-color: #2563eb;
+    color: #1e3a8a;
+    font-weight: 900;
+    box-shadow: 0 10px 18px rgba(37, 99, 235, 0.18);
+    transform: translateY(-1px);
+  }
+  .locals .loc.active::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #2563eb;
+  }
+
 
 </style>
 
