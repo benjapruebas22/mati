@@ -4147,6 +4147,8 @@ def sede_ficha(codigo):
         # Sedes con varias plantas donde los depósitos se manejan por rango Dxx.
         # Ajustar estos rangos si cambian los códigos en cada sede.
         "S01": {"PB": (1, 10), "P1": (11, 20), "P2": (21, 31)},
+        # Gorriti (S11): PB 01-25 / P1 26-47 / P2 48-61
+        "S11": {"PB": (1, 25), "P1": (26, 47), "P2": (48, 61)},
         "S22": {"PB": (1, 10), "P1": (11, 20), "P2": (21, 31)},
     }
 
