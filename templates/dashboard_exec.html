@@ -905,6 +905,51 @@
     gap: 8px;
     flex-wrap: wrap;
   }
+  .gestion-rubro-groups {
+    align-items: stretch;
+    gap: 10px;
+  }
+  .gestion-rubro-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px;
+    border: 1px solid #dce6f6;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+  }
+  .gestion-rubro-group-label {
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    color: #6b7f9e;
+    padding: 0 4px;
+    white-space: nowrap;
+  }
+  .gestion-rubro-group-tabs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .gestion-rubro-group.group-agenda {
+    border-color: #f1d6e8;
+    background: linear-gradient(180deg, #ffffff 0%, #fff5fb 100%);
+  }
+  .gestion-rubro-group.group-agenda .gestion-rubro-tab {
+    border-color: #f1d6e8;
+    background: linear-gradient(180deg, #ffffff 0%, #fff7fc 100%);
+    color: #7a3d66;
+  }
+  .gestion-rubro-group.group-agenda .gestion-rubro-tab.active {
+    border-color: #db2777;
+    box-shadow: 0 10px 18px rgba(219, 39, 119, 0.18);
+    color: #db2777;
+  }
+  .gestion-rubro-group.group-agenda .tab-badge {
+    border-color: #f1d6e8;
+    color: #7a3d66;
+  }
   .gestion-rubro-tab {
     border: 1px solid #cfe0f6;
     background: linear-gradient(180deg, #ffffff 0%, #f6f9ff 100%);
@@ -921,6 +966,14 @@
     border-color: #1d4ed8;
     box-shadow: 0 10px 18px rgba(29, 78, 216, 0.18);
     color: #1d4ed8;
+  }
+  .gestion-rubro-tab.has-old:not(.active) {
+    border-color: #f59e0b;
+  }
+  .gestion-rubro-tab.has-old .tab-badge {
+    border-color: #f59e0b;
+    background: #fff7ed;
+    color: #b45309;
   }
   .tab-badge {
     display: inline-flex;
@@ -2098,22 +2151,33 @@
     <div class="nvd-footnote">El panel solo ordena y filtra: toda la trazabilidad ocurre dentro de Abrir gestion.</div>
 
     <div class="gestion-topbar">
-      <div id="gestionRubroTabs" class="gestion-rubro-tabs" role="tablist" aria-label="Rubros de gestion">
-        <button type="button" class="gestion-rubro-tab active" data-rubro="mantenimiento" aria-selected="true">
-          Mantenimiento <span id="badgeMantenimiento" class="tab-badge">0</span>
-        </button>
-        <button type="button" class="gestion-rubro-tab" data-rubro="choferes" aria-selected="false">
-          Choferes <span id="badgeChoferes" class="tab-badge">0</span>
-        </button>
-        <button type="button" class="gestion-rubro-tab" data-rubro="administrativo" aria-selected="false">
-          Administrativo <span id="badgeAdministrativo" class="tab-badge">0</span>
-        </button>
-        <button id="tabRecordatorios" type="button" class="gestion-rubro-tab" data-rubro="recordatorios" aria-selected="false">
-          Recordatorios <span id="badgeRecordatorios" class="tab-badge">0</span>
-        </button>
-        <button id="tabProgramadas" type="button" class="gestion-rubro-tab" data-rubro="programadas" aria-selected="false">
-          Programadas <span id="badgeProgramadas" class="tab-badge">0</span>
-        </button>
+      <div id="gestionRubroTabs" class="gestion-rubro-tabs gestion-rubro-groups" role="tablist" aria-label="Rubros de gestion">
+        <div class="gestion-rubro-group group-daily">
+          <div class="gestion-rubro-group-label">DIA A DIA</div>
+          <div class="gestion-rubro-group-tabs">
+            <button type="button" class="gestion-rubro-tab active" data-rubro="mantenimiento" aria-selected="true">
+              Mantenimiento <span id="badgeMantenimiento" class="tab-badge">0</span>
+            </button>
+            <button type="button" class="gestion-rubro-tab" data-rubro="choferes" aria-selected="false">
+              Choferes <span id="badgeChoferes" class="tab-badge">0</span>
+            </button>
+            <button type="button" class="gestion-rubro-tab" data-rubro="administrativo" aria-selected="false">
+              Administrativo <span id="badgeAdministrativo" class="tab-badge">0</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="gestion-rubro-group group-agenda">
+          <div class="gestion-rubro-group-label">AGENDA</div>
+          <div class="gestion-rubro-group-tabs">
+            <button id="tabRecordatorios" type="button" class="gestion-rubro-tab" data-rubro="recordatorios" aria-selected="false">
+              Recordatorios <span id="badgeRecordatorios" class="tab-badge">0</span>
+            </button>
+            <button id="tabProgramadas" type="button" class="gestion-rubro-tab" data-rubro="programadas" aria-selected="false">
+              Programadas <span id="badgeProgramadas" class="tab-badge">0</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       <details id="gestionFiltrosBox" class="gestion-filtros-box">
