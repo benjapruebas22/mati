@@ -1755,6 +1755,11 @@
     border-color: #f3c7c7;
     color: #ad2f2f;
   }
+  .task-alert-tag.coffee {
+    background: #fff7ed;
+    border-color: #fed7aa;
+    color: #9a3412;
+  }
 
   @media (max-width: 1220px) {
     .workspace-tabs {
@@ -2641,6 +2646,7 @@
     var RAW_TASK = [];
     var RAW_SOLIC = [];
     var RAW_PROG = [];
+    var TASK_ALERTS_BASE = [];
     var RESUMEN_BASE = { total: 0, informado: 0, en_proceso: 0, resuelto: 0 };
     var AGENTE_GRUPO_FILTRO_ACTIVO = "";
     var GESTION_RUBRO_ACTIVO = "mantenimiento"; // mantenimiento | choferes | administrativo | recordatorios | programadas
@@ -4199,17 +4205,25 @@
         return;
       }
       var countReply = rows.filter(function (r) { return String(r.alerta_tipo || "") === "respuesta"; }).length;
+      var countCoffee = rows.filter(function (r) { return String(r.alerta_tipo || "") === "coffee"; }).length;
       if (el.taskAlertTitle) {
         var ttl = "Alertas personales (" + rows.length + ")";
         if (countReply > 0) ttl += " - " + countReply + " por responder";
+        if (countCoffee > 0) ttl += " - " + countCoffee + " Coffee cercano";
         el.taskAlertTitle.textContent = ttl;
       }
       el.taskAlertCard.style.display = "grid";
       el.taskAlertList.innerHTML = rows.map(function (r) {
         var alertType = String(r.alerta_tipo || "tarea");
         var isReply = alertType === "respuesta";
-        var tagCls = isReply ? "reply" : "task";
-        var tagTxt = isReply ? "Responder chat" : "Tarea asignada";
+        var isCoffee = alertType === "coffee";
+        var tagCls = isReply ? "reply" : (isCoffee ? "coffee" : "task");
+        var tagTxt = isReply ? "Responder chat" : (isCoffee ? "Coffee" : "Tarea asignada");
+        if (isCoffee) {
+          var dias = Number(r.alerta_dias || 0) || 0;
+          if (dias === 1) tagTxt = "Coffee - 1 dia";
+          else if (dias === 2) tagTxt = "Coffee - 2 dias";
+        }
         var actionTxt = isReply ? "Responder" : gestionButtonLabel();
         var sede = String(r.sede_codigo || "-");
         var dep = String(r.deposito_codigo || "");
@@ -4223,6 +4237,80 @@
           "</li>"
         );
       }).join("");
+    }
+
+    function _isoToUtcMs(iso) {
+      var s = String(iso || "").trim();
+      if (!s || s.length < 10) return null;
+      var p = s.slice(0, 10).split("-");
+      if (p.length !== 3) return null;
+      var y = Number(p[0] || 0);
+      var m = Number(p[1] || 0);
+      var d = Number(p[2] || 0);
+      if (!y || !m || !d) return null;
+      return Date.UTC(y, m - 1, d);
+    }
+
+    function _coffeeUpcomingAlerts() {
+      var baseIso = String((el.fecha && el.fecha.value) || "").trim();
+      var baseMs = _isoToUtcMs(baseIso);
+      if (!baseMs) return [];
+      var src = Array.isArray(RAW_PROG) ? RAW_PROG : [];
+      var out = [];
+      for (var i = 0; i < src.length; i += 1) {
+        var r = src[i] || {};
+        if (!isCoffeeTipo(r.tipo || "")) continue;
+        var f = String((r.coffee_fecha_evento || r.fecha || "")).trim();
+        var evMs = _isoToUtcMs(f);
+        if (!evMs) continue;
+        var diff = Math.round((evMs - baseMs) / 86400000);
+        if (diff < 1 || diff > 2) continue; // 1 o 2 días antes
+        var hora = String((r.coffee_horario_evento || r.hora || "")).trim();
+        var sede = String((r.coffee_sede_destino || r.sede_codigo || "")).trim().toUpperCase() || "-";
+        var subtipo = String(r.subtipo || "Coffee").trim() || "Coffee";
+        var cant = Number(r.coffee_cantidad_personas || 0) || 0;
+        var tarea = "Coffee " + f + (hora ? (" " + hora) : "") + " - " + subtipo;
+        if (cant > 0) tarea += " - " + String(cant) + " pers";
+        out.push({
+          alerta_tipo: "coffee",
+          alerta_dias: diff,
+          novedad_id: Number(r.id || 0) || 0,
+          sede_codigo: sede,
+          deposito_codigo: "",
+          deposito_nombre: "",
+          tarea: tarea,
+          estado: String(r.estado || "Pendiente"),
+        });
+      }
+      out.sort(function (a, b) {
+        var da = Number(a.alerta_dias || 0) || 0;
+        var db = Number(b.alerta_dias || 0) || 0;
+        if (da !== db) return da - db;
+        return String(a.tarea || "").localeCompare(String(b.tarea || ""));
+      });
+      return out.slice(0, 8);
+    }
+
+    function updateTaskAlertsMerged() {
+      var base = Array.isArray(TASK_ALERTS_BASE) ? TASK_ALERTS_BASE : [];
+      var coffee = _coffeeUpcomingAlerts();
+      if (!base.length && !coffee.length) {
+        renderTaskAlerts([]);
+        return;
+      }
+      var seen = {};
+      var merged = [];
+      base.forEach(function (r) {
+        merged.push(r);
+        var id = Number((r && r.novedad_id) || 0) || 0;
+        if (id) seen[String(id)] = true;
+      });
+      coffee.forEach(function (r) {
+        var id = Number((r && r.novedad_id) || 0) || 0;
+        if (id && seen[String(id)]) return;
+        merged.push(r);
+      });
+      renderTaskAlerts(merged);
     }
 
     function fetchDepositosBySede(sedeCodigo) {
@@ -5516,6 +5604,7 @@
       if (el.badgeProgramadas) el.badgeProgramadas.textContent = String(programadas.length);
       if (el.tabRecordatorios) el.tabRecordatorios.classList.toggle("has-old", contarTp(recordatorios) > 0);
       renderResumenSegunFiltro();
+      updateTaskAlertsMerged();
     }
 
     function rerenderGestion() {
@@ -5776,7 +5865,8 @@
           }
           renderVehiculos(d.vehiculos || []);
           renderAlertas(d.alertas || []);
-          renderTaskAlerts(d.alertas_tareas_asignadas || []);
+          TASK_ALERTS_BASE = Array.isArray(d.alertas_tareas_asignadas) ? d.alertas_tareas_asignadas.slice() : [];
+          updateTaskAlertsMerged();
           renderResumen(d.resumen_novedades || {});
           loadSubtipos(pref.subtipo || "");
           return loadDay();
