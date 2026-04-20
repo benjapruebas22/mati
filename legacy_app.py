@@ -4143,6 +4143,36 @@ def sede_ficha(codigo):
     # -------------------------
     # LOCALES (para filtros debajo del plano)
     # -------------------------
+    LOCALES_POR_PISO_RANGOS = {
+        # Sedes con varias plantas donde los depósitos se manejan por rango Dxx.
+        # Ajustar estos rangos si cambian los códigos en cada sede.
+        "S01": {"PB": (1, 10), "P1": (11, 20), "P2": (21, 31)},
+        "S22": {"PB": (1, 10), "P1": (11, 20), "P2": (21, 31)},
+    }
+
+    def _filtrar_locales_por_piso(cod_sede: str, piso_value: str, lista):
+        cfg = LOCALES_POR_PISO_RANGOS.get((cod_sede or "").upper().strip(), {})
+        if not cfg:
+            return list(lista or [])
+        rng = cfg.get((piso_value or "").upper().strip())
+        if not rng:
+            return list(lista or [])
+        lo, hi = rng
+        out = []
+        for code in (lista or []):
+            c = (code or "").strip().upper()
+            if c.startswith("D") and c[1:].isdigit():
+                try:
+                    n = int(c[1:])
+                except Exception:
+                    continue
+                if lo <= n <= hi:
+                    out.append(c)
+            else:
+                # no es un Dxx: no lo filtramos para no romper casos especiales
+                out.append(c)
+        return out
+
     try:
         locales_rows = db.execute("""
             SELECT codigo_local
@@ -4150,12 +4180,15 @@ def sede_ficha(codigo):
             WHERE codigo_sede = ?
             ORDER BY codigo_local
         """, (codigo,)).fetchall()
-        locales = sorted(
+        _locales_all = sorted(
             {normalize_local_code(r["codigo_local"]) for r in locales_rows if r["codigo_local"]},
             key=local_sort_key,
         )
     except Exception:
-        locales = []
+        _locales_all = []
+
+    # Para sedes específicas con planta PB/P1/P2, filtramos la lista de locales según el piso seleccionado.
+    locales = _filtrar_locales_por_piso(codigo, piso, _locales_all)
 
     # -------------------------
     # PANEL: defaults (SIEMPRE)
