@@ -871,6 +871,79 @@
     gap: 8px;
     flex-wrap: wrap;
   }
+  /* Próximo Coffee (banner) */
+  .next-coffee-row {
+    display: flex;
+    justify-content: flex-end;
+    margin: 4px 0 8px 0;
+  }
+  .next-coffee-btn {
+    border: 1px solid #fed7aa;
+    background: linear-gradient(180deg, #fff7ed 0%, #fffbf4 100%);
+    color: #7c2d12;
+    border-radius: 12px;
+    padding: 8px 10px;
+    display: grid;
+    gap: 2px;
+    min-width: 280px;
+    max-width: 520px;
+    text-align: left;
+    cursor: pointer;
+    box-shadow: 0 8px 18px rgba(180, 83, 9, 0.08);
+  }
+  .next-coffee-btn:hover {
+    border-color: #fdba74;
+    box-shadow: 0 10px 22px rgba(180, 83, 9, 0.12);
+    transform: translateY(-1px);
+  }
+  .next-coffee-btn:focus-visible {
+    outline: 3px solid rgba(245, 158, 11, 0.25);
+    outline-offset: 2px;
+  }
+  .next-coffee-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .next-coffee-label {
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+    color: #9a3412;
+  }
+  .next-coffee-days {
+    font-size: 11px;
+    font-weight: 900;
+    color: #9a3412;
+    background: rgba(255,255,255,0.7);
+    border: 1px solid rgba(245, 158, 11, 0.20);
+    border-radius: 999px;
+    padding: 2px 8px;
+    white-space: nowrap;
+  }
+  .next-coffee-meta {
+    font-size: 13px;
+    font-weight: 900;
+    color: #7c2d12;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .next-coffee-btn.soon {
+    border-color: #fb7185;
+    background: linear-gradient(180deg, #fff1f2 0%, #fff7ed 100%);
+    box-shadow: 0 10px 22px rgba(225, 29, 72, 0.08);
+  }
+  .next-coffee-btn.soon .next-coffee-label,
+  .next-coffee-btn.soon .next-coffee-days,
+  .next-coffee-btn.soon .next-coffee-meta {
+    color: #9f1239;
+  }
+  .next-coffee-btn.soon .next-coffee-days {
+    border-color: rgba(225, 29, 72, 0.18);
+  }
   .split-legend {
     display: flex;
     align-items: center;
@@ -1977,6 +2050,16 @@
       <h2>Situacion operativa actual</h2>
     </div>
 
+    <div id="nextCoffeeRow" class="next-coffee-row" style="display:none;">
+      <button id="nextCoffeeBtn" type="button" class="next-coffee-btn" title="Abrir gestion del proximo Coffee">
+        <div class="next-coffee-top">
+          <span class="next-coffee-label">Proximo Coffee</span>
+          <span id="nextCoffeeDays" class="next-coffee-days"></span>
+        </div>
+        <div id="nextCoffeeMeta" class="next-coffee-meta"></div>
+      </button>
+    </div>
+
     <div class="kpi-grid resumen-base">
       <div class="kpi total">
         <div class="k-label">Total del dia</div>
@@ -2898,6 +2981,10 @@
       taskAlertCard: document.getElementById("taskAlertCard"),
       taskAlertTitle: document.getElementById("taskAlertTitle"),
       taskAlertList: document.getElementById("taskAlertList"),
+      nextCoffeeRow: document.getElementById("nextCoffeeRow"),
+      nextCoffeeBtn: document.getElementById("nextCoffeeBtn"),
+      nextCoffeeDays: document.getElementById("nextCoffeeDays"),
+      nextCoffeeMeta: document.getElementById("nextCoffeeMeta"),
       registroBox: document.getElementById("registroNvdBox"),
       histTop: document.getElementById("btnHistorialTop"),
       histQuick: document.getElementById("btnHistorialQuick"),
@@ -4291,6 +4378,55 @@
       return out.slice(0, 8);
     }
 
+    function _fmtIso(iso) {
+      var s = String(iso || "").trim();
+      if (!s || s.length < 10) return s || "-";
+      return s.slice(8, 10) + "/" + s.slice(5, 7) + "/" + s.slice(0, 4);
+    }
+
+    function updateNextCoffeeBanner() {
+      if (!el.nextCoffeeRow || !el.nextCoffeeBtn || !el.nextCoffeeDays || !el.nextCoffeeMeta) return;
+      var baseIso = String((el.fecha && el.fecha.value) || "").trim();
+      var baseMs = _isoToUtcMs(baseIso);
+      if (!baseMs) {
+        el.nextCoffeeRow.style.display = "none";
+        return;
+      }
+      var src = Array.isArray(RAW_PROG) ? RAW_PROG : [];
+      var best = null;
+      for (var i = 0; i < src.length; i += 1) {
+        var r = src[i] || {};
+        if (!isCoffeeTipo(r.tipo || "")) continue;
+        var f = String((r.coffee_fecha_evento || r.fecha || "")).trim();
+        var evMs = _isoToUtcMs(f);
+        if (!evMs) continue;
+        var diff = Math.round((evMs - baseMs) / 86400000);
+        if (diff < 0) continue;
+        var hora = String((r.coffee_horario_evento || r.hora || "")).trim();
+        if (!best || diff < best.diff || (diff === best.diff && hora < best.hora)) {
+          best = { diff: diff, fecha: f, hora: hora, row: r };
+        }
+      }
+      if (!best) {
+        el.nextCoffeeRow.style.display = "none";
+        return;
+      }
+      var diasTxt = (best.diff === 0) ? "hoy" : (best.diff === 1 ? "en 1 dia" : ("en " + String(best.diff) + " dias"));
+      var sede = String((best.row && (best.row.coffee_sede_destino || best.row.sede_codigo)) || "").trim().toUpperCase();
+      var cant = Number((best.row && best.row.coffee_cantidad_personas) || 0) || 0;
+      var subtipo = String((best.row && best.row.subtipo) || "Coffee").trim() || "Coffee";
+      var meta = _fmtIso(best.fecha);
+      if (best.hora) meta += " " + best.hora;
+      if (sede) meta += " • " + sede;
+      meta += " • " + subtipo;
+      if (cant > 0) meta += " • " + String(cant) + " pers";
+      el.nextCoffeeDays.textContent = diasTxt;
+      el.nextCoffeeMeta.textContent = meta;
+      el.nextCoffeeBtn.setAttribute("data-id", String((best.row && best.row.id) || ""));
+      el.nextCoffeeBtn.classList.toggle("soon", best.diff <= 2);
+      el.nextCoffeeRow.style.display = "";
+    }
+
     function updateTaskAlertsMerged() {
       var base = Array.isArray(TASK_ALERTS_BASE) ? TASK_ALERTS_BASE : [];
       var coffee = _coffeeUpcomingAlerts();
@@ -5605,6 +5741,7 @@
       if (el.tabRecordatorios) el.tabRecordatorios.classList.toggle("has-old", contarTp(recordatorios) > 0);
       renderResumenSegunFiltro();
       updateTaskAlertsMerged();
+      updateNextCoffeeBanner();
     }
 
     function rerenderGestion() {
@@ -5867,6 +6004,7 @@
           renderAlertas(d.alertas || []);
           TASK_ALERTS_BASE = Array.isArray(d.alertas_tareas_asignadas) ? d.alertas_tareas_asignadas.slice() : [];
           updateTaskAlertsMerged();
+          updateNextCoffeeBanner();
           renderResumen(d.resumen_novedades || {});
           loadSubtipos(pref.subtipo || "");
           return loadDay();
@@ -6279,6 +6417,22 @@
         if (ev.key === "Enter" || ev.key === " ") {
           ev.preventDefault();
           openRecordatoriosTab();
+        }
+      });
+    }
+    if (el.nextCoffeeBtn) {
+      el.nextCoffeeBtn.addEventListener("click", function () {
+        var gid = Number(el.nextCoffeeBtn.getAttribute("data-id") || 0);
+        if (gid > 0) {
+          loadGestion(gid);
+        } else {
+          setGestionRubro("programadas");
+        }
+      });
+      el.nextCoffeeBtn.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter" || ev.key === " ") {
+          ev.preventDefault();
+          el.nextCoffeeBtn.click();
         }
       });
     }
