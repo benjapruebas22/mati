@@ -4135,6 +4135,47 @@
     border-bottom: 1px solid #eef2fb;
     background: #fbfdff;
   }
+  .cll-control-dia {
+    margin: 10px 12px 0;
+    border: 1px solid #fde68a;
+    border-radius: 14px;
+    background: #fffbeb;
+    padding: 10px 12px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
+  .cll-control-dia.hidden { display: none; }
+  .cll-cd-title {
+    font-size: 13px;
+    font-weight: 950;
+    color: #92400e;
+    letter-spacing: 0.2px;
+  }
+  .cll-cd-section {
+    margin-top: 8px;
+    display: grid;
+    gap: 4px;
+    color: #0f172a;
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .cll-cd-section ul {
+    margin: 4px 0 0;
+    padding-left: 18px;
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+  .cll-cd-section li { margin: 2px 0; }
+  .cll-cd-important {
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 900;
+    color: #7c2d12;
+  }
+  .cll-cd-important span {
+    font-weight: 800;
+    color: #0f172a;
+  }
   .cll-meta-grid {
     display: grid;
     grid-template-columns: repeat(4, minmax(140px, 1fr));
@@ -8993,6 +9034,7 @@
       <button type="button" class="cll-close" id="cllClose">Cerrar</button>
     </div>
     <div class="cll-meta" id="cllMeta"></div>
+    <div class="cll-control-dia hidden" id="cllControlDia"></div>
     <div class="cll-chiprow" id="cllDepositos"></div>
     <div class="cll-body" id="cllBody">
       <div class="cll-loading">Cargando...</div>
@@ -9011,12 +9053,13 @@
     const closeBtn = document.getElementById("cllClose");
     const subEl = document.getElementById("cllSub");
     const metaEl = document.getElementById("cllMeta");
+    const controlEl = document.getElementById("cllControlDia");
     const chipsEl = document.getElementById("cllDepositos");
     const bodyEl = document.getElementById("cllBody");
     const msgEl = document.getElementById("cllMsg");
     const saveBtn = document.getElementById("cllSave");
 
-    if (!btn || !modal || !closeBtn || !metaEl || !chipsEl || !bodyEl || !msgEl || !saveBtn || !subEl) return;
+    if (!btn || !modal || !closeBtn || !metaEl || !controlEl || !chipsEl || !bodyEl || !msgEl || !saveBtn || !subEl) return;
 
     const sedeCodigo = String(btn.getAttribute("data-sede") || "").trim().toUpperCase();
     let DATA = null;
@@ -9055,6 +9098,64 @@
           '<div class="k">' + escapeHtml(label) + "</div>" +
           '<div class="v">' + valueHtml + "</div>" +
         "</div>"
+      );
+    }
+
+    function normDia(s) {
+      try {
+        return String(s || "")
+          .trim()
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "");
+      } catch (_e) {
+        return String(s || "").trim().toLowerCase();
+      }
+    }
+
+    function controlDiaS12Html(diaSemana) {
+      const diaN = normDia(diaSemana);
+      const cfg = {
+        lunes: {
+          title: "LUNES",
+          tasks: ["Vereda", "Baños", "Balcones (LIMPIEZA PROFUNDA)"],
+          important: "Debe notarse limpieza profunda en balcones (no solo barrido)",
+        },
+        martes: {
+          title: "MARTES",
+          tasks: ["Vereda", "Baños", "Oficinas (estado general)"],
+          important: "Controlar que se mantenga la limpieza del día anterior",
+        },
+        miercoles: {
+          title: "MIÉRCOLES",
+          tasks: ["Vereda", "Baños", "Oficinas (LIMPIEZA PROFUNDA)", "Vidrios (LIMPIEZA PROFUNDA)"],
+          important: "Los vidrios deben estar impecables (sin marcas)",
+        },
+        jueves: {
+          title: "JUEVES",
+          tasks: ["Vereda", "Baños", "Oficinas (estado general)"],
+          important: "Control general de mantenimiento",
+        },
+        viernes: {
+          title: "VIERNES",
+          tasks: ["Vereda", "Baños", "Oficinas (LIMPIEZA PROFUNDA)", "Terraza (LIMPIEZA PROFUNDA)"],
+          important: "Debe notarse limpieza profunda en terraza",
+        },
+      };
+
+      const it = cfg[diaN] || null;
+      const title = it ? it.title : String(diaSemana || "").trim().toUpperCase();
+      const tasks = it ? it.tasks : [];
+      const important = it ? it.important : "Sin pauta particular configurada para este día.";
+
+      const tasksHtml = tasks.length
+        ? ("<ul>" + tasks.map((t) => "<li>" + escapeHtml(t) + "</li>").join("") + "</ul>")
+        : '<div style="font-weight:900;color:#92400e;">(Sin tareas configuradas)</div>';
+
+      return (
+        '<div class="cll-cd-title">📅 CONTROL DEL DÍA – ' + escapeHtml(title) + "</div>" +
+        '<div class="cll-cd-section">🔴 Tareas a verificar:' + tasksHtml + "</div>" +
+        '<div class="cll-cd-important">⚠️ IMPORTANTE: <span>' + escapeHtml(important) + "</span></div>"
       );
     }
 
@@ -9148,6 +9249,7 @@
       const dia = String(DATA.dia_semana || "-");
       const user = String(DATA.usuario || "-");
       const sedeTxt = sede + (dir ? (" · " + dir) : "");
+      const sedeCod = String((DATA.sede && DATA.sede.codigo) ? DATA.sede.codigo : sedeCodigo).trim().toUpperCase();
 
       subEl.textContent = sede;
       metaEl.innerHTML =
@@ -9158,6 +9260,14 @@
           metaKpi("Usuario", escapeHtml(user || "-")) +
         "</div>" +
         '<div class="cll-hint">El control es obligatorio sobre depósitos terminados (QR). Los depósitos sin QR se muestran con advertencia.</div>';
+
+      if (sedeCod === "S12") {
+        controlEl.classList.remove("hidden");
+        controlEl.innerHTML = controlDiaS12Html(dia);
+      } else {
+        controlEl.classList.add("hidden");
+        controlEl.innerHTML = "";
+      }
 
       const deps = Array.isArray(DATA.depositos) ? DATA.depositos : [];
       const checklist = Array.isArray(DATA.checklist) ? DATA.checklist : [];
