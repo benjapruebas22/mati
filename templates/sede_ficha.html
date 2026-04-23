@@ -2290,6 +2290,12 @@
 
   }
 
+  .h-actions .btn.btn-checklist-limpieza {
+    border-color: #fde68a;
+    background: #fffbeb;
+    color: #92400e;
+  }
+
   .h-actions .btn.btn-volver {
 
     border-color: #dce2ec;
@@ -4066,6 +4072,304 @@
     text-overflow: ellipsis;
   }
 
+  /* Modal: Checklist Control Limpieza */
+  .cll-modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    z-index: 1400;
+  }
+  .cll-modal.open { display: block; }
+  .cll-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(17, 36, 69, 0.45);
+  }
+  .cll-dialog {
+    position: relative;
+    width: min(980px, calc(100vw - 24px));
+    max-height: calc(100vh - 30px);
+    margin: 15px auto;
+    background: #fff;
+    border: 1px solid #d8e3f4;
+    border-radius: 14px;
+    box-shadow: 0 20px 36px rgba(17, 36, 69, 0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .cll-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    border-bottom: 1px solid #e4ebf7;
+    background: linear-gradient(180deg, #f8fbff 0%, #f1f6ff 100%);
+  }
+  .cll-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 900;
+    color: #1f3a61;
+    letter-spacing: 0.2px;
+  }
+  .cll-sub {
+    margin-top: 2px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #5b7297;
+  }
+  .cll-close {
+    border: 1px solid #d6e2f3;
+    background: #fff;
+    color: #1f3554;
+    border-radius: 12px;
+    padding: 8px 10px;
+    font-size: 12px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+  .cll-meta {
+    padding: 10px 12px;
+    border-bottom: 1px solid #eef2fb;
+    background: #fbfdff;
+  }
+  .cll-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(140px, 1fr));
+    gap: 8px;
+  }
+  .cll-kpi {
+    border: 1px solid #dbe5f4;
+    border-radius: 12px;
+    padding: 8px 10px;
+    background: #fff;
+  }
+  .cll-kpi .k {
+    font-size: 10px;
+    font-weight: 900;
+    color: #5a7395;
+    letter-spacing: .2px;
+    text-transform: uppercase;
+  }
+  .cll-kpi .v {
+    margin-top: 2px;
+    font-size: 12px;
+    font-weight: 800;
+    color: #0f172a;
+    word-break: break-word;
+  }
+  .cll-hint {
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #6b7280;
+  }
+  .cll-chiprow {
+    padding: 8px 12px;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid #eef2fb;
+    background: #fff;
+    overflow: auto;
+    max-height: 86px;
+  }
+  .cll-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 8px;
+    border-radius: 999px;
+    border: 1px solid #d7e2f3;
+    background: #f8fbff;
+    color: #28476f;
+    font-size: 12px;
+    font-weight: 900;
+    cursor: pointer;
+    user-select: none;
+  }
+  .cll-chip.done {
+    border-color: #a7f3d0;
+    background: #ecfdf3;
+    color: #047857;
+  }
+  .cll-chip.pending {
+    border-color: #fde68a;
+    background: #fffbeb;
+    color: #92400e;
+  }
+  .cll-chip.missing {
+    border-color: #fecaca;
+    background: #fff1f2;
+    color: #991b1b;
+  }
+  .cll-body {
+    padding: 12px;
+    overflow: auto;
+    display: grid;
+    gap: 10px;
+    background: #f6f8fb;
+  }
+  .cll-loading,
+  .cll-error,
+  .cll-empty {
+    border: 1px dashed #cfe0f8;
+    border-radius: 14px;
+    background: #fff;
+    padding: 12px;
+    color: #486b98;
+    font-weight: 800;
+  }
+  .cll-card {
+    border: 1px solid #dbe5f4;
+    border-radius: 14px;
+    background: #fff;
+    padding: 10px 10px 12px;
+    box-shadow: 0 10px 18px rgba(15, 23, 42, .04);
+  }
+  .cll-card.done {
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+  }
+  .cll-card.pending {
+    border-color: #fde68a;
+    background: #fffbeb;
+  }
+  .cll-card.missing {
+    border-color: #fecaca;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+  }
+  .cll-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .cll-card-title {
+    font-size: 13px;
+    font-weight: 900;
+    color: #0f172a;
+  }
+  .cll-badges {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .cll-badge {
+    border: 1px solid #d7e2f3;
+    background: #f8fbff;
+    color: #28476f;
+    border-radius: 999px;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 900;
+    white-space: nowrap;
+  }
+  .cll-badge.ok {
+    border-color: #a7f3d0;
+    background: #ecfdf3;
+    color: #047857;
+  }
+  .cll-badge.warn {
+    border-color: #fde68a;
+    background: #fffbeb;
+    color: #92400e;
+  }
+  .cll-badge.saved {
+    border-color: #c7d2fe;
+    background: #eef2ff;
+    color: #3730a3;
+  }
+  .cll-checklist {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .cll-item {
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    color: #334155;
+    border-radius: 999px;
+    padding: 3px 8px;
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .cll-actions {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .cll-btn {
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    border-radius: 14px;
+    padding: 10px 12px;
+    font-size: 14px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: transform .04s ease;
+  }
+  .cll-btn:active { transform: translateY(1px); }
+  .cll-btn.good { border-color: #86efac; background: #ecfdf3; color: #166534; }
+  .cll-btn.bad { border-color: #fecaca; background: #fff1f2; color: #991b1b; }
+  .cll-btn.selected { box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14); }
+  .cll-obs {
+    margin-top: 10px;
+    width: 100%;
+    min-height: 64px;
+    resize: vertical;
+    border-radius: 14px;
+    border: 1px solid #d7e2f3;
+    padding: 10px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #0f172a;
+    background: #fff;
+  }
+  .cll-obs.hidden { display: none; }
+  .cll-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    border-top: 1px solid #e4ebf7;
+    background: #fff;
+  }
+  .cll-msg {
+    font-size: 12px;
+    font-weight: 800;
+    color: #475569;
+    min-height: 16px;
+  }
+  .cll-msg.err { color: #991b1b; }
+  .cll-save {
+    border: 1px solid #b9d7ff;
+    background: #edf5ff;
+    color: #1e5b96;
+    border-radius: 14px;
+    padding: 10px 12px;
+    font-size: 13px;
+    font-weight: 900;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .cll-save[disabled] {
+    opacity: .6;
+    cursor: not-allowed;
+  }
+
+  @media (max-width: 920px) {
+    .cll-meta-grid { grid-template-columns: repeat(2, minmax(160px, 1fr)); }
+    .cll-actions { grid-template-columns: 1fr; }
+  }
+
 
 </style>
 
@@ -5156,6 +5460,7 @@
 
         <a class="btn btn-metricas" href="{{ url_for('sede_metricas_edit', codigo=sede.codigo) }}">Editar metricas</a>
         <a class="btn btn-resumen-sedes" href="{{ url_for('auditoria_mobiliario') }}">Relevamientos / Control</a>
+        <button type="button" class="btn btn-checklist-limpieza" id="btnChecklistLimpieza" data-sede="{{ sede.codigo }}">Checklist Control Limpieza</button>
 
 
         {% if home_mode %}
@@ -8675,6 +8980,375 @@
 
 
 
+
+<!-- Modal: Checklist Control Limpieza -->
+<div id="cllModal" class="cll-modal" aria-hidden="true">
+  <div class="cll-backdrop" data-cll-close="1"></div>
+  <div class="cll-dialog" role="dialog" aria-modal="true" aria-labelledby="cllTitle">
+    <div class="cll-head">
+      <div style="min-width:0;">
+        <div class="cll-title" id="cllTitle">Checklist Control Limpieza</div>
+        <div class="cll-sub" id="cllSub">-</div>
+      </div>
+      <button type="button" class="cll-close" id="cllClose">Cerrar</button>
+    </div>
+    <div class="cll-meta" id="cllMeta"></div>
+    <div class="cll-chiprow" id="cllDepositos"></div>
+    <div class="cll-body" id="cllBody">
+      <div class="cll-loading">Cargando...</div>
+    </div>
+    <div class="cll-footer">
+      <div class="cll-msg" id="cllMsg"></div>
+      <button type="button" class="cll-save" id="cllSave">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const btn = document.getElementById("btnChecklistLimpieza");
+    const modal = document.getElementById("cllModal");
+    const closeBtn = document.getElementById("cllClose");
+    const subEl = document.getElementById("cllSub");
+    const metaEl = document.getElementById("cllMeta");
+    const chipsEl = document.getElementById("cllDepositos");
+    const bodyEl = document.getElementById("cllBody");
+    const msgEl = document.getElementById("cllMsg");
+    const saveBtn = document.getElementById("cllSave");
+
+    if (!btn || !modal || !closeBtn || !metaEl || !chipsEl || !bodyEl || !msgEl || !saveBtn || !subEl) return;
+
+    const sedeCodigo = String(btn.getAttribute("data-sede") || "").trim().toUpperCase();
+    let DATA = null;
+    let CONTROLES = {}; // { D01: {resultado, observacion} }
+    let REQUIRED = new Set(); // depósitos terminados (QR)
+
+    function escapeHtml(s) {
+      return String(s == null ? "" : s)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll("\"", "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function setMsg(text, isErr) {
+      msgEl.textContent = String(text || "");
+      msgEl.classList.toggle("err", !!isErr);
+    }
+
+    function openModal() {
+      modal.classList.add("open");
+      modal.setAttribute("aria-hidden", "false");
+      loadData();
+    }
+
+    function closeModal() {
+      modal.classList.remove("open");
+      modal.setAttribute("aria-hidden", "true");
+      setMsg("", false);
+    }
+
+    function metaKpi(label, valueHtml) {
+      return (
+        '<div class="cll-kpi">' +
+          '<div class="k">' + escapeHtml(label) + "</div>" +
+          '<div class="v">' + valueHtml + "</div>" +
+        "</div>"
+      );
+    }
+
+    function chipHtml(dep) {
+      const code = String(dep.codigo || "").toUpperCase();
+      const done = !!dep.qr_terminado;
+      const ctrl = dep.control || {};
+      const res = String(ctrl.resultado || "").toUpperCase();
+      const missing = done && !res;
+      const cls = missing ? "missing" : (done ? "done" : "pending");
+      const icon = missing ? "!" : (done ? "✔" : "❌");
+      return (
+        '<button type="button" class="cll-chip ' + cls + '" data-cll-act="jump" data-dep="' + escapeHtml(code) + '">' +
+          '<span aria-hidden="true">' + icon + "</span>" +
+          escapeHtml(code) +
+        "</button>"
+      );
+    }
+
+    function cardHtml(dep, checklist) {
+      const code = String(dep.codigo || "").toUpperCase();
+      const desc = String(dep.descripcion || "").trim();
+      const done = !!dep.qr_terminado;
+      const ctrl = dep.control || {};
+      const res = String(ctrl.resultado || "").toUpperCase();
+      const obs = String(ctrl.observacion || "");
+      const missing = done && !res;
+      const cls = (missing ? "missing " : "") + (done ? "done" : "pending");
+
+      const badgeQr = done
+        ? '<span class="cll-badge ok">✔ terminado</span>'
+        : '<span class="cll-badge warn">❌ no registrado</span>';
+
+      let badgeSaved = "";
+      if (res === "APROBADO") badgeSaved = '<span class="cll-badge saved">Guardado 👍</span>';
+      else if (res === "OBSERVADO") badgeSaved = '<span class="cll-badge saved">Guardado 👎</span>';
+
+      const checklistHtml = (Array.isArray(checklist) ? checklist : []).map((it) => (
+        '<span class="cll-item">' + escapeHtml(it) + "</span>"
+      )).join("");
+
+      const selOk = res === "APROBADO" ? " selected" : "";
+      const selObs = res === "OBSERVADO" ? " selected" : "";
+      const obsHidden = res === "OBSERVADO" ? "" : " hidden";
+
+      return (
+        '<div class="cll-card ' + cls + '" id="cll-card-' + escapeHtml(code) + '" data-dep="' + escapeHtml(code) + '">' +
+          '<div class="cll-card-head">' +
+            '<div class="cll-card-title">' + escapeHtml(code) + (desc ? (" – " + escapeHtml(desc)) : "") + "</div>" +
+            '<div class="cll-badges">' + badgeQr + badgeSaved + "</div>" +
+          "</div>" +
+          '<div class="cll-checklist">' + checklistHtml + "</div>" +
+          '<div class="cll-actions">' +
+            '<button type="button" class="cll-btn good' + selOk + '" data-cll-act="set" data-dep="' + escapeHtml(code) + '" data-res="APROBADO">👍 Aprobado</button>' +
+            '<button type="button" class="cll-btn bad' + selObs + '" data-cll-act="set" data-dep="' + escapeHtml(code) + '" data-res="OBSERVADO">👎 Observado</button>' +
+          "</div>" +
+          '<textarea class="cll-obs' + obsHidden + '" data-cll-dep="' + escapeHtml(code) + '" placeholder="Observación (obligatoria si observado)">' + escapeHtml(obs) + "</textarea>" +
+        "</div>"
+      );
+    }
+
+    function updateCounters() {
+      const req = Array.from(REQUIRED);
+      let faltan = 0;
+      let faltanObs = 0;
+      req.forEach((dep) => {
+        const c = CONTROLES[dep] || {};
+        const res = String(c.resultado || "").toUpperCase();
+        if (!res) faltan += 1;
+        if (res === "OBSERVADO" && !String(c.observacion || "").trim()) faltanObs += 1;
+      });
+
+      if (!req.length) {
+        setMsg("No hay depósitos terminados (QR) para evaluar hoy.", false);
+        return;
+      }
+      if (faltan || faltanObs) {
+        let txt = "Obligatorios (QR): " + req.length + " · Pendientes: " + faltan;
+        if (faltanObs) txt += " · Observación faltante: " + faltanObs;
+        setMsg(txt, true);
+        return;
+      }
+      setMsg("Obligatorios (QR): " + req.length + " · Todo listo para guardar.", false);
+    }
+
+    function render(data) {
+      DATA = data || {};
+      const sede = (DATA.sede && DATA.sede.nombre) ? String(DATA.sede.nombre) : sedeCodigo;
+      const dir = (DATA.sede && DATA.sede.direccion) ? String(DATA.sede.direccion) : "";
+      const fecha = String(DATA.fecha || "-");
+      const dia = String(DATA.dia_semana || "-");
+      const user = String(DATA.usuario || "-");
+      const sedeTxt = sede + (dir ? (" · " + dir) : "");
+
+      subEl.textContent = sede;
+      metaEl.innerHTML =
+        '<div class="cll-meta-grid">' +
+          metaKpi("Sede", escapeHtml(sedeTxt)) +
+          metaKpi("Fecha", escapeHtml(fecha)) +
+          metaKpi("Día", escapeHtml(dia)) +
+          metaKpi("Usuario", escapeHtml(user || "-")) +
+        "</div>" +
+        '<div class="cll-hint">El control es obligatorio sobre depósitos terminados (QR). Los depósitos sin QR se muestran con advertencia.</div>';
+
+      const deps = Array.isArray(DATA.depositos) ? DATA.depositos : [];
+      const checklist = Array.isArray(DATA.checklist) ? DATA.checklist : [];
+
+      CONTROLES = {};
+      REQUIRED = new Set();
+      deps.forEach((d) => {
+        const code = String(d.codigo || "").toUpperCase();
+        const ctrl = d.control || {};
+        CONTROLES[code] = {
+          resultado: String(ctrl.resultado || "").toUpperCase(),
+          observacion: String(ctrl.observacion || ""),
+        };
+        if (d.qr_terminado) REQUIRED.add(code);
+      });
+
+      chipsEl.innerHTML = deps.map(chipHtml).join("");
+      bodyEl.innerHTML = deps.map((d) => cardHtml(d, checklist)).join("") || '<div class="cll-empty">Sin depósitos cargados para la sede.</div>';
+      updateCounters();
+    }
+
+    async function loadData() {
+      setMsg("", false);
+      metaEl.innerHTML = "";
+      chipsEl.innerHTML = "";
+      bodyEl.innerHTML = '<div class="cll-loading">Cargando...</div>';
+
+      try {
+        const url = "/sedes/" + encodeURIComponent(sedeCodigo) + "/control-limpieza/data";
+        const res = await fetch(url, { headers: { "Accept": "application/json" } });
+        const data = await res.json();
+        if (!res.ok || !data || !data.ok) throw new Error((data && data.error) ? data.error : "No se pudo cargar");
+        render(data);
+      } catch (e) {
+        const msg = (e && e.message) ? e.message : String(e || "Error");
+        bodyEl.innerHTML = '<div class="cll-error">Error: ' + escapeHtml(msg) + "</div>";
+        setMsg("No se pudo cargar el checklist.", true);
+      }
+    }
+
+    function setResultado(dep, res) {
+      const code = String(dep || "").toUpperCase();
+      if (!code) return;
+      if (!CONTROLES[code]) CONTROLES[code] = { resultado: "", observacion: "" };
+      CONTROLES[code].resultado = String(res || "").toUpperCase();
+
+      const card = document.getElementById("cll-card-" + code);
+      if (!card) return;
+
+      const okBtn = card.querySelector('[data-cll-act="set"][data-res="APROBADO"]');
+      const obBtn = card.querySelector('[data-cll-act="set"][data-res="OBSERVADO"]');
+      if (okBtn) okBtn.classList.toggle("selected", CONTROLES[code].resultado === "APROBADO");
+      if (obBtn) obBtn.classList.toggle("selected", CONTROLES[code].resultado === "OBSERVADO");
+
+      const ta = card.querySelector("textarea.cll-obs");
+      if (CONTROLES[code].resultado !== "OBSERVADO") {
+        CONTROLES[code].observacion = "";
+        if (ta) ta.value = "";
+      }
+      if (ta) ta.classList.toggle("hidden", CONTROLES[code].resultado !== "OBSERVADO");
+
+      const missing = REQUIRED.has(code) && !CONTROLES[code].resultado;
+      card.classList.toggle("missing", missing);
+
+      const chip = chipsEl.querySelector('[data-cll-act="jump"][data-dep="' + code + '"]');
+      if (chip) {
+        chip.classList.toggle("missing", missing);
+        chip.classList.toggle("done", !missing && REQUIRED.has(code));
+        chip.classList.toggle("pending", !missing && !REQUIRED.has(code));
+      }
+
+      updateCounters();
+    }
+
+    function validateBeforeSave() {
+      const faltan = [];
+      Array.from(REQUIRED).forEach((dep) => {
+        const c = CONTROLES[dep] || {};
+        const res = String(c.resultado || "").toUpperCase();
+        if (!res) faltan.push(dep);
+      });
+      if (faltan.length) {
+        setMsg("Faltan evaluar depósitos terminados (QR): " + faltan.join(", "), true);
+        faltan.forEach((dep) => {
+          const card = document.getElementById("cll-card-" + dep);
+          if (card) card.classList.add("missing");
+        });
+        return false;
+      }
+
+      const faltanObs = [];
+      Object.keys(CONTROLES).forEach((dep) => {
+        const c = CONTROLES[dep] || {};
+        if (String(c.resultado || "").toUpperCase() === "OBSERVADO" && !String(c.observacion || "").trim()) {
+          faltanObs.push(dep);
+        }
+      });
+      if (faltanObs.length) {
+        setMsg("Falta observación en: " + faltanObs.join(", "), true);
+        return false;
+      }
+      return true;
+    }
+
+    async function save() {
+      if (!DATA) return;
+      if (!validateBeforeSave()) return;
+
+      const payload = {
+        fecha: String(DATA.fecha || ""),
+        dia_semana: String(DATA.dia_semana || ""),
+        controles: [],
+      };
+
+      Object.keys(CONTROLES).forEach((dep) => {
+        const c = CONTROLES[dep] || {};
+        const res = String(c.resultado || "").toUpperCase();
+        if (!res) return;
+        payload.controles.push({
+          deposito: dep,
+          resultado: res,
+          observacion: String(c.observacion || ""),
+        });
+      });
+
+      saveBtn.setAttribute("disabled", "disabled");
+      try {
+        const url = "/sedes/" + encodeURIComponent(sedeCodigo) + "/control-limpieza/save";
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok || !data || !data.ok) throw new Error((data && data.error) ? data.error : "No se pudo guardar");
+        setMsg("Guardado (" + String(data.saved || payload.controles.length) + ").", false);
+        await loadData();
+      } catch (e) {
+        const msg = (e && e.message) ? e.message : String(e || "Error");
+        setMsg(msg, true);
+      } finally {
+        saveBtn.removeAttribute("disabled");
+      }
+    }
+
+    btn.addEventListener("click", openModal);
+    closeBtn.addEventListener("click", closeModal);
+    saveBtn.addEventListener("click", save);
+
+    modal.addEventListener("click", function (ev) {
+      const target = ev.target;
+      if (target && target.getAttribute && target.getAttribute("data-cll-close") === "1") closeModal();
+    });
+
+    chipsEl.addEventListener("click", function (ev) {
+      const el = ev.target.closest("[data-cll-act=\"jump\"]");
+      if (!el) return;
+      const dep = String(el.getAttribute("data-dep") || "").toUpperCase();
+      const card = document.getElementById("cll-card-" + dep);
+      if (card) {
+        try {
+          card.scrollIntoView({ block: "start", behavior: "smooth" });
+        } catch (_e) {
+          card.scrollIntoView();
+        }
+      }
+    });
+
+    bodyEl.addEventListener("click", function (ev) {
+      const el = ev.target.closest("[data-cll-act=\"set\"]");
+      if (!el) return;
+      const dep = el.getAttribute("data-dep");
+      const res = el.getAttribute("data-res");
+      setResultado(dep, res);
+    });
+
+    bodyEl.addEventListener("input", function (ev) {
+      const t = ev.target;
+      if (!t || !t.getAttribute) return;
+      const dep = String(t.getAttribute("data-cll-dep") || "").toUpperCase();
+      if (!dep) return;
+      if (!CONTROLES[dep]) CONTROLES[dep] = { resultado: "", observacion: "" };
+      CONTROLES[dep].observacion = String(t.value || "");
+      updateCounters();
+    });
+
+    document.addEventListener("keydown", function (ev) {
+      if (ev.key === "Escape" && modal.classList.contains("open")) closeModal();
+    });
+  })();
+</script>
 
 <details style="margin-top:14px;border:1px solid #dbe4f2;border-radius:12px;background:#f8fbff;padding:10px;">
   <summary style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;list-style:none;">

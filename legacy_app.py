@@ -4920,6 +4920,367 @@ def sede_ficha(codigo):
     )
 
 
+# ============================================================
+# CONTROL LIMPIEZA INTERNA (Sedes)
+# ============================================================
+
+_CL_DIAS_ES = ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo"]
+
+
+def ensure_sedes_control_limpieza_table(con=None):
+    own = False
+    if con is None:
+        con = get_db()
+        own = True
+
+    con.execute(
+        """
+        CREATE TABLE IF NOT EXISTS sedes_control_limpieza (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sede_codigo TEXT NOT NULL,
+            deposito_codigo TEXT NOT NULL,
+            fecha TEXT NOT NULL,
+            dia_semana TEXT NOT NULL,
+            resultado TEXT NOT NULL,
+            observacion TEXT,
+            usuario TEXT,
+            creado_en TEXT DEFAULT (datetime('now','localtime')),
+            actualizado_en TEXT
+        )
+        """
+    )
+    con.execute(
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_sedes_control_limpieza_unique
+        ON sedes_control_limpieza (sede_codigo, fecha, deposito_codigo)
+        """
+    )
+    con.commit()
+
+    if own:
+        con.close()
+
+
+def _cl_norm(s: str) -> str:
+    return (s or "").strip().lower()
+
+
+def _cl_norm_dep_code(code: str) -> str:
+    code = (code or "").upper().strip()
+    if "-" in code:
+        tail = code.split("-")[-1].strip()
+        if tail.startswith("D") and tail[1:].isdigit():
+            return tail
+    return code
+
+
+def _cl_dep_sort_key(code: str):
+    c = _cl_norm_dep_code(code)
+    if c.startswith("D") and c[1:].isdigit():
+        try:
+            return (0, int(c[1:]))
+        except Exception:
+            return (0, 9999)
+    return (1, c)
+
+
+def _cl_dia_semana_from_iso(fecha_iso: str) -> str:
+    try:
+        dt = datetime.strptime((fecha_iso or "").strip(), "%Y-%m-%d").date()
+    except Exception:
+        dt = datetime.now().date()
+    idx = dt.weekday()
+    if 0 <= idx < len(_CL_DIAS_ES):
+        return _CL_DIAS_ES[idx]
+    return ""
+
+
+def _cl_items_por_dia(dia_semana: str):
+    dia = _cl_norm(dia_semana)
+    items = [
+        "Vereda (si aplica)",
+        "Baños",
+        "Oficinas",
+    ]
+    if dia == "lunes":
+        items.append("Balcones")
+    if dia == "miercoles":
+        items.append("Vidrios")
+    if dia == "viernes":
+        items.append("Terraza")
+    items.append("Estado general")
+    return items
+
+
+def _cl_table_exists(con, table_name: str) -> bool:
+    try:
+        row = con.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
+            (table_name,),
+        ).fetchone()
+        return bool(row)
+    except Exception:
+        return False
+
+
+def _cl_qr_terminados_por_novedades(con, sede_codigo: str, fecha_iso: str):
+    """
+    "Terminado según QR" = tarea/gestion marcada como finalizada (estado general o tarea_estado)
+    para la sede+deposito en la fecha.
+
+    Fuente: tabla novedades_diarias (gestion interna / asignacion de tareas).
+    """
+    if not _cl_table_exists(con, "novedades_diarias"):
+        return set()
+
+    done_states = {
+        "finalizado",
+        "finalizada",
+        "completado",
+        "completada",
+        "terminado",
+        "terminada",
+        "resuelto",
+        "cerrado",
+    }
+    sede = (sede_codigo or "").upper().strip()
+    fecha = (fecha_iso or "").strip()
+
+    try:
+        rows = con.execute(
+            """
+            SELECT
+              COALESCE(NULLIF(TRIM(tarea_deposito_codigo),''), NULLIF(TRIM(subtipo),'')) AS dep,
+              COALESCE(NULLIF(TRIM(tarea_estado),''), NULLIF(TRIM(estado),'')) AS est
+            FROM novedades_diarias
+            WHERE date(fecha) = date(?)
+              AND UPPER(COALESCE(NULLIF(TRIM(tarea_sede_codigo),''), NULLIF(TRIM(sede_codigo),''))) = ?
+            """,
+            (fecha, sede),
+        ).fetchall()
+    except Exception:
+        return set()
+
+    out = set()
+    for r in rows:
+        try:
+            dep_raw = r["dep"]
+        except Exception:
+            dep_raw = None
+        dep = _cl_norm_dep_code(dep_raw or "")
+        if not (dep.startswith("D") and dep[1:].isdigit()):
+            continue
+        try:
+            est_raw = r["est"]
+        except Exception:
+            est_raw = ""
+        if _cl_norm(est_raw) in done_states:
+            out.add(dep)
+    return out
+
+
+@app.get("/sedes/<codigo>/control-limpieza/data", endpoint="sede_control_limpieza_data")
+def sede_control_limpieza_data(codigo):
+    codigo = (codigo or "").upper().strip()
+    con = get_db()
+    ensure_sedes_control_limpieza_table(con)
+
+    sede = con.execute(
+        "SELECT codigo, nombre, direccion FROM sedes_mpd WHERE codigo = ?",
+        (codigo,),
+    ).fetchone()
+    if not sede:
+        con.close()
+        return jsonify({"ok": False, "error": "Sede no encontrada"}), 404
+
+    fecha_iso = datetime.now().date().isoformat()
+    dia_semana = _cl_dia_semana_from_iso(fecha_iso)
+    checklist_items = _cl_items_por_dia(dia_semana)
+
+    # Depósitos de la sede
+    deps_rows = []
+    try:
+        deps_rows = con.execute(
+            """
+            SELECT codigo_local, descripcion
+            FROM sedes_depositos
+            WHERE codigo_sede = ?
+            """,
+            (codigo,),
+        ).fetchall()
+    except Exception:
+        try:
+            deps_rows = con.execute(
+                """
+                SELECT codigo_local, NULL AS descripcion
+                FROM sedes_depositos
+                WHERE codigo_sede = ?
+                """,
+                (codigo,),
+            ).fetchall()
+        except Exception:
+            deps_rows = []
+
+    deps_map = {}
+    for r in (deps_rows or []):
+        code = _cl_norm_dep_code((r["codigo_local"] if r else "") or "")
+        if not (code.startswith("D") and code[1:].isdigit()):
+            continue
+        desc = ""
+        try:
+            desc = (r["descripcion"] or "").strip()
+        except Exception:
+            desc = ""
+        if code not in deps_map or (desc and not deps_map.get(code)):
+            deps_map[code] = desc
+    deps = [{"codigo": c, "descripcion": (deps_map.get(c) or "")} for c in deps_map.keys()]
+    deps.sort(key=lambda d: _cl_dep_sort_key(d.get("codigo") or ""))
+
+    # QR terminado (fuente: gestion interna)
+    qr_terminados = _cl_qr_terminados_por_novedades(con, codigo, fecha_iso)
+
+    # Controles ya guardados hoy
+    controles_rows = con.execute(
+        """
+        SELECT deposito_codigo, resultado, observacion, usuario, actualizado_en, creado_en
+        FROM sedes_control_limpieza
+        WHERE sede_codigo = ? AND fecha = ?
+        """,
+        (codigo, fecha_iso),
+    ).fetchall()
+    controles = {}
+    for r in (controles_rows or []):
+        dep = _cl_norm_dep_code((r["deposito_codigo"] if r else "") or "")
+        if not dep:
+            continue
+        controles[dep] = {
+            "resultado": (r["resultado"] or "").strip(),
+            "observacion": (r["observacion"] or ""),
+            "usuario": (r["usuario"] or ""),
+            "actualizado_en": (r["actualizado_en"] or ""),
+            "creado_en": (r["creado_en"] or ""),
+        }
+
+    out_deps = []
+    for d in deps:
+        dep = d["codigo"]
+        ctrl = controles.get(dep)
+        out_deps.append(
+            {
+                "codigo": dep,
+                "descripcion": d.get("descripcion") or "",
+                "qr_terminado": dep in qr_terminados,
+                "control": ctrl,
+            }
+        )
+
+    usuario = (session.get("full_name") or session.get("username") or "").strip()
+    resp = {
+        "ok": True,
+        "sede": {
+            "codigo": sede["codigo"],
+            "nombre": sede["nombre"],
+            "direccion": sede["direccion"],
+        },
+        "fecha": fecha_iso,
+        "dia_semana": dia_semana,
+        "checklist": checklist_items,
+        "usuario": usuario,
+        "depositos": out_deps,
+    }
+    con.close()
+    return jsonify(resp)
+
+
+@app.post("/sedes/<codigo>/control-limpieza/save", endpoint="sede_control_limpieza_save")
+def sede_control_limpieza_save(codigo):
+    codigo = (codigo or "").upper().strip()
+    payload = request.get_json(force=True) or {}
+
+    fecha_iso = (payload.get("fecha") or "").strip() or datetime.now().date().isoformat()
+    dia_semana = (payload.get("dia_semana") or "").strip() or _cl_dia_semana_from_iso(fecha_iso)
+    controles_in = payload.get("controles") or []
+
+    if not isinstance(controles_in, list):
+        return jsonify({"ok": False, "error": "Formato inválido: controles"}), 400
+
+    usuario = (session.get("full_name") or session.get("username") or "").strip()
+    con = get_db()
+    ensure_sedes_control_limpieza_table(con)
+
+    # QR terminado (obligatorio evaluar)
+    qr_terminados = _cl_qr_terminados_por_novedades(con, codigo, fecha_iso)
+
+    # Normalizamos controles por deposito
+    controles = {}
+    for it in controles_in:
+        if not isinstance(it, dict):
+            continue
+        dep = _cl_norm_dep_code(it.get("deposito") or it.get("deposito_codigo") or "")
+        if not dep:
+            continue
+        res = (it.get("resultado") or "").strip().upper()
+        if res in {"OK", "APROBADO", "APROBADA", "👍"}:
+            res = "APROBADO"
+        elif res in {"OBS", "OBSERVADO", "OBSERVADA", "👎"}:
+            res = "OBSERVADO"
+        else:
+            continue
+
+        obs = (it.get("observacion") or "").strip()
+        if res == "OBSERVADO" and not obs:
+            con.close()
+            return jsonify({"ok": False, "error": f"Falta observación en {dep}"}), 400
+
+        if res != "OBSERVADO":
+            obs = ""
+
+        controles[dep] = {"resultado": res, "observacion": obs}
+
+    # Control obligatorio sobre depósitos terminados: no permitir guardar si falta evaluación.
+    faltan = [d for d in sorted(qr_terminados, key=_cl_dep_sort_key) if d not in controles]
+    if faltan:
+        con.close()
+        return jsonify(
+            {
+                "ok": False,
+                "error": "Faltan evaluar depósitos terminados (QR): " + ", ".join(faltan),
+                "faltan": faltan,
+            }
+        ), 400
+
+    saved = 0
+    for dep, data in controles.items():
+        con.execute(
+            """
+            INSERT INTO sedes_control_limpieza
+              (sede_codigo, deposito_codigo, fecha, dia_semana, resultado, observacion, usuario, actualizado_en)
+            VALUES (?,?,?,?,?,?,?,datetime('now','localtime'))
+            ON CONFLICT(sede_codigo, fecha, deposito_codigo)
+            DO UPDATE SET
+              dia_semana=excluded.dia_semana,
+              resultado=excluded.resultado,
+              observacion=excluded.observacion,
+              usuario=excluded.usuario,
+              actualizado_en=datetime('now','localtime')
+            """,
+            (
+                codigo,
+                dep,
+                fecha_iso,
+                dia_semana,
+                data["resultado"],
+                (data["observacion"] or None),
+                usuario,
+            ),
+        )
+        saved += 1
+
+    con.commit()
+    con.close()
+    return jsonify({"ok": True, "saved": saved, "obligatorios_qr": len(qr_terminados)})
+
+
 @app.post("/sedes/<codigo>/servicios", endpoint="sede_servicios_guardar")
 def sede_servicios_guardar(codigo):
     con = get_db()
