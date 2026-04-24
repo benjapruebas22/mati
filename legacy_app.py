@@ -4952,7 +4952,7 @@ def ensure_sedes_control_limpieza_table(con=None):
     con.execute(
         """
         CREATE UNIQUE INDEX IF NOT EXISTS idx_sedes_control_limpieza_unique
-        ON sedes_control_limpieza (sede_codigo, fecha, deposito_codigo)
+        ON sedes_control_limpieza (sede_codigo, deposito_codigo, fecha)
         """
     )
     con.commit()
@@ -5256,7 +5256,7 @@ def sede_control_limpieza_save(codigo):
             INSERT INTO sedes_control_limpieza
               (sede_codigo, deposito_codigo, fecha, dia_semana, resultado, observacion, usuario, actualizado_en)
             VALUES (?,?,?,?,?,?,?,datetime('now','localtime'))
-            ON CONFLICT(sede_codigo, fecha, deposito_codigo)
+            ON CONFLICT
             DO UPDATE SET
               dia_semana=excluded.dia_semana,
               resultado=excluded.resultado,
@@ -5279,6 +5279,218 @@ def sede_control_limpieza_save(codigo):
     con.commit()
     con.close()
     return jsonify({"ok": True, "saved": saved, "obligatorios_qr": len(qr_terminados)})
+
+
+def _cl_parse_iso_date(s: str):
+    s = (s or "").strip()
+    if not s:
+        return None
+    try:
+        return datetime.strptime(s, "%Y-%m-%d").date()
+    except Exception:
+        return None
+
+
+@app.get("/sedes/control-limpieza/historial", endpoint="sedes_control_limpieza_historial")
+def sedes_control_limpieza_historial():
+    con = get_db()
+    ensure_sedes_control_limpieza_table(con)
+
+    sede_f = (request.args.get("sede") or "").upper().strip()
+    dep_f = _cl_norm_dep_code(request.args.get("deposito") or "")
+    desde_in = (request.args.get("desde") or "").strip()
+    hasta_in = (request.args.get("hasta") or "").strip()
+
+    today = datetime.now().date()
+    hasta_dt = _cl_parse_iso_date(hasta_in) or today
+    desde_dt = _cl_parse_iso_date(desde_in) or (hasta_dt - timedelta(days=30))
+    if desde_dt > hasta_dt:
+        desde_dt, hasta_dt = hasta_dt, desde_dt
+    desde = desde_dt.isoformat()
+    hasta = hasta_dt.isoformat()
+
+    # Combos
+    sedes_rows = con.execute(
+        "SELECT codigo, nombre, direccion FROM sedes_mpd ORDER BY codigo"
+    ).fetchall()
+
+    deps_map = {}
+    if sede_f:
+        try:
+            dep_rows = con.execute(
+                """
+                SELECT codigo_local, descripcion
+                FROM sedes_depositos
+                WHERE codigo_sede = ?
+                ORDER BY codigo_local
+                """,
+                (sede_f,),
+            ).fetchall()
+        except Exception:
+            dep_rows = []
+    else:
+        try:
+            dep_rows = con.execute(
+                """
+                SELECT codigo_local, descripcion
+                FROM sedes_depositos
+                ORDER BY codigo_local
+                """,
+            ).fetchall()
+        except Exception:
+            dep_rows = []
+
+    for r in (dep_rows or []):
+        code = _cl_norm_dep_code((r["codigo_local"] if r else "") or "")
+        if not (code.startswith("D") and code[1:].isdigit()):
+            continue
+        desc = ""
+        try:
+            desc = (r["descripcion"] or "").strip()
+        except Exception:
+            desc = ""
+        if code not in deps_map or (desc and not deps_map.get(code)):
+            deps_map[code] = desc
+    depositos_opts = [{"codigo": c, "descripcion": (deps_map.get(c) or "")} for c in deps_map.keys()]
+    depositos_opts.sort(key=lambda d: _cl_dep_sort_key(d.get("codigo") or ""))
+
+    # Query historial
+    where = ["date(h.fecha) BETWEEN date(?) AND date(?)"]
+    params = [desde, hasta]
+    if sede_f:
+        where.append("h.sede_codigo = ?")
+        params.append(sede_f)
+    if dep_f:
+        where.append("h.deposito_codigo = ?")
+        params.append(dep_f)
+
+    sql = f"""
+        SELECT
+          h.fecha,
+          h.dia_semana,
+          h.sede_codigo,
+          sm.nombre AS sede_nombre,
+          h.deposito_codigo,
+          COALESCE(sd.descripcion,'') AS deposito_desc,
+          h.resultado,
+          h.observacion,
+          h.usuario,
+          COALESCE(NULLIF(h.actualizado_en,''), h.creado_en) AS ts
+        FROM sedes_control_limpieza h
+        LEFT JOIN sedes_mpd sm
+               ON sm.codigo = h.sede_codigo
+        LEFT JOIN sedes_depositos sd
+               ON sd.codigo_sede = h.sede_codigo
+              AND UPPER(TRIM(sd.codigo_local)) = h.deposito_codigo
+        WHERE {" AND ".join(where)}
+        ORDER BY date(h.fecha) DESC, h.sede_codigo, h.deposito_codigo
+        LIMIT 1500
+    """
+    hist_rows = con.execute(sql, tuple(params)).fetchall()
+
+    # Reincidencias (observados) - semana / mes, relativo al "hasta" del filtro
+    end_dt = hasta_dt
+    week_start = (end_dt - timedelta(days=6)).isoformat()
+    month_start = (end_dt - timedelta(days=29)).isoformat()
+    end_iso = end_dt.isoformat()
+
+    if sede_f:
+        kcols = "deposito_codigo"
+        gcols = "deposito_codigo"
+    else:
+        kcols = "sede_codigo, deposito_codigo"
+        gcols = "sede_codigo, deposito_codigo"
+
+    w_where = ["resultado = 'OBSERVADO'", "date(fecha) BETWEEN date(?) AND date(?)"]
+    w_params = [week_start, end_iso]
+    if sede_f:
+        w_where.append("sede_codigo = ?")
+        w_params.append(sede_f)
+    if dep_f:
+        w_where.append("deposito_codigo = ?")
+        w_params.append(dep_f)
+
+    m_where = ["resultado = 'OBSERVADO'", "date(fecha) BETWEEN date(?) AND date(?)"]
+    m_params = [month_start, end_iso]
+    if sede_f:
+        m_where.append("sede_codigo = ?")
+        m_params.append(sede_f)
+    if dep_f:
+        m_where.append("deposito_codigo = ?")
+        m_params.append(dep_f)
+
+    week_counts = {}
+    month_counts = {}
+    try:
+        w_sql = f"SELECT {kcols}, COUNT(*) AS c FROM sedes_control_limpieza WHERE {' AND '.join(w_where)} GROUP BY {gcols}"
+        for r in con.execute(w_sql, tuple(w_params)).fetchall():
+            if sede_f:
+                key = _cl_norm_dep_code(r["deposito_codigo"] or "")
+            else:
+                key = f"{(r['sede_codigo'] or '').upper().strip()}|{_cl_norm_dep_code(r['deposito_codigo'] or '')}"
+            week_counts[key] = int(r["c"] or 0)
+    except Exception:
+        week_counts = {}
+
+    try:
+        m_sql = f"SELECT {kcols}, COUNT(*) AS c FROM sedes_control_limpieza WHERE {' AND '.join(m_where)} GROUP BY {gcols}"
+        for r in con.execute(m_sql, tuple(m_params)).fetchall():
+            if sede_f:
+                key = _cl_norm_dep_code(r["deposito_codigo"] or "")
+            else:
+                key = f"{(r['sede_codigo'] or '').upper().strip()}|{_cl_norm_dep_code(r['deposito_codigo'] or '')}"
+            month_counts[key] = int(r["c"] or 0)
+    except Exception:
+        month_counts = {}
+
+    # Armamos resumen ordenado
+    keys = set(month_counts.keys()) | set(week_counts.keys())
+    resumen = []
+    for k in keys:
+        sede_key = ""
+        dep_key = k
+        if "|" in k:
+            sede_key, dep_key = k.split("|", 1)
+        resumen.append(
+            {
+                "key": k,
+                "sede": sede_key,
+                "deposito": dep_key,
+                "semana": int(week_counts.get(k, 0) or 0),
+                "mes": int(month_counts.get(k, 0) or 0),
+            }
+        )
+    resumen.sort(key=lambda x: (-int(x.get("mes") or 0), -int(x.get("semana") or 0), x.get("deposito") or ""))
+
+    # Seleccion actual: totales o por deposito (si se eligio)
+    selected_reinc = {"semana": 0, "mes": 0}
+    if sede_f and dep_f:
+        selected_reinc["semana"] = int(week_counts.get(dep_f, 0) or 0)
+        selected_reinc["mes"] = int(month_counts.get(dep_f, 0) or 0)
+    elif dep_f and not sede_f:
+        suffix = "|" + dep_f
+        selected_reinc["semana"] = int(sum(int(v or 0) for k, v in week_counts.items() if str(k).endswith(suffix)))
+        selected_reinc["mes"] = int(sum(int(v or 0) for k, v in month_counts.items() if str(k).endswith(suffix)))
+    else:
+        # Totales segun el filtro actual (sede o todas)
+        selected_reinc["semana"] = int(sum(int(v or 0) for v in week_counts.values()))
+        selected_reinc["mes"] = int(sum(int(v or 0) for v in month_counts.values()))
+
+    con.close()
+    return render_template(
+        "sedes_control_limpieza_historial.html",
+        sedes=sedes_rows,
+        depositos_opts=depositos_opts,
+        sede_f=sede_f,
+        deposito_f=dep_f,
+        desde=desde,
+        hasta=hasta,
+        hist_rows=hist_rows,
+        reinc_resumen=resumen[:12],
+        reinc_selected=selected_reinc,
+        reinc_week=week_counts,
+        reinc_month=month_counts,
+    )
 
 
 @app.post("/sedes/<codigo>/servicios", endpoint="sede_servicios_guardar")

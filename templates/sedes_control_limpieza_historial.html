@@ -1,0 +1,337 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  .clh-shell{
+    background: linear-gradient(180deg, #f8fafd 0%, #f3f7fc 100%);
+    border: 1px solid #dfe6f1;
+    border-radius: 18px;
+    box-shadow: 0 8px 20px rgba(24, 39, 63, 0.06);
+    padding: 10px;
+    display: grid;
+    gap: 10px;
+    color: #1f2f44;
+  }
+  .clh-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .clh-title{
+    margin: 0;
+    font-size: 16px;
+    font-weight: 950;
+    color: #1f3c68;
+  }
+  .clh-actions{
+    display:flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .clh-link{
+    border: 1px solid #d3deee;
+    background: #fff;
+    color: #4f6789;
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 900;
+    text-decoration: none;
+  }
+
+  .clh-card{
+    background:#fff;
+    border:1px solid #dfe6f1;
+    border-radius: 14px;
+    box-shadow: 0 8px 20px rgba(24, 39, 63, 0.06);
+    padding: 10px;
+  }
+
+  .clh-filters{
+    display:grid;
+    gap: 8px;
+    grid-template-columns: 1.2fr 1fr 1fr 1fr auto;
+    align-items:end;
+  }
+  .clh-field label{
+    display:block;
+    font-size: 11px;
+    font-weight: 900;
+    color: #486589;
+    margin-bottom: 3px;
+  }
+  .clh-field select,
+  .clh-field input{
+    width: 100%;
+    border: 1px solid #d2e0f5;
+    border-radius: 10px;
+    background: #fff;
+    color: #2b415f;
+    font-size: 12px;
+    padding: 6px 8px;
+  }
+  .clh-btn{
+    border: 1px solid #b9d7ff;
+    background: #edf5ff;
+    color: #1e5b96;
+    border-radius: 12px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 950;
+    cursor:pointer;
+    white-space: nowrap;
+  }
+
+  .clh-kpis{
+    display:grid;
+    gap: 8px;
+    grid-template-columns: 220px 220px 1fr;
+    align-items: stretch;
+  }
+  .kpi{
+    border: 1px solid #dbe5f4;
+    border-radius: 14px;
+    padding: 10px;
+    background: #fbfdff;
+  }
+  .kpi .k{
+    font-size: 10px;
+    font-weight: 950;
+    letter-spacing: .2px;
+    color:#5a7395;
+    text-transform: uppercase;
+  }
+  .kpi .v{
+    margin-top: 4px;
+    font-size: 18px;
+    font-weight: 950;
+    color:#0f172a;
+  }
+  .kpi .sub{
+    margin-top: 4px;
+    font-size: 12px;
+    font-weight: 800;
+    color:#6b7280;
+  }
+
+  .chips{
+    margin-top: 6px;
+    display:flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .chip{
+    display:inline-flex;
+    align-items:center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    border: 1px solid #dbe5f4;
+    background: #fff;
+    font-size: 11px;
+    font-weight: 900;
+    color:#1f3c68;
+  }
+  .chip.bad{ border-color:#fecaca; background:#fff1f2; color:#991b1b; }
+
+  .table-wrap{
+    overflow:auto;
+    border: 1px solid #e4ebf6;
+    border-radius: 12px;
+    background:#fff;
+    max-height: 70vh;
+  }
+  .tbl{
+    width:100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    min-width: 980px;
+  }
+  .tbl th, .tbl td{
+    padding: 7px 8px;
+    border-bottom: 1px solid #edf2f9;
+    text-align: left;
+    vertical-align: top;
+  }
+  .tbl th{
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #f4f8ff;
+    color:#4c6282;
+    font-weight: 900;
+    white-space: nowrap;
+  }
+  .muted{ color:#8ca0bc; }
+  .res{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    border-radius: 999px;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: 950;
+    border: 1px solid transparent;
+    white-space: nowrap;
+  }
+  .res.ok{ background:#ecfdf3; border-color:#a7f3d0; color:#047857; }
+  .res.bad{ background:#fff1f2; border-color:#fecaca; color:#991b1b; }
+
+  tr.obs td{
+    background: rgba(255, 241, 242, 0.55);
+  }
+
+  @media (max-width: 1100px){
+    .clh-filters{ grid-template-columns: 1fr 1fr; }
+    .clh-kpis{ grid-template-columns: 1fr; }
+    .kpi .v{ font-size: 16px; }
+  }
+</style>
+
+<section class="clh-shell">
+  <header class="clh-head">
+    <h2 class="clh-title">Historial Control Limpieza</h2>
+    <div class="clh-actions">
+      {% if sede_f %}
+        <a class="clh-link" href="{{ url_for('sede_ficha', codigo=sede_f, home=1) }}">Volver a sede</a>
+      {% endif %}
+      <a class="clh-link" href="{{ url_for('sedes_resumen_mpd') }}">Volver a sedes</a>
+      <a class="clh-link" href="{{ url_for('dashboard') }}">Dashboard</a>
+    </div>
+  </header>
+
+  <div class="clh-card">
+    <form class="clh-filters" method="get">
+      <div class="clh-field">
+        <label for="fSede">Sede</label>
+        <select id="fSede" name="sede">
+          <option value="">Todas</option>
+          {% for s in sedes %}
+            <option value="{{ s.codigo }}" {% if s.codigo == sede_f %}selected{% endif %}>
+              {{ s.codigo }}{% if s.nombre %} – {{ s.nombre }}{% endif %}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="clh-field">
+        <label for="fDep">Depósito</label>
+        <select id="fDep" name="deposito">
+          <option value="">Todos</option>
+          {% for d in depositos_opts %}
+            <option value="{{ d.codigo }}" {% if d.codigo == deposito_f %}selected{% endif %}>
+              {{ d.codigo }}{% if d.descripcion %} – {{ d.descripcion }}{% endif %}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="clh-field">
+        <label for="fDesde">Desde</label>
+        <input id="fDesde" type="date" name="desde" value="{{ desde }}">
+      </div>
+
+      <div class="clh-field">
+        <label for="fHasta">Hasta</label>
+        <input id="fHasta" type="date" name="hasta" value="{{ hasta }}">
+      </div>
+
+      <button class="clh-btn" type="submit">Filtrar</button>
+    </form>
+  </div>
+
+  <div class="clh-kpis">
+    <div class="kpi">
+      <div class="k">Reincidencias (Semana)</div>
+      <div class="v">{{ reinc_selected.semana }}</div>
+      <div class="sub">Observados en los últimos 7 días (hasta {{ hasta }})</div>
+    </div>
+    <div class="kpi">
+      <div class="k">Reincidencias (Mes)</div>
+      <div class="v">{{ reinc_selected.mes }}</div>
+      <div class="sub">Observados en los últimos 30 días (hasta {{ hasta }})</div>
+    </div>
+    <div class="kpi">
+      <div class="k">Top Reincidencias</div>
+      <div class="sub">Semana / Mes</div>
+      <div class="chips">
+        {% if reinc_resumen and reinc_resumen|length > 0 %}
+          {% for r in reinc_resumen %}
+            {% set cls = "chip" ~ (" bad" if (r.mes or 0) >= 3 else "") %}
+            <span class="{{ cls }}">
+              {% if r.sede %}{{ r.sede }} · {% endif %}{{ r.deposito }}:
+              <span>{{ r.semana or 0 }}</span>/<span>{{ r.mes or 0 }}</span>
+            </span>
+          {% endfor %}
+        {% else %}
+          <span class="chip">Sin observaciones en semana/mes.</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="clh-card">
+    <div class="table-wrap">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Sede</th>
+            <th>Depósito</th>
+            <th>Resultado</th>
+            <th>Observación</th>
+            <th>Usuario</th>
+            <th>Reincidencias</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if not hist_rows or hist_rows|length == 0 %}
+            <tr><td colspan="7" class="muted">Sin registros para el filtro.</td></tr>
+          {% else %}
+            {% for r in hist_rows %}
+              {% set dep_code = (r.deposito_codigo or "")|upper %}
+              {% set sede_code = (r.sede_codigo or "")|upper %}
+              {% set key = dep_code if sede_f else (sede_code ~ "|" ~ dep_code) %}
+              {% set w = reinc_week.get(key, 0) %}
+              {% set m = reinc_month.get(key, 0) %}
+              {% set is_obs = (r.resultado or "")|upper == "OBSERVADO" %}
+              <tr class="{% if is_obs %}obs{% endif %}">
+                <td>{{ r.fecha or "-" }}</td>
+                <td>
+                  {{ sede_code }}
+                  {% if r.sede_nombre %}<span class="muted"> – {{ r.sede_nombre }}</span>{% endif %}
+                </td>
+                <td>
+                  <strong>{{ dep_code }}</strong>
+                  {% if r.deposito_desc %}<span class="muted"> – {{ r.deposito_desc }}</span>{% endif %}
+                </td>
+                <td>
+                  {% if (r.resultado or "")|upper == "APROBADO" %}
+                    <span class="res ok">👍 Aprobado</span>
+                  {% else %}
+                    <span class="res bad">👎 Observado</span>
+                  {% endif %}
+                </td>
+                <td style="white-space:normal;min-width:260px;">
+                  {% set obs = (r.observacion or "")|trim %}
+                  {{ obs if obs else "-" }}
+                </td>
+                <td>{{ (r.usuario or "-") }}</td>
+                <td style="white-space:nowrap;">
+                  <span class="chip">Semana: {{ w }}</span>
+                  <span class="chip">Mes: {{ m }}</span>
+                </td>
+              </tr>
+            {% endfor %}
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+

@@ -5502,6 +5502,7 @@
         <a class="btn btn-metricas" href="{{ url_for('sede_metricas_edit', codigo=sede.codigo) }}">Editar metricas</a>
         <a class="btn btn-resumen-sedes" href="{{ url_for('auditoria_mobiliario') }}">Relevamientos / Control</a>
         <button type="button" class="btn btn-checklist-limpieza" id="btnChecklistLimpieza" data-sede="{{ sede.codigo }}">Checklist Control Limpieza</button>
+        <a class="btn btn-checklist-limpieza" href="{{ url_for('sedes_control_limpieza_historial', sede=sede.codigo) }}">Historial Control Limpieza</a>
 
 
         {% if home_mode %}
@@ -9031,7 +9032,10 @@
         <div class="cll-title" id="cllTitle">Checklist Control Limpieza</div>
         <div class="cll-sub" id="cllSub">-</div>
       </div>
-      <button type="button" class="cll-close" id="cllClose">Cerrar</button>
+      <div style="display:flex;gap:6px;align-items:center;flex:0 0 auto;">
+        <a class="cll-close" href="{{ url_for('sedes_control_limpieza_historial', sede=sede.codigo) }}" target="_blank" rel="noopener">Historial</a>
+        <button type="button" class="cll-close" id="cllClose">Cerrar</button>
+      </div>
     </div>
     <div class="cll-meta" id="cllMeta"></div>
     <div class="cll-control-dia hidden" id="cllControlDia"></div>
