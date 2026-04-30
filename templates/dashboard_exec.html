@@ -4838,7 +4838,6 @@
       if (isCoffee) {
         actions =
           '<div class="gestion-meta-actions">' +
-            '<button type="button" class="btn-mini" data-meta-act="compras">Compras</button>' +
             '<button type="button" class="btn-mini" data-meta-act="salon">Salón</button>' +
             '<button type="button" class="btn-mini" data-meta-act="chofer">Chofer</button>' +
           "</div>";
@@ -4865,9 +4864,6 @@
         var armado = String(log.armado_salon || "").trim() || "-";
         var chofer = String(log.chofer || "").trim() || "-";
         var limpieza = String(log.personal || "").trim() || "-";
-        var ins = Array.isArray(coffeeInsumos) ? coffeeInsumos : [];
-        var faltaComprar = ins.some(function (x) { return normTxt(x && x.estado) === "falta_comprar"; });
-        var compraTxt = faltaComprar ? "Falta comprar" : "OK";
         grid =
           '<div class="gestion-meta-grid">' +
             metaKpi("Evento", evento, false) +
@@ -4877,7 +4873,6 @@
             metaKpi("Plano", plano, plano === "-") +
             metaKpi("Armado salón", armado, armado === "-") +
             metaKpi("Chofer", chofer, chofer === "-") +
-            metaKpi("Compras", compraTxt, compraTxt !== "OK") +
             metaKpi("Limpieza", limpieza, limpieza === "-") +
           "</div>";
       } else {
@@ -5084,10 +5079,11 @@
         el.gestionTareaTitle.style.display = showTareaRow ? "block" : "none";
       }
       if (el.gestionCoffeeInsumosRow) {
-        el.gestionCoffeeInsumosRow.style.display = isCoffee ? "grid" : "none";
+        // Ocultar Control de insumos (no se usa en el panel operativo).
+        el.gestionCoffeeInsumosRow.style.display = "none";
       }
       if (el.gestionCoffeeInsumosTitle) {
-        el.gestionCoffeeInsumosTitle.style.display = isCoffee ? "block" : "none";
+        el.gestionCoffeeInsumosTitle.style.display = "none";
       }
       if (el.gestionCoffeeLogRow) {
         el.gestionCoffeeLogRow.style.display = isCoffee ? "grid" : "none";
