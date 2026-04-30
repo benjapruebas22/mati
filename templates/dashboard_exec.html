@@ -1364,7 +1364,7 @@
   }
   .coffee-insumo-head{
     display:grid;
-    grid-template-columns: minmax(140px, 1fr) 96px 96px 140px 110px 96px 70px;
+    grid-template-columns: minmax(140px, 1fr) 96px 96px 110px 170px 70px;
     gap: 6px;
     align-items: center;
     padding: 6px 8px;
@@ -1383,7 +1383,7 @@
     background: #fff;
     padding: 6px;
     display: grid;
-    grid-template-columns: minmax(140px, 1fr) 96px 96px 140px 110px 96px 70px;
+    grid-template-columns: minmax(140px, 1fr) 96px 96px 110px 170px 70px;
     gap: 6px;
     align-items: center;
   }
@@ -3480,7 +3480,6 @@
         stock_disponible: 0,
         stock_final: 0,
         estado: "hay_stock",
-        decision_compra: "pendiente",
         recibido: false,
         remito_archivo: "",
       });
@@ -3494,7 +3493,6 @@
       if (!el.gestionCoffeeInsumosList) return;
       var arr = Array.isArray(GESTION_COFFEE_INSUMOS) ? GESTION_COFFEE_INSUMOS : [];
       var canEditBase = !!(nov && nov.puede_editar_coffee_insumos);
-      var canDecide = !!(nov && nov.puede_decidir_compra);
       var canRecibir = !!(nov && nov.puede_marcar_recibido);
       var canFinal = !!(canRecibir || IS_MATIAS || CAN_EDIT_AGENTE);
       if (el.gestionCoffeeInsumosAddRow) {
@@ -3517,7 +3515,6 @@
           "<div>Insumo</div>" +
           "<div>Necesario</div>" +
           "<div>Stock / Final</div>" +
-          "<div>Compra</div>" +
           "<div>Estado</div>" +
           "<div>Recibido</div>" +
           "<div></div>" +
@@ -3557,11 +3554,6 @@
               '<input class="ctl-inp ci-stock" type="number" min="0" step="1" value="' + String(it.stock_disponible || 0) + '"' + (canEditBase ? "" : " disabled") + ' title="Stock disponible">' +
               '<input class="ctl-inp ci-final" type="number" min="0" step="1" value="' + String(it.stock_final || 0) + '"' + (canFinal ? "" : " disabled") + ' placeholder="Final" title="Stock final (despues del evento)">' +
             "</div>" +
-            '<select class="ctl-sel ci-decision"' + (canDecide ? "" : " disabled") + ">" +
-              '<option value="pendiente"' + ((it.decision_compra || "") === "pendiente" ? " selected" : "") + '>Pendiente</option>' +
-              '<option value="comprar"' + ((it.decision_compra || "") === "comprar" ? " selected" : "") + '>Comprar</option>' +
-              '<option value="no_necesario"' + ((it.decision_compra || "") === "no_necesario" ? " selected" : "") + '>No necesario</option>' +
-            "</select>" +
             '<span class="coffee-pill ' + estClass + '" title="' + escapeHtml(estTitle) + '">' + escapeHtml(estLabel || "-") + "</span>" +
             '<div class="ci-rec">' +
               '<label class="ci-rec-label">' +
@@ -3656,7 +3648,6 @@
         var cantEl = row.querySelector(".ci-cant");
         var stockEl = row.querySelector(".ci-stock");
         var finalEl = row.querySelector(".ci-final");
-        var decEl = row.querySelector(".ci-decision");
         var recEl = row.querySelector(".ci-recibido");
         out.push({
           id: Number(base.id || 0),
@@ -3664,7 +3655,6 @@
           cantidad_necesaria: Number((cantEl && cantEl.value) || base.cantidad_necesaria || 0),
           stock_disponible: Number((stockEl && stockEl.value) || base.stock_disponible || 0),
           stock_final: Number((finalEl && finalEl.value) || base.stock_final || 0),
-          decision_compra: String((decEl && decEl.value) || base.decision_compra || "pendiente"),
           recibido: !!(recEl && recEl.checked),
         });
       });
@@ -4877,8 +4867,7 @@
         var limpieza = String(log.personal || "").trim() || "-";
         var ins = Array.isArray(coffeeInsumos) ? coffeeInsumos : [];
         var faltaComprar = ins.some(function (x) { return normTxt(x && x.estado) === "falta_comprar"; });
-        var compraPend = ins.some(function (x) { return normTxt(x && x.decision_compra) === "pendiente"; });
-        var compraTxt = faltaComprar ? "Falta comprar" : (compraPend ? "Pendiente" : "OK");
+        var compraTxt = faltaComprar ? "Falta comprar" : "OK";
         grid =
           '<div class="gestion-meta-grid">' +
             metaKpi("Evento", evento, false) +
@@ -4950,7 +4939,7 @@
       if (logBits.length) lines.push("Logística: " + logBits.join(" · "));
 
       if (act === "compras") {
-        lines.push("Marcar decisión de compra en Control de insumos.");
+        lines.push("Revisar faltantes en Control de insumos.");
       } else if (act === "salon") {
         lines.push("Confirmar armado según el plano seleccionado.");
       } else if (act === "chofer") {
@@ -5249,7 +5238,8 @@
       }
       renderGestionGrupoAgentes(!!nov.puede_asignar_tarea);
       if (el.gestionCoffeeInsumosGuardar) {
-        el.gestionCoffeeInsumosGuardar.disabled = !(nov.puede_editar_coffee_insumos || nov.puede_decidir_compra || nov.puede_marcar_recibido);
+        // Se puede guardar si el usuario puede editar base, marcar recibido o actualizar stock final (Matias/admin).
+        el.gestionCoffeeInsumosGuardar.disabled = !(nov.puede_editar_coffee_insumos || nov.puede_marcar_recibido || IS_MATIAS || CAN_EDIT_AGENTE);
       }
       setGestionMsg("", false);
     }
