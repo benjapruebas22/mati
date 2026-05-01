@@ -3127,9 +3127,10 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                                   AND (COALESCE({f_fin}, '') = '' OR TRIM(COALESCE({f_fin}, '')) = '')
                             ) t
                             WHERE fecha_prog IS NOT NULL AND TRIM(COALESCE(fecha_prog,'')) <> ''
+                              AND date(fecha_prog) >= date(?)
                             ORDER BY date(fecha_prog) ASC, id ASC
                             LIMIT 120
-                        """).fetchall()
+                        """, (today_iso,)).fetchall()
 
                         if sub_rows:
                             next_date = (_row_value(sub_rows[0], "fecha_prog", "") or "").strip()
@@ -3162,6 +3163,60 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                                     next_label = "Segunda semana de Feria Judicial"
                                 else:
                                     next_label = "Feria Judicial"
+                        else:
+                            # fallback: si no hay futura, tomar la mas antigua pendiente (vencida)
+                            ov_rows = con.execute(f"""
+                                SELECT *
+                                FROM (
+                                    SELECT
+                                        id,
+                                        UPPER(TRIM(COALESCE(codigo_sede,''))) AS sede,
+                                        COALESCE(titulo,'') AS titulo,
+                                        COALESCE(tipo,'') AS tipo,
+                                        COALESCE(descripcion,'') AS descripcion,
+                                        {date_expr} AS fecha_prog,
+                                        COALESCE({f_fin},'') AS fecha_fin_real_raw
+                                    FROM obras_sede
+                                    WHERE {where_desinf}
+                                      AND (COALESCE({f_fin}, '') = '' OR TRIM(COALESCE({f_fin}, '')) = '')
+                                ) t
+                                WHERE fecha_prog IS NOT NULL AND TRIM(COALESCE(fecha_prog,'')) <> ''
+                                  AND date(fecha_prog) < date(?)
+                                ORDER BY date(fecha_prog) ASC, id ASC
+                                LIMIT 120
+                            """, (today_iso,)).fetchall()
+
+                            if ov_rows:
+                                next_date = (_row_value(ov_rows[0], "fecha_prog", "") or "").strip()
+                                seen = set()
+                                txts = []
+                                for rr in ov_rows:
+                                    dprog = (_row_value(rr, "fecha_prog", "") or "").strip()
+                                    if dprog != next_date:
+                                        break
+                                    sede = (_row_value(rr, "sede", "") or "").strip().upper()
+                                    if sede and sede not in seen:
+                                        seen.add(sede)
+                                        next_sedes.append(sede)
+                                    txts.append(" ".join([
+                                        (_row_value(rr, "titulo", "") or "").strip(),
+                                        (_row_value(rr, "tipo", "") or "").strip(),
+                                        (_row_value(rr, "descripcion", "") or "").strip(),
+                                    ]).strip())
+
+                                text_upper = " ".join([t for t in txts if t]).upper()
+                                for i in (1, 2, 3):
+                                    if (f"GR{i}" in text_upper) or (f"GR {i}" in text_upper) or (f"GRUPO {i}" in text_upper):
+                                        next_group = f"Grupo {i}"
+                                        break
+
+                                if "FERIA" in text_upper and "JUDICIAL" in text_upper:
+                                    if ("PRIMERA" in text_upper) or ("1RA" in text_upper) or ("1ª" in text_upper):
+                                        next_label = "Primera semana de Feria Judicial"
+                                    elif ("SEGUNDA" in text_upper) or ("2DA" in text_upper) or ("2ª" in text_upper):
+                                        next_label = "Segunda semana de Feria Judicial"
+                                    else:
+                                        next_label = "Feria Judicial"
 
                     status = ""
                     try:
@@ -3196,8 +3251,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                         WHERE {where_activo}
                           AND fecha_vencimiento IS NOT NULL
                           AND TRIM(COALESCE(fecha_vencimiento,'')) <> ''
-                          AND date(fecha_vencimiento) >= date(?)
-                    """, (today_iso,)).fetchone()
+                    """).fetchone()
 
                     next_date = (_row_value(row_next, "d", "") or "").strip()
                     next_sedes = []
