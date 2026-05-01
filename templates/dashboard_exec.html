@@ -278,8 +278,12 @@
   .kpi-grid.resumen-base {
     display: none;
   }
-  .kpi-grid.operativa {
+  .card-resumen .kpi-grid.operativa {
+    display: none;
     margin-top: 0;
+  }
+  .card-resumen .kpi-grid.respuestas {
+    display: none;
   }
   .kpi.pending-old { background: linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%); border-color: #fed7aa; }
   .kpi.pending-old .k-val { color: #b45309; }
@@ -289,39 +293,107 @@
   .kpi.assign-open .k-val { color: #a16207; }
   .kpi.matias-open { background: linear-gradient(180deg, #fdf2f8 0%, #fce7f3 100%); border-color: #f9a8d4; }
   .kpi.matias-open .k-val { color: #be185d; }
-  .kpi.mata { background: linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%); border-color: #fed7aa; }
-  .kpi.mata .k-label { color: #9a3412; }
-  .kpi.mata .k-val { color: #c2410c; }
-  .kpi.mata .k-sub {
-    margin-top: 6px;
+
+  /* KPIs compactos (Matafuegos + Desinfeccion) */
+  .ops-kpi-row {
+    margin-top: 8px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .ops-kpi-card {
+    border: 1px solid var(--ctl-line);
+    border-radius: 14px;
+    padding: 10px 12px;
+    background: linear-gradient(180deg, #ffffff 0%, #f9fcff 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+    min-width: 0;
+  }
+  .ops-kpi-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .ops-kpi-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  .ops-kpi-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    border: 1px solid var(--ctl-line);
+    background: #f8fafc;
+  }
+  .ops-kpi-title {
+    font-weight: 900;
+    font-size: 14px;
+    color: #1c3453;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .ops-badge {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--ctl-line);
+    background: #f8fafc;
+    color: #355a89;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+  .ops-badge.ok { border-color: #bbf7d0; background: #ecfdf5; color: #166534; }
+  .ops-badge.warn { border-color: #fed7aa; background: #fff7ed; color: #9a3412; }
+  .ops-badge.bad { border-color: #fecaca; background: #fff1f2; color: #991b1b; }
+  .ops-badge.na { border-color: #dbeafe; background: #eff6ff; color: #1d4ed8; }
+
+  .ops-kpi-body {
+    margin-top: 8px;
+    display: grid;
+    gap: 6px;
+  }
+  .ops-kpi-date-label {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--ctl-soft);
+    letter-spacing: 0.02em;
+  }
+  .ops-kpi-date {
+    margin-top: 1px;
+    font-size: 20px;
+    line-height: 1.05;
+    font-weight: 900;
+    color: #1c3453;
+  }
+  .ops-kpi-line {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 8px;
     font-size: 12px;
-    color: #7c2d12;
+    color: var(--ctl-soft);
   }
-  .kpi.mata .k-note {
-    margin-top: 6px;
-    font-size: 11px;
-    color: #9a3412;
+  .ops-kpi-foot {
+    font-size: 12px;
+    color: #355a89;
     opacity: 0.95;
   }
-  .kpi.desinf { background: linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%); border-color: #a7f3d0; }
-  .kpi.desinf .k-label { color: #14532d; }
-  .kpi.desinf .k-val { color: #166534; }
-  .kpi.desinf .k-sub {
-    margin-top: 6px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    font-size: 12px;
-    color: #14532d;
-  }
-  .kpi.desinf .k-note {
-    margin-top: 6px;
-    font-size: 11px;
-    color: #166534;
-    opacity: 0.95;
+  .ops-kpi-foot.muted { color: var(--ctl-soft); }
+
+  .ops-kpi-mata { border-color: #fed7aa; background: linear-gradient(180deg, #ffffff 0%, #fffaf3 100%); }
+  .ops-kpi-mata .ops-kpi-icon { border-color: #fed7aa; background: #fff7ed; color: #c2410c; }
+  .ops-kpi-desinf { border-color: #a7f3d0; background: linear-gradient(180deg, #ffffff 0%, #f3fef7 100%); }
+  .ops-kpi-desinf .ops-kpi-icon { border-color: #a7f3d0; background: #ecfdf5; color: #166534; }
+
+  @media (max-width: 740px) {
+    .ops-kpi-row { grid-template-columns: 1fr; }
   }
 
   .nvd-form-grid {
@@ -2160,28 +2232,51 @@
       </div>
     </div>
 
-    <div id="mataCard" class="kpi mata" style="display:none;margin-top:8px;">
-      <div class="k-label">🧯 Matafuegos</div>
-      <div class="k-val" id="mataNextDate">-</div>
-      <div class="k-sub">
-        <span>Estado: <strong id="mataStatus">-</strong></span>
-        <span id="mataSoonWrap" style="display:none;">Vencen 45d: <strong id="mataSoon">0</strong></span>
+    <div class="ops-kpi-row" aria-label="KPIs operativos">
+      <div id="mataCard" class="ops-kpi-card ops-kpi-mata" style="display:none;">
+        <div class="ops-kpi-head">
+          <div class="ops-kpi-left">
+            <div class="ops-kpi-icon" aria-hidden="true">&#129519;</div>
+            <div class="ops-kpi-title">Matafuegos</div>
+          </div>
+          <span id="mataBadge" class="ops-badge na">-</span>
+        </div>
+        <div class="ops-kpi-body">
+          <div>
+            <div class="ops-kpi-date-label">Próximo vencimiento</div>
+            <div id="mataNextDate" class="ops-kpi-date">-</div>
+          </div>
+          <div class="ops-kpi-line">
+            <span>Estado: <strong id="mataStatus">-</strong></span>
+            <span id="mataLoteWrap" style="display:none;">· Lote: <strong id="mataLote">-</strong></span>
+            <span id="mataSoonWrap" style="display:none;">· 45d: <strong id="mataSoon">0</strong></span>
+          </div>
+          <div id="mataSedes" class="ops-kpi-foot">0 sedes: -</div>
+        </div>
       </div>
-      <div class="k-note" id="mataSedes">Sedes: -</div>
-    </div>
 
-    <div id="desinfCard" class="kpi desinf" style="display:none;margin-top:8px;">
-      <div class="k-label">🧪 Desinfección</div>
-      <div class="k-val" id="desinfNextDate">-</div>
-      <div class="k-sub">
-        <span id="desinfNextLabelWrap" style="display:none;">Próxima: <strong id="desinfNextLabel">-</strong></span>
-        <span id="desinfGrupoWrap" style="display:none;">Grupo: <strong id="desinfGrupo">-</strong></span>
+      <div id="desinfCard" class="ops-kpi-card ops-kpi-desinf" style="display:none;">
+        <div class="ops-kpi-head">
+          <div class="ops-kpi-left">
+            <div class="ops-kpi-icon" aria-hidden="true">&#129514;</div>
+            <div class="ops-kpi-title">Desinfección</div>
+          </div>
+          <span id="desinfBadge" class="ops-badge na">-</span>
+        </div>
+        <div class="ops-kpi-body">
+          <div>
+            <div class="ops-kpi-date-label">Próxima programada</div>
+            <div id="desinfNextDate" class="ops-kpi-date">-</div>
+          </div>
+          <div class="ops-kpi-line">
+            <span>Estado: <strong id="desinfStatus">-</strong></span>
+            <span id="desinfNextLabelWrap" style="display:none;">· <strong id="desinfNextLabel">-</strong></span>
+            <span id="desinfGrupoWrap" style="display:none;">· <strong id="desinfGrupo">-</strong></span>
+          </div>
+          <div id="desinfSedes" class="ops-kpi-foot">0 sedes: -</div>
+          <div id="desinfUltima" class="ops-kpi-foot muted">Última: -</div>
+        </div>
       </div>
-      <div class="k-sub">
-        <span>Estado: <strong id="desinfStatus">-</strong></span>
-        <span>Sedes: <strong id="desinfSedes">-</strong></span>
-      </div>
-      <div class="k-note" id="desinfUltima">Última: -</div>
     </div>
   </article>
 
@@ -3046,11 +3141,15 @@
       mataCard: document.getElementById("mataCard"),
       mataNextDate: document.getElementById("mataNextDate"),
       mataStatus: document.getElementById("mataStatus"),
+      mataBadge: document.getElementById("mataBadge"),
+      mataLoteWrap: document.getElementById("mataLoteWrap"),
+      mataLote: document.getElementById("mataLote"),
       mataSoonWrap: document.getElementById("mataSoonWrap"),
       mataSoon: document.getElementById("mataSoon"),
       mataSedes: document.getElementById("mataSedes"),
       desinfCard: document.getElementById("desinfCard"),
       desinfNextDate: document.getElementById("desinfNextDate"),
+      desinfBadge: document.getElementById("desinfBadge"),
       desinfNextLabelWrap: document.getElementById("desinfNextLabelWrap"),
       desinfNextLabel: document.getElementById("desinfNextLabel"),
       desinfGrupoWrap: document.getElementById("desinfGrupoWrap"),
@@ -4192,6 +4291,25 @@
       return s;
     }
 
+    function briefCodes(arr, maxShow) {
+      var a = Array.isArray(arr) ? arr.map(function (x) { return String(x || "").trim(); }).filter(Boolean) : [];
+      var max = (maxShow === 0 || maxShow) ? Number(maxShow) : 6;
+      if (!isFinite(max) || max < 1) max = 6;
+      var shown = a.slice(0, max);
+      var more = Math.max(a.length - shown.length, 0);
+      var text = shown.join(", ");
+      if (more > 0) text = (text ? (text + "… +" + String(more)) : ("+" + String(more)));
+      return { count: a.length, text: text || "-" };
+    }
+
+    function setBadge(badgeEl, text, kind) {
+      if (!badgeEl) return;
+      var k = String(kind || "na").trim().toLowerCase();
+      if (["ok", "warn", "bad", "na"].indexOf(k) < 0) k = "na";
+      badgeEl.className = "ops-badge " + k;
+      badgeEl.textContent = String(text || "-");
+    }
+
     function renderDesinfeccionCard(d) {
       if (!el.desinfCard) return;
       var x = d || {};
@@ -4214,9 +4332,19 @@
       }
       el.desinfCard.style.display = "";
 
+      var statusTxt = status || (nextDate ? "Programada" : (lastDate ? "Finalizada" : "-"));
       el.desinfNextDate.textContent = nextDate ? fmtIsoShort(nextDate) : "-";
-      el.desinfStatus.textContent = status || (nextDate ? "Programada" : (lastDate ? "Finalizada" : "-"));
-      el.desinfSedes.textContent = nextSedes.length ? nextSedes.join(", ") : "-";
+      el.desinfStatus.textContent = statusTxt;
+      if (el.desinfBadge) {
+        var kind = "na";
+        var stNorm = normTxt(statusTxt);
+        if (stNorm.indexOf("venc") >= 0) kind = "bad";
+        else if (stNorm.indexOf("final") >= 0) kind = "ok";
+        else if (stNorm.indexOf("program") >= 0) kind = "warn";
+        setBadge(el.desinfBadge, statusTxt || "-", kind);
+      }
+      var briefNext = briefCodes(nextSedes, 6);
+      el.desinfSedes.textContent = String(briefNext.count) + " sedes: " + (briefNext.text || "-");
 
       if (el.desinfNextLabelWrap) {
         if (nextLabel) {
@@ -4236,7 +4364,10 @@
       }
 
       var ultimaTxt = "Última: " + (lastDate ? fmtIsoShort(lastDate) : "-");
-      if (lastSedes.length) ultimaTxt += " · " + lastSedes.join(", ");
+      if (lastSedes.length) {
+        var briefLast = briefCodes(lastSedes, 6);
+        ultimaTxt += " · " + String(briefLast.count) + " sedes: " + (briefLast.text || "-");
+      }
       el.desinfUltima.textContent = ultimaTxt;
     }
 
@@ -4259,21 +4390,31 @@
 
       el.mataNextDate.textContent = nextDate ? fmtIsoShort(nextDate) : "-";
 
-      var status = "-";
+      var estado = "Sin datos";
       if (nextDate) {
         if (days !== null && !isNaN(days)) {
-          if (days < 0) status = "Vencido";
-          else if (days === 0) status = "Vence hoy";
-          else if (days <= 7) status = "Urgente (" + String(days) + "d)";
-          else if (days <= 45) status = "Pronto (" + String(days) + "d)";
-          else status = "Programado (" + String(days) + "d)";
+          if (days <= 0) estado = "Vence hoy";
+          else if (days <= 45) estado = "Por vencer";
+          else estado = "En fecha";
         } else {
-          status = "Programado";
+          estado = "En fecha";
         }
-      } else {
-        status = "Sin datos";
       }
-      el.mataStatus.textContent = status;
+      el.mataStatus.textContent = estado;
+      if (el.mataBadge) {
+        var kind = (estado === "En fecha") ? "ok" : ((estado === "Vence hoy" || estado === "Por vencer") ? "warn" : "na");
+        setBadge(el.mataBadge, estado || "-", kind);
+      }
+
+      if (el.mataLoteWrap) {
+        var lote = String((next && next.lote) || x.lote || "").trim();
+        if (lote) {
+          el.mataLoteWrap.style.display = "";
+          if (el.mataLote) el.mataLote.textContent = lote;
+        } else {
+          el.mataLoteWrap.style.display = "none";
+        }
+      }
 
       if (el.mataSoonWrap) {
         if (count45 > 0) {
@@ -4284,7 +4425,8 @@
         }
       }
 
-      el.mataSedes.textContent = "Sedes: " + (sedes.length ? sedes.join(", ") : "-");
+      var brief = briefCodes(sedes, 6);
+      el.mataSedes.textContent = String(brief.count) + " sedes: " + (brief.text || "-");
     }
 
     function loadOperativoExtras() {
