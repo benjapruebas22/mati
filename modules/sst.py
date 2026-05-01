@@ -2558,6 +2558,11 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 "novedadesHoy": [],
                 "novedadesCount": 0,
             },
+            "desinfeccion": {
+                "last": {"fecha": "", "sedes": [], "grupo": "", "label": ""},
+                "next": {"fecha": "", "sedes": [], "grupo": "", "label": ""},
+                "status": "",
+            },
             "horarios": {
                 "pendienteMail": 0,
                 "enviadosHoy": 0,
@@ -3050,6 +3055,124 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                       AND LOWER({ext_expr}) NOT LIKE '%midefensa%'
                 """).fetchone()
                 data["obras"]["urgenciasExternas"] = int(_row_value(row, "n", 0) or 0)
+            except Exception:
+                pass
+
+            # =========================
+            # DESINFECCION (desde OBRAS)
+            # =========================
+            try:
+                desinf_cols = [c for c in ("tipo", "titulo", "descripcion") if c in cols_obras]
+                if f_fin and desinf_cols and "codigo_sede" in cols_obras:
+                    where_parts = [f"LOWER(COALESCE({c}, '')) LIKE '%desinfecc%'" for c in desinf_cols]
+                    where_desinf = "(" + " OR ".join(where_parts) + ")"
+
+                    # Ultima realizada (fecha_fin_real)
+                    last_date = ""
+                    last_sedes = []
+                    row_last = con.execute(
+                        f"SELECT MAX(date({f_fin})) AS d FROM obras_sede WHERE {where_desinf} AND {f_fin} IS NOT NULL AND TRIM(COALESCE({f_fin},'')) <> ''"
+                    ).fetchone()
+                    last_date = (_row_value(row_last, "d", "") or "").strip()
+                    if last_date:
+                        rows_last = con.execute(f"""
+                            SELECT DISTINCT UPPER(TRIM(COALESCE(codigo_sede,''))) AS sede
+                            FROM obras_sede
+                            WHERE {where_desinf}
+                              AND {f_fin} IS NOT NULL
+                              AND date({f_fin}) = date(?)
+                              AND TRIM(COALESCE(codigo_sede,'')) <> ''
+                            ORDER BY sede
+                        """, (last_date,)).fetchall()
+                        seen = set()
+                        for rr in rows_last:
+                            sede = (_row_value(rr, "sede", "") or "").strip().upper()
+                            if sede and sede not in seen:
+                                seen.add(sede)
+                                last_sedes.append(sede)
+
+                    # Proxima programada: fecha_inicio -> fecha_fin_prevista -> fecha_solicitud
+                    date_candidates = []
+                    if f_ini:
+                        date_candidates.append(f"NULLIF(TRIM({f_ini}), '')")
+                    if "fecha_fin_prevista" in cols_obras:
+                        date_candidates.append("NULLIF(TRIM(fecha_fin_prevista), '')")
+                    if "fecha_solicitud" in cols_obras:
+                        date_candidates.append("NULLIF(TRIM(fecha_solicitud), '')")
+
+                    next_date = ""
+                    next_sedes = []
+                    next_group = ""
+                    next_label = ""
+                    if date_candidates:
+                        date_expr = "date(COALESCE(" + ",".join(date_candidates) + "))"
+                        sub_rows = con.execute(f"""
+                            SELECT *
+                            FROM (
+                                SELECT
+                                    id,
+                                    UPPER(TRIM(COALESCE(codigo_sede,''))) AS sede,
+                                    COALESCE(titulo,'') AS titulo,
+                                    COALESCE(tipo,'') AS tipo,
+                                    COALESCE(descripcion,'') AS descripcion,
+                                    {date_expr} AS fecha_prog,
+                                    COALESCE({f_fin},'') AS fecha_fin_real_raw
+                                FROM obras_sede
+                                WHERE {where_desinf}
+                                  AND (COALESCE({f_fin}, '') = '' OR TRIM(COALESCE({f_fin}, '')) = '')
+                            ) t
+                            WHERE fecha_prog IS NOT NULL AND TRIM(COALESCE(fecha_prog,'')) <> ''
+                            ORDER BY date(fecha_prog) ASC, id ASC
+                            LIMIT 120
+                        """).fetchall()
+
+                        if sub_rows:
+                            next_date = (_row_value(sub_rows[0], "fecha_prog", "") or "").strip()
+                            seen = set()
+                            txts = []
+                            for rr in sub_rows:
+                                dprog = (_row_value(rr, "fecha_prog", "") or "").strip()
+                                if dprog != next_date:
+                                    break
+                                sede = (_row_value(rr, "sede", "") or "").strip().upper()
+                                if sede and sede not in seen:
+                                    seen.add(sede)
+                                    next_sedes.append(sede)
+                                txts.append(" ".join([
+                                    (_row_value(rr, "titulo", "") or "").strip(),
+                                    (_row_value(rr, "tipo", "") or "").strip(),
+                                    (_row_value(rr, "descripcion", "") or "").strip(),
+                                ]).strip())
+
+                            text_upper = " ".join([t for t in txts if t]).upper()
+                            for i in (1, 2, 3):
+                                if (f"GR{i}" in text_upper) or (f"GR {i}" in text_upper) or (f"GRUPO {i}" in text_upper):
+                                    next_group = f"Grupo {i}"
+                                    break
+
+                            if "FERIA" in text_upper and "JUDICIAL" in text_upper:
+                                if ("PRIMERA" in text_upper) or ("1RA" in text_upper) or ("1ª" in text_upper):
+                                    next_label = "Primera semana de Feria Judicial"
+                                elif ("SEGUNDA" in text_upper) or ("2DA" in text_upper) or ("2ª" in text_upper):
+                                    next_label = "Segunda semana de Feria Judicial"
+                                else:
+                                    next_label = "Feria Judicial"
+
+                    status = ""
+                    try:
+                        if next_date:
+                            nd = date.fromisoformat(next_date)
+                            status = "Vencida" if nd < today else "Programada"
+                        elif last_date:
+                            status = "Finalizada"
+                    except Exception:
+                        status = "Programada" if next_date else ("Finalizada" if last_date else "")
+
+                    data["desinfeccion"] = {
+                        "last": {"fecha": last_date, "sedes": last_sedes, "grupo": "", "label": ""},
+                        "next": {"fecha": next_date, "sedes": next_sedes, "grupo": next_group, "label": next_label},
+                        "status": status,
+                    }
             except Exception:
                 pass
 

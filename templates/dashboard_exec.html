@@ -289,6 +289,23 @@
   .kpi.assign-open .k-val { color: #a16207; }
   .kpi.matias-open { background: linear-gradient(180deg, #fdf2f8 0%, #fce7f3 100%); border-color: #f9a8d4; }
   .kpi.matias-open .k-val { color: #be185d; }
+  .kpi.desinf { background: linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%); border-color: #a7f3d0; }
+  .kpi.desinf .k-label { color: #14532d; }
+  .kpi.desinf .k-val { color: #166534; }
+  .kpi.desinf .k-sub {
+    margin-top: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 12px;
+    color: #14532d;
+  }
+  .kpi.desinf .k-note {
+    margin-top: 6px;
+    font-size: 11px;
+    color: #166534;
+    opacity: 0.95;
+  }
 
   .nvd-form-grid {
     display: grid;
@@ -2125,6 +2142,20 @@
         <div class="k-val" id="kpiRespAgente">0</div>
       </div>
     </div>
+
+    <div id="desinfCard" class="kpi desinf" style="display:none;margin-top:8px;">
+      <div class="k-label">🧪 Desinfección</div>
+      <div class="k-val" id="desinfNextDate">-</div>
+      <div class="k-sub">
+        <span id="desinfNextLabelWrap" style="display:none;">Próxima: <strong id="desinfNextLabel">-</strong></span>
+        <span id="desinfGrupoWrap" style="display:none;">Grupo: <strong id="desinfGrupo">-</strong></span>
+      </div>
+      <div class="k-sub">
+        <span>Estado: <strong id="desinfStatus">-</strong></span>
+        <span>Sedes: <strong id="desinfSedes">-</strong></span>
+      </div>
+      <div class="k-note" id="desinfUltima">Última: -</div>
+    </div>
   </article>
 
   <article class="control-card control-workspace-section card-registro" data-workspaces="gestion">
@@ -2985,6 +3016,15 @@
       nextCoffeeBtn: document.getElementById("nextCoffeeBtn"),
       nextCoffeeDays: document.getElementById("nextCoffeeDays"),
       nextCoffeeMeta: document.getElementById("nextCoffeeMeta"),
+      desinfCard: document.getElementById("desinfCard"),
+      desinfNextDate: document.getElementById("desinfNextDate"),
+      desinfNextLabelWrap: document.getElementById("desinfNextLabelWrap"),
+      desinfNextLabel: document.getElementById("desinfNextLabel"),
+      desinfGrupoWrap: document.getElementById("desinfGrupoWrap"),
+      desinfGrupo: document.getElementById("desinfGrupo"),
+      desinfStatus: document.getElementById("desinfStatus"),
+      desinfSedes: document.getElementById("desinfSedes"),
+      desinfUltima: document.getElementById("desinfUltima"),
       registroBox: document.getElementById("registroNvdBox"),
       histTop: document.getElementById("btnHistorialTop"),
       histQuick: document.getElementById("btnHistorialQuick"),
@@ -4109,6 +4149,73 @@
       el.kInfo.textContent = String(x.informado || 0);
       el.kProc.textContent = String(x.en_proceso || 0);
       el.kOk.textContent = String(x.resuelto || 0);
+    }
+
+    function fmtIsoShort(iso) {
+      var s = String(iso || "").trim();
+      if (!s) return "-";
+      var p = s.split("-");
+      if (p.length === 3) return p[2] + "/" + p[1] + "/" + p[0];
+      return s;
+    }
+
+    function renderDesinfeccionCard(d) {
+      if (!el.desinfCard) return;
+      var x = d || {};
+      var next = x.next || {};
+      var last = x.last || {};
+
+      var nextDate = String(next.fecha || "").trim();
+      var nextLabel = String(next.label || "").trim();
+      var nextGrupo = String(next.grupo || "").trim();
+      var nextSedes = Array.isArray(next.sedes) ? next.sedes.filter(Boolean) : [];
+
+      var lastDate = String(last.fecha || "").trim();
+      var lastSedes = Array.isArray(last.sedes) ? last.sedes.filter(Boolean) : [];
+
+      var status = String(x.status || "").trim();
+      var hasAny = !!(nextDate || nextLabel || nextSedes.length || lastDate || lastSedes.length || status);
+      if (!hasAny) {
+        el.desinfCard.style.display = "none";
+        return;
+      }
+      el.desinfCard.style.display = "";
+
+      el.desinfNextDate.textContent = nextDate ? fmtIsoShort(nextDate) : "-";
+      el.desinfStatus.textContent = status || (nextDate ? "Programada" : (lastDate ? "Finalizada" : "-"));
+      el.desinfSedes.textContent = nextSedes.length ? nextSedes.join(", ") : "-";
+
+      if (el.desinfNextLabelWrap) {
+        if (nextLabel) {
+          el.desinfNextLabelWrap.style.display = "";
+          el.desinfNextLabel.textContent = nextLabel;
+        } else {
+          el.desinfNextLabelWrap.style.display = "none";
+        }
+      }
+      if (el.desinfGrupoWrap) {
+        if (nextGrupo) {
+          el.desinfGrupoWrap.style.display = "";
+          el.desinfGrupo.textContent = nextGrupo;
+        } else {
+          el.desinfGrupoWrap.style.display = "none";
+        }
+      }
+
+      var ultimaTxt = "Última: " + (lastDate ? fmtIsoShort(lastDate) : "-");
+      if (lastSedes.length) ultimaTxt += " · " + lastSedes.join(", ");
+      el.desinfUltima.textContent = ultimaTxt;
+    }
+
+    function loadOperativoExtras() {
+      fetch("/api/dashboard_operativo")
+        .then(function (r) { return r.json(); })
+        .then(function (base) {
+          renderDesinfeccionCard((base || {}).desinfeccion || {});
+        })
+        .catch(function () {
+          // opcional: no interrumpir el uso diario si falla el extra
+        });
     }
 
     function resumenEstadoInc(out, estadoRaw) {
@@ -5992,6 +6099,7 @@
           updateTaskAlertsMerged();
           updateNextCoffeeBanner();
           renderResumen(d.resumen_novedades || {});
+          loadOperativoExtras();
           loadSubtipos(pref.subtipo || "");
           return loadDay();
         })
