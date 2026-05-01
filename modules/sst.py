@@ -1869,6 +1869,31 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         )
         """)
 
+        # Backfill: S20 (Palpalá Civil) tiene 10 depósitos (D01..D10) en PB.
+        # Si faltan, los agregamos para que aparezcan en filtros/combos.
+        try:
+            cur.execute(
+                "SELECT codigo_local FROM sedes_depositos WHERE codigo_sede = ?",
+                ("S20",),
+            )
+            existing = {(r[0] or "").strip().upper() for r in cur.fetchall()}
+            required = [
+                ("D09", "deposito 9"),
+                ("D10", "deposito 10"),
+            ]
+            missing = [
+                ("S20", codigo_local, descripcion)
+                for codigo_local, descripcion in required
+                if codigo_local.strip().upper() not in existing
+            ]
+            if missing:
+                cur.executemany(
+                    "INSERT OR IGNORE INTO sedes_depositos (codigo_sede, codigo_local, descripcion) VALUES (?,?,?)",
+                    missing,
+                )
+        except sqlite3.OperationalError:
+            pass
+
         ensure_sedes_mpd_cols(con)
         con.commit()
         con.close()
