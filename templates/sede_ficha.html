@@ -2519,7 +2519,7 @@
 
     gap: 8px;
 
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
 
   }
 
@@ -2685,7 +2685,7 @@
 
 
 
-  .kpi.kpi-seguridad {
+  .kpi.kpi-matafuegos {
 
 
     background: #fef2f2;
@@ -2695,6 +2695,11 @@
     border-color: #fecaca;
 
 
+  }
+
+  .kpi.kpi-desinfeccion {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
   }
 
   .sede-analisis {
@@ -5564,45 +5569,21 @@
 
 
     <div class="kpis{% if view=='resumen' %} kpis-hidden-resumen{% endif %}">
-      <div class="kpi kpi-obras">
+      <a class="kpi kpi-desinfeccion" href="{{ url_for('sede_seguridad', codigo=sede.codigo) }}" style="text-decoration:none;color:inherit;">
         <div>
-          <div class="l">Obras (P/EC/F)</div>
-          <div class="v">{{ obras_kpi.pendientes }}/{{ obras_kpi.en_curso }}/{{ obras_kpi.finalizadas }}</div>
+          <div class="l">Desinfección ({{ desinf_kpi.schedule_label }})</div>
+          <div class="v">{{ desinf_kpi.next_due_label }}</div>
         </div>
-        <div class="tag">Obras</div>
-      </div>
+        <div class="tag">Desinfección</div>
+      </a>
 
-      <div class="kpi kpi-inventario">
+      <a class="kpi kpi-matafuegos" href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='matafuegos', view=view) }}" style="text-decoration:none;color:inherit;">
         <div>
-          <div class="l">Inventario cargado</div>
-          <div class="v">{{ inv_kpi.depositos_cargados }}</div>
-        </div>
-        <div class="tag">Inventario</div>
-      </div>
-
-      <div class="kpi kpi-aires">
-        <div>
-          <div class="l">Aires (total sede)</div>
-          <div class="v">{{ aires_total_kpi.total }}</div>
-        </div>
-        <div class="tag">Aires</div>
-      </div>
-
-      <div class="kpi kpi-mobiliario">
-        <div>
-          <div class="l">Mobiliario (total)</div>
-          <div class="v">{{ mobiliario_total_items }}</div>
-        </div>
-        <div class="tag">Mobiliario</div>
-      </div>
-
-      <div class="kpi kpi-seguridad">
-        <div>
-          <div class="l">Vencen pronto (45d)</div>
+          <div class="l">Matafuegos · vencen (45d)</div>
           <div class="v">{{ seg_vencen.vencen_pronto }}</div>
         </div>
         <div class="tag">Seguridad</div>
-      </div>
+      </a>
     </div>
 
     {% set m2pp_base = metricas.m2_por_persona if metricas.m2_por_persona is not none else none %}

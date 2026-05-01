@@ -4044,6 +4044,24 @@ def sede_ficha(codigo):
           AND date(fecha_vencimiento) <= date('now','+45 day')
     """, (codigo,)).fetchone()
 
+    # KPI: DESINFECCION (vencimientos fijos por año)
+    # - General: 1/5 y 1/9
+    # - En diciembre (1/12): solo S13 (San Martin 271)
+    desinf_months = [5, 9] + ([12] if codigo == "S13" else [])
+    desinf_schedule_label = " · ".join([f"1/{m}" for m in desinf_months]) if desinf_months else ""
+    hoy = date.today()
+    desinf_candidates = (
+        [date(hoy.year, m, 1) for m in desinf_months]
+        + [date(hoy.year + 1, m, 1) for m in desinf_months]
+    )
+    desinf_next_due = min((d for d in desinf_candidates if d >= hoy), default=None)
+    desinf_kpi = {
+        "schedule_label": desinf_schedule_label,
+        "next_due": (desinf_next_due.isoformat() if desinf_next_due else None),
+        "next_due_label": (f"{desinf_next_due.day}/{desinf_next_due.month}" if desinf_next_due else "-"),
+        "days_left": ((desinf_next_due - hoy).days if desinf_next_due else None),
+    }
+
     eventos_sede = db.execute("""
         SELECT fecha, titulo, detalle, color, fuente, ref_id
         FROM eventos
@@ -4873,6 +4891,7 @@ def sede_ficha(codigo):
         inv_kpi=inv_kpi,
         per_kpi=per_kpi,
         seg_vencen=seg_vencen,
+        desinf_kpi=desinf_kpi,
         metricas=metricas,
         depositos_kpi=depositos_kpi,
         eventos_sede=eventos_sede,
