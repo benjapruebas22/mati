@@ -1869,7 +1869,9 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         )
         """)
 
-        # Backfill: S20 (Palpalá Civil) tiene 10 depósitos (D01..D10) en PB.
+        # Backfill: S20 (Palpalá Civil)
+        # PB: D01..D10
+        # P1: D11..D17
         # Si faltan, los agregamos para que aparezcan en filtros/combos.
         try:
             cur.execute(
@@ -1880,6 +1882,13 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             required = [
                 ("D09", "deposito 9"),
                 ("D10", "deposito 10"),
+                ("D11", "piso 1 - deposito 11"),
+                ("D12", "piso 1 - deposito 12"),
+                ("D13", "piso 1 - deposito 13"),
+                ("D14", "piso 1 - deposito 14"),
+                ("D15", "piso 1 - deposito 15"),
+                ("D16", "piso 1 - deposito 16"),
+                ("D17", "piso 1 - deposito 17"),
             ]
             missing = [
                 ("S20", codigo_local, descripcion)
