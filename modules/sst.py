@@ -2558,6 +2558,11 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 "novedadesHoy": [],
                 "novedadesCount": 0,
             },
+            "matafuegos": {
+                "next": {"fecha": "", "sedes": []},
+                "days_left": None,
+                "count_45d": 0,
+            },
             "desinfeccion": {
                 "last": {"fecha": "", "sedes": [], "grupo": "", "label": ""},
                 "next": {"fecha": "", "sedes": [], "grupo": "", "label": ""},
@@ -3172,6 +3177,69 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                         "last": {"fecha": last_date, "sedes": last_sedes, "grupo": "", "label": ""},
                         "next": {"fecha": next_date, "sedes": next_sedes, "grupo": next_group, "label": next_label},
                         "status": status,
+                    }
+            except Exception:
+                pass
+
+        # =========================
+        # MATAFUEGOS (proximos vencimientos)
+        # =========================
+        if _table_exists(con, "matafuegos_sede"):
+            try:
+                cols_mata = _table_cols(con, "matafuegos_sede")
+                if {"fecha_vencimiento", "cod_sede"}.issubset(set(cols_mata or [])):
+                    where_activo = "COALESCE(activo,1)=1" if "activo" in cols_mata else "1=1"
+
+                    row_next = con.execute(f"""
+                        SELECT MIN(date(fecha_vencimiento)) AS d
+                        FROM matafuegos_sede
+                        WHERE {where_activo}
+                          AND fecha_vencimiento IS NOT NULL
+                          AND TRIM(COALESCE(fecha_vencimiento,'')) <> ''
+                          AND date(fecha_vencimiento) >= date(?)
+                    """, (today_iso,)).fetchone()
+
+                    next_date = (_row_value(row_next, "d", "") or "").strip()
+                    next_sedes = []
+                    days_left = None
+                    if next_date:
+                        try:
+                            dnext = date.fromisoformat(next_date)
+                            days_left = int((dnext - today).days)
+                        except Exception:
+                            days_left = None
+
+                        rows_sedes = con.execute(f"""
+                            SELECT DISTINCT UPPER(TRIM(COALESCE(cod_sede,''))) AS sede
+                            FROM matafuegos_sede
+                            WHERE {where_activo}
+                              AND date(fecha_vencimiento) = date(?)
+                              AND TRIM(COALESCE(cod_sede,'')) <> ''
+                            ORDER BY sede
+                        """, (next_date,)).fetchall()
+                        seen = set()
+                        for rr in rows_sedes:
+                            sede = (_row_value(rr, "sede", "") or "").strip().upper()
+                            if sede and sede not in seen:
+                                seen.add(sede)
+                                next_sedes.append(sede)
+
+                    end_45 = (today + timedelta(days=45)).isoformat()
+                    row_45 = con.execute(f"""
+                        SELECT COUNT(*) AS n
+                        FROM matafuegos_sede
+                        WHERE {where_activo}
+                          AND fecha_vencimiento IS NOT NULL
+                          AND TRIM(COALESCE(fecha_vencimiento,'')) <> ''
+                          AND date(fecha_vencimiento) >= date(?)
+                          AND date(fecha_vencimiento) <= date(?)
+                    """, (today_iso, end_45)).fetchone()
+                    count_45 = int(_row_value(row_45, "n", 0) or 0)
+
+                    data["matafuegos"] = {
+                        "next": {"fecha": next_date, "sedes": next_sedes},
+                        "days_left": days_left,
+                        "count_45d": count_45,
                     }
             except Exception:
                 pass
