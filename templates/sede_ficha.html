@@ -2270,7 +2270,8 @@
 
   }
 
-  .h-actions .btn.btn-metricas {
+  .h-actions .btn.btn-metricas,
+  .btn.btn-metricas-sm {
 
     border-color: #d5e9fb;
 
@@ -2278,6 +2279,12 @@
 
     color: #0f5f9a;
 
+  }
+
+  .btn.btn-metricas-sm {
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 800;
   }
 
   .h-actions .btn.btn-resumen-sedes {
@@ -2307,26 +2314,38 @@
   }
 
 
-  .view-tabs {
-
-
-
+  .sede-topbar {
     display: flex;
-
-
-
-    gap: 8px;
-
-
-
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
     flex-wrap: wrap;
+  }
 
+  .sede-topbar-row,
+  .view-tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
 
+  .sede-topbar-more {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-left: auto;
+  }
 
-    margin-top: 10px;
+  .sede-topbar-more .btn {
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 700;
+  }
 
-
-
+  @media (max-width: 720px) {
+    .sede-topbar-more { width: 100%; }
   }
 
 
@@ -2792,7 +2811,7 @@
 
   .sede-analisis-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 6px;
   }
 
@@ -3069,6 +3088,14 @@
 
 
 
+  }
+
+  /* Modo Planos: ampliar plano y ocultar panel derecho */
+  .grid.grid-planos {
+    grid-template-columns: 1fr;
+  }
+  .grid.grid-planos .panel-card {
+    display: none;
   }
 
   /* Botonera del panel operativo arriba del plano */
@@ -3886,6 +3913,10 @@
   .ptab.tone-eva { background: #fef2f2; border-color: #fecaca; }
 
   .ptab.tone-aires { background: #ecfeff; border-color: #a5f3fc; }
+
+  .ptab.tone-planos { background: #eef2ff; border-color: #c7d2fe; color: #3730a3; }
+
+  .ptab.tone-resumen-sedes { background: #ecfdf3; border-color: #a7f3d0; color: #047857; }
 
 
 
@@ -4835,6 +4866,7 @@
 
 
 {% set view = request.args.get('view','operativo') %}
+{% set sub = (request.args.get('sub','') or '')|lower %}
 
 
 
@@ -5878,46 +5910,9 @@
         <a class="btn btn-calendario"
            href="{{ url_for('sede_ficha', codigo=sede.codigo, home=1, piso=piso, tab=tab, view=view) }}">Calendario</a>
         {% endif %}
-
-        {% set link_maps = sede.url_punto_encuentro or sede.url_maps %}
-
-
-        {% if link_maps %}
-
-
-
-        <a class="btn btn-maps" href="{{ link_maps }}" target="_blank" rel="noopener">Maps</a>
-
-
-        {% endif %}
-
-
-        {% if sede.codigo == 'S08' %}
-
-
-
-        <a class="btn btn-fotos" href="{{ url_for('depositos_home') }}">Deposito general</a>
-
-
-        {% endif %}
-
-        <a class="btn btn-metricas" href="{{ url_for('sede_metricas_edit', codigo=sede.codigo) }}">Editar metricas</a>
-        <a class="btn btn-resumen-sedes" href="{{ url_for('auditoria_mobiliario') }}">Relevamientos / Control</a>
         <button type="button" class="btn btn-checklist-limpieza" id="btnChecklistLimpieza" data-sede="{{ sede.codigo }}">Checklist Control Limpieza</button>
         <a class="btn btn-checklist-limpieza" href="{{ url_for('sedes_control_limpieza_historial', sede=sede.codigo) }}">Historial Control Limpieza</a>
-
-
-        {% if home_mode %}
-
-
-
         <a class="btn btn-resumen-sedes" href="{{ url_for('sedes_resumen_mpd') }}">Resumen sedes</a>
-
-
-        {% endif %}
-
-
-
         <a class="btn btn-volver" href="{{ url_for('dashboard') }}">Volver</a>
 
 
@@ -5925,34 +5920,30 @@
 
       <div class="sede-nav">
         {% for s in sedes_nav %}
-        <a class="{% if s.codigo == sede.codigo %}active{% endif %}" data-fuero="{{ s.fuero }}" data-code="{{ s.codigo }}"
+        <a class="{% if s.codigo == sede.codigo %}active{% endif %}"
+           data-fuero="{{ s.fuero }}"
+           data-code="{{ s.codigo }}"
+           title="{{ s.codigo }}{% if s.direccion %} · {{ s.direccion }}{% endif %}{% if s.fuero %} · {{ s.fuero|replace('_',' ')|capitalize }}{% endif %}"
           href="{{ url_for('sede_ficha', codigo=s.codigo, piso=piso, tab=tab, view=view) }}">{{ s.codigo }}</a>
         {% endfor %}
       </div>
 
     </div>
 
+    <div class="sede-topbar" style="padding:0 16px 12px 16px;">
+      <div class="sede-topbar-row">
+        <a class="view-tab {% if view=='resumen' and sub!='info' %}active{% endif %}"
+          href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab=tab, view='resumen', home=home_arg) }}">Resumen</a>
 
-    <div class="view-tabs" style="padding:0 16px 12px 16px;">
+        <a class="view-tab {% if view!='resumen' and tab!='planos' %}active{% endif %}"
+          href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab=(tab if tab!='planos' else 'personal'), view='operativo', home=home_arg) }}">Operativo</a>
 
+        <a class="view-tab {% if view!='resumen' and tab=='planos' %}active{% endif %}"
+          href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='planos', view='operativo', home=home_arg) }}#planos">Planos</a>
 
-
-      <a class="view-tab {% if view=='resumen' %}active{% endif %}"
-
-
-
-        href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab=tab, view='resumen', home=home_arg) }}">Resumen</a>
-
-
-
-      <a class="view-tab {% if view!='resumen' %}active{% endif %}"
-
-
-
-        href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab=tab, view='operativo', home=home_arg) }}">Operativo</a>
-
-
-
+        <a class="view-tab {% if view=='resumen' and sub=='info' %}active{% endif %}"
+          href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab=tab, view='resumen', home=home_arg, sub='info') }}#info-sede">Información de sede</a>
+      </div>
     </div>
 
 
@@ -5961,11 +5952,11 @@
 
 
 
-    <!-- KPIs TOP -->
+    <!-- KPIs TOP (ocultos: duplican Centro Operativo / Panel Operativo) -->
 
 
 
-    <div class="kpis{% if view=='resumen' %} kpis-hidden-resumen{% endif %}">
+    <div class="kpis{% if view=='resumen' %} kpis-hidden-resumen{% endif %}" style="display:none">
       <a class="kpi kpi-desinfeccion" href="{{ url_for('sede_seguridad', codigo=sede.codigo) }}" style="text-decoration:none;color:inherit;">
         <div>
           <div class="l">Desinfección ({{ desinf_kpi.schedule_label }})</div>
@@ -6054,6 +6045,7 @@
       <div class="sede-analisis-head">
         <h4>Analisis de sede</h4>
         <div class="sede-analisis-tools">
+          <a class="btn btn-metricas-sm" href="{{ url_for('sede_metricas_edit', codigo=sede.codigo) }}">Editar metricas</a>
           <details class="sede-criterios">
             <summary>Criterios de analisis</summary>
             <div class="sede-criterios-box">
@@ -6106,7 +6098,8 @@
           <span class="sede-estado {{ ppo_class }}">{{ ppo_state }}</span>
         </article>
 
-        <article class="sede-analisis-card">
+        {# Seguridad y vencimientos: duplicado con panel/centro operativo. Oculto en ficha para reducir ruido. #}
+        <article class="sede-analisis-card" style="display:none">
           <div class="t">Seguridad y vencimientos</div>
           <div class="v">{{ venc45 if venc45 is not none else '-' }} proximos</div>
           <div class="r">Lectura segun vencimientos de seguridad en 45 dias.</div>
@@ -7031,7 +7024,7 @@
 
 
 
-  <div class="card sede-resumen-main" style="padding:12px 16px;margin-bottom:12px;">
+  <div class="card sede-resumen-main" id="info-sede" style="padding:12px 16px;margin-bottom:12px;">
 
 
 
@@ -7474,6 +7467,43 @@
 
 
 
+  {% if sub == 'info' %}
+  <details style="margin:0 16px 12px 16px;border:1px solid #dbe4f2;border-radius:12px;background:#f8fbff;padding:10px;">
+    <summary style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;list-style:none;">
+      <span style="font-size:14px;font-weight:800;color:#1f3c68;">Documentos vinculados (SGI)</span>
+      <span class="btn btn-mpd" style="pointer-events:none;">Ver documentos</span>
+    </summary>
+
+    <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;">
+      <a class="btn btn-mpd" href="{{ url_for('sgi_documentacion_informes', sede=sede.codigo) }}">Ver en Informes</a>
+    </div>
+
+    {% if documentos_vinculados_sede and documentos_vinculados_sede|length > 0 %}
+      <div style="margin-top:8px;display:grid;gap:6px;">
+        {% for d in documentos_vinculados_sede[:12] %}
+          <div style="border:1px solid #d6e5f8;border-radius:10px;background:#fff;padding:8px;display:grid;gap:3px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+              <strong style="font-size:12px;color:#17345e;">{{ d.titulo }}</strong>
+              <span style="font-size:10px;font-weight:800;color:#4b6890;border:1px solid #c7d6ee;border-radius:999px;padding:2px 8px;background:#eef4ff;">{{ d.tipo_documento }}</span>
+            </div>
+            <div style="font-size:11px;color:#5a7395;">
+              {% if d.fecha %}<span><b>Fecha:</b> {{ d.fecha }}</span>{% endif %}
+              {% if d.estado %} · <span><b>Estado:</b> {{ d.estado }}</span>{% endif %}
+              {% if d.tags_txt %} · <span><b>Tags:</b> {{ d.tags_txt }}</span>{% endif %}
+            </div>
+            {% if d.archivo_url %}
+              <div><a href="{{ d.archivo_url }}" target="_blank" rel="noopener" style="font-size:11px;font-weight:800;color:#1d4ed8;text-decoration:none;">Abrir documento</a></div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p style="margin:8px 0 0;color:#6b7280;font-size:12px;">No hay documentos SGI vinculados para esta sede todavia.</p>
+    {% endif %}
+  </details>
+  {% endif %}
+
+  {% if sub != 'info' %}
   <div class="card" style="padding:12px 16px;">
 
 
@@ -7543,6 +7573,7 @@
 
 
   </div>
+  {% endif %}
 
 
 
@@ -7554,7 +7585,7 @@
 
 
 
-  <div class="grid">
+  <div class="grid{% if tab=='planos' %} grid-planos{% endif %}">
 
     <!-- PANEL BOTONES (ARRIBA DEL PLANO) -->
 
@@ -7562,6 +7593,8 @@
 
       <div class="panel-tabs panel-tabs-top">
         <div class="panel-tab-row" aria-label="Panel operativo">
+          <a class="ptab tone-planos {% if tab=='planos' %}active{% endif %}"
+            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='planos', view=view) }}#planos">Planos</a>
           <a class="ptab tone-aires {% if tab=='aires' %}active{% endif %}"
             href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='aires', view=view) }}">Aires</a>
           <a class="ptab tone-lum {% if tab=='luminarias' %}active{% endif %}"
@@ -7607,10 +7640,8 @@
               </div>
             </div>
           </details>
+          <a class="ptab tone-resumen-sedes" href="{{ url_for('sedes_resumen_mpd') }}">Resumen sedes</a>
         </div>
-
-        <a class="btn panel-secondary-link {% if tab=='resumen' %}active{% endif %}"
-          href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='resumen', view=view) }}">Resumen sedes</a>
       </div>
 
     </div>
@@ -7625,7 +7656,7 @@
 
 
 
-    <div class="card">
+    <div class="card" id="planos">
 
 
 
@@ -7689,11 +7720,19 @@
 
 
 
-          </div>
+           </div>
 
 
 
-          {% if sede.url_planos_drive %}
+          {% set link_maps = sede.url_punto_encuentro or sede.url_maps %}
+          {% if link_maps %}
+          <a class="btn" href="{{ link_maps }}" target="_blank" rel="noopener">Maps</a>
+          {% endif %}
+          {% if sede.codigo == 'S08' %}
+          <a class="btn" href="{{ url_for('depositos_home') }}">Deposito general</a>
+          {% endif %}
+
+           {% if sede.url_planos_drive %}
 
 
 
@@ -7800,7 +7839,7 @@
 
 
 
-    <div class="card">
+    <div class="card panel-card">
 
 
 
@@ -10136,40 +10175,6 @@
     });
   })();
 </script>
-
-<details style="margin-top:14px;border:1px solid #dbe4f2;border-radius:12px;background:#f8fbff;padding:10px;">
-  <summary style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;list-style:none;">
-    <span style="font-size:14px;font-weight:800;color:#1f3c68;">Documentos vinculados (SGI)</span>
-    <span class="btn btn-mpd" style="pointer-events:none;">Ver documentos</span>
-  </summary>
-
-  <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;">
-    <a class="btn btn-mpd" href="{{ url_for('sgi_documentacion_informes', sede=sede.codigo) }}">Ver en Informes</a>
-  </div>
-
-  {% if documentos_vinculados_sede and documentos_vinculados_sede|length > 0 %}
-    <div style="margin-top:8px;display:grid;gap:6px;">
-      {% for d in documentos_vinculados_sede[:12] %}
-        <div style="border:1px solid #d6e5f8;border-radius:10px;background:#fff;padding:8px;display:grid;gap:3px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
-            <strong style="font-size:12px;color:#17345e;">{{ d.titulo }}</strong>
-            <span style="font-size:10px;font-weight:800;color:#4b6890;border:1px solid #c7d6ee;border-radius:999px;padding:2px 8px;background:#eef4ff;">{{ d.tipo_documento }}</span>
-          </div>
-          <div style="font-size:11px;color:#5a7395;">
-            {% if d.fecha %}<span><b>Fecha:</b> {{ d.fecha }}</span>{% endif %}
-            {% if d.estado %} ? <span><b>Estado:</b> {{ d.estado }}</span>{% endif %}
-            {% if d.tags_txt %} ? <span><b>Tags:</b> {{ d.tags_txt }}</span>{% endif %}
-          </div>
-          {% if d.archivo_url %}
-            <div><a href="{{ d.archivo_url }}" target="_blank" rel="noopener" style="font-size:11px;font-weight:800;color:#1d4ed8;text-decoration:none;">Abrir documento</a></div>
-          {% endif %}
-        </div>
-      {% endfor %}
-    </div>
-  {% else %}
-    <p style="margin:8px 0 0;color:#6b7280;font-size:12px;">No hay documentos SGI vinculados para esta sede todavia.</p>
-  {% endif %}
-</details>
 
 {% endblock %}
 
