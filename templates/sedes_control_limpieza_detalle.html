@@ -1,0 +1,383 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  .cld-shell{
+    background: linear-gradient(180deg, #f8fafd 0%, #f3f7fc 100%);
+    border: 1px solid #dfe6f1;
+    border-radius: 18px;
+    box-shadow: 0 8px 20px rgba(24, 39, 63, 0.06);
+    padding: 10px;
+    display: grid;
+    gap: 10px;
+    color: #1f2f44;
+  }
+  .cld-head{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .cld-title{
+    margin: 0;
+    font-size: 16px;
+    font-weight: 950;
+    color: #1f3c68;
+  }
+  .muted{ color:#64748b; font-weight: 800; }
+  .cld-actions{
+    display:flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items:center;
+  }
+  .cld-link{
+    border: 1px solid #d3deee;
+    background: #fff;
+    color: #4f6789;
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 900;
+    text-decoration: none;
+  }
+  .card{
+    background:#fff;
+    border:1px solid #dfe6f1;
+    border-radius: 14px;
+    box-shadow: 0 8px 20px rgba(24, 39, 63, 0.06);
+    padding: 10px;
+  }
+  .kpis{
+    display:grid;
+    gap: 8px;
+    grid-template-columns: repeat(4, minmax(160px, 1fr));
+    align-items: stretch;
+  }
+  .kpi{
+    border: 1px solid #dbe5f4;
+    border-radius: 14px;
+    padding: 10px;
+    background: #fbfdff;
+  }
+  .kpi .k{
+    font-size: 10px;
+    font-weight: 950;
+    letter-spacing: .2px;
+    color:#5a7395;
+    text-transform: uppercase;
+  }
+  .kpi .v{
+    margin-top: 4px;
+    font-size: 18px;
+    font-weight: 950;
+    color:#0f172a;
+  }
+  .state{
+    display:inline-flex;
+    align-items:center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 950;
+    border: 1px solid #e2e8f0;
+    background:#f8fafc;
+    color:#0f172a;
+    white-space: nowrap;
+  }
+  .state.pending{
+    border-color:#fed7aa;
+    background:#fff7ed;
+    color:#9a3412;
+  }
+  .state.closed{
+    border-color:#bbf7d0;
+    background:#f0fdf4;
+    color:#166534;
+  }
+  .state.draft{
+    border-color:#cbd5e1;
+    background:#f8fafc;
+    color:#334155;
+  }
+  .tbl{
+    width:100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 12px;
+  }
+  .tbl th{
+    text-align:left;
+    font-size: 10px;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+    color:#54749a;
+    padding: 10px 10px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  .tbl td{
+    padding: 10px 10px;
+    border-bottom: 1px solid #edf2f7;
+    vertical-align: top;
+  }
+  .res{
+    display:inline-flex;
+    align-items:center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 950;
+    border: 1px solid #e2e8f0;
+    background:#f8fafc;
+    white-space: nowrap;
+  }
+  .res.ok{ border-color:#bbf7d0; background:#f0fdf4; color:#166534; }
+  .res.bad{ border-color:#fed7aa; background:#fff7ed; color:#9a3412; }
+  .chat{
+    display:grid;
+    gap: 8px;
+  }
+  .chat-box{
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #fff;
+    max-height: 320px;
+    overflow: auto;
+    padding: 10px;
+    display: grid;
+    gap: 8px;
+  }
+  .msg{
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 8px 10px;
+    background: #f8fafc;
+  }
+  .msg .top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 10px;
+    font-size: 11px;
+    font-weight: 950;
+    color:#334155;
+    margin-bottom: 4px;
+  }
+  .msg .txt{
+    font-size: 12px;
+    font-weight: 800;
+    color:#0f172a;
+    white-space: pre-wrap;
+  }
+  .msg.system{
+    background:#eef2ff;
+    border-color:#c7d2fe;
+  }
+  .chat-form{
+    display:grid;
+    gap: 8px;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+  }
+  .chat-form textarea{
+    width:100%;
+    min-height: 42px;
+    border: 1px solid #d2e0f5;
+    border-radius: 12px;
+    padding: 10px 10px;
+    font-size: 12px;
+  }
+  .btn{
+    border: 1px solid #d3deee;
+    background: #fff;
+    color:#1f3c68;
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 12px;
+    font-weight: 950;
+    cursor:pointer;
+    text-decoration:none;
+    white-space: nowrap;
+  }
+  .btn.primary{ border-color:#93c5fd; background:#eff6ff; color:#1d4ed8; }
+  .btn.danger{ border-color:#fed7aa; background:#fff7ed; color:#9a3412; }
+  @media (max-width: 960px){
+    .kpis{ grid-template-columns: repeat(2, minmax(160px, 1fr)); }
+    .chat-form{ grid-template-columns: 1fr; }
+  }
+</style>
+
+<section class="cld-shell">
+  <header class="cld-head">
+    <div>
+      <h2 class="cld-title">🧹 Limpieza · {{ sede.codigo }}{% if sede.nombre %} – {{ sede.nombre }}{% endif %}</h2>
+      <div class="muted" style="margin-top:2px;">
+        Fecha: <strong>{{ fecha }}</strong>
+        {% if sede.direccion %} · {{ sede.direccion }}{% endif %}
+        ·
+        {% set est = (cierre.estado or 'EN_CARGA') %}
+        {% if est == 'CERRADO_POR_SUPERVISOR' %}
+          <span class="state closed">Cerrado supervisor</span>
+        {% elif est == 'CERRADO_POR_AGENTE' %}
+          <span class="state pending">Pendiente revisión</span>
+        {% else %}
+          <span class="state draft">En carga</span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="cld-actions">
+      <a class="cld-link" href="{{ url_for('sedes_control_limpieza_supervision') }}">Volver</a>
+      <a class="cld-link" href="{{ url_for('sedes_control_limpieza_historial', sede=sede.codigo, desde=fecha, hasta=fecha) }}">Historial</a>
+      <a class="cld-link" href="{{ url_for('sede_ficha', codigo=sede.codigo, home=1) }}">Abrir sede</a>
+      <a class="cld-link" href="{{ url_for('dashboard_exec') }}">Centro operativo</a>
+    </div>
+  </header>
+
+  <div class="kpis">
+    <div class="kpi">
+      <div class="k">Depósitos (total)</div>
+      <div class="v">{{ total_depositos }}</div>
+    </div>
+    <div class="kpi">
+      <div class="k">Aprobados</div>
+      <div class="v">{{ aprobados }}</div>
+    </div>
+    <div class="kpi">
+      <div class="k">Observados</div>
+      <div class="v">{{ observados }}</div>
+    </div>
+    <div class="kpi">
+      <div class="k">Cargado por</div>
+      <div class="v" style="font-size:14px;">{{ cierre.enviado_por if cierre.enviado_por else '-' }}</div>
+    </div>
+  </div>
+
+  <div class="card" style="padding:0;">
+    <div style="max-height:50vh;overflow:auto;border-radius:14px;">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Depósito</th>
+            <th>Resultado</th>
+            <th>Observación</th>
+            <th>Usuario</th>
+            <th>Fecha/hora</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if not items or items|length == 0 %}
+            <tr><td colspan="5" class="muted" style="padding:12px;">Sin depósitos cargados para la sede.</td></tr>
+          {% else %}
+            {% for it in items %}
+              {% set res = (it.resultado or '')|upper %}
+              <tr>
+                <td>
+                  <strong>{{ it.deposito }}</strong>
+                  {% if it.descripcion %}<span class="muted"> – {{ it.descripcion }}</span>{% endif %}
+                </td>
+                <td>
+                  {% if res == 'APROBADO' %}
+                    <span class="res ok">👍 Aprobado</span>
+                  {% elif res == 'OBSERVADO' %}
+                    <span class="res bad">👎 Observado</span>
+                  {% else %}
+                    <span class="res">-</span>
+                  {% endif %}
+                </td>
+                <td style="white-space:normal;min-width:260px;">
+                  {% set obs = (it.observacion or '')|trim %}
+                  {{ obs if obs else "-" }}
+                </td>
+                <td class="muted">{{ it.usuario if it.usuario else "-" }}</td>
+                <td class="muted" style="white-space:nowrap;">{{ it.ts if it.ts else "-" }}</td>
+              </tr>
+            {% endfor %}
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% set est = (cierre.estado or 'EN_CARGA') %}
+  <div class="card">
+    <div style="font-size:12px;font-weight:950;color:#1f3c68;">📝 Informe general del agente</div>
+
+    {% if est == 'EN_CARGA' %}
+      <form method="post" action="{{ url_for('sede_control_limpieza_finalizar', codigo=sede_codigo) }}" style="margin-top:8px;">
+        <input type="hidden" name="fecha" value="{{ fecha }}">
+        <input type="hidden" name="next" value="{{ url_for('sedes_control_limpieza_supervision_detalle', codigo=sede_codigo, fecha=fecha) }}">
+        <textarea name="informe_agente" placeholder="Informe general (opcional)" style="width:100%;min-height:70px;border:1px solid #d2e0f5;border-radius:12px;padding:10px;font-size:12px;">{{ (cierre.informe_agente or '')|trim }}</textarea>
+        <div class="muted" style="margin-top:6px;font-size:11px;">Al finalizar se envía a revisión del supervisor.</div>
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
+          <button type="submit" class="btn danger">Finalizar control</button>
+          <a class="btn primary" href="{{ url_for('sede_ficha', codigo=sede.codigo, home=1) }}">Abrir checklist</a>
+        </div>
+      </form>
+    {% else %}
+      <div style="margin-top:6px;font-size:12px;white-space:pre-wrap;">
+        {% set inf = (cierre.informe_agente or '')|trim %}
+        {{ inf if inf else "-" }}
+      </div>
+      {% if cierre.informe_en %}
+        <div class="muted" style="margin-top:6px;font-size:11px;">Guardado: {{ cierre.informe_en }}{% if cierre.informe_usuario %} · {{ cierre.informe_usuario }}{% endif %}</div>
+      {% endif %}
+    {% endif %}
+  </div>
+
+  <div class="card chat">
+    <div style="font-size:12px;font-weight:950;color:#1f3c68;">💬 Conversación interna</div>
+    <div class="chat-box">
+      {% if not chat_rows or chat_rows|length == 0 %}
+        <div class="muted">Sin mensajes.</div>
+      {% else %}
+        {% for m in chat_rows %}
+          {% set sys = (m.es_sistema or 0) %}
+          <div class="msg {% if sys %}system{% endif %}">
+            <div class="top">
+              <span>{{ m.autor if m.autor else '-' }}</span>
+              <span class="muted">{{ m.creado_en }}</span>
+            </div>
+            <div class="txt">{{ m.mensaje }}</div>
+          </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+    <form class="chat-form" method="post" action="{{ url_for('sedes_control_limpieza_chat_send') }}">
+      <input type="hidden" name="sede_codigo" value="{{ sede_codigo }}">
+      <input type="hidden" name="fecha" value="{{ fecha }}">
+      <input type="hidden" name="next" value="{{ url_for('sedes_control_limpieza_supervision_detalle', codigo=sede_codigo, fecha=fecha) }}">
+      <textarea name="mensaje" placeholder="Escribir mensaje..."></textarea>
+      <button class="btn primary" type="submit">Enviar</button>
+    </form>
+  </div>
+
+  <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+    <div class="muted" style="font-size:12px;">
+      {% if cierre.revisado_en %}
+        Revisado: {{ cierre.revisado_en }}{% if cierre.revisado_por %} · {{ cierre.revisado_por }}{% endif %}
+      {% elif cierre.enviado_en %}
+        Enviado: {{ cierre.enviado_en }}{% if cierre.enviado_por %} · {{ cierre.enviado_por }}{% endif %}
+      {% else %}
+        Sin envío aún.
+      {% endif %}
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      {% if is_supervisor and (cierre.estado or '') == 'CERRADO_POR_AGENTE' %}
+        <form method="post" action="{{ url_for('sedes_control_limpieza_cerrar_revision') }}" style="display:inline;margin:0;">
+          <input type="hidden" name="sede_codigo" value="{{ sede_codigo }}">
+          <input type="hidden" name="fecha" value="{{ fecha }}">
+          <input type="hidden" name="next" value="{{ url_for('sedes_control_limpieza_supervision_detalle', codigo=sede_codigo, fecha=fecha) }}">
+          <button type="submit" class="btn danger">✔ Cerrar revisión</button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

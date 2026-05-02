@@ -368,6 +368,48 @@
     white-space: nowrap;
     cursor: default;
   }
+
+  /* Acciones diarias (Limpieza) */
+  .daily-actions-row{
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .daily-action{
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid var(--ctl-line);
+    border-radius: 13px;
+    background: #fff;
+    color: #1c3453;
+    font-size: 13px;
+    font-weight: 900;
+    text-decoration: none;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+    transition: transform .10s ease, border-color .14s ease, box-shadow .14s ease;
+  }
+  .daily-action:hover{
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(23, 53, 92, 0.06);
+  }
+  .daily-action .icon{
+    width: 28px;
+    height: 28px;
+    border-radius: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    border: 1px solid var(--ctl-line);
+    background: #f8fafc;
+  }
+  .daily-action .label{
+    white-space: nowrap;
+  }
   .ops-badge.ok { border-color: #bbf7d0; background: #ecfdf5; color: #166534; }
   .ops-badge.warn { border-color: #fed7aa; background: #fff7ed; color: #9a3412; }
   .ops-badge.bad { border-color: #fecaca; background: #fff1f2; color: #991b1b; }
@@ -2295,6 +2337,18 @@
       </div>
     </div>
 
+    <div class="daily-actions-row" aria-label="Acciones diarias">
+      <a id="limpiezaAction" class="daily-action" href="{{ url_for('sedes_control_limpieza_supervision') }}">
+        <span class="icon" aria-hidden="true">🧹</span>
+        <span id="limpiezaLabel" class="label">Limpieza</span>
+        <span id="limpiezaBadge" class="ops-badge na" style="display:none;">0</span>
+      </a>
+      <a class="daily-action" href="{{ url_for('sedes_control_limpieza_historial') }}">
+        <span class="icon" aria-hidden="true">📚</span>
+        <span class="label">Historial limpieza</span>
+      </a>
+    </div>
+
     <div id="nextCoffeeRow" class="next-coffee-row" style="display:none;">
       <button id="nextCoffeeBtn" type="button" class="next-coffee-btn" title="Abrir gestion del proximo Coffee">
         <div class="next-coffee-top">
@@ -3183,6 +3237,9 @@
       desinfStatus: document.getElementById("desinfStatus"),
       desinfSedes: document.getElementById("desinfSedes"),
       desinfUltima: document.getElementById("desinfUltima"),
+      limpiezaAction: document.getElementById("limpiezaAction"),
+      limpiezaLabel: document.getElementById("limpiezaLabel"),
+      limpiezaBadge: document.getElementById("limpiezaBadge"),
       registroBox: document.getElementById("registroNvdBox"),
       histTop: document.getElementById("btnHistorialTop"),
       histQuick: document.getElementById("btnHistorialQuick"),
@@ -4456,12 +4513,32 @@
       el.mataSedes.textContent = String(brief.count) + " sedes: " + (brief.text || "-");
     }
 
+    function renderLimpiezaAction(d) {
+      if (!el.limpiezaAction) return;
+      var x = d || {};
+      var n = parseInt(x.pendientesRevision, 10);
+      if (!isFinite(n) || n < 0) n = 0;
+      if (el.limpiezaBadge) {
+        if (n > 0) {
+          el.limpiezaBadge.style.display = "";
+          el.limpiezaBadge.textContent = String(n);
+          setBadge(el.limpiezaBadge, String(n), "warn");
+        } else {
+          el.limpiezaBadge.style.display = "none";
+        }
+      }
+      if (el.limpiezaLabel) {
+        el.limpiezaLabel.textContent = n > 0 ? ("Limpieza (" + String(n) + ")") : "Limpieza";
+      }
+    }
+
     function loadOperativoExtras() {
       fetch("/api/dashboard_operativo")
         .then(function (r) { return r.json(); })
         .then(function (base) {
           renderMatafuegosCard((base || {}).matafuegos || {});
           renderDesinfeccionCard((base || {}).desinfeccion || {});
+          renderLimpiezaAction((base || {}).limpieza || {});
         })
         .catch(function () {
           // opcional: no interrumpir el uso diario si falla el extra

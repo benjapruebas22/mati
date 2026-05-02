@@ -4947,6 +4947,11 @@ def sede_ficha(codigo):
 
 _CL_DIAS_ES = ["Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo"]
 
+# Estados de cierre por SEDE + FECHA (no por depósito)
+CL_EST_EN_CARGA = "EN_CARGA"
+CL_EST_CERRADO_AGENTE = "CERRADO_POR_AGENTE"
+CL_EST_CERRADO_SUPERVISOR = "CERRADO_POR_SUPERVISOR"
+
 
 def ensure_sedes_control_limpieza_table(con=None):
     own = False
@@ -4982,6 +4987,84 @@ def ensure_sedes_control_limpieza_table(con=None):
         con.close()
 
 
+def ensure_sedes_control_limpieza_cierres_table(con=None):
+    """
+    Tabla header por SEDE + FECHA para manejar el flujo:
+      EN_CARGA -> CERRADO_POR_AGENTE -> CERRADO_POR_SUPERVISOR
+    No duplica datos por depósito; solo guarda estado + firmas + informe.
+    """
+    own = False
+    if con is None:
+        con = get_db()
+        own = True
+
+    con.execute(
+        """
+        CREATE TABLE IF NOT EXISTS sedes_control_limpieza_cierres (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sede_codigo TEXT NOT NULL,
+            fecha TEXT NOT NULL,
+            estado TEXT NOT NULL DEFAULT 'EN_CARGA',
+            enviado_por TEXT,
+            enviado_username TEXT,
+            enviado_en TEXT,
+            revisado_por TEXT,
+            revisado_username TEXT,
+            revisado_en TEXT,
+            informe_agente TEXT,
+            informe_usuario TEXT,
+            informe_username TEXT,
+            informe_en TEXT,
+            actualizado_en TEXT DEFAULT (datetime('now','localtime')),
+            UNIQUE(sede_codigo, fecha)
+        )
+        """
+    )
+    con.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_sedes_control_limpieza_cierres_estado
+        ON sedes_control_limpieza_cierres (estado, fecha)
+        """
+    )
+    con.commit()
+
+    if own:
+        con.close()
+
+
+def ensure_sedes_control_limpieza_chat_table(con=None):
+    """Chat interno por SEDE + FECHA (no por depósito)."""
+    own = False
+    if con is None:
+        con = get_db()
+        own = True
+
+    con.execute(
+        """
+        CREATE TABLE IF NOT EXISTS sedes_control_limpieza_chat (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sede_codigo TEXT NOT NULL,
+            fecha TEXT NOT NULL,
+            autor TEXT NOT NULL,
+            autor_username TEXT,
+            mensaje TEXT NOT NULL,
+            es_sistema INTEGER DEFAULT 0,
+            creado_en TEXT NOT NULL DEFAULT (datetime('now','localtime'))
+        )
+        """
+    )
+    con.execute(
+        """
+        CREATE INDEX IF NOT EXISTS idx_sedes_control_limpieza_chat_key
+        ON sedes_control_limpieza_chat (sede_codigo, fecha, id)
+        """
+    )
+    con.commit()
+
+    if own:
+        con.close()
+
+
 def _cl_norm(s: str) -> str:
     return (s or "").strip().lower()
 
@@ -5003,6 +5086,114 @@ def _cl_dep_sort_key(code: str):
         except Exception:
             return (0, 9999)
     return (1, c)
+
+
+def _cl_is_supervisor() -> bool:
+    """
+    Supervisor de limpieza = usuario habilitado a cerrar revisión definitiva.
+    Se mantiene acotado para respetar el flujo (agente no cierra supervisor).
+    """
+    role = (session.get("role") or "").strip().lower()
+    if role == "admin":
+        return True
+    user = (session.get("username") or "").strip().lower()
+    # Ajustable: por defecto Matías y cuenta admin general.
+    return user in {"mcalderari", "admi"}
+
+
+def _cl_estado_label(estado: str) -> str:
+    est = (estado or "").strip().upper()
+    if est == CL_EST_CERRADO_SUPERVISOR:
+        return "Cerrado por supervisor"
+    if est == CL_EST_CERRADO_AGENTE:
+        return "Pendiente revisión supervisor"
+    return "En carga"
+
+
+def _cl_fetch_cierre(con, sede_codigo: str, fecha_iso: str):
+    sede = (sede_codigo or "").upper().strip()
+    fecha = (fecha_iso or "").strip()
+    try:
+        row = con.execute(
+            """
+            SELECT
+              COALESCE(estado,'EN_CARGA') AS estado,
+              COALESCE(enviado_por,'') AS enviado_por,
+              COALESCE(enviado_username,'') AS enviado_username,
+              COALESCE(enviado_en,'') AS enviado_en,
+              COALESCE(revisado_por,'') AS revisado_por,
+              COALESCE(revisado_username,'') AS revisado_username,
+              COALESCE(revisado_en,'') AS revisado_en,
+              COALESCE(informe_agente,'') AS informe_agente,
+              COALESCE(informe_usuario,'') AS informe_usuario,
+              COALESCE(informe_username,'') AS informe_username,
+              COALESCE(informe_en,'') AS informe_en
+            FROM sedes_control_limpieza_cierres
+            WHERE sede_codigo = ? AND fecha = ?
+            LIMIT 1
+            """,
+            (sede, fecha),
+        ).fetchone()
+    except Exception:
+        row = None
+
+    if not row:
+        return {
+            "estado": CL_EST_EN_CARGA,
+            "estado_label": _cl_estado_label(CL_EST_EN_CARGA),
+            "enviado_por": "",
+            "enviado_username": "",
+            "enviado_en": "",
+            "revisado_por": "",
+            "revisado_username": "",
+            "revisado_en": "",
+            "informe_agente": "",
+            "informe_usuario": "",
+            "informe_username": "",
+            "informe_en": "",
+        }
+
+    estado = (row["estado"] or CL_EST_EN_CARGA).strip()
+    return {
+        "estado": estado,
+        "estado_label": _cl_estado_label(estado),
+        "enviado_por": (row["enviado_por"] or "").strip(),
+        "enviado_username": (row["enviado_username"] or "").strip(),
+        "enviado_en": (row["enviado_en"] or "").strip(),
+        "revisado_por": (row["revisado_por"] or "").strip(),
+        "revisado_username": (row["revisado_username"] or "").strip(),
+        "revisado_en": (row["revisado_en"] or "").strip(),
+        "informe_agente": (row["informe_agente"] or ""),
+        "informe_usuario": (row["informe_usuario"] or "").strip(),
+        "informe_username": (row["informe_username"] or "").strip(),
+        "informe_en": (row["informe_en"] or "").strip(),
+    }
+
+
+def _cl_chat_add(con, sede_codigo: str, fecha_iso: str, mensaje: str, es_sistema: int = 0):
+    ensure_sedes_control_limpieza_chat_table(con)
+    sede = (sede_codigo or "").upper().strip()
+    fecha = (fecha_iso or "").strip()
+    msg = (mensaje or "").strip()
+    if not sede or not fecha or not msg:
+        return
+    autor = (session.get("full_name") or session.get("username") or "").strip() or "Sistema"
+    autor_username = (session.get("username") or "").strip()
+    if es_sistema:
+        autor = "Sistema"
+        autor_username = ""
+    try:
+        con.execute(
+            """
+            INSERT INTO sedes_control_limpieza_chat
+              (sede_codigo, fecha, autor, autor_username, mensaje, es_sistema, creado_en)
+            VALUES (?,?,?,?,?,?,datetime('now','localtime'))
+            """,
+            (sede, fecha, autor, autor_username, msg, int(es_sistema or 0)),
+        )
+        con.commit()
+    except Exception:
+        pass
 
 
 def _cl_dia_semana_from_iso(fecha_iso: str) -> str:
@@ -5105,6 +5296,7 @@ def sede_control_limpieza_data(codigo):
     codigo = (codigo or "").upper().strip()
     con = get_db()
     ensure_sedes_control_limpieza_table(con)
+    ensure_sedes_control_limpieza_cierres_table(con)
 
     sede = con.execute(
         "SELECT codigo, nombre, direccion FROM sedes_mpd WHERE codigo = ?",
@@ -5196,6 +5388,13 @@ def sede_control_limpieza_data(codigo):
         )
 
     usuario = (session.get("full_name") or session.get("username") or "").strip()
+    cierre = _cl_fetch_cierre(con, codigo, fecha_iso)
+    is_sup = _cl_is_supervisor()
+    locked = False
+    if (cierre.get("estado") or "") == CL_EST_CERRADO_SUPERVISOR:
+        locked = True
+    elif (cierre.get("estado") or "") == CL_EST_CERRADO_AGENTE and not is_sup:
+        locked = True
     resp = {
         "ok": True,
         "sede": {
@@ -5207,6 +5406,12 @@ def sede_control_limpieza_data(codigo):
         "dia_semana": dia_semana,
         "checklist": checklist_items,
         "usuario": usuario,
+        "cierre": cierre,
+        "permisos": {
+            "is_supervisor": bool(is_sup),
+            "locked": bool(locked),
+        },
+        "detalle_url": url_for("sedes_control_limpieza_supervision_detalle", codigo=codigo, fecha=fecha_iso),
         "depositos": out_deps,
     }
     con.close()
@@ -5228,6 +5433,17 @@ def sede_control_limpieza_save(codigo):
     usuario = (session.get("full_name") or session.get("username") or "").strip()
     con = get_db()
     ensure_sedes_control_limpieza_table(con)
+    ensure_sedes_control_limpieza_cierres_table(con)
+
+    # Lock por cierre (sede+fecha)
+    cierre = _cl_fetch_cierre(con, codigo, fecha_iso)
+    est = (cierre.get("estado") or "").strip()
+    if est == CL_EST_CERRADO_SUPERVISOR:
+        con.close()
+        return jsonify({"ok": False, "error": "Control cerrado por supervisor. No se puede modificar."}), 409
+    if est == CL_EST_CERRADO_AGENTE and not _cl_is_supervisor():
+        con.close()
+        return jsonify({"ok": False, "error": "Control enviado por agente. Pendiente revisión supervisor."}), 403
 
     # QR terminado (obligatorio evaluar)
     qr_terminados = _cl_qr_terminados_por_novedades(con, codigo, fecha_iso)
@@ -5249,10 +5465,7 @@ def sede_control_limpieza_save(codigo):
             continue
 
         obs = (it.get("observacion") or "").strip()
-        if res == "OBSERVADO" and not obs:
-            con.close()
-            return jsonify({"ok": False, "error": f"Falta observación en {dep}"}), 400
-
+        # Observación sugerida si está observado, pero no bloqueante (flujo operativo).
         if res != "OBSERVADO":
             obs = ""
 
@@ -5316,11 +5529,15 @@ def _cl_parse_iso_date(s: str):
 def sedes_control_limpieza_historial():
     con = get_db()
     ensure_sedes_control_limpieza_table(con)
+    ensure_sedes_control_limpieza_cierres_table(con)
 
     sede_f = (request.args.get("sede") or "").upper().strip()
     dep_f = _cl_norm_dep_code(request.args.get("deposito") or "")
     desde_in = (request.args.get("desde") or "").strip()
     hasta_in = (request.args.get("hasta") or "").strip()
+    estado_f = (request.args.get("estado") or "").strip().upper()
+    if estado_f not in {CL_EST_EN_CARGA, CL_EST_CERRADO_AGENTE, CL_EST_CERRADO_SUPERVISOR}:
+        estado_f = ""
 
     today = datetime.now().date()
     hasta_dt = _cl_parse_iso_date(hasta_in) or today
@@ -5396,6 +5613,7 @@ def sedes_control_limpieza_historial():
           h.resultado,
           h.observacion,
           h.usuario,
+          COALESCE(c.estado,'{CL_EST_EN_CARGA}') AS estado_revision,
           COALESCE(NULLIF(h.actualizado_en,''), h.creado_en) AS ts
         FROM sedes_control_limpieza h
         LEFT JOIN sedes_mpd sm
@@ -5403,10 +5621,42 @@ def sedes_control_limpieza_historial():
         LEFT JOIN sedes_depositos sd
                ON sd.codigo_sede = h.sede_codigo
               AND UPPER(TRIM(sd.codigo_local)) = h.deposito_codigo
+        LEFT JOIN sedes_control_limpieza_cierres c
+               ON c.sede_codigo = h.sede_codigo
+              AND c.fecha = h.fecha
         WHERE {" AND ".join(where)}
         ORDER BY date(h.fecha) DESC, h.sede_codigo, h.deposito_codigo
         LIMIT 1500
     """
+    if estado_f:
+        where.append(f"COALESCE(c.estado,'{CL_EST_EN_CARGA}') = ?")
+        params.append(estado_f)
+        sql = f"""
+            SELECT
+              h.fecha,
+              h.dia_semana,
+              h.sede_codigo,
+              sm.nombre AS sede_nombre,
+              h.deposito_codigo,
+              COALESCE(sd.descripcion,'') AS deposito_desc,
+              h.resultado,
+              h.observacion,
+              h.usuario,
+              COALESCE(c.estado,'{CL_EST_EN_CARGA}') AS estado_revision,
+              COALESCE(NULLIF(h.actualizado_en,''), h.creado_en) AS ts
+            FROM sedes_control_limpieza h
+            LEFT JOIN sedes_mpd sm
+                   ON sm.codigo = h.sede_codigo
+            LEFT JOIN sedes_depositos sd
+                   ON sd.codigo_sede = h.sede_codigo
+                  AND UPPER(TRIM(sd.codigo_local)) = h.deposito_codigo
+            LEFT JOIN sedes_control_limpieza_cierres c
+                   ON c.sede_codigo = h.sede_codigo
+                  AND c.fecha = h.fecha
+            WHERE {" AND ".join(where)}
+            ORDER BY date(h.fecha) DESC, h.sede_codigo, h.deposito_codigo
+            LIMIT 1500
+        """
     hist_rows = con.execute(sql, tuple(params)).fetchall()
 
     # Reincidencias (observados) - semana / mes, relativo al "hasta" del filtro
@@ -5504,6 +5754,7 @@ def sedes_control_limpieza_historial():
         depositos_opts=depositos_opts,
         sede_f=sede_f,
         deposito_f=dep_f,
+        estado_f=estado_f,
         desde=desde,
         hasta=hasta,
         hist_rows=hist_rows,
@@ -5512,6 +5763,479 @@ def sedes_control_limpieza_historial():
         reinc_week=week_counts,
         reinc_month=month_counts,
     )
+
+
+@app.post("/sedes/<codigo>/control-limpieza/finalizar", endpoint="sede_control_limpieza_finalizar")
+def sede_control_limpieza_finalizar(codigo):
+    """Cierre por agente (SEDE+FECHA): pasa a 'CERRADO_POR_AGENTE'."""
+    codigo = (codigo or "").upper().strip()
+    is_form = bool(request.form)
+    if is_form:
+        payload = request.form.to_dict(flat=True)
+    else:
+        payload = request.get_json(silent=True) or {}
+        if not isinstance(payload, dict):
+            payload = {}
+
+    fecha_iso = (payload.get("fecha") or "").strip() or datetime.now().date().isoformat()
+    try:
+        datetime.strptime(fecha_iso, "%Y-%m-%d")
+    except Exception:
+        fecha_iso = datetime.now().date().isoformat()
+
+    informe = (payload.get("informe_agente") or payload.get("informe") or "").strip()
+    informe = informe[:6000] if informe else ""
+    next_url = (payload.get("next") or "").strip()
+
+    usuario = (session.get("full_name") or session.get("username") or "").strip()
+    username = (session.get("username") or "").strip()
+
+    con = get_db()
+    ensure_sedes_control_limpieza_table(con)
+    ensure_sedes_control_limpieza_cierres_table(con)
+    ensure_sedes_control_limpieza_chat_table(con)
+
+    cierre_prev = _cl_fetch_cierre(con, codigo, fecha_iso)
+    if (cierre_prev.get("estado") or "") == CL_EST_CERRADO_SUPERVISOR:
+        con.close()
+        if is_form and next_url and next_url.startswith("/"):
+            flash("El control ya fue cerrado por supervisor.", "warning")
+            return redirect(next_url)
+        return jsonify({"ok": False, "error": "El control ya fue cerrado por supervisor."}), 409
+
+    # Validar obligatorios QR
+    qr_terminados = _cl_qr_terminados_por_novedades(con, codigo, fecha_iso)
+    if qr_terminados:
+        rows = con.execute(
+            """
+            SELECT deposito_codigo, resultado
+            FROM sedes_control_limpieza
+            WHERE sede_codigo = ? AND fecha = ?
+            """,
+            (codigo, fecha_iso),
+        ).fetchall()
+        done = set()
+        for r in (rows or []):
+            dep = _cl_norm_dep_code((r["deposito_codigo"] if r else "") or "")
+            res = (r["resultado"] or "").strip().upper()
+            if dep and res in {"APROBADO", "OBSERVADO"}:
+                done.add(dep)
+        faltan = [d for d in sorted(qr_terminados, key=_cl_dep_sort_key) if d not in done]
+        if faltan:
+            con.close()
+            if is_form and next_url and next_url.startswith("/"):
+                flash("Faltan evaluar depósitos terminados (QR): " + ", ".join(faltan), "warning")
+                return redirect(next_url)
+            return jsonify({"ok": False, "error": "Faltan evaluar depósitos terminados (QR): " + ", ".join(faltan), "faltan": faltan}), 400
+
+    was_closed_by_agent = (cierre_prev.get("estado") or "") == CL_EST_CERRADO_AGENTE
+
+    con.execute(
+        """
+        INSERT INTO sedes_control_limpieza_cierres
+          (sede_codigo, fecha, estado, enviado_por, enviado_username, enviado_en,
+           informe_agente, informe_usuario, informe_username, informe_en,
+           actualizado_en)
+        VALUES (?,?,?,?,?,datetime('now','localtime'),?,?,?,?,datetime('now','localtime'),datetime('now','localtime'))
+        ON CONFLICT(sede_codigo, fecha)
+        DO UPDATE SET
+          estado=excluded.estado,
+          enviado_por=excluded.enviado_por,
+          enviado_username=excluded.enviado_username,
+          enviado_en=excluded.enviado_en,
+          informe_agente=excluded.informe_agente,
+          informe_usuario=excluded.informe_usuario,
+          informe_username=excluded.informe_username,
+          informe_en=excluded.informe_en,
+          actualizado_en=datetime('now','localtime')
+        """,
+        (
+            codigo,
+            fecha_iso,
+            CL_EST_CERRADO_AGENTE,
+            usuario,
+            username,
+            informe,
+            (usuario if informe else ""),
+            (username if informe else ""),
+        ),
+    )
+    con.commit()
+
+    if not was_closed_by_agent:
+        _cl_chat_add(con, codigo, fecha_iso, f"Control finalizado por agente: {usuario or username or '-'}", es_sistema=1)
+
+    cierre_new = _cl_fetch_cierre(con, codigo, fecha_iso)
+    con.close()
+    if is_form and next_url and next_url.startswith("/"):
+        flash("Control finalizado (enviado a revisión).", "success")
+        return redirect(next_url)
+    return jsonify({"ok": True, "cierre": cierre_new})
+
+
+@app.post("/sedes/control-limpieza/cerrar-revision", endpoint="sedes_control_limpieza_cerrar_revision")
+def sedes_control_limpieza_cerrar_revision():
+    """Cierre por supervisor (SEDE+FECHA): pasa a 'CERRADO_POR_SUPERVISOR'."""
+    if not _cl_is_supervisor():
+        return redirect(url_for("access_denied"))
+
+    payload = request.form if request.form else (request.get_json(silent=True) or {})
+    sede = (payload.get("sede_codigo") or payload.get("sede") or "").upper().strip()
+    fecha = (payload.get("fecha") or "").strip()
+    next_url = (payload.get("next") or "").strip()
+
+    try:
+        datetime.strptime(fecha, "%Y-%m-%d")
+    except Exception:
+        fecha = datetime.now().date().isoformat()
+
+    con = get_db()
+    ensure_sedes_control_limpieza_cierres_table(con)
+    ensure_sedes_control_limpieza_chat_table(con)
+
+    cierre = _cl_fetch_cierre(con, sede, fecha)
+    if (cierre.get("estado") or "") != CL_EST_CERRADO_AGENTE:
+        con.close()
+        if next_url and next_url.startswith("/"):
+            flash("El control no está pendiente de revisión.", "warning")
+            return redirect(next_url)
+        return jsonify({"ok": False, "error": "El control no está pendiente de revisión."}), 400
+
+    usuario = (session.get("full_name") or session.get("username") or "").strip()
+    username = (session.get("username") or "").strip()
+
+    con.execute(
+        """
+        UPDATE sedes_control_limpieza_cierres
+        SET estado=?,
+            revisado_por=?,
+            revisado_username=?,
+            revisado_en=datetime('now','localtime'),
+            actualizado_en=datetime('now','localtime')
+        WHERE sede_codigo=? AND fecha=?
+        """,
+        (CL_EST_CERRADO_SUPERVISOR, usuario, username, sede, fecha),
+    )
+    con.commit()
+    _cl_chat_add(con, sede, fecha, f"Revisión cerrada por supervisor: {usuario or username or '-'}", es_sistema=1)
+    con.close()
+
+    if next_url and next_url.startswith("/"):
+        flash("Revisión cerrada.", "success")
+        return redirect(next_url)
+    return jsonify({"ok": True})
+
+
+@app.get("/sedes/control-limpieza/supervision", endpoint="sedes_control_limpieza_supervision")
+def sedes_control_limpieza_supervision():
+    """Bandeja por SEDE+FECHA para supervisor (y consulta general)."""
+    con = get_db()
+    ensure_sedes_control_limpieza_table(con)
+    ensure_sedes_control_limpieza_cierres_table(con)
+
+    sede_f = (request.args.get("sede") or "").upper().strip()
+    solo_pend = (request.args.get("pendientes") or "1").strip() in {"1", "true", "True", "si", "SI"}
+    desde_in = (request.args.get("desde") or "").strip()
+    hasta_in = (request.args.get("hasta") or "").strip()
+
+    today = datetime.now().date()
+    hasta_dt = _cl_parse_iso_date(hasta_in) or today
+    desde_dt = _cl_parse_iso_date(desde_in) or (hasta_dt - timedelta(days=14))
+    if desde_dt > hasta_dt:
+        desde_dt, hasta_dt = hasta_dt, desde_dt
+    desde = desde_dt.isoformat()
+    hasta = hasta_dt.isoformat()
+
+    sedes_rows = con.execute("SELECT codigo, nombre, direccion FROM sedes_mpd ORDER BY codigo").fetchall()
+
+    where = ["date(c.fecha) BETWEEN date(?) AND date(?)"]
+    params = [desde, hasta]
+    if sede_f:
+        where.append("c.sede_codigo = ?")
+        params.append(sede_f)
+    if solo_pend:
+        where.append("COALESCE(c.estado,'EN_CARGA') = ?")
+        params.append(CL_EST_CERRADO_AGENTE)
+
+    sql = f"""
+        SELECT
+          c.sede_codigo,
+          c.fecha,
+          COALESCE(c.estado,'{CL_EST_EN_CARGA}') AS estado,
+          COALESCE(c.enviado_por,'') AS enviado_por,
+          COALESCE(c.enviado_en,'') AS enviado_en,
+          COALESCE(c.revisado_por,'') AS revisado_por,
+          COALESCE(c.revisado_en,'') AS revisado_en,
+          COALESCE(sm.nombre,'') AS sede_nombre,
+          COALESCE(sm.direccion,'') AS sede_dir,
+          (
+            SELECT COUNT(*)
+            FROM sedes_depositos sd
+            WHERE sd.codigo_sede = c.sede_codigo
+          ) AS total_depositos,
+          (
+            SELECT COUNT(*)
+            FROM sedes_control_limpieza h
+            WHERE h.sede_codigo = c.sede_codigo AND h.fecha = c.fecha AND UPPER(COALESCE(h.resultado,''))='APROBADO'
+          ) AS aprobados,
+          (
+            SELECT COUNT(*)
+            FROM sedes_control_limpieza h
+            WHERE h.sede_codigo = c.sede_codigo AND h.fecha = c.fecha AND UPPER(COALESCE(h.resultado,''))='OBSERVADO'
+          ) AS observados,
+          (
+            SELECT COUNT(*)
+            FROM sedes_control_limpieza h
+            WHERE h.sede_codigo = c.sede_codigo AND h.fecha = c.fecha
+          ) AS cargados,
+          COALESCE(NULLIF(TRIM(c.enviado_por),''), (
+            SELECT COALESCE(NULLIF(TRIM(h.usuario),''),'-')
+            FROM sedes_control_limpieza h
+            WHERE h.sede_codigo = c.sede_codigo AND h.fecha = c.fecha
+            ORDER BY COALESCE(NULLIF(h.actualizado_en,''), h.creado_en) DESC
+            LIMIT 1
+          ), '-') AS cargado_por
+        FROM sedes_control_limpieza_cierres c
+        LEFT JOIN sedes_mpd sm ON sm.codigo = c.sede_codigo
+        WHERE {" AND ".join(where)}
+        ORDER BY
+          CASE WHEN COALESCE(c.estado,'') = '{CL_EST_CERRADO_AGENTE}' THEN 0 ELSE 1 END,
+          date(c.fecha) DESC,
+          c.sede_codigo
+    """
+    rows = con.execute(sql, tuple(params)).fetchall()
+
+    # KPI pendientes global (para badge / resumen)
+    pending_cnt = 0
+    try:
+        row_p = con.execute(
+            f"SELECT COUNT(*) AS n FROM sedes_control_limpieza_cierres WHERE COALESCE(estado,'{CL_EST_EN_CARGA}') = ?",
+            (CL_EST_CERRADO_AGENTE,),
+        ).fetchone()
+        pending_cnt = int(row_p["n"] or 0) if row_p else 0
+    except Exception:
+        pending_cnt = 0
+
+    is_sup = _cl_is_supervisor()
+    con.close()
+    return render_template(
+        "sedes_control_limpieza_supervision.html",
+        rows=rows,
+        sedes=sedes_rows,
+        sede_f=sede_f,
+        solo_pend=solo_pend,
+        desde=desde,
+        hasta=hasta,
+        pending_cnt=pending_cnt,
+        is_supervisor=bool(is_sup),
+    )
+
+
+@app.get("/sedes/control-limpieza/supervision/<codigo>/<fecha>", endpoint="sedes_control_limpieza_supervision_detalle")
+def sedes_control_limpieza_supervision_detalle(codigo, fecha):
+    codigo = (codigo or "").upper().strip()
+    fecha = (fecha or "").strip()
+    try:
+        datetime.strptime(fecha, "%Y-%m-%d")
+    except Exception:
+        return redirect(url_for("sedes_control_limpieza_supervision"))
+
+    con = get_db()
+    ensure_sedes_control_limpieza_table(con)
+    ensure_sedes_control_limpieza_cierres_table(con)
+    ensure_sedes_control_limpieza_chat_table(con)
+
+    sede = con.execute(
+        "SELECT codigo, nombre, direccion FROM sedes_mpd WHERE codigo = ?",
+        (codigo,),
+    ).fetchone()
+    if not sede:
+        con.close()
+        return ("Sede no encontrada", 404)
+
+    # Depósitos sede
+    deps_rows = []
+    try:
+        deps_rows = con.execute(
+            "SELECT codigo_local, descripcion FROM sedes_depositos WHERE codigo_sede = ?",
+            (codigo,),
+        ).fetchall()
+    except Exception:
+        deps_rows = []
+    deps_map = {}
+    for r in (deps_rows or []):
+        dep_code = _cl_norm_dep_code((r["codigo_local"] if r else "") or "")
+        if not (dep_code.startswith("D") and dep_code[1:].isdigit()):
+            continue
+        desc = ""
+        try:
+            desc = (r["descripcion"] or "").strip()
+        except Exception:
+            desc = ""
+        if dep_code not in deps_map or (desc and not deps_map.get(dep_code)):
+            deps_map[dep_code] = desc
+    deps = [{"codigo": c, "descripcion": deps_map.get(c) or ""} for c in deps_map.keys()]
+    deps.sort(key=lambda d: _cl_dep_sort_key(d.get("codigo") or ""))
+
+    # Controles guardados
+    controles_rows = con.execute(
+        """
+        SELECT deposito_codigo, resultado, observacion, usuario,
+               COALESCE(NULLIF(actualizado_en,''), creado_en) AS ts
+        FROM sedes_control_limpieza
+        WHERE sede_codigo = ? AND fecha = ?
+        """,
+        (codigo, fecha),
+    ).fetchall()
+    controles = {}
+    for r in (controles_rows or []):
+        dep = _cl_norm_dep_code((r["deposito_codigo"] if r else "") or "")
+        if not dep:
+            continue
+        controles[dep] = {
+            "resultado": (r["resultado"] or "").strip(),
+            "observacion": (r["observacion"] or ""),
+            "usuario": (r["usuario"] or ""),
+            "ts": (r["ts"] or ""),
+        }
+
+    items = []
+    aprobados = 0
+    observados = 0
+    for d in deps:
+        dep = d["codigo"]
+        c = controles.get(dep) or {}
+        res = (c.get("resultado") or "").strip().upper()
+        if res == "APROBADO":
+            aprobados += 1
+        elif res == "OBSERVADO":
+            observados += 1
+        items.append({
+            "deposito": dep,
+            "descripcion": d.get("descripcion") or "",
+            "resultado": res,
+            "observacion": c.get("observacion") or "",
+            "usuario": c.get("usuario") or "",
+            "ts": c.get("ts") or "",
+        })
+
+    cierre = _cl_fetch_cierre(con, codigo, fecha)
+    is_sup = _cl_is_supervisor()
+
+    chat_rows = []
+    try:
+        chat_rows = con.execute(
+            """
+            SELECT id, autor, autor_username, mensaje, es_sistema, creado_en
+            FROM sedes_control_limpieza_chat
+            WHERE sede_codigo = ? AND fecha = ?
+            ORDER BY id ASC
+            """,
+            (codigo, fecha),
+        ).fetchall()
+    except Exception:
+        chat_rows = []
+
+    con.close()
+    return render_template(
+        "sedes_control_limpieza_detalle.html",
+        sede=sede,
+        fecha=fecha,
+        cierre=cierre,
+        items=items,
+        total_depositos=len(items),
+        aprobados=aprobados,
+        observados=observados,
+        is_supervisor=bool(is_sup),
+        chat_rows=chat_rows,
+        sede_codigo=codigo,
+    )
+
+
+@app.post("/sedes/control-limpieza/chat", endpoint="sedes_control_limpieza_chat_send")
+def sedes_control_limpieza_chat_send():
+    """Enviar mensaje al chat interno de limpieza (SEDE+FECHA)."""
+    sede = (request.form.get("sede_codigo") or "").upper().strip()
+    fecha = (request.form.get("fecha") or "").strip()
+    mensaje = (request.form.get("mensaje") or "").strip()
+    next_url = (request.form.get("next") or "").strip()
+    if not mensaje:
+        if next_url and next_url.startswith("/"):
+            flash("Escribí un mensaje.", "warning")
+            return redirect(next_url)
+        return redirect(url_for("sedes_control_limpieza_supervision_detalle", codigo=sede, fecha=fecha))
+
+    con = get_db()
+    ensure_sedes_control_limpieza_chat_table(con)
+    _cl_chat_add(con, sede, fecha, mensaje, es_sistema=0)
+    con.close()
+
+    if next_url and next_url.startswith("/"):
+        return redirect(next_url)
+    return redirect(url_for("sedes_control_limpieza_supervision_detalle", codigo=sede, fecha=fecha))
+
+
+@app.get("/sedes/<codigo>/control-limpieza/chat", endpoint="sede_control_limpieza_chat_data")
+def sede_control_limpieza_chat_data(codigo):
+    """JSON: chat por SEDE+FECHA (para UI embebida)."""
+    codigo = (codigo or "").upper().strip()
+    fecha = (request.args.get("fecha") or "").strip() or datetime.now().date().isoformat()
+    try:
+        datetime.strptime(fecha, "%Y-%m-%d")
+    except Exception:
+        fecha = datetime.now().date().isoformat()
+
+    con = get_db()
+    ensure_sedes_control_limpieza_chat_table(con)
+    try:
+        rows = con.execute(
+            """
+            SELECT id, autor, autor_username, mensaje, es_sistema, creado_en
+            FROM sedes_control_limpieza_chat
+            WHERE sede_codigo = ? AND fecha = ?
+            ORDER BY id ASC
+            """,
+            (codigo, fecha),
+        ).fetchall()
+    except Exception:
+        rows = []
+    con.close()
+
+    items = []
+    for r in rows or []:
+        items.append({
+            "id": int(r["id"] or 0),
+            "autor": (r["autor"] or "").strip(),
+            "autor_username": (r["autor_username"] or "").strip(),
+            "mensaje": (r["mensaje"] or ""),
+            "es_sistema": int(r["es_sistema"] or 0),
+            "creado_en": (r["creado_en"] or "").strip(),
+        })
+    return jsonify({"ok": True, "sede": codigo, "fecha": fecha, "mensajes": items})
+
+
+@app.post("/sedes/<codigo>/control-limpieza/chat", endpoint="sede_control_limpieza_chat_save")
+def sede_control_limpieza_chat_save(codigo):
+    """JSON: enviar mensaje al chat por SEDE+FECHA (para UI embebida)."""
+    codigo = (codigo or "").upper().strip()
+    payload = request.get_json(silent=True) or {}
+    if not isinstance(payload, dict):
+        payload = {}
+    fecha = (payload.get("fecha") or "").strip() or datetime.now().date().isoformat()
+    try:
+        datetime.strptime(fecha, "%Y-%m-%d")
+    except Exception:
+        fecha = datetime.now().date().isoformat()
+
+    mensaje = (payload.get("mensaje") or "").strip()
+    if not mensaje:
+        return jsonify({"ok": False, "error": "Mensaje vacío"}), 400
+
+    con = get_db()
+    ensure_sedes_control_limpieza_chat_table(con)
+    _cl_chat_add(con, codigo, fecha, mensaje, es_sistema=0)
+    con.close()
+    return jsonify({"ok": True})
 
 
 @app.post("/sedes/<codigo>/servicios", endpoint="sede_servicios_guardar")

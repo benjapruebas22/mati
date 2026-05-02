@@ -2568,6 +2568,9 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 "next": {"fecha": "", "sedes": [], "grupo": "", "label": ""},
                 "status": "",
             },
+            "limpieza": {
+                "pendientesRevision": 0,
+            },
             "horarios": {
                 "pendienteMail": 0,
                 "enviadosHoy": 0,
@@ -3297,6 +3300,20 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     }
             except Exception:
                 pass
+
+        # =========================
+        # LIMPIEZA - PENDIENTES SUPERVISOR
+        # =========================
+        try:
+            if _table_exists(con, "sedes_control_limpieza_cierres"):
+                row = con.execute("""
+                    SELECT COUNT(*) AS n
+                    FROM sedes_control_limpieza_cierres
+                    WHERE COALESCE(estado,'EN_CARGA') = 'CERRADO_POR_AGENTE'
+                """).fetchone()
+                data["limpieza"]["pendientesRevision"] = int(_row_value(row, "n", 0) or 0)
+        except Exception:
+            pass
 
         # =========================
         # HORARIOS ESPECIALES / MAILS

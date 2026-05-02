@@ -4469,7 +4469,128 @@
     color: #0f172a;
     background: #fff;
   }
+  .cll-obs.warn {
+    border-color: #fed7aa;
+    background: #fff7ed;
+  }
   .cll-obs.hidden { display: none; }
+
+  .cll-extra{
+    padding: 10px 12px 12px 12px;
+    border-top: 1px dashed #e2e8f0;
+    background: #fff;
+    display: grid;
+    gap: 8px;
+  }
+  .cll-extra-title{
+    font-size: 12px;
+    font-weight: 950;
+    color: #1f3c68;
+  }
+  .cll-informe{
+    width: 100%;
+    min-height: 70px;
+    resize: vertical;
+    border-radius: 14px;
+    border: 1px solid #d7e2f3;
+    padding: 10px 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+    background: #fff;
+  }
+  .cll-extra-actions{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .cll-extra-link{
+    font-size: 12px;
+    font-weight: 900;
+    color: #1d4ed8;
+    text-decoration: none;
+    border: 1px solid #bfdbfe;
+    background: #eff6ff;
+    padding: 6px 10px;
+    border-radius: 999px;
+  }
+  .cll-extra-link:hover{
+    filter: brightness(0.98);
+  }
+  .cll-chat{
+    display: grid;
+    gap: 8px;
+  }
+  .cll-chat-box{
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #f8fafc;
+    padding: 8px;
+    max-height: 180px;
+    overflow: auto;
+    display: grid;
+    gap: 6px;
+  }
+  .cll-chat-msg{
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    background: #fff;
+    padding: 6px 8px;
+  }
+  .cll-chat-msg.system{
+    background:#eef2ff;
+    border-color:#c7d2fe;
+  }
+  .cll-chat-msg .top{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    font-size: 11px;
+    font-weight: 950;
+    color:#334155;
+    margin-bottom: 2px;
+  }
+  .cll-chat-msg .txt{
+    font-size: 12px;
+    font-weight: 800;
+    color:#0f172a;
+    white-space: pre-wrap;
+  }
+  .cll-chat-form{
+    display: grid;
+    gap: 8px;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+  }
+  .cll-chat-text{
+    width: 100%;
+    min-height: 42px;
+    resize: vertical;
+    border-radius: 14px;
+    border: 1px solid #d7e2f3;
+    padding: 10px 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #0f172a;
+    background: #fff;
+  }
+  .cll-chat-send{
+    border: 1px solid #b9d7ff;
+    background: #edf5ff;
+    color: #1e5b96;
+    border-radius: 14px;
+    padding: 10px 12px;
+    font-size: 13px;
+    font-weight: 900;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  @media (max-width: 720px){
+    .cll-chat-form{ grid-template-columns: 1fr; }
+  }
   .cll-footer {
     display: flex;
     align-items: center;
@@ -4496,6 +4617,11 @@
     font-weight: 900;
     cursor: pointer;
     white-space: nowrap;
+  }
+  .cll-finalizar{
+    border-color: #fed7aa;
+    background: #fff7ed;
+    color: #9a3412;
   }
   .cll-save[disabled] {
     opacity: .6;
@@ -9137,8 +9263,26 @@
     <div class="cll-body" id="cllBody">
       <div class="cll-loading">Cargando...</div>
     </div>
+    <div class="cll-extra" id="cllExtra">
+      <div class="cll-extra-title">📝 Informe general del agente</div>
+      <textarea class="cll-informe" id="cllInforme" placeholder="Informe general (opcional). Ej: faltó limpieza en baños, cocina observada, etc."></textarea>
+      <div class="cll-extra-actions">
+        <a class="cll-extra-link" id="cllDetalleLink" href="#" target="_blank" rel="noopener">Abrir detalle</a>
+      </div>
+      <div class="cll-chat">
+        <div class="cll-extra-title">💬 Conversación interna</div>
+        <div class="cll-chat-box" id="cllChatList">
+          <div class="cll-loading">Cargando chat...</div>
+        </div>
+        <div class="cll-chat-form">
+          <textarea class="cll-chat-text" id="cllChatText" placeholder="Escribir mensaje..."></textarea>
+          <button type="button" class="cll-chat-send" id="cllChatSend">Enviar</button>
+        </div>
+      </div>
+    </div>
     <div class="cll-footer">
       <div class="cll-msg" id="cllMsg"></div>
+      <button type="button" class="cll-save cll-finalizar" id="cllFinalizar">Finalizar control</button>
       <button type="button" class="cll-save" id="cllSave">Guardar</button>
     </div>
   </div>
@@ -9156,13 +9300,21 @@
     const bodyEl = document.getElementById("cllBody");
     const msgEl = document.getElementById("cllMsg");
     const saveBtn = document.getElementById("cllSave");
+    const finalizarBtn = document.getElementById("cllFinalizar");
+    const informeEl = document.getElementById("cllInforme");
+    const detalleLink = document.getElementById("cllDetalleLink");
+    const chatListEl = document.getElementById("cllChatList");
+    const chatTextEl = document.getElementById("cllChatText");
+    const chatSendBtn = document.getElementById("cllChatSend");
 
-    if (!btn || !modal || !closeBtn || !metaEl || !controlEl || !chipsEl || !bodyEl || !msgEl || !saveBtn || !subEl) return;
+    if (!btn || !modal || !closeBtn || !metaEl || !controlEl || !chipsEl || !bodyEl || !msgEl || !saveBtn || !subEl || !finalizarBtn || !informeEl || !detalleLink || !chatListEl || !chatTextEl || !chatSendBtn) return;
 
     const sedeCodigo = String(btn.getAttribute("data-sede") || "").trim().toUpperCase();
     let DATA = null;
     let CONTROLES = {}; // { D01: {resultado, observacion} }
     let REQUIRED = new Set(); // depósitos terminados (QR)
+    let LOCKED = false;
+    let IS_SUPERVISOR = false;
 
     function escapeHtml(s) {
       return String(s == null ? "" : s)
@@ -9176,6 +9328,64 @@
     function setMsg(text, isErr) {
       msgEl.textContent = String(text || "");
       msgEl.classList.toggle("err", !!isErr);
+    }
+
+    function renderChat(items) {
+      const arr = Array.isArray(items) ? items : [];
+      if (!arr.length) {
+        chatListEl.innerHTML = '<div class="cll-loading">Sin mensajes.</div>';
+        return;
+      }
+      chatListEl.innerHTML = arr.map((m) => {
+        const autor = escapeHtml(String((m && m.autor) || "-"));
+        const ts = escapeHtml(String((m && m.creado_en) || ""));
+        const txt = escapeHtml(String((m && m.mensaje) || ""));
+        const sys = !!(m && m.es_sistema);
+        return (
+          '<div class="cll-chat-msg' + (sys ? ' system' : '') + '">' +
+            '<div class="top"><span>' + autor + '</span><span class="muted">' + ts + '</span></div>' +
+            '<div class="txt">' + txt + '</div>' +
+          '</div>'
+        );
+      }).join("");
+    }
+
+    async function loadChat() {
+      const f = String((DATA && DATA.fecha) ? DATA.fecha : "");
+      if (!f) return;
+      chatListEl.innerHTML = '<div class="cll-loading">Cargando chat...</div>';
+      try {
+        const url = "/sedes/" + encodeURIComponent(sedeCodigo) + "/control-limpieza/chat?fecha=" + encodeURIComponent(f);
+        const res = await fetch(url, { headers: { "Accept": "application/json" } });
+        const data = await res.json();
+        if (!res.ok || !data || !data.ok) throw new Error((data && data.error) ? data.error : "No se pudo cargar chat");
+        renderChat(data.mensajes || []);
+      } catch (e) {
+        renderChat([]);
+      }
+    }
+
+    async function sendChat() {
+      const f = String((DATA && DATA.fecha) ? DATA.fecha : "");
+      const msg = String(chatTextEl.value || "").trim();
+      if (!f || !msg) return;
+      chatSendBtn.setAttribute("disabled", "disabled");
+      try {
+        const url = "/sedes/" + encodeURIComponent(sedeCodigo) + "/control-limpieza/chat";
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fecha: f, mensaje: msg }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data || !data.ok) throw new Error((data && data.error) ? data.error : "No se pudo enviar");
+        chatTextEl.value = "";
+        await loadChat();
+      } catch (_e) {
+        // no bloquear la operativa por chat
+      } finally {
+        chatSendBtn.removeAttribute("disabled");
+      }
     }
 
     function openModal() {
@@ -9298,6 +9508,7 @@
       const selOk = res === "APROBADO" ? " selected" : "";
       const selObs = res === "OBSERVADO" ? " selected" : "";
       const obsHidden = res === "OBSERVADO" ? "" : " hidden";
+      const obsWarn = (res === "OBSERVADO" && !String(obs || "").trim()) ? " warn" : "";
 
       return (
         '<div class="cll-card ' + cls + '" id="cll-card-' + escapeHtml(code) + '" data-dep="' + escapeHtml(code) + '">' +
@@ -9310,7 +9521,7 @@
             '<button type="button" class="cll-btn good' + selOk + '" data-cll-act="set" data-dep="' + escapeHtml(code) + '" data-res="APROBADO">👍 Aprobado</button>' +
             '<button type="button" class="cll-btn bad' + selObs + '" data-cll-act="set" data-dep="' + escapeHtml(code) + '" data-res="OBSERVADO">👎 Observado</button>' +
           "</div>" +
-          '<textarea class="cll-obs' + obsHidden + '" data-cll-dep="' + escapeHtml(code) + '" placeholder="Observación (obligatoria si observado)">' + escapeHtml(obs) + "</textarea>" +
+          '<textarea class="cll-obs' + obsWarn + obsHidden + '" data-cll-dep="' + escapeHtml(code) + '" placeholder="Describir problema (suciedad, falta de limpieza, etc.)">' + escapeHtml(obs) + "</textarea>" +
         "</div>"
       );
     }
@@ -9330,10 +9541,14 @@
         setMsg("No hay depósitos terminados (QR) para evaluar hoy.", false);
         return;
       }
-      if (faltan || faltanObs) {
+      if (faltan) {
         let txt = "Obligatorios (QR): " + req.length + " · Pendientes: " + faltan;
-        if (faltanObs) txt += " · Observación faltante: " + faltanObs;
         setMsg(txt, true);
+        return;
+      }
+      if (faltanObs) {
+        let txt = "Obligatorios (QR): " + req.length + " · OK · Observación sugerida: " + faltanObs;
+        setMsg(txt, false);
         return;
       }
       setMsg("Obligatorios (QR): " + req.length + " · Todo listo para guardar.", false);
@@ -9356,8 +9571,21 @@
           metaKpi("Fecha", escapeHtml(fecha)) +
           metaKpi("Día", escapeHtml(dia)) +
           metaKpi("Usuario", escapeHtml(user || "-")) +
+          metaKpi("Estado", escapeHtml(((DATA.cierre && DATA.cierre.estado_label) ? DATA.cierre.estado_label : "-"))) +
         "</div>" +
         '<div class="cll-hint">El control es obligatorio sobre depósitos terminados (QR). Los depósitos sin QR se muestran con advertencia.</div>';
+
+      IS_SUPERVISOR = !!((DATA.permisos || {}).is_supervisor);
+      LOCKED = !!((DATA.permisos || {}).locked);
+      const cierre = DATA.cierre || {};
+      const estC = String(cierre.estado || "EN_CARGA").toUpperCase();
+      informeEl.value = String(cierre.informe_agente || "");
+      informeEl.disabled = LOCKED || estC !== "EN_CARGA";
+      detalleLink.href = String(DATA.detalle_url || "#");
+      detalleLink.style.display = (detalleLink.href && detalleLink.href !== "#") ? "" : "none";
+      finalizarBtn.style.display = (estC === "EN_CARGA") ? "" : "none";
+      finalizarBtn.disabled = LOCKED || estC !== "EN_CARGA";
+      saveBtn.disabled = LOCKED;
 
       if (sedeCod === "S12") {
         controlEl.classList.remove("hidden");
@@ -9385,6 +9613,7 @@
       chipsEl.innerHTML = deps.map(chipHtml).join("");
       bodyEl.innerHTML = deps.map((d) => cardHtml(d, checklist)).join("") || '<div class="cll-empty">Sin depósitos cargados para la sede.</div>';
       updateCounters();
+      loadChat();
     }
 
     async function loadData() {
@@ -9426,6 +9655,7 @@
         if (ta) ta.value = "";
       }
       if (ta) ta.classList.toggle("hidden", CONTROLES[code].resultado !== "OBSERVADO");
+      if (ta) ta.classList.toggle("warn", (CONTROLES[code].resultado === "OBSERVADO" && !String(CONTROLES[code].observacion || "").trim()));
 
       const missing = REQUIRED.has(code) && !CONTROLES[code].resultado;
       card.classList.toggle("missing", missing);
@@ -9464,15 +9694,15 @@
         }
       });
       if (faltanObs.length) {
-        setMsg("Falta observación en: " + faltanObs.join(", "), true);
-        return false;
+        setMsg("Observación sugerida en: " + faltanObs.join(", "), false);
       }
       return true;
     }
 
-    async function save() {
+    async function save(opts) {
       if (!DATA) return;
       if (!validateBeforeSave()) return;
+      const noReload = !!(opts && opts.noReload);
 
       const payload = {
         fecha: String(DATA.fecha || ""),
@@ -9502,18 +9732,57 @@
         const data = await res.json();
         if (!res.ok || !data || !data.ok) throw new Error((data && data.error) ? data.error : "No se pudo guardar");
         setMsg("Guardado (" + String(data.saved || payload.controles.length) + ").", false);
+        if (!noReload) await loadData();
+        return true;
+      } catch (e) {
+        const msg = (e && e.message) ? e.message : String(e || "Error");
+        setMsg(msg, true);
+        return false;
+      } finally {
+        saveBtn.removeAttribute("disabled");
+      }
+    }
+
+    async function finalizar() {
+      if (!DATA) return;
+      if (LOCKED) {
+        setMsg("Control bloqueado (cerrado/enviado).", true);
+        return;
+      }
+      if (!validateBeforeSave()) return;
+
+      const informe = String(informeEl.value || "").trim();
+      finalizarBtn.setAttribute("disabled", "disabled");
+      try {
+        const saved = await save({ noReload: true });
+        if (!saved) return;
+
+        const url = "/sedes/" + encodeURIComponent(sedeCodigo) + "/control-limpieza/finalizar";
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fecha: String(DATA.fecha || ""),
+            informe_agente: informe,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data || !data.ok) throw new Error((data && data.error) ? data.error : "No se pudo finalizar");
+        setMsg("Control finalizado (enviado a revisión).", false);
         await loadData();
       } catch (e) {
         const msg = (e && e.message) ? e.message : String(e || "Error");
         setMsg(msg, true);
       } finally {
-        saveBtn.removeAttribute("disabled");
+        finalizarBtn.removeAttribute("disabled");
       }
     }
 
     btn.addEventListener("click", openModal);
     closeBtn.addEventListener("click", closeModal);
     saveBtn.addEventListener("click", save);
+    finalizarBtn.addEventListener("click", finalizar);
+    chatSendBtn.addEventListener("click", sendChat);
 
     modal.addEventListener("click", function (ev) {
       const target = ev.target;
@@ -9535,6 +9804,7 @@
     });
 
     bodyEl.addEventListener("click", function (ev) {
+      if (LOCKED) return;
       const el = ev.target.closest("[data-cll-act=\"set\"]");
       if (!el) return;
       const dep = el.getAttribute("data-dep");
@@ -9543,12 +9813,18 @@
     });
 
     bodyEl.addEventListener("input", function (ev) {
+      if (LOCKED) return;
       const t = ev.target;
       if (!t || !t.getAttribute) return;
       const dep = String(t.getAttribute("data-cll-dep") || "").toUpperCase();
       if (!dep) return;
       if (!CONTROLES[dep]) CONTROLES[dep] = { resultado: "", observacion: "" };
       CONTROLES[dep].observacion = String(t.value || "");
+      const card = document.getElementById("cll-card-" + dep);
+      if (card) {
+        const ta = card.querySelector("textarea.cll-obs");
+        if (ta) ta.classList.toggle("warn", (String(CONTROLES[dep].resultado || "").toUpperCase() === "OBSERVADO" && !String(CONTROLES[dep].observacion || "").trim()));
+      }
       updateCounters();
     });
 
