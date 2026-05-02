@@ -224,9 +224,9 @@
         ·
         {% set est = (cierre.estado or 'EN_CARGA') %}
         {% if est == 'CERRADO_POR_SUPERVISOR' %}
-          <span class="state closed">🟢 Cerrado / Revisado por Intendencia</span>
+          <span class="state closed">🟢 Cerrado</span>
         {% elif est == 'CERRADO_POR_AGENTE' %}
-          <span class="state pending">🟡 Enviado / Pendiente revisión Intendencia</span>
+          <span class="state pending">🟡 Pendiente revisión</span>
         {% else %}
           <span class="state draft">En carga</span>
         {% endif %}
@@ -314,7 +314,7 @@
         <input type="hidden" name="fecha" value="{{ fecha }}">
         <input type="hidden" name="next" value="{{ url_for('sedes_control_limpieza_supervision_detalle', codigo=sede_codigo, fecha=fecha) }}">
         <textarea name="informe_agente" placeholder="Informe general (opcional)" style="width:100%;min-height:70px;border:1px solid #d2e0f5;border-radius:12px;padding:10px;font-size:12px;">{{ (cierre.informe_agente or '')|trim }}</textarea>
-        <div class="muted" style="margin-top:6px;font-size:11px;">Al finalizar se envía a revisión del supervisor.</div>
+        <div class="muted" style="margin-top:6px;font-size:11px;">Al finalizar queda pendiente de revisión de Intendencia.</div>
         <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
           <button type="submit" class="btn danger">Finalizar control</button>
           <a class="btn primary" href="{{ url_for('sede_ficha', codigo=sede.codigo, home=1) }}">Abrir checklist</a>

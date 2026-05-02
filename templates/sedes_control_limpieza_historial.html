@@ -298,8 +298,8 @@
         <select id="fEstado" name="estado">
           <option value="">Todos</option>
           <option value="EN_CARGA" {% if estado_f == 'EN_CARGA' %}selected{% endif %}>En carga</option>
-          <option value="CERRADO_POR_AGENTE" {% if estado_f == 'CERRADO_POR_AGENTE' %}selected{% endif %}>Enviado / Pendiente revisión Intendencia</option>
-          <option value="CERRADO_POR_SUPERVISOR" {% if estado_f == 'CERRADO_POR_SUPERVISOR' %}selected{% endif %}>Cerrado / Revisado por Intendencia</option>
+          <option value="CERRADO_POR_AGENTE" {% if estado_f == 'CERRADO_POR_AGENTE' %}selected{% endif %}>Pendiente revisión</option>
+          <option value="CERRADO_POR_SUPERVISOR" {% if estado_f == 'CERRADO_POR_SUPERVISOR' %}selected{% endif %}>Cerrado</option>
         </select>
       </div>
 
@@ -367,92 +367,45 @@
           </tr>
         </thead>
         <tbody>
-          {% if not hist_rows or hist_rows|length == 0 %}
+          {% if not summary_rows or summary_rows|length == 0 %}
             <tr><td colspan="8" class="muted">Sin controles para el filtro.</td></tr>
           {% else %}
-            {% set ns = namespace(key=None, fecha="", sede="", sede_nombre="", usuario="", estado="EN_CARGA", total=0, ok=0, obs=0) %}
-            {% for r in hist_rows %}
-              {% set fecha = (r.fecha or "-") %}
+            {% for r in summary_rows %}
               {% set sede_code = (r.sede_codigo or "")|upper %}
-              {% set key = fecha ~ "|" ~ sede_code %}
-
-              {% if ns.key and key != ns.key %}
-                {% set rowcls = '' %}
-                {% if ns.estado == 'CERRADO_POR_SUPERVISOR' %}{% set rowcls = 'row-closed' %}
-                {% elif ns.estado == 'CERRADO_POR_AGENTE' %}{% set rowcls = 'row-pending' %}{% endif %}
-                <tr class="{{ rowcls }}">
-                  <td>{{ ns.fecha }}</td>
-                  <td>
-                    {{ ns.sede }}
-                    {% if ns.sede_nombre %}<span class="muted"> – {{ ns.sede_nombre }}</span>{% endif %}
-                  </td>
-                  <td>{{ ns.total }}</td>
-                  <td>{{ ns.ok }}</td>
-                  <td>{{ ns.obs }}</td>
-                  <td style="white-space:normal;">
-                    {% if ns.estado == 'CERRADO_POR_SUPERVISOR' %}
-                      <span class="estado-pill closed">🟢 Cerrado / Revisado por Intendencia</span>
-                    {% elif ns.estado == 'CERRADO_POR_AGENTE' %}
-                      <span class="estado-pill pending">🟡 Enviado / Pendiente revisión Intendencia</span>
-                    {% else %}
-                      <span class="estado-pill draft">En carga</span>
-                    {% endif %}
-                  </td>
-                  <td>{{ ns.usuario if ns.usuario else "-" }}</td>
-                  <td>
-                    <a class="clh-link" href="{{ url_for('sedes_control_limpieza_supervision_detalle', codigo=ns.sede, fecha=ns.fecha) }}">Ver detalle</a>
-                  </td>
-                </tr>
-                {% set ns.total = 0 %}
-                {% set ns.ok = 0 %}
-                {% set ns.obs = 0 %}
-              {% endif %}
-
-              {% if (not ns.key) or key != ns.key %}
-                {% set ns.key = key %}
-                {% set ns.fecha = fecha %}
-                {% set ns.sede = sede_code %}
-                {% set ns.sede_nombre = (r.sede_nombre or "") %}
-                {% set ns.estado = (r.estado_revision or 'EN_CARGA') %}
-                {% set ns.usuario = (r.usuario or "") %}
-              {% endif %}
-
-              {% set ns.total = ns.total + 1 %}
-              {% if (r.resultado or "")|upper == "APROBADO" %}
-                {% set ns.ok = ns.ok + 1 %}
-              {% elif (r.resultado or "")|upper == "OBSERVADO" %}
-                {% set ns.obs = ns.obs + 1 %}
-              {% endif %}
-              {% if r.usuario %}{% set ns.usuario = r.usuario %}{% endif %}
-
-              {% if loop.last %}
-                {% set rowcls = '' %}
-                {% if ns.estado == 'CERRADO_POR_SUPERVISOR' %}{% set rowcls = 'row-closed' %}
-                {% elif ns.estado == 'CERRADO_POR_AGENTE' %}{% set rowcls = 'row-pending' %}{% endif %}
-                <tr class="{{ rowcls }}">
-                  <td>{{ ns.fecha }}</td>
-                  <td>
-                    {{ ns.sede }}
-                    {% if ns.sede_nombre %}<span class="muted"> – {{ ns.sede_nombre }}</span>{% endif %}
-                  </td>
-                  <td>{{ ns.total }}</td>
-                  <td>{{ ns.ok }}</td>
-                  <td>{{ ns.obs }}</td>
-                  <td style="white-space:normal;">
-                    {% if ns.estado == 'CERRADO_POR_SUPERVISOR' %}
-                      <span class="estado-pill closed">🟢 Cerrado / Revisado por Intendencia</span>
-                    {% elif ns.estado == 'CERRADO_POR_AGENTE' %}
-                      <span class="estado-pill pending">🟡 Enviado / Pendiente revisión Intendencia</span>
-                    {% else %}
-                      <span class="estado-pill draft">En carga</span>
-                    {% endif %}
-                  </td>
-                  <td>{{ ns.usuario if ns.usuario else "-" }}</td>
-                  <td>
-                    <a class="clh-link" href="{{ url_for('sedes_control_limpieza_supervision_detalle', codigo=ns.sede, fecha=ns.fecha) }}">Ver detalle</a>
-                  </td>
-                </tr>
-              {% endif %}
+              {% set est = (r.estado_revision or 'EN_CARGA') %}
+              {% set rowcls = '' %}
+              {% if est == 'CERRADO_POR_SUPERVISOR' %}{% set rowcls = 'row-closed' %}
+              {% elif est == 'CERRADO_POR_AGENTE' %}{% set rowcls = 'row-pending' %}{% endif %}
+              <tr class="{{ rowcls }}">
+                <td style="white-space:nowrap;">{{ r.fecha or "-" }}</td>
+                <td>
+                  <strong>{{ sede_code }}</strong>
+                  {% if r.sede_nombre %}<span class="muted"> – {{ r.sede_nombre }}</span>{% endif %}
+                </td>
+                <td>{{ r.depositos or 0 }}</td>
+                <td>{{ r.aprobados or 0 }}</td>
+                <td>{{ r.observados or 0 }}</td>
+                <td style="white-space:normal;min-width:220px;">
+                  {% if est == 'CERRADO_POR_SUPERVISOR' %}
+                    <span class="estado-pill closed">🟢 Cerrado</span>
+                    <div class="muted" style="margin-top:2px;font-size:11px;">
+                      Revisado por Intendencia{% if r.revisado_por %}: {{ r.revisado_por }}{% endif %}
+                      {% if r.revisado_en %} · {{ r.revisado_en }}{% endif %}
+                    </div>
+                  {% elif est == 'CERRADO_POR_AGENTE' %}
+                    <span class="estado-pill pending">🟡 Pendiente revisión</span>
+                    <div class="muted" style="margin-top:2px;font-size:11px;">
+                      Esperando validación de Intendencia{% if r.enviado_en %} · Enviado: {{ r.enviado_en }}{% endif %}
+                    </div>
+                  {% else %}
+                    <span class="estado-pill draft">En carga</span>
+                  {% endif %}
+                </td>
+                <td>{{ (r.cargado_por or "-") }}</td>
+                <td>
+                  <a class="clh-link" href="{{ url_for('sedes_control_limpieza_supervision_detalle', codigo=sede_code, fecha=r.fecha) }}">Ver detalle</a>
+                </td>
+              </tr>
             {% endfor %}
           {% endif %}
         </tbody>
@@ -511,8 +464,8 @@
                 <td>{{ (r.usuario or "-") }}</td>
                 {% set est_rev = (r.estado_revision or 'EN_CARGA') %}
                 <td class="muted" style="white-space:normal;">
-                  {% if est_rev == 'CERRADO_POR_SUPERVISOR' %}Cerrado / Revisado por Intendencia
-                  {% elif est_rev == 'CERRADO_POR_AGENTE' %}Enviado / Pendiente revisión Intendencia
+                  {% if est_rev == 'CERRADO_POR_SUPERVISOR' %}Cerrado
+                  {% elif est_rev == 'CERRADO_POR_AGENTE' %}Pendiente revisión
                   {% else %}En carga{% endif %}
                 </td>
                 <td style="white-space:nowrap;">

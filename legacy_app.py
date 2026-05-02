@@ -5093,8 +5093,9 @@ def _cl_is_supervisor() -> bool:
     Supervisor de limpieza = usuario habilitado a cerrar revisión definitiva.
     Se mantiene acotado para respetar el flujo (agente no cierra supervisor).
     """
-    role = (session.get("role") or "").strip().lower()
-    if role == "admin":
+    role_raw = (session.get("role") or "").strip().lower()
+    role = role_raw.replace("_", " ").replace("-", " ").strip()
+    if role in {"admin", "alta direccion", "alta dirección", "supervisor limpieza", "supervisor"}:
         return True
     user = (session.get("username") or "").strip().lower()
     # Ajustable: por defecto Matías y cuenta admin general.
@@ -5104,9 +5105,9 @@ def _cl_is_supervisor() -> bool:
 def _cl_estado_label(estado: str) -> str:
     est = (estado or "").strip().upper()
     if est == CL_EST_CERRADO_SUPERVISOR:
-        return "Cerrado / Revisado por Intendencia"
+        return "Cerrado"
     if est == CL_EST_CERRADO_AGENTE:
-        return "Enviado / Pendiente revisión Intendencia"
+        return "Pendiente revisión"
     return "En carga"
 
 
@@ -5421,7 +5422,11 @@ def sede_control_limpieza_data(codigo):
 @app.post("/sedes/<codigo>/control-limpieza/save", endpoint="sede_control_limpieza_save")
 def sede_control_limpieza_save(codigo):
     codigo = (codigo or "").upper().strip()
-    payload = request.get_json(force=True) or {}
+    payload = request.get_json(silent=True) or {}
+    if not isinstance(payload, dict):
+        payload = {}
+    if not payload:
+        return jsonify({"ok": False, "error": "Formato inválido: JSON"}), 400
 
     fecha_iso = (payload.get("fecha") or "").strip() or datetime.now().date().isoformat()
     dia_semana = (payload.get("dia_semana") or "").strip() or _cl_dia_semana_from_iso(fecha_iso)
@@ -5443,7 +5448,7 @@ def sede_control_limpieza_save(codigo):
         return jsonify({"ok": False, "error": "Control cerrado por supervisor. No se puede modificar."}), 409
     if est == CL_EST_CERRADO_AGENTE and not _cl_is_supervisor():
         con.close()
-        return jsonify({"ok": False, "error": "Control enviado por agente. Pendiente revisión supervisor."}), 403
+        return jsonify({"ok": False, "error": "Control enviado por agente. Pendiente revisión de Intendencia."}), 403
 
     # QR terminado (obligatorio evaluar)
     qr_terminados = _cl_qr_terminados_por_novedades(con, codigo, fecha_iso)
@@ -5601,6 +5606,74 @@ def sedes_control_limpieza_historial():
     if dep_f:
         where.append("h.deposito_codigo = ?")
         params.append(dep_f)
+    if estado_f:
+        where.append(f"COALESCE(c.estado,'{CL_EST_EN_CARGA}') = ?")
+        params.append(estado_f)
+
+    # Resumen por SEDE+FECHA (orden: pendientes -> en carga -> cerrados)
+    # Nota: mapeo visual por firmas: revisado_en > enviado_en > estado (evita confusión "En carga" si ya se finalizó)
+    summary_sql = f"""
+        SELECT
+          h.fecha,
+          h.sede_codigo,
+          sm.nombre AS sede_nombre,
+          CASE
+            WHEN TRIM(COALESCE(c.revisado_en,'')) <> '' THEN '{CL_EST_CERRADO_SUPERVISOR}'
+            WHEN TRIM(COALESCE(c.enviado_en,'')) <> '' THEN '{CL_EST_CERRADO_AGENTE}'
+            ELSE COALESCE(c.estado,'{CL_EST_EN_CARGA}')
+          END AS estado_revision,
+          COALESCE(c.enviado_por,'') AS enviado_por,
+          COALESCE(c.enviado_en,'') AS enviado_en,
+          COALESCE(c.revisado_por,'') AS revisado_por,
+          COALESCE(c.revisado_en,'') AS revisado_en,
+          COUNT(*) AS depositos,
+          SUM(CASE WHEN UPPER(COALESCE(h.resultado,''))='APROBADO' THEN 1 ELSE 0 END) AS aprobados,
+          SUM(CASE WHEN UPPER(COALESCE(h.resultado,''))='OBSERVADO' THEN 1 ELSE 0 END) AS observados,
+          COALESCE(NULLIF(TRIM(c.enviado_por),''), (
+            SELECT COALESCE(NULLIF(TRIM(h2.usuario),''),'-')
+            FROM sedes_control_limpieza h2
+            WHERE h2.sede_codigo = h.sede_codigo AND h2.fecha = h.fecha
+            ORDER BY COALESCE(NULLIF(h2.actualizado_en,''), h2.creado_en) DESC
+            LIMIT 1
+          ), '-') AS cargado_por
+        FROM sedes_control_limpieza h
+        LEFT JOIN sedes_mpd sm
+               ON sm.codigo = h.sede_codigo
+        LEFT JOIN sedes_control_limpieza_cierres c
+               ON c.sede_codigo = h.sede_codigo
+              AND c.fecha = h.fecha
+        WHERE {" AND ".join(where)}
+        GROUP BY h.fecha, h.sede_codigo
+        ORDER BY
+          CASE
+            WHEN (
+              CASE
+                WHEN TRIM(COALESCE(c.revisado_en,'')) <> '' THEN '{CL_EST_CERRADO_SUPERVISOR}'
+                WHEN TRIM(COALESCE(c.enviado_en,'')) <> '' THEN '{CL_EST_CERRADO_AGENTE}'
+                ELSE COALESCE(c.estado,'{CL_EST_EN_CARGA}')
+              END
+            ) = '{CL_EST_CERRADO_AGENTE}' THEN 0
+            WHEN (
+              CASE
+                WHEN TRIM(COALESCE(c.revisado_en,'')) <> '' THEN '{CL_EST_CERRADO_SUPERVISOR}'
+                WHEN TRIM(COALESCE(c.enviado_en,'')) <> '' THEN '{CL_EST_CERRADO_AGENTE}'
+                ELSE COALESCE(c.estado,'{CL_EST_EN_CARGA}')
+              END
+            ) = '{CL_EST_EN_CARGA}' THEN 1
+            WHEN (
+              CASE
+                WHEN TRIM(COALESCE(c.revisado_en,'')) <> '' THEN '{CL_EST_CERRADO_SUPERVISOR}'
+                WHEN TRIM(COALESCE(c.enviado_en,'')) <> '' THEN '{CL_EST_CERRADO_AGENTE}'
+                ELSE COALESCE(c.estado,'{CL_EST_EN_CARGA}')
+              END
+            ) = '{CL_EST_CERRADO_SUPERVISOR}' THEN 2
+            ELSE 3
+          END,
+          date(h.fecha) DESC,
+          h.sede_codigo
+        LIMIT 600
+    """
+    summary_rows = con.execute(summary_sql, tuple(params)).fetchall()
 
     sql = f"""
         SELECT
@@ -5613,7 +5686,11 @@ def sedes_control_limpieza_historial():
           h.resultado,
           h.observacion,
           h.usuario,
-          COALESCE(c.estado,'{CL_EST_EN_CARGA}') AS estado_revision,
+          CASE
+            WHEN TRIM(COALESCE(c.revisado_en,'')) <> '' THEN '{CL_EST_CERRADO_SUPERVISOR}'
+            WHEN TRIM(COALESCE(c.enviado_en,'')) <> '' THEN '{CL_EST_CERRADO_AGENTE}'
+            ELSE COALESCE(c.estado,'{CL_EST_EN_CARGA}')
+          END AS estado_revision,
           COALESCE(NULLIF(h.actualizado_en,''), h.creado_en) AS ts
         FROM sedes_control_limpieza h
         LEFT JOIN sedes_mpd sm
@@ -5628,35 +5705,6 @@ def sedes_control_limpieza_historial():
         ORDER BY date(h.fecha) DESC, h.sede_codigo, h.deposito_codigo
         LIMIT 1500
     """
-    if estado_f:
-        where.append(f"COALESCE(c.estado,'{CL_EST_EN_CARGA}') = ?")
-        params.append(estado_f)
-        sql = f"""
-            SELECT
-              h.fecha,
-              h.dia_semana,
-              h.sede_codigo,
-              sm.nombre AS sede_nombre,
-              h.deposito_codigo,
-              COALESCE(sd.descripcion,'') AS deposito_desc,
-              h.resultado,
-              h.observacion,
-              h.usuario,
-              COALESCE(c.estado,'{CL_EST_EN_CARGA}') AS estado_revision,
-              COALESCE(NULLIF(h.actualizado_en,''), h.creado_en) AS ts
-            FROM sedes_control_limpieza h
-            LEFT JOIN sedes_mpd sm
-                   ON sm.codigo = h.sede_codigo
-            LEFT JOIN sedes_depositos sd
-                   ON sd.codigo_sede = h.sede_codigo
-                  AND UPPER(TRIM(sd.codigo_local)) = h.deposito_codigo
-            LEFT JOIN sedes_control_limpieza_cierres c
-                   ON c.sede_codigo = h.sede_codigo
-                  AND c.fecha = h.fecha
-            WHERE {" AND ".join(where)}
-            ORDER BY date(h.fecha) DESC, h.sede_codigo, h.deposito_codigo
-            LIMIT 1500
-        """
     hist_rows = con.execute(sql, tuple(params)).fetchall()
 
     # Reincidencias (observados) - semana / mes, relativo al "hasta" del filtro
@@ -5757,6 +5805,7 @@ def sedes_control_limpieza_historial():
         estado_f=estado_f,
         desde=desde,
         hasta=hasta,
+        summary_rows=summary_rows,
         hist_rows=hist_rows,
         reinc_resumen=resumen[:12],
         reinc_selected=selected_reinc,
@@ -5868,7 +5917,10 @@ def sede_control_limpieza_finalizar(codigo):
     cierre_new = _cl_fetch_cierre(con, codigo, fecha_iso)
     con.close()
     if is_form and next_url and next_url.startswith("/"):
-        flash("Control finalizado (enviado a revisión).", "success")
+        flash(
+            "Control finalizado correctamente. Queda guardado como control oficial del día y pendiente de revisión de Intendencia.",
+            "success",
+        )
         return redirect(next_url)
     return jsonify({"ok": True, "cierre": cierre_new})
 
@@ -5877,6 +5929,11 @@ def sede_control_limpieza_finalizar(codigo):
 def sedes_control_limpieza_cerrar_revision():
     """Cierre por supervisor (SEDE+FECHA): pasa a 'CERRADO_POR_SUPERVISOR'."""
     if not _cl_is_supervisor():
+        msg = "No tenés permisos para cerrar revisión de limpieza."
+        accept = (request.headers.get("Accept") or "").lower()
+        if request.is_json or "application/json" in accept:
+            return jsonify({"ok": False, "error": msg}), 403
+        flash(msg, "warning")
         return redirect(url_for("access_denied"))
 
     payload = request.form if request.form else (request.get_json(silent=True) or {})
