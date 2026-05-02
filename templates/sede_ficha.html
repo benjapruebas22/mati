@@ -3071,6 +3071,11 @@
 
   }
 
+  /* Botonera del panel operativo arriba del plano */
+  .panel-topbar {
+    grid-column: 1 / -1;
+  }
+
 
 
 
@@ -3684,6 +3689,15 @@
     gap: 10px;
   }
 
+  .panel-tabs.panel-tabs-top {
+    padding: 10px 12px;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+  }
+  .panel-tabs.panel-tabs-top .panel-secondary-link {
+    justify-self: end;
+  }
+
   .panel-tab-row {
     display: flex;
     flex-wrap: wrap;
@@ -4050,6 +4064,14 @@
 
       grid-template-columns: 1fr;
 
+    }
+
+    .panel-tabs.panel-tabs-top {
+      grid-template-columns: 1fr;
+      align-items: start;
+    }
+    .panel-tabs.panel-tabs-top .panel-secondary-link {
+      justify-self: start;
     }
 
     .h-actions {
@@ -7228,6 +7250,65 @@
 
   <div class="grid">
 
+    <!-- PANEL BOTONES (ARRIBA DEL PLANO) -->
+
+    <div class="card panel-topbar">
+
+      <div class="panel-tabs panel-tabs-top">
+        <div class="panel-tab-row" aria-label="Panel operativo">
+          <a class="ptab tone-aires {% if tab=='aires' %}active{% endif %}"
+            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='aires', view=view) }}">Aires</a>
+          <a class="ptab tone-lum {% if tab=='luminarias' %}active{% endif %}"
+            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='luminarias', view=view) }}">Luminarias</a>
+          <a class="ptab tone-mata {% if tab=='matafuegos' %}active{% endif %}"
+            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='matafuegos', view=view) }}">Matafuegos</a>
+          <a class="ptab tone-eva {% if tab=='evacuacion' %}active{% endif %}"
+            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='evacuacion', view=view) }}">Evacuación</a>
+          <a class="ptab tone-dep {% if tab=='depositos' %}active{% endif %}"
+            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='depositos', view=view) }}">Depósitos</a>
+          <a class="ptab tone-mob {% if tab=='mobiliario' %}active{% endif %}"
+            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='mobiliario', view=view) }}">Mobiliario</a>
+          <a class="ptab tone-personal {% if tab=='personal' %}active{% endif %}"
+            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='personal', view=view) }}">Personal</a>
+
+          <details class="panel-control">
+            <summary class="ptab tone-personal">Relevamientos / Control</summary>
+            <div class="panel-control-menu">
+              <div class="panel-control-title">Relevamientos</div>
+              <div class="panel-control-links">
+                <a class="panel-control-link" href="{{ url_for('auditoria_mobiliario') }}">
+                  <span>Mobiliario</span><span class="muted">Relevar</span>
+                </a>
+                <a class="panel-control-link" href="{{ url_for('auditoria_aires') }}">
+                  <span>Aires</span><span class="muted">Relevar</span>
+                </a>
+                <a class="panel-control-link" href="{{ url_for('auditoria_luminarias') }}">
+                  <span>Luminarias</span><span class="muted">Relevar</span>
+                </a>
+                <a class="panel-control-link" href="{{ url_for('relevamientos_comparativa', tipo='mobiliario') }}">
+                  <span>Comparativa</span><span class="muted">Cruzar datos</span>
+                </a>
+              </div>
+
+              <div class="panel-control-title" style="margin-top:6px;">Inventario</div>
+              <div class="panel-control-links">
+                <a class="panel-control-link" href="{{ url_for('sede_inventario', codigo=sede.codigo) }}">
+                  <span>Inventario (sede)</span><span class="muted">Oficial</span>
+                </a>
+                <a class="panel-control-link" href="{{ url_for('checklist_inventario') }}">
+                  <span>Control diario</span><span class="muted">Checklist</span>
+                </a>
+              </div>
+            </div>
+          </details>
+        </div>
+
+        <a class="btn panel-secondary-link {% if tab=='resumen' %}active{% endif %}"
+          href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='resumen', view=view) }}">Resumen sedes</a>
+      </div>
+
+    </div>
+
 
 
 
@@ -7436,59 +7517,6 @@
 
 
 
-
-      <div class="panel-tabs">
-        <div class="panel-tab-row" aria-label="Panel operativo">
-          <a class="ptab tone-aires {% if tab=='aires' %}active{% endif %}"
-            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='aires', view=view) }}">Aires</a>
-          <a class="ptab tone-lum {% if tab=='luminarias' %}active{% endif %}"
-            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='luminarias', view=view) }}">Luminarias</a>
-          <a class="ptab tone-mata {% if tab=='matafuegos' %}active{% endif %}"
-            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='matafuegos', view=view) }}">Matafuegos</a>
-          <a class="ptab tone-eva {% if tab=='evacuacion' %}active{% endif %}"
-            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='evacuacion', view=view) }}">Evacuación</a>
-          <a class="ptab tone-dep {% if tab=='depositos' %}active{% endif %}"
-            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='depositos', view=view) }}">Depósitos</a>
-          <a class="ptab tone-mob {% if tab=='mobiliario' %}active{% endif %}"
-            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='mobiliario', view=view) }}">Mobiliario</a>
-          <a class="ptab tone-personal {% if tab=='personal' %}active{% endif %}"
-            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='personal', view=view) }}">Personal</a>
-
-          <details class="panel-control">
-            <summary class="ptab tone-personal">Relevamientos / Control</summary>
-            <div class="panel-control-menu">
-              <div class="panel-control-title">Relevamientos</div>
-              <div class="panel-control-links">
-                <a class="panel-control-link" href="{{ url_for('auditoria_mobiliario') }}">
-                  <span>Mobiliario</span><span class="muted">Relevar</span>
-                </a>
-                <a class="panel-control-link" href="{{ url_for('auditoria_aires') }}">
-                  <span>Aires</span><span class="muted">Relevar</span>
-                </a>
-                <a class="panel-control-link" href="{{ url_for('auditoria_luminarias') }}">
-                  <span>Luminarias</span><span class="muted">Relevar</span>
-                </a>
-                <a class="panel-control-link" href="{{ url_for('relevamientos_comparativa', tipo='mobiliario') }}">
-                  <span>Comparativa</span><span class="muted">Cruzar datos</span>
-                </a>
-              </div>
-
-              <div class="panel-control-title" style="margin-top:6px;">Inventario</div>
-              <div class="panel-control-links">
-                <a class="panel-control-link" href="{{ url_for('sede_inventario', codigo=sede.codigo) }}">
-                  <span>Inventario (sede)</span><span class="muted">Oficial</span>
-                </a>
-                <a class="panel-control-link" href="{{ url_for('checklist_inventario') }}">
-                  <span>Control diario</span><span class="muted">Checklist</span>
-                </a>
-              </div>
-            </div>
-          </details>
-        </div>
-
-        <a class="btn panel-secondary-link {% if tab=='resumen' %}active{% endif %}"
-          href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='resumen', view=view) }}">Resumen sedes</a>
-      </div>
 
 <div class="panel-body{% if view != 'resumen' %} scrollable{% endif %}">
 
