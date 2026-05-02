@@ -4193,6 +4193,7 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    min-height: 0;
   }
   .cll-head {
     display: flex;
@@ -4348,6 +4349,10 @@
     display: grid;
     gap: 10px;
     background: #f6f8fb;
+    flex: 1 1 auto;
+    min-height: 0;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
   .cll-loading,
   .cll-error,
@@ -4631,6 +4636,81 @@
   @media (max-width: 920px) {
     .cll-meta-grid { grid-template-columns: repeat(2, minmax(160px, 1fr)); }
     .cll-actions { grid-template-columns: 1fr; }
+  }
+
+  /* UX móvil: pantalla completa + controles grandes (Francisco en sede) */
+  @media (max-width: 720px) {
+    .cll-dialog {
+      width: 100vw;
+      height: 100vh;    /* fallback */
+      height: 100svh;   /* mejor en móvil (barra navegador) */
+      max-height: 100vh;
+      max-height: 100svh;
+      margin: 0;
+      border-radius: 0;
+      border: 0;
+    }
+    .cll-head {
+      position: sticky;
+      top: 0;
+      z-index: 6;
+      padding: 10px 10px;
+    }
+    .cll-footer {
+      position: sticky;
+      bottom: 0;
+      z-index: 6;
+      padding: 10px 10px;
+      flex-wrap: wrap;
+    }
+    .cll-title { font-size: 16px; }
+    .cll-sub { font-size: 12px; }
+    .cll-close { padding: 10px 12px; font-size: 13px; }
+
+    .cll-meta { padding: 8px 10px; }
+    .cll-meta-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+    .cll-kpi { padding: 8px 10px; }
+    .cll-kpi .v { font-size: 13px; }
+    .cll-hint { display: none; }
+
+    /* Chips Dxx: una fila scrolleable (no 2/3 filas que tapan el contenido) */
+    .cll-chiprow {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      overflow-y: hidden;
+      max-height: none;
+      padding: 8px 10px;
+      gap: 8px;
+    }
+    .cll-chip {
+      flex: 0 0 auto;
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+
+    .cll-body { padding: 10px; }
+    .cll-card { padding: 12px 12px 14px; }
+    .cll-card-title { font-size: 15px; }
+    .cll-badge { padding: 6px 10px; font-size: 12px; }
+    .cll-item { padding: 6px 10px; font-size: 13px; }
+
+    /* Botones grandes y táctiles */
+    .cll-actions { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .cll-btn {
+      padding: 14px 12px;
+      font-size: 15px;
+      border-radius: 16px;
+    }
+
+    .cll-obs {
+      min-height: 96px;
+      font-size: 15px;
+    }
+    .cll-informe,
+    .cll-chat-text {
+      font-size: 15px;
+    }
+    .cll-chat-send { padding: 12px 14px; font-size: 14px; }
   }
 
 
