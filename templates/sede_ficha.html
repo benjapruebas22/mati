@@ -7696,7 +7696,8 @@
 
 
 
-    <div class="card" id="planos"{% if tab != 'planos' %} style="display:none"{% endif %}>
+    {% if tab == 'planos' %}
+    <div class="card" id="planos">
 
 
 
@@ -7868,6 +7869,7 @@
 
 
     </div>
+    {% endif %}
 
 
 
@@ -7879,6 +7881,7 @@
 
 
 
+    {% if tab != 'planos' %}
     <div class="card panel-card">
 
 
