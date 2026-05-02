@@ -694,6 +694,7 @@
     background: #fbfdff;
     overflow: hidden;
   }
+  #registroNvdBox > summary.registro-summary { display: none !important; }
   .registro-summary {
     list-style: none;
     cursor: pointer;
@@ -2199,6 +2200,7 @@
       <h1>Centro de control operativo - Intendencia</h1>
       <div class="card-head-actions">
         <button id="btnCargarTop" type="button" class="btn-dark">+ Cargar</button>
+        <button id="btnPlanosDeposito" type="button" class="btn-soft">Planos depósito</button>
         <a class="btn-soft" href="{{ url_for('vehiculos_bd_home') }}">Base de datos</a>
         <a class="btn-soft" href="{{ url_for('dashboard_sede_estado_manual') }}">Progreso sedes</a>
       </div>
@@ -2364,13 +2366,12 @@
     <div class="card-head">
       <h2>Cargar</h2>
       <div class="card-head-actions">
-        <button id="btnPlanosDeposito" type="button" class="btn-soft">Planos depósito</button>
         <span class="state-chip soft">Carga manual</span>
       </div>
     </div>
 
     <details id="registroNvdBox" class="registro-box">
-      <summary class="registro-summary">Formulario de carga</summary>
+      <summary class="registro-summary" aria-hidden="true"></summary>
 
       <div class="registro-body">
         <div class="aux-row aux-row-tight">
