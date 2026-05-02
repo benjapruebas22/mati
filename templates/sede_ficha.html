@@ -9797,11 +9797,15 @@
     function updateCounters() {
       const req = Array.from(REQUIRED);
       let faltan = 0;
+      let faltanList = [];
       let faltanObs = 0;
       req.forEach((dep) => {
         const c = CONTROLES[dep] || {};
         const res = String(c.resultado || "").toUpperCase();
-        if (!res) faltan += 1;
+        if (!res) {
+          faltan += 1;
+          faltanList.push(dep);
+        }
         if (res === "OBSERVADO" && !String(c.observacion || "").trim()) faltanObs += 1;
       });
 
@@ -9824,16 +9828,18 @@
         }
       }
 
+      // En esta etapa MiDefensa (QR) NO es requisito obligatorio: no bloquear finalizar.
       if (!req.length) {
-        setMsg("No se puede finalizar: no hay depósitos terminados (QR) para evaluar hoy.", true);
-        setFinalizeDisabled(true);
+        setMsg("MiDefensa (QR) aun no implementado: podes finalizar control sin verificacion QR.", false);
+        setFinalizeDisabled(false);
         updateProgressCounters();
         return;
       }
       if (faltan) {
-        let txt = "Obligatorios (QR): " + req.length + " · Pendientes: " + faltan;
-        setMsg(txt, true);
-        setFinalizeDisabled(true);
+        const preview = faltanList.slice(0, 8).join(", ");
+        const more = (faltanList.length > 8) ? "..." : "";
+        setMsg("Advertencia: depositos terminados (QR) sin evaluar: " + preview + more + ". Se puede finalizar igual.", false);
+        setFinalizeDisabled(false);
         updateProgressCounters();
         return;
       }
@@ -9844,7 +9850,7 @@
         updateProgressCounters();
         return;
       }
-      setMsg("Obligatorios (QR): " + req.length + " · Todo listo para guardar.", false);
+      setMsg("Listo para guardar.", false);
       setFinalizeDisabled(false);
       updateProgressCounters();
     }
@@ -9971,12 +9977,12 @@
         if (!res) faltan.push(dep);
       });
       if (faltan.length) {
-        setMsg("Faltan evaluar depósitos terminados (QR): " + faltan.join(", "), true);
+        // En esta etapa MiDefensa (QR) NO es requisito obligatorio: solo advertir.
+        setMsg("Advertencia: depositos terminados (QR) sin evaluar: " + faltan.join(", ") + ".", false);
         faltan.forEach((dep) => {
           const card = document.getElementById("cll-card-" + dep);
           if (card) card.classList.add("missing");
         });
-        return false;
       }
 
       const faltanObs = [];
@@ -10024,7 +10030,9 @@
         });
         const data = await readJson(res, "No se pudo guardar. Recargá la página e intentá de nuevo.");
         if (!res.ok || !data || !data.ok) throw new Error((data && data.error) ? data.error : "No se pudo guardar");
-        setMsg("Guardado (" + String(data.saved || payload.controles.length) + ").", false);
+        let msg = "Guardado (" + String(data.saved || payload.controles.length) + ").";
+        if (data && data.qr_warning) msg += " " + String(data.qr_warning);
+        setMsg(msg, false);
         if (!noReload) await loadData();
         return true;
       } catch (e) {
@@ -10061,7 +10069,9 @@
         });
         const data = await readJson(res, "No se pudo finalizar. Recargá la página e intentá de nuevo.");
         if (!res.ok || !data || !data.ok) throw new Error((data && data.error) ? data.error : "No se pudo finalizar");
-        setMsg("Control finalizado correctamente. Queda guardado como control oficial del día y pendiente de revisión de Intendencia.", false);
+        let msg = "Control finalizado correctamente. Queda guardado como control oficial del dia y pendiente de revision de Intendencia.";
+        if (data && data.qr_warning) msg += " " + String(data.qr_warning);
+        setMsg(msg, false);
         await loadData();
       } catch (e) {
         const msg = (e && e.message) ? e.message : String(e || "Error");

@@ -5478,15 +5478,14 @@ def sede_control_limpieza_save(codigo):
 
     # Control obligatorio sobre depósitos terminados: no permitir guardar si falta evaluación.
     faltan = [d for d in sorted(qr_terminados, key=_cl_dep_sort_key) if d not in controles]
+    # Etapa actual: MiDefensa (QR) aún no implementado como requisito.
+    # Se mantiene la lógica para informar, pero NO se bloquea el guardado.
+    qr_warning = ""
     if faltan:
-        con.close()
-        return jsonify(
-            {
-                "ok": False,
-                "error": "Faltan evaluar depósitos terminados (QR): " + ", ".join(faltan),
-                "faltan": faltan,
-            }
-        ), 400
+        qr_warning = (
+            "Guardado sin verificación QR (MiDefensa aún no implementado). "
+            "Depósitos terminados (QR) sin evaluar: " + ", ".join(faltan)
+        )
 
     saved = 0
     for dep, data in controles.items():
@@ -5517,7 +5516,15 @@ def sede_control_limpieza_save(codigo):
 
     con.commit()
     con.close()
-    return jsonify({"ok": True, "saved": saved, "obligatorios_qr": len(qr_terminados)})
+    return jsonify(
+        {
+            "ok": True,
+            "saved": saved,
+            "obligatorios_qr": len(qr_terminados),
+            "qr_faltan": faltan,
+            "qr_warning": qr_warning,
+        }
+    )
 
 
 def _cl_parse_iso_date(s: str):
@@ -5852,8 +5859,11 @@ def sede_control_limpieza_finalizar(codigo):
             return redirect(next_url)
         return jsonify({"ok": False, "error": "El control ya fue cerrado por supervisor."}), 409
 
-    # Validar obligatorios QR
+    # QR (MiDefensa): en esta etapa NO es requisito obligatorio para finalizar.
+    # Se conserva la lógica para informar, pero NO se bloquea el cierre.
     qr_terminados = _cl_qr_terminados_por_novedades(con, codigo, fecha_iso)
+    faltan = []
+    qr_warning = ""
     if qr_terminados:
         rows = con.execute(
             """
@@ -5871,11 +5881,12 @@ def sede_control_limpieza_finalizar(codigo):
                 done.add(dep)
         faltan = [d for d in sorted(qr_terminados, key=_cl_dep_sort_key) if d not in done]
         if faltan:
-            con.close()
-            if is_form and next_url and next_url.startswith("/"):
-                flash("Faltan evaluar depósitos terminados (QR): " + ", ".join(faltan), "warning")
-                return redirect(next_url)
-            return jsonify({"ok": False, "error": "Faltan evaluar depósitos terminados (QR): " + ", ".join(faltan), "faltan": faltan}), 400
+            qr_warning = (
+                "Control finalizado sin verificacion QR (MiDefensa aun no implementado). "
+                "Depositos terminados (QR) sin evaluar: " + ", ".join(faltan)
+            )
+    else:
+        qr_warning = "Control finalizado sin verificacion QR (MiDefensa aun no implementado)."
 
     was_closed_by_agent = (cierre_prev.get("estado") or "") == CL_EST_CERRADO_AGENTE
 
@@ -5918,11 +5929,21 @@ def sede_control_limpieza_finalizar(codigo):
     con.close()
     if is_form and next_url and next_url.startswith("/"):
         flash(
-            "Control finalizado correctamente. Queda guardado como control oficial del día y pendiente de revisión de Intendencia.",
+            "Control finalizado correctamente. Queda guardado como control oficial del dia y pendiente de revision de Intendencia.",
             "success",
         )
+        if qr_warning:
+            flash(qr_warning, "warning")
         return redirect(next_url)
-    return jsonify({"ok": True, "cierre": cierre_new})
+    return jsonify(
+        {
+            "ok": True,
+            "cierre": cierre_new,
+            "obligatorios_qr": len(qr_terminados),
+            "qr_faltan": faltan,
+            "qr_warning": qr_warning,
+        }
+    )
 
 
 @app.post("/sedes/control-limpieza/cerrar-revision", endpoint="sedes_control_limpieza_cerrar_revision")
