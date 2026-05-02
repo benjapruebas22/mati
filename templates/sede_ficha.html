@@ -2282,9 +2282,18 @@
   }
 
   .btn.btn-metricas-sm {
-    padding: 6px 10px;
-    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 9px;
     font-weight: 800;
+    line-height: 1;
+    border: 1px solid #c7d2fe;
+    background: #eef2ff;
+    color: #3730a3;
   }
 
   .h-actions .btn.btn-resumen-sedes {
@@ -2759,6 +2768,14 @@
     gap: 4px;
   }
 
+  .sede-analisis-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
   .sede-criterios {
     position: relative;
   }
@@ -3096,6 +3113,11 @@
   }
   .grid.grid-planos .panel-card {
     display: none;
+  }
+
+  /* Modo compacto (por defecto): sin plano visible */
+  .grid.grid-no-planos {
+    grid-template-columns: 1fr;
   }
 
   /* Botonera del panel operativo arriba del plano */
@@ -5919,12 +5941,28 @@
       </div>
 
       <div class="sede-nav">
+        {# Tooltips para chips de sedes (fallback si sedes_nav no trae descripcion) #}
+        {% set sede_tooltips = {
+          'S01': 'Independencia 202 - Penal',
+          'S02': 'San Pedro Civil - Penal Unificado',
+          'S03': 'Perico Penal',
+          'S04': 'Alto Comedero',
+          'S05': 'Humahuaca Penal',
+          'S06': 'Ledesma Penal y Menores Unificado',
+          'S07': 'Palpalá Penal',
+          'S08': 'San Martín 137 - Administración',
+          'S10': 'El Carmen Civil - Penal Unificado',
+          'S11': 'Gorriti 791',
+          'S12': 'Belgrano 284',
+          'S13': 'San Martín 271',
+        } %}
         {% for s in sedes_nav %}
+        {% set _tip = sede_tooltips.get(s.codigo) %}
         <a class="{% if s.codigo == sede.codigo %}active{% endif %}"
            data-fuero="{{ s.fuero }}"
            data-code="{{ s.codigo }}"
-           title="{{ s.codigo }}{% if s.direccion %} · {{ s.direccion }}{% endif %}{% if s.fuero %} · {{ s.fuero|replace('_',' ')|capitalize }}{% endif %}"
-          href="{{ url_for('sede_ficha', codigo=s.codigo, piso=piso, tab=tab, view=view) }}">{{ s.codigo }}</a>
+           title="{{ _tip if _tip else 'Sede sin descripcion' }}"
+           href="{{ url_for('sede_ficha', codigo=s.codigo, piso=piso, tab=tab, view=view) }}">{{ s.codigo }}</a>
         {% endfor %}
       </div>
 
@@ -6045,9 +6083,10 @@
       <div class="sede-analisis-head">
         <h4>Analisis de sede</h4>
         <div class="sede-analisis-tools">
-          <a class="btn btn-metricas-sm" href="{{ url_for('sede_metricas_edit', codigo=sede.codigo) }}">Editar metricas</a>
-          <details class="sede-criterios">
-            <summary>Criterios de analisis</summary>
+          <div class="sede-analisis-actions">
+            <a class="btn btn-metricas-sm" href="{{ url_for('sede_metricas_edit', codigo=sede.codigo) }}">Editar metricas</a>
+            <details class="sede-criterios">
+              <summary>Criterios de analisis</summary>
             <div class="sede-criterios-box">
               <h5>Parametros V1</h5>
               <ul>
@@ -6065,7 +6104,8 @@
                 <li><strong>Calculado</strong>: m2/p ajustado por distribucion de ambientes e indice general interno.</li>
               </ul>
             </div>
-          </details>
+            </details>
+          </div>
           <span class="sede-analisis-ref">Lectura interna orientativa (no certifica cumplimiento legal).</span>
         </div>
       </div>
@@ -7585,7 +7625,7 @@
 
 
 
-  <div class="grid{% if tab=='planos' %} grid-planos{% endif %}">
+  <div class="grid{% if tab=='planos' %} grid-planos{% else %} grid-no-planos{% endif %}">
 
     <!-- PANEL BOTONES (ARRIBA DEL PLANO) -->
 
@@ -7656,7 +7696,7 @@
 
 
 
-    <div class="card" id="planos">
+    <div class="card" id="planos"{% if tab != 'planos' %} style="display:none"{% endif %}>
 
 
 
