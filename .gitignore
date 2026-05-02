@@ -13,6 +13,11 @@ _obsoleto/
 tmp/
 *.log
 
+# Backups locales (no versionar)
+_backup*/
+_backup_*/
+ersUsuario*
+
 # Archivos subidos por usuarios (uploads)
 uploads/
 static/agentes_documentacion/

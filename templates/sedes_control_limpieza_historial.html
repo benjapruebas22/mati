@@ -150,6 +150,9 @@
     font-size: 12px;
     min-width: 980px;
   }
+  .tbl.summary{
+    min-width: 920px;
+  }
   .tbl th, .tbl td{
     padding: 7px 8px;
     border-bottom: 1px solid #edf2f9;
@@ -284,7 +287,107 @@
   </div>
 
   <div class="clh-card">
-    <div class="table-wrap">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+      <div style="font-size:13px;font-weight:950;color:#1f3c68;">Resumen por sede + fecha</div>
+      <div class="muted" style="font-size:12px;">Unidad: sede + fecha</div>
+    </div>
+    <div class="table-wrap" style="margin-top:8px;max-height:60vh;">
+      <table class="tbl summary">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Sede</th>
+            <th>Depósitos</th>
+            <th>Aprobados</th>
+            <th>Observados</th>
+            <th>Estado revisión</th>
+            <th>Cargado por</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if not hist_rows or hist_rows|length == 0 %}
+            <tr><td colspan="8" class="muted">Sin controles para el filtro.</td></tr>
+          {% else %}
+            {% set ns = namespace(key=None, fecha="", sede="", sede_nombre="", usuario="", estado="EN_CARGA", total=0, ok=0, obs=0) %}
+            {% for r in hist_rows %}
+              {% set fecha = (r.fecha or "-") %}
+              {% set sede_code = (r.sede_codigo or "")|upper %}
+              {% set key = fecha ~ "|" ~ sede_code %}
+
+              {% if ns.key and key != ns.key %}
+                <tr>
+                  <td>{{ ns.fecha }}</td>
+                  <td>
+                    {{ ns.sede }}
+                    {% if ns.sede_nombre %}<span class="muted"> – {{ ns.sede_nombre }}</span>{% endif %}
+                  </td>
+                  <td>{{ ns.total }}</td>
+                  <td>{{ ns.ok }}</td>
+                  <td>{{ ns.obs }}</td>
+                  <td class="muted" style="white-space:nowrap;">
+                    {% if ns.estado == 'CERRADO_POR_SUPERVISOR' %}Cerrado supervisor
+                    {% elif ns.estado == 'CERRADO_POR_AGENTE' %}Pendiente revisión
+                    {% else %}En carga{% endif %}
+                  </td>
+                  <td>{{ ns.usuario if ns.usuario else "-" }}</td>
+                  <td>
+                    <a class="clh-link" href="{{ url_for('sedes_control_limpieza_supervision_detalle', codigo=ns.sede, fecha=ns.fecha) }}">Ver detalle</a>
+                  </td>
+                </tr>
+                {% set ns.total = 0 %}
+                {% set ns.ok = 0 %}
+                {% set ns.obs = 0 %}
+              {% endif %}
+
+              {% if (not ns.key) or key != ns.key %}
+                {% set ns.key = key %}
+                {% set ns.fecha = fecha %}
+                {% set ns.sede = sede_code %}
+                {% set ns.sede_nombre = (r.sede_nombre or "") %}
+                {% set ns.estado = (r.estado_revision or 'EN_CARGA') %}
+                {% set ns.usuario = (r.usuario or "") %}
+              {% endif %}
+
+              {% set ns.total = ns.total + 1 %}
+              {% if (r.resultado or "")|upper == "APROBADO" %}
+                {% set ns.ok = ns.ok + 1 %}
+              {% elif (r.resultado or "")|upper == "OBSERVADO" %}
+                {% set ns.obs = ns.obs + 1 %}
+              {% endif %}
+              {% if r.usuario %}{% set ns.usuario = r.usuario %}{% endif %}
+
+              {% if loop.last %}
+                <tr>
+                  <td>{{ ns.fecha }}</td>
+                  <td>
+                    {{ ns.sede }}
+                    {% if ns.sede_nombre %}<span class="muted"> – {{ ns.sede_nombre }}</span>{% endif %}
+                  </td>
+                  <td>{{ ns.total }}</td>
+                  <td>{{ ns.ok }}</td>
+                  <td>{{ ns.obs }}</td>
+                  <td class="muted" style="white-space:nowrap;">
+                    {% if ns.estado == 'CERRADO_POR_SUPERVISOR' %}Cerrado supervisor
+                    {% elif ns.estado == 'CERRADO_POR_AGENTE' %}Pendiente revisión
+                    {% else %}En carga{% endif %}
+                  </td>
+                  <td>{{ ns.usuario if ns.usuario else "-" }}</td>
+                  <td>
+                    <a class="clh-link" href="{{ url_for('sedes_control_limpieza_supervision_detalle', codigo=ns.sede, fecha=ns.fecha) }}">Ver detalle</a>
+                  </td>
+                </tr>
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <details class="clh-card">
+    <summary class="clh-link" style="cursor:pointer;">Ver detalle por depósito (tabla)</summary>
+    <div class="table-wrap" style="margin-top:8px;">
       <table class="tbl">
         <thead>
           <tr>
@@ -347,7 +450,7 @@
         </tbody>
       </table>
     </div>
-  </div>
+  </details>
 </section>
 
 {% endblock %}

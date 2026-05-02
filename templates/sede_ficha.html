@@ -4232,6 +4232,63 @@
     border-bottom: 1px solid #eef2fb;
     background: #fbfdff;
   }
+  .cll-progress{
+    display:flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .cll-progress-left{
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+  }
+  .cll-progress-sede{
+    font-size: 13px;
+    font-weight: 950;
+    color: #0f172a;
+    line-height: 1.1;
+  }
+  .cll-progress-sub{
+    font-size: 12px;
+    font-weight: 800;
+    color: #5b7297;
+  }
+  .cll-progress-kpis{
+    display:flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: stretch;
+    justify-content: flex-end;
+  }
+  .cll-pkpi{
+    border: 1px solid #dbe5f4;
+    border-radius: 12px;
+    padding: 6px 8px;
+    background: #fff;
+    min-width: 92px;
+  }
+  .cll-pkpi .k{
+    font-size: 10px;
+    font-weight: 950;
+    color: #5a7395;
+    letter-spacing: .2px;
+    text-transform: uppercase;
+  }
+  .cll-pkpi .v{
+    margin-top: 2px;
+    font-size: 13px;
+    font-weight: 950;
+    color:#0f172a;
+    white-space: nowrap;
+  }
+  .cll-pkpi .v.ok{ color:#047857; }
+  .cll-pkpi .v.obs{ color:#9a3412; }
+  .cll-pkpi .v.estado{
+    font-weight: 900;
+    color:#1f3c68;
+  }
   .cll-control-dia {
     margin: 10px 12px 0;
     border: 1px solid #fde68a;
@@ -4528,6 +4585,38 @@
     display: grid;
     gap: 8px;
   }
+  .cll-chat-disclosure{
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #f8fafc;
+    overflow: hidden;
+  }
+  .cll-chat-summary{
+    list-style: none;
+    cursor: pointer;
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+    font-weight: 950;
+    color: #1f3c68;
+    background: linear-gradient(180deg, #ffffff 0%, #f3f7ff 100%);
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .cll-chat-summary::-webkit-details-marker { display: none; }
+  .cll-chat-summary::marker { content: ""; }
+  .cll-chat-summary .hint{
+    font-size: 11px;
+    font-weight: 900;
+    color:#6b7280;
+    white-space: nowrap;
+  }
+  .cll-chat-disclosure:not([open]) .cll-chat-box,
+  .cll-chat-disclosure:not([open]) .cll-chat-form{
+    display:none;
+  }
   .cll-chat-box{
     border: 1px solid #e2e8f0;
     border-radius: 14px;
@@ -4633,6 +4722,14 @@
     cursor: not-allowed;
   }
 
+  /* En móvil: botón Finalizar bien grande + orden claro */
+  @media (max-width: 720px){
+    .cll-footer{ gap: 8px; }
+    .cll-msg{ width: 100%; order: 0; }
+    .cll-finalizar{ width: 100%; order: 1; }
+    .cll-save:not(.cll-finalizar){ width: 100%; order: 2; }
+  }
+
   @media (max-width: 920px) {
     .cll-meta-grid { grid-template-columns: repeat(2, minmax(160px, 1fr)); }
     .cll-actions { grid-template-columns: 1fr; }
@@ -4668,7 +4765,9 @@
     .cll-close { padding: 10px 12px; font-size: 13px; }
 
     .cll-meta { padding: 8px 10px; }
-    .cll-meta-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+    .cll-progress-kpis { gap: 6px; justify-content: flex-start; }
+    .cll-pkpi { min-width: 0; flex: 1 1 110px; }
+    .cll-pkpi .v { font-size: 14px; }
     .cll-kpi { padding: 8px 10px; }
     .cll-kpi .v { font-size: 13px; }
     .cll-hint { display: none; }
@@ -4700,6 +4799,7 @@
       padding: 14px 12px;
       font-size: 15px;
       border-radius: 16px;
+      min-height: 48px;
     }
 
     .cll-obs {
@@ -9337,7 +9437,32 @@
         <button type="button" class="cll-close" id="cllClose">Cerrar</button>
       </div>
     </div>
-    <div class="cll-meta" id="cllMeta"></div>
+    <div class="cll-meta" id="cllMeta">
+      <div class="cll-progress" aria-label="Resumen de avance">
+        <div class="cll-progress-left">
+          <div class="cll-progress-sede" id="cllProgSede">-</div>
+          <div class="cll-progress-sub">Fecha: <span id="cllProgFecha">-</span></div>
+        </div>
+        <div class="cll-progress-kpis" aria-label="Indicadores">
+          <div class="cll-pkpi">
+            <div class="k">Avance</div>
+            <div class="v" id="cllProgAvance">0/0</div>
+          </div>
+          <div class="cll-pkpi">
+            <div class="k">Aprobados</div>
+            <div class="v ok" id="cllProgOk">0</div>
+          </div>
+          <div class="cll-pkpi">
+            <div class="k">Observados</div>
+            <div class="v obs" id="cllProgObs">0</div>
+          </div>
+          <div class="cll-pkpi">
+            <div class="k">Estado</div>
+            <div class="v estado" id="cllProgEstado">-</div>
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="cll-control-dia hidden" id="cllControlDia"></div>
     <div class="cll-chiprow" id="cllDepositos"></div>
     <div class="cll-body" id="cllBody">
@@ -9349,8 +9474,11 @@
       <div class="cll-extra-actions">
         <a class="cll-extra-link" id="cllDetalleLink" href="#" target="_blank" rel="noopener">Abrir detalle</a>
       </div>
-      <div class="cll-chat">
-        <div class="cll-extra-title">💬 Conversación interna</div>
+      <details class="cll-chat-disclosure" id="cllChatDisclosure">
+        <summary class="cll-chat-summary">
+          <span>💬 Conversación interna</span>
+          <span class="hint">tocar para abrir</span>
+        </summary>
         <div class="cll-chat-box" id="cllChatList">
           <div class="cll-loading">Cargando chat...</div>
         </div>
@@ -9358,7 +9486,7 @@
           <textarea class="cll-chat-text" id="cllChatText" placeholder="Escribir mensaje..."></textarea>
           <button type="button" class="cll-chat-send" id="cllChatSend">Enviar</button>
         </div>
-      </div>
+      </details>
     </div>
     <div class="cll-footer">
       <div class="cll-msg" id="cllMsg"></div>
@@ -9375,6 +9503,12 @@
     const closeBtn = document.getElementById("cllClose");
     const subEl = document.getElementById("cllSub");
     const metaEl = document.getElementById("cllMeta");
+    const progSedeEl = document.getElementById("cllProgSede");
+    const progFechaEl = document.getElementById("cllProgFecha");
+    const progAvanceEl = document.getElementById("cllProgAvance");
+    const progOkEl = document.getElementById("cllProgOk");
+    const progObsEl = document.getElementById("cllProgObs");
+    const progEstadoEl = document.getElementById("cllProgEstado");
     const controlEl = document.getElementById("cllControlDia");
     const chipsEl = document.getElementById("cllDepositos");
     const bodyEl = document.getElementById("cllBody");
@@ -9383,11 +9517,13 @@
     const finalizarBtn = document.getElementById("cllFinalizar");
     const informeEl = document.getElementById("cllInforme");
     const detalleLink = document.getElementById("cllDetalleLink");
+    const chatDisclosureEl = document.getElementById("cllChatDisclosure");
     const chatListEl = document.getElementById("cllChatList");
     const chatTextEl = document.getElementById("cllChatText");
     const chatSendBtn = document.getElementById("cllChatSend");
 
-    if (!btn || !modal || !closeBtn || !metaEl || !controlEl || !chipsEl || !bodyEl || !msgEl || !saveBtn || !subEl || !finalizarBtn || !informeEl || !detalleLink || !chatListEl || !chatTextEl || !chatSendBtn) return;
+    if (!btn || !modal || !closeBtn || !metaEl || !controlEl || !chipsEl || !bodyEl || !msgEl || !saveBtn || !subEl || !finalizarBtn || !informeEl || !detalleLink || !chatDisclosureEl || !chatListEl || !chatTextEl || !chatSendBtn) return;
+    if (!progSedeEl || !progFechaEl || !progAvanceEl || !progOkEl || !progObsEl || !progEstadoEl) return;
 
     const sedeCodigo = String(btn.getAttribute("data-sede") || "").trim().toUpperCase();
     let DATA = null;
@@ -9395,6 +9531,7 @@
     let REQUIRED = new Set(); // depósitos terminados (QR)
     let LOCKED = false;
     let IS_SUPERVISOR = false;
+    let PREV_BODY_OVERFLOW = "";
 
     function escapeHtml(s) {
       return String(s == null ? "" : s)
@@ -9408,6 +9545,30 @@
     function setMsg(text, isErr) {
       msgEl.textContent = String(text || "");
       msgEl.classList.toggle("err", !!isErr);
+    }
+
+    function lockBodyScroll(on) {
+      try {
+        if (on) {
+          PREV_BODY_OVERFLOW = document.body.style.overflow || "";
+          document.body.style.overflow = "hidden";
+        } else {
+          document.body.style.overflow = PREV_BODY_OVERFLOW || "";
+        }
+      } catch (_e) {
+        // noop
+      }
+    }
+
+    async function readJson(res, fallbackMsg) {
+      const ct = String((res && res.headers && res.headers.get && res.headers.get("content-type")) || "");
+      const isJson = ct.toLowerCase().indexOf("application/json") >= 0;
+      if (isJson) {
+        return await res.json();
+      }
+      // Consumimos el body para evitar errores y mostramos mensaje amigable
+      try { await res.text(); } catch (_e) { /* noop */ }
+      return { ok: false, error: String(fallbackMsg || "Error del servidor. Recargá la página e intentá de nuevo.") };
     }
 
     function renderChat(items) {
@@ -9437,7 +9598,7 @@
       try {
         const url = "/sedes/" + encodeURIComponent(sedeCodigo) + "/control-limpieza/chat?fecha=" + encodeURIComponent(f);
         const res = await fetch(url, { headers: { "Accept": "application/json" } });
-        const data = await res.json();
+        const data = await readJson(res, "No se pudo cargar el chat.");
         if (!res.ok || !data || !data.ok) throw new Error((data && data.error) ? data.error : "No se pudo cargar chat");
         renderChat(data.mensajes || []);
       } catch (e) {
@@ -9457,7 +9618,7 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ fecha: f, mensaje: msg }),
         });
-        const data = await res.json();
+        const data = await readJson(res, "No se pudo enviar el mensaje.");
         if (!res.ok || !data || !data.ok) throw new Error((data && data.error) ? data.error : "No se pudo enviar");
         chatTextEl.value = "";
         await loadChat();
@@ -9468,25 +9629,47 @@
       }
     }
 
+    function setProgressHeader() {
+      const sedeCod = String((DATA && DATA.sede && DATA.sede.codigo) ? DATA.sede.codigo : sedeCodigo).trim().toUpperCase();
+      const sedeNom = String((DATA && DATA.sede && DATA.sede.nombre) ? DATA.sede.nombre : "").trim();
+      const sedeTxt = sedeCod + (sedeNom ? (" - " + sedeNom) : "");
+      progSedeEl.textContent = sedeTxt || sedeCod || "-";
+      progFechaEl.textContent = String((DATA && DATA.fecha) ? DATA.fecha : "-");
+      progEstadoEl.textContent = String((DATA && DATA.cierre && DATA.cierre.estado_label) ? DATA.cierre.estado_label : "-");
+    }
+
+    function updateProgressCounters() {
+      const deps = Array.isArray(DATA && DATA.depositos) ? DATA.depositos : [];
+      let total = deps.length;
+      let done = 0;
+      let ok = 0;
+      let obs = 0;
+      deps.forEach((d) => {
+        const code = String((d && d.codigo) ? d.codigo : "").toUpperCase();
+        const c = CONTROLES[code] || {};
+        const res = String(c.resultado || "").toUpperCase();
+        if (!res) return;
+        done += 1;
+        if (res === "APROBADO") ok += 1;
+        if (res === "OBSERVADO") obs += 1;
+      });
+      progAvanceEl.textContent = String(done) + " / " + String(total);
+      progOkEl.textContent = String(ok);
+      progObsEl.textContent = String(obs);
+    }
+
     function openModal() {
       modal.classList.add("open");
       modal.setAttribute("aria-hidden", "false");
+      lockBodyScroll(true);
       loadData();
     }
 
     function closeModal() {
       modal.classList.remove("open");
       modal.setAttribute("aria-hidden", "true");
+      lockBodyScroll(false);
       setMsg("", false);
-    }
-
-    function metaKpi(label, valueHtml) {
-      return (
-        '<div class="cll-kpi">' +
-          '<div class="k">' + escapeHtml(label) + "</div>" +
-          '<div class="v">' + valueHtml + "</div>" +
-        "</div>"
-      );
     }
 
     function normDia(s) {
@@ -9545,6 +9728,11 @@
         '<div class="cll-cd-section">🔴 Tareas a verificar:' + tasksHtml + "</div>" +
         '<div class="cll-cd-important">⚠️ IMPORTANTE: <span>' + escapeHtml(important) + "</span></div>"
       );
+    }
+
+    function s12HasTasks(diaSemana) {
+      const d = normDia(diaSemana);
+      return d === "lunes" || d === "martes" || d === "miercoles" || d === "jueves" || d === "viernes";
     }
 
     function chipHtml(dep) {
@@ -9617,21 +9805,48 @@
         if (res === "OBSERVADO" && !String(c.observacion || "").trim()) faltanObs += 1;
       });
 
+      function setFinalizeDisabled(disabled) {
+        // Respetar bloqueos por estado (cerrado/solo lectura)
+        if (LOCKED || finalizarBtn.style.display === "none") {
+          finalizarBtn.disabled = true;
+          return;
+        }
+        finalizarBtn.disabled = !!disabled;
+      }
+
+      // Regla operativa S12: si no hay pauta configurada para el día, no permitir finalizar
+      if (String((DATA && DATA.sede && DATA.sede.codigo) ? DATA.sede.codigo : sedeCodigo).trim().toUpperCase() === "S12") {
+        if (!s12HasTasks(String((DATA && DATA.dia_semana) ? DATA.dia_semana : ""))) {
+          setMsg("No se puede finalizar: no hay tareas configuradas para este día.", true);
+          setFinalizeDisabled(true);
+          updateProgressCounters();
+          return;
+        }
+      }
+
       if (!req.length) {
-        setMsg("No hay depósitos terminados (QR) para evaluar hoy.", false);
+        setMsg("No se puede finalizar: no hay depósitos terminados (QR) para evaluar hoy.", true);
+        setFinalizeDisabled(true);
+        updateProgressCounters();
         return;
       }
       if (faltan) {
         let txt = "Obligatorios (QR): " + req.length + " · Pendientes: " + faltan;
         setMsg(txt, true);
+        setFinalizeDisabled(true);
+        updateProgressCounters();
         return;
       }
       if (faltanObs) {
         let txt = "Obligatorios (QR): " + req.length + " · OK · Observación sugerida: " + faltanObs;
         setMsg(txt, false);
+        setFinalizeDisabled(false);
+        updateProgressCounters();
         return;
       }
       setMsg("Obligatorios (QR): " + req.length + " · Todo listo para guardar.", false);
+      setFinalizeDisabled(false);
+      updateProgressCounters();
     }
 
     function render(data) {
@@ -9645,15 +9860,7 @@
       const sedeCod = String((DATA.sede && DATA.sede.codigo) ? DATA.sede.codigo : sedeCodigo).trim().toUpperCase();
 
       subEl.textContent = sede;
-      metaEl.innerHTML =
-        '<div class="cll-meta-grid">' +
-          metaKpi("Sede", escapeHtml(sedeTxt)) +
-          metaKpi("Fecha", escapeHtml(fecha)) +
-          metaKpi("Día", escapeHtml(dia)) +
-          metaKpi("Usuario", escapeHtml(user || "-")) +
-          metaKpi("Estado", escapeHtml(((DATA.cierre && DATA.cierre.estado_label) ? DATA.cierre.estado_label : "-"))) +
-        "</div>" +
-        '<div class="cll-hint">El control es obligatorio sobre depósitos terminados (QR). Los depósitos sin QR se muestran con advertencia.</div>';
+      setProgressHeader();
 
       IS_SUPERVISOR = !!((DATA.permisos || {}).is_supervisor);
       LOCKED = !!((DATA.permisos || {}).locked);
@@ -9698,14 +9905,20 @@
 
     async function loadData() {
       setMsg("", false);
-      metaEl.innerHTML = "";
+      DATA = null;
+      progSedeEl.textContent = sedeCodigo || "-";
+      progFechaEl.textContent = "-";
+      progAvanceEl.textContent = "0 / 0";
+      progOkEl.textContent = "0";
+      progObsEl.textContent = "0";
+      progEstadoEl.textContent = "-";
       chipsEl.innerHTML = "";
       bodyEl.innerHTML = '<div class="cll-loading">Cargando...</div>';
 
       try {
         const url = "/sedes/" + encodeURIComponent(sedeCodigo) + "/control-limpieza/data";
         const res = await fetch(url, { headers: { "Accept": "application/json" } });
-        const data = await res.json();
+        const data = await readJson(res, "No se pudo cargar el checklist.");
         if (!res.ok || !data || !data.ok) throw new Error((data && data.error) ? data.error : "No se pudo cargar");
         render(data);
       } catch (e) {
@@ -9809,7 +10022,7 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-        const data = await res.json();
+        const data = await readJson(res, "No se pudo guardar. Recargá la página e intentá de nuevo.");
         if (!res.ok || !data || !data.ok) throw new Error((data && data.error) ? data.error : "No se pudo guardar");
         setMsg("Guardado (" + String(data.saved || payload.controles.length) + ").", false);
         if (!noReload) await loadData();
@@ -9846,7 +10059,7 @@
             informe_agente: informe,
           }),
         });
-        const data = await res.json();
+        const data = await readJson(res, "No se pudo finalizar. Recargá la página e intentá de nuevo.");
         if (!res.ok || !data || !data.ok) throw new Error((data && data.error) ? data.error : "No se pudo finalizar");
         setMsg("Control finalizado (enviado a revisión).", false);
         await loadData();

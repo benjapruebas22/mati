@@ -1044,6 +1044,8 @@
     justify-content: flex-start;
     margin: 10px 0 0 0;
     width: 100%;
+    /* por si queda dentro de una grilla: que abarque todo */
+    grid-column: 1 / -1;
   }
   .next-coffee-btn {
     border: 1px solid #fed7aa;
@@ -2339,6 +2341,16 @@
       </div>
     </div>
 
+    <div id="nextCoffeeRow" class="next-coffee-row" style="display:none;">
+      <button id="nextCoffeeBtn" type="button" class="next-coffee-btn" title="Abrir gestion del proximo Coffee">
+        <div class="next-coffee-top">
+          <span class="next-coffee-label">Proximo Coffee</span>
+          <span id="nextCoffeeDays" class="next-coffee-days"></span>
+        </div>
+        <div id="nextCoffeeMeta" class="next-coffee-meta"></div>
+      </button>
+    </div>
+
     <div class="daily-actions-row" aria-label="Acciones diarias">
       <a id="limpiezaAction" class="daily-action" href="{{ url_for('sedes_control_limpieza_supervision') }}">
         <span class="icon" aria-hidden="true">🧹</span>
@@ -2350,19 +2362,9 @@
         <span class="label">Historial limpieza</span>
       </a>
     </div>
-
-    <div id="nextCoffeeRow" class="next-coffee-row" style="display:none;">
-      <button id="nextCoffeeBtn" type="button" class="next-coffee-btn" title="Abrir gestion del proximo Coffee">
-        <div class="next-coffee-top">
-          <span class="next-coffee-label">Proximo Coffee</span>
-          <span id="nextCoffeeDays" class="next-coffee-days"></span>
-        </div>
-        <div id="nextCoffeeMeta" class="next-coffee-meta"></div>
-      </button>
-    </div>
   </article>
 
-  <article class="control-card control-workspace-section card-registro" data-workspaces="gestion">
+  <article id="cargarCard" class="control-card control-workspace-section card-registro" data-workspaces="gestion" style="display:none;">
     <div class="card-head">
       <h2>Cargar</h2>
       <div class="card-head-actions">
@@ -3240,6 +3242,7 @@
       limpiezaAction: document.getElementById("limpiezaAction"),
       limpiezaLabel: document.getElementById("limpiezaLabel"),
       limpiezaBadge: document.getElementById("limpiezaBadge"),
+      cargarCard: document.getElementById("cargarCard"),
       registroBox: document.getElementById("registroNvdBox"),
       histTop: document.getElementById("btnHistorialTop"),
       histQuick: document.getElementById("btnHistorialQuick"),
@@ -3419,6 +3422,9 @@
       if (!el.registroBox) return;
       var next = (forceOpen == null) ? (!el.registroBox.open) : !!forceOpen;
       el.registroBox.open = next;
+      if (el.cargarCard) {
+        el.cargarCard.style.display = next ? "" : "none";
+      }
       if (next) {
         try {
           el.registroBox.scrollIntoView({ behavior: "smooth", block: "start" });
