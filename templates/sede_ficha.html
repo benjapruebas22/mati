@@ -3679,32 +3679,101 @@
 
 
   .panel-tabs {
-
-
-
     padding: 12px 14px;
-
-
-
-    display: flex;
-
-
-
-    gap: 8px;
-
-
-
-    flex-wrap: wrap;
-
-
-
+    display: grid;
+    gap: 10px;
   }
 
-  .panel-tab-groups {
+  .panel-tab-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .panel-tab-row .ptab {
+    padding: 6px 10px;
+  }
+
+  .panel-secondary-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    width: fit-content;
+  }
+
+  .panel-control {
+    position: relative;
+  }
+  .panel-control summary {
+    list-style: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .panel-control summary::-webkit-details-marker { display: none; }
+  .panel-control summary::after {
+    content: "▾";
+    font-size: 10px;
+    opacity: 0.7;
+    margin-left: 2px;
+  }
+  .panel-control[open] summary::after { content: "▴"; }
+
+  .panel-control-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    z-index: 20;
+    min-width: 240px;
+    max-width: min(360px, 92vw);
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.14);
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, max-content));
-    gap: 8px;
-    width: 100%;
+    gap: 6px;
+  }
+
+  .panel-control-title {
+    font-size: 10px;
+    font-weight: 900;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 0 0 4px;
+  }
+
+  .panel-control-links {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .panel-control-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    text-decoration: none;
+    color: #0f172a;
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .panel-control-link:hover {
+    background: #eef2ff;
+    border-color: #c7d2fe;
+  }
+  .panel-control-link .muted {
+    font-size: 11px;
+    font-weight: 800;
+    color: #64748b;
+    white-space: nowrap;
   }
 
   .panel-tab-group {
@@ -7369,40 +7438,56 @@
 
 
       <div class="panel-tabs">
-        <a class="btn {% if tab=='resumen' %}active{% endif %}"
-          href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='resumen', view=view) }}">Resumen sedes</a>
+        <div class="panel-tab-row" aria-label="Panel operativo">
+          <a class="ptab tone-aires {% if tab=='aires' %}active{% endif %}"
+            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='aires', view=view) }}">Aires</a>
+          <a class="ptab tone-lum {% if tab=='luminarias' %}active{% endif %}"
+            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='luminarias', view=view) }}">Luminarias</a>
+          <a class="ptab tone-mata {% if tab=='matafuegos' %}active{% endif %}"
+            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='matafuegos', view=view) }}">Matafuegos</a>
+          <a class="ptab tone-eva {% if tab=='evacuacion' %}active{% endif %}"
+            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='evacuacion', view=view) }}">Evacuación</a>
+          <a class="ptab tone-dep {% if tab=='depositos' %}active{% endif %}"
+            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='depositos', view=view) }}">Depósitos</a>
+          <a class="ptab tone-mob {% if tab=='mobiliario' %}active{% endif %}"
+            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='mobiliario', view=view) }}">Mobiliario</a>
+          <a class="ptab tone-personal {% if tab=='personal' %}active{% endif %}"
+            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='personal', view=view) }}">Personal</a>
 
-        <div class="panel-tab-groups">
-          <div class="panel-tab-group">
-            <span class="panel-tab-group-title">Infraestructura</span>
-            <a class="ptab tone-aires {% if tab=='aires' %}active{% endif %}"
-              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='aires', view=view) }}">Aires</a>
-            <a class="ptab tone-lum {% if tab=='luminarias' %}active{% endif %}"
-              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='luminarias', view=view) }}">Luminarias</a>
-          </div>
+          <details class="panel-control">
+            <summary class="ptab tone-personal">Relevamientos / Control</summary>
+            <div class="panel-control-menu">
+              <div class="panel-control-title">Relevamientos</div>
+              <div class="panel-control-links">
+                <a class="panel-control-link" href="{{ url_for('auditoria_mobiliario') }}">
+                  <span>Mobiliario</span><span class="muted">Relevar</span>
+                </a>
+                <a class="panel-control-link" href="{{ url_for('auditoria_aires') }}">
+                  <span>Aires</span><span class="muted">Relevar</span>
+                </a>
+                <a class="panel-control-link" href="{{ url_for('auditoria_luminarias') }}">
+                  <span>Luminarias</span><span class="muted">Relevar</span>
+                </a>
+                <a class="panel-control-link" href="{{ url_for('relevamientos_comparativa', tipo='mobiliario') }}">
+                  <span>Comparativa</span><span class="muted">Cruzar datos</span>
+                </a>
+              </div>
 
-          <div class="panel-tab-group">
-            <span class="panel-tab-group-title">Seguridad</span>
-            <a class="ptab tone-mata {% if tab=='matafuegos' %}active{% endif %}"
-              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='matafuegos', view=view) }}">Matafuegos</a>
-            <a class="ptab tone-eva {% if tab=='evacuacion' %}active{% endif %}"
-              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='evacuacion', view=view) }}">Evacuacion</a>
-          </div>
-
-          <div class="panel-tab-group">
-            <span class="panel-tab-group-title">Logistica</span>
-            <a class="ptab tone-dep {% if tab=='depositos' %}active{% endif %}"
-              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='depositos', view=view) }}">Depositos</a>
-            <a class="ptab tone-mob {% if tab=='mobiliario' %}active{% endif %}"
-              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='mobiliario', view=view) }}">Mobiliario</a>
-          </div>
-
-          <div class="panel-tab-group">
-            <span class="panel-tab-group-title">Equipo</span>
-            <a class="ptab tone-personal {% if tab=='personal' %}active{% endif %}"
-              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='personal', view=view) }}">Personal</a>
-          </div>
+              <div class="panel-control-title" style="margin-top:6px;">Inventario</div>
+              <div class="panel-control-links">
+                <a class="panel-control-link" href="{{ url_for('sede_inventario', codigo=sede.codigo) }}">
+                  <span>Inventario (sede)</span><span class="muted">Oficial</span>
+                </a>
+                <a class="panel-control-link" href="{{ url_for('checklist_inventario') }}">
+                  <span>Control diario</span><span class="muted">Checklist</span>
+                </a>
+              </div>
+            </div>
+          </details>
         </div>
+
+        <a class="btn panel-secondary-link {% if tab=='resumen' %}active{% endif %}"
+          href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='resumen', view=view) }}">Resumen sedes</a>
       </div>
 
 <div class="panel-body{% if view != 'resumen' %} scrollable{% endif %}">
