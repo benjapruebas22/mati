@@ -5104,9 +5104,9 @@ def _cl_is_supervisor() -> bool:
 def _cl_estado_label(estado: str) -> str:
     est = (estado or "").strip().upper()
     if est == CL_EST_CERRADO_SUPERVISOR:
-        return "Cerrado por supervisor"
+        return "Cerrado / Revisado por Intendencia"
     if est == CL_EST_CERRADO_AGENTE:
-        return "Pendiente revisión supervisor"
+        return "Enviado / Pendiente revisión Intendencia"
     return "En carga"
 
 
