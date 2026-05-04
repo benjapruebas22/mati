@@ -3125,6 +3125,22 @@
     grid-column: 1 / -1;
   }
 
+  .plan-left {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .plan-subtitle {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
 
 
 
@@ -7625,7 +7641,7 @@
 
 
 
-  <div class="grid{% if tab=='planos' %} grid-planos{% else %} grid-no-planos{% endif %}">
+  <div class="grid">
 
     <!-- PANEL BOTONES (ARRIBA DEL PLANO) -->
 
@@ -7696,14 +7712,13 @@
 
 
 
-    {% if tab == 'planos' %}
     <div class="card" id="planos">
 
 
 
       <div class="plan-head">
 
-
+        <div class="plan-left">
 
         <div class="tabs">
 
@@ -7711,9 +7726,24 @@
 
           {% if pisos and pisos|length > 0 %}
 
+          {% set _piso_names = {"PB":"Planta Baja","P1":"Piso 1","P2":"Piso 2"} %}
+          {% set _piso_ranges = {
+            "S01": {"PB":"D01-D10","P1":"D11-D20","P2":"D21-D31"},
+            "S11": {"PB":"D01-D25","P1":"D26-D47","P2":"D48-D61"},
+            "S20": {"PB":"D01-D10","P1":"D11-D17"},
+            "S22": {"PB":"D01-D10","P1":"D11-D20","P2":"D21-D31"}
+          } %}
+          {% set _piso_current_name = _piso_names.get(piso, "") %}
+          {% set _piso_current_range = (_piso_ranges.get(sede.codigo, {})).get(piso, "") %}
+          {% set _piso_current_desc = (_piso_current_name ~ (" · " ~ _piso_current_range if _piso_current_range else "") if _piso_current_name else (_piso_current_range if _piso_current_range else "")) %}
+
 
 
           {% for p in pisos %}
+
+          {% set _pname = _piso_names.get(p, "") %}
+          {% set _prange = (_piso_ranges.get(sede.codigo, {})).get(p, "") %}
+          {% set _ptitle = (_pname ~ (" · " ~ _prange if _prange else "") if _pname else (_prange if _prange else p)) %}
 
 
 
@@ -7721,7 +7751,8 @@
 
 
 
-            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=p, tab=tab, view=view) }}">{{ p }}</a>
+            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=p, tab=tab, view=view) }}"
+            title="{{ _ptitle }}">{{ p }}</a>
 
 
 
@@ -7748,6 +7779,11 @@
 
 
 
+
+        {% if _piso_current_desc %}
+        <div class="plan-subtitle">{{ piso }} · {{ _piso_current_desc }}</div>
+        {% endif %}
+        </div>
 
         <div class="plan-actions">
 
@@ -7812,8 +7848,6 @@
           <img src="{{ plano_url }}" alt="Plano {{ sede.codigo }} {{ piso }}">
         </div>
 
-
-
       </div>
 
 
@@ -7869,7 +7903,6 @@
 
 
     </div>
-    {% endif %}
 
 
 
@@ -7881,7 +7914,6 @@
 
 
 
-    {% if tab != 'planos' %}
     <div class="card panel-card">
 
 
@@ -9505,8 +9537,6 @@
 
 
 
-{% endif %}
-
 <!-- Modal: Checklist Control Limpieza -->
 <div id="cllModal" class="cll-modal" aria-hidden="true">
   <div class="cll-backdrop" data-cll-close="1"></div>
@@ -9645,14 +9675,17 @@
     }
 
     async function readJson(res, fallbackMsg) {
-      const ct = String((res && res.headers && res.headers.get && res.headers.get("content-type")) || "");
-      const isJson = ct.toLowerCase().indexOf("application/json") >= 0;
-      if (isJson) {
-        return await res.json();
+      if (res && res.redirected) {
+        try { await res.text(); } catch (_e) { /* noop */ }
+        return { ok: false, error: "Sesión vencida. Recargá la página (F5) y volvé a ingresar." };
       }
-      // Consumimos el body para evitar errores y mostramos mensaje amigable
-      try { await res.text(); } catch (_e) { /* noop */ }
-      return { ok: false, error: String(fallbackMsg || "Error del servidor. Recargá la página e intentá de nuevo.") };
+      // Intentamos JSON aunque el content-type no venga perfecto (evita errores tipo '<!doctype' en UI)
+      try {
+        return await res.json();
+      } catch (_e) {
+        try { await res.text(); } catch (_e2) { /* noop */ }
+        return { ok: false, error: String(fallbackMsg || "Error del servidor. Recargá la página e intentá de nuevo.") };
+      }
     }
 
     function renderChat(items) {
