@@ -5197,6 +5197,7 @@ def _cl_fetch_cierre(con, sede_codigo: str, fecha_iso: str):
               COALESCE(informe_en,'') AS informe_en
             FROM sedes_control_limpieza_cierres
             WHERE sede_codigo = ? AND fecha = ?
+            ORDER BY id DESC
             LIMIT 1
             """,
             (sede, fecha),
@@ -5956,37 +5957,85 @@ def sede_control_limpieza_finalizar(codigo):
 
     was_closed_by_agent = (cierre_prev.get("estado") or "") == CL_EST_CERRADO_AGENTE
 
-    con.execute(
-        """
-        INSERT INTO sedes_control_limpieza_cierres
-          (sede_codigo, fecha, estado, enviado_por, enviado_username, enviado_en,
-           informe_agente, informe_usuario, informe_username, informe_en,
-           actualizado_en)
-        VALUES (?,?,?,?,?,datetime('now','localtime'),?,?,?,?,datetime('now','localtime'),datetime('now','localtime'))
-        ON CONFLICT(sede_codigo, fecha)
-        DO UPDATE SET
-          estado=excluded.estado,
-          enviado_por=excluded.enviado_por,
-          enviado_username=excluded.enviado_username,
-          enviado_en=excluded.enviado_en,
-          informe_agente=excluded.informe_agente,
-          informe_usuario=excluded.informe_usuario,
-          informe_username=excluded.informe_username,
-          informe_en=excluded.informe_en,
-          actualizado_en=datetime('now','localtime')
-        """,
-        (
-            codigo,
-            fecha_iso,
-            CL_EST_CERRADO_AGENTE,
-            usuario,
-            username,
-            informe,
-            (usuario if informe else ""),
-            (username if informe else ""),
-        ),
-    )
-    con.commit()
+    # Manual UPSERT (no depende de UNIQUE/ON CONFLICT en instalaciones viejas)
+    try:
+        row_id = con.execute(
+            """
+            SELECT id
+            FROM sedes_control_limpieza_cierres
+            WHERE sede_codigo = ? AND fecha = ?
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (codigo, fecha_iso),
+        ).fetchone()
+        cierre_id = None
+        if row_id:
+            try:
+                cierre_id = int(row_id["id"])
+            except Exception:
+                try:
+                    cierre_id = int(row_id[0])
+                except Exception:
+                    cierre_id = None
+
+        if cierre_id:
+            con.execute(
+                """
+                UPDATE sedes_control_limpieza_cierres
+                SET estado=?,
+                    enviado_por=?,
+                    enviado_username=?,
+                    enviado_en=datetime('now','localtime'),
+                    informe_agente=?,
+                    informe_usuario=?,
+                    informe_username=?,
+                    informe_en=CASE WHEN ? <> '' THEN datetime('now','localtime') ELSE COALESCE(informe_en,'') END,
+                    actualizado_en=datetime('now','localtime')
+                WHERE id=?
+                """,
+                (
+                    CL_EST_CERRADO_AGENTE,
+                    usuario,
+                    username,
+                    informe,
+                    (usuario if informe else ""),
+                    (username if informe else ""),
+                    informe,
+                    cierre_id,
+                ),
+            )
+        else:
+            con.execute(
+                """
+                INSERT INTO sedes_control_limpieza_cierres
+                  (sede_codigo, fecha, estado, enviado_por, enviado_username, enviado_en,
+                   informe_agente, informe_usuario, informe_username, informe_en,
+                   actualizado_en)
+                VALUES (?,?,?,?,?,datetime('now','localtime'),?,?,?,?,datetime('now','localtime'),datetime('now','localtime'))
+                """,
+                (
+                    codigo,
+                    fecha_iso,
+                    CL_EST_CERRADO_AGENTE,
+                    usuario,
+                    username,
+                    informe,
+                    (usuario if informe else ""),
+                    (username if informe else ""),
+                ),
+            )
+        con.commit()
+    except Exception:
+        try:
+            con.close()
+        except Exception:
+            pass
+        msg = "No se pudo finalizar el control. Revisá el log de error del servidor."
+        if is_form and next_url and next_url.startswith("/"):
+            flash(msg, "error")
+            return redirect(next_url)
+        return jsonify({"ok": False, "error": msg}), 500
 
     if not was_closed_by_agent:
         _cl_chat_add(con, codigo, fecha_iso, f"Control finalizado por agente: {usuario or username or '-'}", es_sistema=1)
