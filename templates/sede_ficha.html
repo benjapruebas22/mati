@@ -9935,13 +9935,14 @@
         finalizarBtn.disabled = !!disabled;
       }
 
-      // Regla operativa S12: si no hay pauta configurada para el día, no permitir finalizar
+      // Regla operativa S12: si no hay pauta configurada para el día, NO bloquear.
+      // Se informa como advertencia para no frenar el flujo (ej: sábados/domingos).
       if (String((DATA && DATA.sede && DATA.sede.codigo) ? DATA.sede.codigo : sedeCodigo).trim().toUpperCase() === "S12") {
         if (!s12HasTasks(String((DATA && DATA.dia_semana) ? DATA.dia_semana : ""))) {
-          setMsg("No se puede finalizar: no hay tareas configuradas para este día.", true);
-          setFinalizeDisabled(true);
+          setMsg("Advertencia: no hay tareas configuradas para este día (S12). Se puede finalizar igual.", false);
+          setFinalizeDisabled(false);
           updateProgressCounters();
-          return;
+          // Continuar con el resto de validaciones/avisos (QR/observaciones)
         }
       }
 

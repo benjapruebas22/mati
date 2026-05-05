@@ -5020,6 +5020,48 @@ def ensure_sedes_control_limpieza_cierres_table(con=None):
         )
         """
     )
+
+    # Backwards-compatible migrations:
+    # - Older installs may have the table without all columns and/or without UNIQUE(sede_codigo, fecha)
+    #   which breaks the UPSERT used in finalizar/cierre.
+    try:
+        cols = set()
+        for r in con.execute("PRAGMA table_info(sedes_control_limpieza_cierres)").fetchall() or []:
+            try:
+                cols.add((r["name"] or "").strip())
+            except Exception:
+                try:
+                    cols.add((r[1] or "").strip())
+                except Exception:
+                    pass
+        for name, ddl in [
+            ("estado", "TEXT"),
+            ("enviado_por", "TEXT"),
+            ("enviado_username", "TEXT"),
+            ("enviado_en", "TEXT"),
+            ("revisado_por", "TEXT"),
+            ("revisado_username", "TEXT"),
+            ("revisado_en", "TEXT"),
+            ("informe_agente", "TEXT"),
+            ("informe_usuario", "TEXT"),
+            ("informe_username", "TEXT"),
+            ("informe_en", "TEXT"),
+            ("actualizado_en", "TEXT"),
+        ]:
+            if name and name not in cols:
+                try:
+                    con.execute(f"ALTER TABLE sedes_control_limpieza_cierres ADD COLUMN {name} {ddl}")
+                except Exception:
+                    pass
+        # Ensure conflict target exists for UPSERT ON CONFLICT(sede_codigo, fecha)
+        con.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_sedes_control_limpieza_cierres_unique
+            ON sedes_control_limpieza_cierres (sede_codigo, fecha)
+            """
+        )
+    except Exception:
+        pass
     con.execute(
         """
         CREATE INDEX IF NOT EXISTS idx_sedes_control_limpieza_cierres_estado
@@ -5053,6 +5095,30 @@ def ensure_sedes_control_limpieza_chat_table(con=None):
         )
         """
     )
+
+    # Backwards-compatible migrations (older table may miss columns)
+    try:
+        cols = set()
+        for r in con.execute("PRAGMA table_info(sedes_control_limpieza_chat)").fetchall() or []:
+            try:
+                cols.add((r["name"] or "").strip())
+            except Exception:
+                try:
+                    cols.add((r[1] or "").strip())
+                except Exception:
+                    pass
+        for name, ddl in [
+            ("autor_username", "TEXT"),
+            ("es_sistema", "INTEGER DEFAULT 0"),
+            ("creado_en", "TEXT"),
+        ]:
+            if name and name not in cols:
+                try:
+                    con.execute(f"ALTER TABLE sedes_control_limpieza_chat ADD COLUMN {name} {ddl}")
+                except Exception:
+                    pass
+    except Exception:
+        pass
     con.execute(
         """
         CREATE INDEX IF NOT EXISTS idx_sedes_control_limpieza_chat_key
