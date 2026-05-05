@@ -6012,7 +6012,11 @@ def sede_control_limpieza_finalizar(codigo):
                   (sede_codigo, fecha, estado, enviado_por, enviado_username, enviado_en,
                    informe_agente, informe_usuario, informe_username, informe_en,
                    actualizado_en)
-                VALUES (?,?,?,?,?,datetime('now','localtime'),?,?,?,?,datetime('now','localtime'),datetime('now','localtime'))
+                VALUES (
+                  ?,?,?,?,?,datetime('now','localtime'),
+                  ?,?,?,CASE WHEN ? <> '' THEN datetime('now','localtime') ELSE '' END,
+                  datetime('now','localtime')
+                )
                 """,
                 (
                     codigo,
@@ -6023,6 +6027,7 @@ def sede_control_limpieza_finalizar(codigo):
                     informe,
                     (usuario if informe else ""),
                     (username if informe else ""),
+                    informe,
                 ),
             )
         con.commit()
