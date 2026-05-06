@@ -4454,6 +4454,22 @@
     cursor: pointer;
     user-select: none;
   }
+  /* Estado del chip (Dxx) segÃºn resultado del depÃ³sito (UI) */
+  .cll-chip.none{
+    border-color: #d7e2f3;
+    background: #f8fafc;
+    color: #334155;
+  }
+  .cll-chip.ok{
+    border-color: #a7f3d0;
+    background: #ecfdf3;
+    color: #047857;
+  }
+  .cll-chip.obs{
+    border-color: #fed7aa;
+    background: #fff7ed;
+    color: #9a3412;
+  }
   .cll-chip.done {
     border-color: #a7f3d0;
     background: #ecfdf3;
@@ -4497,6 +4513,10 @@
     padding: 10px 10px 12px;
     box-shadow: 0 10px 18px rgba(15, 23, 42, .04);
   }
+  /* Estado de tarjeta segÃºn resultado (UI) */
+  .cll-card.none { border-color: #dbe5f4; background: #fff; }
+  .cll-card.ok { border-color: #bbf7d0; background: #f0fdf4; }
+  .cll-card.obs { border-color: #fed7aa; background: #fff7ed; }
   .cll-card.done {
     border-color: #bbf7d0;
     background: #f0fdf4;
@@ -4519,6 +4539,29 @@
     font-size: 13px;
     font-weight: 900;
     color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    line-height: 1.15;
+  }
+  .cll-dep-code{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid #bfdbfe;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-weight: 950;
+    font-size: 13px;
+    letter-spacing: .2px;
+  }
+  .cll-dep-desc{
+    font-weight: 950;
+    font-size: 14px;
+    color:#0f172a;
   }
   .cll-badges {
     display: flex;
@@ -4552,6 +4595,22 @@
     background: #eef2ff;
     color: #3730a3;
   }
+  .cll-state-pill{
+    border: 1px solid #d7e2f3;
+    background: #f8fbff;
+    color: #28476f;
+    border-radius: 999px;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 950;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .cll-state-pill.ok{ border-color:#a7f3d0; background:#ecfdf3; color:#047857; }
+  .cll-state-pill.obs{ border-color:#fed7aa; background:#fff7ed; color:#9a3412; }
+  .cll-state-pill.none{ border-color:#d7e2f3; background:#f8fafc; color:#334155; }
   .cll-checklist {
     margin-top: 8px;
     display: flex;
@@ -4606,10 +4665,36 @@
   }
   .cll-obs.hidden { display: none; }
 
+  /* Bloque inferior (informe + chat): colapsable para ganar espacio en mÃ³vil */
   .cll-extra{
-    padding: 10px 12px 12px 12px;
     border-top: 1px dashed #e2e8f0;
     background: #fff;
+    padding: 0;
+  }
+  .cll-extra-summary{
+    list-style: none;
+    cursor: pointer;
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    font-size: 12px;
+    font-weight: 950;
+    color: #1f3c68;
+    background: linear-gradient(180deg, #ffffff 0%, #f3f7ff 100%);
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .cll-extra-summary::-webkit-details-marker{ display:none; }
+  .cll-extra-summary::marker{ content:""; }
+  .cll-extra-summary .hint{
+    font-size: 11px;
+    font-weight: 900;
+    color:#6b7280;
+    white-space: nowrap;
+  }
+  .cll-extra-body{
+    padding: 10px 12px 12px 12px;
     display: grid;
     gap: 8px;
   }
@@ -9582,26 +9667,32 @@
     <div class="cll-body" id="cllBody">
       <div class="cll-loading">Cargando...</div>
     </div>
-    <div class="cll-extra" id="cllExtra">
-      <div class="cll-extra-title">📝 Informe general del agente</div>
-      <textarea class="cll-informe" id="cllInforme" placeholder="Informe general (opcional). Ej: faltó limpieza en baños, cocina observada, etc."></textarea>
-      <div class="cll-extra-actions">
-        <a class="cll-extra-link" id="cllDetalleLink" href="#" target="_blank" rel="noopener">Abrir detalle</a>
+    <details class="cll-extra" id="cllExtra">
+      <summary class="cll-extra-summary">
+        <span>📝 Informe + conversación</span>
+        <span class="hint">tocar para abrir</span>
+      </summary>
+      <div class="cll-extra-body">
+        <div class="cll-extra-title">📝 Informe general del agente</div>
+        <textarea class="cll-informe" id="cllInforme" placeholder="Informe general (opcional). Ej: faltó limpieza en baños, cocina observada, etc."></textarea>
+        <div class="cll-extra-actions">
+          <a class="cll-extra-link" id="cllDetalleLink" href="#" target="_blank" rel="noopener">Abrir detalle</a>
+        </div>
+        <details class="cll-chat-disclosure" id="cllChatDisclosure">
+          <summary class="cll-chat-summary">
+            <span>💬 Conversación interna</span>
+            <span class="hint">tocar para abrir</span>
+          </summary>
+          <div class="cll-chat-box" id="cllChatList">
+            <div class="cll-loading">Cargando chat...</div>
+          </div>
+          <div class="cll-chat-form">
+            <textarea class="cll-chat-text" id="cllChatText" placeholder="Escribir mensaje..."></textarea>
+            <button type="button" class="cll-chat-send" id="cllChatSend">Enviar</button>
+          </div>
+        </details>
       </div>
-      <details class="cll-chat-disclosure" id="cllChatDisclosure">
-        <summary class="cll-chat-summary">
-          <span>💬 Conversación interna</span>
-          <span class="hint">tocar para abrir</span>
-        </summary>
-        <div class="cll-chat-box" id="cllChatList">
-          <div class="cll-loading">Cargando chat...</div>
-        </div>
-        <div class="cll-chat-form">
-          <textarea class="cll-chat-text" id="cllChatText" placeholder="Escribir mensaje..."></textarea>
-          <button type="button" class="cll-chat-send" id="cllChatSend">Enviar</button>
-        </div>
-      </details>
-    </div>
+    </details>
     <div class="cll-footer">
       <div class="cll-msg" id="cllMsg"></div>
       <button type="button" class="cll-save cll-finalizar" id="cllFinalizar">Finalizar control</button>
@@ -9837,13 +9928,25 @@
       const important = it ? it.important : "Sin pauta particular configurada para este día.";
 
       const tasksHtml = tasks.length
-        ? ("<ul>" + tasks.map((t) => "<li>" + escapeHtml(t) + "</li>").join("") + "</ul>")
+        ? ('<div class="cll-checklist">' + tasks.map((t) => '<span class="cll-item">' + escapeHtml(t) + "</span>").join("") + "</div>")
         : '<div style="font-weight:900;color:#92400e;">(Sin tareas configuradas)</div>';
 
       return (
-        '<div class="cll-cd-title">📅 CONTROL DEL DÍA – ' + escapeHtml(title) + "</div>" +
-        '<div class="cll-cd-section">🔴 Tareas a verificar:' + tasksHtml + "</div>" +
-        '<div class="cll-cd-important">⚠️ IMPORTANTE: <span>' + escapeHtml(important) + "</span></div>"
+        '<div class="cll-cd-title">📋 Control del día — ' + escapeHtml(title) + "</div>" +
+        '<div class="cll-cd-section">Tareas a verificar:' + tasksHtml + "</div>" +
+        '<div class="cll-cd-important">⚠️ Importante: <span>' + escapeHtml(important) + "</span></div>"
+      );
+    }
+
+    function controlDiaGenericHtml(diaSemana, checklistItems) {
+      const title = String(diaSemana || "").trim().toUpperCase();
+      const items = Array.isArray(checklistItems) ? checklistItems : [];
+      const chips = items.length
+        ? ('<div class="cll-checklist">' + items.map((t) => '<span class="cll-item">' + escapeHtml(t) + "</span>").join("") + "</div>")
+        : '<div style="font-weight:900;color:#92400e;">(Sin tareas configuradas)</div>';
+      return (
+        '<div class="cll-cd-title">📋 Control del día — ' + escapeHtml(title) + "</div>" +
+        '<div class="cll-cd-section">Tareas a verificar:' + chips + "</div>"
       );
     }
 
@@ -9854,12 +9957,12 @@
 
     function chipHtml(dep) {
       const code = String(dep.codigo || "").toUpperCase();
-      const done = !!dep.qr_terminado;
       const ctrl = dep.control || {};
       const res = String(ctrl.resultado || "").toUpperCase();
-      const missing = done && !res;
-      const cls = missing ? "missing" : (done ? "done" : "pending");
-      const icon = missing ? "!" : (done ? "✔" : "❌");
+      let cls = "none";
+      let icon = "•";
+      if (res === "APROBADO") { cls = "ok"; icon = "👍"; }
+      else if (res === "OBSERVADO") { cls = "obs"; icon = "👎"; }
       return (
         '<button type="button" class="cll-chip ' + cls + '" data-cll-act="jump" data-dep="' + escapeHtml(code) + '">' +
           '<span aria-hidden="true">' + icon + "</span>" +
@@ -9871,24 +9974,15 @@
     function cardHtml(dep, checklist) {
       const code = String(dep.codigo || "").toUpperCase();
       const desc = String(dep.descripcion || "").trim();
-      const done = !!dep.qr_terminado;
       const ctrl = dep.control || {};
       const res = String(ctrl.resultado || "").toUpperCase();
       const obs = String(ctrl.observacion || "");
-      const missing = done && !res;
-      const cls = (missing ? "missing " : "") + (done ? "done" : "pending");
-
-      const badgeQr = done
-        ? '<span class="cll-badge ok">✔ terminado</span>'
-        : '<span class="cll-badge warn">❌ no registrado</span>';
-
-      let badgeSaved = "";
-      if (res === "APROBADO") badgeSaved = '<span class="cll-badge saved">Guardado 👍</span>';
-      else if (res === "OBSERVADO") badgeSaved = '<span class="cll-badge saved">Guardado 👎</span>';
-
-      const checklistHtml = (Array.isArray(checklist) ? checklist : []).map((it) => (
-        '<span class="cll-item">' + escapeHtml(it) + "</span>"
-      )).join("");
+      let stateCls = "none";
+      let stateText = "No registrado";
+      let stateIcon = "•";
+      if (res === "APROBADO") { stateCls = "ok"; stateText = "Aprobado"; stateIcon = "👍"; }
+      else if (res === "OBSERVADO") { stateCls = "obs"; stateText = "Observado"; stateIcon = "👎"; }
+      const statePill = '<span class="cll-state-pill ' + stateCls + '"><span aria-hidden="true">' + stateIcon + "</span>" + escapeHtml(stateText) + "</span>";
 
       const selOk = res === "APROBADO" ? " selected" : "";
       const selObs = res === "OBSERVADO" ? " selected" : "";
@@ -9896,12 +9990,14 @@
       const obsWarn = (res === "OBSERVADO" && !String(obs || "").trim()) ? " warn" : "";
 
       return (
-        '<div class="cll-card ' + cls + '" id="cll-card-' + escapeHtml(code) + '" data-dep="' + escapeHtml(code) + '">' +
+        '<div class="cll-card ' + stateCls + '" id="cll-card-' + escapeHtml(code) + '" data-dep="' + escapeHtml(code) + '">' +
           '<div class="cll-card-head">' +
-            '<div class="cll-card-title">' + escapeHtml(code) + (desc ? (" – " + escapeHtml(desc)) : "") + "</div>" +
-            '<div class="cll-badges">' + badgeQr + badgeSaved + "</div>" +
+            '<div class="cll-card-title">' +
+              '<span class="cll-dep-code">' + escapeHtml(code) + "</span>" +
+              '<span class="cll-dep-desc">' + (desc ? escapeHtml(desc) : "") + "</span>" +
+            "</div>" +
+            '<div class="cll-badges">' + statePill + "</div>" +
           "</div>" +
-          '<div class="cll-checklist">' + checklistHtml + "</div>" +
           '<div class="cll-actions">' +
             '<button type="button" class="cll-btn good' + selOk + '" data-cll-act="set" data-dep="' + escapeHtml(code) + '" data-res="APROBADO">👍 Aprobado</button>' +
             '<button type="button" class="cll-btn bad' + selObs + '" data-cll-act="set" data-dep="' + escapeHtml(code) + '" data-res="OBSERVADO">👎 Observado</button>' +
@@ -9912,20 +10008,6 @@
     }
 
     function updateCounters() {
-      const req = Array.from(REQUIRED);
-      let faltan = 0;
-      let faltanList = [];
-      let faltanObs = 0;
-      req.forEach((dep) => {
-        const c = CONTROLES[dep] || {};
-        const res = String(c.resultado || "").toUpperCase();
-        if (!res) {
-          faltan += 1;
-          faltanList.push(dep);
-        }
-        if (res === "OBSERVADO" && !String(c.observacion || "").trim()) faltanObs += 1;
-      });
-
       function setFinalizeDisabled(disabled) {
         // Respetar bloqueos por estado (cerrado/solo lectura)
         if (LOCKED || finalizarBtn.style.display === "none") {
@@ -9935,40 +10017,41 @@
         finalizarBtn.disabled = !!disabled;
       }
 
-      // Regla operativa S12: si no hay pauta configurada para el día, NO bloquear.
-      // Se informa como advertencia para no frenar el flujo (ej: sábados/domingos).
-      if (String((DATA && DATA.sede && DATA.sede.codigo) ? DATA.sede.codigo : sedeCodigo).trim().toUpperCase() === "S12") {
-        if (!s12HasTasks(String((DATA && DATA.dia_semana) ? DATA.dia_semana : ""))) {
-          setMsg("Advertencia: no hay tareas configuradas para este día (S12). Se puede finalizar igual.", false);
-          setFinalizeDisabled(false);
-          updateProgressCounters();
-          // Continuar con el resto de validaciones/avisos (QR/observaciones)
-        }
-      }
+      const deps = Array.isArray(DATA && DATA.depositos) ? DATA.depositos : [];
+      let total = deps.length;
+      let ok = 0;
+      let obs = 0;
+      let none = 0;
+      let obsSinObs = 0;
+      const nonePreview = [];
 
-      // En esta etapa MiDefensa (QR) NO es requisito obligatorio: no bloquear finalizar.
-      if (!req.length) {
-        setMsg("MiDefensa (QR) aun no implementado: podes finalizar control sin verificacion QR.", false);
-        setFinalizeDisabled(false);
-        updateProgressCounters();
-        return;
-      }
-      if (faltan) {
-        const preview = faltanList.slice(0, 8).join(", ");
-        const more = (faltanList.length > 8) ? "..." : "";
-        setMsg("Advertencia: depositos terminados (QR) sin evaluar: " + preview + more + ". Se puede finalizar igual.", false);
-        setFinalizeDisabled(false);
-        updateProgressCounters();
-        return;
-      }
-      if (faltanObs) {
-        let txt = "Obligatorios (QR): " + req.length + " · OK · Observación sugerida: " + faltanObs;
-        setMsg(txt, false);
-        setFinalizeDisabled(false);
-        updateProgressCounters();
-        return;
-      }
-      setMsg("Listo para guardar.", false);
+      deps.forEach((d) => {
+        const code = String((d && d.codigo) ? d.codigo : "").toUpperCase();
+        const c = CONTROLES[code] || {};
+        const res = String(c.resultado || "").toUpperCase();
+        if (!res) {
+          none += 1;
+          if (nonePreview.length < 6 && code) nonePreview.push(code);
+          return;
+        }
+        if (res === "APROBADO") ok += 1;
+        else if (res === "OBSERVADO") {
+          obs += 1;
+          if (!String(c.observacion || "").trim()) obsSinObs += 1;
+        }
+      });
+
+      const isS12 = String((DATA && DATA.sede && DATA.sede.codigo) ? DATA.sede.codigo : sedeCodigo).trim().toUpperCase() === "S12";
+      const diaSem = String((DATA && DATA.dia_semana) ? DATA.dia_semana : "");
+      const warnS12 = (isS12 && !s12HasTasks(diaSem))
+        ? "Advertencia: no hay tareas configuradas para este día (S12). Se puede finalizar igual. "
+        : "";
+
+      let msg = "Sin registrar: " + none + " · Aprobados: " + ok + " · Observados: " + obs;
+      if (nonePreview.length) msg += " (Ej: " + nonePreview.join(", ") + (none > nonePreview.length ? "…" : "") + ")";
+      if (obsSinObs) msg += " · Observados sin observación: " + obsSinObs;
+
+      setMsg(warnS12 + msg, false);
       setFinalizeDisabled(false);
       updateProgressCounters();
     }
@@ -9998,16 +10081,14 @@
       finalizarBtn.disabled = LOCKED || estC !== "EN_CARGA";
       saveBtn.disabled = LOCKED;
 
-      if (sedeCod === "S12") {
-        controlEl.classList.remove("hidden");
-        controlEl.innerHTML = controlDiaS12Html(dia);
-      } else {
-        controlEl.classList.add("hidden");
-        controlEl.innerHTML = "";
-      }
-
       const deps = Array.isArray(DATA.depositos) ? DATA.depositos : [];
       const checklist = Array.isArray(DATA.checklist) ? DATA.checklist : [];
+
+      // Bloque superior: Control del dÃ­a (compacto y visible)
+      controlEl.classList.remove("hidden");
+      controlEl.innerHTML = (sedeCod === "S12")
+        ? controlDiaS12Html(dia)
+        : controlDiaGenericHtml(dia, checklist);
 
       CONTROLES = {};
       REQUIRED = new Set();
@@ -10074,35 +10155,33 @@
       if (ta) ta.classList.toggle("hidden", CONTROLES[code].resultado !== "OBSERVADO");
       if (ta) ta.classList.toggle("warn", (CONTROLES[code].resultado === "OBSERVADO" && !String(CONTROLES[code].observacion || "").trim()));
 
-      const missing = REQUIRED.has(code) && !CONTROLES[code].resultado;
-      card.classList.toggle("missing", missing);
-
       const chip = chipsEl.querySelector('[data-cll-act="jump"][data-dep="' + code + '"]');
+      const resU = String(CONTROLES[code].resultado || "").toUpperCase();
+      const stateCls = (resU === "APROBADO") ? "ok" : ((resU === "OBSERVADO") ? "obs" : "none");
+
+      // Actualizar colores de tarjeta + pill de estado
+      card.classList.remove("ok", "obs", "none");
+      card.classList.add(stateCls);
+      const pill = card.querySelector(".cll-state-pill");
+      if (pill) {
+        pill.classList.remove("ok", "obs", "none");
+        pill.classList.add(stateCls);
+        const icon = (stateCls === "ok") ? "👍" : ((stateCls === "obs") ? "👎" : "•");
+        const txt = (stateCls === "ok") ? "Aprobado" : ((stateCls === "obs") ? "Observado" : "No registrado");
+        pill.innerHTML = '<span aria-hidden="true">' + icon + "</span>" + escapeHtml(txt);
+      }
+
       if (chip) {
-        chip.classList.toggle("missing", missing);
-        chip.classList.toggle("done", !missing && REQUIRED.has(code));
-        chip.classList.toggle("pending", !missing && !REQUIRED.has(code));
+        chip.classList.remove("ok", "obs", "none");
+        chip.classList.add(stateCls);
+        const iconEl = chip.querySelector("span");
+        if (iconEl) iconEl.textContent = (stateCls === "ok") ? "👍" : ((stateCls === "obs") ? "👎" : "•");
       }
 
       updateCounters();
     }
 
     function validateBeforeSave() {
-      const faltan = [];
-      Array.from(REQUIRED).forEach((dep) => {
-        const c = CONTROLES[dep] || {};
-        const res = String(c.resultado || "").toUpperCase();
-        if (!res) faltan.push(dep);
-      });
-      if (faltan.length) {
-        // En esta etapa MiDefensa (QR) NO es requisito obligatorio: solo advertir.
-        setMsg("Advertencia: depositos terminados (QR) sin evaluar: " + faltan.join(", ") + ".", false);
-        faltan.forEach((dep) => {
-          const card = document.getElementById("cll-card-" + dep);
-          if (card) card.classList.add("missing");
-        });
-      }
-
       const faltanObs = [];
       Object.keys(CONTROLES).forEach((dep) => {
         const c = CONTROLES[dep] || {};
@@ -10149,7 +10228,6 @@
         const data = await readJson(res, "No se pudo guardar. Recargá la página e intentá de nuevo.");
         if (!res.ok || !data || !data.ok) throw new Error((data && data.error) ? data.error : "No se pudo guardar");
         let msg = "Guardado (" + String(data.saved || payload.controles.length) + ").";
-        if (data && data.qr_warning) msg += " " + String(data.qr_warning);
         setMsg(msg, false);
         if (!noReload) await loadData();
         return true;
@@ -10188,7 +10266,6 @@
         const data = await readJson(res, "No se pudo finalizar. Recargá la página e intentá de nuevo.");
         if (!res.ok || !data || !data.ok) throw new Error((data && data.error) ? data.error : "No se pudo finalizar");
         let msg = "Control finalizado correctamente. Queda guardado como control oficial del dia y pendiente de revision de Intendencia.";
-        if (data && data.qr_warning) msg += " " + String(data.qr_warning);
         setMsg(msg, false);
         await loadData();
       } catch (e) {
