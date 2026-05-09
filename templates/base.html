@@ -101,17 +101,14 @@
     .brand:empty + .top-sep { display: none; }
 
 
-    /* NAV: no agranda topbar. Si no entra â scroll horizontal */
+    /* NAV: simple y con dropdowns visibles */
     .main-nav {
       display: flex;
       align-items: center;
       gap: 6px;
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      overflow-y: hidden;
-      white-space: nowrap;
-      scrollbar-width: thin;
-      -webkit-overflow-scrolling: touch;
+      flex-wrap: wrap;
+      overflow: visible;
+      white-space: normal;
     }
 
     .nav-group {

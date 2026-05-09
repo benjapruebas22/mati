@@ -260,15 +260,15 @@
   .ops-kpi-row {
     margin-top: 8px;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
   }
   .ops-kpi-card {
     border: 1px solid var(--ctl-line);
-    border-radius: 13px;
-    padding: 9px 11px;
-    background: linear-gradient(180deg, #ffffff 0%, #f9fcff 100%);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+    border-radius: 12px;
+    padding: 8px 10px;
+    background: #ffffff;
+    box-shadow: none;
     min-width: 0;
   }
   .ops-kpi-card.ops-kpi-link {
@@ -301,19 +301,20 @@
     min-width: 0;
   }
   .ops-kpi-icon {
-    width: 30px;
-    height: 30px;
-    border-radius: 11px;
+    width: 26px;
+    height: 26px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 17px;
+    font-size: 15px;
     border: 1px solid var(--ctl-line);
     background: #f8fafc;
+    color: #1d4ed8;
   }
   .ops-kpi-title {
     font-weight: 900;
-    font-size: 14px;
+    font-size: 13px;
     color: #1c3453;
     white-space: nowrap;
     overflow: hidden;
@@ -324,7 +325,7 @@
     padding: 3px 8px;
     border-radius: 999px;
     border: 1px solid var(--ctl-line);
-    background: #f8fafc;
+    background: #ffffff;
     color: #355a89;
     font-weight: 800;
     white-space: nowrap;
@@ -343,30 +344,30 @@
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 10px;
-    border: 1px solid var(--ctl-line);
-    border-radius: 13px;
-    background: #fff;
+    padding: 7px 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #ffffff;
     color: #1c3453;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 900;
     text-decoration: none;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
-    transition: transform .10s ease, border-color .14s ease, box-shadow .14s ease;
+    box-shadow: none;
+    transition: background .14s ease, border-color .14s ease, color .14s ease;
   }
   .daily-action:hover{
-    transform: translateY(-1px);
-    box-shadow: 0 10px 20px rgba(23, 53, 92, 0.06);
+    background: #f5f9ff;
+    border-color: #bfdbfe;
   }
   .daily-action .icon{
-    width: 28px;
-    height: 28px;
-    border-radius: 11px;
+    width: 24px;
+    height: 24px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
-    border: 1px solid var(--ctl-line);
+    font-size: 14px;
+    border: 1px solid #e5e7eb;
     background: #f8fafc;
   }
   .daily-action .label{
@@ -383,41 +384,34 @@
     gap: 5px;
   }
   .ops-kpi-date-label {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 800;
     color: var(--ctl-soft);
     letter-spacing: 0.02em;
   }
   .ops-kpi-date {
     margin-top: 1px;
-    font-size: 18px;
+    font-size: 16px;
     line-height: 1.05;
     font-weight: 900;
     color: #1c3453;
   }
-  .ops-kpi-line {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    font-size: 12px;
-    color: var(--ctl-soft);
-  }
-  .ops-kpi-foot {
-    font-size: 12px;
-    color: #355a89;
-    opacity: 0.95;
-  }
+  .ops-kpi-line,
+  .ops-kpi-foot { display: none; }
   .ops-kpi-foot.muted { color: var(--ctl-soft); }
 
-  .ops-kpi-mata { border-color: #fed7aa; background: linear-gradient(180deg, #ffffff 0%, #fffaf3 100%); }
-  .ops-kpi-mata .ops-kpi-icon { border-color: #fed7aa; background: #fff7ed; color: #c2410c; }
-  .ops-kpi-desinf { border-color: #a7f3d0; background: linear-gradient(180deg, #ffffff 0%, #f3fef7 100%); }
-  .ops-kpi-desinf .ops-kpi-icon { border-color: #a7f3d0; background: #ecfdf5; color: #166534; }
-  .ops-kpi-veh { border-color: #bfdbfe; background: linear-gradient(180deg, #ffffff 0%, #f3f8ff 100%); }
-  .ops-kpi-veh .ops-kpi-icon { border-color: #bfdbfe; background: #eff6ff; color: #1d4ed8; }
-  .ops-kpi-obras { border-color: #ddd6fe; background: linear-gradient(180deg, #ffffff 0%, #faf5ff 100%); }
-  .ops-kpi-obras .ops-kpi-icon { border-color: #ddd6fe; background: #f5f3ff; color: #6d28d9; }
+  /* sin fondos por módulo: el estado se comunica con el badge */
+  .ops-kpi-mata,
+  .ops-kpi-desinf,
+  .ops-kpi-veh,
+  .ops-kpi-obras {
+    border-color: var(--ctl-line);
+    background: #ffffff;
+  }
 
+  @media (max-width: 1100px) {
+    .ops-kpi-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
   @media (max-width: 740px) {
     .ops-kpi-row { grid-template-columns: 1fr; }
   }
@@ -488,9 +482,9 @@
     font-weight: 800;
   }
   .ctl-sel.sel-estado-proceso {
-    background: #fff1f5;
-    border-color: #f2d5e1;
-    color: #9d4e68;
+    background: #fffbeb;
+    border-color: #fde68a;
+    color: #92400e;
     font-weight: 800;
   }
   .ctl-sel.sel-estado-resuelto {
@@ -529,7 +523,7 @@
     overflow-wrap: anywhere;
   }
   .tbl th {
-    background: linear-gradient(180deg, #f4f8ff 0%, #edf4ff 100%);
+    background: #f8fafc;
     color: #4b6384;
     font-weight: 900;
     position: sticky;
@@ -548,16 +542,13 @@
     box-shadow: inset 0 -1px 0 rgba(219, 230, 245, 0.8);
   }
   .nvd-split-block .tbl tbody tr:nth-child(even) {
-    background: rgba(244, 248, 255, 0.55);
-  }
-  .nvd-split-block.split-solic .tbl tbody tr:nth-child(even) {
-    background: rgba(255, 247, 235, 0.55);
+    background: #f8fafc;
   }
   .nvd-split-block.split-dia .tbl tbody tr:hover {
-    background: #edf4ff;
+    background: #f2f7ff;
   }
   .nvd-split-block.split-solic .tbl tbody tr:hover {
-    background: #fff2df;
+    background: #f2f7ff;
   }
   .nvd-split-block .tbl th:last-child,
   .nvd-split-block .tbl td:last-child {
@@ -609,9 +600,9 @@
     font-weight: 700;
     color: #6c84a4;
   }
-  .nvd-split-head.dia .title { color: #2f5ea4; }
-  .nvd-split-head.pend .title { color: #9a6a2f; }
-  .nvd-split-head.res .title { color: #2d7a51; }
+  .nvd-split-head.dia .title,
+  .nvd-split-head.pend .title,
+  .nvd-split-head.res .title { color: #1c3453; }
 
   .state-chip {
     display: inline-flex;
@@ -1123,10 +1114,10 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 6px 8px;
-    border: 1px solid #dce6f6;
-    border-radius: 14px;
-    background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
   }
   .gestion-rubro-group-label {
     font-size: 11px;
@@ -1142,24 +1133,7 @@
     gap: 8px;
     flex-wrap: wrap;
   }
-  .gestion-rubro-group.group-agenda {
-    border-color: #f1d6e8;
-    background: linear-gradient(180deg, #ffffff 0%, #fff5fb 100%);
-  }
-  .gestion-rubro-group.group-agenda .gestion-rubro-tab {
-    border-color: #f1d6e8;
-    background: linear-gradient(180deg, #ffffff 0%, #fff7fc 100%);
-    color: #7a3d66;
-  }
-  .gestion-rubro-group.group-agenda .gestion-rubro-tab.active {
-    border-color: #db2777;
-    box-shadow: 0 10px 18px rgba(219, 39, 119, 0.18);
-    color: #db2777;
-  }
-  .gestion-rubro-group.group-agenda .tab-badge {
-    border-color: #f1d6e8;
-    color: #7a3d66;
-  }
+  /* sin color por grupo: solo semáforo (rojo/amarillo/verde) y azul institucional */
   .gestion-rubro-tab {
     border: 1px solid #cfe0f6;
     background: linear-gradient(180deg, #ffffff 0%, #f6f9ff 100%);
@@ -1202,7 +1176,7 @@
   .gestion-filtros-box {
     border: 1px solid #dce6f6;
     border-radius: 12px;
-    background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+    background: #ffffff;
     padding: 6px 8px;
   }
   .gestion-filtros-box > summary {
@@ -1218,10 +1192,10 @@
     align-items: end;
   }
   .gestion-filtros-grid .agente-filtro-scroll {
-    border: 1px dashed #cfdbed;
+    border: 1px solid #e5e7eb;
     border-radius: 10px;
     padding: 6px;
-    background: #fbfdff;
+    background: #ffffff;
   }
 
   .gestion-panels .gestion-panel { display: none; }
@@ -1923,22 +1897,45 @@
   }
   .task-alert-list {
     margin: 0;
-    padding-left: 18px;
-    display: grid;
-    gap: 6px;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
     font-size: 12px;
-    color: #6e2f43;
+    color: #1f3554;
   }
-  .task-alert-list li {
-    border: 1px solid #f2ccd3;
-    background: #fff4f6;
-    border-radius: 8px;
-    padding: 6px 8px;
+  #taskAlertCard {
+    padding: 8px 10px;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 10px;
+    box-shadow: none;
+  }
+  #taskAlertCard::before { display: none; }
+  #taskAlertCard .card-head { flex: 0 0 auto; }
+  #taskAlertCard .card-head h2 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #5f7898;
+  }
+  .task-alert-list li {
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    border-radius: 999px;
+    padding: 5px 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
     gap: 8px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    white-space: nowrap;
   }
   .task-alert-main {
     font-weight: 800;
@@ -2263,7 +2260,7 @@
           </div>
           <div class="ops-kpi-head-actions">
             <span id="mataBadge" class="ops-badge na">-</span>
-            <a class="btn-mini ops-kpi-cta" href="{{ url_for('matafuegos_home') }}">Ver detalle</a>
+            <a class="btn-mini ops-kpi-cta" href="{{ url_for('matafuegos_home') }}">Abrir</a>
           </div>
         </div>
         <div class="ops-kpi-body">
@@ -2288,7 +2285,7 @@
           </div>
           <div class="ops-kpi-head-actions">
             <span id="desinfBadge" class="ops-badge na">-</span>
-            <a class="btn-mini ops-kpi-cta" href="{{ url_for('obras_home', panel='panel-desinf') }}">Ver detalle</a>
+            <a class="btn-mini ops-kpi-cta" href="{{ url_for('obras_home', panel='panel-desinf') }}">Abrir</a>
           </div>
         </div>
         <div class="ops-kpi-body">
@@ -2314,7 +2311,7 @@
           </div>
           <div class="ops-kpi-head-actions">
             <span id="vehOpsBadge" class="ops-badge na">-</span>
-            <a class="btn-mini ops-kpi-cta" href="{{ url_for('vehiculos_control_diario') }}">Ver detalle</a>
+            <a class="btn-mini ops-kpi-cta" href="{{ url_for('vehiculos_control_diario') }}">Abrir</a>
           </div>
         </div>
         <div class="ops-kpi-body">
@@ -2339,7 +2336,7 @@
           </div>
           <div class="ops-kpi-head-actions">
             <span id="obrasOpsBadge" class="ops-badge na">-</span>
-            <a class="btn-mini ops-kpi-cta" href="{{ url_for('obras_home') }}">Ver detalle</a>
+            <a class="btn-mini ops-kpi-cta" href="{{ url_for('obras_home') }}">Abrir</a>
           </div>
         </div>
         <div class="ops-kpi-body">
@@ -4844,12 +4841,9 @@
       var countReply = rows.filter(function (r) { return String(r.alerta_tipo || "") === "respuesta"; }).length;
       var countCoffee = rows.filter(function (r) { return String(r.alerta_tipo || "") === "coffee"; }).length;
       if (el.taskAlertTitle) {
-        var ttl = "Alertas personales (" + rows.length + ")";
-        if (countReply > 0) ttl += " - " + countReply + " por responder";
-        if (countCoffee > 0) ttl += " - " + countCoffee + " Coffee cercano";
-        el.taskAlertTitle.textContent = ttl;
+        el.taskAlertTitle.textContent = "Alertas (" + rows.length + ")";
       }
-      el.taskAlertCard.style.display = "grid";
+      el.taskAlertCard.style.display = "";
       el.taskAlertList.innerHTML = rows.map(function (r) {
         var alertType = String(r.alerta_tipo || "tarea");
         var isReply = alertType === "respuesta";
@@ -5255,7 +5249,7 @@
     }
 
     function gestionButtonLabel() {
-      return (CAN_EDIT_AGENTE || IS_FRANCISCO) ? "Abrir gestion" : "Responder";
+      return (CAN_EDIT_AGENTE || IS_FRANCISCO) ? "Abrir" : "Responder";
     }
 
     function canOpenGestion(row) {
