@@ -302,13 +302,13 @@
   background: #dbeafe;
   border-color: #93c5fd;
 }
-.control-shell .btn-inline.row-gestion.turn-seguimiento {
+.control-shell .tbl .btn-inline.row-gestion.turn-seguimiento {
   border-color: #fde68a;
   background: #ffffff;
   color: #1d4ed8;
   font-weight: 900;
 }
-.control-shell .btn-inline.row-gestion.turn-seguimiento:hover {
+.control-shell .tbl .btn-inline.row-gestion.turn-seguimiento:hover {
   background: #ffffff;
   border-color: #fcd34d;
 }
