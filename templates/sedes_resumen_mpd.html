@@ -1,11 +1,13 @@
 {% extends "base.html" %}
 {% block content %}
 
-<section class="sedes-section">
+<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-09-02') }}">
+
+<section class="sedes-section sgi-sedes">
   <div class="cardx" style="padding:12px 14px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;background:#ecfdf3;border:1px solid #a7f3d0;padding:10px 12px;border-radius:12px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;background:#ffffff;border:1px solid #e5e7eb;padding:10px 12px;border-radius:12px;">
       <div>
-        <h2 style="margin:0;font-size:18px;color:#047857;">Resumen sedes</h2>
+        <h2 style="margin:0;font-size:18px;color:#334155;font-weight:600;">Resumen sedes</h2>
         <div style="font-size:12px;color:#64748b;margin-top:2px;">Vista general de mobiliario, aires y luminarias.</div>
       </div>
       <a class="btn" href="{{ url_for('dashboard') }}">Volver</a>
@@ -73,7 +75,7 @@
               data-val-aires_total="{{ r.aires_total }}"
               data-val-luminarias_total="{{ r.luminarias_total }}"
               data-val-puestos_trabajo="{{ r.puestos_trabajo }}">
-            <td style="padding:8px;border-bottom:1px solid #e5e7eb;font-weight:900;">{{ r.codigo }}</td>
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;font-weight:600;">{{ r.codigo }}</td>
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.nombre }}</td>
             <td data-col="mesa_pc" style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.mesa_pc }}</td>
             <td data-col="escritorio_prof" style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.escritorio_prof }}</td>
@@ -87,33 +89,33 @@
           </tr>
           {% endfor %}
         </tbody>
-        <tfoot style="background:#ecfdf3;">
+        <tfoot style="background:#f8fafc;">
           <tr>
-            <td colspan="2" style="padding:8px;border-top:1px solid #e5e7eb;font-weight:900;">Totales</td>
-            <td data-col="mesa_pc" id="total_mesa_pc" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:900;">{{ totals.mesa_pc }}</td>
-            <td data-col="escritorio_prof" id="total_escritorio_prof" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:900;">{{ totals.escritorio_prof }}</td>
-            <td data-col="silla_giratoria" id="total_silla_giratoria" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:900;">{{ totals.silla_giratoria }}</td>
-            <td data-col="silla_fija" id="total_silla_fija" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:900;">{{ totals.silla_fija }}</td>
-            <td data-col="armario_alto" id="total_armario_alto" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:900;">{{ totals.armario_alto }}</td>
-            <td data-col="biblioteca_baja" id="total_biblioteca_baja" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:900;">{{ totals.biblioteca_baja }}</td>
-            <td data-col="aires_total" id="total_aires_total" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:900;">{{ totals.aires_total }}</td>
-            <td data-col="luminarias_total" id="total_luminarias_total" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:900;">{{ totals.luminarias_total }}</td>
-            <td data-col="puestos_trabajo" id="total_puestos_trabajo" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:900;">{{ totals.puestos_trabajo }}</td>
+            <td colspan="2" style="padding:8px;border-top:1px solid #e5e7eb;font-weight:600;">Totales</td>
+            <td data-col="mesa_pc" id="total_mesa_pc" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:600;">{{ totals.mesa_pc }}</td>
+            <td data-col="escritorio_prof" id="total_escritorio_prof" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:600;">{{ totals.escritorio_prof }}</td>
+            <td data-col="silla_giratoria" id="total_silla_giratoria" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:600;">{{ totals.silla_giratoria }}</td>
+            <td data-col="silla_fija" id="total_silla_fija" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:600;">{{ totals.silla_fija }}</td>
+            <td data-col="armario_alto" id="total_armario_alto" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:600;">{{ totals.armario_alto }}</td>
+            <td data-col="biblioteca_baja" id="total_biblioteca_baja" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:600;">{{ totals.biblioteca_baja }}</td>
+            <td data-col="aires_total" id="total_aires_total" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:600;">{{ totals.aires_total }}</td>
+            <td data-col="luminarias_total" id="total_luminarias_total" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:600;">{{ totals.luminarias_total }}</td>
+            <td data-col="puestos_trabajo" id="total_puestos_trabajo" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:600;">{{ totals.puestos_trabajo }}</td>
           </tr>
         </tfoot>
       </table>
     </div>
 
-    <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#fff7ed;border:1px solid #fed7aa;padding:10px 12px;border-radius:12px;">
+    <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#ffffff;border:1px solid #e5e7eb;padding:10px 12px;border-radius:12px;">
       <div>
-        <h3 style="margin:0;font-size:15px;color:#9a3412;">Vencimientos de matafuegos (todas las sedes)</h3>
-        <div style="font-size:12px;color:#7c2d12;margin-top:2px;">Vista consolidada para controlar recargas/vencimientos en un solo lugar.</div>
+        <h3 style="margin:0;font-size:15px;color:#334155;font-weight:600;">Vencimientos de matafuegos (todas las sedes)</h3>
+        <div style="font-size:12px;color:#64748b;margin-top:2px;">Vista consolidada para controlar recargas/vencimientos en un solo lugar.</div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:12px;">
-        <span style="background:#fff;padding:5px 8px;border-radius:999px;border:1px solid #e5e7eb;"><strong>Total:</strong> {{ matafuegos_vto_kpi.total }}</span>
-        <span style="background:#fff;padding:5px 8px;border-radius:999px;border:1px solid #fecaca;color:#991b1b;"><strong>Vencidos:</strong> {{ matafuegos_vto_kpi.vencidos }}</span>
-        <span style="background:#fff;padding:5px 8px;border-radius:999px;border:1px solid #fdba74;color:#9a3412;"><strong>Hoy:</strong> {{ matafuegos_vto_kpi.vence_hoy }}</span>
-        <span style="background:#fff;padding:5px 8px;border-radius:999px;border:1px solid #fcd34d;color:#92400e;"><strong><=45d:</strong> {{ matafuegos_vto_kpi.vence_45d }}</span>
+        <span class="state info"><strong>Total:</strong> {{ matafuegos_vto_kpi.total }}</span>
+        <span class="state danger"><strong>Vencidos:</strong> {{ matafuegos_vto_kpi.vencidos }}</span>
+        <span class="state warn"><strong>Hoy:</strong> {{ matafuegos_vto_kpi.vence_hoy }}</span>
+        <span class="state warn"><strong><=45d:</strong> {{ matafuegos_vto_kpi.vence_45d }}</span>
       </div>
     </div>
 
@@ -142,7 +144,7 @@
 
     <div style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;overflow:auto;">
       <table style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;">
-        <thead style="background:#fff7ed;">
+        <thead style="background:#f8fafc;">
           <tr>
             <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Sede</th>
             <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Nombre</th>
@@ -161,7 +163,7 @@
           {% if matafuegos_vto_rows and matafuegos_vto_rows|length > 0 %}
             {% for mf in matafuegos_vto_rows %}
             <tr data-mf-sede="{{ mf.sede_codigo }}" data-mf-estado="{{ mf.estado_vto_key }}">
-              <td style="padding:8px;border-bottom:1px solid #e5e7eb;font-weight:900;">{{ mf.sede_codigo }}</td>
+              <td style="padding:8px;border-bottom:1px solid #e5e7eb;font-weight:600;">{{ mf.sede_codigo }}</td>
               <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ mf.sede_nombre or '-' }}</td>
               <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
                 {% if mf.codigo_local %}
@@ -182,17 +184,17 @@
               </td>
               <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
                 {% if mf.estado_vto_key == 'vencido' %}
-                  <span style="display:inline-block;padding:2px 7px;border-radius:999px;background:#fee2e2;color:#991b1b;font-weight:800;">Vencido</span>
+                  <span class="state danger">Vencido</span>
                 {% elif mf.estado_vto_key == 'hoy' %}
-                  <span style="display:inline-block;padding:2px 7px;border-radius:999px;background:#ffedd5;color:#9a3412;font-weight:800;">Vence hoy</span>
+                  <span class="state warn">Vence hoy</span>
                 {% elif mf.estado_vto_key == '45d' %}
-                  <span style="display:inline-block;padding:2px 7px;border-radius:999px;background:#fef3c7;color:#92400e;font-weight:800;">Vence <=45d</span>
+                  <span class="state warn">Vence <=45d</span>
                 {% else %}
-                  <span style="display:inline-block;padding:2px 7px;border-radius:999px;background:#dcfce7;color:#166534;font-weight:800;">Vigente</span>
+                  <span class="state ok">Vigente</span>
                 {% endif %}
               </td>
               <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
-                <a class="btn" style="padding:4px 8px;" href="{{ url_for('sede_ficha', codigo=mf.sede_codigo, tab='matafuegos') }}">Ver sede</a>
+                <a class="btn xs" href="{{ url_for('sede_ficha', codigo=mf.sede_codigo, tab='matafuegos') }}">Ver sede</a>
               </td>
             </tr>
             {% endfor %}

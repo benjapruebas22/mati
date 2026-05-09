@@ -1,0 +1,698 @@
+/* SGI — Módulo Sedes (solo UI/UX visual)
+   No cambia lógica, rutas, datos ni relaciones. */
+
+.sgi-sedes {
+  --sedes-ink: #334155;
+  --sedes-ink-strong: #2f3b52;
+  --sedes-muted: #64748b;
+  --sedes-border: #e5e7eb;
+  --sedes-border-soft: #e2e8f0;
+  --sedes-bg: #ffffff;
+  --sedes-bg-soft: #f8fafc;
+  --sedes-bg-page: #f4f6fb;
+  --sedes-primary: #2563eb;
+  --sedes-primary-soft: #eff6ff;
+  --sedes-success: #16a34a;
+  --sedes-success-soft: #f0fdf4;
+  --sedes-warning: #f59e0b;
+  --sedes-warning-soft: #fffbeb;
+  --sedes-danger: #dc2626;
+  --sedes-danger-soft: #fff1f2;
+
+  /* Alias para templates legacy (mantiene coherencia sin tocar lógica) */
+  --bg: var(--sedes-bg-page);
+  --card: var(--sedes-bg);
+  --border: var(--sedes-border);
+  --border-soft: var(--sedes-border-soft);
+  --text: var(--sedes-ink);
+  --muted: var(--sedes-muted);
+  --primary: var(--sedes-primary);
+  --soft: var(--sedes-primary-soft);
+  --ok: var(--sedes-success);
+  --warn: var(--sedes-warning);
+  --danger: var(--sedes-danger);
+  color: var(--sedes-ink);
+}
+
+.sgi-sedes :where(h1, h2, h3, h4) {
+  color: var(--sedes-ink);
+}
+
+.sgi-sedes .muted,
+.sgi-sedes :where(.seg-sub, .aires-sub, .planos-header-sub) {
+  color: var(--sedes-muted) !important;
+  font-weight: 500 !important;
+}
+
+/* Tipografía institucional: evita negritas extremas en legacy inline styles */
+.sgi-sedes :where([style*="font-weight:800"], [style*="font-weight:900"]) {
+  font-weight: 600 !important;
+}
+
+/* -------------------------
+   Botones (estándar SGI)
+-------------------------- */
+.sgi-sedes :where(a.btn, button.btn, .btn) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--sedes-border);
+  background: var(--sedes-bg);
+  color: var(--sedes-ink);
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  line-height: 1.1;
+}
+.sgi-sedes :where(a.btn:hover, button.btn:hover, .btn:hover) {
+  border-color: #bfdbfe;
+  background: var(--sedes-primary-soft);
+  color: #1d4ed8;
+}
+.sgi-sedes :where(a.btn:focus-visible, button.btn:focus-visible, .btn:focus-visible) {
+  outline: 3px solid rgba(37, 99, 235, 0.22);
+  outline-offset: 2px;
+}
+.sgi-sedes .btn.primary,
+.sgi-sedes .btn.solid-blue,
+.sgi-sedes .btn.soft-primary {
+  border-color: var(--sedes-primary);
+  background: var(--sedes-primary);
+  color: #ffffff;
+}
+.sgi-sedes .btn.primary:hover,
+.sgi-sedes .btn.solid-blue:hover,
+.sgi-sedes .btn.soft-primary:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  color: #ffffff;
+}
+.sgi-sedes .btn.danger {
+  border-color: #fecaca;
+  background: var(--sedes-bg);
+  color: #991b1b;
+}
+.sgi-sedes .btn.danger:hover {
+  border-color: #fca5a5;
+  background: var(--sedes-danger-soft);
+  color: #991b1b;
+}
+
+.sgi-sedes .btn.xs {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+.sgi-sedes .btn.big {
+  padding: 10px 12px;
+  border-radius: 12px;
+}
+
+/* Neutraliza variantes de color (solo dentro de Sedes) */
+.sgi-sedes :where(.btn.outline-amber, .btn.outline-pink, .btn.outline-red, .btn.outline-blue) {
+  border-color: var(--sedes-border) !important;
+  background: var(--sedes-bg) !important;
+  color: var(--sedes-ink) !important;
+}
+.sgi-sedes :where(.btn.solid-pink) {
+  border-color: var(--sedes-primary) !important;
+  background: var(--sedes-primary) !important;
+  color: #ffffff !important;
+}
+
+/* -------------------------
+   Cards / contenedores
+-------------------------- */
+.sgi-sedes :where(.cardx, .planos-card, .seg-card, .aires-card, .limp-main .card-soft, .clh-card, .clx-card, .cld-shell .card, .sede-inv-card) {
+  background: var(--sedes-bg);
+  border: 1px solid var(--sedes-border);
+  border-radius: 14px;
+  box-shadow: none !important;
+}
+
+/* -------------------------
+   Sedes: navegación superior
+-------------------------- */
+.sgi-sedes .sede-active-card {
+  background: var(--sedes-bg);
+  border-color: var(--sedes-border);
+  box-shadow: none !important;
+}
+.sgi-sedes .chip {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: var(--sedes-bg-soft);
+  border: 1px solid var(--sedes-border-soft);
+  color: var(--sedes-ink);
+  font-weight: 600;
+}
+.sgi-sedes .h-title {
+  font-weight: 600 !important;
+  color: var(--sedes-ink) !important;
+}
+.sgi-sedes .h-sub {
+  color: var(--sedes-muted) !important;
+  font-weight: 500 !important;
+}
+
+.sgi-sedes .h-actions .btn.btn-resumen-sedes,
+.sgi-sedes .h-actions .btn.btn-checklist-limpieza,
+.sgi-sedes .h-actions .btn.btn-volver,
+.sgi-sedes .h-actions .btn.btn-calendario {
+  border-color: var(--sedes-border) !important;
+  background: var(--sedes-bg) !important;
+  color: var(--sedes-ink) !important;
+  font-weight: 600 !important;
+}
+
+.sgi-sedes .sede-nav {
+  border-top: 1px solid var(--sedes-border);
+  padding-top: 10px;
+}
+.sgi-sedes .sede-nav a {
+  background: var(--sedes-bg) !important;
+  border-color: var(--sedes-border) !important;
+  color: var(--sedes-ink) !important;
+  font-weight: 600;
+}
+.sgi-sedes .sede-nav a.active {
+  background: var(--sedes-primary-soft) !important;
+  border-color: #bfdbfe !important;
+  color: #1d4ed8 !important;
+  box-shadow: none !important;
+  border-width: 1px !important;
+}
+.sgi-sedes .sede-nav a:hover {
+  background: var(--sedes-primary-soft) !important;
+  border-color: #bfdbfe !important;
+  color: #1d4ed8 !important;
+}
+
+/* Listado de sedes (neutral, sin pasteles fuertes) */
+.sgi-sedes :where(.sedes-title, .sede-city) {
+  font-weight: 600 !important;
+  color: var(--sedes-ink) !important;
+}
+.sgi-sedes :where(.sede-circle, .sede-code-circle) {
+  background: var(--sedes-bg-soft) !important;
+  border-color: var(--sedes-border) !important;
+  color: var(--sedes-ink) !important;
+  box-shadow: none !important;
+}
+.sgi-sedes :where(.fuero-penal, .fuero-menores, .fuero-js, .fuero-otro) {
+  background: var(--sedes-bg-soft) !important;
+}
+
+/* Primera capa: Resumen / Operativo / Planos / Info */
+.sgi-sedes .view-tab {
+  background: var(--sedes-bg) !important;
+  border-color: var(--sedes-border) !important;
+  color: var(--sedes-ink) !important;
+  font-weight: 600 !important;
+}
+.sgi-sedes .view-tab.active {
+  background: var(--sedes-primary-soft) !important;
+  border-color: #bfdbfe !important;
+  color: #1d4ed8 !important;
+}
+
+/* Segunda capa: tabs operativos (panel-topbar) */
+.sgi-sedes .panel-topbar {
+  border-color: var(--sedes-border);
+  background: var(--sedes-bg);
+}
+.sgi-sedes .panel-tabs.panel-tabs-top {
+  border-color: var(--sedes-border) !important;
+}
+.sgi-sedes .panel-tab-row .ptab,
+.sgi-sedes .panel-control summary {
+  background: var(--sedes-bg) !important;
+  border-color: var(--sedes-border) !important;
+  color: var(--sedes-ink) !important;
+  font-weight: 600 !important;
+}
+.sgi-sedes .panel-tab-row .ptab.active {
+  background: var(--sedes-primary-soft) !important;
+  border-color: #bfdbfe !important;
+  color: #1d4ed8 !important;
+  border-width: 1px !important;
+  box-shadow: none !important;
+}
+.sgi-sedes .panel-control-menu {
+  border-color: var(--sedes-border) !important;
+  background: var(--sedes-bg) !important;
+  box-shadow: none !important;
+}
+
+/* Tabs de piso / locales (D##) */
+.sgi-sedes :where(.tab, .loc) {
+  border-color: var(--sedes-border) !important;
+  background: var(--sedes-bg) !important;
+  color: var(--sedes-ink) !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+.sgi-sedes :where(.tab.active, .loc.active, .locals .loc.active) {
+  border-color: #bfdbfe !important;
+  background: var(--sedes-primary-soft) !important;
+  color: #1d4ed8 !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+.sgi-sedes .locals .loc.active::before {
+  display: none !important;
+}
+.sgi-sedes :where(.loc.clear) {
+  border-color: var(--sedes-border) !important;
+  background: var(--sedes-bg) !important;
+  color: var(--sedes-muted) !important;
+}
+
+/* Header: menú de acciones */
+.sgi-sedes .h-actions-more {
+  position: relative;
+}
+.sgi-sedes .h-actions-more > summary {
+  list-style: none;
+}
+.sgi-sedes .h-actions-more > summary::-webkit-details-marker {
+  display: none;
+}
+.sgi-sedes .h-actions-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 60;
+  min-width: 240px;
+  max-width: min(320px, 92vw);
+  padding: 10px;
+  border: 1px solid var(--sedes-border);
+  border-radius: 12px;
+  background: var(--sedes-bg);
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.12);
+  display: grid;
+  gap: 6px;
+}
+.sgi-sedes .h-actions-menu .btn {
+  width: 100%;
+  justify-content: flex-start;
+}
+.sgi-sedes .panel-control-title {
+  color: var(--sedes-muted) !important;
+  font-weight: 600 !important;
+}
+.sgi-sedes .panel-control-link {
+  border-color: var(--sedes-border) !important;
+  background: var(--sedes-bg) !important;
+}
+.sgi-sedes .panel-control-link:hover {
+  background: var(--sedes-bg-soft) !important;
+}
+
+/* Agrupación visual de navegación técnica */
+.sgi-sedes .panel-tab-group {
+  border-color: var(--sedes-border) !important;
+  background: var(--sedes-bg) !important;
+  border-radius: 12px !important;
+}
+.sgi-sedes .panel-tab-group-title {
+  color: var(--sedes-muted) !important;
+  font-weight: 600 !important;
+}
+
+/* Chips de sede (aires / seguridad / inventario / limpieza) */
+.sgi-sedes :where(.aires-chip-sede, .seg-chip-sede) {
+  background: var(--sedes-bg-soft) !important;
+  border-color: var(--sedes-border) !important;
+}
+.sgi-sedes :where(.aires-chip-sede span:nth-child(1), .seg-chip-sede span:nth-child(1)) {
+  color: var(--sedes-muted) !important;
+  font-weight: 600 !important;
+}
+.sgi-sedes :where(.aires-chip-sede span:nth-child(2), .seg-chip-sede span:nth-child(2)) {
+  color: var(--sedes-ink) !important;
+  font-weight: 600 !important;
+}
+
+/* Píldoras de limpieza / tags legacy */
+.sgi-sedes :where(.chip-limp, .seg-tab-btn, .planos-tab-btn) {
+  background: var(--sedes-bg-soft) !important;
+  border-color: var(--sedes-border) !important;
+  color: var(--sedes-ink) !important;
+}
+.sgi-sedes :where(.seg-tab-btn.active, .planos-tab-btn.active) {
+  background: var(--sedes-primary-soft) !important;
+  border-color: #bfdbfe !important;
+  color: #1d4ed8 !important;
+}
+
+/* -------------------------
+   Panel Operativo (derecha)
+-------------------------- */
+.sgi-sedes .panel-card {
+  border-color: var(--sedes-border) !important;
+  background: var(--sedes-bg) !important;
+  box-shadow: none !important;
+}
+.sgi-sedes .panel-head {
+  border-bottom-color: var(--sedes-border) !important;
+}
+.sgi-sedes .panel-title {
+  font-weight: 600 !important;
+  color: var(--sedes-ink) !important;
+}
+
+/* -------------------------
+   Tablas (unificadas)
+-------------------------- */
+.sgi-sedes :where(table, .tbl, .seg-table, .aires-table, .tabla-limpieza) {
+  color: var(--sedes-ink);
+}
+.sgi-sedes :where(.tbl th, .seg-table th, .aires-table th, .tabla-limpieza th) {
+  background: var(--sedes-bg-soft) !important;
+  color: var(--sedes-muted) !important;
+  font-weight: 600 !important;
+}
+.sgi-sedes :where(.tbl td, .seg-table td, .aires-table td, .tabla-limpieza td) {
+  color: var(--sedes-ink) !important;
+}
+
+.sgi-sedes .cell-code {
+  font-weight: 600;
+  color: var(--sedes-ink);
+  white-space: nowrap;
+}
+.sgi-sedes .cell-strong {
+  font-weight: 600;
+  color: var(--sedes-ink);
+}
+.sgi-sedes :where(.tbl tbody tr:hover, .seg-table tbody tr:hover, .aires-table tbody tr:hover) {
+  background: var(--sedes-bg-soft) !important;
+}
+
+/* Badges / estados discretos */
+.sgi-sedes :where(.badge, .pill-fuero, .estado-pill, .state, .res) {
+  border-color: var(--sedes-border) !important;
+  background: var(--sedes-bg-soft) !important;
+  color: var(--sedes-ink) !important;
+  font-weight: 600 !important;
+}
+
+.sgi-sedes :where(.badge, .state) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--sedes-border);
+  background: var(--sedes-bg-soft);
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.sgi-sedes :where(.estado-pill.closed, .state.closed, .res.ok) {
+  border-color: #bbf7d0 !important;
+  background: var(--sedes-success-soft) !important;
+  color: #166534 !important;
+}
+.sgi-sedes :where(.estado-pill.pending, .state.pending, .res.bad) {
+  border-color: #fed7aa !important;
+  background: #fff7ed !important;
+  color: #9a3412 !important;
+}
+
+.sgi-sedes :where(.state.ok) {
+  border-color: #bbf7d0 !important;
+  background: var(--sedes-success-soft) !important;
+  color: #166534 !important;
+}
+.sgi-sedes :where(.state.warn) {
+  border-color: #fed7aa !important;
+  background: #fff7ed !important;
+  color: #9a3412 !important;
+}
+.sgi-sedes :where(.state.danger) {
+  border-color: #fecaca !important;
+  background: var(--sedes-danger-soft) !important;
+  color: #991b1b !important;
+}
+.sgi-sedes :where(.state.info) {
+  border-color: #bfdbfe !important;
+  background: var(--sedes-primary-soft) !important;
+  color: #1d4ed8 !important;
+}
+
+/* Tabla acciones pequeñas */
+.sgi-sedes :where(.btn-table) {
+  border: 1px solid var(--sedes-border) !important;
+  background: var(--sedes-bg) !important;
+  color: var(--sedes-ink) !important;
+  border-radius: 999px !important;
+}
+.sgi-sedes :where(.btn-table:hover) {
+  border-color: #bfdbfe !important;
+  background: var(--sedes-primary-soft) !important;
+  color: #1d4ed8 !important;
+}
+.sgi-sedes :where(.btn-table-danger) {
+  border-color: #fecaca !important;
+  background: var(--sedes-bg) !important;
+  color: #991b1b !important;
+}
+.sgi-sedes :where(.btn-table-danger:hover) {
+  border-color: #fca5a5 !important;
+  background: var(--sedes-danger-soft) !important;
+  color: #991b1b !important;
+}
+
+/* -------------------------
+   Formularios (base)
+-------------------------- */
+.sgi-sedes :where(input, select, textarea) {
+  color: var(--sedes-ink);
+}
+.sgi-sedes :where(input[type="text"], input[type="date"], input[type="number"], select, textarea) {
+  border: 1px solid var(--sedes-border);
+  border-radius: 12px;
+  background: var(--sedes-bg);
+}
+.sgi-sedes :where(input[type="text"]:focus, input[type="date"]:focus, input[type="number"]:focus, select:focus, textarea:focus) {
+  outline: none;
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+/* -------------------------
+   Documentos vinculados (biblioteca)
+-------------------------- */
+.sgi-sedes .sedes-docs {
+  margin: 0 16px 12px;
+  border: 1px solid var(--sedes-border);
+  border-radius: 14px;
+  background: var(--sedes-bg);
+  overflow: hidden;
+}
+.sgi-sedes .sedes-docs > summary {
+  list-style: none;
+}
+.sgi-sedes .sedes-docs > summary::-webkit-details-marker {
+  display: none;
+}
+.sgi-sedes .sedes-docs-summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--sedes-border);
+  background: var(--sedes-bg);
+}
+.sgi-sedes .sedes-docs-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sedes-ink);
+}
+.sgi-sedes .sedes-docs-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--sedes-border);
+  background: var(--sedes-bg-soft);
+  color: var(--sedes-muted);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.sgi-sedes .sedes-docs-actions {
+  padding: 10px 14px 0;
+  display: flex;
+  justify-content: flex-end;
+}
+.sgi-sedes .sedes-docs-list {
+  padding: 10px 14px 14px;
+  display: grid;
+  gap: 8px;
+}
+.sgi-sedes .sedes-doc-item {
+  border: 1px solid var(--sedes-border);
+  border-radius: 12px;
+  background: var(--sedes-bg);
+  padding: 10px 10px;
+  display: grid;
+  gap: 4px;
+}
+.sgi-sedes .sedes-doc-item-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.sgi-sedes .sedes-doc-item-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sedes-ink);
+}
+.sgi-sedes .sedes-doc-type {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sedes-muted);
+  border: 1px solid var(--sedes-border);
+  background: var(--sedes-bg-soft);
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+.sgi-sedes .sedes-doc-meta {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--sedes-muted);
+}
+.sgi-sedes .sedes-doc-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1d4ed8;
+  text-decoration: none;
+}
+.sgi-sedes .sedes-doc-open:hover {
+  text-decoration: underline;
+}
+.sgi-sedes .sedes-docs-empty {
+  margin: 10px 14px 14px;
+  color: var(--sedes-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Títulos compactos (resumen / eventos) */
+.sgi-sedes .sedes-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sedes-ink);
+  margin: 0 0 8px;
+}
+.sgi-sedes .sedes-item-title {
+  font-weight: 600;
+  color: var(--sedes-ink);
+}
+.sgi-sedes .sedes-item-sub {
+  color: var(--sedes-muted);
+  font-weight: 500;
+}
+
+/* Panel operativo: secciones consistentes */
+.sgi-sedes .panel-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.sgi-sedes .panel-section-head.panel-section-head-top {
+  align-items: flex-start;
+}
+.sgi-sedes .panel-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sedes-ink);
+}
+.sgi-sedes .panel-section-sub {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--sedes-muted);
+  font-weight: 500;
+}
+.sgi-sedes .panel-section-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.sgi-sedes .panel-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.sgi-sedes .panel-kpi-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.sgi-sedes .panel-kpi-row .panel-kpi-card {
+  flex: 1 1 180px;
+}
+.sgi-sedes .panel-kpi-card {
+  border: 1px solid var(--sedes-border);
+  border-radius: 12px;
+  background: var(--sedes-bg);
+  padding: 10px;
+  min-width: 0;
+}
+.sgi-sedes .panel-kpi-card .k {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sedes-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.sgi-sedes .panel-kpi-card .v {
+  margin-top: 4px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--sedes-ink);
+}
+.sgi-sedes .panel-mini-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  margin-top: 6px;
+  color: var(--sedes-ink);
+}
+.sgi-sedes .panel-empty {
+  font-size: 12px;
+  margin-top: 6px;
+  color: var(--sedes-muted);
+  font-weight: 500;
+}
+
+@media (max-width: 720px) {
+  .sgi-sedes .panel-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}

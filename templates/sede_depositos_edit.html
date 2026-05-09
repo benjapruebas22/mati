@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
 
-<section style="max-width:1100px;margin:auto">
+<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-09-02') }}">
+
+<section class="sgi-sedes" style="max-width:1100px;margin:auto">
   <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px">
     <div>
       <h2 style="margin:0 0 6px 0">Depositos · {{ sede.nombre }} ({{ sede.codigo }})</h2>
@@ -27,13 +29,13 @@
         <input name="descripcion" placeholder="Ej: Cocina, Pasillo, Oficina..."
           style="padding:10px;border-radius:10px;border:1px solid #e5e7eb;width:100%">
       </div>
-      <button class="btn btn-mpd" type="submit" style="padding:10px 16px;border-radius:999px">
+      <button class="btn primary" type="submit" style="padding:10px 16px;border-radius:999px">
         Agregar
       </button>
     </form>
     <form method="post" style="margin-top:10px">
       <input type="hidden" name="action" value="cleanup">
-      <button class="btn btn-mpd" type="submit" style="padding:6px 10px;border-color:#fecaca">
+      <button class="btn danger xs" type="submit" style="padding:6px 10px;">
         Depurar duplicados
       </button>
     </form>
@@ -51,7 +53,7 @@
       <tbody>
         {% for d in depositos %}
         <tr>
-          <td style="padding:10px;border-bottom:1px solid #eef2f7;font-weight:800">
+          <td style="padding:10px;border-bottom:1px solid #eef2f7;font-weight:600">
             {{ d.codigo_local }}
           </td>
           <td style="padding:10px;border-bottom:1px solid #eef2f7">
@@ -62,13 +64,13 @@
                 style="padding:6px 8px;border-radius:8px;border:1px solid #e5e7eb;min-width:90px">
               <input name="descripcion" value="{{ d.descripcion }}"
                 style="padding:6px 8px;border-radius:8px;border:1px solid #e5e7eb;width:100%">
-              <button class="btn btn-mpd" type="submit" style="padding:6px 10px">Guardar</button>
+              <button class="btn xs primary" type="submit" style="padding:6px 10px">Guardar</button>
             </form>
           </td>
           <td style="padding:10px;border-bottom:1px solid #eef2f7">
             <form method="post" action="{{ url_for('sede_depositos_borrar', dep_id=d.id) }}"
               onsubmit="return confirm('Eliminar este deposito?');">
-              <button class="btn btn-mpd" type="submit" style="padding:6px 10px;border-color:#fecaca">
+              <button class="btn xs danger" type="submit" style="padding:6px 10px">
                 Eliminar
               </button>
             </form>

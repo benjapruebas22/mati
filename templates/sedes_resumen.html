@@ -9,7 +9,7 @@
   .wrap{display:flex;flex-direction:column;gap:14px;}
   .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);}
   .head{padding:14px 16px;display:flex;justify-content:space-between;gap:10px;align-items:flex-start;}
-  .title{margin:0;font-size:18px;font-weight:900;}
+  .title{margin:0;font-size:18px;font-weight:600;color:#334155;}
   .sub{margin:4px 0 0;font-size:12px;color:var(--muted);}
 
   .btn{display:inline-flex;align-items:center;justify-content:center;padding:8px 12px;border-radius:999px;
@@ -19,7 +19,7 @@
   .kpis{padding:0 16px 14px;display:grid;gap:10px;grid-template-columns:repeat(6,minmax(140px,1fr));}
   .kpi{border:1px solid var(--border);border-radius:14px;padding:10px 12px;display:flex;justify-content:space-between;gap:10px;}
   .kpi .l{font-size:11px;color:var(--muted);}
-  .kpi .v{font-size:16px;font-weight:900;margin-top:4px;}
+  .kpi .v{font-size:16px;font-weight:600;margin-top:4px;color:#334155;}
   .kpi .tag{font-size:10px;border:1px solid var(--border);padding:3px 8px;border-radius:999px;color:var(--muted);
             background:#f8fafc;white-space:nowrap;}
 
@@ -31,7 +31,9 @@
   @media (max-width:1100px){.kpis{grid-template-columns:repeat(2,1fr);}}
 </style>
 
-<div class="wrap">
+<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-09-02') }}">
+
+<div class="wrap sgi-sedes">
   <div class="card">
     <div class="head">
       <div>
@@ -71,7 +73,7 @@
         <tbody>
           {% for r in rows %}
           <tr>
-            <td style="font-weight:900;">{{ r.codigo }}</td>
+            <td style="font-weight:600;">{{ r.codigo }}</td>
             <td>{{ r.nombre }}</td>
             <td>{{ r.ciudad or "" }}</td>
             <td>{{ (r.fuero or "")|replace("_"," ")|capitalize }}</td>

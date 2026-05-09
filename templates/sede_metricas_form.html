@@ -17,7 +17,7 @@
     display:flex; justify-content:space-between; align-items:flex-start; gap:12px;
     padding:14px 16px; border-bottom:1px solid var(--border);
   }
-  .h-title{ margin:0; font-size:18px; font-weight:900; }
+  .h-title{ margin:0; font-size:18px; font-weight:600; color:var(--text); }
   .h-sub{ margin:4px 0 0; font-size:12px; color:var(--muted); }
   .actions{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
 
@@ -45,7 +45,7 @@
   }
   .fg{ display:flex; flex-direction:column; gap:6px; }
   .fg label{
-    font-size:11px; font-weight:800; color:var(--muted);
+    font-size:11px; font-weight:600; color:var(--muted);
     text-transform:uppercase; letter-spacing:.04em;
   }
   .input{
@@ -70,7 +70,7 @@
   }
 
   .right-card{ padding:12px 14px; }
-  .rt-title{ margin:0 0 6px; font-size:14px; font-weight:900; }
+  .rt-title{ margin:0 0 6px; font-size:14px; font-weight:600; color:var(--text); }
   .rt-sub{ margin:0; font-size:12px; color:var(--muted); }
 
   .footer{
@@ -85,7 +85,9 @@
   }
 </style>
 
-<div class="wrap">
+<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-09-02') }}">
+
+<div class="wrap sgi-sedes">
   <div class="card">
 
     <div class="head">

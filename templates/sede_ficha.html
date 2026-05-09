@@ -5314,6 +5314,7 @@
 
 </style>
 
+<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-09-02') }}">
 
 
 
@@ -6306,7 +6307,7 @@
 
 
 
-<div class="wrap">
+<div class="wrap sgi-sedes">
 
 
 
@@ -6370,19 +6371,23 @@
       </div>
 
       <div class="h-actions">
-
-        {% if home_mode %}
-        <button type="button" class="btn btn-calendario" id="toggleCalendar">Calendario</button>
-        {% else %}
-        <a class="btn btn-calendario"
-           href="{{ url_for('sede_ficha', codigo=sede.codigo, home=1, piso=piso, tab=tab, view=view) }}">Calendario</a>
-        {% endif %}
         <button type="button" class="btn btn-checklist-limpieza" id="btnChecklistLimpieza" data-sede="{{ sede.codigo }}">Checklist Control Limpieza</button>
-        <a class="btn btn-checklist-limpieza" href="{{ url_for('sedes_control_limpieza_historial', sede=sede.codigo) }}">Historial Control Limpieza</a>
-        <a class="btn btn-resumen-sedes" href="{{ url_for('sedes_resumen_mpd') }}">Resumen sedes</a>
         <a class="btn btn-volver" href="{{ url_for('dashboard') }}">Volver</a>
 
+        <details class="h-actions-more">
+          <summary class="btn btn-calendario" aria-label="Más acciones">Acciones</summary>
+          <div class="h-actions-menu" role="menu">
+            {% if home_mode %}
+              <button type="button" class="btn btn-calendario" id="toggleCalendar">Calendario</button>
+            {% else %}
+              <a class="btn btn-calendario"
+                 href="{{ url_for('sede_ficha', codigo=sede.codigo, home=1, piso=piso, tab=tab, view=view) }}">Calendario</a>
+            {% endif %}
 
+            <a class="btn btn-checklist-limpieza" href="{{ url_for('sedes_control_limpieza_historial', sede=sede.codigo) }}">Historial Control Limpieza</a>
+            <a class="btn btn-resumen-sedes" href="{{ url_for('sedes_resumen_mpd') }}">Resumen sedes</a>
+          </div>
+        </details>
       </div>
 
       <div class="sede-nav">
@@ -7953,37 +7958,39 @@
 
 
   {% if sub == 'info' %}
-  <details style="margin:0 16px 12px 16px;border:1px solid #dbe4f2;border-radius:12px;background:#f8fbff;padding:10px;">
-    <summary style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;list-style:none;">
-      <span style="font-size:14px;font-weight:800;color:#1f3c68;">Documentos vinculados (SGI)</span>
-      <span class="btn btn-mpd" style="pointer-events:none;">Ver documentos</span>
+  <details class="sedes-docs">
+    <summary class="sedes-docs-summary">
+      <span class="sedes-docs-title">Documentos vinculados (SGI)</span>
+      <span class="sedes-docs-badge">Documentación</span>
     </summary>
 
-    <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;">
-      <a class="btn btn-mpd" href="{{ url_for('sgi_documentacion_informes', sede=sede.codigo) }}">Ver en Informes</a>
+    <div class="sedes-docs-actions">
+      <a class="btn" href="{{ url_for('sgi_documentacion_informes', sede=sede.codigo) }}">Ver en Informes</a>
     </div>
 
     {% if documentos_vinculados_sede and documentos_vinculados_sede|length > 0 %}
-      <div style="margin-top:8px;display:grid;gap:6px;">
+      <div class="sedes-docs-list">
         {% for d in documentos_vinculados_sede[:12] %}
-          <div style="border:1px solid #d6e5f8;border-radius:10px;background:#fff;padding:8px;display:grid;gap:3px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
-              <strong style="font-size:12px;color:#17345e;">{{ d.titulo }}</strong>
-              <span style="font-size:10px;font-weight:800;color:#4b6890;border:1px solid #c7d6ee;border-radius:999px;padding:2px 8px;background:#eef4ff;">{{ d.tipo_documento }}</span>
+          <article class="sedes-doc-item">
+            <div class="sedes-doc-item-top">
+              <div class="sedes-doc-item-title">{{ d.titulo }}</div>
+              <span class="sedes-doc-type">{{ d.tipo_documento }}</span>
             </div>
-            <div style="font-size:11px;color:#5a7395;">
+            <div class="sedes-doc-meta">
               {% if d.fecha %}<span><b>Fecha:</b> {{ d.fecha }}</span>{% endif %}
               {% if d.estado %} · <span><b>Estado:</b> {{ d.estado }}</span>{% endif %}
               {% if d.tags_txt %} · <span><b>Tags:</b> {{ d.tags_txt }}</span>{% endif %}
             </div>
             {% if d.archivo_url %}
-              <div><a href="{{ d.archivo_url }}" target="_blank" rel="noopener" style="font-size:11px;font-weight:800;color:#1d4ed8;text-decoration:none;">Abrir documento</a></div>
+              <div class="sedes-doc-link">
+                <a class="sedes-doc-open" href="{{ d.archivo_url }}" target="_blank" rel="noopener">Abrir documento</a>
+              </div>
             {% endif %}
-          </div>
+          </article>
         {% endfor %}
       </div>
     {% else %}
-      <p style="margin:8px 0 0;color:#6b7280;font-size:12px;">No hay documentos SGI vinculados para esta sede todavia.</p>
+      <p class="sedes-docs-empty">No hay documentos SGI vinculados para esta sede todavia.</p>
     {% endif %}
   </details>
   {% endif %}
@@ -7993,7 +8000,7 @@
 
 
 
-    <div style="font-size:13px;font-weight:900;margin-bottom:8px;">Eventos recientes</div>
+    <div class="sedes-section-title">Eventos recientes</div>
 
 
 
@@ -8021,11 +8028,11 @@
 
 
 
-              <div style="font-weight:800;">{{ ev.titulo }}</div>
+              <div class="sedes-item-title">{{ ev.titulo }}</div>
 
 
 
-              {% if ev.detalle %}<div style="color:var(--muted);">{{ ev.detalle }}</div>{% endif %}
+              {% if ev.detalle %}<div class="sedes-item-sub">{{ ev.detalle }}</div>{% endif %}
 
 
 
@@ -8077,55 +8084,69 @@
     <div class="card panel-topbar">
 
       <div class="panel-tabs panel-tabs-top">
-        <div class="panel-tab-row" aria-label="Panel operativo">
-          <a class="ptab tone-planos {% if tab=='planos' %}active{% endif %}"
-            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='planos', view=view) }}#planos">Planos</a>
-          <a class="ptab tone-aires {% if tab=='aires' %}active{% endif %}"
-            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='aires', view=view) }}">Aires</a>
-          <a class="ptab tone-lum {% if tab=='luminarias' %}active{% endif %}"
-            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='luminarias', view=view) }}">Luminarias</a>
-          <a class="ptab tone-mata {% if tab=='matafuegos' %}active{% endif %}"
-            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='matafuegos', view=view) }}">Matafuegos</a>
-          <a class="ptab tone-eva {% if tab=='evacuacion' %}active{% endif %}"
-            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='evacuacion', view=view) }}">Evacuación</a>
-          <a class="ptab tone-dep {% if tab=='depositos' %}active{% endif %}"
-            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='depositos', view=view) }}">Depósitos</a>
-          <a class="ptab tone-mob {% if tab=='mobiliario' %}active{% endif %}"
-            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='mobiliario', view=view) }}">Mobiliario</a>
-          <a class="ptab tone-personal {% if tab=='personal' %}active{% endif %}"
-            href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='personal', view=view) }}">Personal</a>
+        <div class="panel-tab-row" aria-label="Navegación técnica">
+          <div class="panel-tab-group" aria-label="Operativo">
+            <span class="panel-tab-group-title">Operativo</span>
+            <a class="ptab tone-planos {% if tab=='planos' %}active{% endif %}"
+              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='planos', view=view) }}#planos">Planos</a>
+            <a class="ptab tone-aires {% if tab=='aires' %}active{% endif %}"
+              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='aires', view=view) }}">Aires</a>
+            <a class="ptab tone-lum {% if tab=='luminarias' %}active{% endif %}"
+              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='luminarias', view=view) }}">Luminarias</a>
+            <a class="ptab tone-mata {% if tab=='matafuegos' %}active{% endif %}"
+              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='matafuegos', view=view) }}">Matafuegos</a>
+            <a class="ptab tone-eva {% if tab=='evacuacion' %}active{% endif %}"
+              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='evacuacion', view=view) }}">Evacuación</a>
+            <a class="ptab tone-dep {% if tab=='depositos' %}active{% endif %}"
+              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='depositos', view=view) }}">Depósitos</a>
+            <a class="ptab tone-mob {% if tab=='mobiliario' %}active{% endif %}"
+              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='mobiliario', view=view) }}">Mobiliario</a>
+          </div>
 
-          <details class="panel-control">
-            <summary class="ptab tone-personal">Relevamientos / Control</summary>
-            <div class="panel-control-menu">
-              <div class="panel-control-title">Relevamientos</div>
-              <div class="panel-control-links">
-                <a class="panel-control-link" href="{{ url_for('auditoria_mobiliario') }}">
-                  <span>Mobiliario</span><span class="muted">Relevar</span>
-                </a>
-                <a class="panel-control-link" href="{{ url_for('auditoria_aires') }}">
-                  <span>Aires</span><span class="muted">Relevar</span>
-                </a>
-                <a class="panel-control-link" href="{{ url_for('auditoria_luminarias') }}">
-                  <span>Luminarias</span><span class="muted">Relevar</span>
-                </a>
-                <a class="panel-control-link" href="{{ url_for('relevamientos_comparativa', tipo='mobiliario') }}">
-                  <span>Comparativa</span><span class="muted">Cruzar datos</span>
-                </a>
-              </div>
+          <div class="panel-tab-group" aria-label="Información">
+            <span class="panel-tab-group-title">Información</span>
+            <a class="ptab tone-personal {% if tab=='personal' %}active{% endif %}"
+              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='personal', view=view) }}">Personal</a>
+          </div>
 
-              <div class="panel-control-title" style="margin-top:6px;">Inventario</div>
-              <div class="panel-control-links">
-                <a class="panel-control-link" href="{{ url_for('sede_inventario', codigo=sede.codigo) }}">
-                  <span>Inventario (sede)</span><span class="muted">Oficial</span>
-                </a>
-                <a class="panel-control-link" href="{{ url_for('checklist_inventario') }}">
-                  <span>Control diario</span><span class="muted">Checklist</span>
-                </a>
+          <div class="panel-tab-group" aria-label="Control">
+            <span class="panel-tab-group-title">Control</span>
+            <details class="panel-control">
+              <summary class="ptab tone-personal">Relevamientos / Control</summary>
+              <div class="panel-control-menu">
+                <div class="panel-control-title">Relevamientos</div>
+                <div class="panel-control-links">
+                  <a class="panel-control-link" href="{{ url_for('auditoria_mobiliario') }}">
+                    <span>Mobiliario</span><span class="muted">Relevar</span>
+                  </a>
+                  <a class="panel-control-link" href="{{ url_for('auditoria_aires') }}">
+                    <span>Aires</span><span class="muted">Relevar</span>
+                  </a>
+                  <a class="panel-control-link" href="{{ url_for('auditoria_luminarias') }}">
+                    <span>Luminarias</span><span class="muted">Relevar</span>
+                  </a>
+                  <a class="panel-control-link" href="{{ url_for('relevamientos_comparativa', tipo='mobiliario') }}">
+                    <span>Comparativa</span><span class="muted">Cruzar datos</span>
+                  </a>
+                </div>
+
+                <div class="panel-control-title" style="margin-top:6px;">Inventario</div>
+                <div class="panel-control-links">
+                  <a class="panel-control-link" href="{{ url_for('sede_inventario', codigo=sede.codigo) }}">
+                    <span>Inventario (sede)</span><span class="muted">Oficial</span>
+                  </a>
+                  <a class="panel-control-link" href="{{ url_for('checklist_inventario') }}">
+                    <span>Control diario</span><span class="muted">Checklist</span>
+                  </a>
+                </div>
               </div>
-            </div>
-          </details>
-          <a class="ptab tone-resumen-sedes" href="{{ url_for('sedes_resumen_mpd') }}">Resumen sedes</a>
+            </details>
+          </div>
+
+          <div class="panel-tab-group" aria-label="Resumen">
+            <span class="panel-tab-group-title">Resumen</span>
+            <a class="ptab tone-resumen-sedes" href="{{ url_for('sedes_resumen_mpd') }}">Resumen sedes</a>
+          </div>
         </div>
       </div>
 
@@ -8379,48 +8400,29 @@
 
         {% if home_mode %}
 
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">
-
-          <div style="font-size:13px;font-weight:900;">Personal</div>
-
+        <div class="panel-section-head">
+          <div class="panel-section-title">Personal</div>
           <a class="btn primary" href="{{ url_for('personal_home', sede=sede.codigo, piso=piso, q='') }}">Ver detalle</a>
-
         </div>
 
-        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;">
-
-          <div style="border:1px solid var(--border);border-radius:12px;padding:10px;background:#fff;">
-
-            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Total</div>
-
-            <div style="font-size:18px;font-weight:900;">{{ per_kpi.personas }}</div>
-
+        <div class="panel-kpi-grid">
+          <div class="panel-kpi-card">
+            <div class="k">Total</div>
+            <div class="v">{{ per_kpi.personas }}</div>
           </div>
 
-          <div style="border:1px solid var(--border);border-radius:12px;padding:10px;background:#fff;">
-
-            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Ultimas altas</div>
-
+          <div class="panel-kpi-card">
+            <div class="k">Ultimas altas</div>
             {% if personal_rows and personal_rows|length > 0 %}
-
-              <div style="display:flex;flex-direction:column;gap:4px;font-size:12px;margin-top:6px;">
-
+              <div class="panel-mini-list">
                 {% for p in personal_rows[:3] %}
-
                   <div><strong>{{ p.nombre_apellido }}</strong> ? {{ p.codigo_local }}</div>
-
                 {% endfor %}
-
               </div>
-
             {% else %}
-
-              <div style="font-size:12px;color:var(--muted);margin-top:6px;">Sin personal cargado.</div>
-
+              <div class="panel-empty">Sin personal cargado.</div>
             {% endif %}
-
           </div>
-
         </div>
 
         {% else %}
@@ -8429,22 +8431,9 @@
 
 
 
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">
-
-
-
-          <div style="font-size:13px;font-weight:900;">Personal</div>
-
-
-
-          <a class="btn primary" href="{{ url_for('personal_home', sede=sede.codigo, piso=piso, q='') }}">+ Agregar /
-
-
-
-            Editar</a>
-
-
-
+        <div class="panel-section-head">
+          <div class="panel-section-title">Personal</div>
+          <a class="btn primary" href="{{ url_for('personal_home', sede=sede.codigo, piso=piso, q='') }}">+ Agregar / Editar</a>
         </div>
 
 
@@ -8589,34 +8578,12 @@
 
 
 
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">
-
-
-
-          <div style="font-size:13px;font-weight:900;">Mobiliario</div>
-
-
-
-
-
-
-
+        <div class="panel-section-head">
+          <div class="panel-section-title">Mobiliario</div>
           <a class="btn primary"
-
-
-
             href="{{ url_for('mobiliario_nuevo') }}?codigo_sede={{ sede.codigo }}&piso={{ piso }}{% if local %}&codigo_local={{ local }}{% endif %}">
-
-
-
             + Agregar
-
-
-
           </a>
-
-
-
         </div>
 
 
@@ -8709,7 +8676,7 @@
 
 
 
-                <td style="padding:8px;border-bottom:1px solid var(--border);font-weight:900;">{{ m.codigo_local }}</td>
+                <td class="cell-code" style="padding:8px;border-bottom:1px solid var(--border);">{{ m.codigo_local }}</td>
 
 
 
@@ -8857,22 +8824,12 @@
 
 
 
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">
-
-
-
-          <div style="font-size:13px;font-weight:900;">Depósitos</div>
-
-
-
-          <a class="btn" href="{{ url_for('movimientos_home', sede_origen=sede.codigo) }}">Mover mobiliario</a>
-
-
-
-          <a class="btn primary" href="{{ url_for('sede_depositos_edit', codigo=sede.codigo) }}">Editar</a>
-
-
-
+        <div class="panel-section-head">
+          <div class="panel-section-title">Depósitos</div>
+          <div class="panel-section-actions">
+            <a class="btn" href="{{ url_for('movimientos_home', sede_origen=sede.codigo) }}">Mover mobiliario</a>
+            <a class="btn primary" href="{{ url_for('sede_depositos_edit', codigo=sede.codigo) }}">Editar</a>
+          </div>
         </div>
 
 
@@ -8929,7 +8886,7 @@
 
 
 
-                <td style="padding:8px;border-bottom:1px solid var(--border);font-weight:900;">
+                <td class="cell-code" style="padding:8px;border-bottom:1px solid var(--border);">
                   <span title="{{ sede.codigo }} {{ d.codigo_local }}{% if d.descripcion %} - {{ d.descripcion }}{% endif %}">{{ d.codigo_local }}</span>
                 </td>
 
@@ -8987,66 +8944,22 @@
 
 
 
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">
-
-
-
+        <div class="panel-section-head">
           <div>
-
-
-
-            <div style="font-size:13px;font-weight:900;">Luminarias</div>
-
-
-
-            <div style="font-size:12px;color:var(--muted);margin-top:2px;">
-
-
-
+            <div class="panel-section-title">Luminarias</div>
+            <div class="panel-section-sub">
               Totales (filtro actual): Fria <strong>{{ luminarias_kpi.tubo_fria }}</strong> ·
-
-
-
               Calida <strong>{{ luminarias_kpi.tubo_calido }}</strong> ·
-
-
-
               Foco <strong>{{ luminarias_kpi.foco }}</strong> ·
-
-
-
               Panel <strong>{{ luminarias_kpi.panel }}</strong> ·
-
-
-
               Puestos <strong>{{ luminarias_kpi.puestos_trabajo }}</strong>
-
-
-
             </div>
-
-
-
           </div>
 
-
-
           <a class="btn primary"
-
-
-
             href="{{ url_for('luminarias_nuevo') }}?codigo_sede={{ sede.codigo }}&piso={{ piso }}{% if local %}&codigo_local={{ local }}{% endif %}">
-
-
-
             + Agregar
-
-
-
           </a>
-
-
-
         </div>
 
 
@@ -9135,7 +9048,7 @@
 
 
 
-                <td style="padding:8px;border-bottom:1px solid var(--border);font-weight:900;">{{ l.codigo_local }}</td>
+                <td class="cell-code" style="padding:8px;border-bottom:1px solid var(--border);">{{ l.codigo_local }}</td>
 
 
 
@@ -9251,7 +9164,7 @@
 
 
 
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px;">
+        <div class="panel-section-head panel-section-head-top">
 
 
 
@@ -9259,11 +9172,11 @@
 
 
 
-            <div style="font-size:13px;font-weight:900;">Matafuegos</div>
+            <div class="panel-section-title">Matafuegos</div>
 
 
 
-            <div style="font-size:12px;color:var(--muted);margin-top:2px;">
+            <div class="panel-section-sub">
 
 
 
@@ -9283,11 +9196,7 @@
 
 
 
-          <a class="btn primary" href="{{ url_for('matafuegos_home', sede=sede.codigo, piso=piso, q='') }}">+ Agregar /
-
-
-
-            Editar</a>
+          <a class="btn primary" href="{{ url_for('matafuegos_home', sede=sede.codigo, piso=piso, q='') }}">+ Agregar / Editar</a>
 
 
 
@@ -9383,7 +9292,7 @@
 
 
 
-                <td style="padding:8px;border-bottom:1px solid var(--border);font-weight:900;">{{ mf.codigo_local }}
+                <td class="cell-code" style="padding:8px;border-bottom:1px solid var(--border);">{{ mf.codigo_local }}
 
 
 
@@ -9419,7 +9328,7 @@
 
 
 
-                <td style="padding:8px;border-bottom:1px solid var(--border);text-align:center;font-weight:900;">{{
+                <td class="cell-strong" style="padding:8px;border-bottom:1px solid var(--border);text-align:center;">{{
 
 
 
@@ -9483,7 +9392,7 @@
 
 
 
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px;">
+        <div class="panel-section-head panel-section-head-top">
 
 
 
@@ -9491,11 +9400,11 @@
 
 
 
-            <div style="font-size:13px;font-weight:900;margin-bottom:4px;">Evacuación</div>
+            <div class="panel-section-title">Evacuación</div>
 
 
 
-            <div style="color:var(--muted);font-size:12px;line-height:1.35;">
+            <div class="panel-section-sub" style="line-height:1.35;">
 
 
 
@@ -9511,15 +9420,11 @@
 
 
 
-          <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+          <div class="panel-section-actions">
 
 
 
-            <a class="btn primary" href="{{ url_for('eva_responsables_edit', codigo=sede.codigo) }}">Editar
-
-
-
-              responsables</a>
+            <a class="btn primary" href="{{ url_for('eva_responsables_edit', codigo=sede.codigo) }}">Editar responsables</a>
 
 
 
@@ -9683,18 +9588,9 @@
 
 
 
-        <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;margin:8px 0 10px;">
-
-
-
-          <div style="font-size:13px;font-weight:900;">Aires acondicionados</div>
-
-
-
+        <div class="panel-section-head">
+          <div class="panel-section-title">Aires acondicionados</div>
           <a class="btn primary" href="{{ url_for('sede_aires', codigo=sede.codigo) }}">+ Agregar / Editar</a>
-
-
-
         </div>
 
 
@@ -9703,59 +9599,20 @@
 
 
 
-          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
-
-
-
-            <div style="padding:8px 10px;border:1px solid #e5e7eb;border-radius:12px;background:#fff;">
-
-
-
-              <div style="font-size:12px;color:#64748b;">Total</div>
-
-
-
-              <div style="font-weight:800;font-size:18px;">{{ aires_kpi.total or 0 }}</div>
-
-
-
+          <div class="panel-kpi-row">
+            <div class="panel-kpi-card">
+              <div class="k">Total</div>
+              <div class="v">{{ aires_kpi.total or 0 }}</div>
             </div>
-
-
-
-          <div style="padding:8px 10px;border:1px solid #e5e7eb;border-radius:12px;background:#fff;">
-
-
-
-            <div style="font-size:12px;color:#64748b;">Operativos</div>
-
-
-
-            <div style="font-weight:800;font-size:18px;">{{ aires_kpi.operativos or 0 }}</div>
-
-
-
+            <div class="panel-kpi-card">
+              <div class="k">Operativos</div>
+              <div class="v">{{ aires_kpi.operativos or 0 }}</div>
+            </div>
+            <div class="panel-kpi-card">
+              <div class="k">Fuera de servicio</div>
+              <div class="v">{{ aires_kpi.fuera_servicio or 0 }}</div>
+            </div>
           </div>
-
-
-
-          <div style="padding:8px 10px;border:1px solid #e5e7eb;border-radius:12px;background:#fff;">
-
-
-
-            <div style="font-size:12px;color:#64748b;">Fuera de servicio</div>
-
-
-
-            <div style="font-weight:800;font-size:18px;">{{ aires_kpi.fuera_servicio or 0 }}</div>
-
-
-
-          </div>
-
-
-
-        </div>
 
 
 
@@ -10277,7 +10134,7 @@
 
       const tasksHtml = tasks.length
         ? ('<div class="cll-checklist">' + tasks.map((t) => '<span class="cll-item">' + escapeHtml(t) + "</span>").join("") + "</div>")
-        : '<div style="font-weight:900;color:#92400e;">(Sin tareas configuradas)</div>';
+        : '<div style="font-weight:600;color:#92400e;">(Sin tareas configuradas)</div>';
 
       return (
         '<div class="cll-cd-title">📋 Control del día — ' + escapeHtml(title) + "</div>" +
@@ -10291,7 +10148,7 @@
       const items = Array.isArray(checklistItems) ? checklistItems : [];
       const chips = items.length
         ? ('<div class="cll-checklist">' + items.map((t) => '<span class="cll-item">' + escapeHtml(t) + "</span>").join("") + "</div>")
-        : '<div style="font-weight:900;color:#92400e;">(Sin tareas configuradas)</div>';
+        : '<div style="font-weight:600;color:#92400e;">(Sin tareas configuradas)</div>';
       return (
         '<div class="cll-cd-title">📋 Control del día — ' + escapeHtml(title) + "</div>" +
         '<div class="cll-cd-section">Tareas a verificar:' + chips + "</div>"

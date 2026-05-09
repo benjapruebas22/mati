@@ -21,9 +21,9 @@
     .sedes-title {
         margin: 0;
         font-size: 20px;
-        font-weight: 900;
+        font-weight: 600;
         letter-spacing: .2px;
-        color: #0f172a;
+        color: #334155;
     }
 
     .sedes-sub {
@@ -83,7 +83,7 @@
         background: #fff;
         border: 1px solid #e5e7eb;
         border-radius: 14px;
-        box-shadow: 0 10px 22px rgba(15, 23, 42, .06);
+        box-shadow: none;
         padding: 12px 12px;
         display: flex;
         gap: 12px;
@@ -94,8 +94,9 @@
     }
 
     .sede-card:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 12px 24px rgba(15, 23, 42, .08);
+        transform: none;
+        border-color: #bfdbfe;
+        background: #ffffff;
     }
 
     .sede-circle {
@@ -105,34 +106,21 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: 900;
+        font-weight: 600;
         letter-spacing: .3px;
-        color: #0f172a;
-        border: 1px solid rgba(15, 23, 42, .08);
+        color: #334155;
+        border: 1px solid #e5e7eb;
+        background: #f8fafc;
         flex: 0 0 auto;
     }
 
-    /* Pasteles por fuero */
-    .fuero-penal {
-        background: #ede9fe;
-    }
-
-    /* violeta pastel */
-    .fuero-menores {
-        background: #e0f2fe;
-    }
-
-    /* celeste pastel */
-    .fuero-js {
-        background: #fce7f3;
-    }
-
-    /* rosado pastel */
+    /* Unificar: sin pasteles fuertes por fuero */
+    .fuero-penal,
+    .fuero-menores,
+    .fuero-js,
     .fuero-otro {
-        background: #f1f5f9;
+        background: #f8fafc;
     }
-
-    /* gris pastel */
 
     .sede-info {
         flex: 1 1 auto;
@@ -149,9 +137,9 @@
     .sede-city {
         margin: 0;
         font-size: 14px;
-        font-weight: 900;
+        font-weight: 600;
         line-height: 1.15;
-        color: #0f172a;
+        color: #334155;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -161,7 +149,7 @@
         margin-top: 3px;
         font-size: 11px;
         color: #64748b;
-        font-weight: 800;
+        font-weight: 600;
         text-transform: uppercase;
         letter-spacing: .3px;
         white-space: nowrap;
@@ -190,12 +178,14 @@
     }
 </style>
 
-<div class="sedes-wrap">
+<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-09-02') }}">
+
+<div class="sedes-wrap sgi-sedes">
 
     <div class="sedes-head">
         <div>
             <h2 class="sedes-title">Listado de sedes</h2>
-            <p class="sedes-sub">Código + Ciudad + Fuero. Colores institucionales pastel. (Sin fotos)</p>
+            <p class="sedes-sub">Código + Ciudad + Fuero. Acceso rápido a ficha técnica.</p>
         </div>
 
         <div class="sedes-search">

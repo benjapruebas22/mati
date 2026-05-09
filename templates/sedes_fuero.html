@@ -31,44 +31,37 @@
     margin-bottom:12px;
   }
   .sedes-fuero-titlebox{
-    padding:10px 14px;
+    padding:12px 14px;
     border-radius:14px;
-    background:{{ color_fuero }};
-    color:#fff;
+    background:#ffffff;
+    border:1px solid #e5e7eb;
+    border-left:4px solid {{ color_fuero }};
+    color:#0f172a;
     display:flex;
     flex-direction:column;
-    gap:2px;
-    box-shadow:0 10px 22px rgba(15,23,42,0.25);
+    gap:4px;
+  }
+  .sedes-fuero-kicker{
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    color:#64748b;
   }
   .sedes-fuero-titlebox h1{
     margin:0;
     font-size:18px;
-    font-weight:700;
+    font-weight:600;
   }
   .sedes-fuero-titlebox p{
     margin:0;
     font-size:12px;
-    opacity:.95;
+    color:#64748b;
   }
   .sedes-fuero-actions{
     display:flex;
     gap:6px;
     flex-wrap:wrap;
-  }
-  .btn-small{
-    padding:6px 10px;
-    font-size:12px;
-    border-radius:999px;
-    border:1px solid #e5e7eb;
-    background:#fff;
-    color:#111827;
-    text-decoration:none;
-    display:inline-flex;
-    align-items:center;
-    gap:4px;
-  }
-  .btn-small.ghost{
-    background:#f9fafb;
   }
 
   .sedes-grid{
@@ -80,26 +73,22 @@
 
   /* Fichas (las mismas que te pasé recién) */
   .sede-card-fuero{
-    background: radial-gradient(circle at top left, rgba(255,255,255,0.28), transparent 55%), {{ color_fuero }};
+    background:#ffffff;
+    border:1px solid #e5e7eb;
     border-radius:14px;
-    padding:9px 11px 10px 11px;
+    padding:12px 12px;
     display:flex;
     flex-direction:column;
     justify-content:space-between;
-    box-shadow:0 2px 6px rgba(15,23,42,0.18);
+    box-shadow:none;
     min-height:96px;
     cursor:pointer;
-    color:#ffffff;
+    color:#0f172a;
     position:relative;
     overflow:hidden;
   }
-  .sede-card-fuero::after{
-    content:"";
-    position:absolute;
-    inset:0;
-    border-radius:14px;
-    border:1px solid rgba(255,255,255,0.35);
-    pointer-events:none;
+  .sede-card-fuero:hover{
+    border-color:#bfdbfe;
   }
   .sede-mainrow{
     display:flex;
@@ -109,30 +98,32 @@
     position:relative;
     z-index:1;
   }
-  .sede-code-circle{
-    min-width:34px;
-    height:34px;
-    border-radius:999px;
-    background:#ffffff;
-    display:flex;
+  .sede-code-pill{
+    display:inline-flex;
     align-items:center;
     justify-content:center;
+    height:28px;
+    padding:0 10px;
+    border-radius:999px;
+    border:1px solid #e5e7eb;
+    background:#f8fafc;
     font-size:12px;
-    font-weight:800;
-    box-shadow:0 1px 3px rgba(0,0,0,0.25);
-    color:{{ color_fuero }};
+    font-weight:600;
+    color:#0f172a;
   }
   .sede-fuero-pill{
     font-size:11px;
     padding:2px 7px;
     border-radius:999px;
-    background:rgba(0,0,0,0.18);
-    border:1px solid rgba(255,255,255,0.22);
+    border:1px solid #e5e7eb;
+    background:#f8fafc;
+    color:#334155;
     text-transform:uppercase;
     letter-spacing:.04em;
+    font-weight:600;
   }
   .sede-nombre{
-    font-weight:700;
+    font-weight:600;
     font-size:13px;
     margin-top:2px;
     white-space:nowrap;
@@ -141,7 +132,7 @@
   }
   .sede-dir{
     font-size:11px;
-    color:rgba(255,255,255,0.9);
+    color:#64748b;
     margin-top:1px;
     white-space:nowrap;
     overflow:hidden;
@@ -153,8 +144,8 @@
     height:56px;
     border-radius:10px;
     overflow:hidden;
-    border:1px solid rgba(255,255,255,0.70);
-    background:rgba(15,23,42,0.20);
+    border:1px solid #e5e7eb;
+    background:#f8fafc;
     flex-shrink:0;
   }
   .sede-thumb-fuero img{
@@ -167,8 +158,8 @@
     font-size:9px;
     padding:1px 5px;
     border-radius:999px;
-    background:rgba(0,0,0,0.55);
-    color:#f9fafb;
+    background:rgba(15,23,42,0.7);
+    color:#f8fafc;
   }
 
   .sede-actions{
@@ -179,36 +170,21 @@
     position:relative;
     z-index:1;
   }
-  .sede-actions a{
-    font-size:10px;
-    padding:3px 9px;
-    border-radius:999px;
-    text-decoration:none;
-  }
-  .sede-actions .primary{
-    background:#ffffff;
-    border:1px solid rgba(15,23,42,0.05);
-    color:{{ color_fuero }};
-    font-weight:600;
-  }
-  .sede-actions .ghost{
-    background:rgba(0,0,0,0.18);
-    border:1px solid rgba(255,255,255,0.40);
-    color:#ffffff;
-    font-weight:500;
-  }
 </style>
 
-<section class="sedes-fuero-main">
+<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-09-02') }}">
+
+<section class="sedes-fuero-main sgi-sedes">
 
   <header class="sedes-fuero-header">
     <div class="sedes-fuero-titlebox">
+      <div class="sedes-fuero-kicker">Sedes · Fuero</div>
       <h1>{{ titulo_fuero }}</h1>
       <p>Listado de sedes del fuero seleccionado con acceso rápido a ficha y registro fotográfico.</p>
     </div>
     <div class="sedes-fuero-actions">
       <a href="{{ url_for('dashboard', mes=mes, fecha=fecha_dia, q_cal='') if mes is defined else url_for('dashboard') }}"
-         class="btn-small ghost">⬅ Volver al tablero</a>
+         class="btn xs">⬅ Volver al tablero</a>
     </div>
   </header>
 
@@ -219,7 +195,7 @@
         <div class="sede-mainrow">
           <div style="flex:1;min-width:0;">
             <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
-              <span class="sede-code-circle">{{ s.codigo }}</span>
+              <span class="sede-code-pill">{{ s.codigo }}</span>
               <span class="sede-fuero-pill">
                 {{ s.fuero|replace('_',' ')|capitalize }}
               </span>
@@ -241,11 +217,11 @@
         </div>
 
         <div class="sede-actions">
-          <a class="primary"
+          <a class="btn xs primary"
              href="{{ url_for('sede_ficha', codigo=s.codigo) }}">
             📋 Ficha de la sede
           </a>
-          <a class="ghost"
+          <a class="btn xs"
              href="{{ s.url_planos_drive or 'https://drive.google.com/drive/folders/1rQfUwlcFmLJ-AnRj8GC2lCAvfzK5X4SU' }}" target="_blank" rel="noopener">
             📷 Registro fotográfico
           </a>
