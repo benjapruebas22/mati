@@ -536,30 +536,30 @@
         <a class="btn btn-mpd nav-dd-link" href="{{ url_for('sgi_documentacion') }}">Info MPD</a>
         <span class="nav-dd-caret" aria-hidden="true">▼</span>
         <div class="dropdown-menu">
+          <div class="dropdown-title">General</div>
           <a href="{{ url_for('sgi_documentacion') }}">Documentación del sistema</a>
           <a href="{{ url_for('sgi_documentacion_informes') }}">Informes operativos</a>
-          <a href="{{ url_for('personal_sede_home') }}">Personal por sede</a>
-          <a href="{{ url_for('agentes_home') }}">Agentes Intendencia</a>
           <a href="{{ url_for('calendario') }}">Calendario</a>
           <a href="{{ url_for('vehiculos_bd_home') }}" title="Vehículos / Choferes / Destinos">Base de datos</a>
-
           {% if user_role == 'full' %}
-          <a href="{{ url_for('admin_usuarios') }}">Administración (Usuarios)</a>
+          <a href="{{ url_for('admin_usuarios') }}">Administración usuarios</a>
           {% endif %}
+          <a href="{{ url_for('sgi_home') }}">Inicio SGI</a>
+          <a href="{{ url_for('mapa_ssj') }}">Mapa SGI</a>
 
           <div class="dropdown-sep"></div>
-          <div class="dropdown-title">Apoyo</div>
-          <a href="{{ url_for('sgi_home') }}">Inicio SGI</a>
-          <a href="{{ url_for('mapa_ssj') }}">Mapa SSJ</a>
+          <div class="dropdown-title">Personal</div>
+          <a href="{{ url_for('personal_sede_home') }}">Personal por sede</a>
+          <a href="{{ url_for('agentes_home') }}">Agentes Intendencia</a>
 
           {% if can_access("sst") %}
           <div class="dropdown-sep"></div>
           <div class="dropdown-title">SST</div>
           <a href="{{ url_for('matafuegos_home') }}">Matafuegos</a>
-          <a href="{{ url_for('obras_home', panel='panel-desinf') }}">Desinfeccion</a>
+          <a href="{{ url_for('obras_home', panel='panel-desinf') }}">Desinfección</a>
           <a href="{{ url_for('sst_general') }}">Estado general</a>
-          <a href="{{ url_for('sgsst_documentacion_home') }}">Documentacion SG-SST</a>
-          <a href="{{ url_for('sst_ergonomia_gestion_riesgo') }}">Gestion de riesgos</a>
+          <a href="{{ url_for('sgsst_documentacion_home') }}">Documentación SG-SST</a>
+          <a href="{{ url_for('sst_ergonomia_gestion_riesgo') }}">Gestión de riesgos</a>
           <a href="{{ url_for('sst_plan_gantt') }}">Cronograma SST</a>
           <a href="{{ url_for('sst_visitas') }}">Sedes SST</a>
           {% if can_access("obras") %}
@@ -573,7 +573,7 @@
           {% endif %}
 
           <div class="dropdown-sep"></div>
-          <div class="dropdown-title">Direccion</div>
+          <div class="dropdown-title">Dirección</div>
           <a href="{{ url_for('dashboard_ejecutivo') }}">Alta Direccion</a>
         </div>
       </div>

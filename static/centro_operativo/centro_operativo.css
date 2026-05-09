@@ -139,8 +139,8 @@
   color: rgba(146, 64, 14, .92);
 }
 .control-shell #kpiCardTotal.has-old {
-  border-color: #fbbf24;
-  background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%);
+  border-color: #fde68a;
+  background: #ffffff;
 }
 .control-shell #kpiCardTotal.has-old .k-val {
   color: #92400e;
@@ -159,11 +159,11 @@
 
 /* Recordatorios panel */
 .control-shell .nvd-split-block.split-rec {
-  border-color: #e5d5ff;
-  background: linear-gradient(180deg, #ffffff 0%, #faf5ff 100%);
+  border-color: #e5e7eb;
+  background: #ffffff;
 }
 .control-shell .nvd-split-head.rec .title {
-  color: #6d28d9;
+  color: #1c3453;
 }
 
 /* Gestión: tabs más prolijas (segmentadas) */
@@ -175,8 +175,8 @@
   gap: 0;
   padding: 4px;
   border-radius: 14px;
-  border: 1px solid #dbe6f6;
-  background: #f7faff;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
   flex: 1 1 auto;
 }
 .control-shell .gestion-rubro-tab {
@@ -196,7 +196,7 @@
 .control-shell .gestion-rubro-tab.active {
   border: 1px solid #bfdbfe;
   background: #ffffff;
-  box-shadow: 0 8px 16px rgba(29, 78, 216, 0.10);
+  box-shadow: none;
   color: #1d4ed8;
 }
 .control-shell .gestion-rubro-tab .tab-badge {
@@ -209,14 +209,14 @@
   color: #1d4ed8;
 }
 .control-shell .gestion-rubro-tab.has-old:not(.active) {
-  border: 1px solid #fbbf24;
-  background: #fffbeb;
-  color: #92400e;
+  border: 1px solid #fde68a;
+  background: transparent;
+  color: #355a89;
 }
 .control-shell .gestion-rubro-tab.has-old:not(.active) .tab-badge {
-  border-color: #fbbf24;
-  background: rgba(255, 255, 255, .85);
-  color: #92400e;
+  border-color: #fde68a;
+  background: rgba(248, 250, 252, .92);
+  color: #355a89;
 }
 
 /* Acciones discretas */
@@ -293,7 +293,7 @@
 }
 .control-shell .tbl .btn-inline.row-gestion:not(.turn-tu-respuesta):not(.turn-esperando):not(.turn-seguimiento) {
   border-color: #bfdbfe;
-  background: #eff6ff;
+  background: #ffffff;
   color: #1d4ed8;
   font-weight: 900;
   padding: 4px 10px;
@@ -303,14 +303,14 @@
   border-color: #93c5fd;
 }
 .control-shell .btn-inline.row-gestion.turn-seguimiento {
-  border-color: #fcd34d;
-  background: #fffbeb;
-  color: #92400e;
+  border-color: #fde68a;
+  background: #ffffff;
+  color: #1d4ed8;
   font-weight: 900;
 }
 .control-shell .btn-inline.row-gestion.turn-seguimiento:hover {
-  background: #fef3c7;
-  border-color: #fbbf24;
+  background: #ffffff;
+  border-color: #fcd34d;
 }
 /* Mostrar todo (sin barra horizontal): permitir múltiples líneas */
 .control-shell .cell-trunc {
