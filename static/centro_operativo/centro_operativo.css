@@ -292,25 +292,26 @@
   color: #92400e;
 }
 .control-shell .tbl .btn-inline.row-gestion:not(.turn-tu-respuesta):not(.turn-esperando):not(.turn-seguimiento) {
-  border-color: #bfdbfe;
+  border-color: #e2e8f0;
   background: #ffffff;
-  color: #1d4ed8;
-  font-weight: 900;
-  padding: 4px 10px;
+  color: #475569;
+  font-weight: 600;
+  padding: 3px 10px;
 }
 .control-shell .tbl .btn-inline.row-gestion:not(.turn-tu-respuesta):not(.turn-esperando):not(.turn-seguimiento):hover {
-  background: #dbeafe;
-  border-color: #93c5fd;
+  background: #f8fafc;
+  border-color: #cbd5e1;
 }
 .control-shell .tbl .btn-inline.row-gestion.turn-seguimiento {
-  border-color: #fde68a;
+  border-color: #e2e8f0;
   background: #ffffff;
-  color: #1d4ed8;
-  font-weight: 900;
+  color: #475569;
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 rgba(245, 158, 11, 0.55);
 }
 .control-shell .tbl .btn-inline.row-gestion.turn-seguimiento:hover {
-  background: #ffffff;
-  border-color: #fcd34d;
+  background: #f8fafc;
+  border-color: #cbd5e1;
 }
 /* Mostrar todo (sin barra horizontal): permitir múltiples líneas */
 .control-shell .cell-trunc {
