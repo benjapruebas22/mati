@@ -253,6 +253,120 @@
     .clh-kpis{ grid-template-columns: 1fr; }
     .kpi .v{ font-size: 16px; }
   }
+
+  /* SGI (nuevo estándar) — limpieza visual (solo UI/UX) */
+  :root{
+    --clh-line: #e5e7eb;
+    --clh-ink: #334155;
+    --clh-blue: #2563eb;
+    --clh-amber: #f59e0b;
+    --clh-green: #16a34a;
+  }
+  .clh-shell{
+    background: #ffffff;
+    border: 1px solid var(--clh-line);
+    border-radius: 14px;
+    box-shadow: none;
+    padding: 12px;
+    gap: 12px;
+    color: var(--clh-ink);
+  }
+  .clh-title{
+    font-size: 16px;
+    font-weight: 600;
+    color: #334155;
+  }
+  .clh-link{
+    border-color: #e5e7eb;
+    background: #ffffff;
+    color: #334155;
+    font-weight: 600;
+  }
+  .clh-card{
+    border-color: var(--clh-line);
+    border-radius: 14px;
+    box-shadow: none;
+  }
+  .clh-card::before{
+    background: #e2e8f0;
+  }
+  .clh-field label{
+    font-weight: 500;
+    color: #64748b;
+  }
+  .clh-field select,
+  .clh-field input{
+    border-color: #e5e7eb;
+    border-radius: 12px;
+    color: #334155;
+  }
+  .clh-btn{
+    border-color: #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    font-weight: 600;
+  }
+  .clh-btn:hover{
+    border-color: #bfdbfe;
+    background: #eff6ff;
+    color: #1d4ed8;
+  }
+
+  .clh-kpis{ gap: 10px; }
+  .kpi{
+    border-color: #e5e7eb;
+    border-radius: 14px;
+    background: #ffffff;
+  }
+  .kpi::before{
+    background: #e2e8f0;
+  }
+  .kpi .k{
+    font-weight: 600;
+    color: #64748b;
+  }
+  .kpi .v{
+    font-weight: 600;
+    color: #334155;
+  }
+  .kpi .sub{
+    font-weight: 500;
+    color: #64748b;
+  }
+
+  .table-wrap{
+    border-color: #e5e7eb;
+    border-radius: 12px;
+  }
+  .tbl th{
+    background: #f8fafc;
+    color:#64748b;
+    font-weight: 600;
+  }
+  .tbl td{
+    color:#334155;
+  }
+  .tbl tbody tr:hover td{
+    background: #f8fafc;
+  }
+  .res{
+    font-weight: 600;
+  }
+  .res.ok{ background:#f0fdf4; border-color:#bbf7d0; color:#166534; }
+  .res.bad{ background:#fff7ed; border-color:#fed7aa; color:#9a3412; }
+  tr.obs td{ background: rgba(255, 247, 237, 0.55); }
+  tr.row-closed td{ background: rgba(240, 253, 244, 0.55); }
+  tr.row-pending td{ background: rgba(255, 247, 237, 0.45); }
+
+  .estado-pill{
+    font-weight: 600;
+    border-color:#e5e7eb;
+    background:#ffffff;
+    color:#334155;
+  }
+  .estado-pill.pending{ border-color:#fed7aa; background:#fff7ed; color:#9a3412; }
+  .estado-pill.closed{ border-color:#bbf7d0; background:#f0fdf4; color:#166534; }
+  .estado-pill.draft{ border-color:#bfdbfe; background:#eff6ff; color:#1d4ed8; }
 </style>
 
 <section class="clh-shell">

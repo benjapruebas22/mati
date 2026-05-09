@@ -4967,6 +4967,350 @@
     .cll-chat-send { padding: 12px 14px; font-size: 14px; }
   }
 
+  /* --------------------------------------------------
+     SGI (nuevo estándar) — Checklist Control Limpieza
+     Solo UI/UX visual: jerarquía, espaciado, tipografía.
+     -------------------------------------------------- */
+
+  .cll-head {
+    padding: 12px 14px;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .cll-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #334155;
+    letter-spacing: 0;
+  }
+  .cll-sub {
+    font-size: 12px;
+    font-weight: 500;
+    color: #64748b;
+  }
+  .cll-close {
+    border-color: #e5e7eb;
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #ffffff;
+    color: #334155;
+  }
+
+  .cll-meta {
+    padding: 10px 14px;
+    border-bottom: 1px solid #e5e7eb;
+    background: #ffffff;
+  }
+  .cll-progress { align-items: center; }
+  .cll-progress-sede {
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+  }
+  .cll-progress-sub {
+    font-size: 12px;
+    font-weight: 500;
+    color: #64748b;
+  }
+  .cll-progress-kpis { gap: 6px; }
+  .cll-pkpi {
+    border-color: #e5e7eb;
+    border-radius: 12px;
+    padding: 6px 8px;
+    background: #ffffff;
+    min-width: 0;
+  }
+  .cll-pkpi .k {
+    font-size: 10px;
+    font-weight: 600;
+    color: #64748b;
+    letter-spacing: 0.2px;
+    text-transform: uppercase;
+  }
+  .cll-pkpi .v {
+    margin-top: 2px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+    white-space: nowrap;
+  }
+  .cll-pkpi .v.ok { color: #166534; }
+  .cll-pkpi .v.obs { color: #9a3412; }
+  .cll-pkpi .v.estado {
+    font-weight: 600;
+    color: #334155;
+  }
+
+  .cll-control-dia {
+    margin: 10px 14px 0;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #f8fafc;
+    padding: 10px 12px;
+    box-shadow: none;
+  }
+  .cll-cd-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #334155;
+  }
+  .cll-cd-section {
+    font-size: 12px;
+    font-weight: 500;
+    color: #475569;
+  }
+  .cll-cd-important {
+    margin-top: 6px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font-size: 12px;
+    font-weight: 500;
+    color: #64748b;
+  }
+  .cll-cd-important span {
+    font-weight: 500;
+    color: #334155;
+  }
+
+  .cll-checklist { margin-top: 6px; gap: 6px; }
+  .cll-item {
+    border-color: #e5e7eb;
+    background: #ffffff;
+    color: #334155;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .cll-chiprow {
+    padding: 10px 14px;
+    gap: 8px;
+    max-height: none;
+    overflow: visible;
+    border-bottom: 1px solid #e5e7eb;
+    background: #ffffff;
+  }
+  .cll-chip {
+    padding: 6px 10px;
+    border-color: #e5e7eb;
+    background: #ffffff;
+    color: #334155;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .cll-chip.none { border-color: #e5e7eb; background: #ffffff; color: #334155; }
+  .cll-chip.ok,
+  .cll-chip.done { border-color: #86efac; background: #ffffff; color: #166534; }
+  .cll-chip.obs { border-color: #fdba74; background: #ffffff; color: #9a3412; }
+  .cll-chip.pending { border-color: #fde68a; background: #ffffff; color: #92400e; }
+  .cll-chip.missing { border-color: #fecaca; background: #ffffff; color: #991b1b; }
+
+  .cll-body {
+    padding: 12px 14px;
+    gap: 8px;
+    background: #f8fafc;
+  }
+  .cll-loading,
+  .cll-error,
+  .cll-empty {
+    border-color: #e5e7eb;
+    border-style: dashed;
+    border-radius: 12px;
+    background: #ffffff;
+    padding: 12px;
+    color: #64748b;
+    font-weight: 500;
+  }
+  .cll-card {
+    border-color: #e5e7eb;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: none;
+    padding: 10px 10px 12px;
+  }
+  .cll-card.none { border-left: 4px solid #e2e8f0; }
+  .cll-card.ok { border-left: 4px solid #86efac; }
+  .cll-card.obs { border-left: 4px solid #fdba74; }
+  .cll-card.done { border-left: 4px solid #86efac; }
+  .cll-card.pending { border-left: 4px solid #fde68a; }
+  .cll-card.missing { border-left: 4px solid #fecaca; box-shadow: none; }
+
+  .cll-card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+  }
+  .cll-dep-code{
+    padding: 2px 8px;
+    border-color: #e2e8f0;
+    background: #f8fafc;
+    color: #334155;
+    font-weight: 600;
+    font-size: 12px;
+  }
+  .cll-dep-desc{
+    font-weight: 600;
+    font-size: 13px;
+    color: #334155;
+  }
+  .cll-state-pill{
+    border-color: #e2e8f0;
+    background: #f8fafc;
+    color: #334155;
+    font-weight: 600;
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+  .cll-state-pill.ok{ border-color:#bbf7d0; background:#f0fdf4; color:#166534; }
+  .cll-state-pill.obs{ border-color:#fed7aa; background:#fff7ed; color:#9a3412; }
+  .cll-state-pill.none{ border-color:#e2e8f0; background:#f8fafc; color:#334155; }
+
+  .cll-actions {
+    margin-top: 8px;
+    gap: 8px;
+  }
+  .cll-btn {
+    border-color: #e5e7eb;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    min-height: 40px;
+  }
+  .cll-btn.good { border-color: #bbf7d0; background: #ffffff; color: #166534; }
+  .cll-btn.bad { border-color: #fed7aa; background: #ffffff; color: #9a3412; }
+  .cll-btn.good.selected { background: #f0fdf4; }
+  .cll-btn.bad.selected { background: #fff7ed; }
+  .cll-btn.selected { box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12); }
+
+  .cll-obs,
+  .cll-informe,
+  .cll-chat-text {
+    border-color: #e5e7eb;
+    border-radius: 12px;
+    font-weight: 400;
+    color: #334155;
+    background: #ffffff;
+  }
+  .cll-obs { font-size: 13px; }
+  .cll-obs.warn { border-color: #fdba74; background: #ffffff; }
+  .cll-informe { font-size: 13px; }
+  .cll-chat-text { font-size: 13px; }
+
+  .cll-extra-summary{
+    font-size: 12px;
+    font-weight: 600;
+    color: #334155;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .cll-extra-summary .hint { font-weight: 500; color: #64748b; }
+
+  .cll-extra-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #334155;
+  }
+  .cll-extra-link{
+    font-size: 12px;
+    font-weight: 600;
+    color: #1d4ed8;
+    border-color: #bfdbfe;
+    background: #ffffff;
+  }
+
+  .cll-chat-disclosure{
+    border-color: #e5e7eb;
+    border-radius: 12px;
+    background: #ffffff;
+  }
+  .cll-chat-summary{
+    font-size: 12px;
+    font-weight: 600;
+    color: #334155;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .cll-chat-summary .hint { font-weight: 500; color: #64748b; }
+  .cll-chat-box{
+    border-color: #e5e7eb;
+    border-radius: 12px;
+    background: #ffffff;
+  }
+  .cll-chat-msg{
+    border-color: #e2e8f0;
+    border-radius: 12px;
+    background: #ffffff;
+  }
+  .cll-chat-msg.system{
+    background:#f8fafc;
+    border-color:#e2e8f0;
+  }
+  .cll-chat-msg .top{
+    font-size: 11px;
+    font-weight: 600;
+    color: #334155;
+  }
+  .cll-chat-msg .txt{
+    font-size: 12px;
+    font-weight: 400;
+    color: #334155;
+  }
+
+  .cll-chat-send{
+    border-color: #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    border-radius: 12px;
+    font-weight: 600;
+  }
+
+  .cll-footer {
+    padding: 10px 14px;
+    border-top: 1px solid #e5e7eb;
+    background: #ffffff;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .cll-msg {
+    font-size: 12px;
+    font-weight: 500;
+    color: #475569;
+  }
+  .cll-footer-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+  }
+  .cll-save{
+    border: 1px solid #2563eb;
+    background: #2563eb;
+    color: #ffffff;
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .cll-finalizar{
+    border-color: #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+  }
+
+  @media (max-width: 720px) {
+    .cll-footer { flex-wrap: wrap; }
+    .cll-msg { width: 100%; }
+    .cll-footer-actions { width: 100%; flex-direction: column; }
+    .cll-footer-actions .cll-save { width: 100%; }
+    .cll-footer-actions #cllSave { order: 1; }
+    .cll-footer-actions #cllFinalizar { order: 2; }
+  }
+
 
 </style>
 
@@ -9697,8 +10041,10 @@
     </details>
     <div class="cll-footer">
       <div class="cll-msg" id="cllMsg"></div>
-      <button type="button" class="cll-save cll-finalizar" id="cllFinalizar">Finalizar control</button>
-      <button type="button" class="cll-save" id="cllSave">Guardar</button>
+      <div class="cll-footer-actions">
+        <button type="button" class="cll-save" id="cllSave">Guardar</button>
+        <button type="button" class="cll-save cll-finalizar" id="cllFinalizar">Finalizar control</button>
+      </div>
     </div>
   </div>
 </div>

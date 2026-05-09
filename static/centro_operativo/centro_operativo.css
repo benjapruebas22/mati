@@ -64,6 +64,60 @@
   font-weight: 800;
 }
 
+/* Banner "Próximo Coffee" (alerta superior) */
+.control-shell .card-next-coffee {
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  box-shadow: none;
+}
+.control-shell .card-next-coffee .next-coffee-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.control-shell .card-next-coffee .next-coffee-left {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.control-shell .card-next-coffee .next-coffee-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  color: #334155;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+}
+.control-shell .card-next-coffee .next-coffee-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  font-size: 12px;
+  color: #475569;
+}
+.control-shell .card-next-coffee .next-coffee-days {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  font-weight: 600;
+  color: #334155;
+  white-space: nowrap;
+}
+.control-shell .card-next-coffee .next-coffee-btn.soon,
+.control-shell .card-next-coffee .next-coffee-days.soon {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+.control-shell .card-next-coffee .sep {
+  color: #cbd5e1;
+}
+
 /* KPIs: pastel + misma altura */
 .control-shell .card-resumen .kpi-grid.resumen-base {
   display: none;
