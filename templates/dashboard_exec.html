@@ -2401,13 +2401,11 @@
     </ul>
   </article>
 
-  <article class="control-card control-workspace-section card-vehiculos" data-workspaces="gestion recursos">
+  {# Estado de vehículos: oculto por default (acceso vía botón Vehículos) #}
+  <article class="control-card control-workspace-section card-vehiculos" data-workspaces="gestion recursos" style="display:none;">
     <div class="card-head">
       <h2>Estado de vehiculos</h2>
-      <div class="card-head-actions">
-        <button id="btnToggleVehiculosCard" type="button" class="btn-soft" aria-expanded="true">Ocultar</button>
-        <a class="btn-soft" href="{{ url_for('vehiculos_control_diario') }}">Ir a modulo vehiculos</a>
-      </div>
+      <a class="btn-soft" href="{{ url_for('vehiculos_control_diario') }}">Ir a modulo vehiculos</a>
     </div>
     <div id="vehiculosWrap" class="veh-grid">
       <div class="veh-card"><div class="veh-code">-</div><div class="veh-pat">-</div><div class="veh-est">Sin datos</div></div>
@@ -7041,12 +7039,6 @@
     }
 
     // Colapsables (solo UI/UX)
-    wireCollapseToggle(
-      document.getElementById("btnToggleVehiculosCard"),
-      el.vehWrap,
-      "vehiculos_card",
-      true
-    );
     wireCollapseToggle(
       document.getElementById("btnToggleGestionCard"),
       document.getElementById("gestionWrap"),
