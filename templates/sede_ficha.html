@@ -8585,7 +8585,9 @@
 
 
 
-                <td style="padding:8px;border-bottom:1px solid var(--border);font-weight:900;">{{ d.codigo_local }}</td>
+                <td style="padding:8px;border-bottom:1px solid var(--border);font-weight:900;">
+                  <span title="{{ sede.codigo }} {{ d.codigo_local }}{% if d.descripcion %} - {{ d.descripcion }}{% endif %}">{{ d.codigo_local }}</span>
+                </td>
 
 
 

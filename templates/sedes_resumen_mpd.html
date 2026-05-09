@@ -164,7 +164,13 @@
               <td style="padding:8px;border-bottom:1px solid #e5e7eb;font-weight:900;">{{ mf.sede_codigo }}</td>
               <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ mf.sede_nombre or '-' }}</td>
               <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
-                {{ mf.piso or '-' }}{% if mf.codigo_local %} / {{ mf.codigo_local }}{% endif %}
+                {% if mf.codigo_local %}
+                  <span title="{{ mf.sede_codigo }} {{ mf.codigo_local }}{% if mf.ubicacion %} - {{ mf.ubicacion }}{% endif %}">
+                    {{ mf.piso or '-' }} / {{ mf.codigo_local }}
+                  </span>
+                {% else %}
+                  {{ mf.piso or '-' }}
+                {% endif %}
               </td>
               <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ mf.ubicacion or '-' }}</td>
               <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ mf.numero_serie or '-' }}</td>

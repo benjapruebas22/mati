@@ -12,36 +12,64 @@
 
 <style>
   :root {
-    --bg: #f3f4f6;
+    --bg: #f6f7fb;
     --card: #ffffff;
-    --border: #dbe1ea;
+    --border: #e5e7eb;
     --text: #0f172a;
     --muted: #6b7280;
-    --primary: #0f766e;
-    --primary-soft: #e0f2fe;
-    --accent: #f59e0b;
-    --accent-soft: #fef3c7;
-    --good: #16a34a;
-    --warn: #d97706;
-    --bad: #dc2626;
-    --shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
-    --radius-lg: 18px;
+    --primary: #2563eb;
+    --danger: #dc2626;
+    --warning: #d97706;
+    --success: #16a34a;
+    --shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+    --radius-lg: 16px;
     --radius-md: 12px;
   }
 
   body {
-    background:
-      radial-gradient(900px 400px at 10% -10%, #e2e8f0 0, transparent 55%),
-      radial-gradient(700px 380px at 90% 0, #fee2e2 0, transparent 60%),
-      var(--bg);
+    background: var(--bg);
     color: var(--text);
-    font-family: "Trebuchet MS", "Verdana", sans-serif;
+    font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif;
   }
 
   .dash {
     display: flex;
     flex-direction: column;
     gap: 18px;
+  }
+
+  .op-top {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    padding: 14px 16px;
+    display: grid;
+    gap: 10px;
+  }
+  .op-top-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .op-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 950;
+    letter-spacing: .1px;
+  }
+  .op-sub {
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .op-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
   }
 
   .hero-grid,
@@ -59,18 +87,11 @@
   }
 
   .card {
-    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    background: var(--card);
     border: 1px solid var(--border);
-    border-top: 3px solid #a7f3d0;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow);
     padding: 14px 16px;
-    animation: rise 0.4s ease both;
-  }
-
-  @keyframes rise {
-    from { transform: translateY(6px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
   }
 
   .card-head {
@@ -79,10 +100,8 @@
     justify-content: space-between;
     gap: 10px;
     margin-bottom: 10px;
-    padding: 8px 10px;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    background: linear-gradient(90deg, #eef2ff 0%, #fef9c3 60%, #ffffff 100%);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
   }
 
   .title {
@@ -128,8 +147,8 @@
     font-size: 11px;
     padding: 2px 8px;
     border-radius: 999px;
-    background: #ccfbf1;
-    color: #0f766e;
+    background: #eff6ff;
+    color: #1d4ed8;
     font-weight: 800;
   }
 
@@ -137,7 +156,7 @@
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
     padding: 8px 10px;
-    background: #fff7ed;
+    background: #ffffff;
   }
 
   .week-list {
@@ -153,7 +172,7 @@
     padding: 8px 10px;
     border-radius: var(--radius-md);
     border: 1px solid var(--border);
-    background: #f8fafc;
+    background: #ffffff;
   }
 
   .week-date {
@@ -188,8 +207,8 @@
     padding: 6px 10px;
     font-size: 11px;
     border: 1px solid var(--border);
-    background: linear-gradient(90deg, #e0f2fe 0%, #ffffff 65%);
-    border-left: 4px solid #38bdf8;
+    background: #f8fafc;
+    border-left: 4px solid var(--primary);
   }
 
   .kpi .kpi-label {
@@ -229,6 +248,74 @@
     border-color: var(--primary);
     color: #ffffff;
   }
+
+  .btn.secondary {
+    background: #ffffff;
+    border-color: var(--border);
+    color: #111827;
+  }
+
+  .btn.danger {
+    background: var(--danger);
+    border-color: var(--danger);
+    color: #ffffff;
+  }
+
+  .btn.warning {
+    background: #fef3c7;
+    border-color: #fcd34d;
+    color: #92400e;
+  }
+
+  .btn.success {
+    background: #dcfce7;
+    border-color: #86efac;
+    color: #166534;
+  }
+
+  .btn .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 18px;
+    min-width: 18px;
+    padding: 0 6px;
+    border-radius: 999px;
+    font-weight: 950;
+    font-size: 11px;
+    line-height: 1;
+    margin-left: 6px;
+    border: 1px solid transparent;
+  }
+  .btn.primary .badge {
+    background: rgba(255,255,255,.18);
+    border-color: rgba(255,255,255,.28);
+    color: #ffffff;
+  }
+  .btn.secondary .badge {
+    background: #f8fafc;
+    border-color: var(--border);
+    color: #0f172a;
+  }
+
+  details.op-block {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--card);
+    box-shadow: var(--shadow);
+    padding: 10px 12px;
+  }
+  details.op-block > summary {
+    cursor: pointer;
+    font-weight: 950;
+    font-size: 12px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: #334155;
+    list-style: none;
+  }
+  details.op-block > summary::-webkit-details-marker { display: none; }
+  details.op-block[open] > summary { padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
 
   .cal-table {
     width: 100%;
@@ -411,6 +498,31 @@
 </style>
 
 <section class="dash">
+  <header class="op-top">
+    <div class="op-top-row">
+      <div>
+        <h1 class="op-title">Centro Operativo</h1>
+        <div class="op-sub">Accesos diarios y estado general.</div>
+      </div>
+      <div class="op-actions">
+        <a class="btn primary" href="{{ url_for('dashboard_gestion') }}">Gestion diaria</a>
+        <a class="btn primary" href="{{ url_for('ordenes_mantenimiento_list') }}">
+          Mantenimiento <span class="badge" id="mntAlertsBadge" style="display:none;"></span>
+        </a>
+        <a class="btn primary" href="{{ url_for('vehiculos_control_diario') }}">Vehiculos</a>
+        <a class="btn primary" href="{{ url_for('obras_home') }}">Obras</a>
+        <a class="btn primary" href="{{ url_for('sedes_home') }}">Sedes</a>
+        <a class="btn secondary" href="{{ url_for('inventario_dashboard') }}">Inventario</a>
+        <a class="btn secondary" href="{{ url_for('movimientos_home') }}">Movimientos</a>
+        <a class="btn secondary" href="{{ url_for('depositos_home') }}">Depositos</a>
+        <a class="btn secondary" href="{{ url_for('bd_choferes') }}">Choferes</a>
+        <a class="btn secondary" href="{{ url_for('calendario') }}">Calendario</a>
+      </div>
+    </div>
+  </header>
+
+  <details class="op-block" open>
+    <summary>Hoy</summary>
   <div class="hero-grid">
     <div class="card">
       <div class="card-head">
@@ -534,7 +646,10 @@
       </div>
     </div>
   </div>
+  </details>
 
+  <details class="op-block">
+    <summary>Agenda / Vencimientos</summary>
   <div class="main-grid">
     <div class="card">
       <div class="card-head">
@@ -711,7 +826,10 @@
       </div>
     </div>
   </div>
+  </details>
 
+  <details class="op-block">
+    <summary>Sedes</summary>
   <div class="sedes-wrap">
     <div class="sedes-head">
       <div class="title">Listado de sedes</div>
@@ -761,6 +879,7 @@
       {% endfor %}
     </div>
   </div>
+  </details>
 </section>
 
 <script>
@@ -781,6 +900,25 @@
         card.style.display = text.includes(q) ? "" : "none";
       });
     });
+  })();
+</script>
+
+<script>
+  (function () {
+    const badge = document.getElementById("mntAlertsBadge");
+    if (!badge) return;
+
+    fetch("{{ url_for('ordenes_alerts_count') }}", { credentials: "same-origin" })
+      .then(r => (r.ok ? r.json() : null))
+      .then(data => {
+        if (!data) return;
+        const n = parseInt(data.falta_material_abiertas || 0, 10) || 0;
+        if (n <= 0) return;
+        badge.textContent = String(n);
+        badge.style.display = "inline-flex";
+        badge.title = "Alertas abiertas: falta de material";
+      })
+      .catch(() => { /* silencioso */ });
   })();
 </script>
 {% endblock %}

@@ -17,6 +17,10 @@
       --border: #243042;
       --hover: rgba(148, 163, 184, .12);
       --shadow: 0 12px 25px rgba(0, 0, 0, .35);
+      --primary: #2563eb;
+      --danger: #dc2626;
+      --warning: #d97706;
+      --success: #16a34a;
     }
 
     html[data-theme="light"] {
@@ -27,6 +31,10 @@
       --border: #e5e7eb;
       --hover: rgba(15, 23, 42, .06);
       --shadow: 0 12px 25px rgba(15, 23, 42, .18);
+      --primary: #2563eb;
+      --danger: #dc2626;
+      --warning: #d97706;
+      --success: #16a34a;
     }
 
     body {
@@ -55,15 +63,13 @@
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      padding: 6px 12px;
+      padding: 10px 14px;
       border-bottom: 1px solid var(--border);
-      background:
-        linear-gradient(180deg, #f7f9ff 0%, #eef4fb 100%);
-      backdrop-filter: blur(10px);
+      background: var(--card);
       position: sticky;
       top: 0;
       z-index: 40;
-      box-shadow: 0 6px 18px rgba(88, 116, 160, .10);
+      box-shadow: 0 1px 0 rgba(15, 23, 42, .04);
     }
 
     .brand {
@@ -77,7 +83,7 @@
       max-width: 460px;
       font-size: 15px;
       font-weight: 800;
-      color: #446286;
+      color: var(--text);
       letter-spacing: .02em;
       white-space: nowrap;
       overflow: hidden;
@@ -113,23 +119,23 @@
       align-items: center;
       gap: 6px;
       padding: 3px 8px;
-      border: 1px solid #d9e3ef;
+      border: 1px solid var(--border);
       border-radius: 14px;
-      background: rgba(255, 255, 255, .82);
-      box-shadow: 0 3px 10px rgba(89, 116, 157, .07);
+      background: var(--card);
+      box-shadow: none;
       flex: 0 0 auto;
     }
 
     .nav-group.nav-primary {
-      border-color: #c7d8ef;
-      background: linear-gradient(180deg, #fbfdff 0%, #edf5ff 100%);
-      box-shadow: 0 3px 10px rgba(101, 191, 244, .10);
+      border-color: var(--border);
+      background: var(--card);
+      box-shadow: none;
     }
 
     .nav-group.nav-secondary {
-      border-color: #e0daf7;
-      background: linear-gradient(180deg, #fefeff 0%, #f6f3ff 100%);
-      box-shadow: 0 3px 10px rgba(102, 102, 204, .08);
+      border-color: var(--border);
+      background: var(--card);
+      box-shadow: none;
     }
 
     .nav-group-label {
@@ -171,10 +177,10 @@
     .btn.btn-mpd,
     .nav-trigger {
       border-radius: 999px;
-      padding: 6px 11px;
-      border: 1px solid #d5dfed;
-      background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
-      color: #44556d;
+      padding: 7px 11px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
       font-size: 12px;
       text-decoration: none;
       display: inline-flex;
@@ -183,13 +189,13 @@
       cursor: pointer;
       line-height: 1;
       flex: 0 0 auto;
-      box-shadow: 0 2px 6px rgba(89, 116, 157, .08);
+      box-shadow: none;
     }
 
     .btn.btn-mpd:hover,
     .nav-trigger:hover {
-      background: linear-gradient(180deg, #ffffff 0%, #eef5ff 100%);
-      border-color: #c2d3ea;
+      background: color-mix(in srgb, var(--card) 88%, var(--text) 12%);
+      border-color: color-mix(in srgb, var(--border) 78%, var(--text) 22%);
     }
 
     /* =====================================================
@@ -357,17 +363,17 @@
     }
 
     .btn.btn-mpd.btn-area-inicio {
-      background: linear-gradient(180deg, #ffffff 0%, #e8f3ff 100%);
-      border-color: #65BFF4;
-      color: #2f4f77;
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #ffffff;
       font-weight: 900;
-      box-shadow: 0 4px 12px rgba(101, 191, 244, .18);
+      box-shadow: none;
     }
 
     .btn.btn-mpd.btn-area-inicio:hover {
-      background: linear-gradient(180deg, #ffffff 0%, #dcebff 100%);
-      border-color: #4fb4f0;
-      box-shadow: 0 6px 16px rgba(101, 191, 244, .22);
+      background: color-mix(in srgb, var(--primary) 88%, #000 12%);
+      border-color: color-mix(in srgb, var(--primary) 88%, #000 12%);
+      box-shadow: none;
     }
 
     .btn-area-ejecutivo {
@@ -523,60 +529,65 @@
       <a class="btn btn-mpd btn-area-ejecutivo" href="{{ url_for('dashboard_ejecutivo') }}">Alta Direccion</a>
       {% else %}
       <a class="btn btn-mpd btn-area-inicio" href="{{ url_for('dashboard') }}">Centro Operativo</a>
+      <a class="btn btn-mpd btn-area-inicio" href="{{ url_for('sedes_resumen_mpd') }}">Sedes</a>
       
       {% if user_role == 'full' %}
-      <a class="btn btn-mpd btn-area-admin" href="{{ url_for('admin_usuarios') }}">
-        <i class="fas fa-users-cog"></i> Usuarios
-      </a>
+      {# Usuarios queda en Info MPD para reducir ruido visual #}
       {% endif %}
 
-      {% if can_access("sst") %}
       <div class="nav-dropdown nav-menu">
-        <a class="btn btn-mpd btn-sst nav-dd-link" href="{{ url_for('sst_general') }}" title="Sistema de Gestion de Seguridad Salud en el Trabajo">
-          <span class="sg-text">SG</span><span class="dash">-</span>
-          <span class="sst-celeste">S</span><span class="sst-violeta">S</span><span class="sst-rosa">T</span>
-        </a>
+        <a class="btn btn-mpd nav-dd-link" href="{{ url_for('sgi_documentacion') }}">Info MPD</a>
         <span class="nav-dd-caret" aria-hidden="true">v</span>
         <div class="dropdown-menu">
-           <div class="dropdown-title">SST</div>
-           <a href="{{ url_for('sst_general') }}">Estado general</a>
-           <a href="{{ url_for('sgsst_documentacion_home') }}">Documentacion SG-SST</a>
-           <a href="{{ url_for('sst_ergonomia_gestion_riesgo') }}">Gestion de riesgos</a>
-           <a href="{{ url_for('sst_plan_gantt') }}">Cronograma SST</a>
-           <a href="{{ url_for('sst_visitas') }}">Sedes SST</a>
+          <div class="dropdown-title">Informacion</div>
+          <a href="{{ url_for('sgi_documentacion') }}">Informacion del sistema</a>
+          <a href="{{ url_for('sgi_documentacion_informes') }}">Informes</a>
+          <a href="{{ url_for('calendario') }}">Calendario</a>
 
+          <div class="dropdown-sep"></div>
+          <div class="dropdown-title">Equipo</div>
+          <a href="{{ url_for('personal_sede_home') }}">Personal por sede</a>
+          <a href="{{ url_for('agentes_home') }}">Agentes de intendencia</a>
+
+          <div class="dropdown-sep"></div>
+          <div class="dropdown-title">Base de datos</div>
+          <a href="{{ url_for('vehiculos_bd_home') }}">Vehiculos / Choferes / Destinos</a>
+
+          <div class="dropdown-sep"></div>
+          <div class="dropdown-title">Apoyo</div>
+          <a href="{{ url_for('mapa_ssj') }}">Mapa SSJ</a>
+          <a href="{{ url_for('sgi_home') }}">Inicio SGI</a>
+
+          {% if can_access("sst") %}
+          <div class="dropdown-sep"></div>
+          <div class="dropdown-title">SST</div>
+          <a href="{{ url_for('sst_general') }}">Estado general</a>
+          <a href="{{ url_for('sgsst_documentacion_home') }}">Documentacion SG-SST</a>
+          <a href="{{ url_for('sst_ergonomia_gestion_riesgo') }}">Gestion de riesgos</a>
+          <a href="{{ url_for('sst_plan_gantt') }}">Cronograma SST</a>
+          <a href="{{ url_for('sst_visitas') }}">Sedes SST</a>
           {% if can_access("obras") %}
           <div class="dropdown-sep"></div>
-          <div class="dropdown-title">Relevamientos / Control</div>
+          <div class="dropdown-title">Relevamientos</div>
           <a href="{{ url_for('auditoria_mobiliario') }}">Mobiliario</a>
           <a href="{{ url_for('auditoria_aires') }}">Aires</a>
           <a href="{{ url_for('auditoria_luminarias') }}">Luminarias</a>
           <a href="{{ url_for('relevamientos_comparativa') }}">Comparativa</a>
           {% endif %}
-        </div>
-      </div>
-      {% endif %}
+          {% endif %}
 
-      <div class="nav-dropdown nav-menu">
-        <a class="btn btn-mpd btn-sgi nav-dd-link" href="{{ url_for('sgi_home') }}">
-          <span class="sgi-s">S</span><span class="sgi-g">G</span><span class="sgi-i">I</span>
-        </a>
-        <span class="nav-dd-caret" aria-hidden="true">v</span>
-        <div class="dropdown-menu">
-          <div class="dropdown-title">Principal</div>
-          <a href="{{ url_for('sgi_home') }}">Inicio SGI</a>
-          <a href="{{ url_for('vehiculos_control_diario') }}">Vehiculos</a>
-          <a href="{{ url_for('obras_home') }}">Obras</a>
-          <a href="{{ url_for('sede_ficha', codigo='S01', home=1) }}">Sedes</a>
+          {% if user_role == 'full' %}
           <div class="dropdown-sep"></div>
-          <div class="dropdown-title">Apoyo</div>
-          <a href="{{ url_for('mapa_ssj') }}">Mapa SSJ</a>
-          <a href="{{ url_for('personal_sede_home') }}">Personal</a>
-          <a href="{{ url_for('agentes_home') }}">Agentes</a>
+          <div class="dropdown-title">Administracion</div>
+          <a href="{{ url_for('admin_usuarios') }}">Usuarios</a>
+          {% endif %}
+
+          <div class="dropdown-sep"></div>
+          <div class="dropdown-title">Direccion</div>
+          <a href="{{ url_for('dashboard_ejecutivo') }}">Alta Direccion</a>
         </div>
       </div>
       <span class="nav-spacer" aria-hidden="true"></span>
-      <a class="btn btn-mpd btn-area-ejecutivo" href="{{ url_for('dashboard_ejecutivo') }}">Alta Direccion</a>
       {% endif %}
     </nav>
 
