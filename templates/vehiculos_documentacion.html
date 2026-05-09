@@ -1,18 +1,30 @@
 {% extends "base.html" %}
+{% block head_extra %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ url_for('static', filename='vehiculos/vehiculos_ui.css', v='2026-05-09-01') }}">
+{% endblock %}
 {% block content %}
 
-<section class="veh-doc">
-  <header class="veh-doc-head">
+<section class="veh-shell">
+  <header class="veh-head">
     <div>
-      <h2>Documentación de vehículos</h2>
-      <p>Control de vencimientos y fechas clave. Todo queda en el calendario general.</p>
+      <h1 class="veh-title">Vehículos · Documentación</h1>
+      <p class="veh-sub">Soporte institucional: vencimientos, seguros, RTV, services y carnets. (No operación diaria).</p>
     </div>
-    <div class="veh-doc-actions">
-      <a class="btn btn-mpd veh-nav-btn" data-veh="control" href="{{ url_for('vehiculos_control_diario') }}">Control diario</a>
+    <nav class="veh-nav" aria-label="Vehículos">
+      <a class="btn btn-mpd veh-nav-btn" data-veh="documentacion" aria-current="page" href="{{ url_for('vehiculos_documentacion') }}">Documentación</a>
       <a class="btn btn-mpd veh-nav-btn" data-veh="combustible" href="{{ url_for('vehiculos_combustible') }}">Combustible</a>
       <a class="btn btn-mpd veh-nav-btn" data-veh="estadisticas" href="{{ url_for('vehiculos_estadisticas') }}">Estadísticas</a>
-      <a class="btn btn-mpd veh-nav-btn" data-veh="basedatos" href="{{ url_for('vehiculos_bd_home') }}">Base de datos</a>
-    </div>
+      <a class="btn btn-mpd veh-nav-btn" data-veh="respaldo" href="{{ url_for('vehiculos_control_diario') }}">Modo respaldo / contingencia</a>
+
+      <details class="veh-more">
+        <summary class="btn btn-mpd">Más ▾</summary>
+        <div class="veh-more-menu">
+          <a href="{{ url_for('vehiculos_bd_home') }}">Base de datos</a>
+          <a href="{{ url_for('vehiculos_checklist') }}">Checklist</a>
+        </div>
+      </details>
+    </nav>
   </header>
 
   <div class="vd-quick">
@@ -20,13 +32,13 @@
     <button type="button" class="sub" onclick="goDocBlock('tabla-doc')">Ver tabla</button>
   </div>
 
-  <div class="card" style="padding:10px 14px;">
+  <div class="veh-card">
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:12px;">
-      <strong>Alertas</strong>
-      <span class="pill vencido">Vehiculos vencidos: {{ alertas.vehiculos_vencidos }}</span>
-      <span class="pill pronto">Vehiculos por vencer: {{ alertas.vehiculos_pronto }}</span>
-      <span class="pill vencido">Choferes vencidos: {{ alertas.choferes_vencidos }}</span>
-      <span class="pill pronto">Choferes por vencer: {{ alertas.choferes_pronto }}</span>
+      <strong style="color:#334155;font-weight:600;">Alertas</strong>
+      <span class="veh-badge bad">Vehículos vencidos: {{ alertas.vehiculos_vencidos }}</span>
+      <span class="veh-badge warn">Vehículos por vencer: {{ alertas.vehiculos_pronto }}</span>
+      <span class="veh-badge bad">Choferes vencidos: {{ alertas.choferes_vencidos }}</span>
+      <span class="veh-badge warn">Choferes por vencer: {{ alertas.choferes_pronto }}</span>
     </div>
   </div>
 

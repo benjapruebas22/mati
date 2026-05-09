@@ -581,7 +581,9 @@ def register_vehiculos_control(bp, get_db_connection, ensure_cols, rebuild_event
 
     @bp.route("/vehiculos", methods=["GET", "POST"], endpoint="vehiculos_home")
     def vehiculos_home():
-        return redirect(url_for("vehiculos_control_diario"))
+        # Centro de Vehículos (SGI): soporte institucional.
+        # La operación diaria oficial vive en MiDefensa; el control diario en SGI queda como respaldo.
+        return redirect(url_for("vehiculos_documentacion"))
 
     @bp.route("/viajes/<int:viaje_id>/editar2", methods=["GET", "POST"], endpoint="viaje_editar2")
     def viaje_editar2(viaje_id):

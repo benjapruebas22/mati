@@ -1,4 +1,8 @@
 {% extends "base.html" %}
+{% block head_extra %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ url_for('static', filename='vehiculos/vehiculos_ui.css', v='2026-05-09-01') }}">
+{% endblock %}
 {% block content %}
 
 <style>
@@ -186,13 +190,26 @@
   }
 </style>
 
-<section class="veh-page">
-    <header class="stats-head">
-        <div>
-            <h1 class="stats-title">Estadisticas de Vehiculos</h1>
-            <p class="stats-sub">Graficos por KM recorridos (vehiculo, chofer, persona).</p>
+<section class="veh-shell">
+  <header class="veh-head">
+    <div>
+      <h1 class="veh-title">Vehículos · Estadísticas</h1>
+      <p class="veh-sub">Análisis mensual / histórico. Operación diaria oficial: MiDefensa. En SGI queda como soporte.</p>
+    </div>
+    <nav class="veh-nav" aria-label="Vehículos">
+      <a class="btn btn-mpd veh-nav-btn" data-veh="documentacion" href="{{ url_for('vehiculos_documentacion') }}">Documentación</a>
+      <a class="btn btn-mpd veh-nav-btn" data-veh="combustible" href="{{ url_for('vehiculos_combustible') }}">Combustible</a>
+      <a class="btn btn-mpd veh-nav-btn" data-veh="estadisticas" aria-current="page" href="{{ url_for('vehiculos_estadisticas') }}">Estadísticas</a>
+      <a class="btn btn-mpd veh-nav-btn" data-veh="respaldo" href="{{ url_for('vehiculos_control_diario') }}">Modo respaldo / contingencia</a>
+      <details class="veh-more">
+        <summary class="btn btn-mpd">Más ▾</summary>
+        <div class="veh-more-menu">
+          <a href="{{ url_for('vehiculos_bd_home') }}">Base de datos</a>
+          <a href="{{ url_for('vehiculos_checklist') }}">Checklist</a>
         </div>
-    </header>
+      </details>
+    </nav>
+  </header>
 
     <div class="card">
         <div class="card-body">
@@ -261,34 +278,38 @@
         </div>
     </div>
 
-    <div class="charts-grid">
-        <div class="card">
-            <div class="chart-box">
-                <h3 class="chart-title">Distribucion KM por vehiculo (torta)</h3>
-                <div class="chart-mini">
-                    <canvas id="chVehiculoPie"></canvas>
-                </div>
-            </div>
-        </div>
-        <div class="card">
-            <div class="chart-box">
-                <h3 class="chart-title">KM por Chofer (Top 20)</h3>
-                <canvas id="chChofer" height="75"></canvas>
-            </div>
-        </div>
-        <div class="card">
-            <div class="chart-box">
-                <h3 class="chart-title">KM por Vehiculo (Top 20)</h3>
-                <canvas id="chVehiculo" height="75"></canvas>
-            </div>
-        </div>
-        <div class="card">
-            <div class="chart-box">
-                <h3 class="chart-title">KM por Persona trasladada (Top 20)</h3>
-                <canvas id="chPersona" height="75"></canvas>
-            </div>
-        </div>
-    </div>
+    <details class="veh-backup">
+      <summary>Gráficos (opcional)</summary>
+      <div class="veh-backup-sub">Para una lectura rápida, priorizá KPIs y tablas. Los gráficos quedan como apoyo.</div>
+      <div class="charts-grid" style="margin-top:10px;">
+          <div class="card">
+              <div class="chart-box">
+                  <h3 class="chart-title">Distribución KM por vehículo (torta)</h3>
+                  <div class="chart-mini">
+                      <canvas id="chVehiculoPie"></canvas>
+                  </div>
+              </div>
+          </div>
+          <div class="card">
+              <div class="chart-box">
+                  <h3 class="chart-title">KM por Chofer (Top 20)</h3>
+                  <canvas id="chChofer" height="75"></canvas>
+              </div>
+          </div>
+          <div class="card">
+              <div class="chart-box">
+                  <h3 class="chart-title">KM por Vehículo (Top 20)</h3>
+                  <canvas id="chVehiculo" height="75"></canvas>
+              </div>
+          </div>
+          <div class="card">
+              <div class="chart-box">
+                  <h3 class="chart-title">KM por Persona trasladada (Top 20)</h3>
+                  <canvas id="chPersona" height="75"></canvas>
+              </div>
+          </div>
+      </div>
+    </details>
 
     <div class="card">
         <div class="card-body">

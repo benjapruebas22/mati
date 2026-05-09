@@ -1,7 +1,36 @@
 {% extends "base.html" %}
+{% block head_extra %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ url_for('static', filename='vehiculos/vehiculos_ui.css', v='2026-05-09-01') }}">
+{% endblock %}
 {% block content %}
 
-<section style="max-width:none;margin:auto">
+<section class="veh-shell">
+  <header class="veh-head">
+    <div>
+      <h1 class="veh-title">Vehículos · Modo respaldo / contingencia</h1>
+      <p class="veh-sub">La operación diaria oficial de viajes se registra en MiDefensa. En SGI este panel queda solo como respaldo.</p>
+    </div>
+    <nav class="veh-nav" aria-label="Vehículos">
+      <a class="btn btn-mpd veh-nav-btn" data-veh="documentacion" href="{{ url_for('vehiculos_documentacion') }}">Documentación</a>
+      <a class="btn btn-mpd veh-nav-btn" data-veh="combustible" href="{{ url_for('vehiculos_combustible') }}">Combustible</a>
+      <a class="btn btn-mpd veh-nav-btn" data-veh="estadisticas" href="{{ url_for('vehiculos_estadisticas') }}">Estadísticas</a>
+      <a class="btn btn-mpd veh-nav-btn" data-veh="respaldo" aria-current="page" href="{{ url_for('vehiculos_control_diario') }}">Modo respaldo / contingencia</a>
+      <details class="veh-more">
+        <summary class="btn btn-mpd">Más ▾</summary>
+        <div class="veh-more-menu">
+          <a href="{{ url_for('vehiculos_bd_home') }}">Base de datos</a>
+          <a href="{{ url_for('vehiculos_checklist') }}">Checklist</a>
+        </div>
+      </details>
+    </nav>
+  </header>
+
+  <details class="veh-backup">
+    <summary>Abrir panel de control diario (respaldo)</summary>
+    <div class="veh-backup-sub">Usar solo en contingencia o para consulta interna histórica. No duplica la carga diaria.</div>
+
+    <section style="max-width:none;margin:auto">
   <style>
     .vd-quick { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 12px 0; }
     .vd-quick .main { padding:10px 14px; border-radius:999px; border:1px solid #0f172a; background:#0f172a; color:#fff; font-weight:800; cursor:pointer; }
@@ -1183,5 +1212,8 @@
   enableSelectQuickSearch("choferSearch", "choferSelect");
   enableSelectQuickSearch("personalSearch", "personalSelect");
 </script>
+
+  </details>
+</section>
 
 {% endblock %}
