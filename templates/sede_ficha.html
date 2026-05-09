@@ -5314,7 +5314,7 @@
 
 </style>
 
-<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-09-02') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-09-03') }}">
 
 
 
@@ -6329,7 +6329,15 @@
         <div class="h-left">
 
 
-        <div class="chip">{{ sede.codigo }}</div>
+        {% set fuero_map = {
+          'S01':'fuero-penal','S02':'fuero-penal','S03':'fuero-penal','S04':'fuero-penal','S05':'fuero-penal','S06':'fuero-penal','S07':'fuero-penal','S10':'fuero-penal',
+          'S13':'fuero-menores',
+          'S11':'fuero-social','S14':'fuero-social','S15':'fuero-social','S16':'fuero-social','S17':'fuero-social','S18':'fuero-social','S19':'fuero-social','S20':'fuero-social',
+          'S08':'fuero-admin','S12':'fuero-admin'
+        } %}
+        {% set sede_fuero_cls = fuero_map.get(sede.codigo, 'fuero-neutral') %}
+
+        <div class="chip sede-badge {{ sede_fuero_cls }}">{{ sede.codigo }}</div>
 
 
 
@@ -6386,11 +6394,29 @@
 
             <a class="btn btn-checklist-limpieza" href="{{ url_for('sedes_control_limpieza_historial', sede=sede.codigo) }}">Historial Control Limpieza</a>
             <a class="btn btn-resumen-sedes" href="{{ url_for('sedes_resumen_mpd') }}">Resumen sedes</a>
+
+            <details class="fuero-legend">
+              <summary class="panel-control-title">Leyenda de fueros</summary>
+              <div class="fuero-legend-grid" role="list">
+                <div class="fuero-legend-item fuero-penal" role="listitem">
+                  <span class="fuero-dot"></span><span>Penal</span>
+                </div>
+                <div class="fuero-legend-item fuero-social" role="listitem">
+                  <span class="fuero-dot"></span><span>Jurídico Social</span>
+                </div>
+                <div class="fuero-legend-item fuero-menores" role="listitem">
+                  <span class="fuero-dot"></span><span>Menores e Incapaces</span>
+                </div>
+                <div class="fuero-legend-item fuero-admin" role="listitem">
+                  <span class="fuero-dot"></span><span>Administración / Violencia Institucional</span>
+                </div>
+              </div>
+            </details>
           </div>
         </details>
       </div>
 
-      <div class="sede-nav">
+        <div class="sede-nav">
         {# Tooltips para chips de sedes (fallback si sedes_nav no trae descripcion) #}
         {% set sede_tooltips = {
           'S01': 'Independencia 202 - Penal',
@@ -6408,10 +6434,12 @@
         } %}
         {% for s in sedes_nav %}
         {% set _tip = sede_tooltips.get(s.codigo) %}
-        <a class="{% if s.codigo == sede.codigo %}active{% endif %}"
+        {% set _fuero_cls = fuero_map.get(s.codigo, 'fuero-neutral') %}
+        {% set _t = (s.nombre if s.nombre is defined and s.nombre else _tip) %}
+        <a class="sede-chip {{ _fuero_cls }} {% if s.codigo == sede.codigo %}active{% endif %}"
            data-fuero="{{ s.fuero }}"
            data-code="{{ s.codigo }}"
-           title="{{ _tip if _tip else 'Sede sin descripcion' }}"
+           title="{{ _t if _t else 'Sede' }}"
            href="{{ url_for('sede_ficha', codigo=s.codigo, piso=piso, tab=tab, view=view) }}">{{ s.codigo }}</a>
         {% endfor %}
       </div>
@@ -7961,7 +7989,10 @@
   <details class="sedes-docs">
     <summary class="sedes-docs-summary">
       <span class="sedes-docs-title">Documentos vinculados (SGI)</span>
-      <span class="sedes-docs-badge">Documentación</span>
+      <span class="sedes-docs-badge">
+        <span class="sede-badge-soft {{ sede_fuero_cls }}">{{ sede.codigo }}</span>
+        <span>Documentación</span>
+      </span>
     </summary>
 
     <div class="sedes-docs-actions">
@@ -8376,7 +8407,10 @@
 
 
 
-        <div class="badge">{{ sede.codigo }} · {{ piso }}{% if local %} · {{ local }}{% endif %}</div>
+        <div class="badge">
+          <span class="sede-badge-soft {{ sede_fuero_cls }}">{{ sede.codigo }}</span>
+          <span>· {{ piso }}{% if local %} · {{ local }}{% endif %}</span>
+        </div>
 
 
 

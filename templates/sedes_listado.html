@@ -114,13 +114,12 @@
         flex: 0 0 auto;
     }
 
-    /* Unificar: sin pasteles fuertes por fuero */
+    /* Clases por fuero (acentos se aplican desde static/sgi/sgi_sedes.css) */
     .fuero-penal,
     .fuero-menores,
-    .fuero-js,
-    .fuero-otro {
-        background: #f8fafc;
-    }
+    .fuero-social,
+    .fuero-admin,
+    .fuero-neutral { background: #f8fafc; }
 
     .sede-info {
         flex: 1 1 auto;
@@ -178,7 +177,7 @@
     }
 </style>
 
-<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-09-02') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-09-03') }}">
 
 <div class="sedes-wrap sgi-sedes">
 
@@ -198,55 +197,61 @@
         {% for s in sedes %}
 
         {# =========================
-        COLOR INSTITUCIONAL POR CÓDIGO
-        Regla fija:
-        S11 y S12 -> JS (rosado)
-        S13 -> Menores (celeste)
-        S14+ -> JS (rosado)
+        FUERO (criterio oficial por código)
+        Penal: S01,S02,S03,S04,S05,S06,S07,S10
+        Menores: S13
+        Jurídico Social: S11,S14,S15,S16,S17,S18,S19,S20
+        Admin/Violencia: S08,S12
         ========================= #}
 
-        {% set cod = (s.codigo or '')|upper %}
-        {% if cod.startswith('S') %}
-        {% set n = cod[1:]|int %}
-        {% else %}
-        {% set n = 0 %}
-        {% endif %}
+        {% set penal_codes = ['S01','S02','S03','S04','S05','S06','S07','S10'] %}
+        {% set menores_codes = ['S13'] %}
+        {% set social_codes = ['S11','S14','S15','S16','S17','S18','S19','S20'] %}
+        {% set admin_codes = ['S08','S12'] %}
 
-        {% if n == 11 or n == 12 %}
-        {% set cls = 'fuero-js' %}
-        {% set fuero_txt = 'JURÍDICO SOCIAL' %}
-        {% elif n == 13 %}
-        {% set cls = 'fuero-menores' %}
-        {% set fuero_txt = 'MENORES / INCAPACES' %}
-        {% elif n >= 14 %}
-        {% set cls = 'fuero-js' %}
-        {% set fuero_txt = 'JURÍDICO SOCIAL' %}
+        {% set cod = (s.codigo or '')|upper %}
+
+        {% if cod in penal_codes %}
+          {% set cls = 'fuero-penal' %}
+          {% set fuero_txt = 'PENAL' %}
+        {% elif cod in menores_codes %}
+          {% set cls = 'fuero-menores' %}
+          {% set fuero_txt = 'MENORES / INCAPACES' %}
+        {% elif cod in social_codes %}
+          {% set cls = 'fuero-social' %}
+          {% set fuero_txt = 'JURÍDICO SOCIAL' %}
+        {% elif cod in admin_codes %}
+          {% set cls = 'fuero-admin' %}
+          {% set fuero_txt = 'ADMIN / VIOLENCIA' %}
         {% else %}
-        {# Para S01–S10 usa lo que venga en DB #}
-        {% set fu = (s.fuero or '')|lower %}
-        {% if 'penal' in fu %}
-        {% set cls = 'fuero-penal' %}
-        {% set fuero_txt = 'PENAL' %}
-        {% elif 'menor' in fu %}
-        {% set cls = 'fuero-menores' %}
-        {% set fuero_txt = 'MENORES / INCAPACES' %}
-        {% elif 'jurid' in fu or 'social' in fu or 'ajs' in fu %}
-        {% set cls = 'fuero-js' %}
-        {% set fuero_txt = 'JURÍDICO SOCIAL' %}
-        {% else %}
-        {% set cls = 'fuero-otro' %}
-        {% set fuero_txt = (s.fuero or 'OTRO')|upper %}
-        {% endif %}
+          {# Fallback (si aparece una sede nueva sin mapeo) #}
+          {% set fu = (s.fuero or '')|lower %}
+          {% if 'penal' in fu %}
+            {% set cls = 'fuero-penal' %}
+            {% set fuero_txt = 'PENAL' %}
+          {% elif 'menor' in fu %}
+            {% set cls = 'fuero-menores' %}
+            {% set fuero_txt = 'MENORES / INCAPACES' %}
+          {% elif 'jurid' in fu or 'social' in fu or 'ajs' in fu %}
+            {% set cls = 'fuero-social' %}
+            {% set fuero_txt = 'JURÍDICO SOCIAL' %}
+          {% elif 'adm' in fu or 'admin' in fu or 'viol' in fu %}
+            {% set cls = 'fuero-admin' %}
+            {% set fuero_txt = 'ADMIN / VIOLENCIA' %}
+          {% else %}
+            {% set cls = 'fuero-neutral' %}
+            {% set fuero_txt = (s.fuero or 'OTRO')|upper %}
+          {% endif %}
         {% endif %}
 
         <a class="sede-card" href="{{ url_for('sede_ficha', codigo=s.codigo) }}"
             data-text="{{ (s.codigo or '') ~ ' ' ~ (s.ciudad or '') ~ ' ' ~ (s.direccion or '') ~ ' ' ~ fuero_txt }}">
-            <div class="sede-circle {{ cls }}">{{ s.codigo }}</div>
+            <div class="sede-circle sede-badge {{ cls }}">{{ s.codigo }}</div>
 
             <div class="sede-info">
                 <div class="sede-topline">
                     <p class="sede-city">{{ s.ciudad or s.nombre or 'Sede' }}</p>
-                    <span class="pill-fuero">{{ fuero_txt }}</span>
+                    <span class="pill-fuero {{ cls }}">{{ fuero_txt }}</span>
                 </div>
 
                 <div class="sede-dir">

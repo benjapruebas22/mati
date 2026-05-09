@@ -19,6 +19,19 @@
   --sedes-danger: #dc2626;
   --sedes-danger-soft: #fff1f2;
 
+  /* Identidad por fuero (acentos institucionales, sin fondos fuertes) */
+  --texto-principal: #4D4D4D;
+
+  --fuero-penal: #6666cc;
+  --fuero-menores: #65BFF4;
+  --fuero-social: #F14B94;
+  --fuero-admin: #f58a5e;
+
+  --fuero-penal-bg: rgba(102, 102, 204, 0.08);
+  --fuero-menores-bg: rgba(101, 191, 244, 0.10);
+  --fuero-social-bg: rgba(241, 75, 148, 0.08);
+  --fuero-admin-bg: rgba(245, 138, 94, 0.10);
+
   /* Alias para templates legacy (mantiene coherencia sin tocar lógica) */
   --bg: var(--sedes-bg-page);
   --card: var(--sedes-bg);
@@ -47,6 +60,61 @@
 /* Tipografía institucional: evita negritas extremas en legacy inline styles */
 .sgi-sedes :where([style*="font-weight:800"], [style*="font-weight:900"]) {
   font-weight: 600 !important;
+}
+
+/* -----------------------------------
+   Fuero: clases reutilizables (acento)
+------------------------------------ */
+.sgi-sedes .fuero-penal {
+  --fuero-accent: var(--fuero-penal);
+  --fuero-bg: var(--fuero-penal-bg);
+}
+.sgi-sedes .fuero-menores {
+  --fuero-accent: var(--fuero-menores);
+  --fuero-bg: var(--fuero-menores-bg);
+}
+.sgi-sedes .fuero-social {
+  --fuero-accent: var(--fuero-social);
+  --fuero-bg: var(--fuero-social-bg);
+}
+.sgi-sedes .fuero-admin {
+  --fuero-accent: var(--fuero-admin);
+  --fuero-bg: var(--fuero-admin-bg);
+}
+.sgi-sedes .fuero-neutral {
+  --fuero-accent: var(--sedes-muted);
+  --fuero-bg: var(--sedes-bg-soft);
+}
+
+.sgi-sedes :where(.sede-chip, .sede-badge, .sede-badge-soft, .sede-circle, .sede-code-pill) {
+  border-color: var(--fuero-accent, var(--sedes-border)) !important;
+  color: var(--fuero-accent, var(--sedes-ink)) !important;
+  background: var(--fuero-bg, var(--sedes-bg)) !important;
+}
+
+.sgi-sedes .sede-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid var(--sedes-border);
+  background: var(--sedes-bg-soft);
+  font-weight: 600;
+}
+.sgi-sedes .sede-badge-soft {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--sedes-border);
+  background: var(--sedes-bg-soft);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 /* -------------------------
@@ -145,9 +213,9 @@
   width: 44px;
   height: 44px;
   border-radius: 999px;
-  background: var(--sedes-bg-soft);
-  border: 1px solid var(--sedes-border-soft);
-  color: var(--sedes-ink);
+  background: var(--fuero-bg, var(--sedes-bg-soft));
+  border: 1px solid var(--fuero-accent, var(--sedes-border-soft));
+  color: var(--fuero-accent, var(--sedes-ink));
   font-weight: 600;
 }
 .sgi-sedes .h-title {
@@ -175,36 +243,33 @@
 }
 .sgi-sedes .sede-nav a {
   background: var(--sedes-bg) !important;
-  border-color: var(--sedes-border) !important;
-  color: var(--sedes-ink) !important;
+  border-color: var(--fuero-accent, var(--sedes-border)) !important;
+  color: var(--fuero-accent, var(--sedes-ink)) !important;
   font-weight: 600;
 }
 .sgi-sedes .sede-nav a.active {
-  background: var(--sedes-primary-soft) !important;
-  border-color: #bfdbfe !important;
-  color: #1d4ed8 !important;
+  background: var(--fuero-bg, var(--sedes-primary-soft)) !important;
+  border-color: var(--fuero-accent, #bfdbfe) !important;
+  color: var(--fuero-accent, #1d4ed8) !important;
   box-shadow: none !important;
   border-width: 1px !important;
 }
 .sgi-sedes .sede-nav a:hover {
-  background: var(--sedes-primary-soft) !important;
-  border-color: #bfdbfe !important;
-  color: #1d4ed8 !important;
+  background: var(--fuero-bg, var(--sedes-primary-soft)) !important;
+  border-color: var(--fuero-accent, #bfdbfe) !important;
+  color: var(--fuero-accent, #1d4ed8) !important;
 }
 
-/* Listado de sedes (neutral, sin pasteles fuertes) */
+/* Listado de sedes (identidad por fuero como acento, sin saturar) */
 .sgi-sedes :where(.sedes-title, .sede-city) {
   font-weight: 600 !important;
   color: var(--sedes-ink) !important;
 }
 .sgi-sedes :where(.sede-circle, .sede-code-circle) {
-  background: var(--sedes-bg-soft) !important;
-  border-color: var(--sedes-border) !important;
-  color: var(--sedes-ink) !important;
+  background: var(--fuero-bg, var(--sedes-bg-soft)) !important;
+  border-color: var(--fuero-accent, var(--sedes-border)) !important;
+  color: var(--fuero-accent, var(--sedes-ink)) !important;
   box-shadow: none !important;
-}
-.sgi-sedes :where(.fuero-penal, .fuero-menores, .fuero-js, .fuero-otro) {
-  background: var(--sedes-bg-soft) !important;
 }
 
 /* Primera capa: Resumen / Operativo / Planos / Info */
@@ -303,6 +368,42 @@
   width: 100%;
   justify-content: flex-start;
 }
+.sgi-sedes .fuero-legend {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--sedes-border);
+}
+.sgi-sedes .fuero-legend > summary {
+  cursor: pointer;
+  list-style: none;
+  color: var(--sedes-muted);
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+.sgi-sedes .fuero-legend > summary::-webkit-details-marker {
+  display: none;
+}
+.sgi-sedes .fuero-legend-grid {
+  margin-top: 8px;
+  display: grid;
+  gap: 6px;
+}
+.sgi-sedes .fuero-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sedes-ink);
+}
+.sgi-sedes .fuero-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--fuero-accent, var(--sedes-muted));
+  border: 1px solid rgba(15, 23, 42, 0.10);
+}
 .sgi-sedes .panel-control-title {
   color: var(--sedes-muted) !important;
   font-weight: 600 !important;
@@ -328,15 +429,15 @@
 
 /* Chips de sede (aires / seguridad / inventario / limpieza) */
 .sgi-sedes :where(.aires-chip-sede, .seg-chip-sede) {
-  background: var(--sedes-bg-soft) !important;
-  border-color: var(--sedes-border) !important;
+  background: var(--fuero-bg, var(--sedes-bg-soft)) !important;
+  border-color: var(--fuero-accent, var(--sedes-border)) !important;
 }
 .sgi-sedes :where(.aires-chip-sede span:nth-child(1), .seg-chip-sede span:nth-child(1)) {
   color: var(--sedes-muted) !important;
   font-weight: 600 !important;
 }
 .sgi-sedes :where(.aires-chip-sede span:nth-child(2), .seg-chip-sede span:nth-child(2)) {
-  color: var(--sedes-ink) !important;
+  color: var(--fuero-accent, var(--sedes-ink)) !important;
   font-weight: 600 !important;
 }
 
@@ -397,10 +498,17 @@
 }
 
 /* Badges / estados discretos */
-.sgi-sedes :where(.badge, .pill-fuero, .estado-pill, .state, .res) {
+.sgi-sedes :where(.badge, .estado-pill, .state, .res) {
   border-color: var(--sedes-border) !important;
   background: var(--sedes-bg-soft) !important;
   color: var(--sedes-ink) !important;
+  font-weight: 600 !important;
+}
+
+.sgi-sedes :where(.pill-fuero) {
+  border-color: var(--fuero-accent, var(--sedes-border)) !important;
+  background: var(--fuero-bg, var(--sedes-bg-soft)) !important;
+  color: var(--fuero-accent, var(--sedes-ink)) !important;
   font-weight: 600 !important;
 }
 
@@ -524,6 +632,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   padding: 3px 10px;
   border-radius: 999px;
   border: 1px solid var(--sedes-border);

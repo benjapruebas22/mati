@@ -14,7 +14,15 @@
   "menores": "#65BFF4",
   "ajs": "#F14B94",
   "civil": "#65BFF4",
-  "adm": "#4D4D4D"
+  "adm": "#f58a5e"
+}[fuero_slug] %}
+
+{% set fuero_cls = {
+  "penal": "fuero-penal",
+  "menores": "fuero-menores",
+  "ajs": "fuero-social",
+  "civil": "fuero-menores",
+  "adm": "fuero-admin"
 }[fuero_slug] %}
 
 <style>
@@ -172,9 +180,9 @@
   }
 </style>
 
-<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-09-02') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-09-03') }}">
 
-<section class="sedes-fuero-main sgi-sedes">
+<section class="sedes-fuero-main sgi-sedes {{ fuero_cls }}">
 
   <header class="sedes-fuero-header">
     <div class="sedes-fuero-titlebox">

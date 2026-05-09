@@ -31,9 +31,15 @@
   @media (max-width:1100px){.kpis{grid-template-columns:repeat(2,1fr);}}
 </style>
 
-<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-09-02') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-09-03') }}">
 
 <div class="wrap sgi-sedes">
+  {% set fuero_map = {
+    'S01':'fuero-penal','S02':'fuero-penal','S03':'fuero-penal','S04':'fuero-penal','S05':'fuero-penal','S06':'fuero-penal','S07':'fuero-penal','S10':'fuero-penal',
+    'S13':'fuero-menores',
+    'S11':'fuero-social','S14':'fuero-social','S15':'fuero-social','S16':'fuero-social','S17':'fuero-social','S18':'fuero-social','S19':'fuero-social','S20':'fuero-social',
+    'S08':'fuero-admin','S12':'fuero-admin'
+  } %}
   <div class="card">
     <div class="head">
       <div>
@@ -72,8 +78,10 @@
         </thead>
         <tbody>
           {% for r in rows %}
+          {% set code = (r.codigo or '')|upper %}
+          {% set cls = fuero_map.get(code, 'fuero-neutral') %}
           <tr>
-            <td style="font-weight:600;">{{ r.codigo }}</td>
+            <td><span class="sede-badge-soft {{ cls }}">{{ r.codigo }}</span></td>
             <td>{{ r.nombre }}</td>
             <td>{{ r.ciudad or "" }}</td>
             <td>{{ (r.fuero or "")|replace("_"," ")|capitalize }}</td>

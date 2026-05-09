@@ -1,12 +1,21 @@
 {% extends "base.html" %}
 {% block content %}
 
-<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-09-02') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-09-03') }}">
 
 <section class="sgi-sedes" style="max-width:1100px;margin:auto">
+  {% set fuero_map = {
+    'S01':'fuero-penal','S02':'fuero-penal','S03':'fuero-penal','S04':'fuero-penal','S05':'fuero-penal','S06':'fuero-penal','S07':'fuero-penal','S10':'fuero-penal',
+    'S13':'fuero-menores',
+    'S11':'fuero-social','S14':'fuero-social','S15':'fuero-social','S16':'fuero-social','S17':'fuero-social','S18':'fuero-social','S19':'fuero-social','S20':'fuero-social',
+    'S08':'fuero-admin','S12':'fuero-admin'
+  } %}
+  {% set sede_fuero_cls = fuero_map.get(sede.codigo, 'fuero-neutral') %}
   <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px">
     <div>
-      <h2 style="margin:0 0 6px 0">Depositos · {{ sede.nombre }} ({{ sede.codigo }})</h2>
+      <h2 style="margin:0 0 6px 0">
+        Depositos · {{ sede.nombre }} · <span class="sede-badge-soft {{ sede_fuero_cls }}">{{ sede.codigo }}</span>
+      </h2>
       <p style="margin:0;color:#64748b;font-size:12px">
         Edita los locales (D01, D02, etc.) y sus descripciones.
       </p>

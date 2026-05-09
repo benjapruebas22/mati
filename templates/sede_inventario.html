@@ -98,9 +98,16 @@
   }
 </style>
 
-<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-09-02') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-09-03') }}">
 
 <section class="sede-inv-main sgi-sedes">
+  {% set fuero_map = {
+    'S01':'fuero-penal','S02':'fuero-penal','S03':'fuero-penal','S04':'fuero-penal','S05':'fuero-penal','S06':'fuero-penal','S07':'fuero-penal','S10':'fuero-penal',
+    'S13':'fuero-menores',
+    'S11':'fuero-social','S14':'fuero-social','S15':'fuero-social','S16':'fuero-social','S17':'fuero-social','S18':'fuero-social','S19':'fuero-social','S20':'fuero-social',
+    'S08':'fuero-admin','S12':'fuero-admin'
+  } %}
+  {% set sede_fuero_cls = fuero_map.get(sede.codigo, 'fuero-neutral') %}
 
   <!-- PANEL IZQUIERDO: info sede + menú de la sede -->
   <div class="left-panel">
@@ -119,8 +126,10 @@
               border:1px solid #e5e7eb;
               text-align:center;">
             <div style="font-size:11px;color:#64748b;">Código</div>
-            <div style="font-weight:700;font-size:18px;">
-              {{ sede.codigo }}
+            <div style="margin-top:6px;">
+              <span class="sede-badge-soft {{ sede_fuero_cls }}" style="font-size:12px;padding:4px 10px;">
+                {{ sede.codigo }}
+              </span>
             </div>
             <div style="margin-top:8px;font-size:11px;color:#334155;">
               {{ sede.fuero|replace('_',' ')|title }}
