@@ -14,20 +14,20 @@
     --ctl-text: var(--text);
     --ctl-soft: var(--muted);
 
-    --ok-bg: #dcfce7;
-    --ok-bd: #86efac;
+    --ok-bg: #f0fdf4;
+    --ok-bd: #bbf7d0;
     --ok-tx: #166534;
 
-    --warn-bg: #fef3c7;
-    --warn-bd: #fcd34d;
+    --warn-bg: #fffbeb;
+    --warn-bd: #fde68a;
     --warn-tx: #92400e;
 
-    --run-bg: #eff6ff;
-    --run-bd: #bfdbfe;
-    --run-tx: #1d4ed8;
+    --run-bg: #f3f7ff;
+    --run-bd: #cfe0ff;
+    --run-tx: #1e40af;
 
-    --danger-bg: #fee2e2;
-    --danger-bd: #fecaca;
+    --danger-bg: #fef2f2;
+    --danger-bd: #fecdd3;
     --danger-tx: #991b1b;
 
     --nvd-accent: var(--primary);
@@ -52,7 +52,7 @@
     margin: 0;
     font-size: 21px;
     line-height: 1.08;
-    font-weight: 900;
+    font-weight: 600;
     color: var(--ctl-text);
   }
   .control-header-top {
@@ -79,21 +79,21 @@
     display: inline-flex;
     align-items: center;
     width: fit-content;
-    border: 1px solid var(--ctl-line);
+    border: 1px solid var(--run-bd);
     border-radius: 999px;
     padding: 3px 10px;
-    background: #eff6ff;
-    color: var(--run-tx);
+    background: var(--run-bg);
+    color: #334155;
     font-size: 11px;
-    font-weight: 900;
+    font-weight: 600;
     letter-spacing: 0.03em;
     text-transform: uppercase;
   }
   .workspace-context-title {
     margin: 0;
     color: var(--ctl-text);
-    font-size: 18px;
-    font-weight: 900;
+    font-size: 17px;
+    font-weight: 600;
     line-height: 1.2;
   }
   .workspace-context-sub {
@@ -114,7 +114,7 @@
     background: var(--ctl-card);
     color: var(--ctl-text);
     font-size: 13px;
-    font-weight: 900;
+    font-weight: 600;
     cursor: pointer;
     transition: border-color .14s ease, background .14s ease, color .14s ease, transform .1s ease;
   }
@@ -122,9 +122,9 @@
     transform: translateY(-1px);
   }
   .workspace-tab.active {
-    border-color: #bfdbfe;
-    background: #eff6ff;
-    color: #1d4ed8;
+    border-color: var(--run-bd);
+    background: var(--run-bg);
+    color: var(--run-tx);
     box-shadow: none;
   }
   .workspace-tab:focus-visible {
@@ -153,13 +153,13 @@
     top: 0;
     bottom: 0;
     width: 3px;
-    background: rgba(37, 99, 235, 0.28);
+    background: rgba(37, 99, 235, 0.18);
   }
   .control-card.card-alertas.has-alertas {
     border-color: var(--ctl-line);
   }
   .control-card.card-alertas.has-alertas::before {
-    background: rgba(245, 158, 11, 0.45);
+    background: rgba(245, 158, 11, 0.32);
   }
   .control-card.card-task-alert::before {
     background: var(--danger);
@@ -179,27 +179,33 @@
   }
   .card-head h2 {
     margin: 0;
-    font-size: 18px;
+    font-size: 17px;
     line-height: 1.2;
-    font-weight: 900;
+    font-weight: 600;
     color: var(--ctl-text);
     letter-spacing: -0.01em;
   }
 
   .btn-soft {
-    border: 1px solid var(--ctl-line);
-    background: var(--ctl-card);
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
     color: var(--ctl-text);
     border-radius: 999px;
     padding: 6px 12px;
     font-size: 12px;
-    font-weight: 800;
+    font-weight: 600;
     cursor: pointer;
     text-decoration: none;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     white-space: nowrap;
+    min-height: 32px;
+  }
+  .btn-soft:hover{
+    background: #f8fafc;
+    border-color: var(--run-bd);
+    color: var(--run-tx);
   }
 
   .btn-dark {
@@ -207,10 +213,11 @@
     background: var(--primary);
     color: #ffffff;
     border-radius: 999px;
-    padding: 7px 14px;
-    font-size: 13px;
-    font-weight: 900;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
     cursor: pointer;
+    min-height: 32px;
   }
 
   .kpi-grid {
@@ -233,13 +240,13 @@
     margin-top: 2px;
     font-size: 24px;
     line-height: 1;
-    font-weight: 900;
+    font-weight: 700;
     color: #1c3453;
   }
-  .kpi.total { border-left: 4px solid var(--primary); }
-  .kpi.info { border-left: 4px solid var(--run-tx); }
-  .kpi.proc { border-left: 4px solid var(--warning); }
-  .kpi.ok { border-left: 4px solid var(--success); }
+  .kpi.total { border-left: 3px solid rgba(37, 99, 235, 0.35); }
+  .kpi.info { border-left: 3px solid rgba(37, 99, 235, 0.30); }
+  .kpi.proc { border-left: 3px solid rgba(245, 158, 11, 0.35); }
+  .kpi.ok { border-left: 3px solid rgba(34, 197, 94, 0.35); }
   .card-resumen .kpi .k-val { font-size: 30px; }
   .kpi-grid.resumen-base {
     display: none;
@@ -251,10 +258,10 @@
   .card-resumen .kpi-grid.respuestas {
     display: none;
   }
-  .kpi.pending-old { border-left: 4px solid var(--primary); }
-  .kpi.today-open { border-left: 4px solid var(--primary); }
-  .kpi.assign-open { border-left: 4px solid var(--warning); }
-  .kpi.matias-open { border-left: 4px solid var(--primary); }
+  .kpi.pending-old { border-left: 3px solid rgba(37, 99, 235, 0.35); }
+  .kpi.today-open { border-left: 3px solid rgba(37, 99, 235, 0.35); }
+  .kpi.assign-open { border-left: 3px solid rgba(245, 158, 11, 0.35); }
+  .kpi.matias-open { border-left: 3px solid rgba(37, 99, 235, 0.35); }
 
   /* KPIs compactos (Matafuegos + Desinfeccion) */
   .ops-kpi-row {
@@ -313,7 +320,7 @@
     color: #475569;
   }
   .ops-kpi-title {
-    font-weight: 900;
+    font-weight: 600;
     font-size: 13px;
     color: #1c3453;
     white-space: nowrap;
@@ -327,56 +334,82 @@
     border: 1px solid #e5e7eb;
     background: #f8fafc;
     color: #334155;
-    font-weight: 800;
+    font-weight: 600;
     white-space: nowrap;
     cursor: default;
   }
 
-  /* Acciones diarias (Limpieza) */
+  /* Accesos rápidos (agrupados) */
   .daily-actions-row{
-    margin-top: 10px;
+    margin-top: 12px;
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .daily-group{
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #ffffff;
+    padding: 8px;
+    display: grid;
+    gap: 8px;
+    min-width: 240px;
+  }
+  .daily-group-title{
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0 2px;
+  }
+  .daily-group-items{
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     flex-wrap: wrap;
   }
   .daily-action{
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 7px 10px;
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
+    padding: 6px 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
     background: #ffffff;
-    color: #1c3453;
+    color: #334155;
     font-size: 12px;
-    font-weight: 900;
+    font-weight: 600;
     text-decoration: none;
     box-shadow: none;
     transition: background .14s ease, border-color .14s ease, color .14s ease;
   }
   .daily-action:hover{
-    background: #f5f9ff;
-    border-color: #bfdbfe;
+    background: #f8fafc;
+    border-color: #cfe0ff;
+    color: #1e3a8a;
   }
   .daily-action .icon{
-    width: 24px;
-    height: 24px;
-    border-radius: 10px;
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
-    border: 1px solid #e5e7eb;
+    font-size: 13px;
+    border: 1px solid #e2e8f0;
     background: #f8fafc;
+    color: #475569;
   }
-  .daily-action .label{
-    white-space: nowrap;
+  .daily-action .label{ white-space: nowrap; }
+  @media (max-width: 740px){
+    .daily-group{ min-width: 0; width: 100%; }
   }
-  .ops-badge.ok { border-color: #d1fae5; background: #f0fdf4; color: #166534; }
-  .ops-badge.warn { border-color: #fde68a; background: #fffbeb; color: #92400e; }
-  .ops-badge.bad { border-color: #fecdd3; background: #fff1f2; color: #9f1239; }
-  .ops-badge.na { border-color: #bfdbfe; background: #eff6ff; color: #1d4ed8; }
+  .ops-badge.ok { border-color: rgba(34, 197, 94, 0.25); background: rgba(34, 197, 94, 0.08); color: #166534; }
+  .ops-badge.warn { border-color: rgba(245, 158, 11, 0.26); background: rgba(245, 158, 11, 0.08); color: #92400e; }
+  .ops-badge.bad { border-color: rgba(239, 68, 68, 0.26); background: rgba(239, 68, 68, 0.08); color: #991b1b; }
+  .ops-badge.na { border-color: rgba(59, 130, 246, 0.22); background: rgba(59, 130, 246, 0.07); color: #1e40af; }
 
   .ops-kpi-body {
     margin-top: 7px;
@@ -385,7 +418,7 @@
   }
   .ops-kpi-date-label {
     font-size: 10px;
-    font-weight: 800;
+    font-weight: 500;
     color: var(--ctl-soft);
     letter-spacing: 0.02em;
   }
@@ -393,7 +426,7 @@
     margin-top: 1px;
     font-size: 16px;
     line-height: 1.05;
-    font-weight: 900;
+    font-weight: 700;
     color: #1c3453;
   }
   .ops-kpi-line,
@@ -446,8 +479,8 @@
   }
   .f-group label {
     font-size: 11px;
-    color: #59799e;
-    font-weight: 700;
+    color: #64748b;
+    font-weight: 500;
   }
   .btn-mini {
     border: 1px solid #e5e7eb;
@@ -456,7 +489,7 @@
     border-radius: 999px;
     padding: 1px 7px;
     font-size: 10px;
-    font-weight: 800;
+    font-weight: 600;
     line-height: 1.5;
     cursor: pointer;
   }
@@ -465,13 +498,13 @@
     border-color: #cbd5e1;
   }
   .btn-mini.primary{
-    border-color: #bfdbfe;
-    background: #eff6ff;
-    color: #1d4ed8;
+    border-color: var(--run-bd);
+    background: var(--run-bg);
+    color: var(--run-tx);
   }
   .btn-mini.primary:hover{
-    background: #dbeafe;
-    border-color: #93c5fd;
+    background: #eef4ff;
+    border-color: #bcd3ff;
   }
   .ctl-inp,
   .ctl-sel {
@@ -535,7 +568,7 @@
   .tbl th {
     background: #f8fafc;
     color: #4b6384;
-    font-weight: 900;
+    font-weight: 600;
     position: sticky;
     top: 0;
     z-index: 1;
@@ -602,7 +635,7 @@
   }
   .nvd-split-head .title {
     font-size: 14px;
-    font-weight: 900;
+    font-weight: 600;
     letter-spacing: 0.01em;
   }
   .nvd-split-head .sub {
@@ -775,18 +808,18 @@
   }
 
   .btn-inline {
-    border: 1px solid #e5e7eb;
+    border: 1px solid #e2e8f0;
     background: #ffffff;
-    color: #1d4ed8;
+    color: var(--run-tx);
     border-radius: 999px;
     padding: 3px 9px;
     font-size: 11px;
-    font-weight: 900;
+    font-weight: 600;
     cursor: pointer;
   }
   .btn-inline:hover {
-    background: #f5f9ff;
-    border-color: #bfdbfe;
+    background: var(--run-bg);
+    border-color: var(--run-bd);
   }
   .btn-inline[disabled] {
     opacity: 0.6;
@@ -794,19 +827,19 @@
   }
   /* Acciones de tabla: siempre accion (azul). El estado se ve por borde (y rojo solo para "Responder"). */
   button.btn-inline.row-gestion.turn-tu-respuesta {
-    border-color: #fecdd3;
-    background: #fff1f2;
+    border-color: rgba(239, 68, 68, 0.30);
+    background: rgba(239, 68, 68, 0.07);
     color: #b91c1c;
   }
   button.btn-inline.row-gestion.turn-esperando {
-    border-color: #bbf7d0;
+    border-color: rgba(34, 197, 94, 0.26);
     background: #ffffff;
-    color: #1d4ed8;
+    color: var(--run-tx);
   }
   button.btn-inline.row-gestion.turn-seguimiento {
-    border-color: #fde68a;
+    border-color: rgba(245, 158, 11, 0.28);
     background: #ffffff;
-    color: #1d4ed8;
+    color: var(--run-tx);
   }
 
   /* Leyenda: chips suaves con color para interpretar el semáforo */
@@ -1183,7 +1216,7 @@
   }
   .card-operativa .card-head h2 {
     font-size: 17px;
-    font-weight: 700;
+    font-weight: 600;
     color: #334155;
   }
   .card-operativa .card-head-actions {
@@ -1191,7 +1224,7 @@
   }
   .card-operativa .card-head-actions .btn-soft {
     padding: 6px 11px;
-    font-weight: 700;
+    font-weight: 600;
   }
   .card-operativa #gestionWrap {
     display: grid;
@@ -2208,8 +2241,6 @@
       <div class="card-head-actions">
         <button id="btnCargarTop" type="button" class="btn-dark">+ Cargar</button>
         <button id="btnPlanosDeposito" type="button" class="btn-soft">Planos depósito</button>
-        <a class="btn-soft" href="{{ url_for('vehiculos_bd_home') }}">Base de datos</a>
-        <a class="btn-soft" href="{{ url_for('dashboard_sede_estado_manual') }}">Progreso sedes</a>
       </div>
     </div>
     <p class="control-header-intro">Pendientes activos y acceso rapido a la gestion interna (chat, estados, fotos y trazabilidad).</p>
@@ -2395,32 +2426,45 @@
       </div>
     </div>
 
-    <div class="daily-actions-row" aria-label="Acciones diarias">
-      <a id="limpiezaAction" class="daily-action" href="{{ url_for('sedes_control_limpieza_supervision') }}">
-        <span class="icon" aria-hidden="true">🧹</span>
-        <span id="limpiezaLabel" class="label">Limpieza</span>
-        <span id="limpiezaBadge" class="ops-badge na" style="display:none;">0</span>
-      </a>
-      <a class="daily-action" href="{{ url_for('sede_ficha', codigo='S01', home=1) }}">
-        <span class="icon" aria-hidden="true">🏢</span>
-        <span class="label">Sedes</span>
-      </a>
-      <a class="daily-action" href="{{ url_for('sst_general') }}">
-        <span class="icon" aria-hidden="true">⚠️</span>
-        <span class="label">SGSST</span>
-      </a>
-      <a class="daily-action" href="{{ url_for('obras_home') }}">
-        <span class="icon" aria-hidden="true">🏗️</span>
-        <span class="label">Obras</span>
-      </a>
-      <a class="daily-action" href="{{ url_for('vehiculos_control_diario') }}">
-        <span class="icon" aria-hidden="true">🚗</span>
-        <span class="label">Vehículos</span>
-      </a>
-      <a class="daily-action" href="{{ url_for('sedes_control_limpieza_historial') }}">
-        <span class="icon" aria-hidden="true">📚</span>
-        <span class="label">Historial limpieza</span>
-      </a>
+    <div class="daily-actions-row" aria-label="Accesos rápidos">
+      <div class="daily-group">
+        <div class="daily-group-title">Operación diaria</div>
+        <div class="daily-group-items">
+          <a class="daily-action" href="{{ url_for('vehiculos_control_diario') }}">
+            <span class="icon" aria-hidden="true">🚗</span>
+            <span class="label">Vehículos</span>
+          </a>
+          <a class="daily-action" href="{{ url_for('obras_home') }}">
+            <span class="icon" aria-hidden="true">🏗️</span>
+            <span class="label">Obras</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="daily-group">
+        <div class="daily-group-title">Limpieza</div>
+        <div class="daily-group-items">
+          <a id="limpiezaAction" class="daily-action" href="{{ url_for('sedes_control_limpieza_supervision') }}">
+            <span class="icon" aria-hidden="true">🧹</span>
+            <span id="limpiezaLabel" class="label">Limpieza</span>
+            <span id="limpiezaBadge" class="ops-badge na" style="display:none;">0</span>
+          </a>
+          <a class="daily-action" href="{{ url_for('sedes_control_limpieza_historial') }}">
+            <span class="icon" aria-hidden="true">📚</span>
+            <span class="label">Historial limpieza</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="daily-group">
+        <div class="daily-group-title">SST</div>
+        <div class="daily-group-items">
+          <a class="daily-action" href="{{ url_for('sst_general') }}">
+            <span class="icon" aria-hidden="true">⚠️</span>
+            <span class="label">SG‑SST</span>
+          </a>
+        </div>
+      </div>
     </div>
   </article>
 
