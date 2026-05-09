@@ -1,7 +1,12 @@
 {% extends "base.html" %}
 
+{% block head_extra %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
+{% endblock %}
+
 {% block content %}
-<style>
+<style>/*
   .risk-wrap {
     max-width: 1100px;
     margin: 0 auto;
@@ -182,15 +187,15 @@
     .pyr-box:last-child::after { content: ""; }
     .case-summary { grid-template-columns: 1fr; }
   }
-</style>
+*/</style>
 
-<section class="risk-wrap">
+<section class="sst-ui sst-page-ergo-risk risk-wrap">
   <div class="risk-head">
     <div>
       <h1 class="risk-title">Como Gestionamos el Riesgo</h1>
       <p class="risk-sub">Modelo operativo de gestion del riesgo ergonomico MPD.</p>
     </div>
-    <a class="btn outline-slate" href="{{ volver_url if volver_url is defined else url_for('sst_plan') }}">Volver</a>
+    <a class="btn-soft" href="{{ volver_url if volver_url is defined else url_for('sst_plan') }}">Volver</a>
   </div>
 
   <div class="case-summary">

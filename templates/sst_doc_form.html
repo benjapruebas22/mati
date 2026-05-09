@@ -1,88 +1,12 @@
 {% extends "base.html" %}
 
+{% block head_extra %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
+{% endblock %}
+
 {% block content %}
-
-<style>
-  .license-shell {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  .license-head {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-    align-items: flex-end;
-  }
-
-  .license-card {
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 16px;
-    box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
-    padding: 14px 16px;
-  }
-
-  .license-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-  }
-
-  .license-grid .full { grid-column: 1 / -1; }
-
-  .license-field {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .license-field label {
-    font-size: 12px;
-    color: #64748b;
-  }
-
-  .license-field input,
-  .license-field select,
-  .license-field textarea {
-    font-size: 13px;
-    padding: 8px 10px;
-    border-radius: 10px;
-    border: 1px solid #e5e7eb;
-    background: #fff;
-  }
-
-  .license-actions {
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
-    margin-top: 8px;
-    flex-wrap: wrap;
-  }
-
-  .hint {
-    font-size: 12px;
-    color: #64748b;
-    margin: 0;
-  }
-
-  .soft-note {
-    border-radius: 12px;
-    border: 1px solid #dbe4f2;
-    background: #f8fafc;
-    padding: 10px 12px;
-    color: #334155;
-    font-size: 12px;
-  }
-
-  @media (max-width: 720px) {
-    .license-grid { grid-template-columns: 1fr; }
-  }
-</style>
-
-<section class="license-shell">
+<section class="sst-ui sst-page-doc-form license-shell">
   <header class="license-head">
     <div>
       <h1 style="margin:0;">Subir formulario / documento SST</h1>
@@ -165,4 +89,3 @@
 </section>
 
 {% endblock %}
-

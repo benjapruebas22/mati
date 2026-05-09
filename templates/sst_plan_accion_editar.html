@@ -1,8 +1,13 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
+
+{% block head_extra %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
+{% endblock %}
 
 {% block content %}
 {% set return_to = request.args.get('next') %}
-<section class="agentes-main">
+<section class="sst-ui sst-page-plan-edit agentes-main">
   <div class="license-card" style="padding:16px;">
     <h2 style="margin:0 0 6px;">Editar accion</h2>
     <p class="section-sub" style="margin-top:0;">{{ acc.objetivo_titulo }}</p>
@@ -71,8 +76,8 @@
         </div>
       </div>
       <div class="license-actions">
-        <button class="btn outline-amber" type="submit">Guardar cambios</button>
-        <a class="btn outline-slate" href="{{ url_for('sst_plan_cargar') if return_to == 'cargar' else url_for('sst_plan') }}">Cancelar</a>
+        <button class="btn-soft primary" type="submit">Guardar cambios</button>
+        <a class="btn-soft" href="{{ url_for('sst_plan_cargar') if return_to == 'cargar' else url_for('sst_plan') }}">Cancelar</a>
       </div>
     </form>
   </div>

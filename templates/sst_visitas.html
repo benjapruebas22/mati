@@ -1,284 +1,12 @@
 {% extends "base.html" %}
 
+{% block head_extra %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
+{% endblock %}
+
 {% block content %}
-
-<style>
-  .sst-shell {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .sst-head {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-    align-items: flex-end;
-  }
-
-  .sst-topline {
-    margin: 0 0 2px;
-    font-size: 10px;
-    font-weight: 900;
-    color: #375a84;
-    letter-spacing: .02em;
-    text-transform: uppercase;
-  }
-
-  .sst-head h1 {
-    margin: 0;
-    font-size: 18px;
-    line-height: 1.1;
-    letter-spacing: .01em;
-  }
-
-  .sst-sub {
-    margin: 3px 0 0;
-    font-size: 12px;
-    color: #64748b;
-  }
-
-  .sst-card {
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 16px;
-    box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
-    padding: 12px 14px;
-  }
-
-  .sst-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
-
-  .sst-search {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-
-  .sst-search input,
-  .sst-search select {
-    height: 34px;
-    border-radius: 999px;
-    border: 1px solid #dbe4f2;
-    padding: 0 10px;
-    background: #fff;
-    font-size: 12px;
-    min-width: 200px;
-  }
-
-  .sst-search select { min-width: 160px; }
-
-  .sst-kpis {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 10px;
-  }
-
-  .sst-kpi {
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-    align-items: center;
-    border-radius: 16px;
-    border: 1px solid #e5e7eb;
-    background: #fff;
-    box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
-    padding: 10px 12px;
-  }
-
-  .sst-kpi .k-label {
-    font-size: 11px;
-    font-weight: 900;
-    color: #1f2937;
-    text-transform: uppercase;
-    letter-spacing: .02em;
-  }
-
-  .sst-kpi .k-val {
-    font-size: 18px;
-    font-weight: 900;
-    color: #0f172a;
-  }
-
-  .sst-kpi.total { background: #f8fafc; border-color: #dbe4f2; }
-  .sst-kpi.danger { background: #fff1f2; border-color: #fecdd3; }
-  .sst-kpi.pending { background: #fff7ed; border-color: #fed7aa; }
-  .sst-kpi.info { background: #eff6ff; border-color: #bfdbfe; }
-
-  .sst-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 10px;
-  }
-
-  .sede-card {
-    --fuero-accent: #cbd5e1;
-    position: relative;
-    border-radius: 18px;
-    border: 1px solid #e5e7eb;
-    background: color-mix(in srgb, var(--fuero-accent) 10%, #ffffff);
-    border-color: color-mix(in srgb, var(--fuero-accent) 24%, #e5e7eb);
-    box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
-    padding: 12px 12px 10px;
-    overflow: hidden;
-    text-decoration: none;
-    color: inherit;
-  }
-
-  .sede-card::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 4px;
-    background: #cbd5e1;
-  }
-
-  .sede-card.complete::before { background: #22c55e; }
-  .sede-card.pending::before { background: #f59e0b; }
-  .sede-card.danger::before { background: #ef4444; }
-
-  .sede-top {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 10px;
-  }
-
-  .sede-id {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    min-width: 0;
-  }
-
-  .sede-code {
-    width: 46px;
-    height: 46px;
-    border-radius: 16px;
-    border: 1px solid color-mix(in srgb, var(--fuero-accent) 28%, #e5e7eb);
-    background: color-mix(in srgb, var(--fuero-accent) 10%, #ffffff);
-    display: grid;
-    place-items: center;
-    font-weight: 900;
-    letter-spacing: .02em;
-    color: color-mix(in srgb, var(--fuero-accent) 82%, #0f172a);
-  }
-
-  .sede-name {
-    font-weight: 900;
-    font-size: 14px;
-    line-height: 1.15;
-    margin: 0;
-    color: #0f172a;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 220px;
-  }
-
-  .sede-meta {
-    margin-top: 8px;
-    display: grid;
-    gap: 6px;
-  }
-
-  .meta-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    font-size: 12px;
-    color: #334155;
-  }
-
-  .meta-k {
-    font-weight: 800;
-    color: #475569;
-  }
-
-  .sst-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    height: 22px;
-    padding: 0 10px;
-    border-radius: 999px;
-    border: 1px solid #e5e7eb;
-    font-size: 11px;
-    font-weight: 900;
-    white-space: nowrap;
-    background: rgba(255, 255, 255, .7);
-  }
-
-  .sst-chip.complete { background: #eaf8ef; border-color: #9fe8b8; color: #166534; }
-  .sst-chip.pending { background: #fff7e9; border-color: #f3d08c; color: #92400e; }
-  .sst-chip.danger { background: #fee2e2; border-color: #fecaca; color: #b91c1c; }
-
-  .doc-dots {
-    display: inline-flex;
-    gap: 8px;
-    align-items: center;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
-
-  .dot {
-    width: 9px;
-    height: 9px;
-    border-radius: 999px;
-    border: 1px solid rgba(15, 23, 42, .14);
-    background: #e2e8f0;
-    box-shadow: 0 1px 0 rgba(0,0,0,.04) inset;
-  }
-
-  .dot.ok { background: #34d399; border-color: #10b981; }
-  .dot.no { background: #fca5a5; border-color: #ef4444; }
-  .dot.wait { background: #fdba74; border-color: #f59e0b; }
-
-  .sede-actions {
-    display: flex;
-    gap: 8px;
-    justify-content: space-between;
-    margin-top: 10px;
-    flex-wrap: wrap;
-  }
-
-  .sede-actions .btn {
-    height: 30px;
-    padding: 0 10px;
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 900;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .btn-soft {
-    background: rgba(255, 255, 255, .74);
-    border: 1px solid rgba(15, 23, 42, .12);
-    color: #0f172a;
-    text-decoration: none;
-  }
-
-  .btn-soft:hover { background: rgba(255, 255, 255, .92); }
-
-  @media (max-width: 560px) {
-    .sst-search input { min-width: 160px; }
-    .sede-name { max-width: 180px; }
-  }
-</style>
-
-<section class="sst-shell">
+<section class="sst-ui sst-page-visitas sst-shell">
   <header class="sst-head">
     <div>
       <p class="sst-topline">SG-SST</p>
@@ -349,22 +77,22 @@
       </div>
 
       <div class="sede-meta">
-        <div class="meta-row">
-          <span class="meta-k">Docs ART</span>
-          <span class="doc-dots">
+      <div class="meta-row">
+        <span class="meta-k">Docs ART</span>
+        <span class="doc-dots">
             {% set d351_ok = (s.doc_351 and (s.doc_351.drive_url or s.doc_351.archivo)) %}
             {% set rgrl_ok = (s.doc_rgrl and (s.doc_rgrl.drive_url or s.doc_rgrl.archivo)) %}
             {% set d351_pend = (s.doc_351 and (s.doc_351.estado_revision or '')|upper == 'PENDIENTE') %}
             {% set rgrl_pend = (s.doc_rgrl and (s.doc_rgrl.estado_revision or '')|upper == 'PENDIENTE') %}
             <span title="Decreto 351/79" class="dot {% if d351_ok %}{% if d351_pend %}wait{% else %}ok{% endif %}{% else %}no{% endif %}"></span>
-            <span style="font-weight:900;">351/79</span>
+            <span class="meta-k">351/79</span>
             <span title="RGRL" class="dot {% if rgrl_ok %}{% if rgrl_pend %}wait{% else %}ok{% endif %}{% else %}no{% endif %}"></span>
-            <span style="font-weight:900;">RGRL</span>
+            <span class="meta-k">RGRL</span>
           </span>
         </div>
         <div class="meta-row">
           <span class="meta-k">Hallazgos</span>
-          <span style="font-weight:900;">{{ s.pend_hallazgos or 0 }} pend.</span>
+          <span>{{ s.pend_hallazgos or 0 }} pend.</span>
         </div>
       </div>
 

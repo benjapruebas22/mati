@@ -1,18 +1,13 @@
 {% extends "base.html" %}
 
-{% block content %}
-<style>
-  .sst-edit-card {
-    background: #fff;
-    border: 1px solid #e5e7eb;
-    border-radius: 16px;
-    box-shadow: 0 8px 22px rgba(15, 23, 42, .06);
-    padding: 16px;
-  }
-</style>
+{% block head_extra %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
+{% endblock %}
 
-<section class="agentes-main">
-  <div class="sst-edit-card">
+{% block content %}
+<section class="sst-ui sst-page-edit agentes-main">
+  <div class="license-card" style="padding:16px;">
     <h2 style="margin:0 0 8px;">Editar registro SST</h2>
     <form method="post" class="license-form">
       <div class="license-grid">

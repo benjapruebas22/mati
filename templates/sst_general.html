@@ -1,5 +1,10 @@
 {% extends "base.html" %}
 
+{% block head_extra %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
+{% endblock %}
+
 {% block content %}
 
 <style>
@@ -1035,7 +1040,7 @@
   }
 </style>
 
-<section class="agentes-main license-shell compact-top">
+<section class="sst-ui sst-page-general agentes-main license-shell compact-top">
   <header class="section-header license-head">
     <div class="sst-main-brand">
       <div>
