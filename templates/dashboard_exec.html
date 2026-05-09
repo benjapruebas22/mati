@@ -811,22 +811,31 @@
 
   /* Leyenda: chips suaves con color para interpretar el semáforo */
   span.btn-inline.row-gestion.turn-tu-respuesta {
-    border-color: #fecdd3;
-    background: #fff1f2;
+    border-color: rgba(239, 68, 68, 0.32);
+    background: rgba(239, 68, 68, 0.07);
     color: #b91c1c;
     cursor: default;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
   }
   span.btn-inline.row-gestion.turn-esperando {
-    border-color: #bbf7d0;
-    background: #f0fdf4;
+    border-color: rgba(34, 197, 94, 0.28);
+    background: rgba(34, 197, 94, 0.06);
     color: #166534;
     cursor: default;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
   }
   span.btn-inline.row-gestion.turn-seguimiento {
-    border-color: #fde68a;
-    background: #fffbeb;
+    border-color: rgba(245, 158, 11, 0.32);
+    background: rgba(245, 158, 11, 0.08);
     color: #92400e;
     cursor: default;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
   }
 
   .aux-row {
@@ -1026,9 +1035,13 @@
   .pend-respuesta-legend {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+    justify-content: flex-start;
+    gap: 6px;
     flex-wrap: wrap;
+  }
+  .pend-respuesta-legend .aux-row {
+    justify-content: flex-start;
+    gap: 6px;
   }
   .split-legend {
     display: flex;
@@ -1053,10 +1066,12 @@
 
   .gestion-topbar {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: space-between;
-    gap: 8px;
+    gap: 10px;
     flex-wrap: wrap;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e7eb;
   }
   .gestion-rubro-tabs {
     display: flex;
@@ -1079,9 +1094,9 @@
   }
   .gestion-rubro-group-label {
     font-size: 11px;
-    font-weight: 900;
+    font-weight: 700;
     letter-spacing: 0.08em;
-    color: #6b7f9e;
+    color: #94a3b8;
     padding: 0 4px;
     white-space: nowrap;
   }
@@ -1093,12 +1108,13 @@
   }
   /* sin color por grupo: solo semáforo (rojo/amarillo/verde) y azul institucional */
   .gestion-rubro-tab {
-    border: 1px solid #e5e7eb;
+    border: 1px solid #e2e8f0;
     background: #ffffff;
     color: #334155;
-    border-radius: 12px;
-    padding: 8px 11px;
-    font-weight: 900;
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-weight: 700;
+    font-size: 12px;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
@@ -1106,36 +1122,41 @@
   }
   .gestion-rubro-tab:hover { background: #f8fafc; }
   .gestion-rubro-tab.active {
-    border-color: #bfdbfe;
-    background: #eff6ff;
+    border-color: #cfe0ff;
+    background: #f3f7ff;
     box-shadow: none;
-    color: #1d4ed8;
+    color: #1e40af;
   }
   .gestion-rubro-tab.has-old:not(.active) {
-    border-color: #fde68a;
+    border-color: rgba(245, 158, 11, 0.32);
   }
   .gestion-rubro-tab.has-old .tab-badge {
-    border-color: #fde68a;
+    border-color: rgba(245, 158, 11, 0.32);
   }
   .tab-badge {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 20px;
-    height: 16px;
+    min-width: 18px;
+    height: 14px;
     padding: 0 5px;
     border-radius: 999px;
-    border: 1px solid #e5e7eb;
-    background: #f8fafc;
-    color: #475569;
-    font-size: 10px;
-    font-weight: 900;
+    border: 1px solid #e2e8f0;
+    background: #f1f5f9;
+    color: #64748b;
+    font-size: 9px;
+    font-weight: 700;
   }
   .gestion-filtros-box {
+    border: 0;
+    background: transparent;
+    padding: 0;
+  }
+  .gestion-filtros-box[open] {
     border: 1px solid #e5e7eb;
     border-radius: 12px;
     background: #ffffff;
-    padding: 6px 8px;
+    padding: 8px;
   }
   .gestion-filtros-box > summary {
     list-style: none;
@@ -1143,10 +1164,10 @@
   }
   .gestion-filtros-box > summary::-webkit-details-marker { display: none; }
   .gestion-filtros-grid {
-    margin-top: 8px;
+    margin-top: 10px;
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 8px;
+    gap: 10px;
     align-items: end;
   }
   .gestion-filtros-grid .agente-filtro-scroll {
@@ -1154,6 +1175,69 @@
     border-radius: 10px;
     padding: 6px;
     background: #ffffff;
+  }
+
+  /* Gestión (Centro Operativo): limpieza final */
+  .card-operativa {
+    gap: 12px;
+  }
+  .card-operativa .card-head h2 {
+    font-size: 17px;
+    font-weight: 700;
+    color: #334155;
+  }
+  .card-operativa .card-head-actions {
+    gap: 8px;
+  }
+  .card-operativa .card-head-actions .btn-soft {
+    padding: 6px 11px;
+    font-weight: 700;
+  }
+  .card-operativa #gestionWrap {
+    display: grid;
+    gap: 12px;
+  }
+  .card-operativa .nvd-footnote {
+    color: #64748b;
+    font-weight: 500;
+  }
+  .card-operativa .hist-box {
+    margin-top: 8px;
+  }
+  .card-operativa .nvd-split-grid {
+    gap: 12px;
+  }
+  .card-operativa .nvd-split-block {
+    border-color: #e5e7eb;
+    border-radius: 12px;
+    padding: 10px;
+    gap: 8px;
+  }
+  .card-operativa .nvd-split-block.split-dia,
+  .card-operativa .nvd-split-block.split-solic,
+  .card-operativa .nvd-split-block.split-pend {
+    background: #ffffff;
+    border-color: #e5e7eb;
+  }
+  .card-operativa .nvd-split-head {
+    border-bottom-color: #e5e7eb;
+    padding: 2px 2px 8px;
+  }
+  .card-operativa .nvd-split-head .title {
+    font-weight: 600;
+    color: #334155;
+  }
+  .card-operativa .nvd-split-head .sub {
+    font-weight: 500;
+    color: #64748b;
+  }
+  .card-operativa .nvd-admin-subtitle {
+    font-weight: 600;
+    color: #334155;
+  }
+  .card-operativa .tbl th {
+    font-weight: 700;
+    color: #64748b;
   }
 
   .gestion-panels .gestion-panel { display: none; }
@@ -2340,12 +2424,11 @@
     </div>
   </article>
 
-  <article id="alertasCard" class="control-card control-workspace-section card-alertas no-alertas" data-workspaces="gestion resumen recursos">
+  <article id="alertasCard" class="control-card control-workspace-section card-alertas" data-workspaces="gestion resumen recursos" style="display:none;">
     <div class="card-head">
       <h2>Alertas criticas</h2>
     </div>
     <ul id="alertasList" class="alert-list">
-      <li>Sin alertas criticas hoy.</li>
     </ul>
   </article>
 
@@ -2459,13 +2542,50 @@
     </details>
   </article>
 
-  <article class="control-card control-workspace-section card-operativa" data-workspaces="gestion">
+  <article class="control-card control-workspace-section card-operativa" data-workspaces="gestion historial">
     <div class="card-head">
       <h2>Gestion</h2>
       <div class="card-head-actions">
         <button id="btnToggleGestionCard" type="button" class="btn-soft" aria-expanded="true">Ocultar</button>
         <button id="btnRecargarDia" type="button" class="btn-soft">Recargar dia</button>
         <button id="btnHistorialQuick" type="button" class="btn-soft">Historial</button>
+      </div>
+    </div>
+    <div id="histBox" class="hist-box">
+      <div class="aux-row">
+        <strong style="color:#334155;font-weight:600;">Finalizados (historial)</strong>
+        <button id="btnCerrarHist" type="button" class="btn-soft">Cerrar</button>
+      </div>
+      <div class="aux-row">
+        <div class="f-group" style="max-width:180px;">
+          <label for="histDesde">Desde</label>
+          <input id="histDesde" class="ctl-inp" type="date">
+        </div>
+        <div class="f-group" style="max-width:180px;">
+          <label for="histHasta">Hasta</label>
+          <input id="histHasta" class="ctl-inp" type="date">
+        </div>
+        <button id="btnHistBuscar" type="button" class="btn-soft">Buscar</button>
+      </div>
+      <div class="table-wrap" style="max-height:220px;">
+        <table class="tbl">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Hora</th>
+              <th>Agente</th>
+              <th>Sede</th>
+              <th>Tipo</th>
+              <th>Subtipo</th>
+              <th>Observacion</th>
+              <th>Estado</th>
+              <th>Accion</th>
+            </tr>
+          </thead>
+          <tbody id="histBody">
+            <tr><td colspan="9" style="color:#6f86a5;">Sin historial (resueltos).</td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
     <div id="gestionWrap">
@@ -2534,8 +2654,8 @@
       </details>
       </div>
 
-    <div class="pend-respuesta-legend" style="margin-top:-2px;">
-      <div class="aux-row" style="padding-top:0;">
+    <div class="pend-respuesta-legend">
+      <div class="aux-row">
         <span class="btn-inline row-gestion turn-tu-respuesta" style="cursor:default;">Rojo: te toca responder</span>
         <span class="btn-inline row-gestion turn-seguimiento" style="cursor:default;">Amarillo: en seguimiento</span>
         <span class="btn-inline row-gestion turn-esperando" style="cursor:default;">Verde: esperando respuesta</span>
@@ -2692,52 +2812,6 @@
     </div>
   </article>
 
-  <article class="control-card control-workspace-section card-historial" data-workspaces="gestion historial">
-    <div class="card-head">
-      <h2>Historial operativo</h2>
-      <div class="card-head-actions">
-        <button id="btnHistorialTop" type="button" class="btn-soft">Historial</button>
-      </div>
-    </div>
-
-    <div id="histBox" class="hist-box">
-      <div class="aux-row">
-        <strong style="color:#1f7a55;">Finalizados (historial)</strong>
-        <button id="btnCerrarHist" type="button" class="btn-soft">Ocultar</button>
-      </div>
-      <div class="aux-row">
-        <div class="f-group" style="max-width:180px;">
-          <label for="histDesde">Desde</label>
-          <input id="histDesde" class="ctl-inp" type="date">
-        </div>
-        <div class="f-group" style="max-width:180px;">
-          <label for="histHasta">Hasta</label>
-          <input id="histHasta" class="ctl-inp" type="date">
-        </div>
-        <button id="btnHistBuscar" type="button" class="btn-soft">Buscar</button>
-      </div>
-      <div class="table-wrap" style="max-height:220px;">
-        <table class="tbl">
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Hora</th>
-              <th>Agente</th>
-              <th>Sede</th>
-              <th>Tipo</th>
-              <th>Subtipo</th>
-              <th>Observacion</th>
-              <th>Estado</th>
-              <th>Accion</th>
-            </tr>
-          </thead>
-          <tbody id="histBody">
-            <tr><td colspan="9" style="color:#6f86a5;">Sin historial (resueltos).</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </article>
 </section>
 
 <div id="gestionModal" class="gestion-modal" aria-hidden="true">
@@ -4765,14 +4839,16 @@
       }
       var rows = Array.isArray(items) ? items : [];
       if (!rows.length) {
-        el.alertas.innerHTML = '<li class="alert-default">Sin alertas criticas hoy.</li>';
         if (el.alertasCard) {
-          el.alertasCard.classList.add("no-alertas");
+          el.alertasCard.style.display = "none";
           el.alertasCard.classList.remove("has-alertas");
+          el.alertasCard.classList.remove("no-alertas");
         }
+        if (el.alertas) el.alertas.innerHTML = "";
         return;
       }
       if (el.alertasCard) {
+        el.alertasCard.style.display = "";
         el.alertasCard.classList.remove("no-alertas");
         el.alertasCard.classList.add("has-alertas");
       }
