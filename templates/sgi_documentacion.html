@@ -1,395 +1,97 @@
 {% extends "base.html" %}
 
+{% block head_extra %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_documental.css', v='2026-05-09') }}">
+{% endblock %}
+
 {% block content %}
-<style>
-  .sgi-docs-shell {
-    display: grid;
-    gap: 14px;
-    --ink: #12345f;
-    --ink-soft: #5f7698;
-    --line: #d7e4f7;
-  }
-
-  .sgi-docs-hero {
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    background: linear-gradient(120deg, #f8fbff 0%, #eef5ff 56%, #f2fbf7 100%);
-    padding: 14px;
-    display: grid;
-    gap: 12px;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .sgi-docs-hero::after {
-    content: "";
-    position: absolute;
-    right: -55px;
-    top: -55px;
-    width: 210px;
-    height: 210px;
-    border-radius: 999px;
-    background: radial-gradient(circle at center, rgba(154, 189, 255, .27), rgba(154, 189, 255, 0));
-    pointer-events: none;
-  }
-
-  .sgi-docs-head {
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-    flex-wrap: wrap;
-    align-items: center;
-    position: relative;
-    z-index: 1;
-  }
-
-  .sgi-docs-head h2 {
-    margin: 0;
-    font-size: 40px;
-    color: var(--ink);
-    letter-spacing: .2px;
-    line-height: 1.05;
-  }
-
-  .sgi-docs-head .section-sub {
-    margin-top: 7px;
-    max-width: 700px;
-    color: #4e678c;
-  }
-
-  .sgi-docs-head-actions {
-    display: inline-flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-
-  .sgi-doc-action {
-    text-decoration: none;
-    border-radius: 14px;
-    border: 1px solid #c8d9f2;
-    min-height: 60px;
-    min-width: 228px;
-    padding: 10px 13px;
-    display: grid;
-    align-content: center;
-    gap: 2px;
-    transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
-  }
-
-  .sgi-doc-action:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 14px rgba(18, 41, 74, 0.08);
-  }
-
-  .sgi-doc-action .t {
-    font-size: 14px;
-    font-weight: 900;
-    line-height: 1.15;
-  }
-
-  .sgi-doc-action .s {
-    font-size: 11px;
-    font-weight: 700;
-    line-height: 1.15;
-  }
-
-  .sgi-doc-action.informes {
-    background: linear-gradient(180deg, #fff5df 0%, #ffecc0 100%);
-    border-color: #efc36f;
-  }
-
-  .sgi-doc-action.informes .t {
-    color: #8e4f00;
-  }
-
-  .sgi-doc-action.informes .s {
-    color: #a1641a;
-  }
-
-  .sgi-doc-action.volver {
-    background: linear-gradient(180deg, #f8fbff 0%, #edf4ff 100%);
-    border-color: #c8d9f2;
-  }
-
-  .sgi-doc-action.volver .t {
-    color: #1f3c68;
-  }
-
-  .sgi-doc-action.volver .s {
-    color: #5f7698;
-  }
-
-  .sgi-docs-kpis {
-    position: relative;
-    z-index: 1;
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 8px;
-  }
-
-  .sgi-doc-kpi {
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    background: #fff;
-    padding: 10px;
-    display: grid;
-    gap: 2px;
-  }
-
-  .sgi-doc-kpi .l {
-    font-size: 11px;
-    font-weight: 800;
-    color: #49698f;
-    text-transform: uppercase;
-    letter-spacing: .35px;
-  }
-
-  .sgi-doc-kpi .v {
-    font-size: 26px;
-    font-weight: 900;
-    line-height: 1;
-    color: #102f56;
-  }
-
-  .sgi-doc-kpi .s {
-    font-size: 11px;
-    color: #5f7698;
-  }
-
-  .sgi-doc-kpi.marco {
-    background: linear-gradient(180deg, #edf7ff 0%, #e3f1ff 100%);
-    border-color: #bad5f5;
-  }
-
-  .sgi-doc-kpi.manual {
-    background: linear-gradient(180deg, #f0fcf6 0%, #e6f8ef 100%);
-    border-color: #bae9d4;
-  }
-
-  .sgi-doc-kpi.proced {
-    background: linear-gradient(180deg, #fff8ee 0%, #fff1dc 100%);
-    border-color: #f3d09a;
-  }
-
-  .sgi-doc-kpi.instruct {
-    background: linear-gradient(180deg, #f5f2ff 0%, #ede8ff 100%);
-    border-color: #d1c4fb;
-  }
-
-  .sgi-docs-block {
-    border: 1px solid #dbe4f2;
-    border-radius: 14px;
-    background: linear-gradient(180deg, #f9fcff 0%, #f3f8ff 100%);
-    padding: 12px;
-  }
-
-  .sgi-docs-block-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 8px;
-  }
-
-  .sgi-docs-block-head h3 {
-    margin: 0;
-    font-size: 18px;
-    color: #183b67;
-  }
-
-  .sgi-docs-block-head p {
-    margin: 2px 0 0;
-    font-size: 12px;
-    color: #5f7698;
-  }
-
-  .sgi-docs-chip {
-    border: 1px solid #c9daf3;
-    border-radius: 999px;
-    background: #eef5ff;
-    color: #35567f;
-    padding: 4px 10px;
-    font-size: 11px;
-    font-weight: 800;
-  }
-
-  .sgi-docs-grid {
-    display: grid;
-    gap: 10px;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .sgi-doc-link {
-    border: 1px solid #d8e2f5;
-    border-left: 4px solid #bcd0f0;
-    border-radius: 12px;
-    background: linear-gradient(180deg, #f8fbff 0%, #f1f6ff 100%);
-    color: #1f3c68;
-    text-decoration: none;
-    padding: 12px;
-    font-weight: 800;
-    line-height: 1.3;
-    display: block;
-    transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
-  }
-
-  .sgi-doc-link:hover {
-    border-color: #a8bee8;
-    transform: translateY(-1px);
-    box-shadow: 0 6px 14px rgba(18, 41, 74, 0.08);
-  }
-
-  .sgi-doc-link.marco {
-    border-left-color: #89b6f0;
-    background: linear-gradient(180deg, #f4f9ff 0%, #edf5ff 100%);
-  }
-
-  .sgi-doc-link.manual {
-    border-left-color: #86d9b2;
-    background: linear-gradient(180deg, #f3fdf8 0%, #ecfbf4 100%);
-  }
-
-  .sgi-doc-link.proced {
-    border-left-color: #f0c07d;
-    background: linear-gradient(180deg, #fff9ef 0%, #fff4e5 100%);
-  }
-
-  .sgi-doc-link.instruct {
-    border-left-color: #bca6f8;
-    background: linear-gradient(180deg, #f7f4ff 0%, #f0ebff 100%);
-  }
-
-  .sgi-doc-link .sub {
-    display: block;
-    margin-top: 4px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #5e7392;
-  }
-
-  .sgi-doc-link .tag {
-    display: inline-block;
-    margin-top: 8px;
-    border: 1px solid #c7d6ee;
-    border-radius: 999px;
-    background: #ffffff;
-    color: #35567f;
-    padding: 2px 8px;
-    font-size: 10px;
-    font-weight: 800;
-  }
-
-  @media (max-width: 980px) {
-    .sgi-docs-kpis {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .sgi-docs-head h2 {
-      font-size: 32px;
-    }
-  }
-
-  @media (max-width: 800px) {
-    .sgi-docs-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .sgi-docs-head-actions {
-      width: 100%;
-      display: grid;
-      grid-template-columns: 1fr;
-    }
-
-    .sgi-doc-action {
-      min-width: 0;
-      width: 100%;
-    }
-  }
-
-  @media (max-width: 560px) {
-    .sgi-docs-kpis {
-      grid-template-columns: 1fr;
-    }
-  }
-</style>
-
-<section class="sgi-docs-shell sedes-section">
-  <section class="sgi-docs-hero">
-    <header class="sgi-docs-head">
+<section class="sgi-doclib sgi-doclib-shell sedes-section">
+  <section class="sgi-doclib-hero">
+    <header class="sgi-doclib-hero-head">
       <div>
-        <h2>&#128194; Documentaci&oacute;n del Sistema</h2>
-        <p class="section-sub">Repositorio de documentos marco del SGI para consulta interna y referencia operativa.</p>
+        <h2 class="sgi-doclib-hero-title">Documentación del Sistema</h2>
+        <p class="sgi-doclib-hero-sub">Repositorio de documentos marco del SGI para consulta interna y referencia operativa.</p>
       </div>
-      <div class="sgi-docs-head-actions">
-        <a class="sgi-doc-action informes" href="{{ url_for('sgi_documentacion_informes') }}">
-          <span class="t">&#128221; Informes operativos</span>
-          <span class="s">Carga, filtro y gestion documental</span>
-        </a>
-        <a class="sgi-doc-action volver" href="{{ url_for('sgi_home') }}">
-          <span class="t">&#8592; Volver a SGI</span>
-          <span class="s">Regresar al panel principal</span>
-        </a>
+      <div class="sgi-doclib-hero-actions">
+        <a class="sgi-btn sgi-btn-outline" href="{{ url_for('sgi_documentacion_informes') }}">Informes operativos</a>
+        <a class="sgi-btn" href="{{ url_for('sgi_home') }}">Volver a SGI</a>
       </div>
     </header>
 
-    <div class="sgi-docs-kpis">
-      <article class="sgi-doc-kpi marco">
-        <span class="l">Marco institucional</span>
-        <span class="v">1</span>
-        <span class="s">Documento fundacional</span>
+    <div class="sgi-kpi-grid">
+      <article class="sgi-kpi">
+        <span class="k-label">Marco institucional</span>
+        <span class="k-val">1</span>
+        <span class="k-sub">Documento fundacional</span>
       </article>
-      <article class="sgi-doc-kpi manual">
-        <span class="l">Manual</span>
-        <span class="v">1</span>
-        <span class="s">Guia de uso integral</span>
+      <article class="sgi-kpi">
+        <span class="k-label">Manual</span>
+        <span class="k-val">1</span>
+        <span class="k-sub">Guía de uso integral</span>
       </article>
-      <article class="sgi-doc-kpi proced">
-        <span class="l">Procedimientos</span>
-        <span class="v">1</span>
-        <span class="s">Estandar operativo</span>
+      <article class="sgi-kpi">
+        <span class="k-label">Procedimientos</span>
+        <span class="k-val">1</span>
+        <span class="k-sub">Estándar operativo</span>
       </article>
-      <article class="sgi-doc-kpi instruct">
-        <span class="l">Instructivos</span>
-        <span class="v">1</span>
-        <span class="s">Ejecucion diaria</span>
+      <article class="sgi-kpi">
+        <span class="k-label">Instructivos</span>
+        <span class="k-val">1</span>
+        <span class="k-sub">Ejecución diaria</span>
+      </article>
+      <article class="sgi-kpi">
+        <span class="k-label">Archivos</span>
+        <span class="k-val">4</span>
+        <span class="k-sub">Documentos oficiales</span>
       </article>
     </div>
   </section>
 
-  <section class="sgi-docs-block">
-    <div class="sgi-docs-block-head">
+  <section class="sgi-panel">
+    <div class="sgi-panel-head">
       <div>
         <h3>Biblioteca documental base</h3>
-        <p>Acceso rapido a los cuatro documentos estructurales del SGI.</p>
+        <p>Acceso rápido a los cuatro documentos estructurales del SGI.</p>
       </div>
-      <span class="sgi-docs-chip">4 archivos oficiales</span>
+      <span class="sgi-badge">Repositorio oficial</span>
     </div>
 
-    <div class="sgi-docs-grid">
-      <a class="sgi-doc-link marco" href="{{ url_for('static', filename='docs/documentacion_sistema_sgi.pdf') }}" target="_blank" rel="noopener">
-        1. Documento marco institucional
-        <span class="sub">Define la vision, principios y estructura general del sistema de gestion de Intendencia.</span>
-        <span class="tag">Marco</span>
+    <div class="sgi-doc-grid">
+      <a class="sgi-doc-card" href="{{ url_for('static', filename='docs/documentacion_sistema_sgi.pdf') }}" target="_blank" rel="noopener">
+        <div class="sgi-doc-icon" aria-hidden="true">📄</div>
+        <div class="sgi-doc-body">
+          <p class="sgi-doc-title">Documento marco institucional</p>
+          <p class="sgi-doc-desc">Define la visión, principios y estructura general del sistema de gestión de Intendencia.</p>
+          <div class="sgi-doc-meta"><span class="sgi-badge blue">Marco</span></div>
+        </div>
       </a>
 
-      <a class="sgi-doc-link manual" href="{{ url_for('static', filename='docs/manual_sistema_sgi.pdf') }}" target="_blank" rel="noopener">
-        2. Manual del sistema
-        <span class="sub">Describe el funcionamiento de los modulos y la forma de utilizacion del SGI.</span>
-        <span class="tag">Manual</span>
+      <a class="sgi-doc-card" href="{{ url_for('static', filename='docs/manual_sistema_sgi.pdf') }}" target="_blank" rel="noopener">
+        <div class="sgi-doc-icon" aria-hidden="true">📄</div>
+        <div class="sgi-doc-body">
+          <p class="sgi-doc-title">Manual del sistema</p>
+          <p class="sgi-doc-desc">Describe el funcionamiento de los módulos y la forma de utilización del SGI.</p>
+          <div class="sgi-doc-meta"><span class="sgi-badge blue">Manual</span></div>
+        </div>
       </a>
 
-      <a class="sgi-doc-link proced" href="{{ url_for('static', filename='docs/procedimientos_sgi.pdf') }}" target="_blank" rel="noopener">
-        3. Procedimientos
-        <span class="sub">Establece los procesos operativos normalizados del area.</span>
-        <span class="tag">Procedimiento</span>
+      <a class="sgi-doc-card" href="{{ url_for('static', filename='docs/procedimientos_sgi.pdf') }}" target="_blank" rel="noopener">
+        <div class="sgi-doc-icon" aria-hidden="true">📄</div>
+        <div class="sgi-doc-body">
+          <p class="sgi-doc-title">Procedimientos</p>
+          <p class="sgi-doc-desc">Establece los procesos operativos normalizados del área.</p>
+          <div class="sgi-doc-meta"><span class="sgi-badge blue">Procedimiento</span></div>
+        </div>
       </a>
 
-      <a class="sgi-doc-link instruct" href="{{ url_for('static', filename='docs/instructivos_operativos_sgi.pdf') }}" target="_blank" rel="noopener">
-        4. Instructivos operativos
-        <span class="sub">Guias practicas para la ejecucion diaria de tareas.</span>
-        <span class="tag">Instructivo</span>
+      <a class="sgi-doc-card" href="{{ url_for('static', filename='docs/instructivos_operativos_sgi.pdf') }}" target="_blank" rel="noopener">
+        <div class="sgi-doc-icon" aria-hidden="true">📄</div>
+        <div class="sgi-doc-body">
+          <p class="sgi-doc-title">Instructivos operativos</p>
+          <p class="sgi-doc-desc">Guías prácticas para la ejecución diaria de tareas.</p>
+          <div class="sgi-doc-meta"><span class="sgi-badge blue">Instructivo</span></div>
+        </div>
       </a>
     </div>
   </section>

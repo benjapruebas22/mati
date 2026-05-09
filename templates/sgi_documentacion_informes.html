@@ -1,7 +1,12 @@
 {% extends "base.html" %}
 
+{% block head_extra %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_documental.css', v='2026-05-09') }}">
+{% endblock %}
+
 {% block content %}
-{% set filtros_activos = q_sede or q_agente or q_vehiculo %}
+{% set filtros_activos = q_texto or q_tipo or q_estado or q_sede or q_agente or q_vehiculo or q_destino or q_tag %}
 {% set ns = namespace(total=docs|length, informes=0, protocolos=0, notas=0, instrucciones=0, emitidos=0, borradores=0, vinculados=0) %}
 {% for d in docs %}
   {% if (d.tipo_documento or '') == 'informe' %}{% set ns.informes = ns.informes + 1 %}{% endif %}
@@ -13,645 +18,225 @@
   {% if d.sedes_txt or d.agentes_txt or d.vehiculos_txt %}{% set ns.vinculados = ns.vinculados + 1 %}{% endif %}
 {% endfor %}
 
-<style>
-  .sgi-inf-shell {
-    display: grid;
-    gap: 12px;
-    --ink: #12345f;
-    --ink-soft: #5e7596;
-    --line: #d7e4f7;
-    --blue-soft: #edf4ff;
-    --mint-soft: #ecfbf4;
-    --amber-soft: #fff6e6;
-  }
-
-  .sgi-inf-hero {
-    border: 1px solid var(--line);
-    border-radius: 16px;
-    background: linear-gradient(120deg, #f8fbff 0%, #eef5ff 52%, #f3fbf8 100%);
-    padding: 14px;
-    display: grid;
-    gap: 12px;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .sgi-inf-hero::after {
-    content: "";
-    position: absolute;
-    right: -40px;
-    top: -40px;
-    width: 180px;
-    height: 180px;
-    border-radius: 999px;
-    background: radial-gradient(circle at center, rgba(140, 183, 255, .28), rgba(140, 183, 255, 0));
-    pointer-events: none;
-  }
-
-  .sgi-inf-head {
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-    flex-wrap: wrap;
-    align-items: center;
-    position: relative;
-    z-index: 1;
-  }
-
-  .sgi-inf-head h2 {
-    margin: 0;
-    color: var(--ink);
-    font-size: 35px;
-    line-height: 1.1;
-    letter-spacing: .2px;
-  }
-
-  .sgi-inf-sub {
-    margin: 6px 0 0;
-    color: var(--ink-soft);
-    font-size: 13px;
-    max-width: 820px;
-  }
-
-  .sgi-inf-head-actions {
-    display: inline-flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-
-  .sgi-inf-action-link {
-    border: 1px solid #c8d9f2;
-    border-radius: 999px;
-    background: #f7fbff;
-    color: #153a68;
-    font-weight: 800;
-    font-size: 12px;
-    text-decoration: none;
-    padding: 7px 12px;
-  }
-
-  .sgi-inf-action-link:hover {
-    border-color: #95b9eb;
-    background: #edf5ff;
-  }
-
-  .sgi-inf-kpis {
-    position: relative;
-    z-index: 1;
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 8px;
-  }
-
-  .sgi-inf-kpi {
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    background: #fff;
-    padding: 10px;
-    display: grid;
-    gap: 2px;
-  }
-
-  .sgi-inf-kpi .l {
-    font-size: 11px;
-    font-weight: 800;
-    color: #48678d;
-    text-transform: uppercase;
-    letter-spacing: .4px;
-  }
-
-  .sgi-inf-kpi .v {
-    font-size: 24px;
-    font-weight: 900;
-    line-height: 1;
-    color: #0f2f57;
-  }
-
-  .sgi-inf-kpi .s {
-    font-size: 11px;
-    color: var(--ink-soft);
-  }
-
-  .sgi-inf-kpi.total {
-    background: linear-gradient(180deg, #f7fbff 0%, #eef5ff 100%);
-  }
-
-  .sgi-inf-kpi.informes {
-    background: linear-gradient(180deg, #edf6ff 0%, #e5f2ff 100%);
-    border-color: #b9d4f7;
-  }
-
-  .sgi-inf-kpi.protocolos {
-    background: linear-gradient(180deg, #fff8ee 0%, #fff2df 100%);
-    border-color: #f3d19a;
-  }
-
-  .sgi-inf-kpi.notas {
-    background: linear-gradient(180deg, #f7f8fc 0%, #eff2f8 100%);
-    border-color: #d4dbe8;
-  }
-
-  .sgi-inf-kpi.instrucciones {
-    background: linear-gradient(180deg, #effcf7 0%, #e6f8f0 100%);
-    border-color: #b8ead4;
-  }
-
-  .sgi-inf-card {
-    border: 1px solid #dbe4f2;
-    border-radius: 12px;
-    background: linear-gradient(180deg, #f8fbff 0%, #f2f7ff 100%);
-    padding: 10px;
-  }
-
-  .sgi-inf-card h3 {
-    margin: 0;
-    font-size: 17px;
-    color: #1f3c68;
-  }
-
-  .sgi-inf-title-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 6px;
-  }
-
-  .sgi-inf-title-row p {
-    margin: 0;
-    color: var(--ink-soft);
-    font-size: 12px;
-  }
-
-  .sgi-inf-toolbar {
-    display: flex;
-    justify-content: space-between;
-    gap: 10px;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-
-  .sgi-inf-toolbar-actions {
-    display: inline-flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-
-  .sgi-inf-type-tabs {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
-  }
-
-  .sgi-inf-type-tab {
-    text-decoration: none;
-    border: 1px solid #c7d6ee;
-    border-radius: 999px;
-    background: #eef4ff;
-    color: #294f7e;
-    font-size: 11px;
-    font-weight: 800;
-    padding: 6px 10px;
-    line-height: 1;
-  }
-
-  .sgi-inf-type-tab:hover {
-    filter: brightness(0.98);
-  }
-
-  .sgi-inf-type-tab.active {
-    box-shadow: inset 0 0 0 1px rgba(16, 44, 82, .08);
-  }
-
-  .sgi-inf-type-tab.all { background: #eef4ff; border-color: #c7d6ee; color: #294f7e; }
-  .sgi-inf-type-tab.informe { background: #eaf3ff; border-color: #9cc2f9; color: #1b4c8a; }
-  .sgi-inf-type-tab.protocolo { background: #fff4e8; border-color: #f8c68d; color: #9a4f00; }
-  .sgi-inf-type-tab.nota { background: #f4f6fa; border-color: #cfd7e5; color: #445b7f; }
-  .sgi-inf-type-tab.instruccion { background: #e9fbf4; border-color: #9ee4cb; color: #106246; }
-
-  .sgi-inf-btn-toggle {
-    border: 1px solid #b9d0ef;
-    border-radius: 999px;
-    background: #edf4ff;
-    color: #1f3c68;
-    font-weight: 900;
-    font-size: 12px;
-    padding: 8px 14px;
-    cursor: pointer;
-  }
-
-  .sgi-inf-btn-toggle.is-active {
-    background: #dfeeff;
-    border-color: #93b8ee;
-    color: #11345f;
-  }
-
-  .sgi-inf-note {
-    margin: 0;
-    color: #5a7395;
-    font-size: 11px;
-  }
-
-  .sgi-inf-panel.is-hidden {
-    display: none;
-  }
-
-  .sgi-inf-form {
-    display: grid;
-    gap: 8px;
-  }
-
-  .sgi-inf-row2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-
-  .sgi-inf-field {
-    display: grid;
-    gap: 4px;
-  }
-
-  .sgi-inf-field label {
-    font-size: 11px;
-    font-weight: 800;
-    color: #375983;
-  }
-
-  .sgi-inf-field input,
-  .sgi-inf-field textarea,
-  .sgi-inf-field select {
-    border: 1px solid #c7d6ee;
-    border-radius: 10px;
-    background: #fff;
-    color: #17345e;
-    font-size: 12px;
-    padding: 7px 9px;
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  .sgi-inf-field textarea {
-    min-height: 72px;
-    resize: vertical;
-  }
-
-  .sgi-inf-field select[multiple] {
-    min-height: 96px;
-  }
-
-  .sgi-inf-destinos {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 4px 8px;
-  }
-
-  .sgi-inf-destinos label {
-    font-size: 11px;
-    font-weight: 700;
-    color: #284d7f;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-  }
-
-  .sgi-inf-chip-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .sgi-inf-chip {
-    border: 1px solid #c7d6ee;
-    border-radius: 999px;
-    background: #eef4ff;
-    color: #375983;
-    padding: 2px 8px;
-    font-size: 10px;
-    font-weight: 800;
-  }
-
-  .sgi-inf-chip.focus {
-    background: #fff5dd;
-    border-color: #f3d296;
-    color: #8f5a00;
-  }
-
-  .sgi-inf-list {
-    display: grid;
-    gap: 8px;
-    margin-top: 8px;
-  }
-
-  .sgi-inf-item {
-    border: 1px solid #d6e5f8;
-    border-left: 4px solid #c7d6ee;
-    border-radius: 12px;
-    background: #f8fbff;
-    padding: 8px;
-    display: grid;
-    gap: 6px;
-  }
-
-  .sgi-inf-item.tipo-informe {
-    border-left-color: #9cc2f9;
-    background: #f4f9ff;
-  }
-
-  .sgi-inf-item.tipo-protocolo {
-    border-left-color: #f8c68d;
-    background: #fffaf2;
-  }
-
-  .sgi-inf-item.tipo-instruccion {
-    border-left-color: #9ee4cb;
-    background: #f2fcf8;
-  }
-
-  .sgi-inf-item.tipo-acta {
-    border-left-color: #c3b3ff;
-    background: #f8f6ff;
-  }
-
-  .sgi-inf-item.tipo-nota {
-    border-left-color: #cfd7e5;
-    background: #f7f9fc;
-  }
-
-  .sgi-inf-item.tipo-documento-general {
-    border-left-color: #b9d0ef;
-    background: #f5f9ff;
-  }
-
-  .sgi-inf-item-head {
-    display: flex;
-    justify-content: space-between;
-    gap: 8px;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-
-  .sgi-inf-item-head h4 {
-    margin: 0;
-    font-size: 14px;
-    color: #14345e;
-  }
-
-  .sgi-inf-badges {
-    display: inline-flex;
-    gap: 6px;
-    flex-wrap: wrap;
-  }
-
-  .sgi-inf-badge {
-    border-radius: 999px;
-    border: 1px solid #c7d6ee;
-    background: #eef4ff;
-    color: #304f7a;
-    padding: 2px 8px;
-    font-size: 10px;
-    font-weight: 800;
-  }
-
-  .sgi-inf-badge.tipo-informe {
-    background: #eaf3ff;
-    border-color: #9cc2f9;
-    color: #1b4c8a;
-  }
-
-  .sgi-inf-badge.tipo-protocolo {
-    background: #fff4e8;
-    border-color: #f8c68d;
-    color: #9a4f00;
-  }
-
-  .sgi-inf-badge.tipo-instruccion {
-    background: #e9fbf4;
-    border-color: #9ee4cb;
-    color: #106246;
-  }
-
-  .sgi-inf-badge.tipo-acta {
-    background: #f0ecff;
-    border-color: #c3b3ff;
-    color: #4a2a9b;
-  }
-
-  .sgi-inf-badge.tipo-nota {
-    background: #f4f6fa;
-    border-color: #cfd7e5;
-    color: #445b7f;
-  }
-
-  .sgi-inf-badge.tipo-documento-general {
-    background: #eef4ff;
-    border-color: #b9d0ef;
-    color: #304f7a;
-  }
-
-  .sgi-inf-badge.estado {
-    background: #ecfbf2;
-    border-color: #bdeccd;
-    color: #196544;
-  }
-
-  .sgi-inf-badge.estado-borrador {
-    background: #fff6de;
-    border-color: #f4d68e;
-    color: #8f5a00;
-  }
-
-  .sgi-inf-badge.estado-emitido,
-  .sgi-inf-badge.estado-enviado,
-  .sgi-inf-badge.estado-cerrado,
-  .sgi-inf-badge.estado-archivado {
-    background: #ecfbf2;
-    border-color: #bdeccd;
-    color: #196544;
-  }
-
-  .sgi-inf-item-actions {
-    margin-top: 4px;
-    display: inline-flex;
-    gap: 6px;
-    flex-wrap: wrap;
-  }
-
-  .sgi-inf-btn-danger {
-    border: 1px solid #f2b8b5;
-    border-radius: 999px;
-    background: #fff2f2;
-    color: #a2332a;
-    font-weight: 800;
-    font-size: 11px;
-    padding: 4px 10px;
-    cursor: pointer;
-  }
-
-  .sgi-inf-btn-danger:hover {
-    background: #ffe5e5;
-  }
-
-  .sgi-inf-meta,
-  .sgi-inf-desc,
-  .sgi-inf-links {
-    margin: 0;
-    font-size: 11px;
-    color: #4f6789;
-    line-height: 1.25;
-  }
-
-  .sgi-inf-links a {
-    color: #1d4ed8;
-    font-weight: 800;
-    text-decoration: none;
-  }
-
-  .sgi-inf-links a:hover {
-    text-decoration: underline;
-  }
-
-  .sgi-inf-empty {
-    margin: 0;
-    color: #5a7395;
-    font-size: 12px;
-    font-weight: 700;
-  }
-
-  @media (max-width: 980px) {
-    .sgi-inf-kpis {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .sgi-inf-row2 {
-      grid-template-columns: 1fr;
-    }
-
-    .sgi-inf-destinos {
-      grid-template-columns: 1fr;
-    }
-
-    .sgi-inf-head h2 {
-      font-size: 28px;
-    }
-  }
-
-  @media (max-width: 640px) {
-    .sgi-inf-kpis {
-      grid-template-columns: 1fr;
-    }
-  }
-</style>
-
-<section class="sgi-inf-shell sedes-section">
-  <section class="sgi-inf-hero">
-    <header class="sgi-inf-head">
+<section class="sgi-doclib sgi-doclib-shell sedes-section">
+  <!-- A. Encabezado documental -->
+  <section class="sgi-doclib-hero">
+    <header class="sgi-doclib-hero-head">
       <div>
-        <h2>&#128196; Informes y Documentacion</h2>
-        <p class="sgi-inf-sub">Centro documental operativo del SGI. Carga, clasifica y vincula por sede, agente, vehiculo y SST con trazabilidad en un solo lugar.</p>
+        <h2 class="sgi-doclib-hero-title">Informes y Documentación</h2>
+        <p class="sgi-doclib-hero-sub">Centro documental operativo del SGI. Carga, clasifica y vincula por sede, agente, vehículo y SST con trazabilidad en un solo lugar.</p>
       </div>
-      <div class="sgi-inf-head-actions">
-        <a class="sgi-inf-action-link" href="{{ url_for('sgi_documentacion') }}">Documentacion base</a>
-        <a class="sgi-inf-action-link" href="{{ url_for('sgi_home') }}">Volver a SGI</a>
+      <div class="sgi-doclib-hero-actions">
+        <a class="sgi-btn sgi-btn-outline" href="{{ url_for('sgi_documentacion') }}">Documentación base</a>
+        <a class="sgi-btn" href="{{ url_for('sgi_home') }}">Volver a SGI</a>
       </div>
     </header>
 
-    <div class="sgi-inf-kpis">
-      <article class="sgi-inf-kpi total">
-        <span class="l">Documentos</span>
-        <span class="v">{{ ns.total }}</span>
-        <span class="s">Resultados visibles</span>
+    <div class="sgi-kpi-grid">
+      <article class="sgi-kpi">
+        <span class="k-label">Documentos</span>
+        <span class="k-val">{{ ns.total }}</span>
+        <span class="k-sub">Resultados visibles</span>
       </article>
-      <article class="sgi-inf-kpi informes">
-        <span class="l">Informes</span>
-        <span class="v">{{ ns.informes }}</span>
-        <span class="s">Parte operativo y seguimiento</span>
+      <article class="sgi-kpi">
+        <span class="k-label">Informes</span>
+        <span class="k-val">{{ ns.informes }}</span>
+        <span class="k-sub">Parte operativo y seguimiento</span>
       </article>
-      <article class="sgi-inf-kpi protocolos">
-        <span class="l">Protocolos</span>
-        <span class="v">{{ ns.protocolos }}</span>
-        <span class="s">Norma y procedimiento formal</span>
+      <article class="sgi-kpi">
+        <span class="k-label">Protocolos</span>
+        <span class="k-val">{{ ns.protocolos }}</span>
+        <span class="k-sub">Norma y procedimiento formal</span>
       </article>
-      <article class="sgi-inf-kpi notas">
-        <span class="l">Notas</span>
-        <span class="v">{{ ns.notas }}</span>
-        <span class="s">Comunicaciones y actas breves</span>
+      <article class="sgi-kpi">
+        <span class="k-label">Notas</span>
+        <span class="k-val">{{ ns.notas }}</span>
+        <span class="k-sub">Comunicaciones y actas breves</span>
       </article>
-      <article class="sgi-inf-kpi instrucciones">
-        <span class="l">Instructivos</span>
-        <span class="v">{{ ns.instrucciones }}</span>
-        <span class="s">Guias de ejecucion diaria</span>
+      <article class="sgi-kpi">
+        <span class="k-label">Instructivos</span>
+        <span class="k-val">{{ ns.instrucciones }}</span>
+        <span class="k-sub">Guías de ejecución diaria</span>
       </article>
     </div>
   </section>
 
-  <section class="sgi-inf-card sgi-inf-toolbar">
-    <div class="sgi-inf-toolbar-actions">
-      <button id="btnToggleCarga" type="button" class="sgi-inf-btn-toggle {% if doc_editar %}is-active{% endif %}">
-        {% if doc_editar %}Editar documento{% else %}+ Cargar documento{% endif %}
-      </button>
-      <button id="btnToggleFiltros" type="button" class="sgi-inf-btn-toggle {% if filtros_activos %}is-active{% endif %}">
-        {% if filtros_activos %}Filtros activos{% else %}Ver filtros{% endif %}
-      </button>
-    </div>
-    <div class="sgi-inf-chip-list">
-      <span class="sgi-inf-chip focus">Emitidos: {{ ns.emitidos }}</span>
-      <span class="sgi-inf-chip">Borrador: {{ ns.borradores }}</span>
-      <span class="sgi-inf-chip">Con vinculo: {{ ns.vinculados }}</span>
-      {% if q_sede %}<span class="sgi-inf-chip">Sede: {{ q_sede }}</span>{% endif %}
-      {% if q_agente %}<span class="sgi-inf-chip">Agente: {{ q_agente }}</span>{% endif %}
-      {% if q_vehiculo %}<span class="sgi-inf-chip">Vehiculo: {{ q_vehiculo }}</span>{% endif %}
-    </div>
-  </section>
-
-  <section class="sgi-inf-card">
-    <div class="sgi-inf-title-row" style="margin-bottom:8px;">
+  <!-- B. Filtros rápidos -->
+  <section class="sgi-panel">
+    <div class="sgi-panel-head">
       <div>
-        <h3>Filtro rapido por tipo</h3>
-        <p>Toca un tipo para filtrar el listado al instante.</p>
+        <h3>Filtros rápidos</h3>
+        <p>Seleccioná un tipo para filtrar el listado. Si necesitás precisión, abrí filtros avanzados.</p>
+      </div>
+      <div class="sgi-doclib-hero-actions">
+        <button id="btnToggleCarga" type="button" class="sgi-btn sgi-btn-outline {% if doc_editar %}is-active{% endif %}">
+          {% if doc_editar %}Editar documento{% else %}Cargar documento{% endif %}
+        </button>
+        <button id="btnToggleFiltros" type="button" class="sgi-btn sgi-btn-outline {% if filtros_activos %}is-active{% endif %}">
+          {% if filtros_activos %}Filtros activos{% else %}Filtros avanzados{% endif %}
+        </button>
       </div>
     </div>
-    <div class="sgi-inf-type-tabs">
-      <a class="sgi-inf-type-tab all {% if not q_tipo %}active{% endif %}" href="{{ url_for('sgi_documentacion_informes', q=q_texto or None, tipo='', estado=q_estado or None, sede=q_sede or None, agente=q_agente or None, vehiculo=q_vehiculo or None, destino=q_destino or None, tag=q_tag or None) }}">Todos ({{ ns.total }})</a>
-      <a class="sgi-inf-type-tab informe {% if q_tipo == 'informe' %}active{% endif %}" href="{{ url_for('sgi_documentacion_informes', q=q_texto or None, tipo='informe', estado=q_estado or None, sede=q_sede or None, agente=q_agente or None, vehiculo=q_vehiculo or None, destino=q_destino or None, tag=q_tag or None) }}">Informe ({{ ns.informes }})</a>
-      <a class="sgi-inf-type-tab protocolo {% if q_tipo == 'protocolo' %}active{% endif %}" href="{{ url_for('sgi_documentacion_informes', q=q_texto or None, tipo='protocolo', estado=q_estado or None, sede=q_sede or None, agente=q_agente or None, vehiculo=q_vehiculo or None, destino=q_destino or None, tag=q_tag or None) }}">Protocolo ({{ ns.protocolos }})</a>
-      <a class="sgi-inf-type-tab nota {% if q_tipo == 'nota' %}active{% endif %}" href="{{ url_for('sgi_documentacion_informes', q=q_texto or None, tipo='nota', estado=q_estado or None, sede=q_sede or None, agente=q_agente or None, vehiculo=q_vehiculo or None, destino=q_destino or None, tag=q_tag or None) }}">Nota ({{ ns.notas }})</a>
-      <a class="sgi-inf-type-tab instruccion {% if q_tipo == 'instruccion' %}active{% endif %}" href="{{ url_for('sgi_documentacion_informes', q=q_texto or None, tipo='instruccion', estado=q_estado or None, sede=q_sede or None, agente=q_agente or None, vehiculo=q_vehiculo or None, destino=q_destino or None, tag=q_tag or None) }}">Instructivo ({{ ns.instrucciones }})</a>
+
+    <div class="sgi-filter-chips">
+      <a class="sgi-filter-chip {% if not q_tipo %}active{% endif %}" href="{{ url_for('sgi_documentacion_informes', q=q_texto or None, tipo='', estado=q_estado or None, sede=q_sede or None, agente=q_agente or None, vehiculo=q_vehiculo or None, destino=q_destino or None, tag=q_tag or None) }}">
+        <span>Todos</span><span class="count">{{ ns.total }}</span>
+      </a>
+      <a class="sgi-filter-chip {% if q_tipo == 'informe' %}active{% endif %}" href="{{ url_for('sgi_documentacion_informes', q=q_texto or None, tipo='informe', estado=q_estado or None, sede=q_sede or None, agente=q_agente or None, vehiculo=q_vehiculo or None, destino=q_destino or None, tag=q_tag or None) }}">
+        <span>Informes</span><span class="count">{{ ns.informes }}</span>
+      </a>
+      <a class="sgi-filter-chip {% if q_tipo == 'protocolo' %}active{% endif %}" href="{{ url_for('sgi_documentacion_informes', q=q_texto or None, tipo='protocolo', estado=q_estado or None, sede=q_sede or None, agente=q_agente or None, vehiculo=q_vehiculo or None, destino=q_destino or None, tag=q_tag or None) }}">
+        <span>Protocolos</span><span class="count">{{ ns.protocolos }}</span>
+      </a>
+      <a class="sgi-filter-chip {% if q_tipo == 'nota' %}active{% endif %}" href="{{ url_for('sgi_documentacion_informes', q=q_texto or None, tipo='nota', estado=q_estado or None, sede=q_sede or None, agente=q_agente or None, vehiculo=q_vehiculo or None, destino=q_destino or None, tag=q_tag or None) }}">
+        <span>Notas</span><span class="count">{{ ns.notas }}</span>
+      </a>
+      <a class="sgi-filter-chip {% if q_tipo == 'instruccion' %}active{% endif %}" href="{{ url_for('sgi_documentacion_informes', q=q_texto or None, tipo='instruccion', estado=q_estado or None, sede=q_sede or None, agente=q_agente or None, vehiculo=q_vehiculo or None, destino=q_destino or None, tag=q_tag or None) }}">
+        <span>Instructivos</span><span class="count">{{ ns.instrucciones }}</span>
+      </a>
     </div>
+
+    <div class="sgi-chip-row">
+      <span class="sgi-chip">Emitidos: {{ ns.emitidos }}</span>
+      <span class="sgi-chip">Borrador: {{ ns.borradores }}</span>
+      <span class="sgi-chip">Con vínculo: {{ ns.vinculados }}</span>
+      {% if q_sede %}<span class="sgi-chip">Sede: {{ q_sede }}</span>{% endif %}
+      {% if q_agente %}<span class="sgi-chip">Agente: {{ q_agente }}</span>{% endif %}
+      {% if q_vehiculo %}<span class="sgi-chip">Vehículo: {{ q_vehiculo }}</span>{% endif %}
+      {% if q_destino %}<span class="sgi-chip">Destino: {{ q_destino }}</span>{% endif %}
+      {% if q_tag %}<span class="sgi-chip">Tag: {{ q_tag }}</span>{% endif %}
+      {% if q_estado %}<span class="sgi-chip">Estado: {{ q_estado }}</span>{% endif %}
+      {% if q_texto %}<span class="sgi-chip">Texto: “{{ q_texto }}”</span>{% endif %}
+    </div>
+
+    <section id="panel-filtros" class="sgi-panel sgi-subpanel {% if not filtros_activos %}is-hidden{% endif %}">
+      <div class="sgi-panel-head">
+        <div>
+          <h3>Filtros avanzados</h3>
+          <p>Refiná por texto, estado, sede, agente, vehículo, destino y tags.</p>
+        </div>
+        <span class="sgi-badge">Búsqueda</span>
+      </div>
+
+      <form method="get" class="sgi-form">
+        <div class="sgi-field">
+          <label for="q">Texto</label>
+          <input id="q" name="q" value="{{ q_texto or '' }}" placeholder="Título, descripción, autor" />
+        </div>
+
+        <div class="sgi-row2">
+          <div class="sgi-field">
+            <label for="tipo">Tipo</label>
+            <select id="tipo" name="tipo">
+              <option value="">Todos</option>
+              {% for t in tipos_documento %}
+              <option value="{{ t }}" {% if q_tipo==t %}selected{% endif %}>{{ t }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="sgi-field">
+            <label for="estado_f">Estado</label>
+            <select id="estado_f" name="estado">
+              <option value="">Todos</option>
+              {% for e in estados_documento %}
+              <option value="{{ e }}" {% if q_estado==e %}selected{% endif %}>{{ e }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="sgi-row2">
+          <div class="sgi-field">
+            <label for="sede">Sede</label>
+            <select id="sede" name="sede">
+              <option value="">Todas</option>
+              {% for s in sedes %}
+              <option value="{{ s.codigo }}" {% if q_sede==s.codigo %}selected{% endif %}>{{ s.codigo }} - {{ s.nombre }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="sgi-field">
+            <label for="agente">Agente</label>
+            <select id="agente" name="agente">
+              <option value="">Todos</option>
+              {% for a in agentes %}
+              <option value="{{ a.id }}" {% if q_agente == (a.id ~ "") %}selected{% endif %}>{{ a.agente }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="sgi-row2">
+          <div class="sgi-field">
+            <label for="vehiculo">Vehículo</label>
+            <select id="vehiculo" name="vehiculo">
+              <option value="">Todos</option>
+              {% for v in vehiculos %}
+              <option value="{{ v.patente }}" {% if q_vehiculo==v.patente %}selected{% endif %}>{{ v.patente }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="sgi-field">
+            <label for="destino">Destino</label>
+            <select id="destino" name="destino">
+              <option value="">Todos</option>
+              {% for d in destinos_documento %}
+              <option value="{{ d }}" {% if q_destino==d %}selected{% endif %}>{{ d }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="sgi-field">
+          <label for="tag">Tag</label>
+          <input id="tag" name="tag" value="{{ q_tag or '' }}" placeholder="Ej.: S11" />
+        </div>
+
+        <div class="sgi-actions">
+          <button type="submit" class="sgi-btn sgi-btn-primary">Aplicar filtros</button>
+          <a class="sgi-btn" href="{{ url_for('sgi_documentacion_informes') }}">Reset</a>
+        </div>
+      </form>
+
+      {% if tags_disponibles %}
+      <div class="sgi-chip-row">
+        {% for t in tags_disponibles %}
+        <span class="sgi-chip">{{ t.tag }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </section>
   </section>
 
-  <section id="panel-carga" class="sgi-inf-card sgi-inf-panel {% if not doc_editar %}is-hidden{% endif %}">
-    <div class="sgi-inf-title-row">
+  <!-- C. Formulario de carga -->
+  <section id="panel-carga" class="sgi-panel {% if not doc_editar %}is-hidden{% endif %}">
+    <div class="sgi-panel-head">
       <div>
         <h3>{% if doc_editar %}Editar documento #{{ doc_editar.id_documento }}{% else %}Nuevo documento{% endif %}</h3>
-        <p>Carga administrativa con vinculos a sedes, agentes, vehiculos y SST.</p>
+        <p>Formulario institucional para vincular sedes, agentes, vehículos y SST.</p>
       </div>
-      <span class="sgi-inf-chip">Formulario SGI</span>
+      <span class="sgi-badge">Carga</span>
     </div>
 
-    <form method="post" class="sgi-inf-form">
+    <form method="post" class="sgi-form">
       <input type="hidden" name="_action" value="{% if doc_editar %}edit{% else %}create{% endif %}" />
       {% if doc_editar %}
       <input type="hidden" name="id_documento" value="{{ doc_editar.id_documento }}" />
       {% endif %}
 
-      <div class="sgi-inf-row2">
-        <div class="sgi-inf-field">
-          <label for="titulo">Titulo</label>
+      <div class="sgi-row2">
+        <div class="sgi-field">
+          <label for="titulo">Título</label>
           <input id="titulo" name="titulo" required placeholder="Ej.: Informe obra S11" value="{{ doc_editar.titulo if doc_editar else '' }}" />
         </div>
-        <div class="sgi-inf-field">
+        <div class="sgi-field">
           <label for="fecha">Fecha</label>
           <input id="fecha" name="fecha" type="date" value="{{ doc_editar.fecha if doc_editar else '' }}" />
         </div>
       </div>
 
-      <div class="sgi-inf-row2">
-        <div class="sgi-inf-field">
+      <div class="sgi-row2">
+        <div class="sgi-field">
           <label for="tipo_documento">Tipo de documento</label>
           <select id="tipo_documento" name="tipo_documento">
             {% for t in tipos_documento %}
@@ -659,7 +244,7 @@
             {% endfor %}
           </select>
         </div>
-        <div class="sgi-inf-field">
+        <div class="sgi-field">
           <label for="estado">Estado</label>
           <select id="estado" name="estado">
             {% for e in estados_documento %}
@@ -669,19 +254,19 @@
         </div>
       </div>
 
-      <div class="sgi-inf-row2">
-        <div class="sgi-inf-field">
+      <div class="sgi-row2">
+        <div class="sgi-field">
           <label for="autor">Autor</label>
           <input id="autor" name="autor" placeholder="Nombre de quien emite" value="{{ doc_editar.autor if doc_editar else '' }}" />
         </div>
-        <div class="sgi-inf-field">
+        <div class="sgi-field">
           <label for="archivo_url">Archivo o link</label>
           <input id="archivo_url" name="archivo_url" placeholder="https://..." value="{{ doc_editar.archivo_url if doc_editar else '' }}" />
         </div>
       </div>
 
-      <div class="sgi-inf-field">
-        <label for="descripcion">Descripcion</label>
+      <div class="sgi-field">
+        <label for="descripcion">Descripción</label>
         <textarea id="descripcion" name="descripcion" placeholder="Resumen del documento">{{ doc_editar.descripcion if doc_editar else '' }}</textarea>
       </div>
 
@@ -690,17 +275,17 @@
       {% set vehiculos_sel = (doc_editar.vehiculos_patentes_csv.split(',') if doc_editar and doc_editar.vehiculos_patentes_csv else []) %}
       {% set destinos_sel = (doc_editar.destinos_csv.split('||') if doc_editar and doc_editar.destinos_csv else []) %}
 
-      <div class="sgi-inf-row2">
-        <div class="sgi-inf-field">
+      <div class="sgi-row2">
+        <div class="sgi-field">
           <label for="sedes_codigos">Sedes vinculadas</label>
           <select id="sedes_codigos" name="sedes_codigos" multiple>
             {% for s in sedes %}
             <option value="{{ s.codigo }}" {% if s.codigo in sedes_sel %}selected{% endif %}>{{ s.codigo }} - {{ s.nombre }}</option>
             {% endfor %}
           </select>
-          <p class="sgi-inf-note">Seleccion multiple: mantener Ctrl al elegir.</p>
+          <p class="sgi-note">Selección múltiple: mantener Ctrl al elegir.</p>
         </div>
-        <div class="sgi-inf-field">
+        <div class="sgi-field">
           <label for="agentes_ids">Agentes vinculados</label>
           <select id="agentes_ids" name="agentes_ids" multiple>
             {% for a in agentes %}
@@ -710,16 +295,16 @@
         </div>
       </div>
 
-      <div class="sgi-inf-row2">
-        <div class="sgi-inf-field">
-          <label for="vehiculos_patentes">Vehiculos vinculados</label>
+      <div class="sgi-row2">
+        <div class="sgi-field">
+          <label for="vehiculos_patentes">Vehículos vinculados</label>
           <select id="vehiculos_patentes" name="vehiculos_patentes" multiple>
             {% for v in vehiculos %}
             <option value="{{ v.patente }}" {% if v.patente in vehiculos_sel %}selected{% endif %}>{{ v.patente }} - {{ v.tipo }} {{ v.modelo or '' }}</option>
             {% endfor %}
           </select>
         </div>
-        <div class="sgi-inf-field">
+        <div class="sgi-field">
           <label for="sst_id_evento">SST vinculado (opcional)</label>
           <select id="sst_id_evento" name="sst_id_evento">
             <option value="">Sin evento SST</option>
@@ -731,14 +316,14 @@
         </div>
       </div>
 
-      <div class="sgi-inf-row2">
-        <div class="sgi-inf-field">
+      <div class="sgi-row2">
+        <div class="sgi-field">
           <label for="tags">Etiquetas</label>
-          <input id="tags" name="tags" placeholder="S11, vehiculos, limpieza, SST" value="{{ doc_editar.tags_txt if doc_editar else '' }}" />
+          <input id="tags" name="tags" placeholder="S11, vehículos, limpieza, SST" value="{{ doc_editar.tags_txt if doc_editar else '' }}" />
         </div>
-        <div class="sgi-inf-field">
+        <div class="sgi-field">
           <label>Destinatarios</label>
-          <div class="sgi-inf-destinos">
+          <div class="sgi-checkgrid">
             {% for d in destinos_documento %}
             <label><input type="checkbox" name="destinos" value="{{ d }}" {% if d in destinos_sel %}checked{% endif %}> {{ d }}</label>
             {% endfor %}
@@ -746,172 +331,77 @@
         </div>
       </div>
 
-      <div>
-        <button type="submit" class="btn btn-mpd">{% if doc_editar %}Actualizar documento{% else %}Guardar documento{% endif %}</button>
+      <div class="sgi-actions">
+        <button type="submit" class="sgi-btn sgi-btn-primary">
+          {% if doc_editar %}Guardar cambios{% else %}+ Guardar documento{% endif %}
+        </button>
         {% if doc_editar %}
-        <a class="btn btn-mpd" href="{{ url_for('sgi_documentacion_informes') }}">Cancelar edicion</a>
+        <a class="sgi-btn" href="{{ url_for('sgi_documentacion_informes') }}">Cancelar edición</a>
         {% endif %}
       </div>
     </form>
   </section>
 
-  <section id="panel-filtros" class="sgi-inf-card sgi-inf-panel {% if not filtros_activos %}is-hidden{% endif %}">
-    <div class="sgi-inf-title-row">
-      <div>
-        <h3>Filtros de busqueda</h3>
-        <p>Refina por tipo, estado, sede, agente, vehiculo y destino.</p>
-      </div>
-      <span class="sgi-inf-chip">Busqueda avanzada</span>
-    </div>
-
-    <form method="get" class="sgi-inf-form">
-      <div class="sgi-inf-field">
-        <label for="q">Texto</label>
-        <input id="q" name="q" value="{{ q_texto or '' }}" placeholder="Titulo, descripcion, autor" />
-      </div>
-
-      <div class="sgi-inf-row2">
-        <div class="sgi-inf-field">
-          <label for="tipo">Tipo</label>
-          <select id="tipo" name="tipo">
-            <option value="">Todos</option>
-            {% for t in tipos_documento %}
-            <option value="{{ t }}" {% if q_tipo==t %}selected{% endif %}>{{ t }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="sgi-inf-field">
-          <label for="estado_f">Estado</label>
-          <select id="estado_f" name="estado">
-            <option value="">Todos</option>
-            {% for e in estados_documento %}
-            <option value="{{ e }}" {% if q_estado==e %}selected{% endif %}>{{ e }}</option>
-            {% endfor %}
-          </select>
-        </div>
-      </div>
-
-      <div class="sgi-inf-row2">
-        <div class="sgi-inf-field">
-          <label for="sede">Sede</label>
-          <select id="sede" name="sede">
-            <option value="">Todas</option>
-            {% for s in sedes %}
-            <option value="{{ s.codigo }}" {% if q_sede==s.codigo %}selected{% endif %}>{{ s.codigo }} - {{ s.nombre }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="sgi-inf-field">
-          <label for="agente">Agente</label>
-          <select id="agente" name="agente">
-            <option value="">Todos</option>
-            {% for a in agentes %}
-            <option value="{{ a.id }}" {% if q_agente == (a.id ~ "") %}selected{% endif %}>{{ a.agente }}</option>
-            {% endfor %}
-          </select>
-        </div>
-      </div>
-
-      <div class="sgi-inf-row2">
-        <div class="sgi-inf-field">
-          <label for="vehiculo">Vehiculo</label>
-          <select id="vehiculo" name="vehiculo">
-            <option value="">Todos</option>
-            {% for v in vehiculos %}
-            <option value="{{ v.patente }}" {% if q_vehiculo==v.patente %}selected{% endif %}>{{ v.patente }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="sgi-inf-field">
-          <label for="destino">Destino</label>
-          <select id="destino" name="destino">
-            <option value="">Todos</option>
-            {% for d in destinos_documento %}
-            <option value="{{ d }}" {% if q_destino==d %}selected{% endif %}>{{ d }}</option>
-            {% endfor %}
-          </select>
-        </div>
-      </div>
-
-      <div class="sgi-inf-field">
-        <label for="tag">Tag</label>
-        <input id="tag" name="tag" value="{{ q_tag or '' }}" placeholder="Ej.: S11" />
-      </div>
-
-      <div>
-        <button type="submit" class="btn btn-mpd">Aplicar filtros</button>
-        <a class="btn btn-mpd" href="{{ url_for('sgi_documentacion_informes') }}">Reset</a>
-      </div>
-    </form>
-
-    {% if tags_disponibles %}
-    <div class="sgi-inf-chip-list" style="margin-top:8px;">
-      {% for t in tags_disponibles %}
-      <span class="sgi-inf-chip">{{ t.tag }}</span>
-      {% endfor %}
-    </div>
-    {% endif %}
-  </section>
-
-  <section class="sgi-inf-card">
-    <div class="sgi-inf-title-row">
+  <!-- D. Listado documental -->
+  <section class="sgi-panel">
+    <div class="sgi-panel-head">
       <div>
         <h3>Listado documental</h3>
-        <p>Vista principal de registros cargados con sus relaciones y acciones rapidas.</p>
+        <p>Resultados con vínculos a sedes, agentes, vehículos y SST.</p>
       </div>
-      <span class="sgi-inf-chip focus">Total: {{ docs|length }}</span>
+      <span class="sgi-badge">Total: {{ docs|length }}</span>
     </div>
 
     {% if docs %}
-    <div class="sgi-inf-list">
+    <div class="sgi-list">
       {% for d in docs %}
       {% set tipo_cls = 'tipo-' ~ (d.tipo_documento or 'documento_general')|replace('_', '-') %}
       {% set estado_cls = 'estado-' ~ (d.estado or 'borrador')|replace('_', '-') %}
-      <article class="sgi-inf-item {{ tipo_cls }}">
-        <div class="sgi-inf-item-head">
-          <h4>{{ d.titulo }}</h4>
-          <div class="sgi-inf-badges">
-            <span class="sgi-inf-badge {{ tipo_cls }}">{{ (d.tipo_documento or 'documento_general')|replace('_', ' ') }}</span>
-            <span class="sgi-inf-badge estado {{ estado_cls }}">{{ d.estado }}</span>
+      <article class="sgi-item {{ tipo_cls }}">
+        <div class="sgi-item-head">
+          <h4 class="sgi-item-title">{{ d.titulo }}</h4>
+          <div class="sgi-item-badges">
+            <span class="sgi-badge blue {{ tipo_cls }}">{{ (d.tipo_documento or 'documento_general')|replace('_', ' ') }}</span>
+            <span class="sgi-badge estado {{ estado_cls }}">{{ d.estado }}</span>
           </div>
         </div>
 
-        <p class="sgi-inf-meta">
+        <p class="sgi-meta">
           {% if d.fecha %}<b>Fecha:</b> {{ d.fecha }}{% endif %}
           {% if d.autor %} - <b>Autor:</b> {{ d.autor }}{% endif %}
           - <b>ID:</b> {{ d.id_documento }}
         </p>
 
         {% if d.descripcion %}
-        <p class="sgi-inf-desc">{{ d.descripcion }}</p>
+        <p class="sgi-desc">{{ d.descripcion }}</p>
         {% endif %}
 
         {% if d.archivo_url %}
-        <p class="sgi-inf-links"><a href="{{ d.archivo_url }}" target="_blank" rel="noopener">Abrir archivo / enlace</a></p>
+        <p class="sgi-link"><a href="{{ d.archivo_url }}" target="_blank" rel="noopener">Abrir archivo / enlace</a></p>
         {% endif %}
 
-        <div class="sgi-inf-chip-list">
-          {% if d.sedes_txt %}<span class="sgi-inf-chip">Sedes: {{ d.sedes_txt }}</span>{% endif %}
-          {% if d.agentes_txt %}<span class="sgi-inf-chip">Agentes: {{ d.agentes_txt }}</span>{% endif %}
-          {% if d.vehiculos_txt %}<span class="sgi-inf-chip">Vehiculos: {{ d.vehiculos_txt }}</span>{% endif %}
-          {% if d.sst_txt %}<span class="sgi-inf-chip">SST: {{ d.sst_txt }}</span>{% endif %}
-          {% if d.destinos_txt %}<span class="sgi-inf-chip">Destino: {{ d.destinos_txt }}</span>{% endif %}
-          {% if d.tags_txt %}<span class="sgi-inf-chip">Tags: {{ d.tags_txt }}</span>{% endif %}
+        <div class="sgi-rel-chips" data-collapse="1">
+          {% if d.sedes_txt %}<span class="sgi-chip">Sedes: {{ d.sedes_txt }}</span>{% endif %}
+          {% if d.agentes_txt %}<span class="sgi-chip">Agentes: {{ d.agentes_txt }}</span>{% endif %}
+          {% if d.vehiculos_txt %}<span class="sgi-chip">Vehículos: {{ d.vehiculos_txt }}</span>{% endif %}
+          {% if d.sst_txt %}<span class="sgi-chip">SST: {{ d.sst_txt }}</span>{% endif %}
+          {% if d.destinos_txt %}<span class="sgi-chip">Destino: {{ d.destinos_txt }}</span>{% endif %}
+          {% if d.tags_txt %}<span class="sgi-chip">Tags: {{ d.tags_txt }}</span>{% endif %}
         </div>
 
-        <div class="sgi-inf-item-actions">
-          <a class="btn btn-mpd" href="{{ url_for('sgi_documentacion_informes', edit=d.id_documento) }}">Editar</a>
-          <form method="post" onsubmit="return confirm('Borrar este documento y sus vinculos?');" style="display:inline-flex;">
+        <div class="sgi-actions">
+          <a class="sgi-btn" href="{{ url_for('sgi_documentacion_informes', edit=d.id_documento) }}">Editar</a>
+          <form method="post" onsubmit="return confirm('Borrar este documento y sus vinculos?');">
             <input type="hidden" name="_action" value="delete" />
             <input type="hidden" name="id_documento" value="{{ d.id_documento }}" />
-            <button type="submit" class="sgi-inf-btn-danger">Borrar</button>
+            <button type="submit" class="sgi-btn sgi-btn-danger">Borrar</button>
           </form>
         </div>
       </article>
       {% endfor %}
     </div>
     {% else %}
-    <p class="sgi-inf-empty">No hay documentos cargados con esos filtros.</p>
+    <p class="sgi-meta">No hay documentos cargados con esos filtros.</p>
     {% endif %}
   </section>
 </section>
@@ -942,6 +432,28 @@
         tipo.value = t;
       }
     });
+  })();
+
+  (function setupRelChipsCollapse(){
+    var lists = document.querySelectorAll('.sgi-rel-chips[data-collapse=\"1\"]');
+    for (var i = 0; i < lists.length; i++) {
+      var list = lists[i];
+      var chips = list.querySelectorAll('.sgi-chip');
+      if (!chips || chips.length <= 3) continue;
+      list.classList.add('is-collapsed');
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'sgi-rel-toggle';
+      btn.textContent = 'Ver más (' + (chips.length - 3) + ')';
+      btn.addEventListener('click', function(ev){
+        var targetList = ev.currentTarget && ev.currentTarget.parentElement;
+        if (!targetList) return;
+        var collapsed = targetList.classList.toggle('is-collapsed');
+        var count = targetList.querySelectorAll('.sgi-chip').length;
+        ev.currentTarget.textContent = collapsed ? ('Ver más (' + Math.max(0, count - 3) + ')') : 'Ver menos';
+      });
+      list.appendChild(btn);
+    }
   })();
 </script>
 {% endblock %}
