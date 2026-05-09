@@ -8,33 +8,35 @@
 {% block content %}
 <style>
   :root {
-    --ctl-bg: #f7f9fc;
-    --ctl-card: #ffffff;
-    --ctl-line: #dfe7f3;
-    --ctl-text: #20344f;
-    --ctl-soft: #6480a1;
-    --ok-bg: #eef9f2;
-    --ok-bd: #d7ecdf;
-    --ok-tx: #2d7a51;
-    --warn-bg: #fff8ee;
-    --warn-bd: #f2e2c6;
-    --warn-tx: #9a6a2f;
-    --run-bg: #eef4ff;
-    --run-bd: #d7e3fb;
-    --run-tx: #2f5ea4;
-    --danger-bg: #fff2f5;
-    --danger-bd: #f1d9df;
-    --danger-tx: #9e4459;
-    --nvd-accent: #3b82f6;
-    --veh-accent: #22c55e;
-    --alt-accent: #f59e0b;
+    --ctl-bg: var(--bg);
+    --ctl-card: var(--card);
+    --ctl-line: var(--border);
+    --ctl-text: var(--text);
+    --ctl-soft: var(--muted);
+
+    --ok-bg: #dcfce7;
+    --ok-bd: #86efac;
+    --ok-tx: #166534;
+
+    --warn-bg: #fef3c7;
+    --warn-bd: #fcd34d;
+    --warn-tx: #92400e;
+
+    --run-bg: #eff6ff;
+    --run-bd: #bfdbfe;
+    --run-tx: #1d4ed8;
+
+    --danger-bg: #fee2e2;
+    --danger-bd: #fecaca;
+    --danger-tx: #991b1b;
+
+    --nvd-accent: var(--primary);
+    --veh-accent: var(--success);
+    --alt-accent: var(--warning);
   }
 
   .control-shell {
-    background:
-      radial-gradient(1200px 220px at 0% -80px, #e9f1ff 0%, transparent 55%),
-      radial-gradient(1000px 200px at 100% -60px, #eafaf1 0%, transparent 52%),
-      var(--ctl-bg);
+    background: var(--ctl-bg);
     border: 1px solid var(--ctl-line);
     border-radius: 16px;
     padding: 14px;
@@ -51,7 +53,7 @@
     font-size: 21px;
     line-height: 1.08;
     font-weight: 900;
-    color: #183257;
+    color: var(--ctl-text);
   }
   .control-header-top {
     display: flex;
@@ -62,14 +64,14 @@
   }
   .control-header-intro {
     margin: 0;
-    color: #5f7898;
+    color: var(--ctl-soft);
     font-size: 14px;
   }
   .workspace-context {
-    border: 1px solid #d8e4f6;
+    border: 1px solid var(--ctl-line);
     border-radius: 12px;
     padding: 10px 12px;
-    background: linear-gradient(180deg, #ffffff 0%, #f6faff 100%);
+    background: var(--ctl-card);
     display: grid;
     gap: 4px;
   }
@@ -77,11 +79,11 @@
     display: inline-flex;
     align-items: center;
     width: fit-content;
-    border: 1px solid #cadbf3;
+    border: 1px solid var(--ctl-line);
     border-radius: 999px;
     padding: 3px 10px;
-    background: #eef4ff;
-    color: #2f5ea4;
+    background: #eff6ff;
+    color: var(--run-tx);
     font-size: 11px;
     font-weight: 900;
     letter-spacing: 0.03em;
@@ -89,14 +91,14 @@
   }
   .workspace-context-title {
     margin: 0;
-    color: #1d3a61;
+    color: var(--ctl-text);
     font-size: 18px;
     font-weight: 900;
     line-height: 1.2;
   }
   .workspace-context-sub {
     margin: 0;
-    color: #5f7898;
+    color: var(--ctl-soft);
     font-size: 13px;
     line-height: 1.35;
   }
@@ -106,11 +108,11 @@
     gap: 8px;
   }
   .workspace-tab {
-    border: 1px solid #cad8ef;
+    border: 1px solid var(--ctl-line);
     border-radius: 11px;
     min-height: 44px;
-    background: linear-gradient(180deg, #f8fbff 0%, #eff5ff 100%);
-    color: #355a89;
+    background: var(--ctl-card);
+    color: var(--ctl-text);
     font-size: 13px;
     font-weight: 900;
     cursor: pointer;
@@ -120,10 +122,10 @@
     transform: translateY(-1px);
   }
   .workspace-tab.active {
-    border-color: #2f5ea4;
-    background: linear-gradient(180deg, #2f5ea4 0%, #264d86 100%);
+    border-color: var(--primary);
+    background: var(--primary);
     color: #ffffff;
-    box-shadow: 0 8px 16px rgba(47, 94, 164, 0.22);
+    box-shadow: 0 8px 16px rgba(37, 99, 235, 0.18);
   }
   .workspace-tab:focus-visible {
     outline: 3px solid rgba(59, 130, 246, 0.32);
@@ -137,7 +139,7 @@
     padding: 12px;
     display: grid;
     gap: 10px;
-    box-shadow: 0 8px 18px rgba(23, 53, 92, 0.04);
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
     position: relative;
     overflow: hidden;
   }
@@ -151,48 +153,16 @@
     top: 0;
     bottom: 0;
     width: 4px;
-    background: #c9d8ef;
-  }
-  .control-card.card-resumen::before { background: var(--nvd-accent); }
-  .control-card.card-operativa::before { background: #f59e0b; }
-  .control-card.card-alertas::before { background: var(--alt-accent); }
-  .control-card.card-vehiculos::before { background: var(--veh-accent); }
-  .control-card.card-registro::before { background: #64748b; }
-  .control-card.card-historial::before { background: #6366f1; }
-  .control-card.card-task-alert::before { background: #ef4444; }
-
-  .control-card.card-resumen {
-    background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
-  }
-  .control-card.card-operativa {
-    background: linear-gradient(180deg, #ffffff 0%, #fffdf8 100%);
-  }
-  .control-card.card-alertas {
-    background: linear-gradient(180deg, #ffffff 0%, #fffdf8 100%);
-    border-color: #f2e2c6;
-  }
-  .control-card.card-alertas.no-alertas {
-    border-color: #e5eaf4;
-    background: linear-gradient(180deg, #ffffff 0%, #fcfdff 100%);
+    background: var(--nvd-accent);
   }
   .control-card.card-alertas.has-alertas {
-    border-color: #ead9b6;
-    background: linear-gradient(180deg, #fffef9 0%, #fff9ee 100%);
-    box-shadow: 0 10px 22px rgba(146, 109, 38, 0.08);
+    border-color: var(--warn-bd);
   }
-  .control-card.card-vehiculos {
-    background: linear-gradient(180deg, #ffffff 0%, #f9fcfa 100%);
-    box-shadow: 0 5px 12px rgba(23, 53, 92, 0.03);
+  .control-card.card-alertas.has-alertas::before {
+    background: var(--warning);
   }
-  .control-card.card-registro {
-    background: linear-gradient(180deg, #ffffff 0%, #fafcff 100%);
-  }
-  .control-card.card-historial {
-    background: linear-gradient(180deg, #ffffff 0%, #f8f9ff 100%);
-  }
-  .control-card.card-task-alert {
-    background: linear-gradient(180deg, #fff7f8 0%, #fff0f2 100%);
-    border-color: #f3d4d8;
+  .control-card.card-task-alert::before {
+    background: var(--danger);
   }
 
   .card-head {
@@ -212,14 +182,14 @@
     font-size: 18px;
     line-height: 1.2;
     font-weight: 900;
-    color: #1d3a61;
+    color: var(--ctl-text);
     letter-spacing: -0.01em;
   }
 
   .btn-soft {
-    border: 1px solid #cfdcf0;
-    background: linear-gradient(180deg, #f5f9ff 0%, #eaf2fd 100%);
-    color: #2f557f;
+    border: 1px solid var(--ctl-line);
+    background: var(--ctl-card);
+    color: var(--ctl-text);
     border-radius: 999px;
     padding: 6px 12px;
     font-size: 12px;
@@ -233,9 +203,9 @@
   }
 
   .btn-dark {
-    border: 1px solid #112445;
-    background: linear-gradient(180deg, #1a3765 0%, #112445 100%);
-    color: #fff;
+    border: 1px solid var(--primary);
+    background: var(--primary);
+    color: #ffffff;
     border-radius: 999px;
     padding: 7px 14px;
     font-size: 13px;
@@ -252,8 +222,8 @@
     border: 1px solid var(--ctl-line);
     border-radius: 10px;
     padding: 8px;
-    background: linear-gradient(180deg, #ffffff 0%, #f9fcff 100%);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+    background: var(--ctl-card);
+    box-shadow: none;
   }
   .kpi .k-label {
     font-size: 12px;
@@ -266,14 +236,10 @@
     font-weight: 900;
     color: #1c3453;
   }
-  .kpi.total { background: linear-gradient(180deg, #f6f9ff 0%, #edf3fb 100%); border-color: #dfe8f5; }
-  .kpi.total .k-val { color: #2e4f79; }
-  .kpi.info { background: linear-gradient(180deg, #eef4ff 0%, #e6efff 100%); border-color: #d7e3fb; }
-  .kpi.info .k-val { color: #2f5ea4; }
-  .kpi.proc { background: linear-gradient(180deg, #fff1f5 0%, #ffe7ee 100%); border-color: #f4d8e3; }
-  .kpi.proc .k-val { color: #9d4e68; }
-  .kpi.ok { background: linear-gradient(180deg, #eef9f2 0%, #e5f5ed 100%); border-color: #d7ecdf; }
-  .kpi.ok .k-val { color: #20704e; }
+  .kpi.total { border-left: 4px solid var(--primary); }
+  .kpi.info { border-left: 4px solid var(--run-tx); }
+  .kpi.proc { border-left: 4px solid var(--warning); }
+  .kpi.ok { border-left: 4px solid var(--success); }
   .card-resumen .kpi .k-val { font-size: 30px; }
   .kpi-grid.resumen-base {
     display: none;
@@ -285,14 +251,10 @@
   .card-resumen .kpi-grid.respuestas {
     display: none;
   }
-  .kpi.pending-old { background: linear-gradient(180deg, #fff7ed 0%, #ffedd5 100%); border-color: #fed7aa; }
-  .kpi.pending-old .k-val { color: #b45309; }
-  .kpi.today-open { background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%); border-color: #bfdbfe; }
-  .kpi.today-open .k-val { color: #1d4ed8; }
-  .kpi.assign-open { background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 100%); border-color: #fde68a; }
-  .kpi.assign-open .k-val { color: #a16207; }
-  .kpi.matias-open { background: linear-gradient(180deg, #fdf2f8 0%, #fce7f3 100%); border-color: #f9a8d4; }
-  .kpi.matias-open .k-val { color: #be185d; }
+  .kpi.pending-old { border-left: 4px solid var(--primary); }
+  .kpi.today-open { border-left: 4px solid var(--primary); }
+  .kpi.assign-open { border-left: 4px solid var(--warning); }
+  .kpi.matias-open { border-left: 4px solid var(--primary); }
 
   /* KPIs compactos (Matafuegos + Desinfeccion) */
   .ops-kpi-row {
@@ -451,6 +413,10 @@
   .ops-kpi-mata .ops-kpi-icon { border-color: #fed7aa; background: #fff7ed; color: #c2410c; }
   .ops-kpi-desinf { border-color: #a7f3d0; background: linear-gradient(180deg, #ffffff 0%, #f3fef7 100%); }
   .ops-kpi-desinf .ops-kpi-icon { border-color: #a7f3d0; background: #ecfdf5; color: #166534; }
+  .ops-kpi-veh { border-color: #bfdbfe; background: linear-gradient(180deg, #ffffff 0%, #f3f8ff 100%); }
+  .ops-kpi-veh .ops-kpi-icon { border-color: #bfdbfe; background: #eff6ff; color: #1d4ed8; }
+  .ops-kpi-obras { border-color: #ddd6fe; background: linear-gradient(180deg, #ffffff 0%, #faf5ff 100%); }
+  .ops-kpi-obras .ops-kpi-icon { border-color: #ddd6fe; background: #f5f3ff; color: #6d28d9; }
 
   @media (max-width: 740px) {
     .ops-kpi-row { grid-template-columns: 1fr; }
@@ -2289,7 +2255,7 @@
     </div>
 
     <div class="ops-kpi-row" aria-label="KPIs operativos">
-      <div id="mataCard" class="ops-kpi-card ops-kpi-mata ops-kpi-link" data-href="{{ url_for('matafuegos_home') }}" style="display:none;">
+      <div id="mataCard" class="ops-kpi-card ops-kpi-mata ops-kpi-link" data-href="{{ url_for('matafuegos_home') }}">
         <div class="ops-kpi-head">
           <div class="ops-kpi-left">
             <div class="ops-kpi-icon" aria-hidden="true">&#129519;</div>
@@ -2314,7 +2280,7 @@
         </div>
       </div>
 
-      <div id="desinfCard" class="ops-kpi-card ops-kpi-desinf ops-kpi-link" data-href="{{ url_for('obras_home', panel='panel-desinf') }}" style="display:none;">
+      <div id="desinfCard" class="ops-kpi-card ops-kpi-desinf ops-kpi-link" data-href="{{ url_for('obras_home', panel='panel-desinf') }}">
         <div class="ops-kpi-head">
           <div class="ops-kpi-left">
             <div class="ops-kpi-icon" aria-hidden="true">&#129514;</div>
@@ -2339,6 +2305,55 @@
           <div id="desinfUltima" class="ops-kpi-foot muted">Última: -</div>
         </div>
       </div>
+
+      <div id="vehOpsCard" class="ops-kpi-card ops-kpi-veh ops-kpi-link" data-href="{{ url_for('vehiculos_control_diario') }}">
+        <div class="ops-kpi-head">
+          <div class="ops-kpi-left">
+            <div class="ops-kpi-icon" aria-hidden="true">&#128663;</div>
+            <div class="ops-kpi-title">Vehículos</div>
+          </div>
+          <div class="ops-kpi-head-actions">
+            <span id="vehOpsBadge" class="ops-badge na">-</span>
+            <a class="btn-mini ops-kpi-cta" href="{{ url_for('vehiculos_control_diario') }}">Ver detalle</a>
+          </div>
+        </div>
+        <div class="ops-kpi-body">
+          <div>
+            <div class="ops-kpi-date-label">Disponibles hoy</div>
+            <div id="vehOpsAvail" class="ops-kpi-date">-</div>
+          </div>
+          <div class="ops-kpi-line">
+            <span>En uso: <strong id="vehOpsInUse">-</strong></span>
+            <span id="vehOpsPendWrap">· Pend. cierre: <strong id="vehOpsPend">-</strong></span>
+            <span id="vehOpsNoDispWrap" style="display:none;">· No disp.: <strong id="vehOpsNoDisp">-</strong></span>
+          </div>
+          <div id="vehOpsFoot" class="ops-kpi-foot muted">-</div>
+        </div>
+      </div>
+
+      <div id="obrasOpsCard" class="ops-kpi-card ops-kpi-obras ops-kpi-link" data-href="{{ url_for('obras_home') }}">
+        <div class="ops-kpi-head">
+          <div class="ops-kpi-left">
+            <div class="ops-kpi-icon" aria-hidden="true">&#127959;</div>
+            <div class="ops-kpi-title">Obras</div>
+          </div>
+          <div class="ops-kpi-head-actions">
+            <span id="obrasOpsBadge" class="ops-badge na">-</span>
+            <a class="btn-mini ops-kpi-cta" href="{{ url_for('obras_home') }}">Ver detalle</a>
+          </div>
+        </div>
+        <div class="ops-kpi-body">
+          <div>
+            <div class="ops-kpi-date-label">En ejecución hoy</div>
+            <div id="obrasOpsRun" class="ops-kpi-date">-</div>
+          </div>
+          <div class="ops-kpi-line">
+            <span>Cerradas: <strong id="obrasOpsDone">-</strong></span>
+            <span id="obrasOpsUrgWrap">· Urgencias: <strong id="obrasOpsUrg">-</strong></span>
+          </div>
+          <div id="obrasOpsFoot" class="ops-kpi-foot muted">-</div>
+        </div>
+      </div>
     </div>
 
     <div id="nextCoffeeRow" class="next-coffee-row" style="display:none;">
@@ -2357,10 +2372,45 @@
         <span id="limpiezaLabel" class="label">Limpieza</span>
         <span id="limpiezaBadge" class="ops-badge na" style="display:none;">0</span>
       </a>
+      <a class="daily-action" href="{{ url_for('sedes_home') }}">
+        <span class="icon" aria-hidden="true">🏢</span>
+        <span class="label">Sedes</span>
+      </a>
+      <a class="daily-action" href="{{ url_for('sst_general') }}">
+        <span class="icon" aria-hidden="true">⚠️</span>
+        <span class="label">SGSST</span>
+      </a>
+      <a class="daily-action" href="{{ url_for('obras_home') }}">
+        <span class="icon" aria-hidden="true">🏗️</span>
+        <span class="label">Obras</span>
+      </a>
+      <a class="daily-action" href="{{ url_for('vehiculos_control_diario') }}">
+        <span class="icon" aria-hidden="true">🚗</span>
+        <span class="label">Vehículos</span>
+      </a>
       <a class="daily-action" href="{{ url_for('sedes_control_limpieza_historial') }}">
         <span class="icon" aria-hidden="true">📚</span>
         <span class="label">Historial limpieza</span>
       </a>
+    </div>
+  </article>
+
+  <article id="alertasCard" class="control-card control-workspace-section card-alertas no-alertas" data-workspaces="gestion resumen recursos">
+    <div class="card-head">
+      <h2>Alertas criticas</h2>
+    </div>
+    <ul id="alertasList" class="alert-list">
+      <li>Sin alertas criticas hoy.</li>
+    </ul>
+  </article>
+
+  <article class="control-card control-workspace-section card-vehiculos" data-workspaces="gestion recursos">
+    <div class="card-head">
+      <h2>Estado de vehiculos</h2>
+      <a class="btn-soft" href="{{ url_for('vehiculos_control_diario') }}">Ir a modulo vehiculos</a>
+    </div>
+    <div id="vehiculosWrap" class="veh-grid">
+      <div class="veh-card"><div class="veh-code">-</div><div class="veh-pat">-</div><div class="veh-est">Sin datos</div></div>
     </div>
   </article>
 
@@ -2737,25 +2787,6 @@
           </tbody>
         </table>
       </div>
-    </div>
-  </article>
-
-  <article id="alertasCard" class="control-card control-workspace-section card-alertas no-alertas" data-workspaces="resumen recursos">
-    <div class="card-head">
-      <h2>4. Alertas criticas</h2>
-    </div>
-    <ul id="alertasList" class="alert-list">
-      <li>Sin alertas criticas hoy.</li>
-    </ul>
-  </article>
-
-  <article class="control-card control-workspace-section card-vehiculos" data-workspaces="recursos">
-    <div class="card-head">
-      <h2>5. Estado de vehiculos</h2>
-      <a class="btn-soft" href="{{ url_for('vehiculos_control_diario') }}">Ir a modulo vehiculos</a>
-    </div>
-    <div id="vehiculosWrap" class="veh-grid">
-      <div class="veh-card"><div class="veh-code">-</div><div class="veh-pat">-</div><div class="veh-est">Sin datos</div></div>
     </div>
   </article>
 </section>
@@ -3239,6 +3270,22 @@
       desinfStatus: document.getElementById("desinfStatus"),
       desinfSedes: document.getElementById("desinfSedes"),
       desinfUltima: document.getElementById("desinfUltima"),
+      vehOpsCard: document.getElementById("vehOpsCard"),
+      vehOpsBadge: document.getElementById("vehOpsBadge"),
+      vehOpsAvail: document.getElementById("vehOpsAvail"),
+      vehOpsInUse: document.getElementById("vehOpsInUse"),
+      vehOpsPendWrap: document.getElementById("vehOpsPendWrap"),
+      vehOpsPend: document.getElementById("vehOpsPend"),
+      vehOpsNoDispWrap: document.getElementById("vehOpsNoDispWrap"),
+      vehOpsNoDisp: document.getElementById("vehOpsNoDisp"),
+      vehOpsFoot: document.getElementById("vehOpsFoot"),
+      obrasOpsCard: document.getElementById("obrasOpsCard"),
+      obrasOpsBadge: document.getElementById("obrasOpsBadge"),
+      obrasOpsRun: document.getElementById("obrasOpsRun"),
+      obrasOpsDone: document.getElementById("obrasOpsDone"),
+      obrasOpsUrgWrap: document.getElementById("obrasOpsUrgWrap"),
+      obrasOpsUrg: document.getElementById("obrasOpsUrg"),
+      obrasOpsFoot: document.getElementById("obrasOpsFoot"),
       limpiezaAction: document.getElementById("limpiezaAction"),
       limpiezaLabel: document.getElementById("limpiezaLabel"),
       limpiezaBadge: document.getElementById("limpiezaBadge"),
@@ -4415,13 +4462,9 @@
 
       var status = String(x.status || "").trim();
       var hasAny = !!(nextDate || nextLabel || nextSedes.length || lastDate || lastSedes.length || status);
-      if (!hasAny) {
-        el.desinfCard.style.display = "none";
-        return;
-      }
       el.desinfCard.style.display = "";
 
-      var statusTxt = status || (nextDate ? "Programada" : (lastDate ? "Finalizada" : "-"));
+      var statusTxt = status || (nextDate ? "Programada" : (lastDate ? "Finalizada" : "Sin datos"));
       el.desinfNextDate.textContent = nextDate ? fmtIsoShort(nextDate) : "-";
       el.desinfStatus.textContent = statusTxt;
       if (el.desinfBadge) {
@@ -4458,6 +4501,10 @@
         ultimaTxt += " · " + String(briefLast.count) + " sedes: " + (briefLast.text || "-");
       }
       el.desinfUltima.textContent = ultimaTxt;
+
+      if (!hasAny && el.desinfBadge) {
+        setBadge(el.desinfBadge, "Sin datos", "na");
+      }
     }
 
     function renderMatafuegosCard(d) {
@@ -4471,10 +4518,6 @@
       var days = (x.days_left === 0 || x.days_left) ? Number(x.days_left) : null;
 
       var hasAny = !!(nextDate || sedes.length || count45 || (days !== null));
-      if (!hasAny) {
-        el.mataCard.style.display = "none";
-        return;
-      }
       el.mataCard.style.display = "";
 
       el.mataNextDate.textContent = nextDate ? fmtIsoShort(nextDate) : "-";
@@ -4517,6 +4560,10 @@
 
       var brief = briefCodes(sedes, 6);
       el.mataSedes.textContent = String(brief.count) + " sedes: " + (brief.text || "-");
+
+      if (!hasAny && el.mataBadge) {
+        setBadge(el.mataBadge, "Sin datos", "na");
+      }
     }
 
     function renderLimpiezaAction(d) {
@@ -4545,10 +4592,83 @@
           renderMatafuegosCard((base || {}).matafuegos || {});
           renderDesinfeccionCard((base || {}).desinfeccion || {});
           renderLimpiezaAction((base || {}).limpieza || {});
+          renderVehiculosOpsCard((base || {}).vehiculos || {});
+          renderObrasOpsCard((base || {}).obras || {});
         })
         .catch(function () {
           // opcional: no interrumpir el uso diario si falla el extra
         });
+    }
+
+    function renderVehiculosOpsCard(d) {
+      var card = el.vehOpsCard;
+      if (!card || !el.vehOpsAvail) return;
+
+      var donut = ((d || {}).donut) || {};
+      var enUso = Number(donut.enUso || 0);
+      var guardados = Number(donut.guardados || 0);
+      var pend = Number(donut.pendientesCierre || 0);
+      var noDisp = Number(donut.noDisponibles || 0);
+      var total = Number(donut.total || 0);
+
+      if (!isFinite(enUso)) enUso = 0;
+      if (!isFinite(guardados)) guardados = 0;
+      if (!isFinite(pend)) pend = 0;
+      if (!isFinite(noDisp)) noDisp = 0;
+      if (!isFinite(total)) total = 0;
+
+      var hasAny = (total > 0) || (enUso > 0) || (guardados > 0) || (pend > 0) || (noDisp > 0);
+
+      el.vehOpsAvail.textContent = hasAny ? String(guardados) : "-";
+      if (el.vehOpsInUse) el.vehOpsInUse.textContent = hasAny ? String(enUso) : "-";
+      if (el.vehOpsPend) el.vehOpsPend.textContent = hasAny ? String(pend) : "-";
+      if (el.vehOpsNoDisp) el.vehOpsNoDisp.textContent = hasAny ? String(noDisp) : "-";
+
+      if (el.vehOpsNoDispWrap) el.vehOpsNoDispWrap.style.display = noDisp > 0 ? "" : "none";
+      if (el.vehOpsPendWrap) el.vehOpsPendWrap.style.display = pend > 0 ? "" : "";
+
+      if (el.vehOpsFoot) {
+        el.vehOpsFoot.textContent = hasAny ? ("Total: " + String(total || (enUso + guardados + pend + noDisp))) : "Sin datos";
+      }
+
+      if (el.vehOpsBadge) {
+        if (!hasAny) setBadge(el.vehOpsBadge, "Sin datos", "na");
+        else if (pend > 0) setBadge(el.vehOpsBadge, String(pend) + " pend.", "warn");
+        else setBadge(el.vehOpsBadge, "OK", "ok");
+      }
+    }
+
+    function renderObrasOpsCard(d) {
+      var card = el.obrasOpsCard;
+      if (!card || !el.obrasOpsRun) return;
+
+      var enEjec = Number(d.enEjecucionHoy || 0);
+      var cerradas = Number(d.cerradasHoy || 0);
+      var urg = Number(d.urgenciasExternas || 0);
+      var count = Number(d.novedadesCount || 0);
+
+      if (!isFinite(enEjec)) enEjec = 0;
+      if (!isFinite(cerradas)) cerradas = 0;
+      if (!isFinite(urg)) urg = 0;
+      if (!isFinite(count)) count = 0;
+
+      var hasAny = (enEjec > 0) || (cerradas > 0) || (urg > 0) || (count > 0);
+
+      el.obrasOpsRun.textContent = hasAny ? String(enEjec) : "-";
+      if (el.obrasOpsDone) el.obrasOpsDone.textContent = hasAny ? String(cerradas) : "-";
+      if (el.obrasOpsUrg) el.obrasOpsUrg.textContent = hasAny ? String(urg) : "-";
+      if (el.obrasOpsUrgWrap) el.obrasOpsUrgWrap.style.display = urg > 0 ? "" : "";
+
+      if (el.obrasOpsFoot) {
+        el.obrasOpsFoot.textContent = hasAny ? (count > 0 ? (String(count) + " novedades hoy") : "Sin novedades hoy") : "Sin datos";
+      }
+
+      if (el.obrasOpsBadge) {
+        if (!hasAny) setBadge(el.obrasOpsBadge, "Sin datos", "na");
+        else if (urg > 0) setBadge(el.obrasOpsBadge, String(urg) + " urg.", "bad");
+        else if (enEjec > 0) setBadge(el.obrasOpsBadge, "En curso", "na");
+        else setBadge(el.obrasOpsBadge, "OK", "ok");
+      }
     }
 
     function resumenEstadoInc(out, estadoRaw) {
@@ -6880,6 +7000,8 @@
     }
     wireOpsCardLink(el.mataCard);
     wireOpsCardLink(el.desinfCard);
+    wireOpsCardLink(el.vehOpsCard);
+    wireOpsCardLink(el.obrasOpsCard);
     if (el.nextCoffeeBtn) {
       el.nextCoffeeBtn.addEventListener("click", function () {
         var gid = Number(el.nextCoffeeBtn.getAttribute("data-id") || 0);

@@ -529,7 +529,7 @@
       <a class="btn btn-mpd btn-area-ejecutivo" href="{{ url_for('dashboard_ejecutivo') }}">Alta Direccion</a>
       {% else %}
       <a class="btn btn-mpd btn-area-inicio" href="{{ url_for('dashboard') }}">Centro Operativo</a>
-      <a class="btn btn-mpd btn-area-inicio" href="{{ url_for('sedes_resumen_mpd') }}">Sedes</a>
+      <a class="btn btn-mpd btn-area-inicio" href="{{ url_for('sedes_home') }}">Sedes</a>
       
       {% if user_role == 'full' %}
       {# Usuarios queda en Info MPD para reducir ruido visual #}
@@ -561,6 +561,8 @@
           {% if can_access("sst") %}
           <div class="dropdown-sep"></div>
           <div class="dropdown-title">SST</div>
+          <a href="{{ url_for('matafuegos_home') }}">Matafuegos</a>
+          <a href="{{ url_for('obras_home', panel='panel-desinf') }}">Desinfeccion</a>
           <a href="{{ url_for('sst_general') }}">Estado general</a>
           <a href="{{ url_for('sgsst_documentacion_home') }}">Documentacion SG-SST</a>
           <a href="{{ url_for('sst_ergonomia_gestion_riesgo') }}">Gestion de riesgos</a>
