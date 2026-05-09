@@ -537,26 +537,23 @@
 
       <div class="nav-dropdown nav-menu">
         <a class="btn btn-mpd nav-dd-link" href="{{ url_for('sgi_documentacion') }}">Info MPD</a>
-        <span class="nav-dd-caret" aria-hidden="true">v</span>
+        <span class="nav-dd-caret" aria-hidden="true">▼</span>
         <div class="dropdown-menu">
-          <div class="dropdown-title">Informacion</div>
-          <a href="{{ url_for('sgi_documentacion') }}">Informacion del sistema</a>
-          <a href="{{ url_for('sgi_documentacion_informes') }}">Informes</a>
-          <a href="{{ url_for('calendario') }}">Calendario</a>
-
-          <div class="dropdown-sep"></div>
-          <div class="dropdown-title">Equipo</div>
+          <a href="{{ url_for('sgi_documentacion') }}">Documentación del sistema</a>
+          <a href="{{ url_for('sgi_documentacion_informes') }}">Informes operativos</a>
           <a href="{{ url_for('personal_sede_home') }}">Personal por sede</a>
-          <a href="{{ url_for('agentes_home') }}">Agentes de intendencia</a>
+          <a href="{{ url_for('agentes_home') }}">Agentes Intendencia</a>
+          <a href="{{ url_for('calendario') }}">Calendario</a>
+          <a href="{{ url_for('vehiculos_bd_home') }}" title="Vehículos / Choferes / Destinos">Base de datos</a>
 
-          <div class="dropdown-sep"></div>
-          <div class="dropdown-title">Base de datos</div>
-          <a href="{{ url_for('vehiculos_bd_home') }}">Vehiculos / Choferes / Destinos</a>
+          {% if user_role == 'full' %}
+          <a href="{{ url_for('admin_usuarios') }}">Administración (Usuarios)</a>
+          {% endif %}
 
           <div class="dropdown-sep"></div>
           <div class="dropdown-title">Apoyo</div>
-          <a href="{{ url_for('mapa_ssj') }}">Mapa SSJ</a>
           <a href="{{ url_for('sgi_home') }}">Inicio SGI</a>
+          <a href="{{ url_for('mapa_ssj') }}">Mapa SSJ</a>
 
           {% if can_access("sst") %}
           <div class="dropdown-sep"></div>
@@ -576,12 +573,6 @@
           <a href="{{ url_for('auditoria_luminarias') }}">Luminarias</a>
           <a href="{{ url_for('relevamientos_comparativa') }}">Comparativa</a>
           {% endif %}
-          {% endif %}
-
-          {% if user_role == 'full' %}
-          <div class="dropdown-sep"></div>
-          <div class="dropdown-title">Administracion</div>
-          <a href="{{ url_for('admin_usuarios') }}">Usuarios</a>
           {% endif %}
 
           <div class="dropdown-sep"></div>
