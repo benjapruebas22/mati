@@ -2,7 +2,7 @@
 
 {% block head_extra %}
   {{ super() }}
-  <link rel="stylesheet" href="{{ url_for('static', filename='centro_operativo/centro_operativo.css', v='2026-05-09-02') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='centro_operativo/centro_operativo.css', v='2026-05-09-03') }}">
 {% endblock %}
 
 {% block content %}
@@ -2851,58 +2851,55 @@
   <div class="gestion-backdrop" data-close-gestion="1"></div>
   <div class="gestion-dialog" role="dialog" aria-modal="true" aria-labelledby="gestionTitle">
     <div class="gestion-head">
-      <h3 id="gestionTitle" class="gestion-title">Gestion interna</h3>
+      <div class="gestion-head-left">
+        <h3 id="gestionTitle" class="gestion-title">Gestion interna</h3>
+        <div class="gestion-subtitle">Asignacion operativa</div>
+      </div>
       <button id="gestionClose" type="button" class="btn-soft">Cerrar</button>
     </div>
     <div id="gestionMeta" class="gestion-meta"></div>
     <div id="gestionTurnoBar" class="gestion-turno-bar" style="display:none;"></div>
 
-    <div id="gestionStatusTitle" class="gestion-section-title" style="display:none;">Acciones</div>
-    <div id="gestionStatusRow" class="gestion-actions-row" style="display:none;">
-      <div class="gestion-actions-main">
-        <button id="gestionTareaGuardar" type="button" class="btn-action btn-primary">Guardar</button>
-        <button id="gestionTareaFinalizar" type="button" class="btn-action btn-success">Finalizado por agente</button>
-        <button id="gestionCerrar" type="button" class="btn-action btn-danger">Revisado y cerrado</button>
-      </div>
-      <div class="gestion-actions-secondary">
-        <select id="gestionEstado" class="ctl-sel"></select>
-        <button id="gestionEstadoGuardar" type="button" class="btn-soft">Actualizar estado</button>
-      </div>
-    </div>
-    <div id="gestionTareaTitle" class="gestion-section-title" style="display:none;">Asignacion de tarea</div>
-    <div id="gestionTareaRow" class="gestion-tarea-row gestion-asignacion-grid" style="display:none;">
-      <div class="col-agentes">
-        <label for="gestionTareaAgente">Agente asignado</label>
-        <select id="gestionTareaAgente" class="ctl-sel"></select>
-        <button id="gestionAutoasignar" type="button" class="btn-soft btn-autoasignar" style="display:none;">Me asigno</button>
+    <div id="gestionTareaTitle" class="gestion-section-title" style="display:none;">Estado y asignacion</div>
+    <div id="gestionTareaRow" class="gestion-tarea-row" style="display:none;">
+      <div class="gestion-assign-grid">
+        <div class="gestion-field-card card-agente">
+          <label for="gestionTareaAgente">Agente asignado</label>
+          <select id="gestionTareaAgente" class="ctl-sel"></select>
+          <button id="gestionAutoasignar" type="button" class="btn-soft btn-autoasignar" style="display:none;">Me asigno</button>
 
-        <div id="gestionGrupoWrap" class="gestion-grupo-wrap" style="display:none;margin-top:8px;">
-          <div class="gestion-grupo-add">
-            <div>
-              <label for="gestionGrupoAgente">Equipo operativo</label>
-              <select id="gestionGrupoAgente" class="ctl-sel"></select>
+          <div id="gestionGrupoWrap" class="gestion-grupo-wrap" style="display:none;">
+            <div class="gestion-grupo-add">
+              <div>
+                <label for="gestionGrupoAgente">Equipo operativo</label>
+                <select id="gestionGrupoAgente" class="ctl-sel"></select>
+              </div>
+              <button id="gestionGrupoAdd" type="button" class="btn-inline">Agregar</button>
             </div>
-            <button id="gestionGrupoAdd" type="button" class="btn-inline">Agregar</button>
+            <div id="gestionGrupoList" class="gestion-grupo-list"></div>
+            <div class="gestion-tools-help">PodÃ©s asignar 1 a 4 personas del equipo.</div>
           </div>
-          <div id="gestionGrupoList" class="gestion-grupo-list"></div>
-          <div class="gestion-tools-help">PodÃ©s asignar 1 a 4 personas del equipo.</div>
+        </div>
+        <div class="gestion-field-card">
+          <label for="gestionTareaSede">Sede</label>
+          <select id="gestionTareaSede" class="ctl-sel"></select>
+        </div>
+        <div class="gestion-field-card">
+          <label for="gestionTareaDeposito">Deposito</label>
+          <select id="gestionTareaDeposito" class="ctl-sel"></select>
+        </div>
+        <div class="gestion-field-card">
+          <label for="gestionTareaEstado">Estado actual</label>
+          <select id="gestionTareaEstado" class="ctl-sel"></select>
         </div>
       </div>
-      <div>
-        <label for="gestionTareaSede">Sede</label>
-        <select id="gestionTareaSede" class="ctl-sel"></select>
-      </div>
-      <div>
-        <label for="gestionTareaDeposito">Deposito</label>
-        <select id="gestionTareaDeposito" class="ctl-sel"></select>
-      </div>
-      <div class="col-tarea">
-        <label for="gestionTarea">Tarea asignada</label>
-        <input id="gestionTarea" class="ctl-inp" type="text" maxlength="280" placeholder="Ej: Coordinar compra de luminarias para S11">
-      </div>
-      <div>
-        <label for="gestionTareaEstado">Estado tarea</label>
-        <select id="gestionTareaEstado" class="ctl-sel"></select>
+
+      <div class="gestion-detail-block">
+        <div class="gestion-detail-title">Detalle operativo</div>
+        <div class="gestion-detail-body">
+          <label for="gestionTarea">Tarea asignada</label>
+          <input id="gestionTarea" class="ctl-inp" type="text" maxlength="280" placeholder="Ej: Coordinar compra de luminarias para S11">
+        </div>
       </div>
     </div>
     <div id="gestionCoffeeInsumosTitle" class="gestion-section-title" style="display:none;">Control de insumos</div>
@@ -2979,23 +2976,42 @@
         </div>
       </details>
     </div>
-    <div id="gestionFotosTitle" class="gestion-section-title">Fotos</div>
-    <div id="gestionFotosRow" class="gestion-fotos-row">
-      <div class="gestion-fotos-top">
-        <button id="gestionFotoAdd" type="button" class="btn-inline">Agregar foto</button>
-        <div class="gestion-fotos-note">JPG / PNG / WEBP - max 4 MB</div>
+    <div class="gestion-evidence-grid">
+      <div class="gestion-evidence-col">
+        <div id="gestionFotosTitle" class="gestion-section-title">Fotos</div>
+        <div id="gestionFotosRow" class="gestion-fotos-row">
+          <div class="gestion-fotos-top">
+            <button id="gestionFotoAdd" type="button" class="btn-inline">Agregar foto</button>
+            <div class="gestion-fotos-note">JPG / PNG / WEBP - max 4 MB</div>
+          </div>
+          <div id="gestionFotosMsg" class="aux-msg" style="display:none;"></div>
+          <input id="gestionFotoFile" type="file" accept="image/*" style="display:none;">
+          <div id="gestionFotosList" class="gestion-fotos-list"></div>
+        </div>
       </div>
-      <div id="gestionFotosMsg" class="aux-msg" style="display:none;"></div>
-      <input id="gestionFotoFile" type="file" accept="image/*" style="display:none;">
-      <div id="gestionFotosList" class="gestion-fotos-list"></div>
+      <div class="gestion-evidence-col">
+        <div class="gestion-section-title">Conversacion interna</div>
+        <div id="gestionChatList" class="gestion-chat-list"></div>
+        <div class="gestion-compose">
+          <textarea id="gestionTexto" class="ctl-inp" maxlength="1000" placeholder="Escribe una respuesta interna..."></textarea>
+          <div class="aux-row">
+            <div id="gestionMsg" class="aux-msg"></div>
+            <button id="gestionEnviar" type="button" class="btn-dark">Enviar</button>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="gestion-section-title">Conversacion interna</div>
-    <div id="gestionChatList" class="gestion-chat-list"></div>
-    <div class="gestion-compose">
-      <textarea id="gestionTexto" class="ctl-inp" maxlength="1000" placeholder="Escribe una respuesta interna..."></textarea>
-      <div class="aux-row">
-        <div id="gestionMsg" class="aux-msg"></div>
-        <button id="gestionEnviar" type="button" class="btn-dark">Enviar</button>
+
+    <div id="gestionStatusTitle" class="gestion-section-title" style="display:none;">Acciones</div>
+    <div id="gestionStatusRow" class="gestion-actions-row" style="display:none;">
+      <div class="gestion-actions-main">
+        <button id="gestionTareaGuardar" type="button" class="btn-action btn-primary">Guardar</button>
+        <button id="gestionTareaFinalizar" type="button" class="btn-action btn-success">Finalizado por agente</button>
+        <button id="gestionCerrar" type="button" class="btn-action btn-secondary">Revisado y cerrado</button>
+      </div>
+      <div class="gestion-actions-secondary">
+        <select id="gestionEstado" class="ctl-sel"></select>
+        <button id="gestionEstadoGuardar" type="button" class="btn-soft">Actualizar estado</button>
       </div>
     </div>
   </div>

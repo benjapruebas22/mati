@@ -335,37 +335,54 @@
   line-height: 1.25;
 }
 
-/* Modal: más “aire” y jerarquía */
+/* Modal: Gestion interna (panel institucional) */
 .gestion-modal .gestion-dialog {
-  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+  background: #ffffff;
 }
 .gestion-modal .gestion-dialog .gestion-head {
-  padding: 12px 14px;
+  padding: 14px 16px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+}
+.gestion-modal .gestion-dialog .gestion-head-left {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
 }
 .gestion-modal .gestion-dialog .gestion-title {
   font-size: 16px;
+  font-weight: 600;
+  color: #334155;
+  line-height: 1.2;
+}
+.gestion-modal .gestion-dialog .gestion-subtitle {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.2;
 }
 .gestion-modal .gestion-dialog .gestion-meta {
-  padding: 10px 14px 0;
+  padding: 12px 16px 0;
 }
 .gestion-modal .gestion-dialog .gestion-section-title {
-  margin-left: 14px;
-  margin-right: 14px;
+  margin: 12px 16px 0;
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
 }
 .gestion-modal .gestion-dialog .gestion-actions-row,
 .gestion-modal .gestion-dialog .gestion-status-row,
 .gestion-modal .gestion-dialog .gestion-tarea-row,
-.gestion-modal .gestion-dialog .gestion-fotos-row,
-.gestion-modal .gestion-dialog .gestion-chat-list,
-.gestion-modal .gestion-dialog .gestion-compose,
 .gestion-modal .gestion-dialog .gestion-coffee-row {
-  margin-left: 14px;
-  margin-right: 14px;
+  margin-left: 16px;
+  margin-right: 16px;
 }
 .gestion-modal .gestion-dialog label {
   font-size: 11px;
-  color: #59799e;
-  font-weight: 800;
+  color: #64748b;
+  font-weight: 500;
 }
 .gestion-modal .gestion-dialog #gestionEstado {
   max-width: 190px;
@@ -373,27 +390,17 @@
 .gestion-modal .gestion-dialog .aux-row-tight {
   margin: 0;
 }
-.gestion-modal .gestion-dialog .gestion-chat-list {
-  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
-}
-.gestion-modal .gestion-dialog .chat-msg .m-body {
-  padding: 8px 10px;
-  border-radius: 12px;
-}
-.gestion-modal .gestion-dialog .gestion-compose textarea {
-  background: #ffffff;
-}
 
-/* GestiÃ³n interna: cabecera tipo dashboard */
+/* Turnos / estado general */
 .gestion-modal .gestion-dialog .gestion-turno-bar {
-  margin: 8px 14px 0;
-  border-radius: 14px;
+  margin: 10px 16px 0;
+  border-radius: 12px;
   padding: 8px 10px;
   border: 1px solid #e2e8f0;
   background: #f8fafc;
   color: #475569;
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 600;
 }
 .gestion-modal .gestion-dialog .gestion-turno-bar.turno-wait-matias {
   background: #fffbeb;
@@ -411,6 +418,13 @@
   color: #475569;
 }
 
+/* Cabecera meta (KPIs) */
+.gestion-modal .gestion-dialog .gestion-meta-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: none;
+}
 .gestion-modal .gestion-dialog .gestion-meta-card.meta-task {
   padding: 12px;
 }
@@ -420,31 +434,31 @@
   gap: 8px;
 }
 .gestion-modal .gestion-dialog .gestion-head-kpi {
-  border: 1px solid rgba(219, 230, 245, 0.95);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.92);
-  padding: 10px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 8px 10px;
   min-width: 0;
 }
 .gestion-modal .gestion-dialog .gestion-head-kpi .k {
   font-size: 10px;
-  font-weight: 900;
-  color: #4f6f98;
+  font-weight: 600;
+  color: #64748b;
   text-transform: uppercase;
-  letter-spacing: 0.25px;
+  letter-spacing: 0.2px;
 }
 .gestion-modal .gestion-dialog .gestion-head-kpi .v {
-  margin-top: 4px;
+  margin-top: 3px;
   font-size: 13px;
-  font-weight: 900;
-  color: #0f172a;
+  font-weight: 600;
+  color: #334155;
   line-height: 1.25;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .gestion-modal .gestion-dialog .gestion-head-kpi .v.muted {
-  color: #64748b;
-  font-weight: 800;
+  color: #94a3b8;
+  font-weight: 500;
 }
 
 .gestion-modal .gestion-dialog .gestion-state-badge {
@@ -452,26 +466,28 @@
   align-items: center;
   width: fit-content;
   border-radius: 999px;
-  padding: 7px 12px;
-  border: 1px solid transparent;
-  font-size: 13px;
-  font-weight: 1000;
+  padding: 5px 10px;
+  border: 1px solid #e2e8f0;
+  font-size: 12px;
+  font-weight: 600;
+  background: #f8fafc;
+  color: #475569;
 }
 .gestion-modal .gestion-dialog .gestion-state-hint {
-  margin-top: 4px;
+  margin-top: 3px;
   font-size: 11px;
-  color: #5f7ea4;
-  font-weight: 800;
+  color: #64748b;
+  font-weight: 500;
 }
 .gestion-modal .gestion-dialog .gestion-state-badge.gs-pendiente {
-  background: #fef2f2;
-  border-color: #fecaca;
-  color: #b91c1c;
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #475569;
 }
 .gestion-modal .gestion-dialog .gestion-state-badge.gs-curso {
-  background: #fff7ed;
-  border-color: #fed7aa;
-  color: #c2410c;
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
 }
 .gestion-modal .gestion-dialog .gestion-state-badge.gs-finalizado {
   background: #fffbeb;
@@ -486,38 +502,179 @@
 
 .gestion-modal .gestion-dialog .gestion-detail {
   margin-top: 10px;
-  border: 1px solid rgba(219, 230, 245, 0.95);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
   padding: 10px 10px;
 }
 .gestion-modal .gestion-dialog .gestion-detail .k {
   font-size: 10px;
-  font-weight: 900;
-  color: #4f6f98;
+  font-weight: 600;
+  color: #64748b;
   text-transform: uppercase;
-  letter-spacing: 0.25px;
+  letter-spacing: 0.2px;
 }
 .gestion-modal .gestion-dialog .gestion-detail .v {
-  margin-top: 4px;
-  font-size: 12px;
-  font-weight: 800;
-  color: #0f172a;
+  margin-top: 3px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
   line-height: 1.35;
   white-space: normal;
   overflow-wrap: anywhere;
 }
 .gestion-modal .gestion-dialog .gestion-detail .v.muted {
-  color: #64748b;
-  font-weight: 800;
+  color: #94a3b8;
+  font-weight: 500;
 }
 
-/* Acciones: 3 botones claros */
+/* Estado y asignacion */
+.gestion-modal .gestion-dialog .gestion-tarea-row {
+  margin-top: 6px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+.gestion-modal .gestion-dialog .gestion-assign-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  align-items: end;
+}
+.gestion-modal .gestion-dialog .gestion-field-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 10px;
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.gestion-modal .gestion-dialog .btn-autoasignar {
+  margin-top: 2px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+.gestion-modal .gestion-dialog .gestion-grupo-wrap {
+  margin-top: 8px;
+  border: 1px dashed #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 10px;
+}
+.gestion-modal .gestion-dialog .gestion-detail-block {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+}
+.gestion-modal .gestion-dialog .gestion-detail-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+}
+.gestion-modal .gestion-dialog .gestion-detail-body {
+  display: grid;
+  gap: 6px;
+}
+.gestion-modal .gestion-dialog #gestionTarea {
+  font-size: 14px;
+  font-weight: 500;
+  color: #334155;
+}
+@media (max-width: 980px) {
+  .gestion-modal .gestion-dialog .gestion-assign-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 520px) {
+  .gestion-modal .gestion-dialog .gestion-assign-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Evidencia + conversacion */
+.gestion-modal .gestion-dialog .gestion-evidence-grid {
+  margin: 12px 16px 0;
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 12px;
+}
+.gestion-modal .gestion-dialog .gestion-evidence-grid .gestion-section-title {
+  margin: 0 0 6px;
+}
+.gestion-modal .gestion-dialog .gestion-evidence-grid .gestion-fotos-row,
+.gestion-modal .gestion-dialog .gestion-evidence-grid .gestion-chat-list,
+.gestion-modal .gestion-dialog .gestion-evidence-grid .gestion-compose {
+  margin: 0;
+}
+.gestion-modal .gestion-dialog .gestion-evidence-grid .gestion-fotos-row {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 10px;
+}
+.gestion-modal .gestion-dialog .gestion-evidence-grid .gestion-chat-list {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 10px;
+}
+.gestion-modal .gestion-dialog .gestion-evidence-grid .gestion-compose {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f8fafc;
+  padding: 10px;
+}
+.gestion-modal .gestion-dialog #gestionFotoAdd {
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #334155;
+}
+.gestion-modal .gestion-dialog #gestionFotoAdd:hover {
+  background: #f8fafc;
+}
+.gestion-modal .gestion-dialog .chat-msg .m-head {
+  font-weight: 500;
+  color: #64748b;
+}
+.gestion-modal .gestion-dialog .chat-msg.mine .m-head {
+  color: #1d4ed8;
+}
+.gestion-modal .gestion-dialog .chat-msg .m-body {
+  border-color: #e5e7eb;
+  color: #334155;
+}
+.gestion-modal .gestion-dialog .chat-msg.mine .m-body {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+.gestion-modal .gestion-dialog .chat-msg.system .m-body {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+  color: #475569;
+}
+.gestion-modal .gestion-dialog .gestion-evidence-grid .chat-msg .m-body {
+  padding: 8px 10px;
+  border-radius: 12px;
+}
+.gestion-modal .gestion-dialog .gestion-evidence-grid .gestion-compose textarea {
+  background: #ffffff;
+}
+@media (max-width: 980px) {
+  .gestion-modal .gestion-dialog .gestion-evidence-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Acciones finales */
 .gestion-modal .gestion-dialog .gestion-actions-row {
-  margin: 6px 14px 0;
-  border: 1px solid #dbe6f6;
-  border-radius: 14px;
-  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+  margin: 12px 16px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
   padding: 10px;
   display: flex;
   align-items: center;
@@ -539,16 +696,23 @@
   margin-left: auto;
 }
 .gestion-modal .gestion-dialog .btn-action {
-  border: 1px solid #d7e3fb;
+  border: 1px solid #d1d5db;
   background: #ffffff;
-  color: #1f3a61;
-  border-radius: 12px;
-  padding: 9px 12px;
+  color: #334155;
+  border-radius: 10px;
+  padding: 9px 14px;
+  height: 36px;
   font-size: 13px;
-  font-weight: 900;
+  font-weight: 600;
   cursor: pointer;
   user-select: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   transition: transform .10s ease, filter .10s ease, box-shadow .10s ease;
+}
+.gestion-modal .gestion-dialog .gestion-actions-main .btn-action {
+  min-width: 170px;
 }
 .gestion-modal .gestion-dialog .btn-action:hover {
   transform: translateY(-1px);
@@ -562,39 +726,29 @@
   box-shadow: none;
 }
 .gestion-modal .gestion-dialog .btn-action.btn-primary {
-  background: #eff6ff;
-  border-color: #bfdbfe;
-  color: #1d4ed8;
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+}
+.gestion-modal .gestion-dialog .btn-action.btn-primary:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
 }
 .gestion-modal .gestion-dialog .btn-action.btn-success {
   background: #ecfdf5;
   border-color: #bbf7d0;
   color: #166534;
 }
-.gestion-modal .gestion-dialog .btn-action.btn-danger {
-  background: #fef2f2;
-  border-color: #fecaca;
-  color: #b91c1c;
+.gestion-modal .gestion-dialog .btn-action.btn-success:hover {
+  background: #d1fae5;
+  border-color: #86efac;
 }
-
-/* AsignaciÃ³n compacta */
-.gestion-modal .gestion-dialog .gestion-tarea-row.gestion-asignacion-grid {
-  grid-template-columns: 1.5fr 0.8fr 1fr 2fr 0.9fr;
-  align-items: end;
+.gestion-modal .gestion-dialog .btn-action.btn-secondary {
+  background: #334155;
+  border-color: #334155;
+  color: #ffffff;
 }
-.gestion-modal .gestion-dialog .btn-autoasignar {
-  margin-top: 6px;
-  padding: 6px 10px;
-  font-size: 12px;
-}
-.gestion-modal .gestion-dialog .gestion-grupo-wrap {
-  border: 1px dashed #dbe6f6;
-  border-radius: 14px;
-  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
-  padding: 10px;
-}
-@media (max-width: 920px) {
-  .gestion-modal .gestion-dialog .gestion-tarea-row.gestion-asignacion-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+.gestion-modal .gestion-dialog .btn-action.btn-secondary:hover {
+  background: #1f2937;
+  border-color: #1f2937;
 }
