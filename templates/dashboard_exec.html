@@ -2404,7 +2404,10 @@
   <article class="control-card control-workspace-section card-vehiculos" data-workspaces="gestion recursos">
     <div class="card-head">
       <h2>Estado de vehiculos</h2>
-      <a class="btn-soft" href="{{ url_for('vehiculos_control_diario') }}">Ir a modulo vehiculos</a>
+      <div class="card-head-actions">
+        <button id="btnToggleVehiculosCard" type="button" class="btn-soft" aria-expanded="true">Ocultar</button>
+        <a class="btn-soft" href="{{ url_for('vehiculos_control_diario') }}">Ir a modulo vehiculos</a>
+      </div>
     </div>
     <div id="vehiculosWrap" class="veh-grid">
       <div class="veh-card"><div class="veh-code">-</div><div class="veh-pat">-</div><div class="veh-est">Sin datos</div></div>
@@ -2514,13 +2517,15 @@
     <div class="card-head">
       <h2>Gestion</h2>
       <div class="card-head-actions">
+        <button id="btnToggleGestionCard" type="button" class="btn-soft" aria-expanded="true">Ocultar</button>
         <button id="btnRecargarDia" type="button" class="btn-soft">Recargar dia</button>
         <button id="btnHistorialQuick" type="button" class="btn-soft">Historial</button>
       </div>
     </div>
-    <div class="nvd-footnote">El panel solo ordena y filtra: toda la trazabilidad ocurre dentro de Abrir gestion.</div>
+    <div id="gestionWrap">
+      <div class="nvd-footnote">El panel solo ordena y filtra: toda la trazabilidad ocurre dentro de Abrir gestion.</div>
 
-    <div class="gestion-topbar">
+      <div class="gestion-topbar">
       <div id="gestionRubroTabs" class="gestion-rubro-tabs gestion-rubro-groups" role="tablist" aria-label="Rubros de gestion">
         <div class="gestion-rubro-group group-daily">
           <div class="gestion-rubro-group-label">DIA A DIA</div>
@@ -2581,7 +2586,7 @@
           </div>
         </div>
       </details>
-    </div>
+      </div>
 
     <div class="pend-respuesta-legend" style="margin-top:-2px;">
       <div class="aux-row" style="padding-top:0;">
@@ -2737,6 +2742,7 @@
           </table>
         </div>
       </div>
+    </div>
     </div>
   </article>
 
@@ -6962,6 +6968,47 @@
       }
     }
 
+    function _collapseKey(name) {
+      return "sgi_collapse_" + String(name || "").trim();
+    }
+
+    function _getCollapsed(name, defaultCollapsed) {
+      try {
+        var v = localStorage.getItem(_collapseKey(name));
+        if (v === "1") return true;
+        if (v === "0") return false;
+      } catch (_e) {
+        // noop
+      }
+      return !!defaultCollapsed;
+    }
+
+    function _setCollapsed(name, collapsed) {
+      try {
+        localStorage.setItem(_collapseKey(name), collapsed ? "1" : "0");
+      } catch (_e) {
+        // noop
+      }
+    }
+
+    function _applyCollapse(btn, target, collapsed) {
+      if (!btn || !target) return;
+      target.style.display = collapsed ? "none" : "";
+      btn.textContent = collapsed ? "Mostrar" : "Ocultar";
+      btn.setAttribute("aria-expanded", collapsed ? "false" : "true");
+    }
+
+    function wireCollapseToggle(btn, target, keyName, defaultCollapsed) {
+      if (!btn || !target) return;
+      var collapsed = _getCollapsed(keyName, defaultCollapsed);
+      _applyCollapse(btn, target, collapsed);
+      btn.addEventListener("click", function () {
+        collapsed = !collapsed;
+        _setCollapsed(keyName, collapsed);
+        _applyCollapse(btn, target, collapsed);
+      });
+    }
+
     function wireOpsCardLink(card) {
       if (!card) return;
       var href = String(card.getAttribute("data-href") || "").trim();
@@ -6992,6 +7039,20 @@
         }
       });
     }
+
+    // Colapsables (solo UI/UX)
+    wireCollapseToggle(
+      document.getElementById("btnToggleVehiculosCard"),
+      el.vehWrap,
+      "vehiculos_card",
+      true
+    );
+    wireCollapseToggle(
+      document.getElementById("btnToggleGestionCard"),
+      document.getElementById("gestionWrap"),
+      "gestion_card",
+      true
+    );
     wireOpsCardLink(el.mataCard);
     wireOpsCardLink(el.desinfCard);
     wireOpsCardLink(el.vehOpsCard);
