@@ -5,16 +5,17 @@
   <header class="sup-head">
     <div>
       <h1>Relevamientos / Control · Comparativa</h1>
-      <p>Comparacion oficial vs relevado por sede y deposito. <strong>{{ tipo_label }}</strong></p>
+      <p>Comparacion oficial vs relevado por sede y deposito. <strong>{{ 'Inventario operativo' if tipo_label=='Mobiliario' else tipo_label }}</strong></p>
     </div>
     <div class="aud-tabs">
-      <a class="aud-tab {% if tipo_label=='Mobiliario' %}active{% endif %}" href="{{ url_for('relevamientos_comparativa') }}?tipo=mobiliario">Mobiliario</a>
+      <a class="aud-tab {% if tipo_label=='Mobiliario' %}active{% endif %}" href="{{ url_for('relevamientos_comparativa') }}?tipo=mobiliario">Inventario operativo</a>
       <a class="aud-tab {% if tipo_label=='Aires' %}active{% endif %}" href="{{ url_for('relevamientos_comparativa') }}?tipo=aires">Aires</a>
       <a class="aud-tab {% if tipo_label=='Luminarias' %}active{% endif %}" href="{{ url_for('relevamientos_comparativa') }}?tipo=luminarias">Luminarias</a>
     </div>
   </header>
 
   <section class="card sup-filters">
+    {% set _tipo_param = 'mobiliario' if tipo_label=='Mobiliario' else ('aires' if tipo_label=='Aires' else 'luminarias') %}
     <form method="get" class="sup-grid">
       <div class="fg">
         <label>Sede</label>
@@ -46,7 +47,7 @@
       </div>
       <div class="fg actions">
         <button type="submit" class="btn outline-amber">Filtrar</button>
-        <a class="btn outline-slate" href="{{ url_for('auditoria_mobiliario_supervisor') }}">Reset</a>
+        <a class="btn outline-slate" href="{{ url_for('relevamientos_comparativa') }}?tipo={{ _tipo_param }}">Reset</a>
       </div>
     </form>
   </section>

@@ -188,7 +188,7 @@
       <div>
         <h3 class="aires-title">Equipos de aire de la sede</h3>
         <p class="aires-sub">
-          Listado por ambiente, marca, modelo y fechas de instalación / limpieza.
+          Listado por ambiente, marca y seguimiento de limpieza / service.
         </p>
       </div>
 
@@ -203,13 +203,13 @@
         <table class="aires-table">
           <thead>
             <tr>
-              <th>Ambiente</th>
-              <th>Marca / modelo</th>
-              <th>Tipo</th>
+               <th>Ambiente</th>
+              <th>Marca</th>
+              <th>Gas</th>
               <th>Frigorías</th>
               <th>Estado</th>
-              <th>Instalación</th>
               <th>Última limpieza</th>
+              <th>Último service</th>
               <th>Frec. (meses)</th>
               <th>Observaciones</th>
               <th style="text-align:right;">Acciones</th>
@@ -225,14 +225,21 @@
                     · {{ a.modelo }}
                   {% endif %}
                 </td>
-                <td>{{ a.tipo or '—' }}</td>
+                <td>{{ a.gas or '—' }}</td>
                 <td>{{ a.frigorias or '—' }}</td>
                 <td>{{ a.estado or '—' }}</td>
-                <td>{{ a.fecha_instalacion or '—' }}</td>
                 <td>{{ a.fecha_ultima_limpieza or '—' }}</td>
+                <td>{{ a.fecha_ultimo_service or '—' }}</td>
                 <td>{{ a.frecuencia_meses or '—' }}</td>
                 <td style="white-space:normal;max-width:220px;">
                   {{ a.observaciones or '' }}
+                  {% if a.tipo or a.fecha_instalacion %}
+                    <div style="color:#64748b;font-size:11px;line-height:1.2;margin-top:2px;">
+                      {% if a.tipo %}Tipo: {{ a.tipo }}{% endif %}
+                      {% if a.tipo and a.fecha_instalacion %} · {% endif %}
+                      {% if a.fecha_instalacion %}Inst.: {{ a.fecha_instalacion }}{% endif %}
+                    </div>
+                  {% endif %}
                 </td>
                 <td style="text-align:right;white-space:nowrap;">
                   <a href="{{ url_for('aire_editar',

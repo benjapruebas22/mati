@@ -8672,35 +8672,37 @@
 
 
 
-                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:76px;">Aires<br><span style="font-weight:600;color:var(--muted);font-size:10px;">acond.</span></th>
+                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:76px;" title="Aires acondicionados">Aires<br><span style="font-weight:600;color:var(--muted);font-size:10px;">acond.</span></th>
 
 
 
-                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:110px;">Escritorios<br><span style="font-weight:600;color:var(--muted);font-size:10px;">profesionales</span></th>
+                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:110px;" title="Escritorios profesionales">Escritorios<br><span style="font-weight:600;color:var(--muted);font-size:10px;">profesionales</span></th>
 
 
 
-                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:84px;">Mesas<br><span style="font-weight:600;color:var(--muted);font-size:10px;">de PC</span></th>
+                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:84px;" title="Mesas de PC">Mesas<br><span style="font-weight:600;color:var(--muted);font-size:10px;">de PC</span></th>
 
 
 
-                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:90px;">Sillas<br><span style="font-weight:600;color:var(--muted);font-size:10px;">giratorias</span></th>
+                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:90px;" title="Sillas giratorias">Sillas<br><span style="font-weight:600;color:var(--muted);font-size:10px;">giratorias</span></th>
 
 
 
-                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:80px;">Sillas<br><span style="font-weight:600;color:var(--muted);font-size:10px;">fijas</span></th>
+                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:80px;" title="Sillas fijas">Sillas<br><span style="font-weight:600;color:var(--muted);font-size:10px;">fijas</span></th>
 
 
 
-                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:88px;">Armarios<br><span style="font-weight:600;color:var(--muted);font-size:10px;">altos</span></th>
+                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:88px;" title="Armarios altos">Armarios<br><span style="font-weight:600;color:var(--muted);font-size:10px;">altos</span></th>
 
 
 
-                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:106px;">Bibliotecas<br><span style="font-weight:600;color:var(--muted);font-size:10px;">bajas</span></th>
+                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:106px;" title="Bibliotecas bajas">Bibliotecas<br><span style="font-weight:600;color:var(--muted);font-size:10px;">bajas</span></th>
 
 
 
                 <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);">Otros</th>
+
+                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);width:220px;">Observaciones</th>
 
 
 
@@ -9134,11 +9136,13 @@
 
                 <td style="padding:8px;border-bottom:1px solid var(--border);">{{ l.otros_detalle or "" }}</td>
 
+                <td style="padding:8px;border-bottom:1px solid var(--border);white-space:normal;">{{ l.observaciones or "" }}</td>
+
 
 
                 <td style="padding:8px;border-bottom:1px solid var(--border);">
                   <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-                    <a class="btn xs primary"
+                    <a class="btn xs outline-slate"
                        href="{{ url_for('checklist_luminarias', sede_filtro=sede.codigo, ambiente=l.codigo_local) }}">
                       Registrar cambio
                     </a>
@@ -9663,23 +9667,33 @@
 
 
 
-                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:180px;">Ambiente</th>
+                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:190px;">Ambiente</th>
 
 
 
-                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:120px;">Marca</th>
+                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:130px;">Marca</th>
+
+                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:90px;">Gas</th>
+
+                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:90px;">Frigorías</th>
 
 
 
-                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:160px;">Estado</th>
+                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:150px;">Estado</th>
 
 
 
-                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:92px;">Limpieza</th>
+                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:96px;">Última limpieza</th>
 
 
 
-                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:92px;">Service</th>
+                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:96px;">Último service</th>
+
+                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:96px;">Frec.</th>
+
+                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:240px;">Observaciones</th>
+
+                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:110px;text-align:right;">Acción</th>
 
 
 
@@ -9721,6 +9735,10 @@
 
                 <td style="padding:8px;border-bottom:1px solid #f1f5f9;">{{ a.marca or '-' }}</td>
 
+                <td style="padding:8px;border-bottom:1px solid #f1f5f9;">{{ a.gas or '-' }}</td>
+
+                <td style="padding:8px;border-bottom:1px solid #f1f5f9;">{{ a.frigorias or '-' }}</td>
+
 
 
                 <td style="padding:8px;border-bottom:1px solid #f1f5f9;">
@@ -9741,6 +9759,14 @@
 
                 <td style="padding:8px;border-bottom:1px solid #f1f5f9;">{{ a.fecha_ultimo_service or '-' }}</td>
 
+                <td style="padding:8px;border-bottom:1px solid #f1f5f9;">{{ a.frecuencia_meses or '-' }}</td>
+
+                <td style="padding:8px;border-bottom:1px solid #f1f5f9;white-space:normal;">{{ a.observaciones or '' }}</td>
+
+                <td style="padding:8px;border-bottom:1px solid #f1f5f9;text-align:right;white-space:nowrap;">
+                  <a class="btn xs outline-slate" href="{{ url_for('aire_editar', codigo=sede.codigo, aid=a.id) }}">Editar</a>
+                </td>
+
 
 
 
@@ -9759,7 +9785,7 @@
 
 
 
-                <td colspan="5" style="padding:12px;color:#64748b;">No hay equipos cargados para este piso / filtro.
+                <td colspan="10" style="padding:12px;color:#64748b;">No hay equipos cargados para esta sede.
 
 
 
