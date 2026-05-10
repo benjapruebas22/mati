@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block head_extra %}
   {{ super() }}
-  <link rel="stylesheet" href="{{ url_for('static', filename='vehiculos/vehiculos_ui.css', v='2026-05-09-01') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='vehiculos/vehiculos_ui.css', v='2026-05-10-02') }}">
 {% endblock %}
 {% block content %}
 
@@ -165,7 +165,12 @@
                 <strong>{{ r.patente }}</strong>
                 <span class="doc-kpi-sub">{{ r.codigo_interno }}</span>
               </div>
-              <button type="button" class="doc-kpi-edit" onclick="openVehDocCard(event, this.closest('.doc-kpi-cycle'))">Cargar</button>
+              <div class="doc-kpi-topactions">
+                <span class="doc-kpi-status pill {{ r.seguro_top.estado }}" data-doc-role="status">
+                  {% if r.seguro_top.estado == 'vencido' %}Vencido{% elif r.seguro_top.estado == 'pronto' %}Por vencer{% else %}OK{% endif %}
+                </span>
+                <button type="button" class="doc-kpi-edit" onclick="openVehDocCard(event, this.closest('.doc-kpi-cycle'))">Cargar</button>
+              </div>
             </div>
             <span data-doc-role="kind">Seguro</span>
             <span data-doc-role="label">Vigente hasta</span>
@@ -202,12 +207,22 @@
     </div>
   </div>
 
-  <div class="card" style="margin-top:12px;">
-    <div class="card-head">
+  {% set _ch_venc = (chofer_docs|selectattr('estado','equalto','vencido')|list|length) %}
+  {% set _ch_pronto = (chofer_docs|selectattr('estado','equalto','pronto')|list|length) %}
+  <details class="card vd-choferes" style="margin-top:12px;">
+    <summary class="vd-choferes-sum">
+      <span class="vd-choferes-title">Choferes</span>
+      <span class="vd-choferes-kpis">
+        <span class="veh-badge bad">Vencidos: {{ _ch_venc }}</span>
+        <span class="veh-badge warn">Por vencer: {{ _ch_pronto }}</span>
+      </span>
+      <span class="vd-choferes-caret">▼</span>
+    </summary>
+    <div class="card-head" style="border-top:1px solid #e5e7eb;border-bottom:none;">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
         <div>
-          <h3>Choferes</h3>
-          <p>Estado de carnet por chofer.</p>
+          <h3 style="margin:0;font-size:14px;">Documentación de choferes</h3>
+          <p style="margin:2px 0 0;font-size:12px;color:#6b7280;">Vencimiento de carnet por chofer.</p>
         </div>
         <a class="btn btn-mpd" href="{{ url_for('bd_choferes') }}">Agregar chofer</a>
       </div>
@@ -234,7 +249,7 @@
         </tbody>
       </table>
     </div>
-  </div>
+  </details>
 </section>
 
 <style>
@@ -411,7 +426,7 @@
   .doc-kpi-card {
     border: 1px solid #e5e7eb;
     border-radius: 12px;
-    background: #f8fafc;
+    background: var(--doc-bg, #f8fafc);
     padding: 8px 10px;
     display: flex;
     flex-direction: column;
@@ -419,30 +434,46 @@
     width: 100%;
     text-align: left;
     cursor: pointer;
+    transition: box-shadow .14s ease, border-color .14s ease, background-color .14s ease;
   }
 
   .doc-kpi-cycle {
     --doc-accent: #64748b;
-    border-left: 6px solid var(--doc-accent);
+    --doc-bg: #f8fafc;
+    border-left: 4px solid var(--doc-accent);
     padding-left: 10px;
     user-select: none;
   }
 
   .doc-kpi-cycle:focus {
-    outline: 2px solid rgba(15, 23, 42, 0.25);
-    outline-offset: 2px;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, .14);
+    border-color: #bfdbfe;
   }
 
-  .doc-kpi-cycle[data-doc-type="service"] { --doc-accent: #ef4444; }
-  .doc-kpi-cycle[data-doc-type="lavado"] { --doc-accent: #3b82f6; }
-  .doc-kpi-cycle[data-doc-type="seguro"] { --doc-accent: #f59e0b; }
-  .doc-kpi-cycle[data-doc-type="rtv"] { --doc-accent: #a855f7; }
+  /* Colores pastel institucionales por tipo (sin fondos fuertes) */
+  .doc-kpi-cycle[data-doc-type="seguro"] { --doc-accent: #456b52; --doc-bg: #eef7f1; } /* verde pastel */
+  .doc-kpi-cycle[data-doc-type="rtv"] { --doc-accent: #6666cc; --doc-bg: rgba(102, 102, 204, .08); } /* violeta suave */
+  .doc-kpi-cycle[data-doc-type="lavado"] { --doc-accent: #4b6b82; --doc-bg: rgba(75, 107, 130, .08); } /* azul grisáceo suave */
+  .doc-kpi-cycle[data-doc-type="service"] { --doc-accent: #c97171; --doc-bg: rgba(201, 113, 113, .10); } /* rojo pastel */
+
+  .doc-kpi-cycle.is-active {
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, .10);
+    border-color: #cfe0ff;
+  }
 
   .doc-kpi-toprow {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     gap: 8px;
+  }
+
+  .doc-kpi-topactions{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    flex:0 0 auto;
   }
 
   .doc-kpi-edit {
@@ -472,7 +503,7 @@
 
   .doc-kpi-card strong {
     font-size: 12px;
-    color: #0f172a;
+    color: #334155;
   }
 
   .doc-kpi-card span {
@@ -492,22 +523,22 @@
 
   .doc-kpi-card b {
     font-size: 13px;
-    color: #0f172a;
+    color: #334155;
   }
 
   .doc-kpi-card.ok {
-    background: #ecfdf5;
-    border-color: #86efac;
+    background: var(--doc-bg, #f8fafc);
+    border-color: #e5e7eb;
   }
 
   .doc-kpi-card.pronto {
-    background: #fef3c7;
-    border-color: #fcd34d;
+    background: var(--doc-bg, #f8fafc);
+    border-color: #e5e7eb;
   }
 
   .doc-kpi-card.vencido {
-    background: #fee2e2;
-    border-color: #fecaca;
+    background: var(--doc-bg, #f8fafc);
+    border-color: #e5e7eb;
   }
 
   .doc-kpi-cycle.ok,
@@ -560,6 +591,38 @@
     color: #b91c1c;
   }
 
+  .doc-kpi-status.pill{
+    padding: 1px 7px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .02em;
+  }
+
+  /* Choferes: oculto por defecto */
+  .vd-choferes > summary{ list-style:none; cursor:pointer; }
+  .vd-choferes > summary::-webkit-details-marker{ display:none; }
+  .vd-choferes-sum{
+    padding: 12px 14px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .vd-choferes-title{
+    font-weight: 600;
+    color: #334155;
+  }
+  .vd-choferes-kpis{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    justify-content:flex-end;
+    align-items:center;
+    margin-left:auto;
+  }
+  .vd-choferes-caret{ color:#64748b; font-size:12px; }
+  .vd-choferes[open] .vd-choferes-caret{ transform: rotate(180deg); }
+
   @media (max-width: 1100px) {
     .veh-doc-grid {
       grid-template-columns: 1fr;
@@ -609,6 +672,20 @@
       card.classList.add(estado);
     }
 
+    var statusEl = card.querySelector('[data-doc-role="status"]');
+    if (statusEl) {
+      var label =
+        estado === 'vencido' ? 'Vencido' :
+        estado === 'pronto' ? 'Por vencer' :
+        estado === 'ok' ? 'OK' : '';
+      statusEl.textContent = label;
+      VEH_DOC_STATE_CLASSES.forEach(function (cls) { statusEl.classList.remove(cls); });
+      if (estado && VEH_DOC_STATE_CLASSES.indexOf(estado) >= 0) {
+        statusEl.classList.add(estado);
+      }
+      statusEl.style.display = label ? 'inline-flex' : 'none';
+    }
+
     var fecha = (card.dataset[meta.fechaKey] || '').trim();
     var kindEl = card.querySelector('[data-doc-role="kind"]');
     var labelEl = card.querySelector('[data-doc-role="label"]');
@@ -618,9 +695,20 @@
     if (dateEl) dateEl.textContent = fecha ? fecha : '-';
   }
 
+  function setActiveVehDocCard(card){
+    document.querySelectorAll('.doc-kpi-cycle.is-active').forEach(function(el){
+      el.classList.remove('is-active');
+    });
+    if (card) {
+      card.classList.add('is-active');
+      if (typeof card.focus === 'function') card.focus();
+    }
+  }
+
   function cycleVehDocCard(ev, card) {
     if (ev) ev.preventDefault();
     if (!card) return;
+    setActiveVehDocCard(card);
     var idx = parseInt(card.dataset.docIndex || '0', 10);
     if (isNaN(idx) || idx < 0) idx = 0;
     idx = (idx + 1) % VEH_DOC_ORDER.length;
@@ -634,6 +722,7 @@
       ev.stopPropagation();
     }
     if (!card) return;
+    setActiveVehDocCard(card);
     var key = (card.dataset.docType || '').trim();
     if (!key) {
       var idx = parseInt(card.dataset.docIndex || '0', 10);
