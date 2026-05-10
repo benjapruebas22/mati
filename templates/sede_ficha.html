@@ -3120,6 +3120,14 @@
     grid-template-columns: 1fr;
   }
 
+  /* Modo Aires: plano arriba y panel abajo (evita tabla comprimida al lado del plano) */
+  .grid.grid-aires {
+    grid-template-columns: 1fr;
+  }
+  .grid.grid-aires .panel-card {
+    grid-column: 1 / -1;
+  }
+
   /* Botonera del panel operativo arriba del plano */
   .panel-topbar {
     grid-column: 1 / -1;
@@ -3986,6 +3994,20 @@
 
 
 
+    scrollbar-width: thin;
+    scrollbar-color: rgba(100, 116, 139, 0.35) transparent;
+
+  }
+  .panel-body.scrollable::-webkit-scrollbar { width: 10px; }
+  .panel-body.scrollable::-webkit-scrollbar-thumb {
+    background: rgba(100, 116, 139, 0.25);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  .panel-body.scrollable::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.35);
+    background-clip: content-box;
   }
 
 
@@ -6743,11 +6765,11 @@
 
 
 
-      border-color: color-mix(in srgb, #22c55e 35%, var(--border));
+      border-color: #BFE7CC;
 
 
 
-      background: color-mix(in srgb, #ecfdf5 60%, var(--card));
+      background: #F5FBF7;
 
 
 
@@ -6959,7 +6981,7 @@
 
 
 
-      border: 1px solid var(--line);
+      border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
 
 
 
@@ -7279,11 +7301,11 @@
 
 
 
-      padding: 10px;
+      padding: 12px;
 
 
 
-      background: rgba(255, 255, 255, 0.35);
+      background: rgba(255, 255, 255, 0.7);
 
 
 
@@ -7303,11 +7325,11 @@
 
 
 
-      font-weight: 800;
+      font-weight: 600;
 
 
 
-      color: #4338ca;
+      color: var(--text);
 
 
 
@@ -7363,11 +7385,11 @@
 
 
 
-      font-weight: 700;
+      font-weight: 600;
 
 
 
-      color: #4f46e5;
+      color: #1d4ed8;
 
 
 
@@ -7485,7 +7507,7 @@
     border-radius: 999px;
     padding: 0 8px;
     font-size: 10px;
-    font-weight: 800;
+    font-weight: 600;
     border: 1px solid transparent;
     text-transform: none;
     letter-spacing: 0;
@@ -7502,7 +7524,7 @@
     border-radius: 999px;
     padding: 0 8px;
     font-size: 10px;
-    font-weight: 800;
+    font-weight: 600;
     border: 1px solid transparent;
     white-space: nowrap;
   }
@@ -7757,7 +7779,7 @@
 
 
 
-                  <button class="btn danger" type="submit">Eliminar</button>
+                  <button class="btn xs danger" type="submit">Eliminar</button>
 
 
 
@@ -8108,7 +8130,7 @@
 
 
 
-  <div class="grid">
+  <div class="grid{% if tab == 'aires' %} grid-aires{% endif %}">
 
     <!-- PANEL BOTONES (ARRIBA DEL PLANO) -->
 
@@ -8131,7 +8153,7 @@
             <a class="ptab tone-dep {% if tab=='depositos' %}active{% endif %}"
               href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='depositos', view=view) }}">Depósitos</a>
             <a class="ptab tone-mob {% if tab=='mobiliario' %}active{% endif %}"
-              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='mobiliario', view=view) }}">Mobiliario</a>
+              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='mobiliario', view=view) }}">Inventario operativo</a>
           </div>
 
           <div class="panel-tab-group" aria-label="Información">
@@ -8148,7 +8170,7 @@
                 <div class="panel-control-title">Relevamientos</div>
                 <div class="panel-control-links">
                   <a class="panel-control-link" href="{{ url_for('auditoria_mobiliario') }}">
-                    <span>Mobiliario</span><span class="muted">Relevar</span>
+                    <span>Inventario operativo</span><span class="muted">Relevar</span>
                   </a>
                   <a class="panel-control-link" href="{{ url_for('auditoria_aires') }}">
                     <span>Aires</span><span class="muted">Relevar</span>
@@ -8161,15 +8183,7 @@
                   </a>
                 </div>
 
-                <div class="panel-control-title" style="margin-top:6px;">Inventario</div>
-                <div class="panel-control-links">
-                  <a class="panel-control-link" href="{{ url_for('sede_inventario', codigo=sede.codigo) }}">
-                    <span>Inventario (sede)</span><span class="muted">Oficial</span>
-                  </a>
-                  <a class="panel-control-link" href="{{ url_for('checklist_inventario') }}">
-                    <span>Control diario</span><span class="muted">Checklist</span>
-                  </a>
-                </div>
+
               </div>
             </details>
           </div>
@@ -8613,7 +8627,7 @@
 
 
         <div class="panel-section-head">
-          <div class="panel-section-title">Mobiliario</div>
+          <div class="panel-section-title">Inventario operativo</div>
           <a class="btn primary"
             href="{{ url_for('mobiliario_nuevo') }}?codigo_sede={{ sede.codigo }}&piso={{ piso }}{% if local %}&codigo_local={{ local }}{% endif %}">
             + Agregar
@@ -8654,31 +8668,31 @@
 
 
 
-                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:52px;">Aire</th>
+                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:76px;">Aires<br><span style="font-weight:600;color:var(--muted);font-size:10px;">acond.</span></th>
 
 
 
-                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:52px;">Esc</th>
+                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:110px;">Escritorios<br><span style="font-weight:600;color:var(--muted);font-size:10px;">profesionales</span></th>
 
 
 
-                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:52px;">Mesa</th>
+                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:84px;">Mesas<br><span style="font-weight:600;color:var(--muted);font-size:10px;">de PC</span></th>
 
 
 
-                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:52px;">Gir</th>
+                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:90px;">Sillas<br><span style="font-weight:600;color:var(--muted);font-size:10px;">giratorias</span></th>
 
 
 
-                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:52px;">Fija</th>
+                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:80px;">Sillas<br><span style="font-weight:600;color:var(--muted);font-size:10px;">fijas</span></th>
 
 
 
-                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:52px;">Arm</th>
+                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:88px;">Armarios<br><span style="font-weight:600;color:var(--muted);font-size:10px;">altos</span></th>
 
 
 
-                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:52px;">Bib</th>
+                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:106px;">Bibliotecas<br><span style="font-weight:600;color:var(--muted);font-size:10px;">bajas</span></th>
 
 
 
@@ -8686,7 +8700,7 @@
 
 
 
-                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);width:120px;">Accion</th>
+                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);width:120px;">Acciones</th>
 
 
 
@@ -9058,7 +9072,7 @@
 
 
 
-                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);width:140px;">Acción</th>
+                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);width:160px;">Acciones</th>
 
 
 
@@ -9119,41 +9133,16 @@
 
 
                 <td style="padding:8px;border-bottom:1px solid var(--border);">
-
-
-
-                  <a class="btn primary"
-
-
-
-                    href="{{ url_for('checklist_luminarias', sede_filtro=sede.codigo, ambiente=l.codigo_local) }}">
-
-
-
-                    Registrar cambio
-
-
-
-                  </a>
-
-
-
-                  <a class="btn" href="{{ url_for('luminarias_editar', id=l.id) }}">Editar</a>
-
-
-
-                  <form method="post" action="{{ url_for('luminarias_eliminar', id=l.id) }}" style="display:inline;">
-
-
-
-                    <button class="btn" type="submit">Eliminar</button>
-
-
-
-                  </form>
-
-
-
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+                    <a class="btn xs primary"
+                       href="{{ url_for('checklist_luminarias', sede_filtro=sede.codigo, ambiente=l.codigo_local) }}">
+                      Registrar cambio
+                    </a>
+                    <a class="btn xs outline-slate" href="{{ url_for('luminarias_editar', id=l.id) }}">Editar</a>
+                    <form method="post" action="{{ url_for('luminarias_eliminar', id=l.id) }}" style="display:inline;">
+                      <button class="btn xs danger" type="submit">Eliminar</button>
+                    </form>
+                  </div>
                 </td>
 
 
@@ -9690,7 +9679,7 @@
 
 
 
-                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:120px;">Accion</th>
+
 
 
 
@@ -9722,7 +9711,7 @@
 
 
 
-                <td style="padding:8px;border-bottom:1px solid #f1f5f9;font-weight:800;">{{ a.ambiente_desc or a.ambiente_codigo or '-' }}</td>
+                <td style="padding:8px;border-bottom:1px solid #f1f5f9;font-weight:600;">{{ a.ambiente_desc or a.ambiente_codigo or '-' }}</td>
 
 
 
@@ -9750,15 +9739,7 @@
 
 
 
-                <td style="padding:8px;border-bottom:1px solid #f1f5f9;">
 
-
-
-                  <a class="btn" href="{{ url_for('aires_sede_editar', id=a.id) }}">Editar</a>
-
-
-
-                </td>
 
 
 
@@ -9774,7 +9755,7 @@
 
 
 
-                <td colspan="6" style="padding:12px;color:#64748b;">No hay equipos cargados para este piso / filtro.
+                <td colspan="5" style="padding:12px;color:#64748b;">No hay equipos cargados para este piso / filtro.
 
 
 

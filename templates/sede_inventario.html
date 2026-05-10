@@ -114,7 +114,7 @@
 
     <div class="hero">
       <div class="map-card">
-        <h3>Inventario de la sede</h3>
+        <h3>Inventario (deprecado)</h3>
 
         <div class="sede-mini-header">
           <!-- Código / fuero -->
@@ -143,13 +143,22 @@
               {{ sede.ciudad }}{% if sede.departamento %} · {{ sede.departamento }}{% endif %}
             </div>
             <div style="margin-top:6px;">
-              Inventario detallado de mobiliario y equipamiento
-              por depósito / ambiente.
+              Este módulo fue reemplazado.
+              El inventario oficial se gestiona desde el <strong>Panel operativo</strong> (Inventario operativo)
+              y el <strong>Resumen general</strong> de sedes.
             </div>
           </div>
         </div>
 
         <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">
+          <a href="{{ url_for('sede_ficha', codigo=sede.codigo, tab='mobiliario') }}"
+             class="btn xs primary">
+            Abrir inventario operativo
+          </a>
+          <a href="{{ url_for('sedes_resumen_mpd') }}"
+             class="btn xs outline-slate">
+            Resumen general
+          </a>
           <a href="{{ url_for('sede_ficha', codigo=sede.codigo) }}"
              class="btn xs outline-slate">
             ⬅ Volver a ficha de sede
@@ -161,8 +170,8 @@
     <!-- Menú de módulos de la sede (vertical y ordenado) -->
     <div class="buttons-row" style="flex-direction:column;gap:8px;display:flex;">
       <a class="btn big solid-blue"
-         href="{{ url_for('sede_inventario', codigo=sede.codigo) }}">
-        📦 Inventario
+         href="{{ url_for('sede_ficha', codigo=sede.codigo, tab='mobiliario') }}">
+        📦 Inventario operativo
       </a>
       <a class="btn big outline-amber"
          href="{{ url_for('sede_planos', codigo=sede.codigo) }}">

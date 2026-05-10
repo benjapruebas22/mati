@@ -1,241 +1,26 @@
+{% extends "base.html" %}
 {% block content %}
 
-<section class="chk-main">
+<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-09-03') }}">
 
-  <header class="section-header">
-    <div>
-      <h1>Checklist · Editar control de inventario</h1>
-      <p class="section-sub">
-        Ajustá el recuento real y las observaciones del relevamiento.
-      </p>
+<section class="sgi-sedes" style="max-width:1040px;margin:0 auto;padding:10px 12px 18px;display:grid;gap:12px;">
+  <div class="card" style="padding:16px;">
+    <h1 style="margin:0 0 6px;font-size:20px;font-weight:600;color:#334155;">
+      Control de inventario (deprecado)
+    </h1>
+    <p style="margin:0;color:#64748b;font-size:13px;line-height:1.45;">
+      Esta edición fue deshabilitada porque el checklist de inventario fue reemplazado.
+      Usá el <strong>Panel operativo</strong> (Inventario operativo) y el <strong>Resumen general</strong>
+      como inventario oficial. Para control cruzado temporal, usá <strong>Relevamientos</strong> y <strong>Comparativa</strong>.
+    </p>
+
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+      <a class="btn primary" href="{{ url_for('sedes_resumen_mpd') }}">Resumen general de sedes</a>
+      <a class="btn outline-slate" href="{{ url_for('auditoria_mobiliario') }}">Relevamiento inventario</a>
+      <a class="btn outline-slate" href="{{ url_for('relevamientos_comparativa', tipo='mobiliario') }}">Comparativa</a>
+      <a class="btn outline-slate" href="{{ url_for('dashboard') }}">⬅ Volver al inicio</a>
     </div>
-
-    <div class="section-actions">
-      <a class="btn outline-slate" href="{{ url_for('checklist_mobiliario') }}">↩ Volver al listado</a>
-      <a class="btn outline-slate" href="{{ url_for('checklist_inventario') }}">↩ Volver al control diario</a>
-    </div>
-  </header>
-
-  <style>
-    .chk-edit-meta{
-      display:grid;
-      grid-template-columns:repeat(2, minmax(0, 1fr));
-      gap:12px;
-    }
-    @media (max-width: 720px){
-      .chk-edit-meta{ grid-template-columns:1fr; }
-    }
-
-    .chk-compare{
-      margin:10px 0 16px;
-      border:1px solid #e5e7eb;
-      border-radius:12px;
-      overflow:hidden;
-      background:#ffffff;
-      box-shadow:0 6px 14px rgba(15,23,42,0.06);
-    }
-    .chk-compare table{
-      width:100%;
-      border-collapse:collapse;
-      font-size:13px;
-    }
-    .chk-compare th,
-    .chk-compare td{
-      padding:7px 10px;
-      border-bottom:1px solid #eef0f5;
-      text-align:left;
-      white-space:nowrap;
-    }
-    .chk-compare thead th{
-      background:#e0ebff;
-      color:#111827;
-      font-weight:600;
-    }
-    .chk-compare tbody tr:nth-child(even){
-      background:#f9fafb;
-    }
-    .chk-compare tbody tr:last-child td{
-      border-bottom:none;
-    }
-    .chk-compare .row-label{
-      font-weight:600;
-      color:#111827;
-    }
-    .chk-chip{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      margin-top:6px;
-      padding:2px 8px;
-      border-radius:999px;
-      background:#eef2ff;
-      color:#1d4ed8;
-      font-size:11px;
-      font-weight:600;
-      font-variant-numeric:tabular-nums;
-    }
-    .chk-chip .muted{
-      color:#64748b;
-      font-weight:500;
-    }
-  </style>
-
-  {% set is_full = (user_role == 'full') %}
-
-  <div class="chk-card">
-    <h2>Control {{ control.id }} · {{ control.sede_codigo }} {{ control.deposito_codigo }}</h2>
-    {% if is_full %}
-      <p class="hint">Compará el inventario oficial con el recuento real actual.</p>
-
-      <div class="chk-compare">
-        <table>
-          <thead>
-            <tr>
-              <th></th>
-              <th>Aire</th>
-              <th>Escr.</th>
-              <th>Mesa PC</th>
-              <th>Silla gir.</th>
-              <th>Silla fija</th>
-              <th>Armario</th>
-              <th>Biblioteca</th>
-              <th>Otros</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="row-label">Oficial</td>
-              <td>{{ control.aire_marca_oficial }}</td>
-              <td>{{ control.escritorio_prof_oficial }}</td>
-              <td>{{ control.mesa_pc_oficial }}</td>
-              <td>{{ control.silla_giratoria_oficial }}</td>
-              <td>{{ control.silla_fija_oficial }}</td>
-              <td>{{ control.armario_alto_oficial }}</td>
-              <td>{{ control.biblioteca_baja_oficial }}</td>
-              <td>{{ control.otros_oficial }}</td>
-            </tr>
-            <tr>
-              <td class="row-label">Real</td>
-              <td>{{ control.aire_marca }}</td>
-              <td>{{ control.escritorio_prof }}</td>
-              <td>{{ control.mesa_pc }}</td>
-              <td>{{ control.silla_giratoria }}</td>
-              <td>{{ control.silla_fija }}</td>
-              <td>{{ control.armario_alto }}</td>
-              <td>{{ control.biblioteca_baja }}</td>
-              <td>{{ control.otros }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    {% endif %}
-
-    <form method="post" class="form-soft">
-      <div class="chk-edit-meta">
-        <div>
-          <label for="fecha">Fecha del control</label>
-          <input type="date" id="fecha" name="fecha" value="{{ control.fecha }}" required>
-        </div>
-
-        <div>
-          <label for="agente_id">Agente que realiza el control</label>
-          <select name="agente_id" id="agente_id">
-            <option value="">-- Seleccionar agente --</option>
-            {% for ag in agentes %}
-              <option value="{{ ag.id }}" {% if control.agente_id == ag.id %}selected{% endif %}>
-                {{ ag.agente }}
-              </option>
-            {% endfor %}
-          </select>
-        </div>
-      </div>
-
-      <hr class="divider">
-
-      <h3>Recuento real del día del control</h3>
-
-      <div class="form-grid-2">
-        <div>
-          <label for="aire_marca_control">Aires acondicionados instalados</label>
-          <input type="number" id="aire_marca_control" name="aire_marca_control" min="0"
-                 value="{{ control.aire_marca }}">
-          {% if is_full %}
-            <span class="chk-chip"><span class="muted">Of:</span>{{ control.aire_marca_oficial }} · <span class="muted">Real:</span>{{ control.aire_marca }}</span>
-          {% endif %}
-        </div>
-
-        <div>
-          <label for="escritorio_prof_control">Escritorios profesionales</label>
-          <input type="number" id="escritorio_prof_control" name="escritorio_prof_control" min="0"
-                 value="{{ control.escritorio_prof }}">
-          {% if is_full %}
-            <span class="chk-chip"><span class="muted">Of:</span>{{ control.escritorio_prof_oficial }} · <span class="muted">Real:</span>{{ control.escritorio_prof }}</span>
-          {% endif %}
-        </div>
-
-        <div>
-          <label for="mesa_pc_control">Mesas de PC</label>
-          <input type="number" id="mesa_pc_control" name="mesa_pc_control" min="0"
-                 value="{{ control.mesa_pc }}">
-          {% if is_full %}
-            <span class="chk-chip"><span class="muted">Of:</span>{{ control.mesa_pc_oficial }} · <span class="muted">Real:</span>{{ control.mesa_pc }}</span>
-          {% endif %}
-        </div>
-
-        <div>
-          <label for="silla_giratoria_control">Sillas giratorias</label>
-          <input type="number" id="silla_giratoria_control" name="silla_giratoria_control" min="0"
-                 value="{{ control.silla_giratoria }}">
-          {% if is_full %}
-            <span class="chk-chip"><span class="muted">Of:</span>{{ control.silla_giratoria_oficial }} · <span class="muted">Real:</span>{{ control.silla_giratoria }}</span>
-          {% endif %}
-        </div>
-
-        <div>
-          <label for="silla_fija_control">Sillas fijas</label>
-          <input type="number" id="silla_fija_control" name="silla_fija_control" min="0"
-                 value="{{ control.silla_fija }}">
-          {% if is_full %}
-            <span class="chk-chip"><span class="muted">Of:</span>{{ control.silla_fija_oficial }} · <span class="muted">Real:</span>{{ control.silla_fija }}</span>
-          {% endif %}
-        </div>
-
-        <div>
-          <label for="armario_alto_control">Armarios altos</label>
-          <input type="number" id="armario_alto_control" name="armario_alto_control" min="0"
-                 value="{{ control.armario_alto }}">
-          {% if is_full %}
-            <span class="chk-chip"><span class="muted">Of:</span>{{ control.armario_alto_oficial }} · <span class="muted">Real:</span>{{ control.armario_alto }}</span>
-          {% endif %}
-        </div>
-
-        <div>
-          <label for="biblioteca_baja_control">Bibliotecas bajas</label>
-          <input type="number" id="biblioteca_baja_control" name="biblioteca_baja_control" min="0"
-                 value="{{ control.biblioteca_baja }}">
-          {% if is_full %}
-            <span class="chk-chip"><span class="muted">Of:</span>{{ control.biblioteca_baja_oficial }} · <span class="muted">Real:</span>{{ control.biblioteca_baja }}</span>
-          {% endif %}
-        </div>
-
-        <div>
-          <label for="otros_control">Otros (bancas, sillones, etc.)</label>
-          <input type="number" id="otros_control" name="otros_control" min="0"
-                 value="{{ control.otros }}">
-          {% if is_full %}
-            <span class="chk-chip"><span class="muted">Of:</span>{{ control.otros_oficial }} · <span class="muted">Real:</span>{{ control.otros }}</span>
-          {% endif %}
-        </div>
-      </div>
-
-      <label for="observaciones">Observaciones</label>
-      <textarea id="observaciones" name="observaciones" rows="3"
-        placeholder="Ej: falta una silla, se rompió un escritorio, etc.">{{ control.observaciones or "" }}</textarea>
-
-      <button type="submit" class="btn primary full">Guardar cambios</button>
-    </form>
   </div>
-
 </section>
 
 {% endblock %}

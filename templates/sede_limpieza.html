@@ -174,8 +174,8 @@
     <!-- Menú de módulos de la sede (vertical y ordenado) -->
     <div class="buttons-row" style="flex-direction:column;gap:8px;display:flex;">
       <a class="btn big outline-blue"
-         href="{{ url_for('sede_inventario', codigo=sede.codigo) }}">
-        📦 Inventario
+         href="{{ url_for('sede_ficha', codigo=sede.codigo, tab='mobiliario') }}">
+        📦 Inventario operativo
       </a>
       <a class="btn big outline-amber"
          href="{{ url_for('sede_planos', codigo=sede.codigo) }}">

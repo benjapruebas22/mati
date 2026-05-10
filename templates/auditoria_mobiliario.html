@@ -4,8 +4,8 @@
 <section class="aud-shell">
   <header class="aud-top">
     <div>
-      <h2 class="aud-h2">Relevamientos / Control · Mobiliario</h2>
-      <p class="aud-sub">Relevamiento por sede/deposito para control cruzado.</p>
+      <h2 class="aud-h2">Relevamientos / Control · Inventario operativo (mobiliario)</h2>
+      <p class="aud-sub">Control operativo por depósito para comparación con inventario oficial.</p>
     </div>
     <div class="aud-tabs">
       <a class="aud-tab active" href="{{ url_for('auditoria_mobiliario') }}">Mobiliario</a>
@@ -27,6 +27,8 @@
 
       <form method="post" class="formx">
         <input type="hidden" name="auditoria_id" value="{{ edit_row.id if edit_row else '' }}">
+
+        <div class="aud-section-title">Datos generales</div>
         <div class="gridx aud-form">
           <div class="fg">
             <label>Sede</label>
@@ -57,8 +59,9 @@
           </div>
         </div>
 
+        <div class="aud-section-title">Items relevados</div>
         <div class="aud-table-wrap">
-          <table class="table-soft aud-table">
+          <table class="table-soft aud-table aud-table-items">
             <thead>
               <tr>
                 <th>Item</th>
@@ -82,6 +85,7 @@
           </table>
         </div>
 
+        <div class="aud-section-title">Observaciones</div>
         <div class="fg full">
           <label>Observaciones</label>
           <input type="text" name="observaciones" placeholder="Notas generales" value="{{ edit_row.observaciones if edit_row else '' }}">
@@ -124,7 +128,7 @@
                 <td>{{ a.deposito or '-' }}</td>
                 <td>{{ a.responsable or '-' }}</td>
                 <td>{{ a.observaciones or '-' }}</td>
-                <td style="white-space:nowrap">
+                <td class="aud-actions">
                   <a class="btn xs outline" href="{{ url_for('auditoria_mobiliario', edit=a.id) }}">Editar</a>
                   <form method="post" action="{{ url_for('auditoria_mobiliario_borrar', aid=a.id) }}" style="display:inline-block" onsubmit="return confirm('¿Eliminar relevamiento?');">
                     <button type="submit" class="btn xs outline">Eliminar</button>
@@ -138,49 +142,6 @@
     </section>
   </div>
 </section>
-
-<style>
-  .aud-shell{display:flex;flex-direction:column;gap:12px;max-width:100%;margin:0 auto;padding:4px 10px 16px}
-  .aud-top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
-  .aud-h2{margin:0;font-size:20px;font-weight:900;color:#0f172a}
-  .aud-sub{margin:2px 0 0;font-size:13px;color:#64748b}
-  .aud-grid{display:grid;grid-template-columns:minmax(0,1220px);gap:14px;align-items:start;justify-content:center}
-  .aud-shell .cardx{border:1px solid #e5e7eb;box-shadow:0 10px 22px rgba(15,23,42,.06)}
-  .aud-shell label{font-size:12px;font-weight:800;color:#0f172a}
-  .aud-shell input,.aud-shell select{border-radius:10px;padding:8px 10px;font-size:12px}
-  .aud-shell .help{font-size:11px;color:#64748b}
-  .aud-form .fg{display:flex;flex-direction:column;gap:6px}
-  .aud-shell .fg.full{margin-top:12px}
-  .aud-table-wrap{margin-top:8px}
-  .aud-table input{width:100%;max-width:130px}
-  .aud-shell .formx-actions{
-    margin-top:14px;
-    display:flex;
-    gap:8px;
-    flex-wrap:wrap;
-    align-items:center;
-  }
-  .aud-shell .table-wrap{overflow:visible}
-  .aud-shell .aud-table{width:100%;min-width:0;table-layout:fixed}
-  .aud-shell .aud-table th,.aud-shell .aud-table td{white-space:normal;word-break:break-word}
-  .aud-shell .aud-history th:nth-child(1){width:16%}
-  .aud-shell .aud-history th:nth-child(2){width:12%}
-  .aud-shell .aud-history th:nth-child(3){width:20%}
-  .aud-shell .aud-history th:nth-child(4){width:18%}
-  .aud-shell .aud-history th:nth-child(5){width:24%}
-  .aud-shell .aud-history th:nth-child(6){width:10%}
-  .aud-shell .btn-superior-soft{
-    background:#ecfdf5;
-    border:1px solid #a7f3d0;
-    color:#065f46;
-  }
-  .aud-shell .btn-superior-soft:hover{
-    background:#d1fae5;
-    border-color:#6ee7b7;
-    color:#064e3b;
-  }
-  @media (max-width:1100px){.aud-grid{grid-template-columns:1fr}}
-</style>
 
 <script>
   (function(){
@@ -234,33 +195,38 @@
 </script>
 
 <style>
-  .aud-shell{max-width:1200px;margin:0 auto;padding:10px 12px 18px;display:grid;gap:12px}
+  .aud-shell{max-width:1040px;margin:0 auto;padding:10px 12px 18px;display:grid;gap:12px}
   .aud-top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
-  .aud-h2{margin:0;font-size:22px;color:#0f2f57}
+  .aud-h2{margin:0;font-size:20px;color:#334155;font-weight:600}
   .aud-sub{margin:4px 0 0;color:#64748b;font-size:13px}
   .aud-tabs{display:flex;gap:6px;flex-wrap:wrap}
-  .aud-tab{padding:7px 14px;border-radius:999px;border:1px solid #d8e2f1;background:#f6f9ff;color:#2b4b78;font-weight:800;font-size:12px;text-decoration:none}
-  .aud-tab.active{background:#e8f2ff;border-color:#7fb4ff;color:#0f2f57;box-shadow:0 4px 10px rgba(45,123,255,.15)}
-  .aud-tab:hover{background:#eef4ff}
+  .aud-tab{padding:7px 14px;border-radius:999px;border:1px solid #e5e7eb;background:#ffffff;color:#334155;font-weight:600;font-size:12px;text-decoration:none}
+  .aud-tab.active{background:#eff6ff;border-color:#93c5fd;color:#1d4ed8}
+  .aud-tab:hover{background:#f8fafc}
   .aud-grid{display:grid;gap:12px}
   .cardx{border-radius:14px;border:1px solid #dbe3ef;background:#fff;box-shadow:0 8px 20px rgba(15,23,42,.06)}
   .cardx-head{padding:12px 12px 6px}
   .formx{padding:0 12px 12px}
   .gridx.aud-form{gap:10px}
-  .fg label{font-size:11px;font-weight:800;color:#5b6d86;text-transform:uppercase}
+  .fg label{font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase}
   .fg input,.fg select,.fg textarea{border:1px solid #cbd5e1;border-radius:10px;padding:8px 10px;font-size:12px;background:#fff}
+  .aud-section-title{margin:12px 0 6px;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.04em}
   .aud-table-wrap{margin-top:8px}
-  .aud-table td input{width:100%}
-  .aud-table th{background:#f3f6fb;color:#0f2f57}
-  .aud-history th,.aud-history td{padding:6px 8px}
-  .aud-history td:last-child{white-space:nowrap}
+  .aud-table-items th,.aud-table-items td{padding:10px 10px}
+  .aud-table-items td:nth-child(2){text-align:center}
+  .aud-table-items td:nth-child(2) input{width:100%;max-width:96px;text-align:center;padding:6px 8px;border-radius:10px}
+  .aud-table th{background:#f3f4f6;color:#334155}
+  .aud-history th,.aud-history td{padding:8px 10px}
+  .aud-history tbody tr:nth-child(even){background:#f8fafc}
+  .aud-history tbody tr:hover{background:#f1f5f9}
+  .aud-actions{white-space:nowrap;text-align:right}
   .aud-history .btn.xs.outline{padding:4px 8px;font-size:11px}
   .aud-history form .btn.xs.outline{padding:4px 8px;font-size:11px}
   .aud-history th:nth-child(2), .aud-history td:nth-child(2){width:70px;text-align:center}
   .aud-history th:nth-child(6), .aud-history td:nth-child(6){width:140px}
   .aud-history{font-size:12px}
-  .aud-history .btn.xs.outline{background:#f5f8ff;border-color:#c9d7f5;color:#2b4b78}
-  .aud-history form .btn.xs.outline{background:#fff1f1;border-color:#f7c3c3;color:#9b1c1c}
+  .aud-history .btn.xs.outline{background:#fff;border-color:#e5e7eb;color:#334155}
+  .aud-history form .btn.xs.outline{background:#fff;border-color:#fecaca;color:#b91c1c}
   .formx-actions{margin-top:10px}
   .formx-actions .btn{min-height:36px}
   @media (max-width: 640px){
