@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block head_extra %}
   {{ super() }}
-  <link rel="stylesheet" href="{{ url_for('static', filename='vehiculos/vehiculos_ui.css', v='2026-05-10-02') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='vehiculos/vehiculos_ui.css', v='2026-05-10-03') }}">
 {% endblock %}
 {% block content %}
 
@@ -28,8 +28,8 @@
   </header>
 
   <div class="vd-quick">
-    <button type="button" class="main" onclick="openDocForPatente('', 'all')">+ Cargar documentacion</button>
-    <button type="button" class="sub" onclick="goDocBlock('tabla-doc')">Ver tabla</button>
+    <button type="button" class="btn btn-mpd vd-quick-main" onclick="openDocForPatente('', 'all')">+ Cargar documentación</button>
+    <button type="button" class="btn btn-mpd vd-quick-sub" onclick="goDocBlock('tabla-doc')">Ver tabla</button>
   </div>
 
   <div class="veh-card">
@@ -166,15 +166,17 @@
                 <span class="doc-kpi-sub">{{ r.codigo_interno }}</span>
               </div>
               <div class="doc-kpi-topactions">
-                <span class="doc-kpi-status pill {{ r.seguro_top.estado }}" data-doc-role="status">
-                  {% if r.seguro_top.estado == 'vencido' %}Vencido{% elif r.seguro_top.estado == 'pronto' %}Por vencer{% else %}OK{% endif %}
-                </span>
                 <button type="button" class="doc-kpi-edit" onclick="openVehDocCard(event, this.closest('.doc-kpi-cycle'))">Cargar</button>
               </div>
             </div>
-            <span data-doc-role="kind">Seguro</span>
-            <span data-doc-role="label">Vigente hasta</span>
-            <b data-doc-role="date">{{ r.seguro_top.fecha or '-' }}</b>
+            <div class="doc-kpi-meta">
+              <span class="doc-chip doc-chip-kind" data-doc-role="kind">Seguro</span>
+              <span class="pill {{ r.seguro_top.estado }} doc-kpi-status" data-doc-role="status">
+                {% if r.seguro_top.estado == 'vencido' %}Vencido{% elif r.seguro_top.estado == 'pronto' %}Por vencer{% else %}OK{% endif %}
+              </span>
+              <span class="doc-chip doc-chip-date" data-doc-role="date">{{ r.seguro_top.fecha or '-' }}</span>
+              <span class="doc-kpi-label" data-doc-role="label">Vigente hasta</span>
+            </div>
           </div>
           {% endfor %}
         </div>
@@ -253,10 +255,6 @@
 </section>
 
 <style>
-  .vd-quick { display:flex; gap:8px; flex-wrap:wrap; margin:0 0 6px 0; }
-  .vd-quick .main { padding:10px 14px; border-radius:999px; border:1px solid #0f172a; background:#0f172a; color:#fff; font-weight:800; cursor:pointer; }
-  .vd-quick .sub { padding:10px 14px; border-radius:999px; border:1px solid #cbd5e1; background:#fff; color:#0f172a; font-weight:700; cursor:pointer; }
-
   .veh-doc {
     display: flex;
     flex-direction: column;
@@ -426,7 +424,7 @@
   .doc-kpi-card {
     border: 1px solid #e5e7eb;
     border-radius: 12px;
-    background: var(--doc-bg, #f8fafc);
+    background: #ffffff;
     padding: 8px 10px;
     display: flex;
     flex-direction: column;
@@ -436,10 +434,13 @@
     cursor: pointer;
     transition: box-shadow .14s ease, border-color .14s ease, background-color .14s ease;
   }
+  .doc-kpi-card:hover{
+    background:#fbfdff;
+    border-color:#dbe7f4;
+  }
 
   .doc-kpi-cycle {
-    --doc-accent: #64748b;
-    --doc-bg: #f8fafc;
+    --doc-accent: #94a3b8;
     border-left: 4px solid var(--doc-accent);
     padding-left: 10px;
     user-select: none;
@@ -451,11 +452,10 @@
     border-color: #bfdbfe;
   }
 
-  /* Colores pastel institucionales por tipo (sin fondos fuertes) */
-  .doc-kpi-cycle[data-doc-type="seguro"] { --doc-accent: #456b52; --doc-bg: #eef7f1; } /* verde pastel */
-  .doc-kpi-cycle[data-doc-type="rtv"] { --doc-accent: #6666cc; --doc-bg: rgba(102, 102, 204, .08); } /* violeta suave */
-  .doc-kpi-cycle[data-doc-type="lavado"] { --doc-accent: #4b6b82; --doc-bg: rgba(75, 107, 130, .08); } /* azul grisáceo suave */
-  .doc-kpi-cycle[data-doc-type="service"] { --doc-accent: #c97171; --doc-bg: rgba(201, 113, 113, .10); } /* rojo pastel */
+  /* Estados: solo acento + badge (sin colorear toda la tarjeta) */
+  .doc-kpi-cycle.ok { --doc-accent: #456b52; }        /* verde suave */
+  .doc-kpi-cycle.pronto { --doc-accent: #9a3412; }    /* naranja suave */
+  .doc-kpi-cycle.vencido { --doc-accent: #b91c1c; }   /* rojo suave */
 
   .doc-kpi-cycle.is-active {
     box-shadow: 0 0 0 3px rgba(37, 99, 235, .10);
@@ -492,8 +492,44 @@
     background: #f8fafc;
   }
 
-  .doc-kpi-cycle [data-doc-role="kind"] {
-    color: var(--doc-accent);
+  .doc-kpi-meta{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:6px;
+    margin-top:6px;
+  }
+
+  .doc-chip{
+    display:inline-flex;
+    align-items:center;
+    border: 1px solid #e5e7eb;
+    background:#f8fafc;
+    border-radius:999px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    color:#334155;
+    white-space:nowrap;
+  }
+
+  .doc-chip-kind{
+    background:#ffffff;
+    color:#475569;
+    font-size:10px;
+    font-weight:800;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+  }
+
+  .doc-chip-date{
+    background:#ffffff;
+    color:#334155;
+    font-weight:700;
+  }
+
+  .doc-kpi-label{
+    display:none;
   }
 
   .doc-kpi-hint {
@@ -506,45 +542,12 @@
     color: #334155;
   }
 
-  .doc-kpi-card span {
-    font-size: 10px;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: .04em;
-  }
-
   .doc-kpi-card .doc-kpi-sub {
     font-size: 10px;
     color: #475569;
     text-transform: none;
     letter-spacing: 0;
     font-weight: 700;
-  }
-
-  .doc-kpi-card b {
-    font-size: 13px;
-    color: #334155;
-  }
-
-  .doc-kpi-card.ok {
-    background: var(--doc-bg, #f8fafc);
-    border-color: #e5e7eb;
-  }
-
-  .doc-kpi-card.pronto {
-    background: var(--doc-bg, #f8fafc);
-    border-color: #e5e7eb;
-  }
-
-  .doc-kpi-card.vencido {
-    background: var(--doc-bg, #f8fafc);
-    border-color: #e5e7eb;
-  }
-
-  .doc-kpi-cycle.ok,
-  .doc-kpi-cycle.pronto,
-  .doc-kpi-cycle.vencido {
-    border-left-color: var(--doc-accent);
   }
 
   .table-soft {
@@ -555,7 +558,7 @@
 
   .table-soft th,
   .table-soft td {
-    padding: 8px;
+    padding: 10px 10px;
     border-bottom: 1px solid #eef2f7;
     white-space: nowrap;
   }
@@ -567,7 +570,7 @@
     padding: 2px 8px;
     border-radius: 999px;
     font-size: 11px;
-    font-weight: 800;
+    font-weight: 700;
     border: 1px solid #e5e7eb;
     background: #f8fafc;
     color: #475569;
@@ -580,9 +583,9 @@
   }
 
   .pill.pronto {
-    background: #fef3c7;
-    border-color: #fcd34d;
-    color: #92400e;
+    background: #ffedd5;
+    border-color: #fdba74;
+    color: #9a3412;
   }
 
   .pill.vencido {

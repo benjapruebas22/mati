@@ -208,12 +208,42 @@
   border-radius:999px;
   padding:2px 8px;
   font-size:11px;
-  font-weight:600;
+  font-weight:500;
   white-space:nowrap;
 }
-.veh-badge.ok{ box-shadow: inset 3px 0 0 rgba(34, 197, 94, 0.55); }
-.veh-badge.warn{ box-shadow: inset 3px 0 0 rgba(245, 158, 11, 0.55); }
-.veh-badge.bad{ box-shadow: inset 3px 0 0 rgba(239, 68, 68, 0.55); }
+.veh-badge.ok{ box-shadow: inset 2px 0 0 rgba(34, 197, 94, 0.38); }
+.veh-badge.warn{ box-shadow: inset 2px 0 0 rgba(245, 158, 11, 0.38); }
+.veh-badge.bad{ box-shadow: inset 2px 0 0 rgba(239, 68, 68, 0.38); }
+
+/* Vehículos · Documentación: acciones rápidas */
+.veh-shell .vd-quick{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin:0 0 10px 0;
+}
+.veh-shell .vd-quick .vd-quick-main.btn.btn-mpd{
+  background: linear-gradient(180deg, #fbfdff 0%, #eef5ff 100%);
+  border-color: #c7d8ef;
+  color: #1e40af;
+  font-weight: 700;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, .10);
+}
+.veh-shell .vd-quick .vd-quick-main.btn.btn-mpd:hover{
+  background: linear-gradient(180deg, #f6fbff 0%, #e9f2ff 100%);
+  border-color: #b7cfe9;
+}
+.veh-shell .vd-quick .vd-quick-sub.btn.btn-mpd{
+  background:#ffffff;
+  border-color: var(--veh-border);
+  color: var(--veh-text);
+  box-shadow:none;
+}
+.veh-shell .vd-quick .vd-quick-sub.btn.btn-mpd:hover{
+  background:#f8fafc;
+  border-color: var(--veh-run-bd);
+  color: var(--veh-run-tx);
+}
 
 .veh-table-wrap{
   border:1px solid var(--veh-border);
