@@ -318,6 +318,15 @@
   color: var(--sedes-ink) !important;
   font-weight: 600 !important;
 }
+.sgi-sedes .panel-tab-row .ptab.tone-resumen-sedes {
+  background: #eef7f1 !important;
+  border-color: #b7d8c1 !important;
+  color: #456b52 !important;
+  box-shadow: none !important;
+}
+.sgi-sedes .panel-tab-row .ptab.tone-resumen-sedes:hover {
+  background: #e3f1e7 !important;
+}
 .sgi-sedes .panel-tab-row .ptab.active {
   background: var(--sedes-primary-soft) !important;
   border-color: #bfdbfe !important;
