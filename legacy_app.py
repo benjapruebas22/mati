@@ -1822,6 +1822,37 @@ def ensure_luminarias_columns():
     cols = [r["name"] for r in cur.execute("PRAGMA table_info(luminarias_sede)").fetchall()]
     if "puestos_trabajo" not in cols:
         cur.execute("ALTER TABLE luminarias_sede ADD COLUMN puestos_trabajo INTEGER DEFAULT 0")
+    if "observaciones" not in cols:
+        cur.execute("ALTER TABLE luminarias_sede ADD COLUMN observaciones TEXT")
+    con.commit()
+    con.close()
+
+def ensure_aires_mpd_columns():
+    con = get_db()
+    cur = con.cursor()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS aires_mpd(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sede_codigo TEXT NOT NULL,
+            ambiente    TEXT,
+            marca       TEXT,
+            gas         TEXT,
+            modelo      TEXT,
+            tipo        TEXT,
+            frigorias   INTEGER,
+            estado      TEXT,
+            fecha_instalacion      TEXT,
+            fecha_ultima_limpieza  TEXT,
+            fecha_ultimo_service   TEXT,
+            frecuencia_meses       INTEGER,
+            observaciones          TEXT
+        );
+    """)
+    cols = [r["name"] for r in cur.execute("PRAGMA table_info(aires_mpd)").fetchall()]
+    if "gas" not in cols:
+        cur.execute("ALTER TABLE aires_mpd ADD COLUMN gas TEXT")
+    if "fecha_ultimo_service" not in cols:
+        cur.execute("ALTER TABLE aires_mpd ADD COLUMN fecha_ultimo_service TEXT")
     con.commit()
     con.close()
 
@@ -3847,6 +3878,7 @@ def sede_ficha(codigo):
     codigo = (codigo or "").upper().strip()
     ensure_sedes_metricas_table()
     ensure_luminarias_columns()
+    ensure_aires_mpd_columns()
     ensure_sedes_mpd_cols(db)
     ensure_sedes_particularidades_table()
 
@@ -3900,7 +3932,7 @@ def sede_ficha(codigo):
             f"((NULLIF(TRIM({alias}.marca),'') IS NOT NULL "
             f"AND UPPER(TRIM({alias}.marca)) NOT IN ('-','PENDIENTE')) "
             f"OR (NULLIF(TRIM({alias}.estado),'') IS NOT NULL) "
-            f"OR {alias}.fecha_limpieza IS NOT NULL "
+            f"OR {alias}.fecha_ultima_limpieza IS NOT NULL "
             f"OR {alias}.fecha_ultimo_service IS NOT NULL "
             f"OR {alias}.observaciones IS NOT NULL)"
         )
@@ -4308,10 +4340,10 @@ def sede_ficha(codigo):
                 """, (cod,)),
                 "aires_total": safe_scalar("""
                     SELECT COALESCE(COUNT(*),0)
-                    FROM aires_sede
+                    FROM aires_mpd
                     WHERE sede_codigo = ?
                       AND {aires_valid}
-                """.format(aires_valid=aires_valid_where("aires_sede")), (cod,)),
+                """.format(aires_valid=aires_valid_where("aires_mpd")), (cod,)),
                 "luminarias_total": safe_scalar("""
                     SELECT COALESCE(SUM(
                         COALESCE(tubo_led_fria,0) +
@@ -4442,7 +4474,8 @@ def sede_ficha(codigo):
                 COALESCE(l.foco_comun,0)      AS foco_comun,
                 COALESCE(l.panel_led,0)       AS panel_led,
                 COALESCE(l.puestos_trabajo,0) AS puestos_trabajo,
-                l.otros_detalle
+                l.otros_detalle,
+                COALESCE(l.observaciones,'') AS observaciones
             FROM luminarias_sede l
             WHERE {" AND ".join(where)}
             ORDER BY l.codigo_local
@@ -4518,28 +4551,27 @@ def sede_ficha(codigo):
         where = ["a.sede_codigo = ?"]
         params = [codigo]
 
-        if has_col("aires_sede", "piso"):
-            where.append("COALESCE(a.piso,'PB') = ?")
-            params.append(piso)
-
         where.append(aires_valid_where("a"))
 
         aires_rows = db.execute(f"""
             SELECT
                 a.id,
                 a.sede_codigo,
-                COALESCE(a.piso,'PB') AS piso,
-                a.ambiente_codigo,
-                a.ambiente_desc,
-                COALESCE(NULLIF(TRIM(a.ambiente_desc),''), NULLIF(TRIM(a.ambiente_codigo),''), '-') AS ambiente,
+                NULL AS piso,
+                NULL AS ambiente_codigo,
+                a.ambiente AS ambiente_desc,
+                COALESCE(NULLIF(TRIM(a.ambiente),''), '-') AS ambiente,
                 a.marca,
+                a.gas,
+                a.frigorias,
                 a.estado,
-                a.fecha_limpieza,
+                a.fecha_ultima_limpieza AS fecha_limpieza,
                 a.fecha_ultimo_service,
+                a.frecuencia_meses,
                 a.observaciones
-            FROM aires_sede a
+            FROM aires_mpd a
             WHERE {" AND ".join(where)}
-            ORDER BY COALESCE(a.ambiente_codigo,''), COALESCE(a.marca,'')
+            ORDER BY COALESCE(a.ambiente,''), COALESCE(a.marca,'')
         """, params).fetchall()
 
         k = db.execute(f"""
@@ -4547,7 +4579,7 @@ def sede_ficha(codigo):
                 COALESCE(COUNT(*),0) AS total,
                 COALESCE(SUM(CASE WHEN lower(COALESCE(a.estado,'')) = 'operativo' THEN 1 ELSE 0 END),0) AS operativos,
                 COALESCE(SUM(CASE WHEN lower(COALESCE(a.estado,'')) LIKE 'fuera%' THEN 1 ELSE 0 END),0) AS fuera_servicio
-            FROM aires_sede a
+            FROM aires_mpd a
             WHERE {" AND ".join(where)}
         """, params).fetchone()
 
@@ -4572,16 +4604,16 @@ def sede_ficha(codigo):
 
     # AIRES total
     try:
-        if has_col("aires_sede", "sede_codigo"):
+        if has_col("aires_mpd", "sede_codigo"):
             k = db.execute("""
                 SELECT
                     COALESCE(COUNT(*),0) AS total,
                     COALESCE(SUM(CASE WHEN lower(COALESCE(estado,'')) = 'operativo' THEN 1 ELSE 0 END),0) AS operativos,
                     COALESCE(SUM(CASE WHEN lower(COALESCE(estado,'')) LIKE 'fuera%' THEN 1 ELSE 0 END),0) AS fuera_servicio
-                FROM aires_sede
+                FROM aires_mpd
                 WHERE sede_codigo = ?
                   AND {aires_valid}
-            """.format(aires_valid=aires_valid_where("aires_sede")), (codigo,)).fetchone()
+            """.format(aires_valid=aires_valid_where("aires_mpd")), (codigo,)).fetchone()
             if k:
                 aires_total_kpi = dict(k)
     except Exception:
@@ -6953,13 +6985,14 @@ def sedes_resumen():
 @app.route("/sedes/resumen-mpd", endpoint="sedes_resumen_mpd")
 def sedes_resumen_mpd():
     db = get_db()
+    ensure_aires_mpd_columns()
 
     def aires_valid_where(alias: str) -> str:
         return (
             f"((NULLIF(TRIM({alias}.marca),'') IS NOT NULL "
             f"AND UPPER(TRIM({alias}.marca)) NOT IN ('-','PENDIENTE')) "
             f"OR (NULLIF(TRIM({alias}.estado),'') IS NOT NULL) "
-            f"OR {alias}.fecha_limpieza IS NOT NULL "
+            f"OR {alias}.fecha_ultima_limpieza IS NOT NULL "
             f"OR {alias}.fecha_ultimo_service IS NOT NULL "
             f"OR {alias}.observaciones IS NOT NULL)"
         )
@@ -7023,10 +7056,10 @@ def sedes_resumen_mpd():
             """, (cod,)),
             "aires_total": safe_scalar("""
                 SELECT COALESCE(COUNT(*),0)
-                FROM aires_sede
+                FROM aires_mpd
                 WHERE sede_codigo = ?
                   AND {aires_valid}
-            """.format(aires_valid=aires_valid_where("aires_sede")), (cod,)),
+            """.format(aires_valid=aires_valid_where("aires_mpd")), (cod,)),
             "luminarias_total": safe_scalar("""
                 SELECT COALESCE(SUM(
                     COALESCE(tubo_led_fria,0) +
@@ -7405,6 +7438,7 @@ def luminarias_nuevo():
         panel_led = i("panel_led")
         puestos_trabajo = i("puestos_trabajo")
         otros_detalle = (request.form.get("otros_detalle") or "").strip()
+        observaciones = (request.form.get("observaciones") or "").strip()
         activo = 1 if request.form.get("activo") == "1" else 0
 
         if not codigo_sede or not codigo_local:
@@ -7415,11 +7449,11 @@ def luminarias_nuevo():
         cur.execute("""
             INSERT INTO luminarias_sede
             (codigo_sede, piso, codigo_local, tubo_led_fria, tubo_led_calido, foco_comun, panel_led,
-             puestos_trabajo, otros_detalle, activo)
-            VALUES (?,?,?,?,?,?,?,?,?,?)
+             puestos_trabajo, otros_detalle, observaciones, activo)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?)
         """, (
             codigo_sede, piso, codigo_local, tubo_led_fria, tubo_led_calido, foco_comun, panel_led,
-            puestos_trabajo, otros_detalle, activo
+            puestos_trabajo, otros_detalle, observaciones, activo
         ))
         con.commit()
         con.close()
@@ -7471,6 +7505,7 @@ def luminarias_editar(id):
           COALESCE(panel_led,0) AS panel_led,
           COALESCE(puestos_trabajo,0) AS puestos_trabajo,
           COALESCE(otros_detalle,'') AS otros_detalle,
+          COALESCE(observaciones,'') AS observaciones,
           COALESCE(activo,1) AS activo
         FROM luminarias_sede
         WHERE id = ?
@@ -7500,6 +7535,7 @@ def luminarias_editar(id):
         panel_led = i("panel_led")
         puestos_trabajo = i("puestos_trabajo")
         otros_detalle = (request.form.get("otros_detalle") or "").strip()
+        observaciones = (request.form.get("observaciones") or "").strip()
         activo = 1 if request.form.get("activo") == "1" else 0
 
         if not codigo_sede or not codigo_local:
@@ -7511,12 +7547,12 @@ def luminarias_editar(id):
             UPDATE luminarias_sede
             SET codigo_sede=?, piso=?, codigo_local=?,
                 tubo_led_fria=?, tubo_led_calido=?, foco_comun=?, panel_led=?,
-                puestos_trabajo=?, otros_detalle=?, activo=?
+                puestos_trabajo=?, otros_detalle=?, observaciones=?, activo=?
             WHERE id=?
         """, (
             codigo_sede, piso, codigo_local,
             tubo_led_fria, tubo_led_calido, foco_comun, panel_led,
-            puestos_trabajo, otros_detalle, activo, id
+            puestos_trabajo, otros_detalle, observaciones, activo, id
         ))
         con.commit()
         con.close()

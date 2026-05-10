@@ -239,7 +239,8 @@ def register_inventario_general(app, get_db, get_db_connection, ensure_luminaria
             ) m ON m.codigo_sede = s.codigo
             LEFT JOIN (
                 SELECT sede_codigo, COALESCE(COUNT(*),0) AS aires_total
-                FROM aires_sede
+                FROM aires_mpd
+                WHERE NULLIF(TRIM(marca),'') IS NOT NULL
                 GROUP BY sede_codigo
             ) a ON a.sede_codigo = s.codigo
             LEFT JOIN (

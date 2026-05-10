@@ -5915,10 +5915,38 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
     import sqlite3
     from flask import render_template, request, redirect, url_for, abort
 
+    def _ensure_aires_mpd_schema(con):
+        cur = con.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS aires_mpd(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                sede_codigo TEXT NOT NULL,
+                ambiente    TEXT,
+                marca       TEXT,
+                gas         TEXT,
+                modelo      TEXT,
+                tipo        TEXT,
+                frigorias   INTEGER,
+                estado      TEXT,
+                fecha_instalacion      TEXT,
+                fecha_ultima_limpieza  TEXT,
+                fecha_ultimo_service   TEXT,
+                frecuencia_meses       INTEGER,
+                observaciones          TEXT
+            );
+        """)
+        cols = [r[1] for r in cur.execute("PRAGMA table_info(aires_mpd)").fetchall()]
+        if "gas" not in cols:
+            cur.execute("ALTER TABLE aires_mpd ADD COLUMN gas TEXT")
+        if "fecha_ultimo_service" not in cols:
+            cur.execute("ALTER TABLE aires_mpd ADD COLUMN fecha_ultimo_service TEXT")
+        con.commit()
+
     def obtener_sede(codigo):
         con = get_db()
         con.row_factory = sqlite3.Row
         cur = con.cursor()
+        _ensure_aires_mpd_schema(con)
         cur.execute("SELECT * FROM sedes_mpd WHERE codigo = ?", (codigo,))
         sede = cur.fetchone()
         if not sede:
@@ -5996,7 +6024,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     estado, fecha_instalacion, fecha_ultima_limpieza,
                     fecha_ultimo_service, frecuencia_meses, observaciones
                 )
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
             """, (
                 codigo, ambiente, marca, gas, modelo, tipo, frigorias,
                 estado, fecha_instalacion, fecha_ultima_limpieza,
