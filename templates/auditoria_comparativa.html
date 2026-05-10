@@ -1,8 +1,12 @@
 {% extends "base.html" %}
+{% block extra_head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-10-01') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_relevamientos.css', v='2026-05-10-01') }}">
+{% endblock %}
 {% block content %}
 
-<section class="sup-shell">
-  <header class="sup-head">
+<section class="aud-shell sgi-sedes sgi-aud">
+  <header class="aud-top">
     <div>
       <h1>Relevamientos / Control · Comparativa</h1>
       <p>Comparacion oficial vs relevado por sede y deposito. <strong>{{ 'Inventario operativo' if tipo_label=='Mobiliario' else tipo_label }}</strong></p>
@@ -14,9 +18,16 @@
     </div>
   </header>
 
-  <section class="card sup-filters">
+  <section class="cardx">
+    <div class="cardx-head">
+      <div>
+        <h3>Filtros</h3>
+        <p>Acotá sede, depósito y fechas para encontrar diferencias.</p>
+      </div>
+      <span class="pill-soft">Búsqueda</span>
+    </div>
     {% set _tipo_param = 'mobiliario' if tipo_label=='Mobiliario' else ('aires' if tipo_label=='Aires' else 'luminarias') %}
-    <form method="get" class="sup-grid">
+    <form method="get" class="formx gridx aud-form">
       <div class="fg">
         <label>Sede</label>
         <select name="sede">
@@ -45,25 +56,26 @@
         <label>Hasta</label>
         <input type="date" name="hasta" value="{{ q_fecha_hasta or '' }}">
       </div>
-      <div class="fg actions">
-        <button type="submit" class="btn outline-amber">Filtrar</button>
-        <a class="btn outline-slate" href="{{ url_for('relevamientos_comparativa') }}?tipo={{ _tipo_param }}">Reset</a>
+      <div class="fg full formx-actions" style="margin-top:0;">
+        <button type="submit" class="btn outline-amber btn-wide">Filtrar</button>
+        <a class="btn outline-slate btn-wide" href="{{ url_for('relevamientos_comparativa') }}?tipo={{ _tipo_param }}">Reset</a>
       </div>
     </form>
   </section>
 
   {% if filas %}
     {% for f in filas %}
-      <section class="card sup-card">
-        <div class="sup-meta">
-          <div><strong>{{ f.fecha }}</strong></div>
-          <div>Sede: <strong>{{ f.sede_codigo }}</strong></div>
-          <div>Deposito: <strong>{{ f.deposito }}</strong></div>
-          <div>Resp: <strong>{{ f.responsable }}</strong></div>
+      <section class="cardx">
+        <div class="cardx-head">
+          <div>
+            <h3>{{ f.fecha }} · {{ f.sede_codigo }} · {{ f.deposito }}</h3>
+            <p>Resp: {{ f.responsable }} · Obs: {{ f.observaciones }}</p>
+          </div>
+          <span class="pill-soft">{{ 'Inventario operativo' if tipo_label=='Mobiliario' else tipo_label }}</span>
         </div>
-        <div class="sup-obs">Obs: {{ f.observaciones }}</div>
-        <div class="table-wrap">
-          <table class="sup-table">
+        <div class="formx">
+          <div class="aud-table-wrap">
+            <table class="table-soft aud-table">
             <thead>
               <tr>
                 <th>Item</th>
@@ -92,45 +104,16 @@
                 </tr>
               {% endfor %}
             </tbody>
-          </table>
+            </table>
+          </div>
         </div>
       </section>
     {% endfor %}
   {% else %}
-    <section class="card empty">No hay auditorias para los filtros seleccionados.</section>
+    <section class="cardx">
+      <div class="formx" style="padding-top:12px;color:#64748b;">No hay relevamientos para los filtros seleccionados.</div>
+    </section>
   {% endif %}
 </section>
-
-<style>
-  .sup-shell{max-width:1040px;margin:0 auto;padding:10px 12px 18px;display:grid;gap:12px}
-  .sup-head{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;flex-wrap:wrap}
-  .sup-head h1{margin:0;color:#334155;font-size:20px;line-height:1.2;font-weight:600}
-  .sup-head p{margin:4px 0 0;color:#64748b;font-size:13px}
-  .aud-tabs{display:flex;gap:6px;flex-wrap:wrap}
-  .aud-tab{padding:7px 14px;border-radius:999px;border:1px solid #e5e7eb;background:#ffffff;color:#334155;font-weight:600;font-size:12px;text-decoration:none}
-  .aud-tab.active{background:#eff6ff;border-color:#93c5fd;color:#1d4ed8}
-  .aud-tab:hover{background:#f8fafc}
-  .card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;box-shadow:0 8px 20px rgba(15,23,42,.06)}
-  .sup-filters{padding:12px}
-  .sup-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;align-items:end}
-  .fg{display:grid;gap:4px}
-  .fg label{font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.04em}
-  .fg input,.fg select{border:1px solid #cbd5e1;border-radius:10px;padding:8px 10px;font-size:12px}
-  .fg.actions{display:flex;gap:8px;align-items:end}
-  .sup-card{padding:12px}
-  .sup-meta{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:#334155}
-  .sup-obs{margin-top:6px;color:#64748b;font-size:12px}
-  .table-wrap{margin-top:8px;overflow:auto}
-  .sup-table{width:100%;border-collapse:separate;border-spacing:0;min-width:720px}
-  .sup-table th,.sup-table td{padding:8px 10px;border-top:1px solid #e5e7eb;font-size:12px}
-  .sup-table th{background:#f3f4f6;color:#334155;border-top:none;text-align:left;font-weight:600}
-  .chip{display:inline-block;padding:2px 8px;border-radius:999px;font-weight:600;font-size:11px}
-  .chip.ok{background:#dcfce7;color:#166534}
-  .chip.warn{background:#fef3c7;color:#92400e}
-  .chip.bad{background:#fee2e2;color:#b91c1c}
-  .chip.na{background:#e2e8f0;color:#475569}
-  .empty{padding:14px;color:#64748b}
-  @media (max-width:1000px){.sup-grid{grid-template-columns:1fr 1fr}.fg.actions{grid-column:1 / -1}}
-</style>
 
 {% endblock %}

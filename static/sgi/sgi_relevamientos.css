@@ -1,0 +1,268 @@
+/* SGI — Relevamientos / Control (solo UI/UX visual)
+   Unifica Inventario operativo / Aires / Luminarias / Comparativa.
+   No cambia lógica, rutas, datos ni relaciones. */
+
+/* Root */
+.sgi-aud{
+  --aud-ink: var(--sedes-ink, #334155);
+  --aud-muted: var(--sedes-muted, #64748b);
+  --aud-border: var(--sedes-border, #e5e7eb);
+  --aud-border-soft: var(--sedes-border-soft, #e2e8f0);
+  --aud-bg: var(--sedes-bg, #ffffff);
+  --aud-bg-soft: var(--sedes-bg-soft, #f8fafc);
+  --aud-primary: var(--sedes-primary, #2563eb);
+  --aud-primary-soft: var(--sedes-primary-soft, #eff6ff);
+  color: var(--aud-ink);
+}
+
+/* Layout: reduce espacio muerto superior (container ya aporta padding) */
+.sgi-aud.aud-shell{
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.sgi-aud .aud-top{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.sgi-aud .aud-h2{
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.2;
+  color: var(--aud-ink);
+  font-weight: 600;
+}
+.sgi-aud .aud-sub{
+  margin: 3px 0 0;
+  color: var(--aud-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Fallback para templates legacy (si usan h1/p sin clases) */
+.sgi-aud :where(h1, h2, h3, h4){
+  color: var(--aud-ink);
+}
+.sgi-aud h1{
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.2;
+  font-weight: 600;
+}
+.sgi-aud h1 + p{
+  margin: 3px 0 0;
+  color: var(--aud-muted);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Tabs (coherentes con Sedes) */
+.sgi-aud .aud-tabs{
+  display:flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.sgi-aud .aud-tab{
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--aud-border);
+  background: var(--aud-bg);
+  color: var(--aud-ink);
+  font-weight: 600;
+  font-size: 12px;
+  text-decoration: none;
+}
+.sgi-aud .aud-tab.active{
+  background: var(--aud-primary-soft);
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+.sgi-aud .aud-tab:hover{
+  background: var(--aud-bg-soft);
+}
+
+/* Cards */
+.sgi-aud .aud-grid{ display:grid; gap: 12px; }
+.sgi-aud .cardx{
+  border-radius: 14px;
+  border: 1px solid var(--aud-border);
+  background: var(--aud-bg);
+  box-shadow: 0 8px 20px rgba(15,23,42,.06);
+}
+.sgi-aud .cardx-head{
+  padding: 12px 12px 8px;
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap: 10px;
+}
+.sgi-aud .cardx-head h3{
+  margin:0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--aud-ink);
+}
+.sgi-aud .cardx-head p{
+  margin: 3px 0 0;
+  font-size: 12px;
+  color: var(--aud-muted);
+}
+.sgi-aud .formx{
+  padding: 0 12px 12px;
+}
+
+/* Small badge */
+.sgi-aud .pill-soft{
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--aud-bg-soft);
+  border: 1px solid var(--aud-border-soft);
+  color: #475569;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+/* Sections spacing */
+.sgi-aud .aud-section-title{
+  margin: 14px 0 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--aud-muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.sgi-aud .help{
+  font-size: 12px;
+  color: var(--aud-muted);
+  margin-top: 4px;
+}
+
+/* Form grid: 2 columns responsive */
+.sgi-aud .gridx.aud-form{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items:end;
+}
+.sgi-aud .fg{ display:grid; gap: 6px; }
+.sgi-aud .fg.full{ grid-column: 1 / -1; }
+.sgi-aud .fg label{
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--aud-muted);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.sgi-aud .fg input,
+.sgi-aud .fg select,
+.sgi-aud .fg textarea{
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 7px 10px;
+  font-size: 12px;
+  background: #fff;
+}
+
+/* Tables */
+.sgi-aud .aud-table-wrap{
+  margin-top: 8px;
+  overflow: auto;
+}
+.sgi-aud .aud-table th{
+  background: #f3f4f6;
+  color: var(--aud-ink);
+}
+.sgi-aud .aud-table-items th,
+.sgi-aud .aud-table-items td{
+  padding: 10px 10px;
+}
+.sgi-aud .aud-table-items td:nth-child(2){ text-align:center; }
+.sgi-aud .aud-table-items td:nth-child(2) input{
+  width: 100%;
+  max-width: 88px;
+  text-align:center;
+  padding: 6px 8px;
+  border-radius: 10px;
+}
+
+/* Aires detalle */
+.sgi-aud .aud-eq-table th,
+.sgi-aud .aud-eq-table td{
+  padding: 10px 10px;
+  vertical-align: top;
+}
+.sgi-aud .aud-eq-table td input{
+  width: 100%;
+  min-width: 120px;
+  padding: 6px 8px;
+  border-radius: 10px;
+}
+.sgi-aud .aud-eq-table td:nth-child(4) input,
+.sgi-aud .aud-eq-table td:nth-child(8) input{ min-width: 88px; text-align:center; }
+.sgi-aud .aud-eq-table td:nth-child(6) input,
+.sgi-aud .aud-eq-table td:nth-child(7) input{ min-width: 140px; }
+.sgi-aud .aud-eq-table td:nth-child(9) input{ min-width: 220px; }
+.sgi-aud .aud-eq-table .eq-actions{ white-space: nowrap; text-align:right; }
+.sgi-aud .aud-eq-table .btn.xs.outline{ padding: 4px 8px; font-size: 11px; }
+
+/* History */
+.sgi-aud .aud-history{ font-size: 12px; }
+.sgi-aud .aud-history th,
+.sgi-aud .aud-history td{ padding: 8px 10px; }
+.sgi-aud .aud-history tbody tr:nth-child(even){ background: #f8fafc; }
+.sgi-aud .aud-history tbody tr:hover{ background: #f1f5f9; }
+.sgi-aud .aud-actions{ white-space: nowrap; text-align:right; }
+.sgi-aud .aud-history th:nth-child(2),
+.sgi-aud .aud-history td:nth-child(2){ width: 70px; text-align:center; }
+.sgi-aud .aud-history th:nth-child(6),
+.sgi-aud .aud-history td:nth-child(6){ width: 140px; }
+
+/* Botones mini en tablas (outline neutro + peligro discreto) */
+.sgi-aud .btn.xs.outline{
+  background: #fff;
+  border: 1px solid var(--aud-border);
+  color: var(--aud-ink);
+}
+.sgi-aud form .btn.xs.outline{
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+/* Chips (comparativa) */
+.sgi-aud .chip{
+  display:inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 11px;
+}
+.sgi-aud .chip.ok{ background:#dcfce7; color:#166534; }
+.sgi-aud .chip.warn{ background:#fef3c7; color:#92400e; }
+.sgi-aud .chip.bad{ background:#fee2e2; color:#b91c1c; }
+.sgi-aud .chip.na{ background:#e2e8f0; color:#475569; }
+
+/* Buttons refinements (menos agresivo que style.css) */
+.sgi-aud .btn-wide{ min-width: 180px; }
+.sgi-aud .outline-slate{ border-width: 1px !important; }
+.sgi-aud .outline-amber{ border-width: 1px !important; }
+
+.sgi-aud .formx-actions{ margin-top: 12px; display:flex; gap: 10px; flex-wrap: wrap; }
+.sgi-aud .formx-actions .btn{ min-height: 36px; }
+
+/* Responsive */
+@media (max-width: 860px){
+  .sgi-aud .gridx.aud-form{ grid-template-columns: 1fr; }
+}
+@media (max-width: 640px){
+  .sgi-aud .aud-h2{ font-size: 17px; }
+  .sgi-aud .aud-tab{ font-size: 11px; padding: 6px 10px; }
+  .sgi-aud .cardx-head{ padding: 10px; }
+  .sgi-aud .formx{ padding: 0 10px 10px; }
+}
