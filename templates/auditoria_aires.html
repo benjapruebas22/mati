@@ -20,7 +20,7 @@
       <div class="cardx-head">
         <div>
           <h3>Nuevo relevamiento</h3>
-          <p>Elegi sede y completa cantidades.</p>
+          <p>Elegi sede y cargá equipos (mismas columnas que “Sede &gt; Aires”).</p>
         </div>
         <span class="pill-soft">Carga</span>
       </div>
@@ -40,14 +40,14 @@
             </select>
           </div>
           <div class="fg">
-            <label>Deposito</label>
-            <select id="aud_deposito_aires" name="deposito" required>
-              <option value="">-- elegir deposito --</option>
+            <label>Deposito (opcional)</label>
+            <select id="aud_deposito_aires" name="deposito">
+              <option value="">-- sin deposito --</option>
               {% for d in depositos %}
                 <option value="{{ (d.codigo_local or '')|upper }}" data-sede="{{ (d.codigo_sede or '')|upper }}" data-codigo="{{ (d.codigo_local or '')|upper }}" {% if edit_row and (edit_row.deposito or '')|upper == (d.codigo_local or '')|upper %}selected{% endif %}>{{ d.codigo_sede }} - {{ d.codigo_local }}{% if d.descripcion %} · {{ d.descripcion }}{% endif %}</option>
               {% endfor %}
             </select>
-            <div class="help">Seleccion obligatoria para controlar por deposito.</div>
+            <div class="help">Usalo si querés identificar una zona/depósito. Si no, dejalo en blanco.</div>
           </div>
           <div class="fg">
             <label>Fecha</label>
@@ -59,30 +59,64 @@
           </div>
         </div>
 
-        <div class="aud-section-title">Items relevados</div>
+        <div class="aud-section-title">Equipos relevados</div>
+        <div class="help" style="margin-top:-2px;">1 fila = 1 equipo de aire.</div>
         <div class="aud-table-wrap">
-          <table class="table-soft aud-table aud-table-items">
+          <table class="table-soft aud-table aud-eq-table">
             <thead>
               <tr>
-                <th>Item</th>
-                <th>Cantidad relevada</th>
+                <th>Ambiente</th>
+                <th>Marca</th>
+                <th>Gas</th>
+                <th>Frigorías</th>
+                <th>Estado</th>
+                <th>Última limpieza</th>
+                <th>Último service</th>
+                <th>Frec. (meses)</th>
+                <th>Observaciones</th>
+                <th style="text-align:right;">Acción</th>
               </tr>
             </thead>
             <tbody>
-              {% for key, label in items %}
-                <tr>
-                  <td>{{ label }}</td>
-                  <td><input type="number" step="1" min="0" name="qty_{{ key }}" placeholder="" value="{{ edit_items.get(key, '') if edit_items else '' }}"></td>
+              {% if edit_equipos and edit_equipos|length > 0 %}
+                {% for e in edit_equipos %}
+                  <tr class="eq-row">
+                    <td><input type="text" name="eq_ambiente" value="{{ e.ambiente or '' }}" placeholder="Ej: Def 2 / D23"></td>
+                    <td><input type="text" name="eq_marca" value="{{ e.marca or '' }}" placeholder="Ej: Cardiff"></td>
+                    <td><input type="text" name="eq_gas" value="{{ e.gas or '' }}" placeholder="Ej: R410"></td>
+                    <td><input type="number" name="eq_frigorias" value="{{ e.frigorias if e.frigorias is not none else '' }}" placeholder="5000" min="0" step="1"></td>
+                    <td><input type="text" name="eq_estado" value="{{ e.estado or '' }}" placeholder="Operativo / Fuera de servicio"></td>
+                    <td><input type="date" name="eq_fecha_ultima_limpieza" value="{{ e.fecha_ultima_limpieza or '' }}"></td>
+                    <td><input type="date" name="eq_fecha_ultimo_service" value="{{ e.fecha_ultimo_service or '' }}"></td>
+                    <td><input type="number" name="eq_frecuencia_meses" value="{{ e.frecuencia_meses if e.frecuencia_meses is not none else '' }}" placeholder="6" min="0" step="1"></td>
+                    <td><input type="text" name="eq_observaciones" value="{{ e.observaciones or '' }}" placeholder=""></td>
+                    <td class="eq-actions">
+                      <button type="button" class="btn xs outline eq-remove">Quitar</button>
+                    </td>
+                  </tr>
+                {% endfor %}
+              {% else %}
+                <tr class="eq-row">
+                  <td><input type="text" name="eq_ambiente" value="" placeholder="Ej: Def 2 / D23"></td>
+                  <td><input type="text" name="eq_marca" value="" placeholder="Ej: Cardiff"></td>
+                  <td><input type="text" name="eq_gas" value="" placeholder="Ej: R410"></td>
+                  <td><input type="number" name="eq_frigorias" value="" placeholder="5000" min="0" step="1"></td>
+                  <td><input type="text" name="eq_estado" value="" placeholder="Operativo / Fuera de servicio"></td>
+                  <td><input type="date" name="eq_fecha_ultima_limpieza" value=""></td>
+                  <td><input type="date" name="eq_fecha_ultimo_service" value=""></td>
+                  <td><input type="number" name="eq_frecuencia_meses" value="" placeholder="6" min="0" step="1"></td>
+                  <td><input type="text" name="eq_observaciones" value="" placeholder=""></td>
+                  <td class="eq-actions">
+                    <button type="button" class="btn xs outline eq-remove">Quitar</button>
+                  </td>
                 </tr>
-              {% endfor %}
-              {% if allow_otros %}
-              <tr>
-                <td><input type="text" name="otro_item" placeholder="Otro item" value="{{ edit_items.get('otro_item', '') if edit_items else '' }}"></td>
-                <td><input type="number" step="1" min="0" name="otro_qty" placeholder="" value="{{ edit_items.get('otro_qty', '') if edit_items else '' }}"></td>
-              </tr>
               {% endif %}
             </tbody>
           </table>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;">
+          <button type="button" class="btn outline-slate btn-wide" id="eq_add">+ Agregar equipo</button>
+          <span class="help" style="margin:0;">Tip: si no sabés el gas/service, dejalo vacío y completalo después.</span>
         </div>
 
         <div class="aud-section-title">Observaciones</div>
@@ -163,7 +197,7 @@
 
       const base = document.createElement("option");
       base.value = "";
-      base.textContent = "-- elegir deposito --";
+      base.textContent = "-- sin deposito --";
       depSel.appendChild(base);
 
       let count = 0;
@@ -194,6 +228,55 @@
   })();
 </script>
 
+<template id="eq_row_tpl">
+  <tr class="eq-row">
+    <td><input type="text" name="eq_ambiente" value="" placeholder="Ej: Def 2 / D23"></td>
+    <td><input type="text" name="eq_marca" value="" placeholder="Ej: Cardiff"></td>
+    <td><input type="text" name="eq_gas" value="" placeholder="Ej: R410"></td>
+    <td><input type="number" name="eq_frigorias" value="" placeholder="5000" min="0" step="1"></td>
+    <td><input type="text" name="eq_estado" value="" placeholder="Operativo / Fuera de servicio"></td>
+    <td><input type="date" name="eq_fecha_ultima_limpieza" value=""></td>
+    <td><input type="date" name="eq_fecha_ultimo_service" value=""></td>
+    <td><input type="number" name="eq_frecuencia_meses" value="" placeholder="6" min="0" step="1"></td>
+    <td><input type="text" name="eq_observaciones" value="" placeholder=""></td>
+    <td class="eq-actions">
+      <button type="button" class="btn xs outline eq-remove">Quitar</button>
+    </td>
+  </tr>
+</template>
+
+<script>
+  (function(){
+    const tbody = document.querySelector(".aud-eq-table tbody");
+    const addBtn = document.getElementById("eq_add");
+    const tpl = document.getElementById("eq_row_tpl");
+    if (!tbody || !addBtn || !tpl) return;
+
+    function bindRow(row){
+      const rm = row.querySelector(".eq-remove");
+      if (!rm) return;
+      rm.addEventListener("click", function(){
+        const rows = tbody.querySelectorAll("tr");
+        if (rows.length <= 1){
+          row.querySelectorAll("input,select,textarea").forEach(el => { el.value = ""; });
+          return;
+        }
+        row.remove();
+      });
+    }
+
+    tbody.querySelectorAll("tr").forEach(bindRow);
+
+    addBtn.addEventListener("click", function(){
+      const frag = tpl.content.cloneNode(true);
+      tbody.appendChild(frag);
+      bindRow(tbody.lastElementChild);
+      const focus = tbody.lastElementChild && tbody.lastElementChild.querySelector("input[name='eq_ambiente']");
+      if (focus) focus.focus();
+    });
+  })();
+</script>
+
 <style>
   .aud-shell{max-width:1040px;margin:0 auto;padding:10px 12px 18px;display:grid;gap:12px}
   .aud-top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
@@ -211,10 +294,16 @@
   .fg label{font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase}
   .fg input,.fg select,.fg textarea{border:1px solid #cbd5e1;border-radius:10px;padding:8px 10px;font-size:12px;background:#fff}
   .aud-section-title{margin:12px 0 6px;font-size:11px;font-weight:600;color:#64748b;text-transform:uppercase;letter-spacing:.04em}
-  .aud-table-wrap{margin-top:8px}
-  .aud-table-items th,.aud-table-items td{padding:10px 10px}
-  .aud-table-items td:nth-child(2){text-align:center}
-  .aud-table-items td:nth-child(2) input{width:100%;max-width:96px;text-align:center;padding:6px 8px;border-radius:10px}
+  .aud-table-wrap{margin-top:8px;overflow:auto}
+  .aud-eq-table th,.aud-eq-table td{padding:10px 10px;vertical-align:top}
+  .aud-eq-table td input{width:100%;min-width:120px;padding:6px 8px;border-radius:10px}
+  .aud-eq-table td:nth-child(4) input,
+  .aud-eq-table td:nth-child(8) input{min-width:88px;text-align:center}
+  .aud-eq-table td:nth-child(6) input,
+  .aud-eq-table td:nth-child(7) input{min-width:140px}
+  .aud-eq-table td:nth-child(10) input{min-width:220px}
+  .aud-eq-table .eq-actions{white-space:nowrap;text-align:right}
+  .aud-eq-table .btn.xs.outline{padding:4px 8px;font-size:11px}
   .aud-table th{background:#f3f4f6;color:#334155}
   .aud-history th,.aud-history td{padding:8px 10px}
   .aud-history tbody tr:nth-child(even){background:#f8fafc}

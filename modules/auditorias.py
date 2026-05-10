@@ -217,12 +217,31 @@ def register_auditorias(app, get_db):
             )
         """)
         con.execute("""
+            CREATE TABLE IF NOT EXISTS auditoria_aires_equipos(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                auditoria_id INTEGER NOT NULL,
+                ambiente TEXT,
+                marca TEXT,
+                gas TEXT,
+                frigorias INTEGER,
+                estado TEXT,
+                fecha_ultima_limpieza TEXT,
+                fecha_ultimo_service TEXT,
+                frecuencia_meses INTEGER,
+                observaciones TEXT
+            )
+        """)
+        con.execute("""
             CREATE INDEX IF NOT EXISTS idx_auditoria_aires_fecha_sede_dep
             ON auditoria_aires(fecha, sede_codigo, deposito)
         """)
         con.execute("""
             CREATE INDEX IF NOT EXISTS idx_auditoria_aires_items_auditoria
             ON auditoria_aires_items(auditoria_id)
+        """)
+        con.execute("""
+            CREATE INDEX IF NOT EXISTS idx_auditoria_aires_equipos_auditoria
+            ON auditoria_aires_equipos(auditoria_id)
         """)
 
     def ensure_auditoria_luminarias_tables(con):
@@ -639,6 +658,7 @@ def register_auditorias(app, get_db):
 
         edit_row = None
         edit_items = {}
+        edit_equipos = []
         auditoria_id_raw = (request.args.get("edit") or "").strip()
         auditoria_id = int(auditoria_id_raw) if auditoria_id_raw.isdigit() else None
         if auditoria_id:
@@ -647,19 +667,25 @@ def register_auditorias(app, get_db):
                 rows = con.execute("SELECT item, cantidad FROM auditoria_aires_items WHERE auditoria_id = ?", (auditoria_id,)).fetchall()
                 for r in rows:
                     edit_items[(r["item"] or "").strip()] = r["cantidad"]
+                edit_equipos = con.execute("""
+                    SELECT *
+                    FROM auditoria_aires_equipos
+                    WHERE auditoria_id = ?
+                    ORDER BY id
+                """, (auditoria_id,)).fetchall()
 
         if request.method == "POST":
             fecha = (request.form.get("fecha") or today).strip() or today
             sede_codigo = (request.form.get("sede_codigo") or "").strip().upper()
-            deposito = (request.form.get("deposito") or "").strip().upper()
+            deposito = (request.form.get("deposito") or "").strip().upper() or None
             responsable = (request.form.get("responsable") or "").strip()
             observaciones = (request.form.get("observaciones") or "").strip()
 
             auditoria_id_raw = (request.form.get("auditoria_id") or "").strip()
             auditoria_id = int(auditoria_id_raw) if auditoria_id_raw.isdigit() else None
 
-            if not sede_codigo or not deposito:
-                flash("Completa sede y deposito para guardar el relevamiento.", "warning")
+            if not sede_codigo:
+                flash("Completa sede para guardar el relevamiento.", "warning")
                 return redirect(url_for("auditoria_aires", edit=auditoria_id) if auditoria_id else url_for("auditoria_aires"))
 
             if auditoria_id:
@@ -669,6 +695,7 @@ def register_auditorias(app, get_db):
                     WHERE id = ?
                 """, (fecha, sede_codigo, deposito, responsable, observaciones, auditoria_id))
                 cur.execute("DELETE FROM auditoria_aires_items WHERE auditoria_id = ?", (auditoria_id,))
+                cur.execute("DELETE FROM auditoria_aires_equipos WHERE auditoria_id = ?", (auditoria_id,))
             else:
                 cur.execute("""
                     INSERT INTO auditoria_aires (fecha, sede_codigo, deposito, responsable, observaciones)
@@ -676,18 +703,74 @@ def register_auditorias(app, get_db):
                 """, (fecha, sede_codigo, deposito, responsable, observaciones))
                 auditoria_id = cur.lastrowid
 
-            for key, label in items:
-                qty_raw = (request.form.get(f"qty_{key}") or "").strip()
-                if qty_raw == "":
+            # Equipos relevados (detalle)
+            ambientes = request.form.getlist("eq_ambiente")
+            marcas = request.form.getlist("eq_marca")
+            gases = request.form.getlist("eq_gas")
+            frigorias_list = request.form.getlist("eq_frigorias")
+            estados = request.form.getlist("eq_estado")
+            limpiezas = request.form.getlist("eq_fecha_ultima_limpieza")
+            services = request.form.getlist("eq_fecha_ultimo_service")
+            frecs = request.form.getlist("eq_frecuencia_meses")
+            obs_list = request.form.getlist("eq_observaciones")
+
+            total_rows = max(
+                len(ambientes), len(marcas), len(gases), len(frigorias_list),
+                len(estados), len(limpiezas), len(services), len(frecs), len(obs_list),
+            )
+            equipos_insertados = 0
+            for i in range(total_rows):
+                ambiente = (ambientes[i] if i < len(ambientes) else "").strip() or None
+                marca = (marcas[i] if i < len(marcas) else "").strip() or None
+                gas = (gases[i] if i < len(gases) else "").strip() or None
+                estado = (estados[i] if i < len(estados) else "").strip() or None
+                fecha_ultima_limpieza = (limpiezas[i] if i < len(limpiezas) else "").strip() or None
+                fecha_ultimo_service = (services[i] if i < len(services) else "").strip() or None
+                observaciones_eq = (obs_list[i] if i < len(obs_list) else "").strip() or None
+
+                frig_raw = (frigorias_list[i] if i < len(frigorias_list) else "").strip()
+                frigorias = None
+                if frig_raw != "":
+                    try:
+                        frigorias = int(float(frig_raw))
+                    except Exception:
+                        frigorias = None
+
+                frec_raw = (frecs[i] if i < len(frecs) else "").strip()
+                frecuencia_meses = None
+                if frec_raw != "":
+                    try:
+                        frecuencia_meses = int(float(frec_raw))
+                    except Exception:
+                        frecuencia_meses = None
+
+                if not any([
+                    ambiente, marca, gas, frig_raw, estado,
+                    fecha_ultima_limpieza, fecha_ultimo_service, frec_raw, observaciones_eq,
+                ]):
                     continue
+
+                cur.execute("""
+                    INSERT INTO auditoria_aires_equipos (
+                        auditoria_id, ambiente, marca, gas, frigorias, estado,
+                        fecha_ultima_limpieza, fecha_ultimo_service, frecuencia_meses, observaciones
+                    ) VALUES (?,?,?,?,?,?,?,?,?,?)
+                """, (
+                    auditoria_id, ambiente, marca, gas, frigorias, estado,
+                    fecha_ultima_limpieza, fecha_ultimo_service, frecuencia_meses, observaciones_eq
+                ))
+                equipos_insertados += 1
+
+            # Back-compat: guardamos total en la tabla de items (1 fila)
+            if equipos_insertados > 0:
                 try:
-                    qty = float(qty_raw)
+                    label_total = items[0][1]
                 except Exception:
-                    qty = 0
+                    label_total = "Equipos de aire"
                 cur.execute("""
                     INSERT INTO auditoria_aires_items (auditoria_id, item, cantidad)
                     VALUES (?,?,?)
-                """, (auditoria_id, label, qty))
+                """, (auditoria_id, label_total, float(equipos_insertados)))
 
             con.commit()
             flash("Relevamiento de aires guardado." if not auditoria_id_raw else "Relevamiento de aires actualizado.", "success")
@@ -710,6 +793,7 @@ def register_auditorias(app, get_db):
             auditorias=auditorias,
             edit_row=edit_row,
             edit_items=edit_items,
+            edit_equipos=edit_equipos,
             allow_otros=False,
         )
 
@@ -829,6 +913,7 @@ def register_auditorias(app, get_db):
         con.row_factory = sqlite3.Row
         ensure_auditoria_aires_tables(con)
         con.execute("DELETE FROM auditoria_aires_items WHERE auditoria_id = ?", (aid,))
+        con.execute("DELETE FROM auditoria_aires_equipos WHERE auditoria_id = ?", (aid,))
         con.execute("DELETE FROM auditoria_aires WHERE id = ?", (aid,))
         con.commit()
         con.close()
@@ -859,10 +944,14 @@ def register_auditorias(app, get_db):
             oficiales_sql = """
                 SELECT
                     sede_codigo AS sede_codigo,
-                    ambiente_codigo AS deposito_codigo,
+                    CASE
+                      WHEN UPPER(COALESCE(TRIM(ambiente),'')) GLOB 'D[0-9][0-9]*'
+                        THEN UPPER(SUBSTR(TRIM(ambiente), 1, 3))
+                      ELSE 'GENERAL'
+                    END AS deposito_codigo,
                     COUNT(*) AS total
-                FROM aires_sede
-                GROUP BY sede_codigo, ambiente_codigo
+                FROM aires_mpd
+                GROUP BY sede_codigo, deposito_codigo
             """
             tipo_label = "Aires"
         elif tipo == "luminarias":
@@ -985,7 +1074,11 @@ def register_auditorias(app, get_db):
             if q_deposito and depo_code != q_deposito:
                 continue
 
-            oficial = oficiales_map.get((sede, depo_code), {k: 0.0 for k in keys})
+            oficial = oficiales_map.get((sede, depo_code))
+            if oficial is None and tipo == "aires":
+                oficial = oficiales_map.get((sede, "GENERAL"))
+            if oficial is None:
+                oficial = {k: 0.0 for k in keys}
             real = items_by_auditoria.get(a["id"], {})
             detalle = []
             for key, label in item_pairs:

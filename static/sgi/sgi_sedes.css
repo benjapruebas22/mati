@@ -237,6 +237,24 @@
   font-weight: 600 !important;
 }
 
+.sgi-sedes .h-actions .btn.btn-resumen-sedes {
+  background: #eef7f1 !important;
+  border-color: #b7d8c1 !important;
+  color: #456b52 !important;
+}
+.sgi-sedes .h-actions .btn.btn-resumen-sedes:hover {
+  background: #e3f1e7 !important;
+}
+
+.sgi-sedes .ptab.tone-resumen-sedes {
+  background: #eef7f1 !important;
+  border-color: #b7d8c1 !important;
+  color: #456b52 !important;
+}
+.sgi-sedes .ptab.tone-resumen-sedes:hover {
+  background: #e3f1e7 !important;
+}
+
 .sgi-sedes .sede-nav {
   border-top: 1px solid var(--sedes-border);
   padding-top: 10px;
