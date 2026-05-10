@@ -57,30 +57,21 @@
                style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;">
       </div>
 
-      <div style="display:flex;gap:12px;">
-        <div style="flex:1;">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:160px;">
           <label>Marca</label>
           <input type="text" name="marca"
                  value="{{ aire.marca if aire else '' }}"
                  style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;">
         </div>
-        <div style="flex:1;">
-          <label>Modelo</label>
-          <input type="text" name="modelo"
-                 value="{{ aire.modelo if aire else '' }}"
+        <div style="flex:1;min-width:140px;">
+          <label>Gas</label>
+          <input type="text" name="gas"
+                 placeholder="Ej: R410"
+                 value="{{ aire.gas if aire else '' }}"
                  style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;">
         </div>
-      </div>
-
-      <div style="display:flex;gap:12px;">
-        <div style="flex:1;">
-          <label>Tipo</label>
-          <input type="text" name="tipo"
-                 placeholder="Split, ventana, central..."
-                 value="{{ aire.tipo if aire else '' }}"
-                 style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;">
-        </div>
-        <div style="flex:1;">
+        <div style="flex:1;min-width:140px;">
           <label>Frigorías</label>
           <input type="text" name="frigorias"
                  value="{{ aire.frigorias if aire else '' }}"
@@ -101,26 +92,51 @@
         </select>
       </div>
 
-      <div style="display:flex;gap:12px;">
-        <div style="flex:1;">
-          <label>Fecha instalación</label>
-          <input type="date" name="fecha_instalacion"
-                 value="{{ aire.fecha_instalacion if aire and aire.fecha_instalacion else '' }}"
-                 style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;">
-        </div>
-        <div style="flex:1;">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:180px;">
           <label>Última limpieza</label>
           <input type="date" name="fecha_ultima_limpieza"
                  value="{{ aire.fecha_ultima_limpieza if aire and aire.fecha_ultima_limpieza else '' }}"
                  style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;">
         </div>
-        <div style="flex:1;">
+        <div style="flex:1;min-width:180px;">
+          <label>Último service</label>
+          <input type="date" name="fecha_ultimo_service"
+                 value="{{ aire.fecha_ultimo_service if aire and aire.fecha_ultimo_service else '' }}"
+                 style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;">
+        </div>
+        <div style="flex:1;min-width:180px;">
           <label>Frecuencia (meses)</label>
           <input type="number" min="0" name="frecuencia_meses"
                  value="{{ aire.frecuencia_meses if aire and aire.frecuencia_meses else '' }}"
                  style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;">
         </div>
       </div>
+
+      <details style="border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px;background:#ffffff;">
+        <summary style="cursor:pointer;font-weight:600;color:#334155;">Datos opcionales</summary>
+        <div style="margin-top:10px;display:flex;gap:12px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:180px;">
+            <label>Modelo</label>
+            <input type="text" name="modelo"
+                   value="{{ aire.modelo if aire else '' }}"
+                   style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;">
+          </div>
+          <div style="flex:1;min-width:180px;">
+            <label>Tipo</label>
+            <input type="text" name="tipo"
+                   placeholder="Split, ventana, central..."
+                   value="{{ aire.tipo if aire else '' }}"
+                   style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;">
+          </div>
+          <div style="flex:1;min-width:180px;">
+            <label>Fecha instalación</label>
+            <input type="date" name="fecha_instalacion"
+                   value="{{ aire.fecha_instalacion if aire and aire.fecha_instalacion else '' }}"
+                   style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;">
+          </div>
+        </div>
+      </details>
 
       <div>
         <label>Observaciones</label>

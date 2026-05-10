@@ -972,16 +972,23 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 sede_codigo TEXT NOT NULL,   -- S01, S02, S03...
                 ambiente    TEXT,            -- Ej: Mesa de entrada, Planta alta, Oficina 3
                 marca       TEXT,
+                gas         TEXT,            -- Ej: R410, R32, etc.
                 modelo      TEXT,
                 tipo        TEXT,            -- Split, ventana, central, etc.
                 frigorias   INTEGER,
                 estado      TEXT,            -- OK, pendiente service, no funciona, etc.
                 fecha_instalacion      TEXT,
                 fecha_ultima_limpieza  TEXT,
+                fecha_ultimo_service   TEXT,
                 frecuencia_meses       INTEGER,    -- cada cuántos meses limpiás
                 observaciones          TEXT
             );
         """)
+        cols = [r[1] for r in cur.execute("PRAGMA table_info(aires_mpd)").fetchall()]
+        if "gas" not in cols:
+            cur.execute("ALTER TABLE aires_mpd ADD COLUMN gas TEXT")
+        if "fecha_ultimo_service" not in cols:
+            cur.execute("ALTER TABLE aires_mpd ADD COLUMN fecha_ultimo_service TEXT")
         con.commit()
 
 
@@ -5930,9 +5937,9 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         """).fetchall()
 
         cur.execute("""
-            SELECT id, sede_codigo, ambiente, marca, modelo, tipo,
+            SELECT id, sede_codigo, ambiente, marca, gas, modelo, tipo,
                    frigorias, estado, fecha_instalacion,
-                   fecha_ultima_limpieza, frecuencia_meses, observaciones
+                   fecha_ultima_limpieza, fecha_ultimo_service, frecuencia_meses, observaciones
             FROM aires_mpd
             WHERE sede_codigo = ?
             ORDER BY ambiente
@@ -5972,26 +5979,28 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         if request.method == "POST":
             ambiente = request.form.get("ambiente", "").strip()
             marca = request.form.get("marca", "").strip()
+            gas = request.form.get("gas", "").strip()
             modelo = request.form.get("modelo", "").strip()
             tipo = request.form.get("tipo", "").strip()
             frigorias = request.form.get("frigorias", "").strip()
             estado = request.form.get("estado", "").strip()
             fecha_instalacion = request.form.get("fecha_instalacion") or None
             fecha_ultima_limpieza = request.form.get("fecha_ultima_limpieza") or None
+            fecha_ultimo_service = request.form.get("fecha_ultimo_service") or None
             frecuencia_meses = request.form.get("frecuencia_meses") or None
             observaciones = request.form.get("observaciones", "").strip()
 
             cur.execute("""
                 INSERT INTO aires_mpd (
-                    sede_codigo, ambiente, marca, modelo, tipo, frigorias,
+                    sede_codigo, ambiente, marca, gas, modelo, tipo, frigorias,
                     estado, fecha_instalacion, fecha_ultima_limpieza,
-                    frecuencia_meses, observaciones
+                    fecha_ultimo_service, frecuencia_meses, observaciones
                 )
-                VALUES (?,?,?,?,?,?,?,?,?,?,?)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
             """, (
-                codigo, ambiente, marca, modelo, tipo, frigorias,
+                codigo, ambiente, marca, gas, modelo, tipo, frigorias,
                 estado, fecha_instalacion, fecha_ultima_limpieza,
-                frecuencia_meses, observaciones
+                fecha_ultimo_service, frecuencia_meses, observaciones
             ))
             con.commit()
             return redirect(url_for("sede_aires", codigo=codigo))
@@ -6017,12 +6026,14 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         if request.method == "POST":
             ambiente = request.form.get("ambiente", "").strip()
             marca = request.form.get("marca", "").strip()
+            gas = request.form.get("gas", "").strip()
             modelo = request.form.get("modelo", "").strip()
             tipo = request.form.get("tipo", "").strip()
             frigorias = request.form.get("frigorias", "").strip()
             estado = request.form.get("estado", "").strip()
             fecha_instalacion = request.form.get("fecha_instalacion") or None
             fecha_ultima_limpieza = request.form.get("fecha_ultima_limpieza") or None
+            fecha_ultimo_service = request.form.get("fecha_ultimo_service") or None
             frecuencia_meses = request.form.get("frecuencia_meses") or None
             observaciones = request.form.get("observaciones", "").strip()
 
@@ -6030,19 +6041,21 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 UPDATE aires_mpd
                    SET ambiente = ?,
                        marca = ?,
+                       gas = ?,
                        modelo = ?,
                        tipo = ?,
                        frigorias = ?,
                        estado = ?,
                        fecha_instalacion = ?,
                        fecha_ultima_limpieza = ?,
+                       fecha_ultimo_service = ?,
                        frecuencia_meses = ?,
                        observaciones = ?
                  WHERE id = ? AND sede_codigo = ?
             """, (
-                ambiente, marca, modelo, tipo, frigorias, estado,
+                ambiente, marca, gas, modelo, tipo, frigorias, estado,
                 fecha_instalacion, fecha_ultima_limpieza,
-                frecuencia_meses, observaciones,
+                fecha_ultimo_service, frecuencia_meses, observaciones,
                 aid, codigo
             ))
             con.commit()

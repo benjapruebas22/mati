@@ -3120,12 +3120,16 @@
     grid-template-columns: 1fr;
   }
 
-  /* Modo Aires: plano arriba y panel abajo (evita tabla comprimida al lado del plano) */
-  .grid.grid-aires {
+  /* Modo Operativo (inventario/aires/luminarias/matafuegos): plano arriba + panel abajo */
+  .grid.grid-stack {
     grid-template-columns: 1fr;
   }
-  .grid.grid-aires .panel-card {
+  .grid.grid-stack .panel-card {
     grid-column: 1 / -1;
+  }
+  .grid.grid-stack .panel-body.scrollable {
+    max-height: none;
+    overflow: visible;
   }
 
   /* Botonera del panel operativo arriba del plano */
@@ -8130,7 +8134,7 @@
 
 
 
-  <div class="grid{% if tab == 'aires' %} grid-aires{% endif %}">
+  <div class="grid{% if tab in ['mobiliario','aires','luminarias','matafuegos'] %} grid-stack{% endif %}">
 
     <!-- PANEL BOTONES (ARRIBA DEL PLANO) -->
 
@@ -9064,7 +9068,7 @@
 
 
 
-                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:90px;">Puesto</th>
+                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:140px;">Puesto de trabajo</th>
 
 
 

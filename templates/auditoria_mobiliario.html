@@ -75,15 +75,23 @@
                   <td><input type="number" step="1" min="0" name="qty_{{ key }}" placeholder="" value="{{ edit_items.get(key, '') if edit_items else '' }}"></td>
                 </tr>
               {% endfor %}
-              {% if allow_otros %}
-              <tr>
-                <td><input type="text" name="otro_item" placeholder="Otro item" value="{{ edit_items.get('otro_item', '') if edit_items else '' }}"></td>
-                <td><input type="number" step="1" min="0" name="otro_qty" placeholder="" value="{{ edit_items.get('otro_qty', '') if edit_items else '' }}"></td>
-              </tr>
-              {% endif %}
             </tbody>
           </table>
         </div>
+
+        {% if allow_otros %}
+          <div class="aud-section-title">Otro item (opcional)</div>
+          <div style="display:grid;grid-template-columns:minmax(0,1fr) 160px;gap:10px;align-items:end;">
+            <div class="fg">
+              <label>Descripción</label>
+              <input type="text" name="otro_item" placeholder="Ej: Bancas / sillones" value="{{ edit_items.get('otro_item', '') if edit_items else '' }}">
+            </div>
+            <div class="fg">
+              <label>Cantidad</label>
+              <input type="number" step="1" min="0" name="otro_qty" placeholder="" value="{{ edit_items.get('otro_qty', '') if edit_items else '' }}">
+            </div>
+          </div>
+        {% endif %}
 
         <div class="aud-section-title">Observaciones</div>
         <div class="fg full">

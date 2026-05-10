@@ -13,17 +13,17 @@ def register_auditorias(app, get_db):
         ("silla_fija", "Sillas fijas"),
         ("armario_alto", "Armarios altos"),
         ("biblioteca_baja", "Bibliotecas bajas"),
-        ("otros", "Otros (bancas, sillones, etc.)"),
+        ("otros", "Otros"),
     ]
     AIRES_ITEM_PAIRS = [
         ("total", "Equipos de aire"),
     ]
     LUMINARIAS_ITEM_PAIRS = [
-        ("tubo_fria", "Tubo fria"),
-        ("tubo_calido", "Tubo calida"),
+        ("tubo_fria", "Tubo frío"),
+        ("tubo_calido", "Tubo cálido"),
         ("foco", "Foco"),
         ("panel", "Panel"),
-        ("puestos_trabajo", "Puestos de trabajo"),
+        ("puestos_trabajo", "Puesto de trabajo"),
         ("otros", "Otros"),
     ]
     OPERATIVA_RUBROS = [
