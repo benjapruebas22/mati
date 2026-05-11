@@ -586,6 +586,9 @@
     <div class="top-actions">
       {% if current_user %}
       <span class="pill">{{ current_user.full_name }}</span>
+      {% if (current_user.username or '')|lower == 'mcalderari' %}
+      <a class="btn ghost" href="{{ url_for('album_mundial_home') }}" title="Acceso privado">Álbum Mundial</a>
+      {% endif %}
       <a class="btn ghost" href="{{ url_for('password_change') }}">Cambiar clave</a>
       <a class="btn ghost" href="{{ url_for('logout') }}">Salir</a>
       {% endif %}

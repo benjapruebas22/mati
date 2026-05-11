@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block extra_head %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ url_for('static', filename='album_mundial/album_mundial.css', v='2026-05-11-01') }}">
+{% endblock %}
+{% block content %}
+<section class="album-2026">
+  <style>
+    /* Módulo privado: sin navegación institucional */
+    .topbar{ display:none !important; }
+    main.container{ padding-top: 18px; }
+  </style>
+
+  <div class="am-shell">
+    <header class="am-head">
+      <div class="am-title">
+        <div class="am-kicker">Tracker privado</div>
+        <h1>Álbum Mundial 2026</h1>
+        <p>Control rápido por país. Click en cada número: Falta → Tiene → Repetida.</p>
+      </div>
+      <div class="am-actions">
+        <button class="am-btn" type="button" id="amCopyMissing">Copiar faltantes</button>
+        <button class="am-btn" type="button" id="amCopyDup">Copiar repetidas</button>
+        <a class="am-link" href="{{ url_for('dashboard') }}">Volver</a>
+      </div>
+    </header>
+
+    <div class="am-kpis">
+      <div class="am-kpi">
+        <div class="k">Total</div>
+        <div class="v" id="amTotal">{{ totals.total }}</div>
+      </div>
+      <div class="am-kpi">
+        <div class="k">Tiene</div>
+        <div class="v" id="amTiene">{{ totals.tiene }}</div>
+      </div>
+      <div class="am-kpi">
+        <div class="k">Faltan</div>
+        <div class="v" id="amFaltan">{{ totals.faltan }}</div>
+      </div>
+      <div class="am-kpi">
+        <div class="k">Repetidas</div>
+        <div class="v" id="amRepetidas">{{ totals.repetidas }}</div>
+      </div>
+      <div class="am-kpi">
+        <div class="k">Avance</div>
+        <div class="v" id="amPct">{{ totals.pct }}%</div>
+      </div>
+      <div class="am-kpi">
+        <div class="k">Países completos</div>
+        <div class="v" id="amCompletos">{{ totals.completos }}</div>
+      </div>
+    </div>
+
+    <div class="am-progress">
+      <div class="am-progress-bar">
+        <div class="am-progress-fill" id="amProgressFill" style="width: {{ totals.pct }}%"></div>
+      </div>
+      <div class="am-progress-meta">
+        <span id="amProgressText">{{ totals.tiene + totals.repetidas }} / {{ totals.total }}</span>
+        <span id="amProgressPct">{{ totals.pct }}%</span>
+      </div>
+    </div>
+
+    <div class="am-filters">
+      <div class="am-field">
+        <label for="amSearch">Buscar</label>
+        <input id="amSearch" type="search" placeholder="País…">
+      </div>
+      <div class="am-field">
+        <label for="amView">Ver</label>
+        <select id="amView">
+          <option value="all">Todos</option>
+          <option value="missing">Solo faltantes</option>
+          <option value="dup">Solo repetidas</option>
+          <option value="complete">Países completos</option>
+          <option value="incomplete">Países incompletos</option>
+        </select>
+      </div>
+      <div class="am-field">
+        <label for="amSort">Ordenar</label>
+        <select id="amSort">
+          <option value="order">Orden original</option>
+          <option value="name">Nombre</option>
+          <option value="most">Más completos</option>
+          <option value="least">Más faltantes</option>
+          <option value="dup">Más repetidas</option>
+        </select>
+      </div>
+      <button class="am-btn am-btn-ghost" type="button" id="amReset">Reset</button>
+    </div>
+
+    <div class="am-countries" id="amCountries">
+      {% for p in paises %}
+      <article class="am-country {% if p.completo %}is-complete{% endif %}" data-pais-id="{{ p.id }}">
+        <div class="am-country-head">
+          <div class="am-flag" aria-hidden="true">{{ (p.bandera or p.codigo[:2]) }}</div>
+          <button type="button" class="am-country-name" data-open-pais="{{ p.id }}">
+            {{ p.nombre }}
+          </button>
+
+          <div class="am-country-stats">
+            <span class="am-pill ok"><strong data-role="tiene">{{ p.tiene }}</strong> Tiene</span>
+            <span class="am-pill miss"><strong data-role="faltan">{{ p.faltan }}</strong> Faltan</span>
+            <span class="am-pill dup"><strong data-role="rep">{{ p.repetidas }}</strong> Rep.</span>
+          </div>
+
+          <div class="am-country-right">
+            <div class="am-mini">
+              <div class="am-mini-bar">
+                <div class="am-mini-fill" data-role="pct-fill" style="width: {{ p.pct }}%"></div>
+              </div>
+              <div class="am-mini-pct"><span data-role="pct">{{ p.pct }}</span>%</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="am-grid" role="list" aria-label="Figuritas {{ p.nombre }}">
+          {% for f in p.figuritas %}
+          {% set st = f.estado %}
+          {% set st_label = 'Falta' if st == 0 else ('Tiene' if st == 1 else 'Repetida') %}
+          <button
+            type="button"
+            class="am-chip st-{{ st }}"
+            data-num="{{ f.numero }}"
+            data-state="{{ st }}"
+            title="Figurita #{{ f.numero }} · {{ p.nombre }} · {{ (f.nombre or '-') }} · Estado: {{ st_label }}"
+          >
+            {{ f.numero }}
+          </button>
+          {% endfor %}
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Panel lateral -->
+  <div class="am-side" id="amSide" aria-hidden="true">
+    <div class="am-side-card" role="dialog" aria-modal="true" aria-label="Detalle país">
+      <header class="am-side-head">
+        <div>
+          <div class="am-side-kicker" id="amSideCode"></div>
+          <h2 id="amSideTitle">País</h2>
+          <div class="am-side-sub" id="amSideSub"></div>
+        </div>
+        <button class="am-x" type="button" id="amSideClose" aria-label="Cerrar">×</button>
+      </header>
+      <div class="am-side-body">
+        <div class="am-side-kpis">
+          <span class="am-pill ok"><strong id="amSideTiene">0</strong> Tiene</span>
+          <span class="am-pill miss"><strong id="amSideFaltan">0</strong> Faltan</span>
+          <span class="am-pill dup"><strong id="amSideRep">0</strong> Rep.</span>
+        </div>
+
+        <div class="am-side-tablewrap">
+          <table class="am-table" id="amSideTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Nombre</th>
+                <th>Tipo</th>
+                <th>Posición</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="am-side-foot">
+          <div class="am-help">Tip: editá y salí del campo para guardar.</div>
+          <button class="am-btn am-btn-ghost" type="button" id="amSideDone">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.__ALBUM_MUNDIAL__ = {
+      paises: {{ paises|tojson }},
+      totals: {{ totals|tojson }},
+      endpoints: {
+        toggle: "{{ url_for('album_mundial_toggle') }}",
+        update: "{{ url_for('album_mundial_update_figurita') }}"
+      }
+    };
+  </script>
+  <script src="{{ url_for('static', filename='album_mundial/album_mundial.js', v='2026-05-11-01') }}"></script>
+</section>
+{% endblock %}
+

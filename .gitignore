@@ -9,6 +9,8 @@ env/
 # Base de Datos y Temporales
 mpd.db
 mpd.db-journal
+album_mundial_2026.db
+album_mundial_2026.db-journal
 _obsoleto/
 tmp/
 *.log
