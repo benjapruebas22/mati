@@ -34,6 +34,30 @@
   const elCopyMissing = document.getElementById("amCopyMissing");
   const elCopyDup = document.getElementById("amCopyDup");
 
+  const elOpenImportList = document.getElementById("amOpenImportList");
+  const elOpenImportMulti = document.getElementById("amOpenImportMulti");
+
+  const elImportListModal = document.getElementById("amImportListModal");
+  const elImportListClose = document.getElementById("amImportListClose");
+  const elImportListCancel = document.getElementById("amImportListCancel");
+  const elImportListPreview = document.getElementById("amImportListPreview");
+  const elImportListApply = document.getElementById("amImportListApply");
+  const elImportListCountry = document.getElementById("amImportListCountry");
+  const elImportListSource = document.getElementById("amImportListSource");
+  const elImportListText = document.getElementById("amImportListText");
+  const elImportListWarn = document.getElementById("amImportListWarn");
+  const elImportListTableBody = document.querySelector("#amImportListTable tbody");
+
+  const elImportMultiModal = document.getElementById("amImportMultiModal");
+  const elImportMultiClose = document.getElementById("amImportMultiClose");
+  const elImportMultiCancel = document.getElementById("amImportMultiCancel");
+  const elImportMultiPreview = document.getElementById("amImportMultiPreview");
+  const elImportMultiApply = document.getElementById("amImportMultiApply");
+  const elImportMultiSource = document.getElementById("amImportMultiSource");
+  const elImportMultiText = document.getElementById("amImportMultiText");
+  const elImportMultiWarn = document.getElementById("amImportMultiWarn");
+  const elImportMultiPreviewHost = document.getElementById("amImportMultiPreviewHost");
+
   const elImportText = document.getElementById("amImportText");
   const elImportApply = document.getElementById("amImportApply");
   const elImportClear = document.getElementById("amImportClear");
@@ -159,7 +183,7 @@
       el.textContent = msg || "";
     }
 
-    function pingAnimation(btn) {
+  function pingAnimation(btn) {
       if (!btn) return;
       btn.classList.remove("is-pop");
       // force reflow to restart animation
@@ -190,13 +214,15 @@
         const n = (f.nombre || "").trim();
         const tip = (f.tipo || "").trim();
         const pos = (f.posicion || "").trim();
-        const meta = [n || "-", tip || "", pos || ""].filter(Boolean).join(" · ");
-        btn.title = `Figurita #${num} · ${nombrePais} · ${meta} · Estado: ${label}`;
+        const nSafe = n || "-";
+        const tipSafe = tip || "-";
+        const posPart = pos ? ` · Pos: ${pos}` : "";
+        btn.title = `Figurita #${num} · ${nombrePais} · ${nSafe} · Tipo: ${tipSafe}${posPart} · Estado: ${label}`;
         pingAnimation(btn);
         return;
       }
     }
-    btn.title = `Figurita #${num} · ${nombrePais} · Estado: ${label}`;
+    btn.title = `Figurita #${num} · ${nombrePais} · Tipo: - · Estado: ${label}`;
     pingAnimation(btn);
   }
 
@@ -475,11 +501,254 @@
       }
     }
 
-    // Side panel
-    let sidePaisId = null;
-    function isSideOpenFor(pId) {
-      return elSide && elSide.getAttribute("aria-hidden") === "false" && sidePaisId === pId;
+    function setModalOpen(el, open) {
+      if (!el) return;
+      el.setAttribute("aria-hidden", open ? "false" : "true");
     }
+
+    function clearTbody(tbody) {
+      if (!tbody) return;
+      tbody.innerHTML = "";
+    }
+
+    function renderPreviewTable(tbody, items) {
+      if (!tbody) return;
+      clearTbody(tbody);
+      (items || []).forEach((it) => {
+        const tr = document.createElement("tr");
+        const pos = String(it.posicion || "").trim();
+        const name = String(it.nombre || "").trim();
+        const tipo = String(it.tipo || "").trim();
+        tr.innerHTML = `
+          <td><strong>${Number(it.numero || 0)}</strong></td>
+          <td>${escapeHtml(name)}${pos ? `<div style="color: var(--am-muted); font-size: 11px;">Pos: ${escapeHtml(pos)}</div>` : ""}</td>
+          <td>${escapeHtml(tipo || "-")}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function buildWarnText(missing, duplicates, invalid) {
+      const miss = Array.isArray(missing) ? missing : [];
+      const dup = Array.isArray(duplicates) ? duplicates : [];
+      const inv = Array.isArray(invalid) ? invalid : [];
+      const bits = [];
+      if (miss.length) bits.push(`Faltan números: ${miss.join(", ")}.`);
+      if (dup.length) bits.push(`Números repetidos: ${dup.join(", ")}.`);
+      if (inv.length) bits.push(`Líneas ignoradas: ${inv.length}.`);
+      return bits.join(" ");
+    }
+
+    function applyMetaUpdates(updatedList) {
+      const updated = Array.isArray(updatedList) ? updatedList : [];
+      const touchedPais = new Set();
+
+      updated.forEach((u) => {
+        const pid = Number(u.pais_id);
+        const num = Number(u.numero);
+        const p = byId.get(pid);
+        if (!p) return;
+        touchedPais.add(pid);
+
+        const f = (p.figuritas || []).find((x) => Number(x.numero) === num);
+        if (f) {
+          f.nombre = String(u.nombre || "");
+          f.tipo = String(u.tipo || "");
+          f.posicion = String(u.posicion || "");
+        }
+
+        const elCard = elById.get(pid);
+        if (elCard) {
+          const chip = elCard.querySelector(`.am-chip[data-num="${num}"]`);
+          if (chip) {
+            const st = Number(chip.dataset.state || (f ? f.estado : 0) || 0);
+            setChipState(chip, st, pid, p.nombre || "País");
+          }
+        }
+      });
+
+      touchedPais.forEach((pid) => {
+        const p = byId.get(pid);
+        if (!p) return;
+        // estado no cambia, pero refresca UI por consistencia
+        recalcPais(p);
+        updatePaisUI(pid);
+        if (isSideOpenFor(pid)) renderSide(pid);
+      });
+
+      updateTotalsUI(recalcTotals());
+      applyFilters();
+    }
+
+    // Import list (single)
+    async function previewImportListModal() {
+      if (!endpoints.previewList) return;
+      const paisId = Number((elImportListCountry && elImportListCountry.value) || 0);
+      const text = String((elImportListText && elImportListText.value) || "").trim();
+      if (!paisId || !text) {
+        setInlineResult(elImportListWarn, "warn", "Elegí selección y pegá el listado para previsualizar.");
+        clearTbody(elImportListTableBody);
+        return;
+      }
+
+      setInlineResult(elImportListWarn, "", "Previsualizando…");
+      try {
+        const res = await postJson(endpoints.previewList, { mode: "single", pais_id: paisId, text });
+        renderPreviewTable(elImportListTableBody, res.items || []);
+        const msg = buildWarnText(res.missing, res.duplicates, res.invalid);
+        setInlineResult(elImportListWarn, msg ? "warn" : "ok", msg || "OK: 0 faltantes / 0 repetidos.");
+      } catch (e) {
+        setInlineResult(elImportListWarn, "bad", "No se pudo previsualizar.");
+      }
+    }
+
+    async function applyImportListModal() {
+      if (!endpoints.applyList) return;
+      const paisId = Number((elImportListCountry && elImportListCountry.value) || 0);
+      const text = String((elImportListText && elImportListText.value) || "").trim();
+      const source = String((elImportListSource && elImportListSource.value) || "").trim();
+      if (!paisId || !text) {
+        setInlineResult(elImportListWarn, "warn", "Elegí selección y pegá el listado para importar.");
+        return;
+      }
+
+      setInlineResult(elImportListWarn, "", "Importando…");
+      try {
+        const res = await postJson(endpoints.applyList, { mode: "single", pais_id: paisId, text, source });
+        applyMetaUpdates(res.updated || []);
+        const msg = buildWarnText(res.missing, res.duplicates, res.invalid);
+        setInlineResult(
+          elImportListWarn,
+          msg ? "warn" : "ok",
+          `Importado: ${(res.updated || []).length}. ${msg}`.trim()
+        );
+        toast("Importación aplicada.");
+      } catch (e) {
+        setInlineResult(elImportListWarn, "bad", "No se pudo importar.");
+        toast("No se pudo importar.");
+      }
+    }
+
+    function closeImportListModal() {
+      setModalOpen(elImportListModal, false);
+    }
+
+    function openImportListModal() {
+      setInlineResult(elImportListWarn, "", "");
+      clearTbody(elImportListTableBody);
+      setModalOpen(elImportListModal, true);
+      if (elImportListText) elImportListText.focus();
+    }
+
+    // Import list (multi)
+    function renderMultiPreview(host, results) {
+      if (!host) return;
+      host.innerHTML = "";
+      (results || []).forEach((r) => {
+        const details = document.createElement("details");
+        details.className = "am-tool";
+        details.open = false;
+
+        const miss = Array.isArray(r.missing) ? r.missing : [];
+        const dup = Array.isArray(r.duplicates) ? r.duplicates : [];
+        const extra = [];
+        if (miss.length) extra.push(`faltan ${miss.length}`);
+        if (dup.length) extra.push(`rep ${dup.length}`);
+        const badge = extra.length ? ` · ${extra.join(" · ")}` : "";
+
+        details.innerHTML = `
+          <summary class="am-tool-sum">${escapeHtml(String(r.pais_nombre || ""))}${badge}</summary>
+          <div class="am-tool-body">
+            <div class="am-tool-help">${escapeHtml(buildWarnText(r.missing, r.duplicates, r.invalid) || "OK")}</div>
+            <div class="am-side-tablewrap" style="max-height: 34vh;">
+              <table class="am-table">
+                <thead>
+                  <tr><th>Número</th><th>Nombre detectado</th><th>Tipo detectado</th></tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        `;
+
+        const tbody = details.querySelector("tbody");
+        renderPreviewTable(tbody, r.items || []);
+        host.appendChild(details);
+      });
+    }
+
+    async function previewImportMultiModal() {
+      if (!endpoints.previewList) return;
+      const text = String((elImportMultiText && elImportMultiText.value) || "").trim();
+      if (!text) {
+        setInlineResult(elImportMultiWarn, "warn", "Pegá el texto (varias selecciones) para previsualizar.");
+        if (elImportMultiPreviewHost) elImportMultiPreviewHost.innerHTML = "";
+        return;
+      }
+
+      setInlineResult(elImportMultiWarn, "", "Previsualizando…");
+      try {
+        const res = await postJson(endpoints.previewList, { mode: "multi", text });
+        renderMultiPreview(elImportMultiPreviewHost, res.results || []);
+        const unknown = Array.isArray(res.unknown_paises) ? res.unknown_paises : [];
+        const invalid = Array.isArray(res.invalid) ? res.invalid : [];
+        const bits = [];
+        if (unknown.length) bits.push(`País no encontrado: ${unknown.slice(0, 4).join(", ")}${unknown.length > 4 ? "…" : ""}.`);
+        if (invalid.length) bits.push(`Líneas fuera de bloque: ${invalid.length}.`);
+        setInlineResult(elImportMultiWarn, bits.length ? "warn" : "ok", bits.join(" ") || "OK");
+      } catch (e) {
+        setInlineResult(elImportMultiWarn, "bad", "No se pudo previsualizar.");
+      }
+    }
+
+    async function applyImportMultiModal() {
+      if (!endpoints.applyList) return;
+      const text = String((elImportMultiText && elImportMultiText.value) || "").trim();
+      const source = String((elImportMultiSource && elImportMultiSource.value) || "").trim();
+      if (!text) {
+        setInlineResult(elImportMultiWarn, "warn", "Pegá el texto (varias selecciones) para importar.");
+        return;
+      }
+
+      setInlineResult(elImportMultiWarn, "", "Importando…");
+      try {
+        const res = await postJson(endpoints.applyList, { mode: "multi", text, source });
+        applyMetaUpdates(res.updated || []);
+
+        const unknown = Array.isArray(res.unknown_paises) ? res.unknown_paises : [];
+        const invalid = Array.isArray(res.invalid) ? res.invalid : [];
+        const bits = [];
+        if (unknown.length) bits.push(`País no encontrado: ${unknown.slice(0, 4).join(", ")}${unknown.length > 4 ? "…" : ""}.`);
+        if (invalid.length) bits.push(`Líneas ignoradas: ${invalid.length}.`);
+
+        setInlineResult(
+          elImportMultiWarn,
+          bits.length ? "warn" : "ok",
+          `Importado: ${(res.updated || []).length}. ${bits.join(" ")}`.trim()
+        );
+        toast("Importación aplicada.");
+      } catch (e) {
+        setInlineResult(elImportMultiWarn, "bad", "No se pudo importar.");
+        toast("No se pudo importar.");
+      }
+    }
+
+    function closeImportMultiModal() {
+      setModalOpen(elImportMultiModal, false);
+    }
+
+    function openImportMultiModal() {
+      setInlineResult(elImportMultiWarn, "", "");
+      if (elImportMultiPreviewHost) elImportMultiPreviewHost.innerHTML = "";
+      setModalOpen(elImportMultiModal, true);
+      if (elImportMultiText) elImportMultiText.focus();
+    }
+
+      // Side panel
+      let sidePaisId = null;
+      function isSideOpenFor(pId) {
+        return elSide && elSide.getAttribute("aria-hidden") === "false" && sidePaisId === pId;
+      }
 
   function openSide(pId) {
     if (!elSide) return;
@@ -610,11 +879,34 @@
 
   if (elSearch) elSearch.addEventListener("input", applyFilters);
   if (elView) elView.addEventListener("change", applyFilters);
-  if (elSort) elSort.addEventListener("change", applyFilters);
-  if (elReset) elReset.addEventListener("click", resetFilters);
+    if (elSort) elSort.addEventListener("change", applyFilters);
+    if (elReset) elReset.addEventListener("click", resetFilters);
 
     if (elCopyMissing) elCopyMissing.addEventListener("click", () => onCopy("missing"));
     if (elCopyDup) elCopyDup.addEventListener("click", () => onCopy("dup"));
+
+    if (elOpenImportList) elOpenImportList.addEventListener("click", openImportListModal);
+    if (elOpenImportMulti) elOpenImportMulti.addEventListener("click", openImportMultiModal);
+
+    if (elImportListClose) elImportListClose.addEventListener("click", closeImportListModal);
+    if (elImportListCancel) elImportListCancel.addEventListener("click", closeImportListModal);
+    if (elImportListPreview) elImportListPreview.addEventListener("click", previewImportListModal);
+    if (elImportListApply) elImportListApply.addEventListener("click", applyImportListModal);
+    if (elImportListModal) {
+      elImportListModal.addEventListener("click", (ev) => {
+        if (ev.target === elImportListModal) closeImportListModal();
+      });
+    }
+
+    if (elImportMultiClose) elImportMultiClose.addEventListener("click", closeImportMultiModal);
+    if (elImportMultiCancel) elImportMultiCancel.addEventListener("click", closeImportMultiModal);
+    if (elImportMultiPreview) elImportMultiPreview.addEventListener("click", previewImportMultiModal);
+    if (elImportMultiApply) elImportMultiApply.addEventListener("click", applyImportMultiModal);
+    if (elImportMultiModal) {
+      elImportMultiModal.addEventListener("click", (ev) => {
+        if (ev.target === elImportMultiModal) closeImportMultiModal();
+      });
+    }
 
     if (elImportApply) elImportApply.addEventListener("click", applyImportRepetidas);
     if (elImportClear) elImportClear.addEventListener("click", clearImportBox);
@@ -631,17 +923,21 @@
 
     if (elSideClose) elSideClose.addEventListener("click", closeSide);
     if (elSideDone) elSideDone.addEventListener("click", closeSide);
-  if (elSideTableBody) elSideTableBody.addEventListener("change", onSideChange);
-  if (elSideTableBody) elSideTableBody.addEventListener("input", (ev) => {
-    const t = ev.target;
-    if (!t || t.tagName !== "INPUT") return;
+    if (elSideTableBody) elSideTableBody.addEventListener("change", onSideChange);
+    if (elSideTableBody) elSideTableBody.addEventListener("input", (ev) => {
+      const t = ev.target;
+      if (!t || t.tagName !== "INPUT") return;
     // debounce saves for typing
     onSideChange(ev);
   });
 
-  document.addEventListener("keydown", (ev) => {
-    if (ev.key === "Escape") closeSide();
-  });
+    document.addEventListener("keydown", (ev) => {
+      if (ev.key === "Escape") {
+        closeSide();
+        closeImportListModal();
+        closeImportMultiModal();
+      }
+    });
 
   // Basic totals bootstrap (in case backend changes)
   paises.forEach(recalcPais);

@@ -126,7 +126,23 @@ def register_album_mundial(app: Flask) -> None:
                 """
             )
             con.execute(
+                """
+                CREATE TABLE IF NOT EXISTS album_imports (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    mode TEXT NOT NULL,
+                    pais_id INTEGER,
+                    source TEXT,
+                    raw_text TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    FOREIGN KEY(pais_id) REFERENCES album_paises(id) ON DELETE SET NULL
+                )
+                """
+            )
+            con.execute(
                 "CREATE INDEX IF NOT EXISTS idx_album_figuritas_pais ON album_figuritas(pais_id)"
+            )
+            con.execute(
+                "CREATE INDEX IF NOT EXISTS idx_album_imports_created ON album_imports(created_at)"
             )
             con.commit()
         finally:
@@ -179,6 +195,87 @@ def register_album_mundial(app: Flask) -> None:
         variants.add(base.replace(".", ""))
         variants.add(base.replace("_", "").replace(".", ""))
         return {v for v in variants if v}
+
+    _ITEM_RE = re.compile(r"^\s*(?P<num>\d{1,2})\s*(?:[:\.\-–—]\s*|\s+)\s*(?P<rest>.+?)\s*$")
+    _HAS_DT_RE = re.compile(r"\bDT\b", re.IGNORECASE)
+
+    def _is_country_header_line(line: str) -> bool:
+        txt = str(line or "").strip()
+        if not txt:
+            return False
+        if re.search(r"\d", txt):
+            return False
+        if not re.search(r"[A-ZÁÉÍÓÚÜÑ]", txt.upper()):
+            return False
+        return txt.upper() == txt
+
+    def _infer_tipo_and_name_pos(rest: str) -> tuple[str, str, str]:
+        raw = str(rest or "").strip()
+        if "|" in raw:
+            left, right = raw.split("|", 1)
+            raw = left.strip()
+            posicion = right.strip()
+        else:
+            posicion = ""
+
+        norm = _norm_txt(raw)
+        extras: list[str] = []
+
+        if _HAS_DT_RE.search(raw) or "director tecnico" in norm:
+            base = "DT"
+        elif "escudo" in norm:
+            base = "Escudo"
+        elif "formacion" in norm or "foto grupal" in norm or "equipo" in norm:
+            base = "Especial"
+        else:
+            base = "Jugador"
+
+        if "metalizado" in norm or "metalizada" in norm:
+            extras.append("Metalizado")
+        if "historica" in norm:
+            extras.append("Histórica")
+
+        tipo = " / ".join([base] + extras) if extras else base
+        nombre = raw.strip()
+        return nombre, tipo, posicion
+
+    def _parse_items_block(text: str) -> dict:
+        seen: set[int] = set()
+        dupes: set[int] = set()
+        invalid: list[str] = []
+        items_by_num: dict[int, dict] = {}
+
+        for raw_line in str(text or "").splitlines():
+            line = raw_line.strip()
+            if not line:
+                continue
+            m = _ITEM_RE.match(line)
+            if not m:
+                if _is_country_header_line(line):
+                    continue
+                invalid.append(line)
+                continue
+
+            num = int(m.group("num"))
+            if num < 1 or num > 20:
+                invalid.append(line)
+                continue
+
+            rest = m.group("rest") or ""
+            nombre, tipo, posicion = _infer_tipo_and_name_pos(rest)
+            if not nombre:
+                invalid.append(line)
+                continue
+
+            if num in seen:
+                dupes.add(num)
+            seen.add(num)
+
+            items_by_num[num] = {"numero": num, "nombre": nombre, "tipo": tipo, "posicion": posicion}
+
+        missing = [n for n in range(1, 21) if n not in items_by_num]
+        items = [items_by_num[n] for n in sorted(items_by_num.keys())]
+        return {"items": items, "missing": missing, "duplicates": sorted(dupes), "invalid": invalid}
 
     def _is_matias() -> bool:
         username = _norm_txt(session.get("username") or "")
@@ -391,6 +488,294 @@ def register_album_mundial(app: Flask) -> None:
             con.close()
 
         return jsonify({"ok": True})
+
+    @app.route(
+        "/album-mundial/api/import/list/preview",
+        methods=["POST"],
+        endpoint="album_mundial_import_list_preview",
+    )
+    def album_mundial_import_list_preview():
+        if not _has_access():
+            return jsonify({"ok": False, "error": "forbidden"}), 403
+
+        _ensure_schema()
+        _seed_if_needed()
+
+        data = request.get_json(silent=True) or {}
+        mode = str((data.get("mode") or "single")).strip().lower()
+        text = str(data.get("text") or "")
+
+        con = _connect()
+        try:
+            rows = con.execute("SELECT id, nombre, codigo FROM album_paises").fetchall()
+            id_to_name = {int(r["id"]): str(r["nombre"] or "") for r in rows}
+            code_to_id: dict[str, int] = {}
+            for r in rows:
+                for v in _pais_code_variants(str(r["codigo"] or "")):
+                    code_to_id[v] = int(r["id"])
+                name_code = _make_code(str(r["nombre"] or ""))
+                for v in _pais_code_variants(name_code):
+                    code_to_id[v] = int(r["id"])
+
+            if mode == "single":
+                try:
+                    pais_id = int(data.get("pais_id"))
+                except Exception:
+                    return jsonify({"ok": False, "error": "bad_request"}), 400
+                parsed = _parse_items_block(text)
+                return jsonify(
+                    {
+                        "ok": True,
+                        "mode": "single",
+                        "pais_id": pais_id,
+                        "pais_nombre": id_to_name.get(pais_id, ""),
+                        **parsed,
+                    }
+                )
+
+            if mode == "multi":
+                current = None
+                blocks: dict[str, list[str]] = {}
+                invalid: list[str] = []
+
+                for raw_line in str(text or "").splitlines():
+                    line = raw_line.strip()
+                    if not line:
+                        continue
+                    if _is_country_header_line(line):
+                        current = line
+                        blocks.setdefault(current, [])
+                        continue
+                    if current is None:
+                        # ignore leading noise
+                        invalid.append(line)
+                        continue
+                    blocks[current].append(raw_line)
+
+                results = []
+                unknown = []
+                for header, lines in blocks.items():
+                    key = _make_code(header)
+                    pid = (
+                        code_to_id.get(key)
+                        or code_to_id.get(key.replace("_", ""))
+                        or code_to_id.get(key.replace(".", ""))
+                        or code_to_id.get(key.replace("_", "").replace(".", ""))
+                    )
+                    if not pid:
+                        unknown.append(header)
+                        continue
+                    parsed = _parse_items_block("\n".join(lines))
+                    results.append(
+                        {
+                            "pais_id": int(pid),
+                            "pais_nombre": id_to_name.get(int(pid), header),
+                            **parsed,
+                        }
+                    )
+
+                return jsonify(
+                    {
+                        "ok": True,
+                        "mode": "multi",
+                        "results": results,
+                        "unknown_paises": unknown,
+                        "invalid": invalid,
+                    }
+                )
+
+            return jsonify({"ok": False, "error": "bad_request"}), 400
+        finally:
+            con.close()
+
+    @app.route(
+        "/album-mundial/api/import/list/apply",
+        methods=["POST"],
+        endpoint="album_mundial_import_list_apply",
+    )
+    def album_mundial_import_list_apply():
+        if not _has_access():
+            return jsonify({"ok": False, "error": "forbidden"}), 403
+
+        _ensure_schema()
+        _seed_if_needed()
+
+        data = request.get_json(silent=True) or {}
+        mode = str((data.get("mode") or "single")).strip().lower()
+        text = str(data.get("text") or "")
+        source = str(data.get("source") or "").strip()
+        now = _now()
+
+        con = _connect()
+        try:
+            rows = con.execute("SELECT id, nombre, codigo FROM album_paises").fetchall()
+            id_to_name = {int(r["id"]): str(r["nombre"] or "") for r in rows}
+            code_to_id: dict[str, int] = {}
+            for r in rows:
+                for v in _pais_code_variants(str(r["codigo"] or "")):
+                    code_to_id[v] = int(r["id"])
+                name_code = _make_code(str(r["nombre"] or ""))
+                for v in _pais_code_variants(name_code):
+                    code_to_id[v] = int(r["id"])
+
+            updated: list[dict] = []
+            unknown: list[str] = []
+            invalid: list[str] = []
+
+            if mode == "single":
+                try:
+                    pais_id = int(data.get("pais_id"))
+                except Exception:
+                    return jsonify({"ok": False, "error": "bad_request"}), 400
+
+                parsed = _parse_items_block(text)
+                invalid.extend(parsed.get("invalid") or [])
+
+                payload = []
+                for item in parsed["items"]:
+                    payload.append(
+                        (
+                            item["nombre"],
+                            item["tipo"],
+                            item.get("posicion") or "",
+                            now,
+                            pais_id,
+                            int(item["numero"]),
+                        )
+                    )
+                    updated.append(
+                        {
+                            "pais_id": pais_id,
+                            "pais_nombre": id_to_name.get(pais_id, ""),
+                            "numero": int(item["numero"]),
+                            "nombre": item["nombre"],
+                            "tipo": item["tipo"],
+                            "posicion": item.get("posicion") or "",
+                        }
+                    )
+
+                if payload:
+                    con.executemany(
+                        """
+                        UPDATE album_figuritas
+                        SET nombre = ?, tipo = ?, posicion = ?, updated_at = ?
+                        WHERE pais_id = ? AND numero = ?
+                        """,
+                        payload,
+                    )
+
+                con.execute(
+                    "INSERT INTO album_imports(mode, pais_id, source, raw_text, created_at) VALUES(?, ?, ?, ?, ?)",
+                    ("single", pais_id, source, text, now),
+                )
+                con.commit()
+
+                return jsonify(
+                    {
+                        "ok": True,
+                        "mode": "single",
+                        "pais_id": pais_id,
+                        "pais_nombre": id_to_name.get(pais_id, ""),
+                        "updated": updated,
+                        "missing": parsed.get("missing") or [],
+                        "duplicates": parsed.get("duplicates") or [],
+                        "invalid": invalid,
+                    }
+                )
+
+            if mode == "multi":
+                current = None
+                blocks: dict[str, list[str]] = {}
+                for raw_line in str(text or "").splitlines():
+                    line = raw_line.strip()
+                    if not line:
+                        continue
+                    if _is_country_header_line(line):
+                        current = line
+                        blocks.setdefault(current, [])
+                        continue
+                    if current is None:
+                        invalid.append(line)
+                        continue
+                    blocks[current].append(raw_line)
+
+                payload = []
+                results = []
+                for header, lines in blocks.items():
+                    key = _make_code(header)
+                    pid = (
+                        code_to_id.get(key)
+                        or code_to_id.get(key.replace("_", ""))
+                        or code_to_id.get(key.replace(".", ""))
+                        or code_to_id.get(key.replace("_", "").replace(".", ""))
+                    )
+                    if not pid:
+                        unknown.append(header)
+                        continue
+                    parsed = _parse_items_block("\n".join(lines))
+                    invalid.extend(parsed.get("invalid") or [])
+
+                    for item in parsed["items"]:
+                        payload.append(
+                            (
+                                item["nombre"],
+                                item["tipo"],
+                                item.get("posicion") or "",
+                                now,
+                                int(pid),
+                                int(item["numero"]),
+                            )
+                        )
+                        updated.append(
+                            {
+                                "pais_id": int(pid),
+                                "pais_nombre": id_to_name.get(int(pid), header),
+                                "numero": int(item["numero"]),
+                                "nombre": item["nombre"],
+                                "tipo": item["tipo"],
+                                "posicion": item.get("posicion") or "",
+                            }
+                        )
+
+                    results.append(
+                        {
+                            "pais_id": int(pid),
+                            "pais_nombre": id_to_name.get(int(pid), header),
+                            "missing": parsed.get("missing") or [],
+                            "duplicates": parsed.get("duplicates") or [],
+                        }
+                    )
+
+                if payload:
+                    con.executemany(
+                        """
+                        UPDATE album_figuritas
+                        SET nombre = ?, tipo = ?, posicion = ?, updated_at = ?
+                        WHERE pais_id = ? AND numero = ?
+                        """,
+                        payload,
+                    )
+
+                con.execute(
+                    "INSERT INTO album_imports(mode, pais_id, source, raw_text, created_at) VALUES(?, ?, ?, ?, ?)",
+                    ("multi", None, source, text, now),
+                )
+                con.commit()
+
+                return jsonify(
+                    {
+                        "ok": True,
+                        "mode": "multi",
+                        "updated": updated,
+                        "results": results,
+                        "unknown_paises": unknown,
+                        "invalid": invalid,
+                    }
+                )
+
+            return jsonify({"ok": False, "error": "bad_request"}), 400
+        finally:
+            con.close()
 
     @app.route(
         "/album-mundial/api/import/repetidas",

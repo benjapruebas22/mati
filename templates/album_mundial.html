@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block extra_head %}
   {{ super() }}
-  <link rel="stylesheet" href="{{ url_for('static', filename='album_mundial/album_mundial.css', v='2026-05-11-02') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='album_mundial/album_mundial.css', v='2026-05-11-03') }}">
 {% endblock %}
 {% block content %}
 <section class="album-2026">
@@ -12,18 +12,20 @@
   </style>
 
   <div class="am-shell">
-    <header class="am-head">
-      <div class="am-title">
-        <div class="am-kicker">Tracker privado</div>
-        <h1>Álbum Mundial 2026</h1>
-        <p>Control rápido por país. Click en cada número: Falta → Tiene → Repetida.</p>
-      </div>
-      <div class="am-actions">
-        <button class="am-btn" type="button" id="amCopyMissing">Copiar faltantes</button>
-        <button class="am-btn" type="button" id="amCopyDup">Copiar repetidas</button>
-        <a class="am-link" href="{{ url_for('dashboard') }}">Volver</a>
-      </div>
-    </header>
+      <header class="am-head">
+        <div class="am-title">
+          <div class="am-kicker">Tracker privado</div>
+          <h1>Álbum Mundial 2026</h1>
+          <p>Control rápido por país. Click en cada número: Falta → Tiene → Repetida.</p>
+        </div>
+        <div class="am-actions">
+          <button class="am-btn am-btn-primary" type="button" id="amOpenImportList">Importar lista de figuritas</button>
+          <button class="am-btn" type="button" id="amOpenImportMulti">Importar varias selecciones</button>
+          <button class="am-btn" type="button" id="amCopyMissing">Copiar faltantes</button>
+          <button class="am-btn" type="button" id="amCopyDup">Copiar repetidas</button>
+          <a class="am-link" href="{{ url_for('dashboard') }}">Volver</a>
+        </div>
+      </header>
 
     <div class="am-kpis">
       <div class="am-kpi">
@@ -159,24 +161,24 @@
           {% for f in p.figuritas %}
           {% set st = f.estado %}
           {% set st_label = 'Falta' if st == 0 else ('Tiene' if st == 1 else 'Repetida') %}
-          <button
-            type="button"
-            class="am-chip st-{{ st }}"
-            data-num="{{ f.numero }}"
-            data-state="{{ st }}"
-            title="Figurita #{{ f.numero }} · {{ p.nombre }} · {{ (f.nombre or '-') }} · Estado: {{ st_label }}"
-          >
-            {{ f.numero }}
-          </button>
+            <button
+              type="button"
+              class="am-chip st-{{ st }}"
+              data-num="{{ f.numero }}"
+              data-state="{{ st }}"
+              title="Figurita #{{ f.numero }} · {{ p.nombre }} · {{ (f.nombre or '-') }} · Tipo: {{ (f.tipo or '-') }}{% if f.posicion %} · Pos: {{ f.posicion }}{% endif %} · Estado: {{ st_label }}"
+            >
+              {{ f.numero }}
+            </button>
           {% endfor %}
         </div>
       </article>
       {% endfor %}
+      </div>
     </div>
-  </div>
 
-  <!-- Panel lateral -->
-  <div class="am-side" id="amSide" aria-hidden="true">
+    <!-- Panel lateral -->
+    <div class="am-side" id="amSide" aria-hidden="true">
     <div class="am-side-card" role="dialog" aria-modal="true" aria-label="Detalle país">
       <header class="am-side-head">
         <div>
@@ -212,10 +214,111 @@
           <button class="am-btn am-btn-ghost" type="button" id="amSideDone">Cerrar</button>
         </div>
       </div>
+      </div>
     </div>
-  </div>
 
-  <script>
+    <!-- Modal: Importar lista (1 selección) -->
+    <div class="am-modal" id="amImportListModal" aria-hidden="true">
+      <div class="am-modal-card" role="dialog" aria-modal="true" aria-label="Importar lista de figuritas">
+        <header class="am-side-head">
+          <div>
+            <div class="am-side-kicker">Importación</div>
+            <h2>Importar lista de figuritas</h2>
+            <div class="am-side-sub">Pegá el listado y el sistema completa Nombre / Tipo / Posición (opcional).</div>
+          </div>
+          <button class="am-x" type="button" id="amImportListClose" aria-label="Cerrar">×</button>
+        </header>
+        <div class="am-modal-body">
+          <div class="am-modal-grid">
+            <div class="am-field">
+              <label for="amImportListCountry">Selección</label>
+              <select id="amImportListCountry">
+                {% for p in paises %}
+                  <option value="{{ p.id }}">{{ p.nombre }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="am-field">
+              <label for="amImportListSource">Fuente / observación (opcional)</label>
+              <input id="amImportListSource" type="text" placeholder="Ej: cargado desde listado web / revisado manualmente">
+            </div>
+          </div>
+
+          <div class="am-tool-help">
+            Formatos aceptados:
+            <code>1: Nombre</code> · <code>2 - Nombre</code> · <code>3. Nombre</code> · <code>4 Nombre</code>
+            · Posición opcional: <code>2: Dibu Martínez | ARQ</code>
+          </div>
+
+          <textarea id="amImportListText" class="am-textarea" rows="10" spellcheck="false" placeholder="ARGENTINA&#10;1: Escudo&#10;2: Emiliano &quot;Dibu&quot; Martínez&#10;...&#10;20: Giuliano Simeone"></textarea>
+
+          <div class="am-modal-actions">
+            <button class="am-btn am-btn-ghost" type="button" id="amImportListPreview">Previsualizar</button>
+            <button class="am-btn am-btn-primary" type="button" id="amImportListApply">Importar</button>
+            <button class="am-btn" type="button" id="amImportListCancel">Cancelar</button>
+          </div>
+
+          <div class="am-modal-warn" id="amImportListWarn" aria-live="polite"></div>
+
+          <div class="am-side-tablewrap" style="max-height: 44vh;">
+            <table class="am-table" id="amImportListTable">
+              <thead>
+                <tr>
+                  <th>Número</th>
+                  <th>Nombre detectado</th>
+                  <th>Tipo detectado</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Importar varias selecciones -->
+    <div class="am-modal" id="amImportMultiModal" aria-hidden="true">
+      <div class="am-modal-card" role="dialog" aria-modal="true" aria-label="Importar varias selecciones">
+        <header class="am-side-head">
+          <div>
+            <div class="am-side-kicker">Importación</div>
+            <h2>Importar varias selecciones</h2>
+            <div class="am-side-sub">
+              Pegá varios bloques: una línea país en MAYÚSCULAS y debajo del 1 al 20. Países no encontrados se ignoran.
+            </div>
+          </div>
+          <button class="am-x" type="button" id="amImportMultiClose" aria-label="Cerrar">×</button>
+        </header>
+        <div class="am-modal-body">
+          <div class="am-modal-grid">
+            <div class="am-field" style="grid-column: 1 / -1;">
+              <label for="amImportMultiSource">Fuente / observación (opcional)</label>
+              <input id="amImportMultiSource" type="text" placeholder="Ej: copiado de un listado / revisado manualmente">
+            </div>
+          </div>
+
+          <div class="am-tool-help">
+            Ejemplo:
+            <code>ARGENTINA</code> + líneas <code>1: ...</code> a <code>20: ...</code>, luego <code>BRASIL</code>, etc.
+            Posición opcional: <code>2: Nombre | ARQ</code>
+          </div>
+
+          <textarea id="amImportMultiText" class="am-textarea" rows="12" spellcheck="false" placeholder="ARGENTINA&#10;1: Escudo&#10;2: Dibu Martínez&#10;...&#10;20: Giuliano Simeone&#10;&#10;BRASIL&#10;1: Escudo&#10;..."></textarea>
+
+          <div class="am-modal-actions">
+            <button class="am-btn am-btn-ghost" type="button" id="amImportMultiPreview">Previsualizar</button>
+            <button class="am-btn am-btn-primary" type="button" id="amImportMultiApply">Importar</button>
+            <button class="am-btn" type="button" id="amImportMultiCancel">Cancelar</button>
+          </div>
+
+          <div class="am-modal-warn" id="amImportMultiWarn" aria-live="polite"></div>
+
+          <div class="am-multi-preview" id="amImportMultiPreviewHost"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
       window.__ALBUM_MUNDIAL__ = {
         paises: {{ paises|tojson }},
         totals: {{ totals|tojson }},
@@ -225,10 +328,12 @@
           importRep: "{{ url_for('album_mundial_import_repetidas') }}",
           reset: "{{ url_for('album_mundial_reset') }}",
           exportBackup: "{{ url_for('album_mundial_export_backup') }}",
-          importBackup: "{{ url_for('album_mundial_import_backup') }}"
+          importBackup: "{{ url_for('album_mundial_import_backup') }}",
+          previewList: "{{ url_for('album_mundial_import_list_preview') }}",
+          applyList: "{{ url_for('album_mundial_import_list_apply') }}"
         }
       };
     </script>
-  <script src="{{ url_for('static', filename='album_mundial/album_mundial.js', v='2026-05-11-02') }}"></script>
+  <script src="{{ url_for('static', filename='album_mundial/album_mundial.js', v='2026-05-11-03') }}"></script>
 </section>
 {% endblock %}
