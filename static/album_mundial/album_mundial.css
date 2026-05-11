@@ -1,21 +1,24 @@
 :root{
-  --am-bg: #0b1220;
-  --am-card: #0f172a;
+  --am-bg: #0d1830;
+  --am-card: #101c34;
   --am-text: #e5e7eb;
   --am-muted: #94a3b8;
-  --am-border: #243042;
+  --am-border: #2a3b56;
   --am-soft: rgba(148, 163, 184, .10);
-  --am-primary: #60a5fa;
+  --am-primary: #4ea1ff;
   --am-ok: #22c55e;
   --am-warn: #fb923c;
-  --am-bad: #f87171;
-  --am-dup: #38bdf8;
+  --am-bad: #fb7185;
+  --am-dup: #22d3ee;
   --am-gold: #d6b36a;
 }
 
 .album-2026{
   min-height: calc(100vh - 28px);
-  background: var(--am-bg);
+  background:
+    radial-gradient(900px 520px at 18% -10%, rgba(78,161,255,.20) 0%, transparent 60%),
+    radial-gradient(900px 520px at 85% 0%, rgba(34,211,238,.14) 0%, transparent 55%),
+    var(--am-bg);
   color: var(--am-text);
   border: 1px solid color-mix(in srgb, var(--am-border) 65%, transparent);
   border-radius: 18px;
@@ -96,7 +99,7 @@
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: background .15s ease, border-color .15s ease, transform .05s ease;
+  transition: background .15s ease, border-color .15s ease, transform .05s ease, box-shadow .15s ease;
 }
 .am-btn:hover{
   background: color-mix(in srgb, var(--am-soft) 65%, transparent);
@@ -108,13 +111,23 @@
   outline-offset: 2px;
 }
 .am-btn-primary{
-  background: linear-gradient(180deg, rgba(96,165,250,.26) 0%, rgba(96,165,250,.12) 100%);
-  border-color: rgba(96,165,250,.35);
+  background: linear-gradient(180deg, rgba(78,161,255,.30) 0%, rgba(78,161,255,.14) 100%);
+  border-color: rgba(78,161,255,.45);
+  box-shadow: 0 0 0 1px rgba(78,161,255,.08), 0 10px 30px rgba(0,0,0,.20);
 }
 .am-btn-ghost{
   background: transparent;
   border-color: color-mix(in srgb, var(--am-border) 80%, transparent);
   color: var(--am-muted);
+}
+.am-btn-danger{
+  background: linear-gradient(180deg, rgba(251,113,133,.22) 0%, rgba(251,113,133,.10) 100%);
+  border-color: rgba(251,113,133,.42);
+  color: rgba(254,202,202,.98);
+}
+.am-btn-danger:hover{
+  background: linear-gradient(180deg, rgba(251,113,133,.28) 0%, rgba(251,113,133,.14) 100%);
+  border-color: rgba(251,113,133,.55);
 }
 
 .am-kpis{
@@ -162,8 +175,10 @@
 }
 .am-progress-fill{
   height:100%;
-  background: linear-gradient(90deg, rgba(34,197,94,.85) 0%, rgba(56,189,248,.85) 100%);
+  background: linear-gradient(90deg, rgba(34,197,94,.95) 0%, rgba(34,211,238,.92) 100%);
   width: 0%;
+  transition: width .25s ease;
+  box-shadow: 0 0 18px rgba(34,197,94,.18), 0 0 18px rgba(34,211,238,.16);
 }
 .am-progress-meta{
   display:flex;
@@ -315,7 +330,8 @@
 }
 .am-mini-fill{
   height:100%;
-  background: linear-gradient(90deg, rgba(34,197,94,.85) 0%, rgba(56,189,248,.85) 100%);
+  background: linear-gradient(90deg, rgba(34,197,94,.95) 0%, rgba(34,211,238,.92) 100%);
+  box-shadow: 0 0 16px rgba(34,211,238,.12);
 }
 .am-mini-pct{
   font-size: 12px;
@@ -341,7 +357,7 @@
   font-size: 12px;
   font-weight: 800;
   cursor: pointer;
-  transition: background .12s ease, border-color .12s ease, transform .05s ease;
+  transition: background .12s ease, border-color .12s ease, transform .05s ease, box-shadow .12s ease;
 }
 .am-chip:hover{
   background: rgba(148,163,184,.12);
@@ -350,20 +366,123 @@
 .am-chip:active{ transform: translateY(1px); }
 
 .am-chip.st-0{
-  background: rgba(148,163,184,.06);
-  color: var(--am-muted);
-  border-color: color-mix(in srgb, var(--am-border) 75%, transparent);
+  background: rgba(251,113,133,.14);
+  border-color: rgba(251,113,133,.35);
+  color: rgba(254,202,202,.95);
 }
 .am-chip.st-1{
   background: rgba(34,197,94,.14);
   border-color: rgba(34,197,94,.35);
   color: rgba(187,247,208,.95);
+  box-shadow: 0 0 0 1px rgba(34,197,94,.08);
 }
 .am-chip.st-2{
-  background: rgba(56,189,248,.16);
-  border-color: rgba(56,189,248,.35);
-  color: rgba(186,230,253,.95);
+  background: rgba(34,211,238,.16);
+  border-color: rgba(34,211,238,.38);
+  color: rgba(165,243,252,.96);
+  box-shadow: 0 0 0 1px rgba(34,211,238,.08);
 }
+
+@keyframes am-pop{
+  0%{ transform: scale(1); }
+  45%{ transform: scale(1.09); }
+  100%{ transform: scale(1); }
+}
+.am-chip.is-pop{
+  animation: am-pop .22s ease;
+}
+
+@media (prefers-reduced-motion: reduce){
+  .am-progress-fill{ transition: none; }
+  .am-chip.is-pop{ animation: none; }
+}
+
+/* Tools */
+.am-tools{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+@media (max-width: 900px){
+  .am-tools{ grid-template-columns: 1fr; }
+}
+
+.am-tool{
+  background: var(--am-card);
+  border: 1px solid var(--am-border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.am-tool[open]{
+  box-shadow: inset 0 0 0 1px rgba(78,161,255,.10);
+}
+.am-tool-sum{
+  cursor:pointer;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--am-text);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+  user-select:none;
+}
+.am-tool-sum::-webkit-details-marker{ display:none; }
+.am-tool-sum::after{
+  content: "▾";
+  color: var(--am-muted);
+  font-size: 12px;
+  transition: transform .15s ease;
+}
+.am-tool[open] .am-tool-sum::after{
+  transform: rotate(180deg);
+}
+.am-tool-body{
+  padding: 10px 12px 12px;
+  display:grid;
+  gap: 8px;
+  border-top: 1px solid rgba(148,163,184,.10);
+}
+.am-tool-help{
+  color: var(--am-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+.am-tool-help code{
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(148,163,184,.20);
+  background: rgba(2,6,23,.32);
+  color: rgba(226,232,240,.95);
+}
+.am-textarea{
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid var(--am-border);
+  background: rgba(2,6,23,.35);
+  color: var(--am-text);
+  padding: 10px 12px;
+  font-size: 13px;
+  resize: vertical;
+}
+.am-textarea:focus{
+  outline: none;
+  border-color: rgba(78,161,255,.60);
+  box-shadow: 0 0 0 3px rgba(78,161,255,.14);
+}
+.am-tool-actions{
+  display:flex;
+  gap: 8px;
+  flex-wrap:wrap;
+}
+.am-tool-result{
+  font-size: 12px;
+  color: var(--am-muted);
+}
+.am-tool-result.is-ok{ color: rgba(187,247,208,.95); }
+.am-tool-result.is-warn{ color: rgba(254,215,170,.95); }
+.am-tool-result.is-bad{ color: rgba(254,202,202,.95); }
 
 /* Side panel */
 .am-side{

@@ -172,6 +172,14 @@ def register_album_mundial(app: Flask) -> None:
         finally:
             con.close()
 
+    def _pais_code_variants(code: str) -> set[str]:
+        base = (code or "").strip().upper()
+        variants = {base}
+        variants.add(base.replace("_", ""))
+        variants.add(base.replace(".", ""))
+        variants.add(base.replace("_", "").replace(".", ""))
+        return {v for v in variants if v}
+
     def _is_matias() -> bool:
         username = _norm_txt(session.get("username") or "")
         full_name = _norm_txt(session.get("full_name") or "")
@@ -383,5 +391,260 @@ def register_album_mundial(app: Flask) -> None:
             con.close()
 
         return jsonify({"ok": True})
+
+    @app.route(
+        "/album-mundial/api/import/repetidas",
+        methods=["POST"],
+        endpoint="album_mundial_import_repetidas",
+    )
+    def album_mundial_import_repetidas():
+        if not _has_access():
+            return jsonify({"ok": False, "error": "forbidden"}), 403
+
+        _ensure_schema()
+        _seed_if_needed()
+
+        data = request.get_json(silent=True) or {}
+        text = str(data.get("text") or "").strip()
+        if not text:
+            return jsonify({"ok": True, "updated": [], "unknown": [], "invalid": []})
+
+        con = _connect()
+        try:
+            rows = con.execute("SELECT id, nombre, codigo FROM album_paises").fetchall()
+            code_to_id: dict[str, int] = {}
+            for r in rows:
+                for v in _pais_code_variants(str(r["codigo"] or "")):
+                    code_to_id[v] = int(r["id"])
+                name_code = _make_code(str(r["nombre"] or ""))
+                for v in _pais_code_variants(name_code):
+                    code_to_id[v] = int(r["id"])
+
+            updated: set[tuple[int, int]] = set()
+            unknown: list[str] = []
+            invalid: list[str] = []
+
+            for raw_line in text.splitlines():
+                line = raw_line.strip()
+                if not line:
+                    continue
+                if ":" not in line:
+                    invalid.append(line)
+                    continue
+
+                raw_pais, raw_nums = line.split(":", 1)
+                pais_code = _make_code(raw_pais)
+                pais_id = (
+                    code_to_id.get(pais_code)
+                    or code_to_id.get(pais_code.replace("_", ""))
+                    or code_to_id.get(pais_code.replace(".", ""))
+                    or code_to_id.get(pais_code.replace("_", "").replace(".", ""))
+                )
+                if not pais_id:
+                    unknown.append(raw_pais.strip() or line)
+                    continue
+
+                nums_part = raw_nums.strip()
+                if not nums_part:
+                    invalid.append(line)
+                    continue
+
+                tokens = re.split(r"[,\s]+", nums_part)
+                any_ok = False
+                for tok in tokens:
+                    t = tok.strip()
+                    if not t:
+                        continue
+                    m = re.match(r"^(?P<num>\d{1,3})(?:x(?P<count>\d{1,2}))?$", t, re.IGNORECASE)
+                    if not m:
+                        invalid.append(f"{raw_pais.strip()}: {t}")
+                        continue
+                    try:
+                        num = int(m.group("num"))
+                    except Exception:
+                        invalid.append(f"{raw_pais.strip()}: {t}")
+                        continue
+                    if num < 1 or num > 20:
+                        invalid.append(f"{raw_pais.strip()}: {t}")
+                        continue
+                    updated.add((int(pais_id), num))
+                    any_ok = True
+
+                if not any_ok:
+                    invalid.append(line)
+
+            if updated:
+                now = _now()
+                con.executemany(
+                    """
+                    UPDATE album_figuritas
+                    SET estado = 2, updated_at = ?
+                    WHERE pais_id = ? AND numero = ?
+                    """,
+                    [(now, pid, num) for (pid, num) in sorted(updated)],
+                )
+                con.commit()
+
+            return jsonify(
+                {
+                    "ok": True,
+                    "updated": [
+                        {"pais_id": pid, "numero": num, "estado": 2} for (pid, num) in sorted(updated)
+                    ],
+                    "unknown": unknown,
+                    "invalid": invalid,
+                }
+            )
+        finally:
+            con.close()
+
+    @app.route("/album-mundial/api/reset", methods=["POST"], endpoint="album_mundial_reset")
+    def album_mundial_reset():
+        if not _has_access():
+            return jsonify({"ok": False, "error": "forbidden"}), 403
+
+        _ensure_schema()
+        _seed_if_needed()
+
+        con = _connect()
+        try:
+            now = _now()
+            con.execute("UPDATE album_figuritas SET estado = 0, updated_at = ?", (now,))
+            con.commit()
+        finally:
+            con.close()
+
+        return jsonify({"ok": True})
+
+    @app.route(
+        "/album-mundial/api/backup/export",
+        methods=["GET"],
+        endpoint="album_mundial_export_backup",
+    )
+    def album_mundial_export_backup():
+        if not _has_access():
+            return jsonify({"ok": False, "error": "forbidden"}), 403
+
+        _ensure_schema()
+        _seed_if_needed()
+
+        paises, totals = _load_state()
+        return jsonify(
+            {
+                "ok": True,
+                "version": 1,
+                "exported_at": _now(),
+                "paises": paises,
+                "totals": totals,
+            }
+        )
+
+    @app.route(
+        "/album-mundial/api/backup/import",
+        methods=["POST"],
+        endpoint="album_mundial_import_backup",
+    )
+    def album_mundial_import_backup():
+        if not _has_access():
+            return jsonify({"ok": False, "error": "forbidden"}), 403
+
+        _ensure_schema()
+        _seed_if_needed()
+
+        data = request.get_json(silent=True) or {}
+        payload = data.get("backup") if isinstance(data.get("backup"), dict) else data
+        paises_payload = payload.get("paises") if isinstance(payload, dict) else None
+        if not isinstance(paises_payload, list):
+            return jsonify({"ok": False, "error": "bad_request"}), 400
+
+        con = _connect()
+        try:
+            rows = con.execute("SELECT id, codigo, nombre FROM album_paises").fetchall()
+            code_to_id: dict[str, int] = {}
+            for r in rows:
+                for v in _pais_code_variants(str(r["codigo"] or "")):
+                    code_to_id[v] = int(r["id"])
+                name_code = _make_code(str(r["nombre"] or ""))
+                for v in _pais_code_variants(name_code):
+                    code_to_id[v] = int(r["id"])
+
+            now = _now()
+            created = 0
+            changed = 0
+
+            for p in paises_payload:
+                if not isinstance(p, dict):
+                    continue
+                raw_code = str(p.get("codigo") or p.get("code") or "").strip()
+                raw_name = str(p.get("nombre") or p.get("name") or raw_code).strip()
+                code = _make_code(raw_code or raw_name)
+                if not code:
+                    continue
+
+                pais_id = code_to_id.get(code) or code_to_id.get(code.replace("_", ""))
+                if not pais_id:
+                    con.execute(
+                        """
+                        INSERT OR IGNORE INTO album_paises(nombre, codigo, bandera, orden)
+                        VALUES(?, ?, ?, ?)
+                        """,
+                        (raw_name or code, code, str(p.get("bandera") or ""), int(p.get("orden") or 0)),
+                    )
+                    row = con.execute("SELECT id FROM album_paises WHERE codigo = ?", (code,)).fetchone()
+                    pais_id = int(row["id"]) if row else None
+                    if not pais_id:
+                        continue
+                    for v in _pais_code_variants(code):
+                        code_to_id[v] = int(pais_id)
+                    created += 1
+
+                figs = p.get("figuritas")
+                if not isinstance(figs, list):
+                    continue
+                for f in figs:
+                    if not isinstance(f, dict):
+                        continue
+                    try:
+                        numero = int(f.get("numero"))
+                    except Exception:
+                        continue
+                    if numero < 1 or numero > 20:
+                        continue
+
+                    estado = f.get("estado", 0)
+                    try:
+                        estado_i = int(estado)
+                    except Exception:
+                        estado_i = 0
+                    if estado_i not in (0, 1, 2):
+                        estado_i = 0
+
+                    nombre = str(f.get("nombre") or "").strip()
+                    tipo = str(f.get("tipo") or "").strip()
+                    posicion = str(f.get("posicion") or "").strip()
+
+                    cur = con.execute(
+                        """
+                        UPDATE album_figuritas
+                        SET nombre = ?, tipo = ?, posicion = ?, estado = ?, updated_at = ?
+                        WHERE pais_id = ? AND numero = ?
+                        """,
+                        (nombre, tipo, posicion, estado_i, now, int(pais_id), numero),
+                    )
+                    if cur.rowcount == 0:
+                        con.execute(
+                            """
+                            INSERT INTO album_figuritas(pais_id, numero, nombre, tipo, posicion, estado, updated_at)
+                            VALUES(?, ?, ?, ?, ?, ?, ?)
+                            """,
+                            (int(pais_id), numero, nombre, tipo, posicion, estado_i, now),
+                        )
+                    changed += 1
+
+            con.commit()
+        finally:
+            con.close()
+
+        return jsonify({"ok": True, "created_paises": created, "changed": changed})
 
     app._album_mundial_registered = True

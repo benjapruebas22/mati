@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block extra_head %}
   {{ super() }}
-  <link rel="stylesheet" href="{{ url_for('static', filename='album_mundial/album_mundial.css', v='2026-05-11-01') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='album_mundial/album_mundial.css', v='2026-05-11-02') }}">
 {% endblock %}
 {% block content %}
 <section class="album-2026">
@@ -62,11 +62,11 @@
       </div>
     </div>
 
-    <div class="am-filters">
-      <div class="am-field">
-        <label for="amSearch">Buscar</label>
-        <input id="amSearch" type="search" placeholder="País…">
-      </div>
+      <div class="am-filters">
+        <div class="am-field">
+          <label for="amSearch">Buscar</label>
+          <input id="amSearch" type="search" placeholder="País…">
+        </div>
       <div class="am-field">
         <label for="amView">Ver</label>
         <select id="amView">
@@ -86,13 +86,53 @@
           <option value="least">Más faltantes</option>
           <option value="dup">Más repetidas</option>
         </select>
+        </div>
+        <button class="am-btn am-btn-ghost" type="button" id="amReset">Reset</button>
       </div>
-      <button class="am-btn am-btn-ghost" type="button" id="amReset">Reset</button>
-    </div>
 
-    <div class="am-countries" id="amCountries">
-      {% for p in paises %}
-      <article class="am-country {% if p.completo %}is-complete{% endif %}" data-pais-id="{{ p.id }}">
+      <div class="am-tools">
+        <details class="am-tool" id="amToolImport">
+          <summary class="am-tool-sum">Importador rápido (repetidas)</summary>
+          <div class="am-tool-body">
+            <div class="am-tool-help">
+              Pegá texto así (una línea por país):
+              <code>PANAMA:3</code> · <code>ECUADOR:11x2,3x2,16,1</code>
+            </div>
+            <textarea
+              id="amImportText"
+              class="am-textarea"
+              rows="5"
+              placeholder="PANAMA:3&#10;SENEGAL:3&#10;PORTUGAL:17&#10;ECUADOR:11x2,3x2,16,1"
+              spellcheck="false"
+            ></textarea>
+            <div class="am-tool-actions">
+              <button class="am-btn am-btn-primary" type="button" id="amImportApply">Aplicar repetidas</button>
+              <button class="am-btn am-btn-ghost" type="button" id="amImportClear">Limpiar</button>
+            </div>
+            <div class="am-tool-result" id="amImportResult" aria-live="polite"></div>
+          </div>
+        </details>
+
+        <details class="am-tool" id="amToolBackup">
+          <summary class="am-tool-sum">Backup</summary>
+          <div class="am-tool-body">
+            <div class="am-tool-help">
+              Exportá un backup para WhatsApp/Drive. Si importás, pisa estados/nombres/tipos/posiciones.
+            </div>
+            <div class="am-tool-actions">
+              <button class="am-btn" type="button" id="amExportBackup">Exportar backup JSON</button>
+              <input id="amImportBackupFile" type="file" accept="application/json" hidden>
+              <label class="am-btn am-btn-ghost" for="amImportBackupFile">Importar backup JSON</label>
+              <button class="am-btn am-btn-danger" type="button" id="amResetAlbum">Reset álbum</button>
+            </div>
+            <div class="am-tool-result" id="amBackupResult" aria-live="polite"></div>
+          </div>
+        </details>
+      </div>
+
+      <div class="am-countries" id="amCountries">
+        {% for p in paises %}
+        <article class="am-country {% if p.completo %}is-complete{% endif %}" data-pais-id="{{ p.id }}">
         <div class="am-country-head">
           <div class="am-flag" aria-hidden="true">{{ (p.bandera or p.codigo[:2]) }}</div>
           <button type="button" class="am-country-name" data-open-pais="{{ p.id }}">
@@ -176,16 +216,19 @@
   </div>
 
   <script>
-    window.__ALBUM_MUNDIAL__ = {
-      paises: {{ paises|tojson }},
-      totals: {{ totals|tojson }},
-      endpoints: {
-        toggle: "{{ url_for('album_mundial_toggle') }}",
-        update: "{{ url_for('album_mundial_update_figurita') }}"
-      }
-    };
-  </script>
-  <script src="{{ url_for('static', filename='album_mundial/album_mundial.js', v='2026-05-11-01') }}"></script>
+      window.__ALBUM_MUNDIAL__ = {
+        paises: {{ paises|tojson }},
+        totals: {{ totals|tojson }},
+        endpoints: {
+          toggle: "{{ url_for('album_mundial_toggle') }}",
+          update: "{{ url_for('album_mundial_update_figurita') }}",
+          importRep: "{{ url_for('album_mundial_import_repetidas') }}",
+          reset: "{{ url_for('album_mundial_reset') }}",
+          exportBackup: "{{ url_for('album_mundial_export_backup') }}",
+          importBackup: "{{ url_for('album_mundial_import_backup') }}"
+        }
+      };
+    </script>
+  <script src="{{ url_for('static', filename='album_mundial/album_mundial.js', v='2026-05-11-02') }}"></script>
 </section>
 {% endblock %}
-

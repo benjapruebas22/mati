@@ -34,6 +34,16 @@
   const elCopyMissing = document.getElementById("amCopyMissing");
   const elCopyDup = document.getElementById("amCopyDup");
 
+  const elImportText = document.getElementById("amImportText");
+  const elImportApply = document.getElementById("amImportApply");
+  const elImportClear = document.getElementById("amImportClear");
+  const elImportResult = document.getElementById("amImportResult");
+
+  const elExportBackup = document.getElementById("amExportBackup");
+  const elImportBackupFile = document.getElementById("amImportBackupFile");
+  const elResetAlbum = document.getElementById("amResetAlbum");
+  const elBackupResult = document.getElementById("amBackupResult");
+
   const elSide = document.getElementById("amSide");
   const elSideClose = document.getElementById("amSideClose");
   const elSideDone = document.getElementById("amSideDone");
@@ -130,17 +140,40 @@
     return data;
   }
 
-  function toast(msg) {
-    const el = document.createElement("div");
-    el.className = "am-toast";
-    el.textContent = msg;
-    document.body.appendChild(el);
-    setTimeout(() => el.classList.add("show"), 10);
-    setTimeout(() => {
-      el.classList.remove("show");
-      setTimeout(() => el.remove(), 200);
-    }, 2200);
-  }
+    function toast(msg) {
+      const el = document.createElement("div");
+      el.className = "am-toast";
+      el.textContent = msg;
+      document.body.appendChild(el);
+      setTimeout(() => el.classList.add("show"), 10);
+      setTimeout(() => {
+        el.classList.remove("show");
+        setTimeout(() => el.remove(), 200);
+      }, 2200);
+    }
+
+    function setInlineResult(el, kind, msg) {
+      if (!el) return;
+      el.classList.remove("is-ok", "is-warn", "is-bad");
+      if (kind) el.classList.add(`is-${kind}`);
+      el.textContent = msg || "";
+    }
+
+    function pingAnimation(btn) {
+      if (!btn) return;
+      btn.classList.remove("is-pop");
+      // force reflow to restart animation
+      // eslint-disable-next-line no-unused-expressions
+      btn.offsetWidth;
+      btn.classList.add("is-pop");
+      btn.addEventListener(
+        "animationend",
+        () => {
+          btn.classList.remove("is-pop");
+        },
+        { once: true }
+      );
+    }
 
   function setChipState(btn, st, paisId, nombrePais) {
     btn.classList.remove("st-0", "st-1", "st-2");
@@ -156,12 +189,15 @@
         f.estado = st;
         const n = (f.nombre || "").trim();
         const tip = (f.tipo || "").trim();
-        const meta = [n || "-", tip ? `(${tip})` : ""].filter(Boolean).join(" ");
+        const pos = (f.posicion || "").trim();
+        const meta = [n || "-", tip || "", pos || ""].filter(Boolean).join(" · ");
         btn.title = `Figurita #${num} · ${nombrePais} · ${meta} · Estado: ${label}`;
+        pingAnimation(btn);
         return;
       }
     }
     btn.title = `Figurita #${num} · ${nombrePais} · Estado: ${label}`;
+    pingAnimation(btn);
   }
 
   async function onChipClick(ev) {
@@ -280,17 +316,170 @@
     return lines.join("\n");
   }
 
-  async function onCopy(kind) {
-    const text = buildList(kind);
-    const ok = await copyText(text);
-    toast(ok ? "Copiado al portapapeles." : "No se pudo copiar.");
-  }
+    async function onCopy(kind) {
+      const text = buildList(kind);
+      const ok = await copyText(text);
+      toast(ok ? "Copiado al portapapeles." : "No se pudo copiar.");
+    }
 
-  // Side panel
-  let sidePaisId = null;
-  function isSideOpenFor(pId) {
-    return elSide && elSide.getAttribute("aria-hidden") === "false" && sidePaisId === pId;
-  }
+    async function applyImportRepetidas() {
+      if (!elImportText || !elImportApply) return;
+      const text = String(elImportText.value || "").trim();
+      if (!text) {
+        setInlineResult(elImportResult, "warn", "Pegá al menos una línea para importar.");
+        return;
+      }
+
+      setInlineResult(elImportResult, "", "Importando…");
+      try {
+        const res = await postJson(endpoints.importRep, { text });
+        const updated = Array.isArray(res.updated) ? res.updated : [];
+        const touchedPais = new Set();
+
+        updated.forEach((u) => {
+          const pid = Number(u.pais_id);
+          const num = Number(u.numero);
+          const st = Number(u.estado);
+          const p = byId.get(pid);
+          if (!p) return;
+          touchedPais.add(pid);
+          const elCard = elById.get(pid);
+          if (elCard) {
+            const chip = elCard.querySelector(`.am-chip[data-num="${num}"]`);
+            if (chip) setChipState(chip, st, pid, p.nombre || "País");
+          }
+          const f = (p.figuritas || []).find((x) => Number(x.numero) === num);
+          if (f) f.estado = st;
+        });
+
+        touchedPais.forEach((pid) => {
+          const p = byId.get(pid);
+          if (!p) return;
+          recalcPais(p);
+          updatePaisUI(pid);
+          if (isSideOpenFor(pid)) renderSide(pid);
+        });
+
+        updateTotalsUI(recalcTotals());
+        applyFilters();
+
+        const unknown = Array.isArray(res.unknown) ? res.unknown : [];
+        const invalid = Array.isArray(res.invalid) ? res.invalid : [];
+
+        const bits = [];
+        bits.push(`Listo: ${updated.length} repetidas aplicadas.`);
+        if (unknown.length) {
+          bits.push(
+            `País no encontrado: ${unknown.slice(0, 3).join(", ")}${unknown.length > 3 ? "…" : ""}`
+          );
+        }
+        if (invalid.length) {
+          bits.push(
+            `Tokens inválidos: ${invalid.slice(0, 3).join(", ")}${invalid.length > 3 ? "…" : ""}`
+          );
+        }
+
+        setInlineResult(elImportResult, unknown.length || invalid.length ? "warn" : "ok", bits.join(" "));
+        toast("Importación aplicada.");
+      } catch (e) {
+        setInlineResult(elImportResult, "bad", "No se pudo importar (reintentá).");
+        toast("No se pudo importar.");
+      }
+    }
+
+    function clearImportBox() {
+      if (elImportText) elImportText.value = "";
+      setInlineResult(elImportResult, "", "");
+    }
+
+    async function exportBackup() {
+      if (!endpoints.exportBackup) return;
+      setInlineResult(elBackupResult, "", "Exportando…");
+      try {
+        const res = await fetch(endpoints.exportBackup, { method: "GET" });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data || data.ok === false) throw new Error("bad");
+
+        const stamp = new Date().toISOString().slice(0, 19).replaceAll(":", "-");
+        const fileName = `album_mundial_2026_backup_${stamp}.json`;
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+
+        setInlineResult(elBackupResult, "ok", `Backup exportado: ${fileName}`);
+        toast("Backup exportado.");
+      } catch (e) {
+        setInlineResult(elBackupResult, "bad", "No se pudo exportar el backup.");
+        toast("No se pudo exportar.");
+      }
+    }
+
+    async function importBackupFromFile(file) {
+      if (!file || !endpoints.importBackup) return;
+      const ok = confirm("¿Importar backup? Esto pisa estados/nombres/tipos/posiciones.");
+      if (!ok) return;
+      setInlineResult(elBackupResult, "", "Importando…");
+
+      try {
+        const text = await file.text();
+        const payload = JSON.parse(text);
+        await postJson(endpoints.importBackup, { backup: payload });
+        setInlineResult(elBackupResult, "ok", "Backup importado. Recargando…");
+        toast("Backup importado.");
+        setTimeout(() => window.location.reload(), 400);
+      } catch (e) {
+        setInlineResult(elBackupResult, "bad", "No se pudo importar el backup.");
+        toast("No se pudo importar.");
+      }
+    }
+
+    async function resetAlbum() {
+      if (!endpoints.reset) return;
+      const ok = confirm("¿Resetear el álbum? Solo resetea estados (no borra nombres).");
+      if (!ok) return;
+      setInlineResult(elBackupResult, "", "Reseteando…");
+
+      try {
+        await postJson(endpoints.reset, {});
+
+        paises.forEach((p) => {
+          (p.figuritas || []).forEach((f) => {
+            f.estado = 0;
+          });
+          recalcPais(p);
+          updatePaisUI(Number(p.id));
+
+          const elCard = elById.get(Number(p.id));
+          if (elCard) {
+            elCard.querySelectorAll(".am-chip").forEach((chip) => {
+              setChipState(chip, 0, Number(p.id), p.nombre || "País");
+            });
+          }
+        });
+
+        updateTotalsUI(recalcTotals());
+        if (sidePaisId != null) renderSide(sidePaisId);
+        applyFilters();
+
+        setInlineResult(elBackupResult, "ok", "Álbum reseteado.");
+        toast("Álbum reseteado.");
+      } catch (e) {
+        setInlineResult(elBackupResult, "bad", "No se pudo resetear.");
+        toast("No se pudo resetear.");
+      }
+    }
+
+    // Side panel
+    let sidePaisId = null;
+    function isSideOpenFor(pId) {
+      return elSide && elSide.getAttribute("aria-hidden") === "false" && sidePaisId === pId;
+    }
 
   function openSide(pId) {
     if (!elSide) return;
@@ -424,11 +613,24 @@
   if (elSort) elSort.addEventListener("change", applyFilters);
   if (elReset) elReset.addEventListener("click", resetFilters);
 
-  if (elCopyMissing) elCopyMissing.addEventListener("click", () => onCopy("missing"));
-  if (elCopyDup) elCopyDup.addEventListener("click", () => onCopy("dup"));
+    if (elCopyMissing) elCopyMissing.addEventListener("click", () => onCopy("missing"));
+    if (elCopyDup) elCopyDup.addEventListener("click", () => onCopy("dup"));
 
-  if (elSideClose) elSideClose.addEventListener("click", closeSide);
-  if (elSideDone) elSideDone.addEventListener("click", closeSide);
+    if (elImportApply) elImportApply.addEventListener("click", applyImportRepetidas);
+    if (elImportClear) elImportClear.addEventListener("click", clearImportBox);
+
+    if (elExportBackup) elExportBackup.addEventListener("click", exportBackup);
+    if (elImportBackupFile) {
+      elImportBackupFile.addEventListener("change", (ev) => {
+        const file = ev.target && ev.target.files ? ev.target.files[0] : null;
+        if (ev.target) ev.target.value = "";
+        if (file) importBackupFromFile(file);
+      });
+    }
+    if (elResetAlbum) elResetAlbum.addEventListener("click", resetAlbum);
+
+    if (elSideClose) elSideClose.addEventListener("click", closeSide);
+    if (elSideDone) elSideDone.addEventListener("click", closeSide);
   if (elSideTableBody) elSideTableBody.addEventListener("change", onSideChange);
   if (elSideTableBody) elSideTableBody.addEventListener("input", (ev) => {
     const t = ev.target;
