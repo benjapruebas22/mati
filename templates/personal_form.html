@@ -175,6 +175,18 @@
             </select>
           </div>
 
+          <div class="fg">
+            <label>Ocupacion de puesto (PEP)</label>
+            {% set ocup = (r.ocupacion_puesto if r and r.ocupacion_puesto is defined else 'EXCLUSIVO') %}
+            <select class="input" name="ocupacion_puesto">
+              <option value="EXCLUSIVO" {% if ocup=='EXCLUSIVO' %}selected{% endif %}>Puesto exclusivo (1.00)</option>
+              <option value="DOBLE_TURNO" {% if ocup=='DOBLE_TURNO' %}selected{% endif %}>Doble turno mismo puesto (0.50)</option>
+              <option value="COMPARTIDO" {% if ocup=='COMPARTIDO' %}selected{% endif %}>Puesto compartido (0.50)</option>
+              <option value="OCASIONAL" {% if ocup=='OCASIONAL' %}selected{% endif %}>Uso ocasional (0.25)</option>
+              <option value="SIN_PUESTO_FIJO" {% if ocup=='SIN_PUESTO_FIJO' %}selected{% endif %}>Sin puesto fisico fijo (0.00)</option>
+            </select>
+          </div>
+
           <div class="fg span2">
             <label>Nombre y apellido</label>
             <input class="input" name="nombre_apellido" required
@@ -203,6 +215,7 @@
                 <li><strong>Local:</strong> D01, D02… (si aplica).</li>
                 <li><strong>Piso:</strong> PB, P1, P2, P3.</li>
                 <li><strong>Dependencia:</strong> nombre institucional completo.</li>
+                <li><strong>PEP:</strong> define equivalencia de uso de puesto.</li>
               </ul>
             </div>
           </div>

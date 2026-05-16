@@ -19,6 +19,146 @@
       <a class="btn" href="{{ url_for('dashboard') }}">Volver</a>
     </div>
 
+    <div style="margin-top:12px;background:#ffffff;border:1px solid #e5e7eb;padding:12px;border-radius:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
+        <div>
+          <h3 style="margin:0;font-size:16px;color:#0f172a;font-weight:700;">Infraestructura por sede y deposito (PEP)</h3>
+          <div style="font-size:12px;color:#64748b;margin-top:3px;">Cobertura de puestos calculada por PEP, sin usar personas reales como denominador.</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:12px;">
+          <span class="state info"><strong>Personas reales:</strong> {{ infra_totals.personas_reales }}</span>
+          <span class="state info"><strong>PEP:</strong> {{ '%.2f'|format(infra_totals.pep or 0) }}</span>
+          <span class="state info"><strong>Puestos:</strong> {{ '%.2f'|format(infra_totals.puestos_existentes or 0) }}</span>
+          <span class="state info"><strong>Cobertura:</strong> {% if infra_totals.cobertura_pct is not none %}{{ infra_totals.cobertura_pct }}%{% else %}-{% endif %}</span>
+        </div>
+      </div>
+
+      <form method="get" style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:end;">
+        <div>
+          <label style="font-size:12px;color:#64748b;">Sede</label>
+          <select name="infra_sede" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+            <option value="">Todas</option>
+            {% for s in infra_sedes %}
+              <option value="{{ s.codigo }}" {% if infra_sede == s.codigo %}selected{% endif %}>{{ s.codigo }} - {{ s.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px;color:#64748b;">Depositos</label>
+          <select name="infra_deposito" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+            <option value="">Todos</option>
+            {% for d in infra_depositos %}
+              <option value="{{ d.codigo }}" {% if infra_deposito == d.codigo %}selected{% endif %}>{{ d.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button class="btn" type="submit" style="padding:6px 12px;">Aplicar</button>
+        <a class="btn" href="{{ url_for('sedes_resumen_mpd') }}" style="padding:6px 12px;">Limpiar</a>
+      </form>
+
+      <details style="margin-top:10px;">
+        <summary style="cursor:pointer;font-size:12px;color:#334155;font-weight:700;">Criterios de analisis (V1)</summary>
+        <ul style="margin:8px 0 0;padding-left:18px;font-size:12px;color:#475569;line-height:1.4;">
+          <li>PEP por ocupacion: exclusivo 1.00, doble turno 0.50, compartido 0.50, ocasional 0.25, sin puesto fijo 0.00.</li>
+          <li>puestos_necesarios = suma(PEP). cobertura_puestos = puestos_existentes / puestos_necesarios * 100.</li>
+          <li>Ocupacion: 8 a 12 m2/persona adecuado, menor a 8 intensivo, mayor a 12 amplio.</li>
+          <li>Densidad por oficina: hasta 2 adecuado, 2 a 3 intensivo, mas de 3 saturado.</li>
+          <li>Seguridad: vencimientos proximos dentro de 45 dias requieren atencion.</li>
+          <li>Indice general interno: promedio de ocupacion, densidad y seguridad.</li>
+        </ul>
+      </details>
+
+      <div style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;overflow:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;">
+          <thead style="background:#f8fafc;">
+            <tr>
+              <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Sede</th>
+              <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb;">Personas reales</th>
+              <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb;">PEP</th>
+              <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb;">Puestos existentes</th>
+              <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb;">Diferencia puestos</th>
+              <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb;">Cobertura %</th>
+              <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Semaforo</th>
+              <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb;">m2/persona</th>
+              <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb;">Densidad</th>
+              <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb;">Seg. 45d</th>
+              <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb;">Indice general</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if infra_rows and infra_rows|length > 0 %}
+              {% for r in infra_rows %}
+                {% set code = (r.codigo or '')|upper %}
+                {% set cls = fuero_map.get(code, 'fuero-neutral') %}
+                {% if r.cobertura_estado_key == 'critico' %}
+                  {% set sem_style = 'background:#fef2f2;border-color:#fecaca;color:#b91c1c;' %}
+                {% elif r.cobertura_estado_key == 'leve' %}
+                  {% set sem_style = 'background:#fff7ed;border-color:#fed7aa;color:#b45309;' %}
+                {% elif r.cobertura_estado_key == 'equilibrado' %}
+                  {% set sem_style = 'background:#ecfdf3;border-color:#bbf7d0;color:#15803d;' %}
+                {% elif r.cobertura_estado_key == 'sob_leve' %}
+                  {% set sem_style = 'background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8;' %}
+                {% elif r.cobertura_estado_key == 'sob_alto' %}
+                  {% set sem_style = 'background:#eef2ff;border-color:#c7d2fe;color:#4338ca;' %}
+                {% else %}
+                  {% set sem_style = 'background:#f8fafc;border-color:#e2e8f0;color:#475569;' %}
+                {% endif %}
+                <tr>
+                  <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
+                    <span class="sede-badge-soft {{ cls }}">{{ r.codigo }}</span>
+                    <span style="margin-left:6px;color:#334155;">{{ r.nombre }}</span>
+                  </td>
+                  <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ r.personas_reales }}</td>
+                  <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ '%.2f'|format(r.pep or 0) }}</td>
+                  <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ '%.2f'|format(r.puestos_existentes or 0) }}</td>
+                  <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ '%.2f'|format(r.diferencia_puestos or 0) }}</td>
+                  <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">
+                    {% if r.cobertura_pct is not none %}{{ r.cobertura_pct }}%{% else %}-{% endif %}
+                  </td>
+                  <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
+                    <span class="state" style="{{ sem_style }}">{{ r.cobertura_estado_label }}</span>
+                  </td>
+                  <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">
+                    {% if r.m2pp is not none %}{{ r.m2pp }}{% else %}-{% endif %}
+                  </td>
+                  <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">
+                    {% if r.densidad_oficina is not none %}{{ r.densidad_oficina }}{% else %}-{% endif %}
+                  </td>
+                  <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ r.seg_vencen_45d }}</td>
+                  <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">
+                    {% if r.indice_general is not none %}{{ r.indice_general }}{% else %}-{% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="11" style="padding:10px;color:#64748b;">No hay datos de infraestructura para el filtro seleccionado.</td>
+              </tr>
+            {% endif %}
+          </tbody>
+          <tfoot style="background:#f8fafc;">
+            <tr>
+              <td style="padding:8px;border-top:1px solid #e5e7eb;font-weight:700;">Totales</td>
+              <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:right;font-weight:700;">{{ infra_totals.personas_reales }}</td>
+              <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:right;font-weight:700;">{{ '%.2f'|format(infra_totals.pep or 0) }}</td>
+              <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:right;font-weight:700;">{{ '%.2f'|format(infra_totals.puestos_existentes or 0) }}</td>
+              <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:right;font-weight:700;">{{ '%.2f'|format(infra_totals.diferencia_puestos or 0) }}</td>
+              <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:right;font-weight:700;">
+                {% if infra_totals.cobertura_pct is not none %}{{ infra_totals.cobertura_pct }}%{% else %}-{% endif %}
+              </td>
+              <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;">
+                <span class="state info">{{ infra_totals.estado_label }}</span>
+              </td>
+              <td colspan="3" style="padding:8px;border-top:1px solid #e5e7eb;"></td>
+              <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:right;font-weight:700;">
+                {% if infra_totals.indice_general is not none %}{{ infra_totals.indice_general }}{% else %}-{% endif %}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
     {% if rows and rows|length > 0 %}
     <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:end;">
       <div>

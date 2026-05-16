@@ -163,6 +163,8 @@
                   <th>Nombre y apellido</th>
                   <th>Dependencia</th>
                   <th>Email</th>
+                  <th style="width:190px;">Ocupacion puesto</th>
+                  <th style="width:70px;">PEP</th>
                   <th style="width:110px;">Estado</th>
                   <th style="width:150px;">Acciones</th>
                 </tr>
@@ -180,6 +182,8 @@
                       <td><strong>{{ r.nombre_apellido }}</strong></td>
                       <td>{{ r.dependencia }}</td>
                       <td>{{ r.email_admin }}</td>
+                      <td>{{ r.ocupacion_puesto_label }}</td>
+                      <td><strong>{{ '%.2f'|format(r.pep or 0) }}</strong></td>
                       <td>
                         {% if r.activo == 1 %}
                           <span class="pill" style="background:#ecfdf3;border-color:#bbf7d0;color:#15803d;">Activo</span>
@@ -200,7 +204,7 @@
                   {% endfor %}
                 {% else %}
                   <tr>
-                    <td colspan="8" style="text-align:center;color:#9ca3af;padding:16px;">
+                    <td colspan="10" style="text-align:center;color:#9ca3af;padding:16px;">
                       No hay registros para los filtros seleccionados.
                     </td>
                   </tr>

@@ -3590,6 +3590,46 @@ def api_sedes_mpd():
 
 import sqlite3
 
+PEP_FACTORES_PUESTO = {
+    "EXCLUSIVO": 1.00,
+    "DOBLE_TURNO": 0.50,
+    "COMPARTIDO": 0.50,
+    "OCASIONAL": 0.25,
+    "SIN_PUESTO_FIJO": 0.00,
+}
+
+PEP_LABELS_PUESTO = {
+    "EXCLUSIVO": "Puesto exclusivo",
+    "DOBLE_TURNO": "Doble turno mismo puesto",
+    "COMPARTIDO": "Puesto compartido",
+    "OCASIONAL": "Uso ocasional",
+    "SIN_PUESTO_FIJO": "Sin puesto fisico fijo",
+}
+
+def normalizar_ocupacion_puesto(raw) -> str:
+    key = str(raw or "").strip().upper()
+    if key not in PEP_FACTORES_PUESTO:
+        return "EXCLUSIVO"
+    return key
+
+def pep_factor_desde_ocupacion(raw) -> float:
+    return float(PEP_FACTORES_PUESTO.get(normalizar_ocupacion_puesto(raw), 1.00))
+
+def pep_label_desde_ocupacion(raw) -> str:
+    return PEP_LABELS_PUESTO.get(normalizar_ocupacion_puesto(raw), "Puesto exclusivo")
+
+def normalizar_deposito_codigo(raw: str) -> str:
+    code = str(raw or "").strip().upper()
+    if not code:
+        return ""
+    if "-" in code:
+        chunks = [c for c in code.split("-") if c]
+        if chunks:
+            code = chunks[-1]
+    if code.startswith("D") and code[1:].isdigit():
+        return f"D{int(code[1:]):02d}"
+    return code
+
 # ============================================================
 # MIGRACIÓN SEGURA: asegurar columnas piso/activo sin romper
 # ============================================================
@@ -3607,9 +3647,24 @@ def ensure_personal_schema():
     if "activo" not in cols:
         cur.execute("ALTER TABLE personal_sede ADD COLUMN activo INTEGER DEFAULT 1;")
 
+    if "ocupacion_puesto" not in cols:
+        cur.execute("ALTER TABLE personal_sede ADD COLUMN ocupacion_puesto TEXT DEFAULT 'EXCLUSIVO';")
+
     # normalizar nulos/vacíos
     cur.execute("UPDATE personal_sede SET piso='PB' WHERE piso IS NULL OR TRIM(piso)='';")
     cur.execute("UPDATE personal_sede SET activo=1 WHERE activo IS NULL;")
+    cur.execute("""
+        UPDATE personal_sede
+        SET ocupacion_puesto = 'EXCLUSIVO'
+        WHERE ocupacion_puesto IS NULL OR TRIM(ocupacion_puesto) = '';
+    """)
+    cur.execute("UPDATE personal_sede SET ocupacion_puesto = UPPER(TRIM(ocupacion_puesto));")
+    allowed = ",".join([f"'{k}'" for k in sorted(PEP_FACTORES_PUESTO.keys())])
+    cur.execute(f"""
+        UPDATE personal_sede
+        SET ocupacion_puesto = 'EXCLUSIVO'
+        WHERE UPPER(COALESCE(TRIM(ocupacion_puesto), '')) NOT IN ({allowed});
+    """)
 
     con.commit()
     con.close()
@@ -3678,6 +3733,7 @@ def personal_home():
             p.sede_texto,
             p.email_admin,
             COALESCE(p.activo,1) AS activo,
+            UPPER(COALESCE(NULLIF(TRIM(p.ocupacion_puesto),''),'EXCLUSIVO')) AS ocupacion_puesto,
             s.nombre AS sede_nombre,
             s.ciudad
         FROM personal_sede p
@@ -3695,8 +3751,17 @@ def personal_home():
             p.nombre_apellido
     """
 
-    filas = cur.execute(sql, params).fetchall()
+    filas_db = cur.execute(sql, params).fetchall()
     con.close()
+
+    filas = []
+    for r in filas_db:
+        item = dict(r)
+        ocup = normalizar_ocupacion_puesto(item.get("ocupacion_puesto"))
+        item["ocupacion_puesto"] = ocup
+        item["ocupacion_puesto_label"] = pep_label_desde_ocupacion(ocup)
+        item["pep"] = pep_factor_desde_ocupacion(ocup)
+        filas.append(item)
 
     return render_template(
         "personal_home.html",
@@ -3704,7 +3769,8 @@ def personal_home():
         filas=filas,
         cod_sede=cod_sede,
         piso=piso,
-        q=q
+        q=q,
+        pep_ocupacion_labels=PEP_LABELS_PUESTO,
     )
 
 
@@ -3730,6 +3796,7 @@ def personal_nuevo():
         "piso": (request.args.get("piso") or "PB").strip(),
         "codigo_local": (request.args.get("local") or "").strip().upper(),
         "activo": "1",
+        "ocupacion_puesto": "EXCLUSIVO",
     }
 
     if request.method == "POST":
@@ -3741,20 +3808,27 @@ def personal_nuevo():
         sede_texto = (request.form.get("sede_texto") or "").strip()
         email_admin = (request.form.get("email_admin") or "").strip()
         activo = 1 if request.form.get("activo") == "1" else 0
+        ocupacion_puesto = normalizar_ocupacion_puesto(request.form.get("ocupacion_puesto"))
 
         if not codigo_sede or not nombre_apellido or not codigo_local:
             con.close()
             flash("Sede, Local y Nombre y apellido son obligatorios.", "warning")
-            return render_template("personal_form.html", modo="nuevo", sedes=sedes, r=request.form)
+            return render_template(
+                "personal_form.html",
+                modo="nuevo",
+                sedes=sedes,
+                r=request.form,
+                pep_ocupacion_labels=PEP_LABELS_PUESTO,
+            )
 
         cur.execute("""
             INSERT INTO personal_sede
-            (codigo_sede, piso, codigo_local, nombre_apellido, dependencia, sede_texto, email_admin, activo)
-            VALUES (?,?,?,?,?,?,?,?)
+            (codigo_sede, piso, codigo_local, nombre_apellido, dependencia, sede_texto, email_admin, activo, ocupacion_puesto)
+            VALUES (?,?,?,?,?,?,?,?,?)
         """, (
             codigo_sede, piso, codigo_local,
             nombre_apellido, dependencia, sede_texto,
-            email_admin, activo
+            email_admin, activo, ocupacion_puesto
         ))
 
         con.commit()
@@ -3765,7 +3839,13 @@ def personal_nuevo():
         return redirect(url_for("personal_home", sede=codigo_sede, piso=piso))
 
     con.close()
-    return render_template("personal_form.html", modo="nuevo", sedes=sedes, r=pre)
+    return render_template(
+        "personal_form.html",
+        modo="nuevo",
+        sedes=sedes,
+        r=pre,
+        pep_ocupacion_labels=PEP_LABELS_PUESTO,
+    )
 
 
 # ============================================================
@@ -3794,7 +3874,8 @@ def personal_editar(id):
             dependencia,
             sede_texto,
             email_admin,
-            COALESCE(activo,1) AS activo
+            COALESCE(activo,1) AS activo,
+            UPPER(COALESCE(NULLIF(TRIM(ocupacion_puesto),''),'EXCLUSIVO')) AS ocupacion_puesto
         FROM personal_sede
         WHERE id = ?
     """, (id,)).fetchone()
@@ -3813,11 +3894,19 @@ def personal_editar(id):
         sede_texto = (request.form.get("sede_texto") or "").strip()
         email_admin = (request.form.get("email_admin") or "").strip()
         activo = 1 if request.form.get("activo") == "1" else 0
+        ocupacion_puesto = normalizar_ocupacion_puesto(request.form.get("ocupacion_puesto"))
 
         if not codigo_sede or not nombre_apellido or not codigo_local:
             con.close()
             flash("Sede, Local y Nombre y apellido son obligatorios.", "warning")
-            return render_template("personal_form.html", modo="editar", sedes=sedes, r=request.form, id=id)
+            return render_template(
+                "personal_form.html",
+                modo="editar",
+                sedes=sedes,
+                r=request.form,
+                id=id,
+                pep_ocupacion_labels=PEP_LABELS_PUESTO,
+            )
 
         cur.execute("""
             UPDATE personal_sede
@@ -3829,12 +3918,13 @@ def personal_editar(id):
                 dependencia=?,
                 sede_texto=?,
                 email_admin=?,
-                activo=?
+                activo=?,
+                ocupacion_puesto=?
             WHERE id=?
         """, (
             codigo_sede, piso, codigo_local,
             nombre_apellido, dependencia, sede_texto,
-            email_admin, activo, id
+            email_admin, activo, ocupacion_puesto, id
         ))
 
         con.commit()
@@ -3844,7 +3934,16 @@ def personal_editar(id):
         return redirect(url_for("personal_home", sede=codigo_sede, piso=piso))
 
     con.close()
-    return render_template("personal_form.html", modo="editar", sedes=sedes, r=r, id=id)
+    r_dict = dict(r)
+    r_dict["ocupacion_puesto"] = normalizar_ocupacion_puesto(r_dict.get("ocupacion_puesto"))
+    return render_template(
+        "personal_form.html",
+        modo="editar",
+        sedes=sedes,
+        r=r_dict,
+        id=id,
+        pep_ocupacion_labels=PEP_LABELS_PUESTO,
+    )
 
 
 # ============================================================
@@ -6986,6 +7085,7 @@ def sedes_resumen():
 def sedes_resumen_mpd():
     db = get_db()
     ensure_aires_mpd_columns()
+    ensure_personal_schema()
 
     def aires_valid_where(alias: str) -> str:
         return (
@@ -6997,11 +7097,16 @@ def sedes_resumen_mpd():
             f"OR {alias}.observaciones IS NOT NULL)"
         )
 
+    infra_sede = (request.args.get("infra_sede") or "").strip().upper()
+    infra_deposito = normalizar_deposito_codigo((request.args.get("infra_deposito") or "").strip())
+
     sedes_rows = db.execute("""
         SELECT codigo, nombre
         FROM sedes_mpd
         ORDER BY codigo
     """).fetchall()
+    sedes_nombre = {str(r["codigo"] or "").strip().upper(): str(r["nombre"] or "").strip() for r in sedes_rows}
+    sedes_codigos = [str(r["codigo"] or "").strip().upper() for r in sedes_rows]
 
     def safe_scalar(sql, params=()):
         try:
@@ -7010,6 +7115,302 @@ def sedes_resumen_mpd():
         except Exception:
             return 0
 
+    # ------------------------------------------------------------
+    # NUEVA ESTADISTICA DE INFRAESTRUCTURA (PEP + COBERTURA PUESTOS)
+    # ------------------------------------------------------------
+    personal_rows = db.execute("""
+        SELECT
+            UPPER(COALESCE(codigo_sede,'')) AS sede_codigo,
+            COALESCE(codigo_local,'') AS codigo_local,
+            UPPER(COALESCE(NULLIF(TRIM(ocupacion_puesto),''),'EXCLUSIVO')) AS ocupacion_puesto
+        FROM personal_sede
+        WHERE COALESCE(activo,1)=1
+    """).fetchall()
+
+    puestos_rows = db.execute("""
+        SELECT
+            UPPER(COALESCE(codigo_sede,'')) AS sede_codigo,
+            COALESCE(codigo_local,'') AS codigo_local,
+            COALESCE(SUM(COALESCE(puestos_trabajo,0)),0) AS puestos_existentes
+        FROM luminarias_sede
+        WHERE COALESCE(activo,1)=1
+        GROUP BY UPPER(COALESCE(codigo_sede,'')), COALESCE(codigo_local,'')
+    """).fetchall()
+
+    depositos_base_rows = []
+    try:
+        depositos_base_rows = db.execute("""
+            SELECT
+                UPPER(COALESCE(codigo_sede,'')) AS sede_codigo,
+                COALESCE(codigo_local,'') AS codigo_local,
+                COALESCE(descripcion,'') AS descripcion
+            FROM sedes_depositos
+            ORDER BY codigo_sede, codigo_local
+        """).fetchall()
+    except Exception:
+        depositos_base_rows = []
+
+    personal_by_sede = defaultdict(lambda: {"personas_reales": 0, "pep": 0.0})
+    personal_by_sede_dep = defaultdict(lambda: {"personas_reales": 0, "pep": 0.0})
+    puestos_by_sede = defaultdict(float)
+    puestos_by_sede_dep = defaultdict(float)
+    depositos_meta = {}
+
+    for row in depositos_base_rows:
+        sede = str(row["sede_codigo"] or "").strip().upper()
+        dep = normalizar_deposito_codigo(row["codigo_local"])
+        desc = str(row["descripcion"] or "").strip()
+        if not sede or not dep:
+            continue
+        if dep not in depositos_meta:
+            depositos_meta[dep] = {"descripcion": desc, "sedes": set([sede])}
+        else:
+            if not depositos_meta[dep].get("descripcion") and desc:
+                depositos_meta[dep]["descripcion"] = desc
+            depositos_meta[dep]["sedes"].add(sede)
+
+    for row in personal_rows:
+        sede = str(row["sede_codigo"] or "").strip().upper()
+        if not sede:
+            continue
+        dep = normalizar_deposito_codigo(row["codigo_local"]) or "SIN_PUESTO"
+        ocup = normalizar_ocupacion_puesto(row["ocupacion_puesto"])
+        pep = pep_factor_desde_ocupacion(ocup)
+        personal_by_sede[sede]["personas_reales"] += 1
+        personal_by_sede[sede]["pep"] += pep
+        personal_by_sede_dep[(sede, dep)]["personas_reales"] += 1
+        personal_by_sede_dep[(sede, dep)]["pep"] += pep
+        if dep != "SIN_PUESTO":
+            depositos_meta.setdefault(dep, {"descripcion": "", "sedes": set()})
+            depositos_meta[dep]["sedes"].add(sede)
+
+    for row in puestos_rows:
+        sede = str(row["sede_codigo"] or "").strip().upper()
+        if not sede:
+            continue
+        dep = normalizar_deposito_codigo(row["codigo_local"]) or "SIN_PUESTO"
+        puestos = float(row["puestos_existentes"] or 0.0)
+        puestos_by_sede[sede] += puestos
+        puestos_by_sede_dep[(sede, dep)] += puestos
+        if dep != "SIN_PUESTO":
+            depositos_meta.setdefault(dep, {"descripcion": "", "sedes": set()})
+            depositos_meta[dep]["sedes"].add(sede)
+
+    metricas_rows = db.execute("""
+        SELECT
+            UPPER(COALESCE(sede_codigo,'')) AS sede_codigo,
+            m2_totales, personas, oficinas, depositos
+        FROM sedes_metricas
+    """).fetchall()
+    metricas_map = {str(r["sede_codigo"] or "").strip().upper(): dict(r) for r in metricas_rows}
+
+    infra_rows_db = db.execute("""
+        SELECT
+            UPPER(COALESCE(sede_codigo,'')) AS sede_codigo,
+            oficinas,
+            salas_entrevistas,
+            banios,
+            espacios_comunes,
+            depositos,
+            personas,
+            m2_totales
+        FROM sedes_infraestructura
+    """).fetchall()
+    infra_map = {str(r["sede_codigo"] or "").strip().upper(): dict(r) for r in infra_rows_db}
+
+    seg_rows = db.execute("""
+        SELECT
+            UPPER(COALESCE(cod_sede,'')) AS sede_codigo,
+            COALESCE(COUNT(*),0) AS vencen_pronto
+        FROM matafuegos_sede
+        WHERE COALESCE(activo,1)=1
+          AND fecha_vencimiento IS NOT NULL
+          AND date(fecha_vencimiento) <= date('now','+45 day')
+        GROUP BY UPPER(COALESCE(cod_sede,''))
+    """).fetchall()
+    seg_map = {str(r["sede_codigo"] or "").strip().upper(): int(r["vencen_pronto"] or 0) for r in seg_rows}
+
+    def _sort_dep_key(dep_code: str):
+        d = str(dep_code or "").strip().upper()
+        if d.startswith("D") and d[1:].isdigit():
+            return (0, int(d[1:]), d)
+        if d == "SIN_PUESTO":
+            return (2, 9999, d)
+        return (1, 9999, d)
+
+    infra_depositos = []
+    for dep_code in sorted(depositos_meta.keys(), key=_sort_dep_key):
+        meta = depositos_meta.get(dep_code, {})
+        desc = str(meta.get("descripcion") or "").strip()
+        sedes_count = len(meta.get("sedes") or set())
+        label = dep_code
+        if desc:
+            label = f"{dep_code} - {desc}"
+        if sedes_count > 1 and dep_code != "SIN_PUESTO":
+            label = f"{label} ({sedes_count} sedes)"
+        infra_depositos.append({"codigo": dep_code, "label": label})
+
+    def cobertura_estado(cobertura_pct):
+        if cobertura_pct is None:
+            return ("sin_dato", "Sin dato")
+        c = float(cobertura_pct)
+        if c < 80:
+            return ("critico", "Faltante critico")
+        if c <= 94:
+            return ("leve", "Faltante leve")
+        if c <= 115:
+            return ("equilibrado", "Equilibrado")
+        if c <= 140:
+            return ("sob_leve", "Sobredimensionado leve")
+        return ("sob_alto", "Sobredimensionado alto")
+
+    infra_rows = []
+    infra_sedes_source = [infra_sede] if infra_sede else sedes_codigos
+    for sede in infra_sedes_source:
+        if not sede:
+            continue
+        nombre = sedes_nombre.get(sede, sede)
+
+        if infra_deposito:
+            k = (sede, infra_deposito)
+            personas_reales = int(personal_by_sede_dep.get(k, {}).get("personas_reales", 0) or 0)
+            pep = float(personal_by_sede_dep.get(k, {}).get("pep", 0.0) or 0.0)
+            puestos_existentes = float(puestos_by_sede_dep.get(k, 0.0) or 0.0)
+            if personas_reales == 0 and pep == 0 and puestos_existentes == 0:
+                continue
+        else:
+            personas_reales = int(personal_by_sede.get(sede, {}).get("personas_reales", 0) or 0)
+            pep = float(personal_by_sede.get(sede, {}).get("pep", 0.0) or 0.0)
+            puestos_existentes = float(puestos_by_sede.get(sede, 0.0) or 0.0)
+
+        puestos_necesarios = pep
+        diferencia = puestos_existentes - puestos_necesarios
+        cobertura_pct = (puestos_existentes / puestos_necesarios * 100.0) if puestos_necesarios > 0 else None
+        estado_key, estado_label = cobertura_estado(cobertura_pct)
+
+        mrow = metricas_map.get(sede, {})
+        irow = infra_map.get(sede, {})
+        m2_totales = mrow.get("m2_totales")
+        if m2_totales is None:
+            m2_totales = irow.get("m2_totales")
+
+        personas_base = mrow.get("personas")
+        if personas_base is None:
+            personas_base = irow.get("personas")
+        if personas_base is None:
+            personas_base = personas_reales
+
+        oficinas_base = mrow.get("oficinas")
+        if oficinas_base is None:
+            oficinas_base = irow.get("oficinas")
+
+        dep_base = mrow.get("depositos")
+        if dep_base is None:
+            dep_base = irow.get("depositos")
+        dep_base = float(dep_base or 0)
+
+        salas = float(irow.get("salas_entrevistas") or 0)
+        banios = float(irow.get("banios") or 0)
+        comunes = float(irow.get("espacios_comunes") or 0)
+        ofis = float(oficinas_base or 0)
+        amb_utiles = ofis + salas + banios + comunes
+        amb_total = amb_utiles + dep_base
+        factor_deposito = (dep_base / amb_total) if amb_total > 0 else 0.0
+        factor_potencial = 1 + (factor_deposito * 0.7)
+
+        m2pp_base = None
+        if m2_totales is not None and personas_base:
+            try:
+                m2pp_base = float(m2_totales) / float(personas_base)
+            except Exception:
+                m2pp_base = None
+        m2pp = (m2pp_base * factor_potencial) if m2pp_base is not None else None
+
+        m2_estado = "Sin dato"
+        m2_score = None
+        if m2pp is not None:
+            if m2pp < 8:
+                m2_estado = "Intensivo"
+                m2_score = 60
+            elif m2pp <= 12:
+                m2_estado = "Adecuado"
+                m2_score = 100
+            else:
+                m2_estado = "Amplio"
+                m2_score = 85
+
+        densidad = None
+        densidad_estado = "Sin dato"
+        densidad_score = None
+        if personas_base and oficinas_base:
+            try:
+                densidad = float(personas_base) / float(oficinas_base)
+            except Exception:
+                densidad = None
+        if densidad is not None:
+            if densidad <= 2:
+                densidad_estado = "Adecuado"
+                densidad_score = 100
+            elif densidad <= 3:
+                densidad_estado = "Intensivo"
+                densidad_score = 70
+            else:
+                densidad_estado = "Saturado"
+                densidad_score = 35
+
+        seg_vencen_45d = int(seg_map.get(sede, 0) or 0)
+        if seg_vencen_45d <= 0:
+            seg_estado = "Adecuado"
+            seg_score = 100
+        elif seg_vencen_45d <= 2:
+            seg_estado = "Atencion"
+            seg_score = 70
+        else:
+            seg_estado = "Critico"
+            seg_score = 35
+
+        idx_scores = [v for v in (m2_score, densidad_score, seg_score) if v is not None]
+        indice_general = round(sum(idx_scores) / len(idx_scores), 1) if idx_scores else None
+
+        infra_rows.append({
+            "codigo": sede,
+            "nombre": nombre,
+            "personas_reales": personas_reales,
+            "pep": round(pep, 2),
+            "puestos_existentes": round(puestos_existentes, 2),
+            "puestos_necesarios": round(puestos_necesarios, 2),
+            "diferencia_puestos": round(diferencia, 2),
+            "cobertura_pct": round(cobertura_pct, 1) if cobertura_pct is not None else None,
+            "cobertura_estado_key": estado_key,
+            "cobertura_estado_label": estado_label,
+            "m2pp": round(m2pp, 2) if m2pp is not None else None,
+            "m2_estado": m2_estado,
+            "densidad_oficina": round(densidad, 2) if densidad is not None else None,
+            "densidad_estado": densidad_estado,
+            "seg_vencen_45d": seg_vencen_45d,
+            "seg_estado": seg_estado,
+            "indice_general": indice_general,
+            "factor_deposito_pct": round(factor_deposito * 100.0, 1),
+        })
+
+    infra_rows.sort(key=lambda x: x.get("codigo") or "")
+    infra_totals = {
+        "personas_reales": sum(int(r.get("personas_reales") or 0) for r in infra_rows),
+        "pep": round(sum(float(r.get("pep") or 0.0) for r in infra_rows), 2),
+        "puestos_existentes": round(sum(float(r.get("puestos_existentes") or 0.0) for r in infra_rows), 2),
+    }
+    infra_totals["diferencia_puestos"] = round(infra_totals["puestos_existentes"] - infra_totals["pep"], 2)
+    infra_totals["cobertura_pct"] = (
+        round((infra_totals["puestos_existentes"] / infra_totals["pep"]) * 100.0, 1)
+        if infra_totals["pep"] > 0 else None
+    )
+    infra_totals["estado_key"], infra_totals["estado_label"] = cobertura_estado(infra_totals["cobertura_pct"])
+    idx_vals = [float(r["indice_general"]) for r in infra_rows if r.get("indice_general") is not None]
+    infra_totals["indice_general"] = round(sum(idx_vals) / len(idx_vals), 1) if idx_vals else None
+
+    # ------------------------------------------------------------
+    # RESUMEN ACTUAL (inventario operativo)
+    # ------------------------------------------------------------
     resumen_sedes_rows = []
     resumen_sedes_totals = {
         "mesa_pc": 0,
@@ -7189,6 +7590,12 @@ def sedes_resumen_mpd():
         "sedes_resumen_mpd.html",
         rows=resumen_sedes_rows,
         totals=resumen_sedes_totals,
+        infra_rows=infra_rows,
+        infra_totals=infra_totals,
+        infra_sede=infra_sede,
+        infra_deposito=infra_deposito,
+        infra_sedes=sedes_rows,
+        infra_depositos=infra_depositos,
         matafuegos_vto_rows=matafuegos_vto_rows,
         matafuegos_vto_kpi=matafuegos_vto_kpi,
     )
