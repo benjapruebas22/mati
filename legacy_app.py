@@ -3,7 +3,7 @@ from datetime import date, datetime, timedelta
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from collections import defaultdict
-import sqlite3, os, calendar
+import sqlite3, os, calendar, csv, io
 from functools import wraps
 from flask import redirect, url_for
 import os
@@ -3630,6 +3630,337 @@ def normalizar_deposito_codigo(raw: str) -> str:
         return f"D{int(code[1:]):02d}"
     return code
 
+INFRA_RUBROS_META = [
+    {"key": "escritorio_prof", "label": "Escritorio profesional", "critico": 0},
+    {"key": "mesa_pc", "label": "Mesa PC", "critico": 1},
+    {"key": "silla_giratoria", "label": "Silla giratoria", "critico": 1},
+    {"key": "silla_fija", "label": "Silla fija", "critico": 0},
+    {"key": "armario_biblioteca", "label": "Armario/Biblioteca", "critico": 0},
+    {"key": "aire", "label": "Aire acondicionado", "critico": 1},
+    {"key": "puestos_existentes", "label": "Puestos existentes", "critico": 1},
+]
+
+INFRA_RUBRO_LABELS = {x["key"]: x["label"] for x in INFRA_RUBROS_META}
+INFRA_CRITICOS = {x["key"] for x in INFRA_RUBROS_META if int(x.get("critico") or 0) == 1}
+INFRA_MODO_FORMULA = {
+    "FIJO": "Fijo",
+    "PERSONAS": "Igual a personas reales",
+    "PERSONAS_MAS": "Personas reales + valor",
+}
+
+def _infra_to_float(val):
+    if val is None:
+        return None
+    txt = str(val).strip().replace(",", ".")
+    if txt == "":
+        return None
+    try:
+        return float(txt)
+    except Exception:
+        return None
+
+def infra_eval_formula(modo: str, valor, personas_reales):
+    m = str(modo or "FIJO").strip().upper()
+    v = _infra_to_float(valor)
+    p = _infra_to_float(personas_reales)
+    if m == "PERSONAS":
+        if p is None:
+            return None
+        return float(p)
+    if m == "PERSONAS_MAS":
+        if p is None:
+            return None
+        return float(p) + float(v or 0)
+    if v is None:
+        return None
+    return float(v)
+
+def infra_fmt_num(v):
+    if v is None:
+        return "-"
+    try:
+        f = float(v)
+    except Exception:
+        return "-"
+    if abs(f - round(f)) < 0.0001:
+        return str(int(round(f)))
+    return f"{f:.2f}"
+
+def infra_estado_rubro(real_val, min_esp, max_esp, has_criterio=True):
+    if not has_criterio:
+        return "Sin criterio"
+    if min_esp is None or max_esp is None:
+        return "Revisar"
+    if float(min_esp) > float(max_esp):
+        return "Revisar"
+    rv = _infra_to_float(real_val)
+    if rv is None:
+        return "Revisar"
+    if rv < float(min_esp):
+        return "Bajo estandar"
+    if rv > float(max_esp):
+        return "Alto"
+    return "Razonable"
+
+def infra_estado_general(rubros_estado: dict, rubros_minimos: dict):
+    if not rubros_estado:
+        return "Revisar"
+    if any(str(v or "") in ("Revisar", "Sin criterio") for v in rubros_estado.values()):
+        return "Revisar"
+
+    criticos_bajo = []
+    bajos = []
+    altos = []
+    for k, estado in rubros_estado.items():
+        if estado == "Bajo estandar":
+            bajos.append(k)
+            if k == "aire":
+                m = _infra_to_float(rubros_minimos.get(k))
+                if m is not None and m > 0:
+                    criticos_bajo.append(k)
+            elif k in INFRA_CRITICOS:
+                criticos_bajo.append(k)
+        elif estado == "Alto":
+            altos.append(k)
+
+    if criticos_bajo:
+        return "Bajo estandar"
+    if bajos:
+        return "Bajo estandar"
+    if altos:
+        return "Alto"
+    if all(v == "Razonable" for v in rubros_estado.values()):
+        return "Razonable"
+    return "Revisar"
+
+def infra_accion_sugerida(estado_general: str):
+    st = str(estado_general or "").strip()
+    if st == "Bajo estandar":
+        return "Priorizar ajuste / Pedido justificado / Buscar stock disponible"
+    if st == "Alto":
+        return "Revisar redistribucion antes de comprar"
+    if st == "Razonable":
+        return "Sin prioridad / No requiere compra"
+    return "Completar datos o validar relevamiento"
+
+def ensure_infra_criterios_schema(db=None):
+    own = False
+    if db is None:
+        db = get_db()
+        own = True
+    cur = db.cursor()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS infra_criterios_deposito(
+            codigo TEXT PRIMARY KEY,
+            nombre TEXT NOT NULL,
+            fuero TEXT,
+            personas_base TEXT,
+            composicion TEXT,
+            estado_esperado TEXT,
+            activo INTEGER DEFAULT 1,
+            orden INTEGER DEFAULT 0,
+            creado_en TEXT DEFAULT (datetime('now')),
+            actualizado_en TEXT
+        )
+    """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS infra_criterios_rubros(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            criterio_codigo TEXT NOT NULL,
+            rubro TEXT NOT NULL,
+            min_modo TEXT NOT NULL DEFAULT 'FIJO',
+            min_val REAL,
+            max_modo TEXT NOT NULL DEFAULT 'FIJO',
+            max_val REAL,
+            es_critico INTEGER DEFAULT 0,
+            actualizado_en TEXT,
+            UNIQUE(criterio_codigo, rubro)
+        )
+    """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS infra_asignacion_criterio_deposito(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sede_codigo TEXT NOT NULL,
+            deposito_codigo TEXT NOT NULL,
+            criterio_codigo TEXT NOT NULL,
+            observaciones TEXT,
+            actualizado_en TEXT,
+            UNIQUE(sede_codigo, deposito_codigo)
+        )
+    """)
+
+    criterios_seed = [
+        {
+            "codigo": "C01",
+            "nombre": "Defensor solo Penal",
+            "fuero": "PENAL",
+            "personas_base": "1",
+            "composicion": "Defensor individual",
+            "estado_esperado": "Oficina individual",
+            "orden": 1,
+            "rubros": {
+                "escritorio_prof": ("FIJO", 1, "FIJO", 1),
+                "mesa_pc": ("FIJO", 1, "FIJO", 1),
+                "silla_giratoria": ("FIJO", 1, "FIJO", 1),
+                "silla_fija": ("FIJO", 2, "FIJO", 3),
+                "armario_biblioteca": ("FIJO", 1, "FIJO", 2),
+                "aire": ("FIJO", 1, "FIJO", 1),
+                "puestos_existentes": ("FIJO", 1, "FIJO", 1),
+            },
+        },
+        {
+            "codigo": "C02",
+            "nombre": "Equipo Defensor Penal",
+            "fuero": "PENAL",
+            "personas_base": "4",
+            "composicion": "1 secretario, 1 prosecretario, 2 auxiliares",
+            "estado_esperado": "Oficina de equipo",
+            "orden": 2,
+            "rubros": {
+                "escritorio_prof": ("FIJO", 2, "FIJO", 2),
+                "mesa_pc": ("FIJO", 4, "FIJO", 4),
+                "silla_giratoria": ("FIJO", 2, "FIJO", 4),
+                "silla_fija": ("FIJO", 3, "FIJO", 4),
+                "armario_biblioteca": ("FIJO", 1, "FIJO", 2),
+                "aire": ("FIJO", 1, "FIJO", 1),
+                "puestos_existentes": ("FIJO", 4, "FIJO", 4),
+            },
+        },
+        {
+            "codigo": "C03",
+            "nombre": "Sala de audiencia",
+            "fuero": "PENAL",
+            "personas_base": "Variable",
+            "composicion": "Uso funcional de audiencia",
+            "estado_esperado": "Sala funcional",
+            "orden": 3,
+            "rubros": {
+                "escritorio_prof": ("FIJO", 0, "FIJO", 1),
+                "mesa_pc": ("FIJO", 1, "FIJO", 1),
+                "silla_giratoria": ("FIJO", 0, "FIJO", 1),
+                "silla_fija": ("FIJO", 3, "FIJO", 5),
+                "armario_biblioteca": ("FIJO", 0, "FIJO", 1),
+                "aire": ("FIJO", 0, "FIJO", 1),
+                "puestos_existentes": ("FIJO", 1, "FIJO", 1),
+            },
+        },
+        {
+            "codigo": "C04",
+            "nombre": "Defensor + Secretario Menores/Incapaces",
+            "fuero": "MENORES E INCAPACES",
+            "personas_base": "2",
+            "composicion": "Defensor y secretario",
+            "estado_esperado": "Oficina compartida jerarquica",
+            "orden": 4,
+            "rubros": {
+                "escritorio_prof": ("FIJO", 2, "FIJO", 2),
+                "mesa_pc": ("FIJO", 2, "FIJO", 2),
+                "silla_giratoria": ("FIJO", 2, "FIJO", 2),
+                "silla_fija": ("FIJO", 3, "FIJO", 4),
+                "armario_biblioteca": ("FIJO", 1, "FIJO", 2),
+                "aire": ("FIJO", 1, "FIJO", 1),
+                "puestos_existentes": ("FIJO", 2, "FIJO", 2),
+            },
+        },
+        {
+            "codigo": "C05",
+            "nombre": "Sala Auxiliares Menores/Incapaces",
+            "fuero": "MENORES E INCAPACES",
+            "personas_base": "8 a 12",
+            "composicion": "Sala operativa amplia",
+            "estado_esperado": "Sala operativa amplia",
+            "orden": 5,
+            "rubros": {
+                "escritorio_prof": ("FIJO", 0, "FIJO", 2),
+                "mesa_pc": ("PERSONAS", 0, "PERSONAS_MAS", 1),
+                "silla_giratoria": ("PERSONAS", 0, "PERSONAS_MAS", 1),
+                "silla_fija": ("FIJO", 2, "FIJO", 4),
+                "armario_biblioteca": ("FIJO", 6, "FIJO", 8),
+                "aire": ("FIJO", 1, "FIJO", 2),
+                "puestos_existentes": ("PERSONAS", 0, "PERSONAS_MAS", 1),
+            },
+        },
+        {
+            "codigo": "C06",
+            "nombre": "Juridico Social Mixto",
+            "fuero": "JURIDICO SOCIAL",
+            "personas_base": "4 a 5",
+            "composicion": "Defensor, secretario y auxiliares compartidos",
+            "estado_esperado": "Oficina mixta flexible",
+            "orden": 6,
+            "rubros": {
+                "escritorio_prof": ("FIJO", 2, "FIJO", 3),
+                "mesa_pc": ("FIJO", 4, "FIJO", 5),
+                "silla_giratoria": ("FIJO", 3, "FIJO", 5),
+                "silla_fija": ("FIJO", 3, "FIJO", 5),
+                "armario_biblioteca": ("FIJO", 2, "FIJO", 3),
+                "aire": ("FIJO", 1, "FIJO", 2),
+                "puestos_existentes": ("FIJO", 4, "FIJO", 5),
+            },
+        },
+        {
+            "codigo": "C07",
+            "nombre": "Mesa de entrada",
+            "fuero": "GENERAL",
+            "personas_base": "Segun carga real",
+            "composicion": "Atencion operativa",
+            "estado_esperado": "Atencion operativa",
+            "orden": 7,
+            "rubros": {
+                "escritorio_prof": ("FIJO", 0, "FIJO", 1),
+                "mesa_pc": ("PERSONAS", 0, "PERSONAS_MAS", 1),
+                "silla_giratoria": ("PERSONAS", 0, "PERSONAS_MAS", 1),
+                "silla_fija": ("FIJO", 2, "FIJO", 4),
+                "armario_biblioteca": ("FIJO", 1, "FIJO", 2),
+                "aire": ("FIJO", 1, "FIJO", 1),
+                "puestos_existentes": ("PERSONAS", 0, "PERSONAS_MAS", 1),
+            },
+        },
+        {
+            "codigo": "C08",
+            "nombre": "Oficina administrativa comun",
+            "fuero": "GENERAL",
+            "personas_base": "Variable",
+            "composicion": "Oficina compartida",
+            "estado_esperado": "Oficina compartida",
+            "orden": 8,
+            "rubros": {
+                "escritorio_prof": ("FIJO", 0, "FIJO", 2),
+                "mesa_pc": ("PERSONAS", 0, "PERSONAS_MAS", 1),
+                "silla_giratoria": ("PERSONAS", 0, "PERSONAS_MAS", 1),
+                "silla_fija": ("FIJO", 1, "FIJO", 3),
+                "armario_biblioteca": ("FIJO", 1, "FIJO", 3),
+                "aire": ("FIJO", 1, "FIJO", 1),
+                "puestos_existentes": ("PERSONAS", 0, "PERSONAS_MAS", 1),
+            },
+        },
+    ]
+
+    for c in criterios_seed:
+        cur.execute("""
+            INSERT OR IGNORE INTO infra_criterios_deposito
+            (codigo, nombre, fuero, personas_base, composicion, estado_esperado, activo, orden, actualizado_en)
+            VALUES (?,?,?,?,?,?,1,?, datetime('now'))
+        """, (
+            c["codigo"], c["nombre"], c["fuero"], c["personas_base"],
+            c["composicion"], c["estado_esperado"], int(c.get("orden") or 0)
+        ))
+        for rubro in INFRA_RUBROS_META:
+            rk = rubro["key"]
+            defs = c["rubros"].get(rk, ("FIJO", 0, "FIJO", 0))
+            cur.execute("""
+                INSERT OR IGNORE INTO infra_criterios_rubros
+                (criterio_codigo, rubro, min_modo, min_val, max_modo, max_val, es_critico, actualizado_en)
+                VALUES (?,?,?,?,?,?,?, datetime('now'))
+            """, (
+                c["codigo"], rk, defs[0], defs[1], defs[2], defs[3],
+                int(rubro.get("critico") or 0)
+            ))
+
+    db.commit()
+    if own:
+        db.close()
+
 # ============================================================
 # MIGRACIÓN SEGURA: asegurar columnas piso/activo sin romper
 # ============================================================
@@ -7081,11 +7412,12 @@ def sedes_resumen():
     con.close()
     return render_template("sede_resumen.html", rows=rows, tot=tot)
 
-@app.route("/sedes/resumen-mpd", endpoint="sedes_resumen_mpd")
+@app.route("/sedes/resumen-mpd", methods=["GET", "POST"], endpoint="sedes_resumen_mpd")
 def sedes_resumen_mpd():
     db = get_db()
     ensure_aires_mpd_columns()
     ensure_personal_schema()
+    ensure_infra_criterios_schema(db)
 
     def aires_valid_where(alias: str) -> str:
         return (
@@ -7097,17 +7429,6 @@ def sedes_resumen_mpd():
             f"OR {alias}.observaciones IS NOT NULL)"
         )
 
-    infra_sede = (request.args.get("infra_sede") or "").strip().upper()
-    infra_deposito = normalizar_deposito_codigo((request.args.get("infra_deposito") or "").strip())
-
-    sedes_rows = db.execute("""
-        SELECT codigo, nombre
-        FROM sedes_mpd
-        ORDER BY codigo
-    """).fetchall()
-    sedes_nombre = {str(r["codigo"] or "").strip().upper(): str(r["nombre"] or "").strip() for r in sedes_rows}
-    sedes_codigos = [str(r["codigo"] or "").strip().upper() for r in sedes_rows]
-
     def safe_scalar(sql, params=()):
         try:
             r = db.execute(sql, params).fetchone()
@@ -7115,298 +7436,561 @@ def sedes_resumen_mpd():
         except Exception:
             return 0
 
-    # ------------------------------------------------------------
-    # NUEVA ESTADISTICA DE INFRAESTRUCTURA (PEP + COBERTURA PUESTOS)
-    # ------------------------------------------------------------
-    personal_rows = db.execute("""
-        SELECT
-            UPPER(COALESCE(codigo_sede,'')) AS sede_codigo,
-            COALESCE(codigo_local,'') AS codigo_local,
-            UPPER(COALESCE(NULLIF(TRIM(ocupacion_puesto),''),'EXCLUSIVO')) AS ocupacion_puesto
-        FROM personal_sede
-        WHERE COALESCE(activo,1)=1
-    """).fetchall()
+    def _redirect_infra():
+        params = {}
+        for k in ("infra_sede", "infra_deposito", "infra_fuero", "infra_criterio", "infra_estado_general", "infra_elemento", "edit_criterio", "asig_sede", "asig_deposito"):
+            v = (request.form.get(k) or "").strip()
+            if k == "infra_deposito":
+                v = normalizar_deposito_codigo(v)
+            if k == "asig_deposito":
+                v = normalizar_deposito_codigo(v)
+            if v:
+                params[k] = v
+        return redirect(url_for("sedes_resumen_mpd", **params))
 
-    puestos_rows = db.execute("""
-        SELECT
-            UPPER(COALESCE(codigo_sede,'')) AS sede_codigo,
-            COALESCE(codigo_local,'') AS codigo_local,
-            COALESCE(SUM(COALESCE(puestos_trabajo,0)),0) AS puestos_existentes
-        FROM luminarias_sede
-        WHERE COALESCE(activo,1)=1
-        GROUP BY UPPER(COALESCE(codigo_sede,'')), COALESCE(codigo_local,'')
-    """).fetchall()
+    if request.method == "POST":
+        action = (request.form.get("infra_action") or "").strip().lower()
+        if action == "save_criterio":
+            codigo = (request.form.get("criterio_codigo") or "").strip().upper()
+            nombre = (request.form.get("criterio_nombre") or "").strip()
+            fuero = (request.form.get("criterio_fuero") or "").strip().upper()
+            personas_base = (request.form.get("criterio_personas_base") or "").strip()
+            composicion = (request.form.get("criterio_composicion") or "").strip()
+            estado_esperado = (request.form.get("criterio_estado_esperado") or "").strip()
+            orden = int(_infra_to_float(request.form.get("criterio_orden")) or 0)
+            activo = 1 if (request.form.get("criterio_activo") or "1") == "1" else 0
 
-    depositos_base_rows = []
+            if not codigo or not nombre:
+                flash("Completa codigo y nombre del criterio.", "warning")
+                return _redirect_infra()
+
+            db.execute("""
+                INSERT INTO infra_criterios_deposito
+                (codigo, nombre, fuero, personas_base, composicion, estado_esperado, activo, orden, actualizado_en)
+                VALUES (?,?,?,?,?,?,?,?, datetime('now'))
+                ON CONFLICT(codigo) DO UPDATE SET
+                    nombre=excluded.nombre,
+                    fuero=excluded.fuero,
+                    personas_base=excluded.personas_base,
+                    composicion=excluded.composicion,
+                    estado_esperado=excluded.estado_esperado,
+                    activo=excluded.activo,
+                    orden=excluded.orden,
+                    actualizado_en=datetime('now')
+            """, (codigo, nombre, fuero, personas_base, composicion, estado_esperado, activo, orden))
+
+            for rb in INFRA_RUBROS_META:
+                k = rb["key"]
+                min_modo = (request.form.get(f"{k}_min_modo") or "FIJO").strip().upper()
+                max_modo = (request.form.get(f"{k}_max_modo") or "FIJO").strip().upper()
+                if min_modo not in INFRA_MODO_FORMULA:
+                    min_modo = "FIJO"
+                if max_modo not in INFRA_MODO_FORMULA:
+                    max_modo = "FIJO"
+                min_val = _infra_to_float(request.form.get(f"{k}_min_val"))
+                max_val = _infra_to_float(request.form.get(f"{k}_max_val"))
+                if min_val is None:
+                    min_val = 0
+                if max_val is None:
+                    max_val = 0
+                es_critico = 1 if request.form.get(f"{k}_critico") == "1" else 0
+                db.execute("""
+                    INSERT INTO infra_criterios_rubros
+                    (criterio_codigo, rubro, min_modo, min_val, max_modo, max_val, es_critico, actualizado_en)
+                    VALUES (?,?,?,?,?,?,?, datetime('now'))
+                    ON CONFLICT(criterio_codigo, rubro) DO UPDATE SET
+                        min_modo=excluded.min_modo,
+                        min_val=excluded.min_val,
+                        max_modo=excluded.max_modo,
+                        max_val=excluded.max_val,
+                        es_critico=excluded.es_critico,
+                        actualizado_en=datetime('now')
+                """, (codigo, k, min_modo, min_val, max_modo, max_val, es_critico))
+
+            db.commit()
+            flash(f"Criterio {codigo} guardado.", "success")
+            return _redirect_infra()
+
+        if action == "assign_criterio":
+            sede = (request.form.get("asig_sede") or "").strip().upper()
+            deposito = normalizar_deposito_codigo(request.form.get("asig_deposito"))
+            criterio_codigo = (request.form.get("asig_criterio") or "").strip().upper()
+            observaciones = (request.form.get("asig_observaciones") or "").strip()
+            if not (sede and deposito and criterio_codigo):
+                flash("Completa sede, deposito y criterio para asignar.", "warning")
+                return _redirect_infra()
+
+            existe = db.execute("SELECT 1 FROM infra_criterios_deposito WHERE codigo = ? LIMIT 1", (criterio_codigo,)).fetchone()
+            if not existe:
+                flash("El criterio seleccionado no existe.", "warning")
+                return _redirect_infra()
+
+            db.execute("""
+                INSERT INTO infra_asignacion_criterio_deposito
+                (sede_codigo, deposito_codigo, criterio_codigo, observaciones, actualizado_en)
+                VALUES (?,?,?,?, datetime('now'))
+                ON CONFLICT(sede_codigo, deposito_codigo) DO UPDATE SET
+                    criterio_codigo=excluded.criterio_codigo,
+                    observaciones=excluded.observaciones,
+                    actualizado_en=datetime('now')
+            """, (sede, deposito, criterio_codigo, observaciones))
+            db.commit()
+            flash(f"Criterio {criterio_codigo} asignado a {sede} {deposito}.", "success")
+            return _redirect_infra()
+
+    infra_sede = (request.args.get("infra_sede") or "").strip().upper()
+    infra_deposito = normalizar_deposito_codigo((request.args.get("infra_deposito") or "").strip())
+    infra_fuero = (request.args.get("infra_fuero") or "").strip().upper()
+    infra_criterio = (request.args.get("infra_criterio") or "").strip().upper()
+    infra_estado_general_filter = (request.args.get("infra_estado_general") or "").strip()
+    infra_elemento = (request.args.get("infra_elemento") or "").strip()
+    infra_export = (request.args.get("infra_export") or "").strip().lower()
+    edit_criterio = (request.args.get("edit_criterio") or "").strip().upper()
+    asig_sede = (request.args.get("asig_sede") or "").strip().upper()
+    asig_deposito = normalizar_deposito_codigo((request.args.get("asig_deposito") or "").strip())
+
+    sedes_rows = db.execute("""
+        SELECT
+            UPPER(COALESCE(codigo,'')) AS codigo,
+            COALESCE(nombre,'') AS nombre,
+            UPPER(COALESCE(fuero,'')) AS fuero
+        FROM sedes_mpd
+        ORDER BY codigo
+    """).fetchall()
+    sedes_codigos = [str(r["codigo"] or "").strip().upper() for r in sedes_rows]
+    sedes_nombre = {str(r["codigo"] or "").strip().upper(): str(r["nombre"] or "").strip() for r in sedes_rows}
+    sedes_fuero = {str(r["codigo"] or "").strip().upper(): str(r["fuero"] or "").strip().upper() for r in sedes_rows}
+    infra_fueros = sorted({f for f in sedes_fuero.values() if f})
+
+    dep_catalog = {}
+    dep_filter_map = {}
+    dep_assign_opts = []
+    dep_rows = []
     try:
-        depositos_base_rows = db.execute("""
+        dep_rows = db.execute("""
             SELECT
                 UPPER(COALESCE(codigo_sede,'')) AS sede_codigo,
                 COALESCE(codigo_local,'') AS codigo_local,
-                COALESCE(descripcion,'') AS descripcion
+                COALESCE(descripcion,'') AS descripcion,
+                COALESCE(nombre,'') AS nombre,
+                COALESCE(ubicacion,'') AS ubicacion,
+                COALESCE(tipo,'') AS tipo
             FROM sedes_depositos
             ORDER BY codigo_sede, codigo_local
         """).fetchall()
     except Exception:
-        depositos_base_rows = []
-
-    personal_by_sede = defaultdict(lambda: {"personas_reales": 0, "pep": 0.0})
-    personal_by_sede_dep = defaultdict(lambda: {"personas_reales": 0, "pep": 0.0})
-    puestos_by_sede = defaultdict(float)
-    puestos_by_sede_dep = defaultdict(float)
-    depositos_meta = {}
-
-    for row in depositos_base_rows:
-        sede = str(row["sede_codigo"] or "").strip().upper()
-        dep = normalizar_deposito_codigo(row["codigo_local"])
-        desc = str(row["descripcion"] or "").strip()
+        dep_rows = []
+    for d in dep_rows:
+        sede = str(d["sede_codigo"] or "").strip().upper()
+        dep = normalizar_deposito_codigo(d["codigo_local"])
         if not sede or not dep:
             continue
-        if dep not in depositos_meta:
-            depositos_meta[dep] = {"descripcion": desc, "sedes": set([sede])}
-        else:
-            if not depositos_meta[dep].get("descripcion") and desc:
-                depositos_meta[dep]["descripcion"] = desc
-            depositos_meta[dep]["sedes"].add(sede)
+        descripcion = str(d["descripcion"] or "").strip()
+        nombre = str(d["nombre"] or "").strip()
+        ubicacion = str(d["ubicacion"] or "").strip()
+        tipo = str(d["tipo"] or "").strip()
+        ref = descripcion or nombre or ubicacion or tipo or dep
+        dep_catalog[(sede, dep)] = {
+            "descripcion": descripcion,
+            "nombre": nombre,
+            "ubicacion": ubicacion,
+            "tipo": tipo,
+            "referencia": ref,
+        }
+        dep_filter_map.setdefault(dep, {"label": dep, "sedes": set()})
+        if descripcion and dep_filter_map[dep]["label"] == dep:
+            dep_filter_map[dep]["label"] = f"{dep} - {descripcion}"
+        dep_filter_map[dep]["sedes"].add(sede)
+        dep_assign_opts.append({"sede_codigo": sede, "deposito_codigo": dep, "label": f"{sede} - {dep} - {ref}"})
 
-    for row in personal_rows:
-        sede = str(row["sede_codigo"] or "").strip().upper()
-        if not sede:
-            continue
-        dep = normalizar_deposito_codigo(row["codigo_local"]) or "SIN_PUESTO"
-        ocup = normalizar_ocupacion_puesto(row["ocupacion_puesto"])
-        pep = pep_factor_desde_ocupacion(ocup)
-        personal_by_sede[sede]["personas_reales"] += 1
-        personal_by_sede[sede]["pep"] += pep
-        personal_by_sede_dep[(sede, dep)]["personas_reales"] += 1
-        personal_by_sede_dep[(sede, dep)]["pep"] += pep
-        if dep != "SIN_PUESTO":
-            depositos_meta.setdefault(dep, {"descripcion": "", "sedes": set()})
-            depositos_meta[dep]["sedes"].add(sede)
+    criterios_rows = db.execute("""
+        SELECT codigo, nombre, fuero, personas_base, composicion, estado_esperado, activo, orden
+        FROM infra_criterios_deposito
+        ORDER BY COALESCE(orden,0), codigo
+    """).fetchall()
+    criterios_map = {}
+    for c in criterios_rows:
+        codigo = str(c["codigo"] or "").strip().upper()
+        criterios_map[codigo] = {
+            "codigo": codigo,
+            "nombre": str(c["nombre"] or "").strip(),
+            "fuero": str(c["fuero"] or "").strip().upper(),
+            "personas_base": str(c["personas_base"] or "").strip(),
+            "composicion": str(c["composicion"] or "").strip(),
+            "estado_esperado": str(c["estado_esperado"] or "").strip(),
+            "activo": int(c["activo"] or 0),
+            "orden": int(c["orden"] or 0),
+            "rubros": {rb["key"]: {"min_modo": "FIJO", "min_val": 0, "max_modo": "FIJO", "max_val": 0, "es_critico": int(rb["critico"])} for rb in INFRA_RUBROS_META},
+        }
+    rubros_rows = db.execute("""
+        SELECT criterio_codigo, rubro, min_modo, min_val, max_modo, max_val, es_critico
+        FROM infra_criterios_rubros
+    """).fetchall()
+    for rr in rubros_rows:
+        cc = str(rr["criterio_codigo"] or "").strip().upper()
+        rk = str(rr["rubro"] or "").strip()
+        if cc in criterios_map and rk in criterios_map[cc]["rubros"]:
+            criterios_map[cc]["rubros"][rk] = {
+                "min_modo": str(rr["min_modo"] or "FIJO").strip().upper(),
+                "min_val": _infra_to_float(rr["min_val"]) if rr["min_val"] is not None else 0,
+                "max_modo": str(rr["max_modo"] or "FIJO").strip().upper(),
+                "max_val": _infra_to_float(rr["max_val"]) if rr["max_val"] is not None else 0,
+                "es_critico": int(rr["es_critico"] or 0),
+            }
+    criterios_opts = [criterios_map[k] for k in sorted(criterios_map.keys())]
+    if not edit_criterio and criterios_opts:
+        edit_criterio = criterios_opts[0]["codigo"]
+    criterio_edit = criterios_map.get(edit_criterio)
+    if not criterio_edit:
+        criterio_edit = {
+            "codigo": "",
+            "nombre": "",
+            "fuero": "",
+            "personas_base": "",
+            "composicion": "",
+            "estado_esperado": "",
+            "activo": 1,
+            "orden": 0,
+            "rubros": {rb["key"]: {"min_modo": "FIJO", "min_val": 0, "max_modo": "FIJO", "max_val": 0, "es_critico": int(rb["critico"])} for rb in INFRA_RUBROS_META},
+        }
 
-    for row in puestos_rows:
-        sede = str(row["sede_codigo"] or "").strip().upper()
-        if not sede:
-            continue
-        dep = normalizar_deposito_codigo(row["codigo_local"]) or "SIN_PUESTO"
-        puestos = float(row["puestos_existentes"] or 0.0)
-        puestos_by_sede[sede] += puestos
-        puestos_by_sede_dep[(sede, dep)] += puestos
-        if dep != "SIN_PUESTO":
-            depositos_meta.setdefault(dep, {"descripcion": "", "sedes": set()})
-            depositos_meta[dep]["sedes"].add(sede)
-
-    metricas_rows = db.execute("""
+    asign_rows = db.execute("""
         SELECT
             UPPER(COALESCE(sede_codigo,'')) AS sede_codigo,
-            m2_totales, personas, oficinas, depositos
-        FROM sedes_metricas
+            UPPER(COALESCE(deposito_codigo,'')) AS deposito_codigo,
+            UPPER(COALESCE(criterio_codigo,'')) AS criterio_codigo,
+            COALESCE(observaciones,'') AS observaciones
+        FROM infra_asignacion_criterio_deposito
     """).fetchall()
-    metricas_map = {str(r["sede_codigo"] or "").strip().upper(): dict(r) for r in metricas_rows}
+    asign_map = {}
+    for a in asign_rows:
+        s = str(a["sede_codigo"] or "").strip().upper()
+        d = normalizar_deposito_codigo(a["deposito_codigo"])
+        c = str(a["criterio_codigo"] or "").strip().upper()
+        if s and d:
+            asign_map[(s, d)] = {"criterio_codigo": c, "observaciones": str(a["observaciones"] or "").strip()}
 
-    infra_rows_db = db.execute("""
+    personal_map = defaultdict(lambda: {"personas_reales": 0, "nombres": []})
+    per_rows = db.execute("""
         SELECT
-            UPPER(COALESCE(sede_codigo,'')) AS sede_codigo,
-            oficinas,
-            salas_entrevistas,
-            banios,
-            espacios_comunes,
-            depositos,
-            personas,
-            m2_totales
-        FROM sedes_infraestructura
-    """).fetchall()
-    infra_map = {str(r["sede_codigo"] or "").strip().upper(): dict(r) for r in infra_rows_db}
-
-    seg_rows = db.execute("""
-        SELECT
-            UPPER(COALESCE(cod_sede,'')) AS sede_codigo,
-            COALESCE(COUNT(*),0) AS vencen_pronto
-        FROM matafuegos_sede
+            UPPER(COALESCE(codigo_sede,'')) AS sede_codigo,
+            COALESCE(codigo_local,'') AS codigo_local,
+            COALESCE(nombre_apellido,'') AS nombre
+        FROM personal_sede
         WHERE COALESCE(activo,1)=1
-          AND fecha_vencimiento IS NOT NULL
-          AND date(fecha_vencimiento) <= date('now','+45 day')
-        GROUP BY UPPER(COALESCE(cod_sede,''))
     """).fetchall()
-    seg_map = {str(r["sede_codigo"] or "").strip().upper(): int(r["vencen_pronto"] or 0) for r in seg_rows}
+    for p in per_rows:
+        sede = str(p["sede_codigo"] or "").strip().upper()
+        dep = normalizar_deposito_codigo(p["codigo_local"]) or "SIN_CODIGO"
+        if not sede:
+            continue
+        k = (sede, dep)
+        personal_map[k]["personas_reales"] += 1
+        nom = str(p["nombre"] or "").strip()
+        if nom:
+            personal_map[k]["nombres"].append(nom)
 
-    def _sort_dep_key(dep_code: str):
-        d = str(dep_code or "").strip().upper()
-        if d.startswith("D") and d[1:].isdigit():
-            return (0, int(d[1:]), d)
-        if d == "SIN_PUESTO":
-            return (2, 9999, d)
-        return (1, 9999, d)
+    mobiliario_map = defaultdict(lambda: {
+        "escritorio_prof": 0,
+        "mesa_pc": 0,
+        "silla_giratoria": 0,
+        "silla_fija": 0,
+        "armario_biblioteca": 0,
+    })
+    mob_rows = db.execute("""
+        SELECT
+            UPPER(COALESCE(codigo_sede,'')) AS sede_codigo,
+            COALESCE(codigo_local,'') AS codigo_local,
+            COALESCE(SUM(COALESCE(escritorio_prof,0)),0) AS escritorio_prof,
+            COALESCE(SUM(COALESCE(mesa_pc,0)),0) AS mesa_pc,
+            COALESCE(SUM(COALESCE(silla_giratoria,0)),0) AS silla_giratoria,
+            COALESCE(SUM(COALESCE(silla_fija,0)),0) AS silla_fija,
+            COALESCE(SUM(COALESCE(armario_alto,0)),0) AS armario_alto,
+            COALESCE(SUM(COALESCE(biblioteca_baja,0)),0) AS biblioteca_baja
+        FROM mobiliario_sede
+        WHERE COALESCE(activo,1)=1
+        GROUP BY UPPER(COALESCE(codigo_sede,'')), COALESCE(codigo_local,'')
+    """).fetchall()
+    for m in mob_rows:
+        sede = str(m["sede_codigo"] or "").strip().upper()
+        dep = normalizar_deposito_codigo(m["codigo_local"]) or "SIN_CODIGO"
+        if not sede:
+            continue
+        k = (sede, dep)
+        mobiliario_map[k]["escritorio_prof"] = float(m["escritorio_prof"] or 0)
+        mobiliario_map[k]["mesa_pc"] = float(m["mesa_pc"] or 0)
+        mobiliario_map[k]["silla_giratoria"] = float(m["silla_giratoria"] or 0)
+        mobiliario_map[k]["silla_fija"] = float(m["silla_fija"] or 0)
+        mobiliario_map[k]["armario_biblioteca"] = float((m["armario_alto"] or 0) + (m["biblioteca_baja"] or 0))
+
+    puestos_map = defaultdict(float)
+    pto_rows = db.execute("""
+        SELECT
+            UPPER(COALESCE(codigo_sede,'')) AS sede_codigo,
+            COALESCE(codigo_local,'') AS codigo_local,
+            COALESCE(SUM(COALESCE(puestos_trabajo,0)),0) AS puestos
+        FROM luminarias_sede
+        WHERE COALESCE(activo,1)=1
+        GROUP BY UPPER(COALESCE(codigo_sede,'')), COALESCE(codigo_local,'')
+    """).fetchall()
+    for pr in pto_rows:
+        sede = str(pr["sede_codigo"] or "").strip().upper()
+        dep = normalizar_deposito_codigo(pr["codigo_local"]) or "SIN_CODIGO"
+        if not sede:
+            continue
+        puestos_map[(sede, dep)] = float(pr["puestos"] or 0)
+
+    aires_map = defaultdict(float)
+    aires_rows = db.execute(f"""
+        SELECT
+            UPPER(COALESCE(sede_codigo,'')) AS sede_codigo,
+            COALESCE(ambiente,'') AS ambiente
+        FROM aires_mpd
+        WHERE {aires_valid_where("aires_mpd")}
+    """).fetchall()
+    for ar in aires_rows:
+        sede = str(ar["sede_codigo"] or "").strip().upper()
+        dep = normalizar_deposito_codigo(ar["ambiente"]) or "SIN_CODIGO"
+        if not sede:
+            continue
+        aires_map[(sede, dep)] += 1
+
+    all_keys = set(dep_catalog.keys()) | set(personal_map.keys()) | set(mobiliario_map.keys()) | set(puestos_map.keys()) | set(aires_map.keys()) | set(asign_map.keys())
+    for sede in sedes_codigos:
+        if (sede, "SIN_CODIGO") in all_keys:
+            continue
+    all_keys = {k for k in all_keys if k[0]}
+
+    infra_rows_raw = []
+    for sede, dep in sorted(all_keys, key=lambda x: (x[0], x[1])):
+        fuero = sedes_fuero.get(sede, "")
+        info = dep_catalog.get((sede, dep), {})
+        referencia = str(info.get("referencia") or "").strip() or dep
+        personas_reales = int(personal_map.get((sede, dep), {}).get("personas_reales", 0) or 0)
+        nombres = personal_map.get((sede, dep), {}).get("nombres", [])
+        nombre_ref = referencia
+        if not nombre_ref and nombres:
+            nombre_ref = ", ".join(nombres[:2]) + ("..." if len(nombres) > 2 else "")
+
+        criterio_asig = asign_map.get((sede, dep), {})
+        criterio_codigo = str(criterio_asig.get("criterio_codigo") or "").strip().upper()
+        criterio = criterios_map.get(criterio_codigo)
+        criterio_nombre = criterio.get("nombre") if criterio else "-"
+        criterio_fuero = criterio.get("fuero") if criterio else ""
+
+        reales = {
+            "escritorio_prof": float(mobiliario_map.get((sede, dep), {}).get("escritorio_prof", 0) or 0),
+            "mesa_pc": float(mobiliario_map.get((sede, dep), {}).get("mesa_pc", 0) or 0),
+            "silla_giratoria": float(mobiliario_map.get((sede, dep), {}).get("silla_giratoria", 0) or 0),
+            "silla_fija": float(mobiliario_map.get((sede, dep), {}).get("silla_fija", 0) or 0),
+            "armario_biblioteca": float(mobiliario_map.get((sede, dep), {}).get("armario_biblioteca", 0) or 0),
+            "aire": float(aires_map.get((sede, dep), 0) or 0),
+            "puestos_existentes": float(puestos_map.get((sede, dep), 0) or 0),
+        }
+
+        rubros_estado = {}
+        rubros_min = {}
+        rubros_data = {}
+        for rb in INFRA_RUBROS_META:
+            rk = rb["key"]
+            real_val = reales.get(rk, 0)
+            min_esp = None
+            max_esp = None
+            esperado_txt = "-"
+            if criterio:
+                rdef = criterio["rubros"].get(rk)
+                if rdef:
+                    min_esp = infra_eval_formula(rdef.get("min_modo"), rdef.get("min_val"), personas_reales)
+                    max_esp = infra_eval_formula(rdef.get("max_modo"), rdef.get("max_val"), personas_reales)
+                    esperado_txt = f"{infra_fmt_num(min_esp)} - {infra_fmt_num(max_esp)}"
+            estado = infra_estado_rubro(real_val, min_esp, max_esp, bool(criterio))
+            rubros_estado[rk] = estado
+            rubros_min[rk] = min_esp
+            rubros_data[rk] = {
+                "real": real_val,
+                "esperado": esperado_txt,
+                "estado": estado,
+                "min": min_esp,
+                "max": max_esp,
+            }
+
+        estado_general = infra_estado_general(rubros_estado, rubros_min)
+        accion_sugerida = infra_accion_sugerida(estado_general)
+
+        row = {
+            "sede": sede,
+            "deposito": dep,
+            "nombre_referencia": nombre_ref or "-",
+            "personas_reales": personas_reales,
+            "fuero": fuero or "GENERAL",
+            "criterio_codigo": criterio_codigo or "",
+            "criterio_asignado": criterio_nombre if criterio else "Sin criterio",
+            "criterio_fuero": criterio_fuero,
+            "estado_general": estado_general,
+            "accion_sugerida": accion_sugerida,
+            "nombres": nombres,
+            "observaciones_asignacion": str(criterio_asig.get("observaciones") or ""),
+            "rubros": rubros_data,
+            "escritorio_prof_real": rubros_data["escritorio_prof"]["real"],
+            "escritorio_prof_esperado": rubros_data["escritorio_prof"]["esperado"],
+            "escritorio_prof_estado": rubros_data["escritorio_prof"]["estado"],
+            "mesa_pc_real": rubros_data["mesa_pc"]["real"],
+            "mesa_pc_esperado": rubros_data["mesa_pc"]["esperado"],
+            "mesa_pc_estado": rubros_data["mesa_pc"]["estado"],
+            "silla_giratoria_real": rubros_data["silla_giratoria"]["real"],
+            "silla_giratoria_esperado": rubros_data["silla_giratoria"]["esperado"],
+            "silla_giratoria_estado": rubros_data["silla_giratoria"]["estado"],
+            "silla_fija_real": rubros_data["silla_fija"]["real"],
+            "silla_fija_esperado": rubros_data["silla_fija"]["esperado"],
+            "silla_fija_estado": rubros_data["silla_fija"]["estado"],
+            "armario_biblioteca_real": rubros_data["armario_biblioteca"]["real"],
+            "armario_biblioteca_esperado": rubros_data["armario_biblioteca"]["esperado"],
+            "armario_biblioteca_estado": rubros_data["armario_biblioteca"]["estado"],
+            "aire_real": rubros_data["aire"]["real"],
+            "aire_esperado": rubros_data["aire"]["esperado"],
+            "aire_estado": rubros_data["aire"]["estado"],
+            "puestos_existentes_real": rubros_data["puestos_existentes"]["real"],
+            "puestos_existentes_esperado": rubros_data["puestos_existentes"]["esperado"],
+            "puestos_existentes_estado": rubros_data["puestos_existentes"]["estado"],
+        }
+        infra_rows_raw.append(row)
 
     infra_depositos = []
-    for dep_code in sorted(depositos_meta.keys(), key=_sort_dep_key):
-        meta = depositos_meta.get(dep_code, {})
-        desc = str(meta.get("descripcion") or "").strip()
-        sedes_count = len(meta.get("sedes") or set())
-        label = dep_code
-        if desc:
-            label = f"{dep_code} - {desc}"
-        if sedes_count > 1 and dep_code != "SIN_PUESTO":
-            label = f"{label} ({sedes_count} sedes)"
-        infra_depositos.append({"codigo": dep_code, "label": label})
-
-    def cobertura_estado(cobertura_pct):
-        if cobertura_pct is None:
-            return ("sin_dato", "Sin dato")
-        c = float(cobertura_pct)
-        if c < 80:
-            return ("critico", "Faltante critico")
-        if c <= 94:
-            return ("leve", "Faltante leve")
-        if c <= 115:
-            return ("equilibrado", "Equilibrado")
-        if c <= 140:
-            return ("sob_leve", "Sobredimensionado leve")
-        return ("sob_alto", "Sobredimensionado alto")
+    for dep_code in sorted(dep_filter_map.keys()):
+        meta = dep_filter_map.get(dep_code, {})
+        sedes_n = len(meta.get("sedes") or set())
+        lbl = str(meta.get("label") or dep_code)
+        if sedes_n > 1:
+            lbl = f"{lbl} ({sedes_n} sedes)"
+        infra_depositos.append({"codigo": dep_code, "label": lbl})
 
     infra_rows = []
-    infra_sedes_source = [infra_sede] if infra_sede else sedes_codigos
-    for sede in infra_sedes_source:
-        if not sede:
+    for r in infra_rows_raw:
+        if infra_sede and r["sede"] != infra_sede:
             continue
-        nombre = sedes_nombre.get(sede, sede)
-
-        if infra_deposito:
-            k = (sede, infra_deposito)
-            personas_reales = int(personal_by_sede_dep.get(k, {}).get("personas_reales", 0) or 0)
-            pep = float(personal_by_sede_dep.get(k, {}).get("pep", 0.0) or 0.0)
-            puestos_existentes = float(puestos_by_sede_dep.get(k, 0.0) or 0.0)
-            if personas_reales == 0 and pep == 0 and puestos_existentes == 0:
+        if infra_deposito and r["deposito"] != infra_deposito:
+            continue
+        if infra_fuero and (r["fuero"] or "").upper() != infra_fuero:
+            continue
+        if infra_criterio and (r["criterio_codigo"] or "").upper() != infra_criterio:
+            continue
+        if infra_estado_general_filter and r["estado_general"] != infra_estado_general_filter:
+            continue
+        if infra_elemento:
+            estado_el = r.get(f"{infra_elemento}_estado", "")
+            if estado_el == "Razonable":
                 continue
+        infra_rows.append(r)
+
+    infra_rows.sort(key=lambda x: (x["sede"], x["deposito"]))
+
+    infra_totals = {
+        "total_depositos": len(infra_rows),
+        "razonable": sum(1 for x in infra_rows if x["estado_general"] == "Razonable"),
+        "bajo_estandar": sum(1 for x in infra_rows if x["estado_general"] == "Bajo estandar"),
+        "alto": sum(1 for x in infra_rows if x["estado_general"] == "Alto"),
+        "revisar": sum(1 for x in infra_rows if x["estado_general"] == "Revisar"),
+    }
+
+    resumen_sede_map = {}
+    for r in infra_rows:
+        sede = r["sede"]
+        if sede not in resumen_sede_map:
+            resumen_sede_map[sede] = {
+                "sede": sede,
+                "sede_nombre": sedes_nombre.get(sede, sede),
+                "total": 0,
+                "razonable": 0,
+                "bajo_estandar": 0,
+                "alto": 0,
+                "revisar": 0,
+                "_falt": defaultdict(int),
+                "_exc": defaultdict(int),
+            }
+        s = resumen_sede_map[sede]
+        s["total"] += 1
+        if r["estado_general"] == "Razonable":
+            s["razonable"] += 1
+        elif r["estado_general"] == "Bajo estandar":
+            s["bajo_estandar"] += 1
+        elif r["estado_general"] == "Alto":
+            s["alto"] += 1
         else:
-            personas_reales = int(personal_by_sede.get(sede, {}).get("personas_reales", 0) or 0)
-            pep = float(personal_by_sede.get(sede, {}).get("pep", 0.0) or 0.0)
-            puestos_existentes = float(puestos_by_sede.get(sede, 0.0) or 0.0)
+            s["revisar"] += 1
 
-        puestos_necesarios = pep
-        diferencia = puestos_existentes - puestos_necesarios
-        cobertura_pct = (puestos_existentes / puestos_necesarios * 100.0) if puestos_necesarios > 0 else None
-        estado_key, estado_label = cobertura_estado(cobertura_pct)
+        for rb in INFRA_RUBROS_META:
+            rk = rb["key"]
+            est = r.get(f"{rk}_estado")
+            if est == "Bajo estandar":
+                s["_falt"][rk] += 1
+            elif est == "Alto":
+                s["_exc"][rk] += 1
 
-        mrow = metricas_map.get(sede, {})
-        irow = infra_map.get(sede, {})
-        m2_totales = mrow.get("m2_totales")
-        if m2_totales is None:
-            m2_totales = irow.get("m2_totales")
+    infra_resumen_sede = []
+    for sede in sorted(resumen_sede_map.keys()):
+        item = resumen_sede_map[sede]
+        falt = sorted(item["_falt"].items(), key=lambda x: x[1], reverse=True)
+        exc = sorted(item["_exc"].items(), key=lambda x: x[1], reverse=True)
+        falt_txt = ", ".join([f"{INFRA_RUBRO_LABELS.get(k, k)} ({v})" for k, v in falt[:3]]) if falt else "-"
+        exc_txt = ", ".join([f"{INFRA_RUBRO_LABELS.get(k, k)} ({v})" for k, v in exc[:3]]) if exc else "-"
 
-        personas_base = mrow.get("personas")
-        if personas_base is None:
-            personas_base = irow.get("personas")
-        if personas_base is None:
-            personas_base = personas_reales
-
-        oficinas_base = mrow.get("oficinas")
-        if oficinas_base is None:
-            oficinas_base = irow.get("oficinas")
-
-        dep_base = mrow.get("depositos")
-        if dep_base is None:
-            dep_base = irow.get("depositos")
-        dep_base = float(dep_base or 0)
-
-        salas = float(irow.get("salas_entrevistas") or 0)
-        banios = float(irow.get("banios") or 0)
-        comunes = float(irow.get("espacios_comunes") or 0)
-        ofis = float(oficinas_base or 0)
-        amb_utiles = ofis + salas + banios + comunes
-        amb_total = amb_utiles + dep_base
-        factor_deposito = (dep_base / amb_total) if amb_total > 0 else 0.0
-        factor_potencial = 1 + (factor_deposito * 0.7)
-
-        m2pp_base = None
-        if m2_totales is not None and personas_base:
-            try:
-                m2pp_base = float(m2_totales) / float(personas_base)
-            except Exception:
-                m2pp_base = None
-        m2pp = (m2pp_base * factor_potencial) if m2pp_base is not None else None
-
-        m2_estado = "Sin dato"
-        m2_score = None
-        if m2pp is not None:
-            if m2pp < 8:
-                m2_estado = "Intensivo"
-                m2_score = 60
-            elif m2pp <= 12:
-                m2_estado = "Adecuado"
-                m2_score = 100
-            else:
-                m2_estado = "Amplio"
-                m2_score = 85
-
-        densidad = None
-        densidad_estado = "Sin dato"
-        densidad_score = None
-        if personas_base and oficinas_base:
-            try:
-                densidad = float(personas_base) / float(oficinas_base)
-            except Exception:
-                densidad = None
-        if densidad is not None:
-            if densidad <= 2:
-                densidad_estado = "Adecuado"
-                densidad_score = 100
-            elif densidad <= 3:
-                densidad_estado = "Intensivo"
-                densidad_score = 70
-            else:
-                densidad_estado = "Saturado"
-                densidad_score = 35
-
-        seg_vencen_45d = int(seg_map.get(sede, 0) or 0)
-        if seg_vencen_45d <= 0:
-            seg_estado = "Adecuado"
-            seg_score = 100
-        elif seg_vencen_45d <= 2:
-            seg_estado = "Atencion"
-            seg_score = 70
+        if item["bajo_estandar"] > 0 and item["alto"] > 0:
+            conclusion = "Antes de comprar mobiliario nuevo, revisar redistribucion interna."
+        elif item["bajo_estandar"] > 0:
+            conclusion = "Pedido justificado o redistribucion prioritaria segun faltantes."
+        elif item["alto"] > 0:
+            conclusion = "Revisar redistribucion antes de nuevas compras."
+        elif item["revisar"] > 0:
+            conclusion = "Completar datos para consolidar diagnostico."
         else:
-            seg_estado = "Critico"
-            seg_score = 35
+            conclusion = "Sede equilibrada segun criterios asignados."
 
-        idx_scores = [v for v in (m2_score, densidad_score, seg_score) if v is not None]
-        indice_general = round(sum(idx_scores) / len(idx_scores), 1) if idx_scores else None
-
-        infra_rows.append({
-            "codigo": sede,
-            "nombre": nombre,
-            "personas_reales": personas_reales,
-            "pep": round(pep, 2),
-            "puestos_existentes": round(puestos_existentes, 2),
-            "puestos_necesarios": round(puestos_necesarios, 2),
-            "diferencia_puestos": round(diferencia, 2),
-            "cobertura_pct": round(cobertura_pct, 1) if cobertura_pct is not None else None,
-            "cobertura_estado_key": estado_key,
-            "cobertura_estado_label": estado_label,
-            "m2pp": round(m2pp, 2) if m2pp is not None else None,
-            "m2_estado": m2_estado,
-            "densidad_oficina": round(densidad, 2) if densidad is not None else None,
-            "densidad_estado": densidad_estado,
-            "seg_vencen_45d": seg_vencen_45d,
-            "seg_estado": seg_estado,
-            "indice_general": indice_general,
-            "factor_deposito_pct": round(factor_deposito * 100.0, 1),
+        infra_resumen_sede.append({
+            "sede": item["sede"],
+            "sede_nombre": item["sede_nombre"],
+            "total_depositos": item["total"],
+            "razonable": item["razonable"],
+            "bajo_estandar": item["bajo_estandar"],
+            "alto": item["alto"],
+            "revisar": item["revisar"],
+            "principales_faltantes": falt_txt,
+            "posibles_excedentes": exc_txt,
+            "conclusion": conclusion,
         })
 
-    infra_rows.sort(key=lambda x: x.get("codigo") or "")
-    infra_totals = {
-        "personas_reales": sum(int(r.get("personas_reales") or 0) for r in infra_rows),
-        "pep": round(sum(float(r.get("pep") or 0.0) for r in infra_rows), 2),
-        "puestos_existentes": round(sum(float(r.get("puestos_existentes") or 0.0) for r in infra_rows), 2),
-    }
-    infra_totals["diferencia_puestos"] = round(infra_totals["puestos_existentes"] - infra_totals["pep"], 2)
-    infra_totals["cobertura_pct"] = (
-        round((infra_totals["puestos_existentes"] / infra_totals["pep"]) * 100.0, 1)
-        if infra_totals["pep"] > 0 else None
-    )
-    infra_totals["estado_key"], infra_totals["estado_label"] = cobertura_estado(infra_totals["cobertura_pct"])
-    idx_vals = [float(r["indice_general"]) for r in infra_rows if r.get("indice_general") is not None]
-    infra_totals["indice_general"] = round(sum(idx_vals) / len(idx_vals), 1) if idx_vals else None
+    if infra_export == "csv":
+        out = io.StringIO()
+        writer = csv.writer(out)
+        writer.writerow([
+            "Sede", "Deposito", "Nombre/referencia", "Personas reales", "Fuero",
+            "Criterio", "Escritorio real", "Escritorio esperado", "Estado escritorio",
+            "Mesa PC real", "Mesa PC esperada", "Estado mesa PC",
+            "Silla giratoria real", "Silla giratoria esperada", "Estado silla giratoria",
+            "Silla fija real", "Silla fija esperada", "Estado silla fija",
+            "Armario/Biblioteca real", "Armario/Biblioteca esperado", "Estado armario/biblioteca",
+            "Aire real", "Aire esperado", "Estado aire",
+            "Puestos real", "Puestos esperado", "Estado puestos",
+            "Estado general", "Accion sugerida"
+        ])
+        for r in infra_rows:
+            writer.writerow([
+                r["sede"], r["deposito"], r["nombre_referencia"], r["personas_reales"], r["fuero"],
+                f"{r['criterio_codigo']} - {r['criterio_asignado']}" if r["criterio_codigo"] else "Sin criterio",
+                infra_fmt_num(r["escritorio_prof_real"]), r["escritorio_prof_esperado"], r["escritorio_prof_estado"],
+                infra_fmt_num(r["mesa_pc_real"]), r["mesa_pc_esperado"], r["mesa_pc_estado"],
+                infra_fmt_num(r["silla_giratoria_real"]), r["silla_giratoria_esperado"], r["silla_giratoria_estado"],
+                infra_fmt_num(r["silla_fija_real"]), r["silla_fija_esperado"], r["silla_fija_estado"],
+                infra_fmt_num(r["armario_biblioteca_real"]), r["armario_biblioteca_esperado"], r["armario_biblioteca_estado"],
+                infra_fmt_num(r["aire_real"]), r["aire_esperado"], r["aire_estado"],
+                infra_fmt_num(r["puestos_existentes_real"]), r["puestos_existentes_esperado"], r["puestos_existentes_estado"],
+                r["estado_general"], r["accion_sugerida"],
+            ])
+        csv_txt = out.getvalue()
+        headers = {
+            "Content-Type": "text/csv; charset=utf-8",
+            "Content-Disposition": "attachment; filename=infraestructura_depositos.csv",
+        }
+        return csv_txt, 200, headers
 
     # ------------------------------------------------------------
     # RESUMEN ACTUAL (inventario operativo)
@@ -7594,8 +8178,22 @@ def sedes_resumen_mpd():
         infra_totals=infra_totals,
         infra_sede=infra_sede,
         infra_deposito=infra_deposito,
+        infra_fuero=infra_fuero,
+        infra_criterio=infra_criterio,
+        infra_estado_general=infra_estado_general_filter,
+        infra_elemento=infra_elemento,
         infra_sedes=sedes_rows,
         infra_depositos=infra_depositos,
+        infra_fueros=infra_fueros,
+        infra_criterios=criterios_opts,
+        infra_rubros_meta=INFRA_RUBROS_META,
+        infra_modo_formula=INFRA_MODO_FORMULA,
+        infra_resumen_sede=infra_resumen_sede,
+        criterio_edit=criterio_edit,
+        edit_criterio=edit_criterio,
+        asig_sede=asig_sede,
+        asig_deposito=asig_deposito,
+        infra_assign_options=dep_assign_opts,
         matafuegos_vto_rows=matafuegos_vto_rows,
         matafuegos_vto_kpi=matafuegos_vto_kpi,
     )

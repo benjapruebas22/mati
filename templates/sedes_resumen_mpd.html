@@ -19,17 +19,18 @@
       <a class="btn" href="{{ url_for('dashboard') }}">Volver</a>
     </div>
 
-    <div style="margin-top:12px;background:#ffffff;border:1px solid #e5e7eb;padding:12px;border-radius:12px;">
+    <div style="margin-top:12px;background:#ffffff;border:1px solid #e5e7eb;padding:12px;border-radius:12px;" id="infra-analisis">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
         <div>
-          <h3 style="margin:0;font-size:16px;color:#0f172a;font-weight:700;">Infraestructura por sede y deposito (PEP)</h3>
-          <div style="font-size:12px;color:#64748b;margin-top:3px;">Cobertura de puestos calculada por PEP, sin usar personas reales como denominador.</div>
+          <h3 style="margin:0;font-size:16px;color:#0f172a;font-weight:700;">Analisis por deposito/oficina</h3>
+          <div style="font-size:12px;color:#64748b;margin-top:3px;">Comparacion real vs criterio estandar por deposito, con estado operativo y accion sugerida.</div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:12px;">
-          <span class="state info"><strong>Personas reales:</strong> {{ infra_totals.personas_reales }}</span>
-          <span class="state info"><strong>PEP:</strong> {{ '%.2f'|format(infra_totals.pep or 0) }}</span>
-          <span class="state info"><strong>Puestos:</strong> {{ '%.2f'|format(infra_totals.puestos_existentes or 0) }}</span>
-          <span class="state info"><strong>Cobertura:</strong> {% if infra_totals.cobertura_pct is not none %}{{ infra_totals.cobertura_pct }}%{% else %}-{% endif %}</span>
+          <span class="state info"><strong>Depositos analizados:</strong> {{ infra_totals.total_depositos }}</span>
+          <span class="state ok"><strong>Razonable:</strong> {{ infra_totals.razonable }}</span>
+          <span class="state warn"><strong>Bajo estandar:</strong> {{ infra_totals.bajo_estandar }}</span>
+          <span class="state danger"><strong>Alto:</strong> {{ infra_totals.alto }}</span>
+          <span class="state"><strong>Revisar:</strong> {{ infra_totals.revisar }}</span>
         </div>
       </div>
 
@@ -52,19 +53,54 @@
             {% endfor %}
           </select>
         </div>
+        <div>
+          <label style="font-size:12px;color:#64748b;">Fuero</label>
+          <select name="infra_fuero" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+            <option value="">Todos</option>
+            {% for f in infra_fueros %}
+              <option value="{{ f }}" {% if infra_fuero == f %}selected{% endif %}>{{ f }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px;color:#64748b;">Criterio asignado</label>
+          <select name="infra_criterio" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+            <option value="">Todos</option>
+            {% for c in infra_criterios %}
+              <option value="{{ c.codigo }}" {% if infra_criterio == c.codigo %}selected{% endif %}>{{ c.codigo }} - {{ c.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px;color:#64748b;">Estado general</label>
+          <select name="infra_estado_general" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+            <option value="">Todos</option>
+            {% for eg in ['Bajo estandar', 'Razonable', 'Alto', 'Revisar'] %}
+              <option value="{{ eg }}" {% if infra_estado_general == eg %}selected{% endif %}>{{ eg }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label style="font-size:12px;color:#64748b;">Elemento (desvio)</label>
+          <select name="infra_elemento" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+            <option value="">Todos</option>
+            {% for rb in infra_rubros_meta %}
+              <option value="{{ rb.key }}" {% if infra_elemento == rb.key %}selected{% endif %}>{{ rb.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
         <button class="btn" type="submit" style="padding:6px 12px;">Aplicar</button>
         <a class="btn" href="{{ url_for('sedes_resumen_mpd') }}" style="padding:6px 12px;">Limpiar</a>
+        <a class="btn" href="{{ url_for('sedes_resumen_mpd', infra_sede=infra_sede or None, infra_deposito=infra_deposito or None, infra_fuero=infra_fuero or None, infra_criterio=infra_criterio or None, infra_estado_general=infra_estado_general or None, infra_elemento=infra_elemento or None, infra_export='csv') }}" style="padding:6px 12px;">Exportar CSV</a>
       </form>
 
       <details style="margin-top:10px;">
         <summary style="cursor:pointer;font-size:12px;color:#334155;font-weight:700;">Criterios de analisis (V1)</summary>
         <ul style="margin:8px 0 0;padding-left:18px;font-size:12px;color:#475569;line-height:1.4;">
-          <li>PEP por ocupacion: exclusivo 1.00, doble turno 0.50, compartido 0.50, ocasional 0.25, sin puesto fijo 0.00.</li>
-          <li>puestos_necesarios = suma(PEP). cobertura_puestos = puestos_existentes / puestos_necesarios * 100.</li>
-          <li>Ocupacion: 8 a 12 m2/persona adecuado, menor a 8 intensivo, mayor a 12 amplio.</li>
-          <li>Densidad por oficina: hasta 2 adecuado, 2 a 3 intensivo, mas de 3 saturado.</li>
-          <li>Seguridad: vencimientos proximos dentro de 45 dias requieren atencion.</li>
-          <li>Indice general interno: promedio de ocupacion, densidad y seguridad.</li>
+          <li>Analisis primero por deposito/oficina y luego resumen por sede.</li>
+          <li>Estados por rubro: Bajo estandar, Razonable, Alto, Sin criterio, Revisar.</li>
+          <li>Rubros criticos: mesa PC, silla giratoria, puestos existentes y aire cuando corresponda.</li>
+          <li>Acciones: Priorizar ajuste, Pedido justificado, Redistribucion sugerida o Completar datos.</li>
         </ul>
       </details>
 
@@ -73,89 +109,261 @@
           <thead style="background:#f8fafc;">
             <tr>
               <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Sede</th>
-              <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb;">Personas reales</th>
-              <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb;">PEP</th>
-              <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb;">Puestos existentes</th>
-              <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb;">Diferencia puestos</th>
-              <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb;">Cobertura %</th>
-              <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Semaforo</th>
-              <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb;">m2/persona</th>
-              <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb;">Densidad</th>
-              <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb;">Seg. 45d</th>
-              <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb;">Indice general</th>
+              <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Depos.</th>
+              <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Nombre / referencia</th>
+              <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb;">Pers.</th>
+              <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Fuero</th>
+              <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Criterio</th>
+              <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb;">Esc. real</th>
+              <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Esc. esp.</th>
+              <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Estado esc.</th>
+              <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb;">Mesa real</th>
+              <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Mesa esp.</th>
+              <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Estado mesa</th>
+              <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb;">Silla gir. real</th>
+              <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Silla gir. esp.</th>
+              <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Estado silla gir.</th>
+              <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb;">Silla fija real</th>
+              <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Silla fija esp.</th>
+              <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Estado silla fija</th>
+              <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb;">Arm/Bib real</th>
+              <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Arm/Bib esp.</th>
+              <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Estado arm/bib</th>
+              <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb;">Aire real</th>
+              <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Aire esp.</th>
+              <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Estado aire</th>
+              <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb;">Puestos real</th>
+              <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Puestos esp.</th>
+              <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Estado puestos</th>
+              <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Estado general</th>
+              <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Accion sugerida</th>
+              <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Editar</th>
+              <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Asignar</th>
             </tr>
           </thead>
           <tbody>
             {% if infra_rows and infra_rows|length > 0 %}
               {% for r in infra_rows %}
-                {% set code = (r.codigo or '')|upper %}
-                {% set cls = fuero_map.get(code, 'fuero-neutral') %}
-                {% if r.cobertura_estado_key == 'critico' %}
-                  {% set sem_style = 'background:#fef2f2;border-color:#fecaca;color:#b91c1c;' %}
-                {% elif r.cobertura_estado_key == 'leve' %}
-                  {% set sem_style = 'background:#fff7ed;border-color:#fed7aa;color:#b45309;' %}
-                {% elif r.cobertura_estado_key == 'equilibrado' %}
-                  {% set sem_style = 'background:#ecfdf3;border-color:#bbf7d0;color:#15803d;' %}
-                {% elif r.cobertura_estado_key == 'sob_leve' %}
-                  {% set sem_style = 'background:#eff6ff;border-color:#bfdbfe;color:#1d4ed8;' %}
-                {% elif r.cobertura_estado_key == 'sob_alto' %}
-                  {% set sem_style = 'background:#eef2ff;border-color:#c7d2fe;color:#4338ca;' %}
-                {% else %}
-                  {% set sem_style = 'background:#f8fafc;border-color:#e2e8f0;color:#475569;' %}
-                {% endif %}
-                <tr>
-                  <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
-                    <span class="sede-badge-soft {{ cls }}">{{ r.codigo }}</span>
-                    <span style="margin-left:6px;color:#334155;">{{ r.nombre }}</span>
-                  </td>
-                  <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ r.personas_reales }}</td>
-                  <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ '%.2f'|format(r.pep or 0) }}</td>
-                  <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ '%.2f'|format(r.puestos_existentes or 0) }}</td>
-                  <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ '%.2f'|format(r.diferencia_puestos or 0) }}</td>
-                  <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">
-                    {% if r.cobertura_pct is not none %}{{ r.cobertura_pct }}%{% else %}-{% endif %}
-                  </td>
-                  <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
-                    <span class="state" style="{{ sem_style }}">{{ r.cobertura_estado_label }}</span>
-                  </td>
-                  <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">
-                    {% if r.m2pp is not none %}{{ r.m2pp }}{% else %}-{% endif %}
-                  </td>
-                  <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">
-                    {% if r.densidad_oficina is not none %}{{ r.densidad_oficina }}{% else %}-{% endif %}
-                  </td>
-                  <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ r.seg_vencen_45d }}</td>
-                  <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">
-                    {% if r.indice_general is not none %}{{ r.indice_general }}{% else %}-{% endif %}
-                  </td>
-                </tr>
+              {% set cls = fuero_map.get((r.sede or '')|upper, 'fuero-neutral') %}
+              <tr>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;"><span class="sede-badge-soft {{ cls }}">{{ r.sede }}</span></td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.deposito }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.nombre_referencia }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ r.personas_reales }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.fuero }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{% if r.criterio_codigo %}<strong>{{ r.criterio_codigo }}</strong> - {{ r.criterio_asignado }}{% else %}<span class="state">Sin criterio</span>{% endif %}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ r.escritorio_prof_real|round(2) }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.escritorio_prof_esperado }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.escritorio_prof_estado }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ r.mesa_pc_real|round(2) }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.mesa_pc_esperado }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.mesa_pc_estado }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ r.silla_giratoria_real|round(2) }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.silla_giratoria_esperado }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.silla_giratoria_estado }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ r.silla_fija_real|round(2) }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.silla_fija_esperado }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.silla_fija_estado }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ r.armario_biblioteca_real|round(2) }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.armario_biblioteca_esperado }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.armario_biblioteca_estado }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ r.aire_real|round(2) }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.aire_esperado }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.aire_estado }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ r.puestos_existentes_real|round(2) }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.puestos_existentes_esperado }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.puestos_existentes_estado }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
+                  {% if r.estado_general == 'Bajo estandar' %}
+                    <span class="state warn">Bajo estandar</span>
+                  {% elif r.estado_general == 'Alto' %}
+                    <span class="state danger">Alto</span>
+                  {% elif r.estado_general == 'Razonable' %}
+                    <span class="state ok">Razonable</span>
+                  {% else %}
+                    <span class="state">Revisar</span>
+                  {% endif %}
+                </td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.accion_sugerida }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
+                  <a class="btn xs" href="{{ url_for('sedes_resumen_mpd', infra_sede=infra_sede or None, infra_deposito=infra_deposito or None, infra_fuero=infra_fuero or None, infra_criterio=infra_criterio or None, infra_estado_general=infra_estado_general or None, infra_elemento=infra_elemento or None, edit_criterio=(r.criterio_codigo if r.criterio_codigo else edit_criterio), asig_sede=r.sede, asig_deposito=r.deposito) }}#infra-forms">Editar</a>
+                </td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
+                  <a class="btn xs" href="{{ url_for('sedes_resumen_mpd', infra_sede=infra_sede or None, infra_deposito=infra_deposito or None, infra_fuero=infra_fuero or None, infra_criterio=infra_criterio or None, infra_estado_general=infra_estado_general or None, infra_elemento=infra_elemento or None, asig_sede=r.sede, asig_deposito=r.deposito, edit_criterio=(r.criterio_codigo if r.criterio_codigo else edit_criterio)) }}#infra-forms">Asignar criterio</a>
+                </td>
+              </tr>
               {% endfor %}
             {% else %}
               <tr>
-                <td colspan="11" style="padding:10px;color:#64748b;">No hay datos de infraestructura para el filtro seleccionado.</td>
+                <td colspan="31" style="padding:10px;color:#64748b;">No hay datos de analisis para el filtro seleccionado.</td>
               </tr>
             {% endif %}
           </tbody>
-          <tfoot style="background:#f8fafc;">
-            <tr>
-              <td style="padding:8px;border-top:1px solid #e5e7eb;font-weight:700;">Totales</td>
-              <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:right;font-weight:700;">{{ infra_totals.personas_reales }}</td>
-              <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:right;font-weight:700;">{{ '%.2f'|format(infra_totals.pep or 0) }}</td>
-              <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:right;font-weight:700;">{{ '%.2f'|format(infra_totals.puestos_existentes or 0) }}</td>
-              <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:right;font-weight:700;">{{ '%.2f'|format(infra_totals.diferencia_puestos or 0) }}</td>
-              <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:right;font-weight:700;">
-                {% if infra_totals.cobertura_pct is not none %}{{ infra_totals.cobertura_pct }}%{% else %}-{% endif %}
-              </td>
-              <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;">
-                <span class="state info">{{ infra_totals.estado_label }}</span>
-              </td>
-              <td colspan="3" style="padding:8px;border-top:1px solid #e5e7eb;"></td>
-              <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:right;font-weight:700;">
-                {% if infra_totals.indice_general is not none %}{{ infra_totals.indice_general }}{% else %}-{% endif %}
-              </td>
-            </tr>
-          </tfoot>
         </table>
+      </div>
+
+      <div style="margin-top:12px;border:1px solid #e5e7eb;border-radius:12px;overflow:auto;background:#fff;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead style="background:#f8fafc;">
+            <tr>
+              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Sede</th>
+              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">Depositos analizados</th>
+              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">Razonables</th>
+              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">Bajo estandar</th>
+              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">Altos</th>
+              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">Revisar</th>
+              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Principales faltantes</th>
+              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Posibles excedentes</th>
+              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Conclusion</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if infra_resumen_sede and infra_resumen_sede|length > 0 %}
+              {% for rs in infra_resumen_sede %}
+              <tr>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>{{ rs.sede }}</strong> - {{ rs.sede_nombre }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ rs.total_depositos }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ rs.razonable }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ rs.bajo_estandar }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ rs.alto }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ rs.revisar }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ rs.principales_faltantes }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ rs.posibles_excedentes }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ rs.conclusion }}</td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="9" style="padding:10px;color:#64748b;">No hay resumen por sede para los filtros actuales.</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+
+      <div id="infra-forms" style="margin-top:12px;display:grid;grid-template-columns:1fr;gap:12px;">
+        <details open>
+          <summary style="cursor:pointer;font-size:13px;font-weight:700;color:#334155;">Criterios estandar por deposito/oficina (editable)</summary>
+          <form method="post" style="margin-top:8px;border:1px solid #e5e7eb;border-radius:12px;padding:10px;background:#fff;">
+            <input type="hidden" name="infra_action" value="save_criterio">
+            <input type="hidden" name="infra_sede" value="{{ infra_sede or '' }}">
+            <input type="hidden" name="infra_deposito" value="{{ infra_deposito or '' }}">
+            <input type="hidden" name="infra_fuero" value="{{ infra_fuero or '' }}">
+            <input type="hidden" name="infra_criterio" value="{{ infra_criterio or '' }}">
+            <input type="hidden" name="infra_estado_general" value="{{ infra_estado_general or '' }}">
+            <input type="hidden" name="infra_elemento" value="{{ infra_elemento or '' }}">
+            <input type="hidden" name="edit_criterio" value="{{ criterio_edit.codigo or '' }}">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;">
+              <div>
+                <label style="font-size:12px;color:#64748b;">Criterio</label>
+                <select onchange="window.location=this.value" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+                  <option value="{{ url_for('sedes_resumen_mpd', infra_sede=infra_sede or None, infra_deposito=infra_deposito or None, infra_fuero=infra_fuero or None, infra_criterio=infra_criterio or None, infra_estado_general=infra_estado_general or None, infra_elemento=infra_elemento or None) }}">Nuevo criterio</option>
+                  {% for c in infra_criterios %}
+                    <option value="{{ url_for('sedes_resumen_mpd', infra_sede=infra_sede or None, infra_deposito=infra_deposito or None, infra_fuero=infra_fuero or None, infra_criterio=infra_criterio or None, infra_estado_general=infra_estado_general or None, infra_elemento=infra_elemento or None, edit_criterio=c.codigo) }}#infra-forms" {% if criterio_edit.codigo == c.codigo %}selected{% endif %}>{{ c.codigo }} - {{ c.nombre }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div><label style="font-size:12px;color:#64748b;">Codigo</label><input name="criterio_codigo" value="{{ criterio_edit.codigo or '' }}" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;width:90px;"></div>
+              <div><label style="font-size:12px;color:#64748b;">Nombre</label><input name="criterio_nombre" value="{{ criterio_edit.nombre or '' }}" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;width:260px;"></div>
+              <div><label style="font-size:12px;color:#64748b;">Fuero</label><input name="criterio_fuero" value="{{ criterio_edit.fuero or '' }}" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;width:180px;"></div>
+              <div><label style="font-size:12px;color:#64748b;">Personas base</label><input name="criterio_personas_base" value="{{ criterio_edit.personas_base or '' }}" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;width:120px;"></div>
+              <div><label style="font-size:12px;color:#64748b;">Orden</label><input name="criterio_orden" value="{{ criterio_edit.orden or 0 }}" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;width:70px;"></div>
+              <div><label style="font-size:12px;color:#64748b;">Activo</label><select name="criterio_activo" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;"><option value="1" {% if (criterio_edit.activo or 1)==1 %}selected{% endif %}>Si</option><option value="0" {% if (criterio_edit.activo or 1)==0 %}selected{% endif %}>No</option></select></div>
+            </div>
+            <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+              <div style="flex:1 1 260px;"><label style="font-size:12px;color:#64748b;">Composicion</label><input name="criterio_composicion" value="{{ criterio_edit.composicion or '' }}" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;"></div>
+              <div style="flex:1 1 220px;"><label style="font-size:12px;color:#64748b;">Estado esperado</label><input name="criterio_estado_esperado" value="{{ criterio_edit.estado_esperado or '' }}" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;"></div>
+            </div>
+            <div style="margin-top:10px;border:1px solid #e5e7eb;border-radius:10px;overflow:auto;">
+              <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                <thead style="background:#f8fafc;">
+                  <tr>
+                    <th style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:left;">Rubro</th>
+                    <th style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:left;">Min modo</th>
+                    <th style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:left;">Min valor</th>
+                    <th style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:left;">Max modo</th>
+                    <th style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:left;">Max valor</th>
+                    <th style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:center;">Critico</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for rb in infra_rubros_meta %}
+                  {% set rv = criterio_edit.rubros.get(rb.key) if criterio_edit and criterio_edit.rubros else None %}
+                  <tr>
+                    <td style="padding:6px;border-bottom:1px solid #e5e7eb;">{{ rb.label }}</td>
+                    <td style="padding:6px;border-bottom:1px solid #e5e7eb;">
+                      <select name="{{ rb.key }}_min_modo" style="padding:4px 8px;border-radius:8px;border:1px solid #e5e7eb;">
+                        {% for mk, mv in infra_modo_formula.items() %}
+                          <option value="{{ mk }}" {% if rv and rv.min_modo == mk %}selected{% endif %}>{{ mv }}</option>
+                        {% endfor %}
+                      </select>
+                    </td>
+                    <td style="padding:6px;border-bottom:1px solid #e5e7eb;"><input type="number" step="0.01" name="{{ rb.key }}_min_val" value="{{ rv.min_val if rv else 0 }}" style="padding:4px 8px;border-radius:8px;border:1px solid #e5e7eb;width:100px;"></td>
+                    <td style="padding:6px;border-bottom:1px solid #e5e7eb;">
+                      <select name="{{ rb.key }}_max_modo" style="padding:4px 8px;border-radius:8px;border:1px solid #e5e7eb;">
+                        {% for mk, mv in infra_modo_formula.items() %}
+                          <option value="{{ mk }}" {% if rv and rv.max_modo == mk %}selected{% endif %}>{{ mv }}</option>
+                        {% endfor %}
+                      </select>
+                    </td>
+                    <td style="padding:6px;border-bottom:1px solid #e5e7eb;"><input type="number" step="0.01" name="{{ rb.key }}_max_val" value="{{ rv.max_val if rv else 0 }}" style="padding:4px 8px;border-radius:8px;border:1px solid #e5e7eb;width:100px;"></td>
+                    <td style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:center;">
+                      <input type="checkbox" name="{{ rb.key }}_critico" value="1" {% if rv and rv.es_critico==1 %}checked{% endif %}>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+            <div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end;">
+              <button class="btn" type="submit">Guardar criterio</button>
+            </div>
+          </form>
+        </details>
+
+        <details open>
+          <summary style="cursor:pointer;font-size:13px;font-weight:700;color:#334155;">Asignar criterio a deposito/oficina</summary>
+          <form method="post" style="margin-top:8px;border:1px solid #e5e7eb;border-radius:12px;padding:10px;background:#fff;">
+            <input type="hidden" name="infra_action" value="assign_criterio">
+            <input type="hidden" name="infra_sede" value="{{ infra_sede or '' }}">
+            <input type="hidden" name="infra_deposito" value="{{ infra_deposito or '' }}">
+            <input type="hidden" name="infra_fuero" value="{{ infra_fuero or '' }}">
+            <input type="hidden" name="infra_criterio" value="{{ infra_criterio or '' }}">
+            <input type="hidden" name="infra_estado_general" value="{{ infra_estado_general or '' }}">
+            <input type="hidden" name="infra_elemento" value="{{ infra_elemento or '' }}">
+            <input type="hidden" name="edit_criterio" value="{{ edit_criterio or '' }}">
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;">
+              <div>
+                <label style="font-size:12px;color:#64748b;">Sede</label>
+                <select name="asig_sede" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+                  <option value="">Seleccionar</option>
+                  {% for s in infra_sedes %}
+                    <option value="{{ s.codigo }}" {% if asig_sede == s.codigo %}selected{% endif %}>{{ s.codigo }} - {{ s.nombre }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div>
+                <label style="font-size:12px;color:#64748b;">Deposito</label>
+                <input name="asig_deposito" value="{{ asig_deposito or '' }}" placeholder="D01" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;width:120px;">
+              </div>
+              <div style="min-width:280px;">
+                <label style="font-size:12px;color:#64748b;">Criterio</label>
+                <select name="asig_criterio" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;width:100%;">
+                  <option value="">Seleccionar criterio</option>
+                  {% for c in infra_criterios %}
+                    <option value="{{ c.codigo }}" {% if (c.codigo == infra_criterio) %}selected{% endif %}>{{ c.codigo }} - {{ c.nombre }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div style="flex:1 1 300px;">
+                <label style="font-size:12px;color:#64748b;">Observaciones</label>
+                <input name="asig_observaciones" value="" placeholder="Opcional" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;width:100%;">
+              </div>
+              <button class="btn" type="submit" style="padding:6px 12px;">Asignar criterio</button>
+            </div>
+            <div style="margin-top:8px;font-size:11px;color:#64748b;">Tip: tambien podes usar los botones "Asignar criterio" de cada fila para prefijar sede y deposito.</div>
+          </form>
+        </details>
       </div>
     </div>
 
@@ -421,14 +629,17 @@
   }
 
   function resetFiltrosResumen() {
+    if (!filtroSede || !filtroElemento) return;
     filtroSede.value = "";
     filtroElemento.value = "";
     applyResumenFiltros();
   }
 
-  filtroSede.addEventListener("change", applyResumenFiltros);
-  filtroElemento.addEventListener("change", applyResumenFiltros);
-  applyResumenFiltros();
+  if (filtroSede && filtroElemento) {
+    filtroSede.addEventListener("change", applyResumenFiltros);
+    filtroElemento.addEventListener("change", applyResumenFiltros);
+    applyResumenFiltros();
+  }
 
   function applyMatafuegosFiltros() {
     if (!mfFiltroSede || !mfFiltroEstado) return;
