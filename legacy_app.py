@@ -3735,6 +3735,8 @@ def infra_estado_general(rubros_estado: dict, rubros_minimos: dict):
 
 def infra_accion_sugerida(estado_general: str):
     st = str(estado_general or "").strip()
+    if st == "Sin criterio":
+        return "Asignar criterio para habilitar analisis operativo"
     if st == "Bajo estandar":
         return "Priorizar ajuste / Pedido justificado / Buscar stock disponible"
     if st == "Alto":
@@ -7814,7 +7816,7 @@ def sedes_resumen_mpd():
                 "max": max_esp,
             }
 
-        estado_general = infra_estado_general(rubros_estado, rubros_min)
+        estado_general = "Sin criterio" if not criterio else infra_estado_general(rubros_estado, rubros_min)
         accion_sugerida = infra_accion_sugerida(estado_general)
 
         row = {
@@ -7886,6 +7888,7 @@ def sedes_resumen_mpd():
 
     infra_totals = {
         "total_depositos": len(infra_rows),
+        "sin_criterio": sum(1 for x in infra_rows if x["estado_general"] == "Sin criterio"),
         "razonable": sum(1 for x in infra_rows if x["estado_general"] == "Razonable"),
         "bajo_estandar": sum(1 for x in infra_rows if x["estado_general"] == "Bajo estandar"),
         "alto": sum(1 for x in infra_rows if x["estado_general"] == "Alto"),
@@ -7900,6 +7903,7 @@ def sedes_resumen_mpd():
                 "sede": sede,
                 "sede_nombre": sedes_nombre.get(sede, sede),
                 "total": 0,
+                "sin_criterio": 0,
                 "razonable": 0,
                 "bajo_estandar": 0,
                 "alto": 0,
@@ -7909,7 +7913,9 @@ def sedes_resumen_mpd():
             }
         s = resumen_sede_map[sede]
         s["total"] += 1
-        if r["estado_general"] == "Razonable":
+        if r["estado_general"] == "Sin criterio":
+            s["sin_criterio"] += 1
+        elif r["estado_general"] == "Razonable":
             s["razonable"] += 1
         elif r["estado_general"] == "Bajo estandar":
             s["bajo_estandar"] += 1
@@ -7934,7 +7940,9 @@ def sedes_resumen_mpd():
         falt_txt = ", ".join([f"{INFRA_RUBRO_LABELS.get(k, k)} ({v})" for k, v in falt[:3]]) if falt else "-"
         exc_txt = ", ".join([f"{INFRA_RUBRO_LABELS.get(k, k)} ({v})" for k, v in exc[:3]]) if exc else "-"
 
-        if item["bajo_estandar"] > 0 and item["alto"] > 0:
+        if item["sin_criterio"] > 0:
+            conclusion = "Asignar criterios faltantes para consolidar el analisis operativo."
+        elif item["bajo_estandar"] > 0 and item["alto"] > 0:
             conclusion = "Antes de comprar mobiliario nuevo, revisar redistribucion interna."
         elif item["bajo_estandar"] > 0:
             conclusion = "Pedido justificado o redistribucion prioritaria segun faltantes."
@@ -7949,6 +7957,7 @@ def sedes_resumen_mpd():
             "sede": item["sede"],
             "sede_nombre": item["sede_nombre"],
             "total_depositos": item["total"],
+            "sin_criterio": item["sin_criterio"],
             "razonable": item["razonable"],
             "bajo_estandar": item["bajo_estandar"],
             "alto": item["alto"],
