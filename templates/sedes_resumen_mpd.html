@@ -80,7 +80,7 @@
           <label style="font-size:12px;color:#64748b;">Estado general</label>
           <select name="infra_estado_general" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
             <option value="">Todos</option>
-            {% for eg in ['Sin criterio', 'No aplica', 'Especial', 'Bajo estandar', 'Razonable', 'Alto', 'Revisar inventario', 'Revisar criterio', 'Revisar'] %}
+            {% for eg in ['Sin criterio', 'No aplica', 'Especial', 'Razonable', 'Puesto compartido', 'Cubierto estructuralmente', 'Capacidad disponible', 'Reserva funcional', 'Oficina reservada / vacante funcional', 'Bajo estandar', 'Deficit espacial', 'Alto', 'Revisar inventario', 'Revisar criterio', 'Revisar'] %}
               <option value="{{ eg }}" {% if infra_estado_general == eg %}selected{% endif %}>{{ eg }}</option>
             {% endfor %}
           </select>
@@ -136,27 +136,33 @@
                   {% endif %}
                 </td>
                 <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
-                  {% if r.estado_general == 'Sin criterio' %}
+                  {% set rop = r.resultado_operativo or r.estado_general %}
+                  {% if rop == 'Sin criterio' %}
                     <span class="state">Sin criterio</span>
-                  {% elif r.estado_general == 'Bajo estandar' %}
-                    <span class="state warn">Bajo estandar</span>
-                  {% elif r.estado_general == 'Alto' %}
-                    <span class="state danger">Alto</span>
-                  {% elif r.estado_general == 'Razonable' %}
-                    <span class="state ok">Razonable</span>
-                  {% elif r.estado_general == 'No aplica' %}
+                  {% elif rop in ['Bajo estandar','Deficit espacial'] %}
+                    <span class="state warn">{{ rop }}</span>
+                  {% elif rop in ['Alto','Reserva funcional','Capacidad disponible','Oficina reservada / vacante funcional'] %}
+                    <span class="state danger">{{ rop }}</span>
+                  {% elif rop in ['Razonable','Puesto compartido','Cubierto estructuralmente'] %}
+                    <span class="state ok">{{ rop }}</span>
+                  {% elif rop == 'No aplica' %}
                     <span class="state">No aplica</span>
-                  {% elif r.estado_general == 'Especial' %}
+                  {% elif rop == 'Especial' %}
                     <span class="state">Especial</span>
-                  {% elif r.estado_general == 'Revisar inventario' %}
+                  {% elif rop == 'Revisar inventario' %}
                     <span class="state">Revisar inventario</span>
-                  {% elif r.estado_general == 'Revisar criterio' %}
+                  {% elif rop == 'Revisar criterio' %}
                     <span class="state">Revisar criterio</span>
                   {% else %}
-                    <span class="state">Revisar</span>
+                    <span class="state">{{ rop }}</span>
                   {% endif %}
                 </td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.accion_sugerida }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
+                  {{ r.accion_operativa or r.accion_sugerida }}
+                  {% if r.nota_operativa %}
+                    <div style="font-size:11px;color:#64748b;">{{ r.nota_operativa }}</div>
+                  {% endif %}
+                </td>
                 <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
                   <a class="btn xs" href="{{ url_for('sedes_resumen_mpd', infra_sede=infra_sede or None, infra_deposito=infra_deposito or None, infra_fuero=infra_fuero or None, infra_criterio=infra_criterio or None, infra_estado_general=infra_estado_general or None, infra_elemento=infra_elemento or None, asig_sede=r.sede, asig_deposito=r.deposito, asig_criterio=(r.criterio_final_codigo if r.criterio_final_codigo else r.criterio_sugerido_codigo), edit_criterio=(r.criterio_final_codigo if r.criterio_final_codigo else edit_criterio)) }}#infra-forms">Corregir criterio</a>
                 </td>

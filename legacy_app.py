@@ -3932,6 +3932,149 @@ def infra_accion_sugerida(estado_general: str):
         return "Validar criterio o datos"
     return "Validar criterio o datos"
 
+def infra_resultado_operativo(
+    estado_general: str,
+    criterio_final_codigo: str,
+    criterio_final_fuente: str,
+    personas_reales: int,
+    puestos_existentes: float,
+    rubros_data: dict,
+    dependencia_detectada: str = "",
+    descripcion_inventario: str = "",
+    inventario_observaciones: str = "",
+    inventario_presente: bool = True,
+):
+    est_tec = str(estado_general or "").strip()
+    criterio_cod = str(criterio_final_codigo or "").strip().upper()
+    fuente = str(criterio_final_fuente or "").strip()
+    personas = int(personas_reales or 0)
+    puestos = float(puestos_existentes or 0)
+
+    txt_full = infra_norm_text(" ".join([
+        str(dependencia_detectada or ""),
+        str(descripcion_inventario or ""),
+        str(inventario_observaciones or ""),
+    ]))
+
+    kw_turno_comp = (
+        "turno", "manana", "tarde", "guardia", "compart", "subrogancia", "subrog",
+    )
+    kw_reserva = (
+        "reserva", "vacante", "reorganizacion", "reorganizacion", "jubilacion",
+        "traslado", "licencia", "cobertura",
+    )
+    kw_cubierto = (
+        "placard", "empotrado", "repisa", "estante", "mueble fijo", "modulo fijo",
+    )
+
+    comparte_puesto = infra_has_any(txt_full, kw_turno_comp) or criterio_cod in ("C04",)
+    reserva_funcional_hint = infra_has_any(txt_full, kw_reserva)
+
+    personas_simultaneas = personas
+    if comparte_puesto and personas >= 2:
+        personas_simultaneas = max(1, personas - 1)
+
+    resultado = est_tec
+    accion = infra_accion_sugerida(est_tec)
+    nota = ""
+
+    if est_tec in ("No aplica", "Sin criterio", "Revisar", "Revisar criterio", "Revisar inventario", "Especial"):
+        return {
+            "resultado": resultado,
+            "accion": accion,
+            "personas_simultaneas": personas_simultaneas,
+            "nota": nota,
+        }
+
+    if personas_simultaneas > puestos and personas > 0:
+        return {
+            "resultado": "Deficit espacial",
+            "accion": "Revisar espacio / priorizar ajuste",
+            "personas_simultaneas": personas_simultaneas,
+            "nota": f"Simultaneas {personas_simultaneas} > puestos {infra_fmt_num(puestos)}",
+        }
+
+    if personas == 0 and inventario_presente and criterio_cod not in ("C10",):
+        if est_tec == "Alto" or reserva_funcional_hint:
+            return {
+                "resultado": "Oficina reservada / vacante funcional",
+                "accion": "Validar destino del espacio",
+                "personas_simultaneas": personas_simultaneas,
+                "nota": "",
+            }
+
+    bajos = [k for k, v in (rubros_data or {}).items() if str((v or {}).get("estado") or "") == "Bajo estandar"]
+    if est_tec == "Bajo estandar" and bajos == ["armario_biblioteca"] and infra_has_any(txt_full, kw_cubierto):
+        return {
+            "resultado": "Cubierto estructuralmente",
+            "accion": "Mantener / validar",
+            "personas_simultaneas": personas_simultaneas,
+            "nota": "Almacenamiento fijo detectado",
+        }
+
+    if est_tec == "Alto":
+        if puestos > personas_simultaneas:
+            if reserva_funcional_hint or fuente in ("Manual", "Personal") or criterio_cod in ("C02", "C03", "C04", "C05", "C07"):
+                return {
+                    "resultado": "Reserva funcional",
+                    "accion": "No redistribuir automaticamente",
+                    "personas_simultaneas": personas_simultaneas,
+                    "nota": "",
+                }
+            return {
+                "resultado": "Capacidad disponible",
+                "accion": "Mantener / validar",
+                "personas_simultaneas": personas_simultaneas,
+                "nota": "",
+            }
+        return {
+            "resultado": "Alto",
+            "accion": "Revisar redistribucion",
+            "personas_simultaneas": personas_simultaneas,
+            "nota": "",
+        }
+
+    if comparte_puesto and personas_simultaneas < personas and est_tec == "Razonable":
+        return {
+            "resultado": "Puesto compartido",
+            "accion": "Validar personas simultaneas",
+            "personas_simultaneas": personas_simultaneas,
+            "nota": "",
+        }
+
+    if est_tec == "Razonable" and puestos > (personas_simultaneas + 0.5):
+        return {
+            "resultado": "Capacidad disponible",
+            "accion": "Mantener / validar",
+            "personas_simultaneas": personas_simultaneas,
+            "nota": "",
+        }
+
+    return {
+        "resultado": resultado,
+        "accion": accion,
+        "personas_simultaneas": personas_simultaneas,
+        "nota": nota,
+    }
+
+def infra_bucket_resultado(resultado: str):
+    r = str(resultado or "").strip()
+    if r in ("Bajo estandar", "Deficit espacial"):
+        return "bajo_estandar"
+    if r in ("Alto", "Reserva funcional", "Capacidad disponible", "Oficina reservada / vacante funcional"):
+        return "alto"
+    if r in ("Razonable", "Puesto compartido", "Cubierto estructuralmente"):
+        return "razonable"
+    if r == "No aplica":
+        return "no_aplica"
+    if r == "Especial":
+        return "especial"
+    if r == "Sin criterio":
+        return "sin_criterio"
+    if r.startswith("Revisar"):
+        return "revisar"
+    return "revisar"
+
 def ensure_infra_criterios_schema(db=None):
     own = False
     if db is None:
@@ -8344,6 +8487,22 @@ def sedes_resumen_mpd():
         else:
             estado_general = infra_estado_general(rubros_estado, rubros_min)
         accion_sugerida = infra_accion_sugerida(estado_general)
+        resultado_op = infra_resultado_operativo(
+            estado_general=estado_general,
+            criterio_final_codigo=criterio_final_codigo,
+            criterio_final_fuente=criterio_final_fuente,
+            personas_reales=personas_reales,
+            puestos_existentes=float(reales.get("puestos_existentes") or 0),
+            rubros_data=rubros_data,
+            dependencia_detectada=dependencia_detectada,
+            descripcion_inventario=descripcion_inv or referencia,
+            inventario_observaciones=str(inv_info.get("observaciones") or ""),
+            inventario_presente=inventario_presente,
+        )
+        resultado_operativo = str((resultado_op or {}).get("resultado") or estado_general).strip()
+        accion_operativa = str((resultado_op or {}).get("accion") or accion_sugerida).strip()
+        personas_simultaneas = int((resultado_op or {}).get("personas_simultaneas") or personas_reales)
+        nota_operativa = str((resultado_op or {}).get("nota") or "").strip()
 
         row = {
             "sede": sede,
@@ -8371,6 +8530,10 @@ def sedes_resumen_mpd():
             "criterio_fuero": criterio_fuero,
             "estado_general": estado_general,
             "accion_sugerida": accion_sugerida,
+            "resultado_operativo": resultado_operativo,
+            "accion_operativa": accion_operativa,
+            "personas_simultaneas": personas_simultaneas,
+            "nota_operativa": nota_operativa,
             "nombres": nombres,
             "observaciones_asignacion": str(criterio_asig.get("observaciones") or ""),
             "inventario_presente": 1 if inventario_presente else 0,
@@ -8430,10 +8593,11 @@ def sedes_resumen_mpd():
         if infra_criterio and (r["criterio_codigo"] or "").upper() != infra_criterio:
             continue
         if infra_estado_general_filter:
+            estado_view = str(r.get("resultado_operativo") or r.get("estado_general") or "")
             if infra_estado_general_filter == "Revisar":
-                if not str(r["estado_general"]).startswith("Revisar"):
+                if not estado_view.startswith("Revisar"):
                     continue
-            elif r["estado_general"] != infra_estado_general_filter:
+            elif estado_view != infra_estado_general_filter:
                 continue
         if infra_elemento:
             estado_el = r.get(f"{infra_elemento}_estado", "")
@@ -8450,16 +8614,43 @@ def sedes_resumen_mpd():
 
     infra_totals = {
         "total_depositos": len(infra_rows),
-        "sin_criterio": sum(1 for x in infra_rows if x["estado_general"] == "Sin criterio"),
-        "no_aplica": sum(1 for x in infra_rows if x["estado_general"] == "No aplica"),
-        "especial": sum(1 for x in infra_rows if x["estado_general"] == "Especial"),
-        "razonable": sum(1 for x in infra_rows if x["estado_general"] == "Razonable"),
-        "bajo_estandar": sum(1 for x in infra_rows if x["estado_general"] == "Bajo estandar"),
-        "alto": sum(1 for x in infra_rows if x["estado_general"] == "Alto"),
-        "revisar": sum(1 for x in infra_rows if str(x["estado_general"]).startswith("Revisar")),
-        "revisar_inventario": sum(1 for x in infra_rows if x["estado_general"] == "Revisar inventario"),
-        "revisar_criterio": sum(1 for x in infra_rows if x["estado_general"] == "Revisar criterio"),
+        "sin_criterio": 0,
+        "no_aplica": 0,
+        "especial": 0,
+        "razonable": 0,
+        "bajo_estandar": 0,
+        "alto": 0,
+        "revisar": 0,
+        "revisar_inventario": 0,
+        "revisar_criterio": 0,
+        "reserva_funcional": 0,
+        "capacidad_disponible": 0,
+        "deficit_espacial": 0,
+        "puesto_compartido": 0,
+        "cubierto_estructuralmente": 0,
+        "oficina_reservada": 0,
     }
+    for x in infra_rows:
+        res = str(x.get("resultado_operativo") or x.get("estado_general") or "")
+        bucket = infra_bucket_resultado(res)
+        if bucket in infra_totals:
+            infra_totals[bucket] += 1
+        if res == "Revisar inventario":
+            infra_totals["revisar_inventario"] += 1
+        if res == "Revisar criterio":
+            infra_totals["revisar_criterio"] += 1
+        if res == "Reserva funcional":
+            infra_totals["reserva_funcional"] += 1
+        if res == "Capacidad disponible":
+            infra_totals["capacidad_disponible"] += 1
+        if res == "Deficit espacial":
+            infra_totals["deficit_espacial"] += 1
+        if res == "Puesto compartido":
+            infra_totals["puesto_compartido"] += 1
+        if res == "Cubierto estructuralmente":
+            infra_totals["cubierto_estructuralmente"] += 1
+        if res == "Oficina reservada / vacante funcional":
+            infra_totals["oficina_reservada"] += 1
 
     resumen_sede_map = {}
     for r in infra_rows:
@@ -8481,20 +8672,10 @@ def sedes_resumen_mpd():
             }
         s = resumen_sede_map[sede]
         s["total"] += 1
-        if r["estado_general"] == "Sin criterio":
-            s["sin_criterio"] += 1
-        elif r["estado_general"] == "No aplica":
-            s["no_aplica"] += 1
-        elif r["estado_general"] == "Especial":
-            s["especial"] += 1
-        elif r["estado_general"] == "Razonable":
-            s["razonable"] += 1
-        elif r["estado_general"] == "Bajo estandar":
-            s["bajo_estandar"] += 1
-        elif r["estado_general"] == "Alto":
-            s["alto"] += 1
-        elif str(r["estado_general"]).startswith("Revisar"):
-            s["revisar"] += 1
+        estado_res = str(r.get("resultado_operativo") or r.get("estado_general") or "")
+        bucket = infra_bucket_resultado(estado_res)
+        if bucket in s:
+            s[bucket] += 1
 
         for rb in INFRA_RUBROS_META:
             rk = rb["key"]
@@ -8582,7 +8763,8 @@ def sedes_resumen_mpd():
         writer = csv.writer(out)
         writer.writerow([
             "Sede", "Local", "Piso", "Descripcion", "Personas reales", "Dependencia detectada", "Fuero",
-            "Criterio personal", "Criterio sugerido", "Criterio final", "Fuente criterio final", "Estado general", "Accion sugerida",
+            "Criterio personal", "Criterio sugerido", "Criterio final", "Fuente criterio final",
+            "Resultado operativo", "Accion operativa", "Estado tecnico", "Accion tecnica", "Personas simultaneas",
             "Escritorio real", "Escritorio esperado", "Estado escritorio",
             "Mesa PC real", "Mesa PC esperada", "Estado mesa PC",
             "Silla giratoria real", "Silla giratoria esperada", "Estado silla giratoria",
@@ -8598,7 +8780,11 @@ def sedes_resumen_mpd():
                 (f"{r['criterio_sugerido_codigo']} - {r['criterio_sugerido_nombre']}" if r.get("criterio_sugerido_codigo") else r.get("criterio_sugerido_nombre", "Sin criterio")),
                 (f"{r['criterio_final_codigo']} - {r['criterio_final_nombre']}" if r.get("criterio_final_codigo") else r.get("criterio_final_nombre", "Sin criterio")),
                 r.get("criterio_final_fuente", "-"),
-                r["estado_general"], r["accion_sugerida"],
+                r.get("resultado_operativo", r.get("estado_general", "-")),
+                r.get("accion_operativa", r.get("accion_sugerida", "-")),
+                r.get("estado_general", "-"),
+                r.get("accion_sugerida", "-"),
+                r.get("personas_simultaneas", r.get("personas_reales", 0)),
                 infra_fmt_num(r["escritorio_prof_real"]), r["escritorio_prof_esperado"], r["escritorio_prof_estado"],
                 infra_fmt_num(r["mesa_pc_real"]), r["mesa_pc_esperado"], r["mesa_pc_estado"],
                 infra_fmt_num(r["silla_giratoria_real"]), r["silla_giratoria_esperado"], r["silla_giratoria_estado"],
