@@ -8224,15 +8224,21 @@ def sedes_resumen_mpd():
     """).fetchall()
 
     def _persona_signature(nombre_raw, email_raw):
-        nom = infra_norm_text(nombre_raw)
         mail = str(email_raw or "").strip().lower()
-        if mail and nom:
-            return f"mailnom:{mail}|{nom}"
+        # Regla principal de identidad: email.
+        # Evita duplicados por variantes de nombre (ej: "Perez, Juan" vs "Juan Perez").
         if mail:
             return f"mail:{mail}"
-        if nom:
-            return f"nom:{nom}"
-        return ""
+
+        nom = infra_norm_text(nombre_raw)
+        if not nom:
+            return ""
+
+        # Fallback sin email: clave por tokens ordenados para tolerar cambios de orden.
+        toks = [t for t in nom.split(" ") if t]
+        if not toks:
+            return ""
+        return "nom_tokens:" + "|".join(sorted(toks))
 
     def _pick_preferred_person_row(prev: dict, cand: dict):
         if prev is None:
