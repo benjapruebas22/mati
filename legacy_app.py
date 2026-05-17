@@ -3,7 +3,7 @@ from datetime import date, datetime, timedelta
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from collections import defaultdict
-import sqlite3, os, calendar, csv, io
+import sqlite3, os, calendar, csv, io, re, unicodedata
 from functools import wraps
 from flask import redirect, url_for
 import os
@@ -3648,6 +3648,127 @@ INFRA_MODO_FORMULA = {
     "PERSONAS_MAS": "Personas reales + valor",
 }
 
+def infra_norm_text(raw) -> str:
+    txt = str(raw or "").strip().lower()
+    if not txt:
+        return ""
+    txt = unicodedata.normalize("NFKD", txt)
+    txt = "".join(ch for ch in txt if not unicodedata.combining(ch))
+    txt = re.sub(r"[^a-z0-9\s]", " ", txt)
+    txt = re.sub(r"\s+", " ", txt).strip()
+    return txt
+
+def infra_has_any(texto_norm: str, keywords):
+    t = str(texto_norm or "")
+    return any(k in t for k in keywords)
+
+def infra_detect_dependencia(dep_counter: dict, referencia: str = "", tipo_espacio: str = "", fuero: str = ""):
+    if dep_counter:
+        ordered = sorted(dep_counter.items(), key=lambda x: (-int(x[1]), str(x[0]).upper()))
+        if len(ordered) >= 2 and int(ordered[1][1]) == int(ordered[0][1]):
+            return f"{ordered[0][0]} / {ordered[1][0]}"
+        return str(ordered[0][0]).strip()
+    ref = str(referencia or "").strip()
+    if ref:
+        return ref
+    tipo = str(tipo_espacio or "").strip()
+    if tipo:
+        return tipo
+    if fuero:
+        return str(fuero or "").strip().title()
+    return "Sin datos"
+
+def infra_sugerir_criterio(
+    sede_codigo: str,
+    deposito_codigo: str,
+    personas_reales: int,
+    fuero: str,
+    dependencia_detectada: str,
+    referencia: str,
+    tipo_espacio: str,
+):
+    sede = str(sede_codigo or "").strip().upper()
+    dep = str(deposito_codigo or "").strip().upper()
+    personas = int(personas_reales or 0)
+    fuero_norm = infra_norm_text(fuero)
+    dep_txt = infra_norm_text(dependencia_detectada)
+    ref_txt = infra_norm_text(referencia)
+    tipo_txt = infra_norm_text(tipo_espacio)
+    full = " ".join(x for x in [dep_txt, ref_txt, tipo_txt, fuero_norm, sede.lower(), dep.lower()] if x).strip()
+
+    kw_audiencia = ("audiencia", "audiencias", "tribunal")
+    kw_mesa_entrada = ("mesa de entrada", "recepcion", "atencion al publico", "atencion operativa")
+    kw_direccion = ("defensoria general", "defensoria general", "alta direccion", "direccion", "jefe", "jefatura", "administracion general", "coordinacion")
+    kw_penal = ("penal",)
+    kw_social = ("juridico social", "civil", "ajs", "social")
+    kw_aux = ("auxiliar", "auxiliares", "equipo interdisciplinario", "interdisciplinario", "equipo")
+    kw_servicios = ("servicios", "servicio", "apoyo", "intendencia", "mantenimiento", "limpieza", "maestranza", "sistemas", "personal")
+    kw_no_operativo = ("bano", "cocina", "patio", "pasillo", "archivo", "almacen", "cochera", "garage")
+
+    if not full and personas <= 0:
+        return {"codigo": "C10", "motivo": "Sin datos operativos para sugerir"}
+
+    if infra_has_any(full, kw_audiencia):
+        return {"codigo": "C08", "motivo": "Coincidencia con sala de audiencia"}
+    if infra_has_any(full, kw_mesa_entrada):
+        return {"codigo": "C07", "motivo": "Coincidencia con mesa de entrada/recepcion"}
+    if infra_has_any(full, kw_no_operativo):
+        return {"codigo": "C10", "motivo": "Espacio no operativo de oficina"}
+    if infra_has_any(full, kw_servicios):
+        return {"codigo": "C09", "motivo": "Area de servicios o apoyo"}
+    if infra_has_any(full, kw_direccion):
+        return {"codigo": "C03", "motivo": "Perfil de direccion o jefatura"}
+
+    if infra_has_any(full, kw_penal):
+        if personas <= 1:
+            return {"codigo": "C01", "motivo": "Defensoria penal individual"}
+        if personas == 2:
+            return {"codigo": "C02", "motivo": "Defensoria penal con secretario"}
+        return {"codigo": "C04", "motivo": "Equipo defensor penal"}
+
+    if infra_has_any(full, kw_social):
+        if personas >= 6:
+            return {"codigo": "C06", "motivo": "Sala amplia de auxiliares"}
+        if personas >= 3:
+            return {"codigo": "C05", "motivo": "Equipo juridico social"}
+        if personas == 2:
+            return {"codigo": "C02", "motivo": "Defensor y secretario"}
+        return {"codigo": "C01", "motivo": "Defensor individual"}
+
+    if infra_has_any(full, kw_aux):
+        if personas >= 6:
+            return {"codigo": "C06", "motivo": "Sala de auxiliares"}
+        if personas >= 3:
+            return {"codigo": "C05", "motivo": "Defensor + secretario + auxiliares"}
+        if personas == 2:
+            return {"codigo": "C02", "motivo": "Defensor y secretario"}
+
+    if "menores" in fuero_norm or "incapaces" in fuero_norm:
+        if personas >= 6:
+            return {"codigo": "C06", "motivo": "Fuero menores con equipo ampliado"}
+        if personas >= 3:
+            return {"codigo": "C05", "motivo": "Fuero menores con auxiliares"}
+        if personas == 2:
+            return {"codigo": "C02", "motivo": "Fuero menores de 2 personas"}
+
+    if "penal" in fuero_norm and personas >= 3:
+        return {"codigo": "C04", "motivo": "Fuero penal con equipo"}
+    if ("social" in fuero_norm or "civil" in fuero_norm) and personas >= 3:
+        return {"codigo": "C05", "motivo": "Fuero social/civil con equipo"}
+
+    if personas <= 0:
+        return {"codigo": "C10", "motivo": "Sin personal activo en deposito"}
+    if personas == 1:
+        return {"codigo": "C01", "motivo": "Oficina individual"}
+    if personas == 2:
+        return {"codigo": "C02", "motivo": "Oficina de 2 personas"}
+    if personas >= 6:
+        return {"codigo": "C06", "motivo": "Sala de trabajo amplia"}
+    if personas >= 3:
+        return {"codigo": "C05", "motivo": "Oficina compartida con equipo"}
+
+    return {"codigo": "C10", "motivo": "Sin patron concluyente"}
+
 def _infra_to_float(val):
     if val is None:
         return None
@@ -3794,10 +3915,10 @@ def ensure_infra_criterios_schema(db=None):
     criterios_seed = [
         {
             "codigo": "C01",
-            "nombre": "Defensor solo Penal",
-            "fuero": "PENAL",
+            "nombre": "Defensor solo",
+            "fuero": "GENERAL",
             "personas_base": "1",
-            "composicion": "Defensor individual",
+            "composicion": "Defensor en oficina individual",
             "estado_esperado": "Oficina individual",
             "orden": 1,
             "rubros": {
@@ -3812,92 +3933,92 @@ def ensure_infra_criterios_schema(db=None):
         },
         {
             "codigo": "C02",
-            "nombre": "Equipo Defensor Penal",
-            "fuero": "PENAL",
-            "personas_base": "4",
-            "composicion": "1 secretario, 1 prosecretario, 2 auxiliares",
-            "estado_esperado": "Oficina de equipo",
-            "orden": 2,
-            "rubros": {
-                "escritorio_prof": ("FIJO", 2, "FIJO", 2),
-                "mesa_pc": ("FIJO", 4, "FIJO", 4),
-                "silla_giratoria": ("FIJO", 2, "FIJO", 4),
-                "silla_fija": ("FIJO", 3, "FIJO", 4),
-                "armario_biblioteca": ("FIJO", 1, "FIJO", 2),
-                "aire": ("FIJO", 1, "FIJO", 1),
-                "puestos_existentes": ("FIJO", 4, "FIJO", 4),
-            },
-        },
-        {
-            "codigo": "C03",
-            "nombre": "Sala de audiencia",
-            "fuero": "PENAL",
-            "personas_base": "Variable",
-            "composicion": "Uso funcional de audiencia",
-            "estado_esperado": "Sala funcional",
-            "orden": 3,
-            "rubros": {
-                "escritorio_prof": ("FIJO", 0, "FIJO", 1),
-                "mesa_pc": ("FIJO", 1, "FIJO", 1),
-                "silla_giratoria": ("FIJO", 0, "FIJO", 1),
-                "silla_fija": ("FIJO", 3, "FIJO", 5),
-                "armario_biblioteca": ("FIJO", 0, "FIJO", 1),
-                "aire": ("FIJO", 0, "FIJO", 1),
-                "puestos_existentes": ("FIJO", 1, "FIJO", 1),
-            },
-        },
-        {
-            "codigo": "C04",
-            "nombre": "Defensor + Secretario Menores/Incapaces",
-            "fuero": "MENORES E INCAPACES",
+            "nombre": "Defensor + secretario",
+            "fuero": "GENERAL",
             "personas_base": "2",
-            "composicion": "Defensor y secretario",
+            "composicion": "Defensor y secretario en oficina compartida",
             "estado_esperado": "Oficina compartida jerarquica",
-            "orden": 4,
+            "orden": 2,
             "rubros": {
                 "escritorio_prof": ("FIJO", 2, "FIJO", 2),
                 "mesa_pc": ("FIJO", 2, "FIJO", 2),
                 "silla_giratoria": ("FIJO", 2, "FIJO", 2),
-                "silla_fija": ("FIJO", 3, "FIJO", 4),
+                "silla_fija": ("FIJO", 2, "FIJO", 4),
                 "armario_biblioteca": ("FIJO", 1, "FIJO", 2),
                 "aire": ("FIJO", 1, "FIJO", 1),
                 "puestos_existentes": ("FIJO", 2, "FIJO", 2),
             },
         },
         {
-            "codigo": "C05",
-            "nombre": "Sala Auxiliares Menores/Incapaces",
-            "fuero": "MENORES E INCAPACES",
-            "personas_base": "8 a 12",
-            "composicion": "Sala operativa amplia",
-            "estado_esperado": "Sala operativa amplia",
-            "orden": 5,
+            "codigo": "C03",
+            "nombre": "Alta Direccion / Jefe de area",
+            "fuero": "GENERAL",
+            "personas_base": "1 a 2",
+            "composicion": "Defensoria general, administracion o jefaturas",
+            "estado_esperado": "Oficina de direccion",
+            "orden": 3,
             "rubros": {
-                "escritorio_prof": ("FIJO", 0, "FIJO", 2),
+                "escritorio_prof": ("FIJO", 1, "FIJO", 2),
+                "mesa_pc": ("FIJO", 1, "FIJO", 2),
+                "silla_giratoria": ("FIJO", 1, "FIJO", 2),
+                "silla_fija": ("FIJO", 2, "FIJO", 4),
+                "armario_biblioteca": ("FIJO", 1, "FIJO", 3),
+                "aire": ("FIJO", 1, "FIJO", 1),
+                "puestos_existentes": ("FIJO", 1, "FIJO", 2),
+            },
+        },
+        {
+            "codigo": "C04",
+            "nombre": "Equipo defensor penal",
+            "fuero": "PENAL",
+            "personas_base": "3 a 5",
+            "composicion": "Equipo penal con secretario y auxiliares",
+            "estado_esperado": "Oficina de equipo penal",
+            "orden": 4,
+            "rubros": {
+                "escritorio_prof": ("FIJO", 2, "FIJO", 3),
                 "mesa_pc": ("PERSONAS", 0, "PERSONAS_MAS", 1),
                 "silla_giratoria": ("PERSONAS", 0, "PERSONAS_MAS", 1),
-                "silla_fija": ("FIJO", 2, "FIJO", 4),
-                "armario_biblioteca": ("FIJO", 6, "FIJO", 8),
+                "silla_fija": ("FIJO", 3, "FIJO", 5),
+                "armario_biblioteca": ("FIJO", 1, "FIJO", 3),
+                "aire": ("FIJO", 1, "FIJO", 2),
+                "puestos_existentes": ("PERSONAS", 0, "PERSONAS_MAS", 1),
+            },
+        },
+        {
+            "codigo": "C05",
+            "nombre": "Defensor + secretario + auxiliares Juridico Social",
+            "fuero": "JURIDICO SOCIAL",
+            "personas_base": "3 a 6",
+            "composicion": "Equipo juridico social o civil mixto",
+            "estado_esperado": "Oficina mixta flexible",
+            "orden": 5,
+            "rubros": {
+                "escritorio_prof": ("FIJO", 2, "FIJO", 3),
+                "mesa_pc": ("PERSONAS", 0, "PERSONAS_MAS", 1),
+                "silla_giratoria": ("PERSONAS", 0, "PERSONAS_MAS", 1),
+                "silla_fija": ("FIJO", 3, "FIJO", 5),
+                "armario_biblioteca": ("FIJO", 2, "FIJO", 4),
                 "aire": ("FIJO", 1, "FIJO", 2),
                 "puestos_existentes": ("PERSONAS", 0, "PERSONAS_MAS", 1),
             },
         },
         {
             "codigo": "C06",
-            "nombre": "Juridico Social Mixto",
-            "fuero": "JURIDICO SOCIAL",
-            "personas_base": "4 a 5",
-            "composicion": "Defensor, secretario y auxiliares compartidos",
-            "estado_esperado": "Oficina mixta flexible",
+            "nombre": "Sala auxiliares",
+            "fuero": "GENERAL",
+            "personas_base": "6 o mas",
+            "composicion": "Sala amplia de auxiliares o equipo operativo",
+            "estado_esperado": "Sala operativa amplia",
             "orden": 6,
             "rubros": {
-                "escritorio_prof": ("FIJO", 2, "FIJO", 3),
-                "mesa_pc": ("FIJO", 4, "FIJO", 5),
-                "silla_giratoria": ("FIJO", 3, "FIJO", 5),
-                "silla_fija": ("FIJO", 3, "FIJO", 5),
-                "armario_biblioteca": ("FIJO", 2, "FIJO", 3),
+                "escritorio_prof": ("FIJO", 0, "FIJO", 2),
+                "mesa_pc": ("PERSONAS", 0, "PERSONAS_MAS", 1),
+                "silla_giratoria": ("PERSONAS", 0, "PERSONAS_MAS", 1),
+                "silla_fija": ("FIJO", 2, "FIJO", 4),
+                "armario_biblioteca": ("FIJO", 4, "FIJO", 8),
                 "aire": ("FIJO", 1, "FIJO", 2),
-                "puestos_existentes": ("FIJO", 4, "FIJO", 5),
+                "puestos_existentes": ("PERSONAS", 0, "PERSONAS_MAS", 1),
             },
         },
         {
@@ -3905,7 +4026,7 @@ def ensure_infra_criterios_schema(db=None):
             "nombre": "Mesa de entrada",
             "fuero": "GENERAL",
             "personas_base": "Segun carga real",
-            "composicion": "Atencion operativa",
+            "composicion": "Atencion / recepcion",
             "estado_esperado": "Atencion operativa",
             "orden": 7,
             "rubros": {
@@ -3920,44 +4041,123 @@ def ensure_infra_criterios_schema(db=None):
         },
         {
             "codigo": "C08",
-            "nombre": "Oficina administrativa comun",
+            "nombre": "Sala de audiencia",
             "fuero": "GENERAL",
             "personas_base": "Variable",
-            "composicion": "Oficina compartida",
-            "estado_esperado": "Oficina compartida",
+            "composicion": "Sala funcional de audiencias",
+            "estado_esperado": "Sala funcional",
             "orden": 8,
             "rubros": {
-                "escritorio_prof": ("FIJO", 0, "FIJO", 2),
-                "mesa_pc": ("PERSONAS", 0, "PERSONAS_MAS", 1),
-                "silla_giratoria": ("PERSONAS", 0, "PERSONAS_MAS", 1),
+                "escritorio_prof": ("FIJO", 0, "FIJO", 1),
+                "mesa_pc": ("FIJO", 1, "FIJO", 1),
+                "silla_giratoria": ("FIJO", 0, "FIJO", 1),
+                "silla_fija": ("FIJO", 3, "FIJO", 5),
+                "armario_biblioteca": ("FIJO", 0, "FIJO", 1),
+                "aire": ("FIJO", 0, "FIJO", 1),
+                "puestos_existentes": ("FIJO", 1, "FIJO", 1),
+            },
+        },
+        {
+            "codigo": "C09",
+            "nombre": "Servicios / apoyo",
+            "fuero": "GENERAL",
+            "personas_base": "0 a 2",
+            "composicion": "Limpieza, mantenimiento, sistemas o apoyo",
+            "estado_esperado": "Espacio de apoyo operativo",
+            "orden": 9,
+            "rubros": {
+                "escritorio_prof": ("FIJO", 0, "FIJO", 1),
+                "mesa_pc": ("FIJO", 0, "FIJO", 1),
+                "silla_giratoria": ("FIJO", 0, "FIJO", 1),
                 "silla_fija": ("FIJO", 1, "FIJO", 3),
-                "armario_biblioteca": ("FIJO", 1, "FIJO", 3),
-                "aire": ("FIJO", 1, "FIJO", 1),
-                "puestos_existentes": ("PERSONAS", 0, "PERSONAS_MAS", 1),
+                "armario_biblioteca": ("FIJO", 0, "FIJO", 2),
+                "aire": ("FIJO", 0, "FIJO", 1),
+                "puestos_existentes": ("FIJO", 0, "FIJO", 1),
+            },
+        },
+        {
+            "codigo": "C10",
+            "nombre": "Sin criterio operativo",
+            "fuero": "GENERAL",
+            "personas_base": "No aplica",
+            "composicion": "Bano, cocina, patio, pasillo, archivo u otros no operativos",
+            "estado_esperado": "Sin analisis operativo",
+            "orden": 10,
+            "rubros": {
+                "escritorio_prof": ("FIJO", 0, "FIJO", 0),
+                "mesa_pc": ("FIJO", 0, "FIJO", 0),
+                "silla_giratoria": ("FIJO", 0, "FIJO", 0),
+                "silla_fija": ("FIJO", 0, "FIJO", 0),
+                "armario_biblioteca": ("FIJO", 0, "FIJO", 0),
+                "aire": ("FIJO", 0, "FIJO", 0),
+                "puestos_existentes": ("FIJO", 0, "FIJO", 0),
             },
         },
     ]
 
+    existing_codes = {
+        str(r[0] or "").strip().upper()
+        for r in cur.execute("SELECT codigo FROM infra_criterios_deposito").fetchall()
+    }
+    aplicar_migracion_base_v2 = "C10" not in existing_codes
+
     for c in criterios_seed:
-        cur.execute("""
-            INSERT OR IGNORE INTO infra_criterios_deposito
-            (codigo, nombre, fuero, personas_base, composicion, estado_esperado, activo, orden, actualizado_en)
-            VALUES (?,?,?,?,?,?,1,?, datetime('now'))
-        """, (
-            c["codigo"], c["nombre"], c["fuero"], c["personas_base"],
-            c["composicion"], c["estado_esperado"], int(c.get("orden") or 0)
-        ))
+        if aplicar_migracion_base_v2:
+            cur.execute("""
+                INSERT INTO infra_criterios_deposito
+                (codigo, nombre, fuero, personas_base, composicion, estado_esperado, activo, orden, actualizado_en)
+                VALUES (?,?,?,?,?,?,1,?, datetime('now'))
+                ON CONFLICT(codigo) DO UPDATE SET
+                    nombre=excluded.nombre,
+                    fuero=excluded.fuero,
+                    personas_base=excluded.personas_base,
+                    composicion=excluded.composicion,
+                    estado_esperado=excluded.estado_esperado,
+                    activo=1,
+                    orden=excluded.orden,
+                    actualizado_en=datetime('now')
+            """, (
+                c["codigo"], c["nombre"], c["fuero"], c["personas_base"],
+                c["composicion"], c["estado_esperado"], int(c.get("orden") or 0)
+            ))
+        else:
+            cur.execute("""
+                INSERT OR IGNORE INTO infra_criterios_deposito
+                (codigo, nombre, fuero, personas_base, composicion, estado_esperado, activo, orden, actualizado_en)
+                VALUES (?,?,?,?,?,?,1,?, datetime('now'))
+            """, (
+                c["codigo"], c["nombre"], c["fuero"], c["personas_base"],
+                c["composicion"], c["estado_esperado"], int(c.get("orden") or 0)
+            ))
+
         for rubro in INFRA_RUBROS_META:
             rk = rubro["key"]
             defs = c["rubros"].get(rk, ("FIJO", 0, "FIJO", 0))
-            cur.execute("""
-                INSERT OR IGNORE INTO infra_criterios_rubros
-                (criterio_codigo, rubro, min_modo, min_val, max_modo, max_val, es_critico, actualizado_en)
-                VALUES (?,?,?,?,?,?,?, datetime('now'))
-            """, (
-                c["codigo"], rk, defs[0], defs[1], defs[2], defs[3],
-                int(rubro.get("critico") or 0)
-            ))
+            if aplicar_migracion_base_v2:
+                cur.execute("""
+                    INSERT INTO infra_criterios_rubros
+                    (criterio_codigo, rubro, min_modo, min_val, max_modo, max_val, es_critico, actualizado_en)
+                    VALUES (?,?,?,?,?,?,?, datetime('now'))
+                    ON CONFLICT(criterio_codigo, rubro) DO UPDATE SET
+                        min_modo=excluded.min_modo,
+                        min_val=excluded.min_val,
+                        max_modo=excluded.max_modo,
+                        max_val=excluded.max_val,
+                        es_critico=excluded.es_critico,
+                        actualizado_en=datetime('now')
+                """, (
+                    c["codigo"], rk, defs[0], defs[1], defs[2], defs[3],
+                    int(rubro.get("critico") or 0)
+                ))
+            else:
+                cur.execute("""
+                    INSERT OR IGNORE INTO infra_criterios_rubros
+                    (criterio_codigo, rubro, min_modo, min_val, max_modo, max_val, es_critico, actualizado_en)
+                    VALUES (?,?,?,?,?,?,?, datetime('now'))
+                """, (
+                    c["codigo"], rk, defs[0], defs[1], defs[2], defs[3],
+                    int(rubro.get("critico") or 0)
+                ))
 
     db.commit()
     if own:
@@ -7440,7 +7640,7 @@ def sedes_resumen_mpd():
 
     def _redirect_infra():
         params = {}
-        for k in ("infra_sede", "infra_deposito", "infra_fuero", "infra_criterio", "infra_estado_general", "infra_elemento", "edit_criterio", "asig_sede", "asig_deposito"):
+        for k in ("infra_sede", "infra_deposito", "infra_fuero", "infra_criterio", "infra_estado_general", "infra_elemento", "edit_criterio", "asig_sede", "asig_deposito", "asig_criterio"):
             v = (request.form.get(k) or "").strip()
             if k == "infra_deposito":
                 v = normalizar_deposito_codigo(v)
@@ -7550,6 +7750,7 @@ def sedes_resumen_mpd():
     edit_criterio = (request.args.get("edit_criterio") or "").strip().upper()
     asig_sede = (request.args.get("asig_sede") or "").strip().upper()
     asig_deposito = normalizar_deposito_codigo((request.args.get("asig_deposito") or "").strip())
+    asig_criterio = (request.args.get("asig_criterio") or "").strip().upper()
 
     sedes_rows = db.execute("""
         SELECT
@@ -7672,15 +7873,27 @@ def sedes_resumen_mpd():
         if s and d:
             asign_map[(s, d)] = {"criterio_codigo": c, "observaciones": str(a["observaciones"] or "").strip()}
 
-    personal_map = defaultdict(lambda: {"personas_reales": 0, "nombres": []})
-    per_rows = db.execute("""
-        SELECT
-            UPPER(COALESCE(codigo_sede,'')) AS sede_codigo,
-            COALESCE(codigo_local,'') AS codigo_local,
-            COALESCE(nombre_apellido,'') AS nombre
-        FROM personal_sede
-        WHERE COALESCE(activo,1)=1
-    """).fetchall()
+    personal_map = defaultdict(lambda: {"personas_reales": 0, "nombres": [], "dependencias": defaultdict(int)})
+    try:
+        per_rows = db.execute("""
+            SELECT
+                UPPER(COALESCE(codigo_sede,'')) AS sede_codigo,
+                COALESCE(codigo_local,'') AS codigo_local,
+                COALESCE(nombre_apellido,'') AS nombre,
+                COALESCE(dependencia,'') AS dependencia
+            FROM personal_sede
+            WHERE COALESCE(activo,1)=1
+        """).fetchall()
+    except Exception:
+        per_rows = db.execute("""
+            SELECT
+                UPPER(COALESCE(codigo_sede,'')) AS sede_codigo,
+                COALESCE(codigo_local,'') AS codigo_local,
+                COALESCE(nombre_apellido,'') AS nombre,
+                '' AS dependencia
+            FROM personal_sede
+            WHERE COALESCE(activo,1)=1
+        """).fetchall()
     for p in per_rows:
         sede = str(p["sede_codigo"] or "").strip().upper()
         dep = normalizar_deposito_codigo(p["codigo_local"]) or "SIN_CODIGO"
@@ -7691,6 +7904,9 @@ def sedes_resumen_mpd():
         nom = str(p["nombre"] or "").strip()
         if nom:
             personal_map[k]["nombres"].append(nom)
+        dependencia = str(p["dependencia"] or "").strip()
+        if dependencia:
+            personal_map[k]["dependencias"][dependencia] += 1
 
     mobiliario_map = defaultdict(lambda: {
         "escritorio_prof": 0,
@@ -7775,10 +7991,49 @@ def sedes_resumen_mpd():
             nombre_ref = ", ".join(nombres[:2]) + ("..." if len(nombres) > 2 else "")
 
         criterio_asig = asign_map.get((sede, dep), {})
-        criterio_codigo = str(criterio_asig.get("criterio_codigo") or "").strip().upper()
-        criterio = criterios_map.get(criterio_codigo)
-        criterio_nombre = criterio.get("nombre") if criterio else "-"
-        criterio_fuero = criterio.get("fuero") if criterio else ""
+        criterio_manual_codigo = str(criterio_asig.get("criterio_codigo") or "").strip().upper()
+        criterio_manual = criterios_map.get(criterio_manual_codigo)
+
+        dependencias_counter = personal_map.get((sede, dep), {}).get("dependencias", {})
+        dependencia_detectada = infra_detect_dependencia(
+            dependencias_counter,
+            referencia=referencia,
+            tipo_espacio=str(info.get("tipo") or ""),
+            fuero=fuero,
+        )
+        sugerencia = infra_sugerir_criterio(
+            sede_codigo=sede,
+            deposito_codigo=dep,
+            personas_reales=personas_reales,
+            fuero=fuero,
+            dependencia_detectada=dependencia_detectada,
+            referencia=referencia,
+            tipo_espacio=str(info.get("tipo") or ""),
+        )
+        criterio_sugerido_codigo = str((sugerencia or {}).get("codigo") or "").strip().upper()
+        criterio_sugerido = criterios_map.get(criterio_sugerido_codigo)
+
+        if criterio_manual:
+            criterio_final = criterio_manual
+            criterio_final_codigo = criterio_manual_codigo
+            criterio_final_fuente = "Manual"
+        else:
+            criterio_final = criterio_sugerido
+            criterio_final_codigo = criterio_sugerido_codigo
+            criterio_final_fuente = "Sugerido"
+
+        criterio_final_operativo = bool(criterio_final) and criterio_final_codigo != "C10"
+        criterio_final_nombre = (
+            str(criterio_final.get("nombre") or "").strip()
+            if criterio_final
+            else ("Sin criterio operativo" if criterio_final_codigo in ("", "C10") else "Revisar")
+        )
+        criterio_sugerido_nombre = (
+            str(criterio_sugerido.get("nombre") or "").strip()
+            if criterio_sugerido
+            else ("Sin criterio operativo" if criterio_sugerido_codigo == "C10" else "Revisar")
+        )
+        criterio_fuero = criterio_final.get("fuero") if criterio_final else ""
 
         reales = {
             "escritorio_prof": float(mobiliario_map.get((sede, dep), {}).get("escritorio_prof", 0) or 0),
@@ -7799,13 +8054,13 @@ def sedes_resumen_mpd():
             min_esp = None
             max_esp = None
             esperado_txt = "-"
-            if criterio:
-                rdef = criterio["rubros"].get(rk)
+            if criterio_final_operativo and criterio_final:
+                rdef = criterio_final["rubros"].get(rk)
                 if rdef:
                     min_esp = infra_eval_formula(rdef.get("min_modo"), rdef.get("min_val"), personas_reales)
                     max_esp = infra_eval_formula(rdef.get("max_modo"), rdef.get("max_val"), personas_reales)
                     esperado_txt = f"{infra_fmt_num(min_esp)} - {infra_fmt_num(max_esp)}"
-            estado = infra_estado_rubro(real_val, min_esp, max_esp, bool(criterio))
+            estado = infra_estado_rubro(real_val, min_esp, max_esp, bool(criterio_final_operativo))
             rubros_estado[rk] = estado
             rubros_min[rk] = min_esp
             rubros_data[rk] = {
@@ -7816,7 +8071,10 @@ def sedes_resumen_mpd():
                 "max": max_esp,
             }
 
-        estado_general = "Sin criterio" if not criterio else infra_estado_general(rubros_estado, rubros_min)
+        if not criterio_final_operativo:
+            estado_general = "Sin criterio" if criterio_final_codigo in ("", "C10") else "Revisar"
+        else:
+            estado_general = infra_estado_general(rubros_estado, rubros_min)
         accion_sugerida = infra_accion_sugerida(estado_general)
 
         row = {
@@ -7825,8 +8083,17 @@ def sedes_resumen_mpd():
             "nombre_referencia": nombre_ref or "-",
             "personas_reales": personas_reales,
             "fuero": fuero or "GENERAL",
-            "criterio_codigo": criterio_codigo or "",
-            "criterio_asignado": criterio_nombre if criterio else "Sin criterio",
+            "dependencia_detectada": dependencia_detectada or "-",
+            "criterio_manual_codigo": criterio_manual_codigo or "",
+            "criterio_manual_nombre": (str(criterio_manual.get("nombre") or "").strip() if criterio_manual else ""),
+            "criterio_sugerido_codigo": criterio_sugerido_codigo or "",
+            "criterio_sugerido_nombre": criterio_sugerido_nombre,
+            "criterio_sugerido_motivo": str((sugerencia or {}).get("motivo") or ""),
+            "criterio_final_codigo": criterio_final_codigo or "",
+            "criterio_final_nombre": criterio_final_nombre,
+            "criterio_final_fuente": criterio_final_fuente,
+            "criterio_codigo": criterio_final_codigo or "",
+            "criterio_asignado": criterio_final_nombre if criterio_final_codigo else "Sin criterio",
             "criterio_fuero": criterio_fuero,
             "estado_general": estado_general,
             "accion_sugerida": accion_sugerida,
@@ -7971,20 +8238,22 @@ def sedes_resumen_mpd():
         out = io.StringIO()
         writer = csv.writer(out)
         writer.writerow([
-            "Sede", "Deposito", "Nombre/referencia", "Personas reales", "Fuero",
-            "Criterio", "Escritorio real", "Escritorio esperado", "Estado escritorio",
+            "Sede", "Deposito", "Personas reales", "Dependencia detectada", "Fuero",
+            "Criterio sugerido", "Criterio final", "Estado general", "Accion sugerida",
+            "Escritorio real", "Escritorio esperado", "Estado escritorio",
             "Mesa PC real", "Mesa PC esperada", "Estado mesa PC",
             "Silla giratoria real", "Silla giratoria esperada", "Estado silla giratoria",
             "Silla fija real", "Silla fija esperada", "Estado silla fija",
             "Armario/Biblioteca real", "Armario/Biblioteca esperado", "Estado armario/biblioteca",
             "Aire real", "Aire esperado", "Estado aire",
-            "Puestos real", "Puestos esperado", "Estado puestos",
-            "Estado general", "Accion sugerida"
+            "Puestos real", "Puestos esperado", "Estado puestos"
         ])
         for r in infra_rows:
             writer.writerow([
-                r["sede"], r["deposito"], r["nombre_referencia"], r["personas_reales"], r["fuero"],
-                f"{r['criterio_codigo']} - {r['criterio_asignado']}" if r["criterio_codigo"] else "Sin criterio",
+                r["sede"], r["deposito"], r["personas_reales"], r.get("dependencia_detectada", "-"), r["fuero"],
+                (f"{r['criterio_sugerido_codigo']} - {r['criterio_sugerido_nombre']}" if r.get("criterio_sugerido_codigo") else r.get("criterio_sugerido_nombre", "Sin criterio operativo")),
+                (f"{r['criterio_final_codigo']} - {r['criterio_final_nombre']}" if r.get("criterio_final_codigo") else r.get("criterio_final_nombre", "Sin criterio operativo")),
+                r["estado_general"], r["accion_sugerida"],
                 infra_fmt_num(r["escritorio_prof_real"]), r["escritorio_prof_esperado"], r["escritorio_prof_estado"],
                 infra_fmt_num(r["mesa_pc_real"]), r["mesa_pc_esperado"], r["mesa_pc_estado"],
                 infra_fmt_num(r["silla_giratoria_real"]), r["silla_giratoria_esperado"], r["silla_giratoria_estado"],
@@ -7992,7 +8261,6 @@ def sedes_resumen_mpd():
                 infra_fmt_num(r["armario_biblioteca_real"]), r["armario_biblioteca_esperado"], r["armario_biblioteca_estado"],
                 infra_fmt_num(r["aire_real"]), r["aire_esperado"], r["aire_estado"],
                 infra_fmt_num(r["puestos_existentes_real"]), r["puestos_existentes_esperado"], r["puestos_existentes_estado"],
-                r["estado_general"], r["accion_sugerida"],
             ])
         csv_txt = out.getvalue()
         headers = {
@@ -8202,6 +8470,7 @@ def sedes_resumen_mpd():
         edit_criterio=edit_criterio,
         asig_sede=asig_sede,
         asig_deposito=asig_deposito,
+        asig_criterio=asig_criterio,
         infra_assign_options=dep_assign_opts,
         matafuegos_vto_rows=matafuegos_vto_rows,
         matafuegos_vto_kpi=matafuegos_vto_kpi,

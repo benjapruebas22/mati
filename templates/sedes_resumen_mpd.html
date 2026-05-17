@@ -23,7 +23,7 @@
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
         <div>
           <h3 style="margin:0;font-size:16px;color:#0f172a;font-weight:700;">Analisis por deposito/oficina</h3>
-          <div style="font-size:12px;color:#64748b;margin-top:3px;">Comparacion real vs criterio estandar por deposito, con estado operativo y accion sugerida.</div>
+          <div style="font-size:12px;color:#64748b;margin-top:3px;">Diagnostico automatico por deposito: personal + inventario + criterio estandar (manual prevalece sobre sugerido).</div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:12px;">
           <span class="state info"><strong>Depositos analizados:</strong> {{ infra_totals.total_depositos }}</span>
@@ -64,7 +64,7 @@
           </select>
         </div>
         <div>
-          <label style="font-size:12px;color:#64748b;">Criterio asignado</label>
+          <label style="font-size:12px;color:#64748b;">Criterio final</label>
           <select name="infra_criterio" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
             <option value="">Todos</option>
             {% for c in infra_criterios %}
@@ -111,15 +111,14 @@
             <tr>
               <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Sede</th>
               <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Deposito</th>
-              <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Nombre / referencia</th>
               <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb;">Personas</th>
-              <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Fuero</th>
-              <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Criterio asignado</th>
+              <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Dependencia detectada</th>
+              <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Criterio sugerido</th>
+              <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Criterio final</th>
               <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Estado general</th>
               <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Accion sugerida</th>
+              <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Corregir criterio</th>
               <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Ver detalle</th>
-              <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Asignar criterio</th>
-              <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Editar</th>
             </tr>
           </thead>
           <tbody>
@@ -129,10 +128,23 @@
               <tr>
                 <td style="padding:8px;border-bottom:1px solid #e5e7eb;"><span class="sede-badge-soft {{ cls }}">{{ r.sede }}</span></td>
                 <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.deposito }}</td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.nombre_referencia }}</td>
                 <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ r.personas_reales }}</td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.fuero }}</td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{% if r.criterio_codigo %}<strong>{{ r.criterio_codigo }}</strong> - {{ r.criterio_asignado }}{% else %}<span class="state">Sin criterio</span>{% endif %}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.dependencia_detectada or '-' }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
+                  {% if r.criterio_sugerido_codigo %}
+                    <strong>{{ r.criterio_sugerido_codigo }}</strong> - {{ r.criterio_sugerido_nombre }}
+                  {% else %}
+                    <span class="state">Sin criterio operativo</span>
+                  {% endif %}
+                </td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
+                  {% if r.criterio_final_codigo %}
+                    <strong>{{ r.criterio_final_codigo }}</strong> - {{ r.criterio_final_nombre }}
+                    <div style="font-size:11px;color:#64748b;">Fuente: {{ r.criterio_final_fuente }}</div>
+                  {% else %}
+                    <span class="state">Sin criterio operativo</span>
+                  {% endif %}
+                </td>
                 <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
                   {% if r.estado_general == 'Sin criterio' %}
                     <span class="state">Sin criterio</span>
@@ -148,17 +160,14 @@
                 </td>
                 <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.accion_sugerida }}</td>
                 <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
+                  <a class="btn xs" href="{{ url_for('sedes_resumen_mpd', infra_sede=infra_sede or None, infra_deposito=infra_deposito or None, infra_fuero=infra_fuero or None, infra_criterio=infra_criterio or None, infra_estado_general=infra_estado_general or None, infra_elemento=infra_elemento or None, asig_sede=r.sede, asig_deposito=r.deposito, asig_criterio=(r.criterio_final_codigo if r.criterio_final_codigo else r.criterio_sugerido_codigo), edit_criterio=(r.criterio_final_codigo if r.criterio_final_codigo else edit_criterio)) }}#infra-forms">Corregir criterio</a>
+                </td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
                   <button class="btn xs" type="button" data-infra-toggle="{{ loop.index0 }}">Ver detalle</button>
-                </td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
-                  <a class="btn xs" href="{{ url_for('sedes_resumen_mpd', infra_sede=infra_sede or None, infra_deposito=infra_deposito or None, infra_fuero=infra_fuero or None, infra_criterio=infra_criterio or None, infra_estado_general=infra_estado_general or None, infra_elemento=infra_elemento or None, asig_sede=r.sede, asig_deposito=r.deposito, edit_criterio=(r.criterio_codigo if r.criterio_codigo else edit_criterio)) }}#infra-forms">Asignar criterio</a>
-                </td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
-                  <a class="btn xs" href="{{ url_for('sedes_resumen_mpd', infra_sede=infra_sede or None, infra_deposito=infra_deposito or None, infra_fuero=infra_fuero or None, infra_criterio=infra_criterio or None, infra_estado_general=infra_estado_general or None, infra_elemento=infra_elemento or None, edit_criterio=(r.criterio_codigo if r.criterio_codigo else edit_criterio), asig_sede=r.sede, asig_deposito=r.deposito) }}#infra-forms">Editar</a>
                 </td>
               </tr>
               <tr data-infra-detail-row="{{ loop.index0 }}" style="display:none;background:#f8fafc;">
-                <td colspan="11" style="padding:10px;border-bottom:1px solid #e5e7eb;">
+                <td colspan="10" style="padding:10px;border-bottom:1px solid #e5e7eb;">
                   <div style="font-weight:700;color:#334155;margin-bottom:6px;">Detalle tecnico por rubro</div>
                   <table style="width:100%;border-collapse:collapse;font-size:11px;background:#fff;border:1px solid #e5e7eb;">
                     <thead style="background:#f1f5f9;">
@@ -184,7 +193,7 @@
               {% endfor %}
             {% else %}
               <tr>
-                <td colspan="11" style="padding:10px;color:#64748b;">No hay datos de analisis para el filtro seleccionado.</td>
+                <td colspan="10" style="padding:10px;color:#64748b;">No hay datos de analisis para el filtro seleccionado.</td>
               </tr>
             {% endif %}
           </tbody>
@@ -342,7 +351,7 @@
                 <select name="asig_criterio" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;width:100%;">
                   <option value="">Seleccionar criterio</option>
                   {% for c in infra_criterios %}
-                    <option value="{{ c.codigo }}" {% if (c.codigo == infra_criterio) %}selected{% endif %}>{{ c.codigo }} - {{ c.nombre }}</option>
+                    <option value="{{ c.codigo }}" {% if (c.codigo == asig_criterio) or (not asig_criterio and c.codigo == infra_criterio) %}selected{% endif %}>{{ c.codigo }} - {{ c.nombre }}</option>
                   {% endfor %}
                 </select>
               </div>
@@ -352,7 +361,7 @@
               </div>
               <button class="btn" type="submit" style="padding:6px 12px;">Asignar criterio</button>
             </div>
-            <div style="margin-top:8px;font-size:11px;color:#64748b;">Tip: tambien podes usar los botones "Asignar criterio" de cada fila para prefijar sede y deposito.</div>
+            <div style="margin-top:8px;font-size:11px;color:#64748b;">Tip: usa "Corregir criterio" en cada fila para prefijar sede, deposito y criterio sugerido/final.</div>
           </form>
         </details>
       </div>
