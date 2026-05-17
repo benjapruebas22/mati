@@ -29,6 +29,7 @@
           <span class="state info"><strong>Depositos analizados:</strong> {{ infra_totals.total_depositos }}</span>
           <span class="state"><strong>Sin criterio:</strong> {{ infra_totals.sin_criterio }}</span>
           <span class="state"><strong>No aplica:</strong> {{ infra_totals.no_aplica }}</span>
+          <span class="state"><strong>Especial:</strong> {{ infra_totals.especial }}</span>
           <span class="state ok"><strong>Razonable:</strong> {{ infra_totals.razonable }}</span>
           <span class="state warn"><strong>Bajo estandar:</strong> {{ infra_totals.bajo_estandar }}</span>
           <span class="state danger"><strong>Alto:</strong> {{ infra_totals.alto }}</span>
@@ -79,7 +80,7 @@
           <label style="font-size:12px;color:#64748b;">Estado general</label>
           <select name="infra_estado_general" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
             <option value="">Todos</option>
-            {% for eg in ['Sin criterio', 'No aplica', 'Bajo estandar', 'Razonable', 'Alto', 'Revisar inventario', 'Revisar criterio', 'Revisar'] %}
+            {% for eg in ['Sin criterio', 'No aplica', 'Especial', 'Bajo estandar', 'Razonable', 'Alto', 'Revisar inventario', 'Revisar criterio', 'Revisar'] %}
               <option value="{{ eg }}" {% if infra_estado_general == eg %}selected{% endif %}>{{ eg }}</option>
             {% endfor %}
           </select>
@@ -103,8 +104,8 @@
         <ul style="margin:8px 0 0;padding-left:18px;font-size:12px;color:#475569;line-height:1.4;">
           <li>Analisis primero por deposito/oficina y luego resumen por sede.</li>
           <li>Union obligatoria por clave Sede + Local (no por descripcion).</li>
-          <li>Prioridad de criterio: manual asignado > sugerido automatico.</li>
-          <li>Estados: Razonable, Bajo estandar, Alto, Revisar, No aplica, Sin criterio.</li>
+          <li>Prioridad de criterio: manual asignado > criterio cargado en Personal > sugerido automatico.</li>
+          <li>Estados: Razonable, Bajo estandar, Alto, Revisar, Revisar inventario, Revisar criterio, No aplica, Especial, Sin criterio.</li>
           <li>C10 sin analisis y C09 sin personal estable no se marcan bajo estandar.</li>
         </ul>
       </details>
@@ -162,6 +163,8 @@
                     <span class="state ok">Razonable</span>
                   {% elif r.estado_general == 'No aplica' %}
                     <span class="state">No aplica</span>
+                  {% elif r.estado_general == 'Especial' %}
+                    <span class="state">Especial</span>
                   {% elif r.estado_general == 'Revisar inventario' %}
                     <span class="state">Revisar inventario</span>
                   {% elif r.estado_general == 'Revisar criterio' %}
@@ -222,6 +225,7 @@
               <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">Depositos analizados</th>
               <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">Sin criterio</th>
               <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">No aplica</th>
+              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">Especial</th>
               <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">Razonables</th>
               <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">Bajo estandar</th>
               <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">Altos</th>
@@ -239,6 +243,7 @@
                 <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ rs.total_depositos }}</td>
                 <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ rs.sin_criterio }}</td>
                 <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ rs.no_aplica }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ rs.especial }}</td>
                 <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ rs.razonable }}</td>
                 <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ rs.bajo_estandar }}</td>
                 <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ rs.alto }}</td>
@@ -250,7 +255,7 @@
               {% endfor %}
             {% else %}
               <tr>
-                <td colspan="11" style="padding:10px;color:#64748b;">No hay resumen por sede para los filtros actuales.</td>
+                <td colspan="12" style="padding:10px;color:#64748b;">No hay resumen por sede para los filtros actuales.</td>
               </tr>
             {% endif %}
           </tbody>
@@ -299,6 +304,7 @@
             <input type="hidden" name="infra_estado_general" value="{{ infra_estado_general or '' }}">
             <input type="hidden" name="infra_elemento" value="{{ infra_elemento or '' }}">
             <input type="hidden" name="edit_criterio" value="{{ criterio_edit.codigo or '' }}">
+            <input type="hidden" name="criterio_orden" value="{{ criterio_edit.orden or 0 }}">
             <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;">
               <div>
                 <label style="font-size:12px;color:#64748b;">Criterio</label>
@@ -310,56 +316,37 @@
                 </select>
               </div>
               <div><label style="font-size:12px;color:#64748b;">Codigo</label><input name="criterio_codigo" value="{{ criterio_edit.codigo or '' }}" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;width:90px;"></div>
-              <div><label style="font-size:12px;color:#64748b;">Nombre</label><input name="criterio_nombre" value="{{ criterio_edit.nombre or '' }}" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;width:260px;"></div>
-              <div><label style="font-size:12px;color:#64748b;">Fuero</label><input name="criterio_fuero" value="{{ criterio_edit.fuero or '' }}" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;width:180px;"></div>
+              <div style="flex:1 1 300px;"><label style="font-size:12px;color:#64748b;">Nombre criterio</label><input name="criterio_nombre" value="{{ criterio_edit.nombre or '' }}" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;width:100%;"></div>
+              <div><label style="font-size:12px;color:#64748b;">Fuero</label><input name="criterio_fuero" value="{{ criterio_edit.fuero or '' }}" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;width:130px;"></div>
               <div><label style="font-size:12px;color:#64748b;">Personas base</label><input name="criterio_personas_base" value="{{ criterio_edit.personas_base or '' }}" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;width:120px;"></div>
-              <div><label style="font-size:12px;color:#64748b;">Orden</label><input name="criterio_orden" value="{{ criterio_edit.orden or 0 }}" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;width:70px;"></div>
               <div><label style="font-size:12px;color:#64748b;">Activo</label><select name="criterio_activo" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;"><option value="1" {% if (criterio_edit.activo or 1)==1 %}selected{% endif %}>Si</option><option value="0" {% if (criterio_edit.activo or 1)==0 %}selected{% endif %}>No</option></select></div>
             </div>
-            <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
-              <div style="flex:1 1 260px;"><label style="font-size:12px;color:#64748b;">Composicion</label><input name="criterio_composicion" value="{{ criterio_edit.composicion or '' }}" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;"></div>
-              <div style="flex:1 1 220px;"><label style="font-size:12px;color:#64748b;">Estado esperado</label><input name="criterio_estado_esperado" value="{{ criterio_edit.estado_esperado or '' }}" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;"></div>
+            <div style="margin-top:8px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;">
+              {% for rb in infra_rubros_meta %}
+              {% set rv = criterio_edit.rubros.get(rb.key) if criterio_edit and criterio_edit.rubros else None %}
+              <div>
+                <label style="font-size:12px;color:#64748b;">{{ rb.label }}</label>
+                <input
+                  name="{{ rb.key }}_esperado"
+                  value="{{ rv.esperado_txt if rv else '0' }}"
+                  placeholder="Ej: 1 | 1 a 2 | personas reales | personas reales + 1"
+                  style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;"
+                >
+              </div>
+              {% endfor %}
             </div>
-            <div style="margin-top:10px;border:1px solid #e5e7eb;border-radius:10px;overflow:auto;">
-              <table style="width:100%;border-collapse:collapse;font-size:12px;">
-                <thead style="background:#f8fafc;">
-                  <tr>
-                    <th style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:left;">Rubro</th>
-                    <th style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:left;">Min modo</th>
-                    <th style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:left;">Min valor</th>
-                    <th style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:left;">Max modo</th>
-                    <th style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:left;">Max valor</th>
-                    <th style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:center;">Critico</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for rb in infra_rubros_meta %}
-                  {% set rv = criterio_edit.rubros.get(rb.key) if criterio_edit and criterio_edit.rubros else None %}
-                  <tr>
-                    <td style="padding:6px;border-bottom:1px solid #e5e7eb;">{{ rb.label }}</td>
-                    <td style="padding:6px;border-bottom:1px solid #e5e7eb;">
-                      <select name="{{ rb.key }}_min_modo" style="padding:4px 8px;border-radius:8px;border:1px solid #e5e7eb;">
-                        {% for mk, mv in infra_modo_formula.items() %}
-                          <option value="{{ mk }}" {% if rv and rv.min_modo == mk %}selected{% endif %}>{{ mv }}</option>
-                        {% endfor %}
-                      </select>
-                    </td>
-                    <td style="padding:6px;border-bottom:1px solid #e5e7eb;"><input type="number" step="0.01" name="{{ rb.key }}_min_val" value="{{ rv.min_val if rv else 0 }}" style="padding:4px 8px;border-radius:8px;border:1px solid #e5e7eb;width:100px;"></td>
-                    <td style="padding:6px;border-bottom:1px solid #e5e7eb;">
-                      <select name="{{ rb.key }}_max_modo" style="padding:4px 8px;border-radius:8px;border:1px solid #e5e7eb;">
-                        {% for mk, mv in infra_modo_formula.items() %}
-                          <option value="{{ mk }}" {% if rv and rv.max_modo == mk %}selected{% endif %}>{{ mv }}</option>
-                        {% endfor %}
-                      </select>
-                    </td>
-                    <td style="padding:6px;border-bottom:1px solid #e5e7eb;"><input type="number" step="0.01" name="{{ rb.key }}_max_val" value="{{ rv.max_val if rv else 0 }}" style="padding:4px 8px;border-radius:8px;border:1px solid #e5e7eb;width:100px;"></td>
-                    <td style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:center;">
-                      <input type="checkbox" name="{{ rb.key }}_critico" value="1" {% if rv and rv.es_critico==1 %}checked{% endif %}>
-                    </td>
-                  </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
+            <div style="margin-top:8px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:8px;">
+              <div>
+                <label style="font-size:12px;color:#64748b;">Uso</label>
+                <input name="criterio_composicion" value="{{ criterio_edit.composicion or '' }}" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+              </div>
+              <div>
+                <label style="font-size:12px;color:#64748b;">Observacion</label>
+                <input name="criterio_estado_esperado" value="{{ criterio_edit.estado_esperado or '' }}" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+              </div>
+            </div>
+            <div style="margin-top:8px;font-size:11px;color:#64748b;">
+              Formato esperado por rubro: <strong>numero</strong>, <strong>rango</strong> (ej: 2 a 4), <strong>personas reales</strong> o <strong>personas reales + N</strong>.
             </div>
             <div style="margin-top:10px;display:flex;gap:8px;justify-content:flex-end;">
               <button class="btn" type="submit">Guardar criterio</button>
