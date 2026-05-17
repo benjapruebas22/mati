@@ -8197,6 +8197,7 @@ def sedes_resumen_mpd():
         "nombres": [],
         "dependencias": defaultdict(int),
         "pisos": defaultdict(int),
+        "piso_dominante": "",
         "emails": set(),
         "criterios": defaultdict(int),
     })
@@ -8212,6 +8213,7 @@ def sedes_resumen_mpd():
     criterio_expr = f"COALESCE({criterio_col},'') AS criterio_personal" if criterio_col else "'' AS criterio_personal"
     per_rows = db.execute(f"""
         SELECT
+            COALESCE(id,0) AS pid,
             UPPER(COALESCE(codigo_sede,'')) AS sede_codigo,
             COALESCE(codigo_local,'') AS codigo_local,
             COALESCE(nombre_apellido,'') AS nombre,
@@ -8243,22 +8245,32 @@ def sedes_resumen_mpd():
     def _pick_preferred_person_row(prev: dict, cand: dict):
         if prev is None:
             return dict(cand)
-        p = dict(prev)
+        prev_id = int(prev.get("pid") or 0)
+        cand_id = int(cand.get("pid") or 0)
+        # Base: registro mas reciente (id mayor).
+        if cand_id >= prev_id:
+            p = dict(cand)
+            alt = dict(prev)
+        else:
+            p = dict(prev)
+            alt = dict(cand)
         # Preferimos la fila con criterio personal cargado.
-        if (not p.get("criterio")) and cand.get("criterio"):
-            p["criterio"] = cand.get("criterio")
+        if (not p.get("criterio")) and alt.get("criterio"):
+            p["criterio"] = alt.get("criterio")
         # Si no habia dependencia/piso/mail, completamos.
-        if (not p.get("dependencia")) and cand.get("dependencia"):
-            p["dependencia"] = cand.get("dependencia")
-        if (not p.get("piso")) and cand.get("piso"):
-            p["piso"] = cand.get("piso")
-        if (not p.get("email")) and cand.get("email"):
-            p["email"] = cand.get("email")
+        if (not p.get("dependencia")) and alt.get("dependencia"):
+            p["dependencia"] = alt.get("dependencia")
+        if (not p.get("piso")) and alt.get("piso"):
+            p["piso"] = alt.get("piso")
+        if (not p.get("email")) and alt.get("email"):
+            p["email"] = alt.get("email")
+        if (not p.get("nombre")) and alt.get("nombre"):
+            p["nombre"] = alt.get("nombre")
         # Si la dependencia previa es vacia o mas corta, priorizamos la mas descriptiva.
-        if cand.get("dependencia") and (
-            (not p.get("dependencia")) or (len(str(cand.get("dependencia"))) > len(str(p.get("dependencia"))))
+        if alt.get("dependencia") and (
+            (not p.get("dependencia")) or (len(str(alt.get("dependencia"))) > len(str(p.get("dependencia"))))
         ):
-            p["dependencia"] = cand.get("dependencia")
+            p["dependencia"] = alt.get("dependencia")
         return p
 
     personas_unicas = defaultdict(dict)
@@ -8277,6 +8289,7 @@ def sedes_resumen_mpd():
         if not sig:
             sig = f"fila:{len(personas_unicas[k]) + 1}"
         cand = {
+            "pid": int(p["pid"] or 0),
             "nombre": nom,
             "dependencia": dependencia,
             "piso": piso,
@@ -8286,7 +8299,20 @@ def sedes_resumen_mpd():
         personas_unicas[k][sig] = _pick_preferred_person_row(personas_unicas[k].get(sig), cand)
 
     for k, personas in personas_unicas.items():
+        piso_counter = defaultdict(int)
         for _, pdata in personas.items():
+            px = str(pdata.get("piso") or "").strip().upper()
+            if px:
+                piso_counter[px] += 1
+        piso_dominante = ""
+        if piso_counter:
+            piso_dominante = sorted(piso_counter.items(), key=lambda x: (-int(x[1]), str(x[0])))[0][0]
+            personal_map[k]["piso_dominante"] = piso_dominante
+
+        for _, pdata in personas.items():
+            piso_persona = str(pdata.get("piso") or "").strip().upper()
+            if piso_dominante and piso_persona and piso_persona != piso_dominante:
+                continue
             personal_map[k]["personas_reales"] += 1
             nom = str(pdata.get("nombre") or "").strip()
             if nom:
