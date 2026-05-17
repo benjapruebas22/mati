@@ -7911,6 +7911,8 @@ def sedes_resumen_mpd():
     infra_estado_general_filter = (request.args.get("infra_estado_general") or "").strip()
     infra_elemento = (request.args.get("infra_elemento") or "").strip()
     infra_export = (request.args.get("infra_export") or "").strip().lower()
+    infra_detalle_sede = (request.args.get("infra_detalle_sede") or "").strip().upper()
+    infra_detalle_local = normalizar_local_clave((request.args.get("infra_detalle_local") or "").strip())
     edit_criterio = (request.args.get("edit_criterio") or "").strip().upper()
     asig_sede = (request.args.get("asig_sede") or "").strip().upper()
     asig_deposito = normalizar_local_clave((request.args.get("asig_deposito") or "").strip())
@@ -8439,6 +8441,11 @@ def sedes_resumen_mpd():
                 continue
         infra_rows.append(r)
 
+    infra_rows_lookup = {(r["sede"], r["deposito"]): r for r in infra_rows_raw}
+    infra_detalle_row = None
+    if infra_detalle_sede and infra_detalle_local:
+        infra_detalle_row = infra_rows_lookup.get((infra_detalle_sede, infra_detalle_local))
+
     infra_rows.sort(key=lambda x: (x["sede"], x["deposito"]))
 
     infra_totals = {
@@ -8805,6 +8812,9 @@ def sedes_resumen_mpd():
         infra_rubros_meta=INFRA_RUBROS_META,
         infra_modo_formula=INFRA_MODO_FORMULA,
         infra_resumen_sede=infra_resumen_sede,
+        infra_detalle_sede=infra_detalle_sede,
+        infra_detalle_local=infra_detalle_local,
+        infra_detalle_row=infra_detalle_row,
         criterio_edit=criterio_edit,
         edit_criterio=edit_criterio,
         asig_sede=asig_sede,

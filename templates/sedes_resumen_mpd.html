@@ -85,15 +85,6 @@
             {% endfor %}
           </select>
         </div>
-        <div>
-          <label style="font-size:12px;color:#64748b;">Elemento (desvio)</label>
-          <select name="infra_elemento" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
-            <option value="">Todos</option>
-            {% for rb in infra_rubros_meta %}
-              <option value="{{ rb.key }}" {% if infra_elemento == rb.key %}selected{% endif %}>{{ rb.label }}</option>
-            {% endfor %}
-          </select>
-        </div>
         <button class="btn" type="submit" style="padding:6px 12px;">Aplicar</button>
         <a class="btn" href="{{ url_for('sedes_resumen_mpd') }}" style="padding:6px 12px;">Limpiar</a>
         <a class="btn" href="{{ url_for('sedes_resumen_mpd', infra_sede=infra_sede or None, infra_deposito=infra_deposito or None, infra_fuero=infra_fuero or None, infra_criterio=infra_criterio or None, infra_estado_general=infra_estado_general or None, infra_elemento=infra_elemento or None, infra_export='csv') }}" style="padding:6px 12px;">Exportar CSV</a>
@@ -119,8 +110,7 @@
               <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Descripcion</th>
               <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb;">Personas</th>
               <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Detecto</th>
-              <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Criterio sugerido</th>
-              <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Criterio final</th>
+              <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Criterio aplicado</th>
               <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Resultado</th>
               <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Accion</th>
               <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Corregir criterio</th>
@@ -137,13 +127,6 @@
                 <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.descripcion_inventario or r.nombre_referencia }}</td>
                 <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ r.personas_reales }}</td>
                 <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.dependencia_detectada or '-' }}</td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
-                  {% if r.criterio_sugerido_codigo %}
-                    <strong>{{ r.criterio_sugerido_codigo }}</strong> - {{ r.criterio_sugerido_nombre }}
-                  {% else %}
-                    <span class="state">Sin criterio</span>
-                  {% endif %}
-                </td>
                 <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
                   {% if r.criterio_final_codigo %}
                     <strong>{{ r.criterio_final_codigo }}</strong> - {{ r.criterio_final_nombre }}
@@ -178,44 +161,55 @@
                   <a class="btn xs" href="{{ url_for('sedes_resumen_mpd', infra_sede=infra_sede or None, infra_deposito=infra_deposito or None, infra_fuero=infra_fuero or None, infra_criterio=infra_criterio or None, infra_estado_general=infra_estado_general or None, infra_elemento=infra_elemento or None, asig_sede=r.sede, asig_deposito=r.deposito, asig_criterio=(r.criterio_final_codigo if r.criterio_final_codigo else r.criterio_sugerido_codigo), edit_criterio=(r.criterio_final_codigo if r.criterio_final_codigo else edit_criterio)) }}#infra-forms">Corregir criterio</a>
                 </td>
                 <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
-                  <button class="btn xs" type="button" data-infra-toggle="{{ loop.index0 }}">Ver detalle</button>
-                </td>
-              </tr>
-              <tr data-infra-detail-row="{{ loop.index0 }}" style="display:none;background:#f8fafc;">
-                <td colspan="11" style="padding:10px;border-bottom:1px solid #e5e7eb;">
-                  <div style="font-weight:700;color:#334155;margin-bottom:6px;">Detalle tecnico por rubro</div>
-                  <table style="width:100%;border-collapse:collapse;font-size:11px;background:#fff;border:1px solid #e5e7eb;">
-                    <thead style="background:#f1f5f9;">
-                      <tr>
-                        <th style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:left;">Rubro</th>
-                        <th style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:right;">Real</th>
-                        <th style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:center;">Esperado</th>
-                        <th style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:center;">Estado</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr><td style="padding:6px;border-bottom:1px solid #e5e7eb;">Escritorio profesional</td><td style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ r.escritorio_prof_real|round(2) }}</td><td style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.escritorio_prof_esperado }}</td><td style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.escritorio_prof_estado }}</td></tr>
-                      <tr><td style="padding:6px;border-bottom:1px solid #e5e7eb;">Mesa PC</td><td style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ r.mesa_pc_real|round(2) }}</td><td style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.mesa_pc_esperado }}</td><td style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.mesa_pc_estado }}</td></tr>
-                      <tr><td style="padding:6px;border-bottom:1px solid #e5e7eb;">Silla giratoria</td><td style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ r.silla_giratoria_real|round(2) }}</td><td style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.silla_giratoria_esperado }}</td><td style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.silla_giratoria_estado }}</td></tr>
-                      <tr><td style="padding:6px;border-bottom:1px solid #e5e7eb;">Silla fija</td><td style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ r.silla_fija_real|round(2) }}</td><td style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.silla_fija_esperado }}</td><td style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.silla_fija_estado }}</td></tr>
-                      <tr><td style="padding:6px;border-bottom:1px solid #e5e7eb;">Armario/Biblioteca</td><td style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ r.armario_biblioteca_real|round(2) }}</td><td style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.armario_biblioteca_esperado }}</td><td style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.armario_biblioteca_estado }}</td></tr>
-                      <tr><td style="padding:6px;border-bottom:1px solid #e5e7eb;">Aire acondicionado</td><td style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ r.aire_real|round(2) }}</td><td style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.aire_esperado }}</td><td style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.aire_estado }}</td></tr>
-                      <tr><td style="padding:6px;border-bottom:1px solid #e5e7eb;">Puestos existentes</td><td style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ r.puestos_existentes_real|round(2) }}</td><td style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.puestos_existentes_esperado }}</td><td style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.puestos_existentes_estado }}</td></tr>
-                      <tr><td style="padding:6px;border-bottom:1px solid #e5e7eb;">Otros</td><td style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ r.inventario_otros|round(2) }}</td><td style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:center;">-</td><td style="padding:6px;border-bottom:1px solid #e5e7eb;text-align:center;">-</td></tr>
-                      <tr><td style="padding:6px;">Observaciones inventario</td><td colspan="3" style="padding:6px;">{{ r.inventario_observaciones or '-' }}</td></tr>
-                    </tbody>
-                  </table>
+                  <a class="btn xs" href="{{ url_for('sedes_resumen_mpd', infra_sede=infra_sede or None, infra_deposito=infra_deposito or None, infra_fuero=infra_fuero or None, infra_criterio=infra_criterio or None, infra_estado_general=infra_estado_general or None, infra_elemento=infra_elemento or None, edit_criterio=edit_criterio or None, infra_detalle_sede=r.sede, infra_detalle_local=r.deposito) }}#infra-detalle-modal">Ver detalle</a>
                 </td>
               </tr>
               {% endfor %}
             {% else %}
               <tr>
-                <td colspan="11" style="padding:10px;color:#64748b;">No hay datos de analisis para el filtro seleccionado.</td>
+                <td colspan="10" style="padding:10px;color:#64748b;">No hay datos de analisis para el filtro seleccionado.</td>
               </tr>
             {% endif %}
           </tbody>
         </table>
       </div>
+
+      {% if infra_detalle_row %}
+      <div id="infra-detalle-modal" style="position:fixed;inset:0;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:18px;z-index:1200;">
+        <div style="width:min(980px,96vw);max-height:92vh;overflow:auto;background:#fff;border:1px solid #e5e7eb;border-radius:14px;box-shadow:0 20px 45px rgba(15,23,42,.22);">
+          <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid #e5e7eb;">
+            <div>
+              <div style="font-size:15px;font-weight:700;color:#0f172a;">Detalle técnico inventario</div>
+              <div style="font-size:12px;color:#64748b;">{{ infra_detalle_row.sede }} - {{ infra_detalle_row.deposito }} | {{ infra_detalle_row.descripcion_inventario or '-' }}</div>
+            </div>
+            <a class="btn xs" href="{{ url_for('sedes_resumen_mpd', infra_sede=infra_sede or None, infra_deposito=infra_deposito or None, infra_fuero=infra_fuero or None, infra_criterio=infra_criterio or None, infra_estado_general=infra_estado_general or None, infra_elemento=infra_elemento or None, edit_criterio=edit_criterio or None) }}">Cerrar</a>
+          </div>
+          <div style="padding:12px;">
+            <table style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;border:1px solid #e5e7eb;">
+              <thead style="background:#f1f5f9;">
+                <tr>
+                  <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Rubro</th>
+                  <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">Real</th>
+                  <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">Esperado</th>
+                  <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;">Escritorio profesional</td><td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ infra_detalle_row.escritorio_prof_real|round(2) }}</td><td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ infra_detalle_row.escritorio_prof_esperado }}</td><td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ infra_detalle_row.escritorio_prof_estado }}</td></tr>
+                <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;">Mesa PC</td><td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ infra_detalle_row.mesa_pc_real|round(2) }}</td><td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ infra_detalle_row.mesa_pc_esperado }}</td><td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ infra_detalle_row.mesa_pc_estado }}</td></tr>
+                <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;">Silla giratoria</td><td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ infra_detalle_row.silla_giratoria_real|round(2) }}</td><td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ infra_detalle_row.silla_giratoria_esperado }}</td><td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ infra_detalle_row.silla_giratoria_estado }}</td></tr>
+                <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;">Silla fija</td><td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ infra_detalle_row.silla_fija_real|round(2) }}</td><td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ infra_detalle_row.silla_fija_esperado }}</td><td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ infra_detalle_row.silla_fija_estado }}</td></tr>
+                <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;">Armario/Biblioteca</td><td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ infra_detalle_row.armario_biblioteca_real|round(2) }}</td><td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ infra_detalle_row.armario_biblioteca_esperado }}</td><td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ infra_detalle_row.armario_biblioteca_estado }}</td></tr>
+                <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;">Aire acondicionado</td><td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ infra_detalle_row.aire_real|round(2) }}</td><td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ infra_detalle_row.aire_esperado }}</td><td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ infra_detalle_row.aire_estado }}</td></tr>
+                <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;">Puestos existentes</td><td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ infra_detalle_row.puestos_existentes_real|round(2) }}</td><td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ infra_detalle_row.puestos_existentes_esperado }}</td><td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ infra_detalle_row.puestos_existentes_estado }}</td></tr>
+                <tr><td style="padding:8px;border-bottom:1px solid #e5e7eb;">Otros</td><td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ infra_detalle_row.inventario_otros|round(2) }}</td><td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">-</td><td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">-</td></tr>
+                <tr><td style="padding:8px;">Observaciones inventario</td><td colspan="3" style="padding:8px;">{{ infra_detalle_row.inventario_observaciones or '-' }}</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      {% endif %}
 
       <div style="margin-top:12px;border:1px solid #e5e7eb;border-radius:12px;overflow:auto;background:#fff;">
         <table style="width:100%;border-collapse:collapse;font-size:12px;">
@@ -698,20 +692,6 @@
     applyMatafuegosFiltros();
   }
 
-  function initInfraDetalleToggle() {
-    document.querySelectorAll("[data-infra-toggle]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const key = btn.getAttribute("data-infra-toggle");
-        const row = document.querySelector(`[data-infra-detail-row="${key}"]`);
-        if (!row) return;
-        const isHidden = row.style.display === "none" || !row.style.display;
-        row.style.display = isHidden ? "table-row" : "none";
-        btn.textContent = isHidden ? "Ocultar detalle" : "Ver detalle";
-      });
-    });
-  }
-
-  initInfraDetalleToggle();
 </script>
 
 {% endblock %}
