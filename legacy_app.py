@@ -8222,28 +8222,81 @@ def sedes_resumen_mpd():
         FROM personal_sede
         WHERE COALESCE(activo,1)=1
     """).fetchall()
+
+    def _persona_signature(nombre_raw, email_raw):
+        nom = infra_norm_text(nombre_raw)
+        mail = str(email_raw or "").strip().lower()
+        if mail and nom:
+            return f"mailnom:{mail}|{nom}"
+        if mail:
+            return f"mail:{mail}"
+        if nom:
+            return f"nom:{nom}"
+        return ""
+
+    def _pick_preferred_person_row(prev: dict, cand: dict):
+        if prev is None:
+            return dict(cand)
+        p = dict(prev)
+        # Preferimos la fila con criterio personal cargado.
+        if (not p.get("criterio")) and cand.get("criterio"):
+            p["criterio"] = cand.get("criterio")
+        # Si no habia dependencia/piso/mail, completamos.
+        if (not p.get("dependencia")) and cand.get("dependencia"):
+            p["dependencia"] = cand.get("dependencia")
+        if (not p.get("piso")) and cand.get("piso"):
+            p["piso"] = cand.get("piso")
+        if (not p.get("email")) and cand.get("email"):
+            p["email"] = cand.get("email")
+        # Si la dependencia previa es vacia o mas corta, priorizamos la mas descriptiva.
+        if cand.get("dependencia") and (
+            (not p.get("dependencia")) or (len(str(cand.get("dependencia"))) > len(str(p.get("dependencia"))))
+        ):
+            p["dependencia"] = cand.get("dependencia")
+        return p
+
+    personas_unicas = defaultdict(dict)
     for p in per_rows:
         sede = str(p["sede_codigo"] or "").strip().upper()
         dep = normalizar_local_clave(p["codigo_local"])
         if not sede or not dep:
             continue
         k = (sede, dep)
-        personal_map[k]["personas_reales"] += 1
         nom = str(p["nombre"] or "").strip()
-        if nom:
-            personal_map[k]["nombres"].append(nom)
         dependencia = str(p["dependencia"] or "").strip()
-        if dependencia:
-            personal_map[k]["dependencias"][dependencia] += 1
         piso = str(p["piso"] or "").strip().upper()
-        if piso:
-            personal_map[k]["pisos"][piso] += 1
         email = str(p["email_admin"] or "").strip().lower()
-        if email:
-            personal_map[k]["emails"].add(email)
         criterio_personal = infra_extract_criterio_codigo(p["criterio_personal"])
-        if criterio_personal:
-            personal_map[k]["criterios"][criterio_personal] += 1
+        sig = _persona_signature(nom, email)
+        if not sig:
+            sig = f"fila:{len(personas_unicas[k]) + 1}"
+        cand = {
+            "nombre": nom,
+            "dependencia": dependencia,
+            "piso": piso,
+            "email": email,
+            "criterio": criterio_personal,
+        }
+        personas_unicas[k][sig] = _pick_preferred_person_row(personas_unicas[k].get(sig), cand)
+
+    for k, personas in personas_unicas.items():
+        for _, pdata in personas.items():
+            personal_map[k]["personas_reales"] += 1
+            nom = str(pdata.get("nombre") or "").strip()
+            if nom:
+                personal_map[k]["nombres"].append(nom)
+            dependencia = str(pdata.get("dependencia") or "").strip()
+            if dependencia:
+                personal_map[k]["dependencias"][dependencia] += 1
+            piso = str(pdata.get("piso") or "").strip().upper()
+            if piso:
+                personal_map[k]["pisos"][piso] += 1
+            email = str(pdata.get("email") or "").strip().lower()
+            if email:
+                personal_map[k]["emails"].add(email)
+            criterio_personal = str(pdata.get("criterio") or "").strip().upper()
+            if criterio_personal:
+                personal_map[k]["criterios"][criterio_personal] += 1
 
     mobiliario_map = defaultdict(lambda: {
         "escritorio_prof": 0,
