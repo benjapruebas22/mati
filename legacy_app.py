@@ -8229,28 +8229,33 @@ def sedes_resumen_mpd():
 
     def _persona_signature(nombre_raw, email_raw):
         mail = str(email_raw or "").strip().lower()
-        # Regla principal de identidad: email.
-        # Evita duplicados por variantes de nombre (ej: "Perez, Juan" vs "Juan Perez").
+        nom = infra_norm_text(nombre_raw)
+        toks = [t for t in nom.split(" ") if t]
+        nom_key = "|".join(sorted(toks)) if toks else ""
+
+        # Identidad prioritaria: email + nombre normalizado.
+        # Evita duplicados por orden/apellido-nombre, sin mezclar personas
+        # distintas que comparten casilla de correo.
+        if mail and nom_key:
+            return f"mail:{mail}|nom:{nom_key}"
         if mail:
             return f"mail:{mail}"
 
-        nom = infra_norm_text(nombre_raw)
-        if not nom:
+        if not nom_key:
             return ""
 
-        # Fallback sin email: clave por tokens ordenados para tolerar cambios de orden.
-        toks = [t for t in nom.split(" ") if t]
-        if not toks:
-            return ""
-        return "nom_tokens:" + "|".join(sorted(toks))
+        # Fallback sin email: clave por tokens ordenados.
+        return "nom_tokens:" + nom_key
 
     def _pick_preferred_person_row(prev: dict, cand: dict):
         if prev is None:
             return dict(cand)
+        prev_valid = int(prev.get("is_valid_local") or 0)
+        cand_valid = int(cand.get("is_valid_local") or 0)
         prev_id = int(prev.get("pid") or 0)
         cand_id = int(cand.get("pid") or 0)
-        # Base: registro mas reciente (id mayor).
-        if cand_id >= prev_id:
+        # Base: priorizar fila de local valido; luego, la mas reciente (id mayor).
+        if (cand_valid > prev_valid) or (cand_valid == prev_valid and cand_id >= prev_id):
             p = dict(cand)
             alt = dict(prev)
         else:
@@ -8276,12 +8281,13 @@ def sedes_resumen_mpd():
         return p
 
     personas_unicas = defaultdict(dict)
+    preferred_by_sede_sig = defaultdict(dict)
+    raw_person_rows = []
     for p in per_rows:
         sede = str(p["sede_codigo"] or "").strip().upper()
         dep = normalizar_local_clave(p["codigo_local"])
         if not sede or not dep:
             continue
-        k = (sede, dep)
         nom = str(p["nombre"] or "").strip()
         dependencia = str(p["dependencia"] or "").strip()
         piso = str(p["piso"] or "").strip().upper()
@@ -8289,15 +8295,32 @@ def sedes_resumen_mpd():
         criterio_personal = infra_extract_criterio_codigo(p["criterio_personal"])
         sig = _persona_signature(nom, email)
         if not sig:
-            sig = f"fila:{len(personas_unicas[k]) + 1}"
+            sig = f"fila_id:{int(p['pid'] or 0)}"
+        valid_set = valid_locals_by_sede.get(sede) or set()
+        is_valid_local = 1 if (not valid_set or dep in valid_set) else 0
         cand = {
             "pid": int(p["pid"] or 0),
+            "sede": sede,
+            "dep": dep,
+            "is_valid_local": is_valid_local,
             "nombre": nom,
             "dependencia": dependencia,
             "piso": piso,
             "email": email,
             "criterio": criterio_personal,
         }
+        raw_person_rows.append((sede, dep, sig, cand))
+        if sig.startswith("mail:"):
+            preferred_by_sede_sig[sede][sig] = _pick_preferred_person_row(
+                preferred_by_sede_sig[sede].get(sig), cand
+            )
+
+    for sede, dep, sig, cand in raw_person_rows:
+        if sig.startswith("mail:"):
+            preferred = preferred_by_sede_sig.get(sede, {}).get(sig)
+            if preferred and int(preferred.get("pid") or 0) != int(cand.get("pid") or 0):
+                continue
+        k = (sede, dep)
         personas_unicas[k][sig] = _pick_preferred_person_row(personas_unicas[k].get(sig), cand)
 
     for k, personas in personas_unicas.items():
