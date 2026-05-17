@@ -8077,6 +8077,7 @@ def sedes_resumen_mpd():
     dep_catalog = {}
     dep_filter_map = {}
     dep_assign_opts = []
+    valid_locals_by_sede = defaultdict(set)
     dep_rows = []
     try:
         dep_rows = db.execute("""
@@ -8109,6 +8110,7 @@ def sedes_resumen_mpd():
             "tipo": tipo,
             "referencia": ref,
         }
+        valid_locals_by_sede[sede].add(dep)
         dep_filter_map.setdefault(dep, {"label": dep, "sedes": set()})
         if descripcion and dep_filter_map[dep]["label"] == dep:
             dep_filter_map[dep]["label"] = f"{dep} - {descripcion}"
@@ -8396,6 +8398,15 @@ def sedes_resumen_mpd():
 
     all_keys = set(personal_map.keys()) | set(mobiliario_map.keys()) | set(puestos_map.keys()) | set(asign_map.keys())
     all_keys = {k for k in all_keys if k[0] and k[1]}
+    # Respetar catalogo oficial de locales por sede cuando existe.
+    all_keys_filtrado = set()
+    for k in all_keys:
+        sede_k, dep_k = k
+        valid_set = valid_locals_by_sede.get(sede_k) or set()
+        if valid_set and dep_k not in valid_set:
+            continue
+        all_keys_filtrado.add(k)
+    all_keys = all_keys_filtrado
 
     infra_rows_raw = []
     for sede, dep in sorted(all_keys, key=lambda x: (x[0], x[1])):
