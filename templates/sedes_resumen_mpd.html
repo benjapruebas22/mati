@@ -401,6 +401,67 @@
     </div>
 
     {% if rows and rows|length > 0 %}
+    <div style="margin-top:12px;border:1px solid #e5e7eb;border-radius:12px;overflow:auto;background:#fff;">
+      <div style="padding:10px 12px;border-bottom:1px solid #e5e7eb;font-weight:700;color:#334155;">Resumen inventario por sede</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead style="background:#f8fafc;">
+          <tr>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Sede</th>
+            <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Nombre</th>
+            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Mesas PC</th>
+            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Escritorios</th>
+            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Sillas gir.</th>
+            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Sillas fijas</th>
+            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Armarios</th>
+            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Bibliotecas</th>
+            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Aires</th>
+            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Luminarias</th>
+            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Puestos</th>
+            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Total mobiliario</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          {% set code = (r.codigo or '')|upper %}
+          {% set cls = fuero_map.get(code, 'fuero-neutral') %}
+          {% set total_mob = (r.mesa_pc or 0) + (r.escritorio_prof or 0) + (r.silla_giratoria or 0) + (r.silla_fija or 0) + (r.armario_alto or 0) + (r.biblioteca_baja or 0) + (r.aires_total or 0) %}
+          <tr>
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;"><span class="sede-badge-soft {{ cls }}">{{ r.codigo }}</span></td>
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.nombre }}</td>
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.mesa_pc }}</td>
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.escritorio_prof }}</td>
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.silla_giratoria }}</td>
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.silla_fija }}</td>
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.armario_alto }}</td>
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.biblioteca_baja }}</td>
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.aires_total }}</td>
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.luminarias_total }}</td>
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.puestos_trabajo }}</td>
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;font-weight:600;">{{ total_mob }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot style="background:#f8fafc;">
+          {% set total_mob_all = (totals.mesa_pc or 0) + (totals.escritorio_prof or 0) + (totals.silla_giratoria or 0) + (totals.silla_fija or 0) + (totals.armario_alto or 0) + (totals.biblioteca_baja or 0) + (totals.aires_total or 0) %}
+          <tr>
+            <td colspan="2" style="padding:8px;border-top:1px solid #e5e7eb;font-weight:700;">Totales</td>
+            <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.mesa_pc }}</td>
+            <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.escritorio_prof }}</td>
+            <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.silla_giratoria }}</td>
+            <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.silla_fija }}</td>
+            <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.armario_alto }}</td>
+            <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.biblioteca_baja }}</td>
+            <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.aires_total }}</td>
+            <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.luminarias_total }}</td>
+            <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.puestos_trabajo }}</td>
+            <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ total_mob_all }}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <details style="margin-top:12px;">
+      <summary style="cursor:pointer;font-size:13px;font-weight:700;color:#334155;">Detalle por elemento (opcional)</summary>
     <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:end;">
       <div>
         <label style="font-size:12px;color:#64748b;">Sede</label>
@@ -496,6 +557,7 @@
         </tfoot>
       </table>
     </div>
+    </details>
 
     <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:#ffffff;border:1px solid #e5e7eb;padding:10px 12px;border-radius:12px;">
       <div>
