@@ -110,6 +110,19 @@
     </div>
 
     <div style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;overflow:auto;background:#fff;">
+      <div style="padding:8px 10px;border-bottom:1px solid #e5e7eb;background:#f8fafc;display:flex;gap:10px;align-items:end;flex-wrap:wrap;">
+        <div>
+          <label style="font-size:12px;color:#64748b;">Filtro categoría</label>
+          <select id="filtroCategoriaBienes" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;min-width:220px;background:#fff;">
+            <option value="">Todas</option>
+            <option value="sst">SST</option>
+            <option value="instalaciones">Instalaciones</option>
+            <option value="instalaciones electricas">Instalaciones eléctricas</option>
+            <option value="infraestructura sede">Infraestructura sede</option>
+            <option value="otros">Otros</option>
+          </select>
+        </div>
+      </div>
       <table style="width:100%;border-collapse:collapse;font-size:12px;">
         <thead style="background:#f8fafc;">
           <tr>
@@ -129,10 +142,11 @@
         <tbody>
           {% if items_unificados and items_unificados|length > 0 %}
             {% for it in items_unificados %}
-            <tr>
+            {% set cat_key = (it.categoria or '')|lower %}
+            {% set cat_norm = cat_key|replace('é','e') %}
+            <tr data-cat="{{ cat_norm }}">
               <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ it.sede_codigo }}</td>
               <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ it.local or '-' }}</td>
-              {% set cat_key = (it.categoria or '')|lower %}
               <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
                 <span class="cat-badge {% if cat_key == 'sst' %}cat-sst{% elif cat_key == 'instalaciones' %}cat-inst{% elif cat_key == 'instalaciones eléctricas' or cat_key == 'instalaciones electricas' %}cat-elec{% elif cat_key == 'infraestructura sede' %}cat-infra{% else %}cat-otros{% endif %}">
                   {{ it.categoria or '-' }}
@@ -227,7 +241,7 @@
   }
 
   .cat-otros {
-    background: #f3f4f6;
+    background: #eef2f7;
     border-color: #e5e7eb;
     color: #374151;
   }
@@ -236,5 +250,21 @@
     background: #f8fafc;
   }
 </style>
+
+<script>
+  (function () {
+    const sel = document.getElementById("filtroCategoriaBienes");
+    if (!sel) return;
+    function applyFilter() {
+      const val = (sel.value || "").trim().toLowerCase();
+      document.querySelectorAll("tr[data-cat]").forEach((tr) => {
+        const cat = (tr.getAttribute("data-cat") || "").trim().toLowerCase();
+        tr.style.display = (!val || cat === val) ? "" : "none";
+      });
+    }
+    sel.addEventListener("change", applyFilter);
+    applyFilter();
+  })();
+</script>
 
 {% endblock %}
