@@ -3330,6 +3330,7 @@ def depositos_home():
 
     ensure_cols(con, "depositos_items", [
         ("categoria", "TEXT"),
+        ("subcategoria", "TEXT"),
     ])
     con.execute("""
         UPDATE depositos_items
@@ -3367,29 +3368,33 @@ def depositos_home():
 @app.route("/depositos/agregar", methods=["POST"], endpoint="depositos_agregar")
 def depositos_agregar():
     # OJO: tu form manda "deposito_codigo"
-    deposito = request.form.get("deposito_codigo")
+    deposito = (request.form.get("deposito_codigo") or "").strip()
     item = request.form.get("item")
     cantidad = request.form.get("cantidad") or 1
     estado = request.form.get("estado")
     observ = request.form.get("observaciones")
     categoria = (request.form.get("categoria") or "Herramientas").strip()
+    subcategoria = (request.form.get("subcategoria") or "").strip()
+    if not deposito:
+        deposito = "GENERAL_MPD"
 
-    if not deposito or not item:
-        flash("⚠️ Completá Depósito e Ítem.", "warning")
+    if not item:
+        flash("⚠️ Completá Item.", "warning")
         return redirect(url_for("depositos_home"))
 
     con = get_db()
     ensure_cols(con, "depositos_items", [
         ("categoria", "TEXT"),
+        ("subcategoria", "TEXT"),
     ])
     con.execute("""
-        INSERT INTO depositos_items (deposito, item, cantidad, estado, observaciones, categoria)
-        VALUES (?, ?, ?, ?, ?, ?)
-    """, (deposito, item, cantidad, estado, observ, categoria))
+        INSERT INTO depositos_items (deposito, item, cantidad, estado, observaciones, categoria, subcategoria)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (deposito, item, cantidad, estado, observ, categoria, subcategoria))
     con.commit()
     con.close()
 
-    flash("Ítem agregado al Depósito.", "ok")
+    flash("Item agregado a Stock operativo general MPD.", "ok")
     return redirect(url_for("depositos_home"))
 
 
@@ -3399,6 +3404,7 @@ def depositos_editar(did):
     con.row_factory = sqlite3.Row
     ensure_cols(con, "depositos_items", [
         ("categoria", "TEXT"),
+        ("subcategoria", "TEXT"),
     ])
 
     sedes_deps = con.execute("""
@@ -3415,18 +3421,21 @@ def depositos_editar(did):
         return redirect(url_for("depositos_home"))
 
     if request.method == "POST":
-        deposito = request.form.get("deposito_codigo")
+        deposito = (request.form.get("deposito_codigo") or "").strip()
+        if not deposito:
+            deposito = "GENERAL_MPD"
         item = request.form.get("item")
         cantidad = request.form.get("cantidad") or 1
         estado = request.form.get("estado")
         observ = request.form.get("observaciones")
         categoria = (request.form.get("categoria") or "Herramientas").strip()
+        subcategoria = (request.form.get("subcategoria") or "").strip()
 
         con.execute("""
             UPDATE depositos_items
-            SET deposito=?, item=?, cantidad=?, estado=?, observaciones=?, categoria=?
+            SET deposito=?, item=?, cantidad=?, estado=?, observaciones=?, categoria=?, subcategoria=?
             WHERE id=?
-        """, (deposito, item, cantidad, estado, observ, categoria, did))
+        """, (deposito, item, cantidad, estado, observ, categoria, subcategoria, did))
         con.commit()
         con.close()
 
@@ -3434,7 +3443,7 @@ def depositos_editar(did):
         return redirect(url_for("depositos_home"))
 
     con.close()
-    return render_template("depositos_edit.html", reg=reg, sedes_deps=sedes_deps)
+    return render_template("depositos_editar.html", reg=reg, sedes_deps=sedes_deps)
 
 
 @app.route("/depositos/borrar/<int:did>", methods=["POST"], endpoint="depositos_borrar")
@@ -3445,6 +3454,167 @@ def depositos_borrar(did):
     con.close()
     flash("Ítem eliminado.", "ok")
     return redirect(url_for("depositos_home"))
+
+
+@app.route("/bienes_sede", methods=["GET", "POST"], endpoint="bienes_sede")
+def bienes_sede():
+    con = get_db()
+    con.row_factory = sqlite3.Row
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS bienes_sede_items(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sede_codigo TEXT NOT NULL,
+            local TEXT,
+            categoria TEXT NOT NULL,
+            subcategoria TEXT,
+            tipo TEXT,
+            cantidad INTEGER DEFAULT 0,
+            descripcion TEXT,
+            observaciones TEXT,
+            estado TEXT,
+            fecha_relevamiento TEXT,
+            actualizado_en TEXT
+        )
+    """)
+    con.commit()
+
+    sedes_rows = con.execute("""
+        SELECT UPPER(COALESCE(codigo,'')) AS codigo, COALESCE(nombre,'') AS nombre
+        FROM sedes_mpd
+        ORDER BY codigo
+    """).fetchall()
+
+    categoria_opts = [
+        "SST",
+        "Instalaciones",
+        "Instalaciones eléctricas",
+        "Infraestructura sede",
+        "Otros",
+    ]
+    subcategoria_opts = [
+        "Tableros", "Disyuntores", "Térmicas", "Circuitos", "Cable canal", "Cableado",
+        "Puestos de trabajo", "RJ45", "UPS", "Canalizaciones", "Tomas simples", "Tomas dobles",
+        "Llaves eléctricas", "Luminarias", "Luces emergencia", "Reflectores", "Panel LED",
+        "Tubo LED", "Foco común", "Instalaciones especiales", "Trifásica", "Monofásica",
+        "Grupo electrógeno", "Otros",
+    ]
+    estado_opts = ["Bueno", "Regular", "Para revisar", "Fuera de servicio"]
+
+    infra_sede = (request.values.get("infra_sede") or request.values.get("sede") or "").strip().upper()
+    if request.method == "POST":
+        action = (request.form.get("action") or "save").strip().lower()
+        infra_sede = (request.form.get("infra_sede") or "").strip().upper()
+        if not infra_sede:
+            con.close()
+            flash("Seleccioná una sede para gestionar bienes.", "warning")
+            return redirect(url_for("bienes_sede"))
+
+        if action == "delete":
+            rid = int(request.form.get("rid") or 0)
+            if rid > 0:
+                con.execute("DELETE FROM bienes_sede_items WHERE id = ? AND sede_codigo = ?", (rid, infra_sede))
+                con.commit()
+                con.close()
+                flash("Bien eliminado.", "success")
+                return redirect(url_for("bienes_sede", infra_sede=infra_sede))
+        else:
+            rid = int(request.form.get("rid") or 0)
+            local = normalizar_local_clave(request.form.get("local"))
+            categoria = (request.form.get("categoria") or "Otros").strip()
+            subcategoria = (request.form.get("subcategoria") or "").strip()
+            tipo = (request.form.get("tipo") or "").strip()
+            cantidad_raw = (request.form.get("cantidad") or "0").strip()
+            descripcion = (request.form.get("descripcion") or "").strip()
+            observaciones = (request.form.get("observaciones") or "").strip()
+            estado = (request.form.get("estado") or "").strip()
+            fecha_relevamiento = (request.form.get("fecha_relevamiento") or "").strip()
+
+            try:
+                cantidad = int(float(cantidad_raw))
+            except Exception:
+                cantidad = 0
+
+            if not categoria:
+                con.close()
+                flash("Completá la categoría del bien.", "warning")
+                return redirect(url_for("bienes_sede", infra_sede=infra_sede))
+
+            if rid > 0:
+                con.execute("""
+                    UPDATE bienes_sede_items
+                    SET local = ?,
+                        categoria = ?,
+                        subcategoria = ?,
+                        tipo = ?,
+                        cantidad = ?,
+                        descripcion = ?,
+                        observaciones = ?,
+                        estado = ?,
+                        fecha_relevamiento = ?,
+                        actualizado_en = datetime('now')
+                    WHERE id = ? AND sede_codigo = ?
+                """, (
+                    local, categoria, subcategoria, tipo, cantidad, descripcion,
+                    observaciones, estado, fecha_relevamiento, rid, infra_sede
+                ))
+                msg = "Bien actualizado."
+            else:
+                con.execute("""
+                    INSERT INTO bienes_sede_items
+                    (sede_codigo, local, categoria, subcategoria, tipo, cantidad, descripcion, observaciones, estado, fecha_relevamiento, actualizado_en)
+                    VALUES (?,?,?,?,?,?,?,?,?,?, datetime('now'))
+                """, (
+                    infra_sede, local, categoria, subcategoria, tipo, cantidad,
+                    descripcion, observaciones, estado, fecha_relevamiento
+                ))
+                msg = "Bien agregado."
+
+            con.commit()
+            con.close()
+            flash(msg, "success")
+            return redirect(url_for("bienes_sede", infra_sede=infra_sede))
+
+    edit_id = int(request.args.get("edit_id") or 0)
+    edit_row = None
+    if infra_sede and edit_id > 0:
+        edit_row = con.execute("""
+            SELECT *
+            FROM bienes_sede_items
+            WHERE id = ? AND sede_codigo = ?
+            LIMIT 1
+        """, (edit_id, infra_sede)).fetchone()
+
+    items = []
+    if infra_sede:
+        items = con.execute("""
+            SELECT *
+            FROM bienes_sede_items
+            WHERE sede_codigo = ?
+            ORDER BY
+                COALESCE(categoria, '') ASC,
+                COALESCE(subcategoria, '') ASC,
+                COALESCE(local, '') ASC,
+                id DESC
+        """, (infra_sede,)).fetchall()
+
+    sede_nombre = ""
+    for s in sedes_rows:
+        if (s["codigo"] or "").upper() == infra_sede:
+            sede_nombre = s["nombre"] or ""
+            break
+
+    con.close()
+    return render_template(
+        "bienes_sede.html",
+        sedes=sedes_rows,
+        infra_sede=infra_sede,
+        sede_nombre=sede_nombre,
+        items=items,
+        edit_row=edit_row,
+        categoria_opts=categoria_opts,
+        subcategoria_opts=subcategoria_opts,
+        estado_opts=estado_opts,
+    )
 
 
 
@@ -7914,6 +8084,7 @@ def sedes_resumen():
     con.close()
     return render_template("sede_resumen.html", rows=rows, tot=tot)
 
+@app.route("/infra_analisis", methods=["GET", "POST"], endpoint="infra_analisis")
 @app.route("/sedes/resumen-mpd", methods=["GET", "POST"], endpoint="sedes_resumen_mpd")
 def sedes_resumen_mpd():
     db = get_db()
@@ -7948,7 +8119,8 @@ def sedes_resumen_mpd():
                 v = normalizar_local_clave(v)
             if v:
                 params[k] = v
-        return redirect(url_for("sedes_resumen_mpd", **params))
+        target_ep = "infra_analisis" if request.endpoint == "infra_analisis" else "sedes_resumen_mpd"
+        return redirect(url_for(target_ep, **params))
 
     if request.method == "POST":
         action = (request.form.get("infra_action") or "").strip().lower()
@@ -8047,7 +8219,7 @@ def sedes_resumen_mpd():
             flash(f"Criterio {criterio_codigo} asignado a {sede} {deposito}.", "success")
             return _redirect_infra()
 
-    infra_sede = (request.args.get("infra_sede") or "").strip().upper()
+    infra_sede = (request.args.get("infra_sede") or request.args.get("sede") or "").strip().upper()
     infra_deposito = normalizar_local_clave((request.args.get("infra_deposito") or "").strip())
     infra_fuero = (request.args.get("infra_fuero") or "").strip().upper()
     infra_criterio = (request.args.get("infra_criterio") or "").strip().upper()
@@ -9099,6 +9271,7 @@ def sedes_resumen_mpd():
 
     return render_template(
         "sedes_resumen_mpd.html",
+        is_infra_screen=(request.endpoint == "infra_analisis"),
         rows=resumen_sedes_rows,
         totals=resumen_sedes_totals,
         infra_rows=infra_rows,

@@ -5,9 +5,9 @@
 
   <header class="section-header">
     <div>
-      <h2>Editar ítem de depósito</h2>
+      <h2>Editar item de stock operativo general MPD</h2>
       <p class="section-sub">
-        Modificá los datos del stock guardado en Taller / Depósitos.
+        Modifica categoria, subcategoria y estado del bien general.
       </p>
     </div>
   </header>
@@ -16,18 +16,7 @@
     <form method="post" class="dep-form">
       <div class="dep-form-row">
 
-        <!-- Depósito -->
-        <div class="dep-group dep-deposito">
-          <label>Depósito</label>
-          <select name="deposito_codigo" required>
-            {% for d in sedes_deps %}
-              <option value="{{ d.codigo }}"
-                      {% if d.codigo == reg.deposito_codigo %}selected{% endif %}>
-                {{ d.descripcion }}
-              </option>
-            {% endfor %}
-          </select>
-        </div>
+        <input type="hidden" name="deposito_codigo" value="{{ reg.deposito_codigo or 'GENERAL_MPD' }}">
 
         <!-- Categoria -->
         <div class="dep-group dep-cat">
@@ -35,8 +24,14 @@
           {% set cat = (reg.categoria or '').lower() %}
           <select name="categoria">
             <option value="Herramientas" {% if cat == 'herramientas' %}selected{% endif %}>Herramientas</option>
-            <option value="Mobiliario" {% if cat == 'mobiliario' %}selected{% endif %}>Mobiliario</option>
+            <option value="Mobiliario operativo" {% if cat == 'mobiliario operativo' %}selected{% endif %}>Mobiliario operativo</option>
+            <option value="Elementos protocolares" {% if cat == 'elementos protocolares' %}selected{% endif %}>Elementos protocolares</option>
           </select>
+        </div>
+
+        <div class="dep-group dep-deposito">
+          <label>Subcategoria (opcional)</label>
+          <input type="text" name="subcategoria" value="{{ reg.subcategoria or '' }}">
         </div>
 
         <!-- Ítem -->

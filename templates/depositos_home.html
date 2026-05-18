@@ -6,9 +6,9 @@
   <!-- ENCABEZADO -->
   <header class="section-header dep-head">
     <div>
-      <h2>Depósitos – Stock general</h2>
+      <h2>Stock operativo general MPD</h2>
       <p class="section-sub">
-        Registro del stock guardado en Taller y Depósitos (aires nuevos, muebles, gomas, etc.).
+        Bienes institucionales moviles de uso general (no vinculados a una sede fija).
       </p>
     </div>
 
@@ -25,14 +25,10 @@
   {% set total_cantidad = total_cantidad + (r.cantidad or 0) %}
   {% endfor %}
   {% endif %}
-  {% set deps_activos = [] %}
+  {% set cats_activas = [] %}
   {% if items %}
   {% for r in items %}
-  {% if r.deposito_desc %}
-  {% if r.deposito_desc not in deps_activos %}{% set _ = deps_activos.append(r.deposito_desc) %}{% endif %}
-  {% else %}
-  {% if r.deposito_codigo not in deps_activos %}{% set _ = deps_activos.append(r.deposito_codigo) %}{% endif %}
-  {% endif %}
+  {% if r.categoria and r.categoria not in cats_activas %}{% set _ = cats_activas.append(r.categoria) %}{% endif %}
   {% endfor %}
   {% endif %}
 
@@ -46,8 +42,8 @@
       <div class="kpi-v">{{ total_cantidad }}</div>
     </div>
     <div class="kpi">
-      <div class="kpi-l">Depósitos activos</div>
-      <div class="kpi-v">{{ deps_activos|length }}</div>
+      <div class="kpi-l">Categorias activas</div>
+      <div class="kpi-v">{{ cats_activas|length }}</div>
     </div>
   </div>
 
@@ -63,24 +59,21 @@
     <form method="post" action="{{ url_for('depositos_agregar') }}" class="dep-form">
       <div class="dep-form-row">
 
-        <!-- Depósito -->
-        <div class="dep-group dep-deposito">
-          <label>Depósito</label>
-          <select name="deposito_codigo" required>
-            <option value="">Elegí depósito...</option>
-            {% for d in sedes_deps %}
-            <option value="{{ d.codigo }}">{{ d.descripcion }}</option>
-            {% endfor %}
-          </select>
-        </div>
+        <input type="hidden" name="deposito_codigo" value="GENERAL_MPD">
 
         <!-- Categoria -->
         <div class="dep-group dep-cat">
           <label>Categoria</label>
           <select name="categoria">
             <option value="Herramientas" selected>Herramientas</option>
-            <option value="Mobiliario">Mobiliario</option>
+            <option value="Mobiliario operativo">Mobiliario operativo</option>
+            <option value="Elementos protocolares">Elementos protocolares</option>
           </select>
+        </div>
+
+        <div class="dep-group dep-deposito">
+          <label>Subcategoria (opcional)</label>
+          <input type="text" name="subcategoria" placeholder="Ej.: escaleras / banderas / camillas">
         </div>
 
         <!-- Ítem -->
@@ -130,7 +123,7 @@
       <div>
         <h3 class="card-title">Listado</h3>
         <p class="section-sub">
-          Visualización unificada por depósito.
+          Visualizacion unificada por categoria operativa.
         </p>
       </div>
 
@@ -138,11 +131,12 @@
         <select id="depCatFilter" class="dep-filter">
           <option value="">Todas las categorias</option>
           <option value="Herramientas">Herramientas</option>
-          <option value="Mobiliario">Mobiliario</option>
+          <option value="Mobiliario operativo">Mobiliario operativo</option>
+          <option value="Elementos protocolares">Elementos protocolares</option>
         </select>
         <div class="searchbox">
           <span class="sb-ico">🔎</span>
-          <input id="depSearch" type="text" placeholder="Buscar ítem / depósito / observación...">
+          <input id="depSearch" type="text" placeholder="Buscar item / categoria / subcategoria / observacion...">
         </div>
       </div>
     </div>
@@ -152,7 +146,7 @@
       <table class="table-soft dep-table" id="depTable">
         <thead>
           <tr>
-            <th style="min-width:210px;">Depósito</th>
+            <th style="min-width:170px;">Subcategoria</th>
             <th style="width:140px;">Categoria</th>
             <th>Ítem</th>
             <th style="width:70px;text-align:center;">Cant.</th>
@@ -165,14 +159,11 @@
           {% for reg in items %}
           {% set est = (reg.estado or '').lower() %}
           <tr class="row"
-            data-text="{{ (reg.deposito_desc or reg.deposito_codigo or '') ~ ' ' ~ (reg.item or '') ~ ' ' ~ (reg.observaciones or '') ~ ' ' ~ (reg.estado or '') ~ ' ' ~ (reg.categoria or '') | lower }}"
+            data-text="{{ (reg.subcategoria or '') ~ ' ' ~ (reg.item or '') ~ ' ' ~ (reg.observaciones or '') ~ ' ' ~ (reg.estado or '') ~ ' ' ~ (reg.categoria or '') | lower }}"
             data-cat="{{ (reg.categoria or '') }}">
             <td class="dep-col-dep">
               <div class="dep-strong">
-                {{ reg.deposito_desc or reg.deposito_codigo }}
-              </div>
-              <div class="dep-muted">
-                {{ reg.deposito_codigo or '' }}
+                {{ reg.subcategoria or '-' }}
               </div>
             </td>
 
@@ -208,7 +199,7 @@
               </a>
 
               <form method="post" action="{{ url_for('depositos_borrar', did=reg.id) }}"
-                onsubmit="return confirm('¿Eliminar este registro de depósito?');">
+                onsubmit="return confirm('¿Eliminar este registro de stock general MPD?');">
                 <button type="submit" class="btn xs danger">
                   Borrar
                 </button>

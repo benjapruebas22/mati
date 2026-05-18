@@ -10,20 +10,28 @@
     'S11':'fuero-social','S14':'fuero-social','S15':'fuero-social','S16':'fuero-social','S17':'fuero-social','S18':'fuero-social','S19':'fuero-social','S20':'fuero-social',
     'S08':'fuero-admin','S12':'fuero-admin'
   } %}
+  {% set show_infra = is_infra_screen|default(false) %}
+  {% set infra_nav_endpoint = 'infra_analisis' if show_infra else 'sedes_resumen_mpd' %}
   <div class="cardx" style="padding:12px 14px;">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;background:#ffffff;border:1px solid #e5e7eb;padding:10px 12px;border-radius:12px;">
       <div>
-        <h2 style="margin:0;font-size:18px;color:#334155;font-weight:600;">Resumen sedes</h2>
-        <div style="font-size:12px;color:#64748b;margin-top:2px;">Vista general de inventario operativo principal por sede.</div>
+        <h2 style="margin:0;font-size:18px;color:#334155;font-weight:600;">{{ 'Analisis depositos por sede' if show_infra else 'Resumen sedes' }}</h2>
+        <div style="font-size:12px;color:#64748b;margin-top:2px;">{{ 'Diagnostico operativo por deposito con filtros y criterios.' if show_infra else 'Vista general de inventario operativo principal por sede.' }}</div>
       </div>
-      <a class="btn" href="{{ url_for('depositos_home') }}">GENERAL MPD</a>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        {% if show_infra %}
+        <a class="btn" href="{{ url_for('sedes_resumen_mpd') }}">Resumen sedes</a>
+        {% endif %}
+        <a class="btn" href="{{ url_for('depositos_home') }}">GENERAL MPD</a>
+      </div>
     </div>
 
+    {% if not show_infra %}
     <div id="resumen-inventario-top" style="margin-top:12px;border:1px solid #e5e7eb;border-radius:12px;overflow:auto;background:#fff;">
       <div style="padding:10px 12px;border-bottom:1px solid #e5e7eb;font-weight:700;color:#334155;">Resumen inventario operativo por sede</div>
       {% if rows and rows|length > 0 %}
       <table style="width:100%;border-collapse:collapse;font-size:12px;">
-        <thead style="background:#f8fafc;">
+        <thead style="background:#f1f5f9;">
           <tr>
             <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Sede</th>
             <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Nombre</th>
@@ -56,10 +64,10 @@
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.aires_total }}</td>
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;font-weight:600;">{{ total_mob }}</td>
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
-              <a class="btn xs" href="{{ url_for('sede_ficha', codigo=r.codigo, view='operativo', tab='planos') }}">Ver bienes p/sede</a>
+              <a class="btn xs" href="{{ url_for('bienes_sede', infra_sede=r.codigo) }}">Ver bienes p/sede</a>
             </td>
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
-              <a class="btn xs" href="{{ url_for('sedes_resumen_mpd', infra_sede=r.codigo) }}#infra-analisis">Análisis depósitos</a>
+              <a class="btn xs" href="{{ url_for('infra_analisis', sede=r.codigo) }}#infra-analisis">Análisis depósitos</a>
             </td>
           </tr>
           {% endfor %}
@@ -85,7 +93,9 @@
       <div style="padding:10px;color:#64748b;font-size:12px;">No hay datos de inventario para mostrar.</div>
       {% endif %}
     </div>
+    {% endif %}
 
+    {% if show_infra %}
     <div style="margin-top:12px;background:#ffffff;border:1px solid #e5e7eb;padding:12px;border-radius:12px;" id="infra-analisis">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap;">
         <div>
@@ -153,8 +163,8 @@
           </select>
         </div>
         <button class="btn" type="submit" style="padding:6px 12px;">Aplicar</button>
-        <a class="btn" href="{{ url_for('sedes_resumen_mpd') }}" style="padding:6px 12px;">Limpiar</a>
-        <a class="btn" href="{{ url_for('sedes_resumen_mpd', infra_sede=infra_sede or None, infra_deposito=infra_deposito or None, infra_fuero=infra_fuero or None, infra_criterio=infra_criterio or None, infra_estado_general=infra_estado_general or None, infra_elemento=infra_elemento or None, infra_export='csv') }}" style="padding:6px 12px;">Exportar CSV</a>
+        <a class="btn" href="{{ url_for(infra_nav_endpoint) }}" style="padding:6px 12px;">Limpiar</a>
+        <a class="btn" href="{{ url_for(infra_nav_endpoint, infra_sede=infra_sede or None, infra_deposito=infra_deposito or None, infra_fuero=infra_fuero or None, infra_criterio=infra_criterio or None, infra_estado_general=infra_estado_general or None, infra_elemento=infra_elemento or None, infra_export='csv') }}" style="padding:6px 12px;">Exportar CSV</a>
       </form>
 
       <details style="margin-top:10px;">
@@ -193,7 +203,7 @@
                 <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ rs.alto }}</td>
                 <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ rs.revisar }}</td>
                 <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
-                  <a class="btn xs" href="{{ url_for('sedes_resumen_mpd', infra_sede=rs.sede) }}#infra-analisis">Ver análisis</a>
+                  <a class="btn xs" href="{{ url_for('infra_analisis', sede=rs.sede) }}#infra-analisis">Ver análisis</a>
                 </td>
               </tr>
               {% endfor %}
@@ -297,10 +307,10 @@
                   {% endif %}
                 </td>
                 <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
-                  <a class="btn xs" href="{{ url_for('sedes_resumen_mpd', infra_sede=infra_sede or None, infra_deposito=infra_deposito or None, infra_fuero=infra_fuero or None, infra_criterio=infra_criterio or None, infra_estado_general=infra_estado_general or None, infra_elemento=infra_elemento or None, asig_sede=r.sede, asig_deposito=r.deposito, asig_criterio=(r.criterio_final_codigo if r.criterio_final_codigo else r.criterio_sugerido_codigo), edit_criterio=(r.criterio_final_codigo if r.criterio_final_codigo else edit_criterio)) }}#infra-forms">Corregir criterio</a>
+                  <a class="btn xs" href="{{ url_for(infra_nav_endpoint, infra_sede=infra_sede or None, infra_deposito=infra_deposito or None, infra_fuero=infra_fuero or None, infra_criterio=infra_criterio or None, infra_estado_general=infra_estado_general or None, infra_elemento=infra_elemento or None, asig_sede=r.sede, asig_deposito=r.deposito, asig_criterio=(r.criterio_final_codigo if r.criterio_final_codigo else r.criterio_sugerido_codigo), edit_criterio=(r.criterio_final_codigo if r.criterio_final_codigo else edit_criterio)) }}#infra-forms">Corregir criterio</a>
                 </td>
                 <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
-                  <a class="btn xs" href="{{ url_for('sedes_resumen_mpd', infra_sede=infra_sede or None, infra_deposito=infra_deposito or None, infra_fuero=infra_fuero or None, infra_criterio=infra_criterio or None, infra_estado_general=infra_estado_general or None, infra_elemento=infra_elemento or None, edit_criterio=edit_criterio or None, infra_detalle_sede=r.sede, infra_detalle_local=r.deposito) }}#infra-detalle-modal">Ver detalle</a>
+                  <a class="btn xs" href="{{ url_for(infra_nav_endpoint, infra_sede=infra_sede or None, infra_deposito=infra_deposito or None, infra_fuero=infra_fuero or None, infra_criterio=infra_criterio or None, infra_estado_general=infra_estado_general or None, infra_elemento=infra_elemento or None, edit_criterio=edit_criterio or None, infra_detalle_sede=r.sede, infra_detalle_local=r.deposito) }}#infra-detalle-modal">Ver detalle</a>
                 </td>
               </tr>
               {% endfor %}
@@ -326,7 +336,7 @@
               <div style="font-size:15px;font-weight:700;color:#0f172a;">Detalle técnico inventario</div>
               <div style="font-size:12px;color:#64748b;">{{ infra_detalle_row.sede }} - {{ infra_detalle_row.deposito }} | {{ infra_detalle_row.descripcion_inventario or '-' }}</div>
             </div>
-            <a class="btn xs" href="{{ url_for('sedes_resumen_mpd', infra_sede=infra_sede or None, infra_deposito=infra_deposito or None, infra_fuero=infra_fuero or None, infra_criterio=infra_criterio or None, infra_estado_general=infra_estado_general or None, infra_elemento=infra_elemento or None, edit_criterio=edit_criterio or None) }}">Cerrar</a>
+            <a class="btn xs" href="{{ url_for(infra_nav_endpoint, infra_sede=infra_sede or None, infra_deposito=infra_deposito or None, infra_fuero=infra_fuero or None, infra_criterio=infra_criterio or None, infra_estado_general=infra_estado_general or None, infra_elemento=infra_elemento or None, edit_criterio=edit_criterio or None) }}">Cerrar</a>
           </div>
           <div style="padding:12px;">
             <table style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;border:1px solid #e5e7eb;">
@@ -404,9 +414,9 @@
               <div>
                 <label style="font-size:12px;color:#64748b;">Criterio</label>
                 <select onchange="window.location=this.value" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
-                  <option value="{{ url_for('sedes_resumen_mpd', infra_sede=infra_sede or None, infra_deposito=infra_deposito or None, infra_fuero=infra_fuero or None, infra_criterio=infra_criterio or None, infra_estado_general=infra_estado_general or None, infra_elemento=infra_elemento or None) }}">Nuevo criterio</option>
+                  <option value="{{ url_for(infra_nav_endpoint, infra_sede=infra_sede or None, infra_deposito=infra_deposito or None, infra_fuero=infra_fuero or None, infra_criterio=infra_criterio or None, infra_estado_general=infra_estado_general or None, infra_elemento=infra_elemento or None) }}">Nuevo criterio</option>
                   {% for c in infra_criterios %}
-                    <option value="{{ url_for('sedes_resumen_mpd', infra_sede=infra_sede or None, infra_deposito=infra_deposito or None, infra_fuero=infra_fuero or None, infra_criterio=infra_criterio or None, infra_estado_general=infra_estado_general or None, infra_elemento=infra_elemento or None, edit_criterio=c.codigo) }}#infra-forms" {% if criterio_edit.codigo == c.codigo %}selected{% endif %}>{{ c.codigo }} - {{ c.nombre }}</option>
+                    <option value="{{ url_for(infra_nav_endpoint, infra_sede=infra_sede or None, infra_deposito=infra_deposito or None, infra_fuero=infra_fuero or None, infra_criterio=infra_criterio or None, infra_estado_general=infra_estado_general or None, infra_elemento=infra_elemento or None, edit_criterio=c.codigo) }}#infra-forms" {% if criterio_edit.codigo == c.codigo %}selected{% endif %}>{{ c.codigo }} - {{ c.nombre }}</option>
                   {% endfor %}
                 </select>
               </div>
@@ -494,8 +504,9 @@
         </details>
       </div>
     </div>
+    {% endif %}
 
-    {% if rows and rows|length > 0 %}
+    {% if show_infra and rows and rows|length > 0 %}
     <details style="margin-top:12px;">
       <summary style="cursor:pointer;font-size:13px;font-weight:700;color:#334155;">Detalle por elemento (opcional)</summary>
     <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:end;">
@@ -699,7 +710,7 @@
         </tbody>
       </table>
     </div>
-    {% else %}
+    {% elif show_infra %}
     <div style="color:#64748b;font-size:12px;margin-top:12px;">No hay datos para mostrar.</div>
     {% endif %}
   </div>

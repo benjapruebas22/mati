@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="sedes-section sgi-sedes">
+  <div class="cardx" style="padding:12px 14px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;background:#fff;border:1px solid #e5e7eb;padding:10px 12px;border-radius:12px;flex-wrap:wrap;">
+      <div>
+        <h2 style="margin:0;font-size:18px;color:#334155;font-weight:600;">Bienes por sede</h2>
+        <div style="font-size:12px;color:#64748b;margin-top:2px;">Gestion simple por sede: SST, instalaciones, infraestructura y otros.</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <a class="btn" href="{{ url_for('sedes_resumen_mpd') }}">Volver resumen</a>
+        {% if infra_sede %}
+        <a class="btn" href="{{ url_for('infra_analisis', sede=infra_sede) }}">Analisis depositos {{ infra_sede }}</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <form method="get" style="margin-top:10px;display:flex;gap:10px;align-items:end;flex-wrap:wrap;">
+      <div>
+        <label style="font-size:12px;color:#64748b;">Sede</label>
+        <select name="infra_sede" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;min-width:260px;">
+          <option value="">Seleccionar sede...</option>
+          {% for s in sedes %}
+          <option value="{{ s.codigo }}" {% if infra_sede == s.codigo %}selected{% endif %}>{{ s.codigo }} - {{ s.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button class="btn" type="submit">Abrir</button>
+    </form>
+
+    {% if infra_sede %}
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;font-size:12px;">
+      <span class="state info"><strong>{{ infra_sede }}</strong> - {{ sede_nombre }}</span>
+      <span class="state"><strong>Registros:</strong> {{ items|length }}</span>
+    </div>
+
+    <div style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;background:#fff;padding:10px;">
+      <div style="font-size:13px;font-weight:700;color:#334155;">{{ 'Editar bien' if edit_row else 'Agregar bien' }}</div>
+      <form method="post" style="margin-top:8px;">
+        <input type="hidden" name="action" value="save">
+        <input type="hidden" name="infra_sede" value="{{ infra_sede }}">
+        <input type="hidden" name="rid" value="{{ edit_row.id if edit_row else '' }}">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;">
+          <div>
+            <label style="font-size:12px;color:#64748b;">Local</label>
+            <input name="local" value="{{ edit_row.local if edit_row else '' }}" placeholder="D01" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+          </div>
+          <div>
+            <label style="font-size:12px;color:#64748b;">Categoria</label>
+            {% set cat_sel = (edit_row.categoria if edit_row else '') %}
+            <select name="categoria" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+              {% for c in categoria_opts %}
+              <option value="{{ c }}" {% if cat_sel == c %}selected{% endif %}>{{ c }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px;color:#64748b;">Subcategoria (opcional)</label>
+            <input name="subcategoria" list="subcats" value="{{ edit_row.subcategoria if edit_row else '' }}" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+            <datalist id="subcats">
+              {% for sc in subcategoria_opts %}
+              <option value="{{ sc }}"></option>
+              {% endfor %}
+            </datalist>
+          </div>
+          <div>
+            <label style="font-size:12px;color:#64748b;">Tipo</label>
+            <input name="tipo" value="{{ edit_row.tipo if edit_row else '' }}" placeholder="Ej: tablero / matafuego / heladera" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+          </div>
+          <div>
+            <label style="font-size:12px;color:#64748b;">Cantidad</label>
+            <input type="number" min="0" step="1" name="cantidad" value="{{ edit_row.cantidad if edit_row else 0 }}" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+          </div>
+          <div>
+            <label style="font-size:12px;color:#64748b;">Estado</label>
+            {% set est_sel = (edit_row.estado if edit_row else '') %}
+            <select name="estado" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+              <option value="">-</option>
+              {% for e in estado_opts %}
+              <option value="{{ e }}" {% if est_sel == e %}selected{% endif %}>{{ e }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px;color:#64748b;">Fecha relevamiento</label>
+            <input type="date" name="fecha_relevamiento" value="{{ edit_row.fecha_relevamiento if edit_row else '' }}" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+          </div>
+          <div style="grid-column:1 / -1;">
+            <label style="font-size:12px;color:#64748b;">Descripcion</label>
+            <input name="descripcion" value="{{ edit_row.descripcion if edit_row else '' }}" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+          </div>
+          <div style="grid-column:1 / -1;">
+            <label style="font-size:12px;color:#64748b;">Observaciones</label>
+            <input name="observaciones" value="{{ edit_row.observaciones if edit_row else '' }}" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+          </div>
+        </div>
+        <div style="margin-top:10px;display:flex;justify-content:flex-end;gap:8px;">
+          {% if edit_row %}
+          <a class="btn" href="{{ url_for('bienes_sede', infra_sede=infra_sede) }}">Cancelar</a>
+          {% endif %}
+          <button class="btn primary" type="submit">{{ 'Guardar cambios' if edit_row else 'Agregar' }}</button>
+        </div>
+      </form>
+    </div>
+
+    <div style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;overflow:auto;background:#fff;">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead style="background:#f8fafc;">
+          <tr>
+            <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Sede</th>
+            <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Local</th>
+            <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Categoria</th>
+            <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Subcategoria</th>
+            <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Tipo</th>
+            <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">Cantidad</th>
+            <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Descripcion</th>
+            <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Estado</th>
+            <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Fecha</th>
+            <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Observaciones</th>
+            <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if items and items|length > 0 %}
+            {% for it in items %}
+            <tr>
+              <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ it.sede_codigo }}</td>
+              <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ it.local or '-' }}</td>
+              <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ it.categoria or '-' }}</td>
+              <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ it.subcategoria or '-' }}</td>
+              <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ it.tipo or '-' }}</td>
+              <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ it.cantidad or 0 }}</td>
+              <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ it.descripcion or '-' }}</td>
+              <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ it.estado or '-' }}</td>
+              <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ it.fecha_relevamiento or '-' }}</td>
+              <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ it.observaciones or '-' }}</td>
+              <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
+                <a class="btn xs" href="{{ url_for('bienes_sede', infra_sede=infra_sede, edit_id=it.id) }}">Editar</a>
+                <form method="post" action="{{ url_for('bienes_sede') }}" style="display:inline;" onsubmit="return confirm('Eliminar bien?');">
+                  <input type="hidden" name="action" value="delete">
+                  <input type="hidden" name="infra_sede" value="{{ infra_sede }}">
+                  <input type="hidden" name="rid" value="{{ it.id }}">
+                  <button class="btn xs danger" type="submit">Eliminar</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="11" style="padding:10px;color:#64748b;">No hay bienes cargados para esta sede.</td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div style="margin-top:10px;padding:10px;border:1px dashed #cbd5e1;border-radius:12px;font-size:12px;color:#64748b;background:#fff;">
+      Selecciona una sede para gestionar bienes asociados.
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+{% endblock %}
+
