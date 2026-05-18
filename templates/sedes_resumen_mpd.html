@@ -29,6 +29,10 @@
     {% if not show_infra %}
     <div id="resumen-inventario-top" style="margin-top:12px;border:1px solid #e5e7eb;border-radius:12px;overflow:auto;background:#fff;">
       <div style="padding:10px 12px;border-bottom:1px solid #e5e7eb;font-weight:700;color:#334155;">Resumen inventario operativo por sede</div>
+      <div style="padding:8px 12px;border-bottom:1px solid #e5e7eb;display:flex;gap:8px;flex-wrap:wrap;font-size:12px;background:#fafafa;">
+        <span class="state info"><strong>Puestos de trabajo (total):</strong> {{ totals.puestos_trabajo or 0 }}</span>
+        <span class="state info"><strong>Luminarias (total):</strong> {{ totals.luminarias_total or 0 }}</span>
+      </div>
       {% if rows and rows|length > 0 %}
       <table style="width:100%;border-collapse:collapse;font-size:12px;">
         <thead style="background:#f1f5f9;">
