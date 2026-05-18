@@ -40,74 +40,76 @@
       <span class="state ok"><strong>Vigentes:</strong> {{ matafuegos_kpi.vigentes or 0 }}</span>
     </div>
 
-    <div style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;background:#fff;padding:10px;">
-      <div style="font-size:13px;font-weight:700;color:#334155;">{{ 'Editar bien' if edit_row else 'Agregar bien' }}</div>
-      <form method="post" style="margin-top:8px;">
-        <input type="hidden" name="action" value="save">
-        <input type="hidden" name="infra_sede" value="{{ infra_sede }}">
-        <input type="hidden" name="rid" value="{{ edit_row.id if edit_row else '' }}">
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;">
-          <div>
-            <label style="font-size:12px;color:#64748b;">Local</label>
-            <input name="local" value="{{ edit_row.local if edit_row else '' }}" placeholder="D01" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+    <details style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;background:#fff;" {% if edit_row %}open{% endif %}>
+      <summary class="btn btn-cargar-bien">{{ 'Editar bien' if edit_row else 'Cargar bien' }}</summary>
+      <div style="padding:10px;">
+        <form method="post" style="margin-top:2px;">
+          <input type="hidden" name="action" value="save">
+          <input type="hidden" name="infra_sede" value="{{ infra_sede }}">
+          <input type="hidden" name="rid" value="{{ edit_row.id if edit_row else '' }}">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;">
+            <div>
+              <label style="font-size:12px;color:#64748b;">Local</label>
+              <input name="local" value="{{ edit_row.local if edit_row else '' }}" placeholder="D01" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+            </div>
+            <div>
+              <label style="font-size:12px;color:#64748b;">Categoria</label>
+              {% set cat_sel = (edit_row.categoria if edit_row else '') %}
+              <select name="categoria" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+                {% for c in categoria_opts %}
+                <option value="{{ c }}" {% if cat_sel == c %}selected{% endif %}>{{ c }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <label style="font-size:12px;color:#64748b;">Subcategoria (opcional)</label>
+              <input name="subcategoria" list="subcats" value="{{ edit_row.subcategoria if edit_row else '' }}" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+              <datalist id="subcats">
+                {% for sc in subcategoria_opts %}
+                <option value="{{ sc }}"></option>
+                {% endfor %}
+              </datalist>
+            </div>
+            <div>
+              <label style="font-size:12px;color:#64748b;">Tipo</label>
+              <input name="tipo" value="{{ edit_row.tipo if edit_row else '' }}" placeholder="Ej: tablero / matafuego / heladera" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+            </div>
+            <div>
+              <label style="font-size:12px;color:#64748b;">Cantidad</label>
+              <input type="number" min="0" step="1" name="cantidad" value="{{ edit_row.cantidad if edit_row else 0 }}" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+            </div>
+            <div>
+              <label style="font-size:12px;color:#64748b;">Estado</label>
+              {% set est_sel = (edit_row.estado if edit_row else '') %}
+              <select name="estado" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+                <option value="">-</option>
+                {% for e in estado_opts %}
+                <option value="{{ e }}" {% if est_sel == e %}selected{% endif %}>{{ e }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <label style="font-size:12px;color:#64748b;">Fecha relevamiento</label>
+              <input type="date" name="fecha_relevamiento" value="{{ edit_row.fecha_relevamiento if edit_row else '' }}" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+            </div>
+            <div style="grid-column:1 / -1;">
+              <label style="font-size:12px;color:#64748b;">Descripcion</label>
+              <input name="descripcion" value="{{ edit_row.descripcion if edit_row else '' }}" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+            </div>
+            <div style="grid-column:1 / -1;">
+              <label style="font-size:12px;color:#64748b;">Observaciones</label>
+              <input name="observaciones" value="{{ edit_row.observaciones if edit_row else '' }}" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+            </div>
           </div>
-          <div>
-            <label style="font-size:12px;color:#64748b;">Categoria</label>
-            {% set cat_sel = (edit_row.categoria if edit_row else '') %}
-            <select name="categoria" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
-              {% for c in categoria_opts %}
-              <option value="{{ c }}" {% if cat_sel == c %}selected{% endif %}>{{ c }}</option>
-              {% endfor %}
-            </select>
+          <div style="margin-top:10px;display:flex;justify-content:flex-end;gap:8px;">
+            {% if edit_row %}
+            <a class="btn" href="{{ url_for('bienes_sede', infra_sede=infra_sede) }}">Cancelar</a>
+            {% endif %}
+            <button class="btn primary" type="submit">{{ 'Guardar cambios' if edit_row else 'Agregar' }}</button>
           </div>
-          <div>
-            <label style="font-size:12px;color:#64748b;">Subcategoria (opcional)</label>
-            <input name="subcategoria" list="subcats" value="{{ edit_row.subcategoria if edit_row else '' }}" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
-            <datalist id="subcats">
-              {% for sc in subcategoria_opts %}
-              <option value="{{ sc }}"></option>
-              {% endfor %}
-            </datalist>
-          </div>
-          <div>
-            <label style="font-size:12px;color:#64748b;">Tipo</label>
-            <input name="tipo" value="{{ edit_row.tipo if edit_row else '' }}" placeholder="Ej: tablero / matafuego / heladera" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
-          </div>
-          <div>
-            <label style="font-size:12px;color:#64748b;">Cantidad</label>
-            <input type="number" min="0" step="1" name="cantidad" value="{{ edit_row.cantidad if edit_row else 0 }}" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
-          </div>
-          <div>
-            <label style="font-size:12px;color:#64748b;">Estado</label>
-            {% set est_sel = (edit_row.estado if edit_row else '') %}
-            <select name="estado" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
-              <option value="">-</option>
-              {% for e in estado_opts %}
-              <option value="{{ e }}" {% if est_sel == e %}selected{% endif %}>{{ e }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div>
-            <label style="font-size:12px;color:#64748b;">Fecha relevamiento</label>
-            <input type="date" name="fecha_relevamiento" value="{{ edit_row.fecha_relevamiento if edit_row else '' }}" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
-          </div>
-          <div style="grid-column:1 / -1;">
-            <label style="font-size:12px;color:#64748b;">Descripcion</label>
-            <input name="descripcion" value="{{ edit_row.descripcion if edit_row else '' }}" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
-          </div>
-          <div style="grid-column:1 / -1;">
-            <label style="font-size:12px;color:#64748b;">Observaciones</label>
-            <input name="observaciones" value="{{ edit_row.observaciones if edit_row else '' }}" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
-          </div>
-        </div>
-        <div style="margin-top:10px;display:flex;justify-content:flex-end;gap:8px;">
-          {% if edit_row %}
-          <a class="btn" href="{{ url_for('bienes_sede', infra_sede=infra_sede) }}">Cancelar</a>
-          {% endif %}
-          <button class="btn primary" type="submit">{{ 'Guardar cambios' if edit_row else 'Agregar' }}</button>
-        </div>
-      </form>
-    </div>
+        </form>
+      </div>
+    </details>
 
     <div style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;overflow:auto;background:#fff;">
       <div style="padding:8px 10px;border-bottom:1px solid #e5e7eb;background:#f8fafc;display:flex;gap:10px;align-items:end;flex-wrap:wrap;">
@@ -248,6 +250,19 @@
 
   .sgi-sedes table tbody tr:hover td {
     background: #f8fafc;
+  }
+
+  .btn-cargar-bien {
+    margin: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+    user-select: none;
+    display: inline-block;
+    list-style: none;
+  }
+
+  .btn-cargar-bien::-webkit-details-marker {
+    display: none;
   }
 </style>
 
