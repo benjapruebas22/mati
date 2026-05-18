@@ -22,7 +22,7 @@
         {% if show_infra %}
         <a class="btn" href="{{ url_for('sedes_resumen_mpd') }}">Resumen sedes</a>
         {% endif %}
-        <a class="btn" href="{{ url_for('depositos_home') }}">GENERAL MPD</a>
+        <a class="btn" href="{{ url_for('depositos_home') }}" title="Stock operativo institucional: banners, camillas, escaleras y elementos protocolares.">GENERAL MPD</a>
       </div>
     </div>
 
@@ -64,10 +64,10 @@
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.aires_total }}</td>
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;font-weight:600;">{{ total_mob }}</td>
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
-              <a class="btn xs" href="{{ url_for('bienes_sede', infra_sede=r.codigo) }}">Ver bienes p/sede</a>
+              <a class="btn xs btn-sede-bienes" href="{{ url_for('bienes_sede', infra_sede=r.codigo) }}">Ver bienes p/sede</a>
             </td>
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
-              <a class="btn xs" href="{{ url_for('infra_analisis', sede=r.codigo) }}#infra-analisis">Análisis depósitos</a>
+              <a class="btn xs btn-sede-analisis" href="{{ url_for('infra_analisis', sede=r.codigo) }}#infra-analisis">Análisis depósitos</a>
             </td>
           </tr>
           {% endfor %}
@@ -715,6 +715,40 @@
     {% endif %}
   </div>
 </section>
+
+<style>
+  #resumen-inventario-top thead th {
+    background: #eef2f7;
+  }
+
+  #resumen-inventario-top tbody tr:hover td {
+    background: #f8fafc;
+  }
+
+  #infra-analisis table tbody tr:hover td {
+    background: #f8fafc;
+  }
+
+  .btn-sede-bienes {
+    background: #f3f4f6 !important;
+    border-color: #d1d5db !important;
+    color: #374151 !important;
+  }
+
+  .btn-sede-bienes:hover {
+    background: #e5e7eb !important;
+  }
+
+  .btn-sede-analisis {
+    background: #e0f2fe !important;
+    border-color: #bae6fd !important;
+    color: #0c4a6e !important;
+  }
+
+  .btn-sede-analisis:hover {
+    background: #bae6fd !important;
+  }
+</style>
 
 <script>
   const filtroSede = document.getElementById("filtroSede");

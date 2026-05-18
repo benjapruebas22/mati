@@ -64,7 +64,7 @@
         <!-- Categoria -->
         <div class="dep-group dep-cat">
           <label>Categoria</label>
-          <select name="categoria">
+          <select name="categoria" id="depCategoria">
             <option value="Herramientas" selected>Herramientas</option>
             <option value="Mobiliario operativo">Mobiliario operativo</option>
             <option value="Elementos protocolares">Elementos protocolares</option>
@@ -73,7 +73,9 @@
 
         <div class="dep-group dep-deposito">
           <label>Subcategoria (opcional)</label>
-          <input type="text" name="subcategoria" placeholder="Ej.: escaleras / banderas / camillas">
+          <input type="text" name="subcategoria" id="depSubcategoria" list="depSubcategoriaList" placeholder="Ej.: escaleras / banderas / camillas">
+          <datalist id="depSubcategoriaList"></datalist>
+          <div class="dep-muted" id="depSubcatHint">Sugerencias segun categoria (editable libremente).</div>
         </div>
 
         <!-- Ítem -->
@@ -598,6 +600,38 @@
 
     input.addEventListener("input", apply);
     if (catFilter) catFilter.addEventListener("change", apply);
+  })();
+
+  (function () {
+    const categoria = document.getElementById("depCategoria");
+    const subcatList = document.getElementById("depSubcategoriaList");
+    const subcatHint = document.getElementById("depSubcatHint");
+    if (!categoria || !subcatList) return;
+
+    const sugerencias = {
+      "Herramientas": ["manuales", "electricas", "mantenimiento", "limpieza"],
+      "Mobiliario operativo": ["camillas", "escaleras", "pizarras", "mobiliario reserva", "muebles moviles"],
+      "Elementos protocolares": ["banderas", "portabanderas", "mastiles", "banners", "actos"]
+    };
+
+    function renderSugerencias() {
+      const cat = categoria.value || "";
+      const lista = sugerencias[cat] || [];
+      subcatList.innerHTML = "";
+      lista.forEach(function (txt) {
+        const opt = document.createElement("option");
+        opt.value = txt;
+        subcatList.appendChild(opt);
+      });
+      if (subcatHint) {
+        subcatHint.textContent = lista.length
+          ? ("Sugerencias: " + lista.join(" · "))
+          : "Sugerencias segun categoria (editable libremente).";
+      }
+    }
+
+    categoria.addEventListener("change", renderSugerencias);
+    renderSugerencias();
   })();
 </script>
 

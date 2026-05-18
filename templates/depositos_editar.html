@@ -22,7 +22,7 @@
         <div class="dep-group dep-cat">
           <label>Categoria</label>
           {% set cat = (reg.categoria or '').lower() %}
-          <select name="categoria">
+          <select name="categoria" id="depCategoriaEdit">
             <option value="Herramientas" {% if cat == 'herramientas' %}selected{% endif %}>Herramientas</option>
             <option value="Mobiliario operativo" {% if cat == 'mobiliario operativo' %}selected{% endif %}>Mobiliario operativo</option>
             <option value="Elementos protocolares" {% if cat == 'elementos protocolares' %}selected{% endif %}>Elementos protocolares</option>
@@ -31,7 +31,9 @@
 
         <div class="dep-group dep-deposito">
           <label>Subcategoria (opcional)</label>
-          <input type="text" name="subcategoria" value="{{ reg.subcategoria or '' }}">
+          <input type="text" name="subcategoria" id="depSubcategoriaEdit" list="depSubcategoriaListEdit" value="{{ reg.subcategoria or '' }}">
+          <datalist id="depSubcategoriaListEdit"></datalist>
+          <div style="font-size:11px;color:#94a3b8;" id="depSubcatHintEdit">Sugerencias segun categoria (editable libremente).</div>
         </div>
 
         <!-- Ítem -->
@@ -127,5 +129,39 @@
   .dep-estado  { flex:0 0 140px; }
   .dep-obs     { flex:2 1 240px; }
 </style>
+
+<script>
+  (function () {
+    const categoria = document.getElementById("depCategoriaEdit");
+    const subcatList = document.getElementById("depSubcategoriaListEdit");
+    const subcatHint = document.getElementById("depSubcatHintEdit");
+    if (!categoria || !subcatList) return;
+
+    const sugerencias = {
+      "Herramientas": ["manuales", "electricas", "mantenimiento", "limpieza"],
+      "Mobiliario operativo": ["camillas", "escaleras", "pizarras", "mobiliario reserva", "muebles moviles"],
+      "Elementos protocolares": ["banderas", "portabanderas", "mastiles", "banners", "actos"]
+    };
+
+    function renderSugerencias() {
+      const cat = categoria.value || "";
+      const lista = sugerencias[cat] || [];
+      subcatList.innerHTML = "";
+      lista.forEach(function (txt) {
+        const opt = document.createElement("option");
+        opt.value = txt;
+        subcatList.appendChild(opt);
+      });
+      if (subcatHint) {
+        subcatHint.textContent = lista.length
+          ? ("Sugerencias: " + lista.join(" · "))
+          : "Sugerencias segun categoria (editable libremente).";
+      }
+    }
+
+    categoria.addEventListener("change", renderSugerencias);
+    renderSugerencias();
+  })();
+</script>
 
 {% endblock %}
