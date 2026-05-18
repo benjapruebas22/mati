@@ -1,576 +1,225 @@
 {% extends "base.html" %}
 {% block content %}
 
-<section class="depositos-main sedes-section">
-
-  <!-- ENCABEZADO -->
-  <header class="section-header dep-head">
-    <div>
-      <h2>Stock operativo general MPD</h2>
-      <p class="section-sub">
-        Bienes institucionales moviles de uso general (no vinculados a una sede fija).
-      </p>
-    </div>
-
-    <div class="dep-head-actions">
-      <span class="badge-soft">SGI · Intendencia</span>
-    </div>
-  </header>
-
-  {# ===== KPIs (sin backend, se calculan en Jinja) ===== #}
-  {% set total_items = (items|length) if items else 0 %}
-  {% set total_cantidad = 0 %}
-  {% if items %}
-  {% for r in items %}
-  {% set total_cantidad = total_cantidad + (r.cantidad or 0) %}
-  {% endfor %}
-  {% endif %}
-  {% set cats_activas = [] %}
-  {% if items %}
-  {% for r in items %}
-  {% if r.categoria and r.categoria not in cats_activas %}{% set _ = cats_activas.append(r.categoria) %}{% endif %}
-  {% endfor %}
-  {% endif %}
-
-  <div class="dep-kpis">
-    <div class="kpi">
-      <div class="kpi-l">Ítems registrados</div>
-      <div class="kpi-v">{{ total_items }}</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-l">Cantidad total</div>
-      <div class="kpi-v">{{ total_cantidad }}</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-l">Categorias activas</div>
-      <div class="kpi-v">{{ cats_activas|length }}</div>
-    </div>
-  </div>
-
-  <!-- ================= ALTA RÁPIDA ================= -->
-  <section class="card-soft dep-card">
-    <div class="dep-header-row">
+<section class="sedes-section sgi-sedes">
+  <div class="cardx" style="padding:12px 14px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;background:#fff;border:1px solid #e5e7eb;padding:10px 12px;border-radius:12px;flex-wrap:wrap;">
       <div>
-        <h3 class="card-title">Agregar ítem</h3>
-        <p class="mini-sub">Carga rápida sin salir de la pantalla.</p>
+        <h2 style="margin:0;font-size:18px;color:#334155;font-weight:600;">Stock operativo general MPD</h2>
+        <div style="font-size:12px;color:#64748b;margin-top:2px;">Bienes institucionales moviles de uso general (no vinculados a una sede fija).</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <a class="btn" href="{{ url_for('sedes_resumen_mpd') }}">Volver resumen</a>
+        <span class="state">SGI - Intendencia</span>
       </div>
     </div>
 
-    <form method="post" action="{{ url_for('depositos_agregar') }}" class="dep-form">
-      <div class="dep-form-row">
-
-        <input type="hidden" name="deposito_codigo" value="GENERAL_MPD">
-
-        <!-- Categoria -->
-        <div class="dep-group dep-cat">
-          <label>Categoria</label>
-          <select name="categoria" id="depCategoria">
-            <option value="Herramientas" selected>Herramientas</option>
-            <option value="Mobiliario operativo">Mobiliario operativo</option>
-            <option value="Elementos protocolares">Elementos protocolares</option>
-          </select>
-        </div>
-
-        <div class="dep-group dep-deposito">
-          <label>Subcategoria (opcional)</label>
-          <input type="text" name="subcategoria" id="depSubcategoria" list="depSubcategoriaList" placeholder="Ej.: escaleras / banderas / camillas">
-          <datalist id="depSubcategoriaList"></datalist>
-          <div class="dep-muted" id="depSubcatHint">Sugerencias segun categoria (editable libremente).</div>
-        </div>
-
-        <!-- Ítem -->
-        <div class="dep-group dep-item">
-          <label>Ítem</label>
-          <input type="text" name="item" placeholder="Ej.: Aire nuevo 4500 fg" required>
-        </div>
-
-        <!-- Cantidad -->
-        <div class="dep-group dep-cant">
-          <label>Cant.</label>
-          <input type="number" name="cantidad" min="0" step="1" value="1">
-        </div>
-
-        <!-- Estado -->
-        <div class="dep-group dep-estado">
-          <label>Estado</label>
-          <select name="estado">
-            <option value="Bueno">Bueno</option>
-            <option value="Regular">Regular</option>
-            <option value="Para reparar">Para reparar</option>
-            <option value="Baja">Baja</option>
-          </select>
-        </div>
-
-        <!-- Obs -->
-        <div class="dep-group dep-obs">
-          <label>Observaciones</label>
-          <input type="text" name="observaciones" placeholder="Ej.: para S06 – falta control / para reparar / etc.">
-        </div>
-
-        <!-- Botón -->
-        <div class="dep-group dep-btn">
-          <label>&nbsp;</label>
-          <button type="submit" class="btn primary btn-add">
-            ➕ Agregar
-          </button>
-        </div>
-      </div>
-    </form>
-  </section>
-
-  <!-- ================= LISTADO ================= -->
-  <section class="card-soft dep-card">
-
-    <div class="dep-header-row dep-list-head">
-      <div>
-        <h3 class="card-title">Listado</h3>
-        <p class="section-sub">
-          Visualizacion unificada por categoria operativa.
-        </p>
-      </div>
-
-      <div class="dep-tools">
-        <select id="depCatFilter" class="dep-filter">
-          <option value="">Todas las categorias</option>
-          <option value="Herramientas">Herramientas</option>
-          <option value="Mobiliario operativo">Mobiliario operativo</option>
-          <option value="Elementos protocolares">Elementos protocolares</option>
-        </select>
-        <div class="searchbox">
-          <span class="sb-ico">🔎</span>
-          <input id="depSearch" type="text" placeholder="Buscar item / categoria / subcategoria / observacion...">
-        </div>
-      </div>
-    </div>
-
+    {% set ns = namespace(total_cantidad=0, cats=[]) %}
     {% if items %}
-    <div class="table-wrapper">
-      <table class="table-soft dep-table" id="depTable">
-        <thead>
+      {% for r in items %}
+        {% set ns.total_cantidad = ns.total_cantidad + (r.cantidad or 0) %}
+        {% set cat_val = (r.categoria or 'Herramientas') %}
+        {% if cat_val not in ns.cats %}
+          {% set _ = ns.cats.append(cat_val) %}
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+
+    <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;font-size:12px;">
+      <span class="state"><strong>Items registrados:</strong> {{ items|length if items else 0 }}</span>
+      <span class="state info"><strong>Cantidad total:</strong> {{ ns.total_cantidad }}</span>
+      <span class="state info"><strong>Categorias activas:</strong> {{ ns.cats|length }}</span>
+    </div>
+
+    <details style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;background:#fff;">
+      <summary class="btn btn-cargar-item">Cargar item</summary>
+      <div style="padding:10px;">
+        <form method="post" action="{{ url_for('depositos_agregar') }}" style="margin-top:2px;">
+          <input type="hidden" name="deposito_codigo" value="GENERAL_MPD">
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;">
+            <div>
+              <label style="font-size:12px;color:#64748b;">Categoria</label>
+              <select name="categoria" id="depCategoria" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+                <option value="Herramientas" selected>Herramientas</option>
+                <option value="Mobiliario operativo">Mobiliario operativo</option>
+                <option value="Elementos protocolares">Elementos protocolares</option>
+              </select>
+            </div>
+
+            <div>
+              <label style="font-size:12px;color:#64748b;">Subcategoria (opcional)</label>
+              <input type="text" name="subcategoria" id="depSubcategoria" list="depSubcategoriaList" placeholder="Ej: escaleras / banderas / camillas" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+              <datalist id="depSubcategoriaList"></datalist>
+              <div id="depSubcatHint" style="font-size:11px;color:#94a3b8;margin-top:2px;">Sugerencias segun categoria (editable libremente).</div>
+            </div>
+
+            <div>
+              <label style="font-size:12px;color:#64748b;">Item</label>
+              <input type="text" name="item" required placeholder="Ej: Aire nuevo 4500 fg" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+            </div>
+
+            <div>
+              <label style="font-size:12px;color:#64748b;">Cantidad</label>
+              <input type="number" name="cantidad" min="0" step="1" value="1" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+            </div>
+
+            <div>
+              <label style="font-size:12px;color:#64748b;">Estado</label>
+              <select name="estado" style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+                <option value="Bueno">Bueno</option>
+                <option value="Regular">Regular</option>
+                <option value="Para reparar">Para reparar</option>
+                <option value="Baja">Baja</option>
+              </select>
+            </div>
+
+            <div style="grid-column:1 / -1;">
+              <label style="font-size:12px;color:#64748b;">Observaciones</label>
+              <input type="text" name="observaciones" placeholder="Ej: para S06 - falta control / para reparar / etc." style="width:100%;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;">
+            </div>
+          </div>
+
+          <div style="margin-top:10px;display:flex;justify-content:flex-end;gap:8px;">
+            <button type="submit" class="btn primary">Agregar</button>
+          </div>
+        </form>
+      </div>
+    </details>
+
+    <div style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;overflow:auto;background:#fff;">
+      <div style="padding:8px 10px;border-bottom:1px solid #e5e7eb;background:#f8fafc;display:flex;gap:10px;align-items:end;justify-content:space-between;flex-wrap:wrap;">
+        <div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap;">
+          <div>
+            <label style="font-size:12px;color:#64748b;">Filtro categoria</label>
+            <select id="depCatFilter" style="padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;min-width:220px;background:#fff;">
+              <option value="">Todas las categorias</option>
+              <option value="Herramientas">Herramientas</option>
+              <option value="Mobiliario operativo">Mobiliario operativo</option>
+              <option value="Elementos protocolares">Elementos protocolares</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;border:1px solid #e5e7eb;background:#fff;min-width:260px;">
+          <input id="depSearch" type="text" placeholder="Buscar item / categoria / subcategoria / observacion..." style="border:none;outline:none;width:100%;font-size:12px;color:#0f172a;background:#fff;">
+        </div>
+      </div>
+
+      {% if items %}
+      <table id="depTable" style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead style="background:#f8fafc;">
           <tr>
-            <th style="min-width:170px;">Subcategoria</th>
-            <th style="width:140px;">Categoria</th>
-            <th>Ítem</th>
-            <th style="width:70px;text-align:center;">Cant.</th>
-            <th style="width:140px;">Estado</th>
-            <th>Observaciones</th>
-            <th style="width:160px;">Acciones</th>
+            <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Subcategoria</th>
+            <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Categoria</th>
+            <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Item</th>
+            <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">Cant.</th>
+            <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Estado</th>
+            <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Observaciones</th>
+            <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">Acciones</th>
           </tr>
         </thead>
         <tbody>
           {% for reg in items %}
-          {% set est = (reg.estado or '').lower() %}
-          <tr class="row"
-            data-text="{{ (reg.subcategoria or '') ~ ' ' ~ (reg.item or '') ~ ' ' ~ (reg.observaciones or '') ~ ' ' ~ (reg.estado or '') ~ ' ' ~ (reg.categoria or '') | lower }}"
-            data-cat="{{ (reg.categoria or '') }}">
-            <td class="dep-col-dep">
-              <div class="dep-strong">
-                {{ reg.subcategoria or '-' }}
-              </div>
-            </td>
-
-            <td>
-              <span class="estado-pill estado-regular">{{ reg.categoria or 'Herramientas' }}</span>
-            </td>
-
-            <td class="dep-col-item">
-              <div class="item-strong">{{ reg.item }}</div>
-            </td>
-
-            <td class="text-center">
-              <span class="qty">{{ reg.cantidad }}</span>
-            </td>
-
-            <td>
-              <span class="estado-pill
-                    {% if est=='bueno' %}estado-bueno{% endif %}
-                    {% if est=='regular' %}estado-regular{% endif %}
-                    {% if est=='para reparar' %}estado-reparar{% endif %}
-                    {% if est=='baja' %}estado-baja{% endif %}">
-                {{ reg.estado or '—' }}
+          {% set cat = (reg.categoria or 'Herramientas') %}
+          {% set cat_key = cat|lower %}
+          {% set est = (reg.estado or '')|lower %}
+          <tr class="row" data-cat="{{ cat }}" data-text="{{ ((reg.subcategoria or '') ~ ' ' ~ (reg.item or '') ~ ' ' ~ (reg.observaciones or '') ~ ' ' ~ (reg.estado or '') ~ ' ' ~ cat)|lower }}">
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ reg.subcategoria or '-' }}</td>
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
+              <span class="cat-badge {% if 'herramient' in cat_key %}cat-herr{% elif 'mobiliario' in cat_key %}cat-mob{% elif 'protocolares' in cat_key %}cat-proto{% else %}cat-otros{% endif %}">
+                {{ cat }}
               </span>
             </td>
-
-            <td class="dep-col-obs">
-              {{ reg.observaciones or '—' }}
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ reg.item }}</td>
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;"><span class="qty-pill">{{ reg.cantidad or 0 }}</span></td>
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
+              <span class="state {% if est == 'bueno' %}ok{% elif est == 'regular' %}warn{% elif est == 'para reparar' %}info{% elif est == 'baja' %}danger{% endif %}">
+                {{ reg.estado or '-' }}
+              </span>
             </td>
-
-            <td class="dep-actions">
-              <a href="{{ url_for('depositos_editar', did=reg.id) }}" class="btn xs outline">
-                Editar
-              </a>
-
-              <form method="post" action="{{ url_for('depositos_borrar', did=reg.id) }}"
-                onsubmit="return confirm('¿Eliminar este registro de stock general MPD?');">
-                <button type="submit" class="btn xs danger">
-                  Borrar
-                </button>
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ reg.observaciones or '-' }}</td>
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
+              <a href="{{ url_for('depositos_editar', did=reg.id) }}" class="btn xs">Editar</a>
+              <form method="post" action="{{ url_for('depositos_borrar', did=reg.id) }}" style="display:inline;" onsubmit="return confirm('Eliminar este registro de stock general MPD?');">
+                <button type="submit" class="btn xs danger">Borrar</button>
               </form>
             </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
-
-      <div id="depEmpty" class="muted" style="display:none;margin-top:10px;">
-        No hay resultados para la búsqueda.
-      </div>
+      <div id="depEmpty" style="display:none;padding:10px;color:#64748b;">No hay resultados para la busqueda.</div>
+      {% else %}
+      <div style="padding:10px;color:#64748b;">Todavia no hay items cargados.</div>
+      {% endif %}
     </div>
-    {% else %}
-    <p class="muted" style="margin-top:8px;">
-      Todavía no hay ítems cargados. Usá el formulario de arriba para comenzar.
-    </p>
-    {% endif %}
-  </section>
-
+  </div>
 </section>
 
 <style>
-  .depositos-main {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  /* header */
-  .dep-head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-  }
-
-  .dep-head-actions {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-
-  .badge-soft {
-    font-size: 11px;
-    padding: 4px 10px;
-    border-radius: 999px;
-    border: 1px solid #e2e8f0;
+  .sgi-sedes table tbody tr:hover td {
     background: #f8fafc;
-    color: #64748b;
-    white-space: nowrap;
   }
 
-  /* kpis */
-  .dep-kpis {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(160px, 1fr));
-    gap: 10px;
-  }
-
-  .kpi {
-    border: 1px solid #e2e8f0;
-    background: #ffffff;
-    border-radius: 16px;
-    padding: 10px 12px;
-  }
-
-  .kpi-l {
-    font-size: 11px;
-    color: #64748b;
-  }
-
-  .kpi-v {
-    margin-top: 4px;
-    font-size: 18px;
-    font-weight: 900;
-    color: #0f172a;
-  }
-
-  /* cards */
-  .dep-card {
-    margin-top: 4px;
-  }
-
-  .card-soft {
-    border-radius: 16px;
-    border: 1px solid #e2e8f0;
-    background: #ffffff;
-    padding: 12px 14px;
-  }
-
-  .dep-header-row {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 6px;
-  }
-
-  .card-title {
-    margin: 0;
-    font-size: 15px;
-  }
-
-  .section-sub {
-    margin: 0;
-    font-size: 13px;
-    color: #64748b;
-  }
-
-  .mini-sub {
-    margin: 2px 0 0;
-    font-size: 12px;
-    color: #94a3b8;
-  }
-
-  /* tools */
-  .dep-tools {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-
-  .searchbox {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 10px;
-    border-radius: 999px;
-    border: 1px solid #e2e8f0;
-    background: #fff;
-    min-width: 280px;
-  }
-
-  .dep-filter {
-    border: 1px solid #e2e8f0;
-    border-radius: 999px;
-    padding: 6px 10px;
-    background: #fff;
-    font-size: 12px;
-    color: #0f172a;
-  }
-
-  .sb-ico {
-    font-size: 12px;
-    color: #94a3b8;
-  }
-
-  .searchbox input {
-    border: none;
-    outline: none;
-    width: 100%;
-    font-size: 12.5px;
-    color: #0f172a;
-  }
-
-  /* form */
-  .dep-form {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .dep-form-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .dep-group {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    font-size: 12px;
-  }
-
-  .dep-group label {
-    color: #64748b;
-  }
-
-  .dep-group select,
-  .dep-group input {
-    font-size: 13px;
-    padding: 6px 10px;
-    border-radius: 12px;
-    border: 1px solid #e2e8f0;
-    min-width: 0;
-    background: #fff;
-  }
-
-  .dep-deposito {
-    flex: 1 1 240px;
-  }
-
-  .dep-cat {
-    flex: 0 0 160px;
-  }
-
-  .dep-item {
-    flex: 2 1 300px;
-  }
-
-  .dep-cant {
-    flex: 0 0 90px;
-    max-width: 100px;
-  }
-
-  .dep-estado {
-    flex: 0 0 160px;
-  }
-
-  .dep-obs {
-    flex: 2 1 260px;
-  }
-
-  .dep-btn {
-    flex: 0 0 120px;
-    align-self: flex-end;
-  }
-
-  .btn-add {
-    padding: 10px 14px;
-    border-radius: 999px;
-  }
-
-  /* table */
-  .table-wrapper {
-    overflow: auto;
-    border-radius: 14px;
-    border: 1px solid #e2e8f0;
-  }
-
-  .dep-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-  }
-
-  .dep-table thead th {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    background: #f8fafc;
-    border-bottom: 1px solid #e2e8f0;
-    font-size: 12px;
-    text-align: left;
-    padding: 10px 10px;
-  }
-
-  .dep-table tbody td {
-    font-size: 12px;
-    padding: 10px 10px;
-    border-bottom: 1px solid #eef2f7;
-    vertical-align: middle;
-    background: #fff;
-  }
-
-  .dep-table tbody tr:nth-child(even) td {
-    background: #fcfdff;
-  }
-
-  .dep-table tbody tr:hover td {
-    background: #f1f5ff;
-  }
-
-  .text-center {
-    text-align: center;
-  }
-
-  .dep-strong {
-    font-weight: 800;
-    color: #0f172a;
-  }
-
-  .dep-muted {
-    font-size: 11px;
-    color: #94a3b8;
-    margin-top: 2px;
-  }
-
-  .item-strong {
-    font-weight: 700;
-    color: #0f172a;
-  }
-
-  .qty {
+  .btn-cargar-item {
+    margin: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+    user-select: none;
     display: inline-block;
-    min-width: 32px;
-    padding: 2px 8px;
-    border-radius: 999px;
-    border: 1px solid #e2e8f0;
-    background: #fff;
-    font-weight: 800;
+    list-style: none;
   }
 
-  .dep-actions {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    justify-content: flex-start;
+  .btn-cargar-item::-webkit-details-marker {
+    display: none;
   }
 
-  .btn.xs {
-    padding: 3px 10px;
-    font-size: 11px;
-    border-radius: 999px;
-  }
-
-  .btn.danger {
-    background: #fee2e2;
-    border: 1px solid #fecaca;
-    color: #b91c1c;
-  }
-
-  .btn.danger:hover {
-    background: #fecaca;
-  }
-
-  .estado-pill {
+  .cat-badge {
     display: inline-block;
     padding: 3px 10px;
     border-radius: 999px;
     font-size: 11px;
-    font-weight: 800;
-    border: 1px solid rgba(15, 23, 42, .08);
+    font-weight: 600;
+    border: 1px solid transparent;
   }
 
-  .estado-bueno {
-    background: #dcfce7;
-    color: #166534;
-  }
-
-  .estado-regular {
+  .cat-herr {
     background: #fef9c3;
+    border-color: #fde68a;
     color: #854d0e;
   }
 
-  .estado-reparar {
-    background: #e0f2fe;
-    color: #0369a1;
+  .cat-mob {
+    background: #dbeafe;
+    border-color: #bfdbfe;
+    color: #1e3a8a;
   }
 
-  .estado-baja {
-    background: #fee2e2;
-    color: #b91c1c;
+  .cat-proto {
+    background: #ede9fe;
+    border-color: #ddd6fe;
+    color: #5b21b6;
   }
 
-  @media (max-width:900px) {
-    .dep-kpis {
-      grid-template-columns: 1fr;
-    }
+  .cat-otros {
+    background: #eef2f7;
+    border-color: #e5e7eb;
+    color: #374151;
+  }
 
-    .searchbox {
-      min-width: 220px;
-    }
-
-    .dep-actions {
-      flex-wrap: wrap;
-    }
-
-    .dep-cat {
-      flex: 1 1 180px;
-    }
+  .qty-pill {
+    display: inline-block;
+    min-width: 28px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    font-weight: 700;
   }
 </style>
 
 <script>
-  // Búsqueda rápida en tabla (front-end)
   (function () {
     const input = document.getElementById("depSearch");
     const catFilter = document.getElementById("depCatFilter");
@@ -585,7 +234,7 @@
       const cat = (catFilter && catFilter.value) ? catFilter.value : "";
       let visible = 0;
 
-      rows.forEach(tr => {
+      rows.forEach((tr) => {
         const t = (tr.getAttribute("data-text") || "");
         const c = (tr.getAttribute("data-cat") || "");
         const okText = !q || t.includes(q);
@@ -618,14 +267,14 @@
       const cat = categoria.value || "";
       const lista = sugerencias[cat] || [];
       subcatList.innerHTML = "";
-      lista.forEach(function (txt) {
+      lista.forEach((txt) => {
         const opt = document.createElement("option");
         opt.value = txt;
         subcatList.appendChild(opt);
       });
       if (subcatHint) {
         subcatHint.textContent = lista.length
-          ? ("Sugerencias: " + lista.join(" · "))
+          ? ("Sugerencias: " + lista.join(" - "))
           : "Sugerencias segun categoria (editable libremente).";
       }
     }
