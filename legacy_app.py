@@ -107,7 +107,7 @@ def ensure_auth_tables(con):
         ("mvea", "Mauro Vea Murguia", ROLE_INT_VEHICULOS),
         ("eperez", "Emiliano Perez de la Puente", ROLE_FULL),
         ("cvidaurre", "Carlos Vidaurre", ROLE_DASH_SOLO),
-        ("mduran", "Marcos Duran", ROLE_DASH_VEHICULOS),
+        ("mduran", "Marcos Duran", ROLE_FULL),
         ("nguerrero", "Nestor Guerrero", ROLE_DASH_SOLO),
         ("mflores", "Manuel Flores", ROLE_DASH_VEHICULOS),
         ("mabatedaga", "Maximiliano Abatedaga", ROLE_FULL),
@@ -3585,6 +3585,7 @@ def bienes_sede():
         """, (edit_id, infra_sede)).fetchone()
 
     items = []
+    items_unificados = []
     matafuegos_rows = []
     matafuegos_kpi = {
         "total": 0,
@@ -3681,6 +3682,81 @@ def bienes_sede():
             elif estado_vto_key == "invalida":
                 matafuegos_kpi["fecha_invalida"] += 1
 
+    # Unificar vista: bienes manuales + SST automatico (matafuegos)
+    for it in items:
+        try:
+            rid = int(it["id"])
+        except Exception:
+            rid = None
+        items_unificados.append({
+            "id": rid,
+            "sede_codigo": str(it["sede_codigo"] or "").strip().upper(),
+            "local": str(it["local"] or "").strip().upper(),
+            "categoria": str(it["categoria"] or "").strip() or "Otros",
+            "subcategoria": str(it["subcategoria"] or "").strip(),
+            "tipo": str(it["tipo"] or "").strip(),
+            "cantidad": int(it["cantidad"] or 0),
+            "descripcion": str(it["descripcion"] or "").strip(),
+            "estado": str(it["estado"] or "").strip(),
+            "fecha_relevamiento": str(it["fecha_relevamiento"] or "").strip(),
+            "observaciones": str(it["observaciones"] or "").strip(),
+            "es_auto": 0,
+            "origen": "manual",
+        })
+
+    for mf in matafuegos_rows:
+        local = normalizar_local_clave(mf.get("codigo_local") or "")
+        serie = str(mf.get("numero_serie") or "").strip()
+        ubic = str(mf.get("ubicacion") or "").strip()
+        tipo = str(mf.get("tipo") or "").strip()
+        kg = str(mf.get("capacidad_kg") or "").strip()
+        rec = str(mf.get("fecha_recarga") or "").strip()
+        estado_vto = str(mf.get("estado_vto") or "").strip()
+        f_vto = str(mf.get("fecha_vencimiento") or "").strip()
+        dias = mf.get("dias_restantes")
+
+        desc_parts = []
+        if serie:
+            desc_parts.append(f"Serie {serie}")
+        if ubic:
+            desc_parts.append(ubic)
+        if kg:
+            desc_parts.append(f"{kg}kg")
+        descripcion = " | ".join(desc_parts) if desc_parts else "Matafuego"
+
+        obs_parts = []
+        if rec:
+            obs_parts.append(f"Recarga {rec}")
+        if dias is not None:
+            obs_parts.append(f"Dias {dias}")
+        observ = " · ".join(obs_parts)
+
+        items_unificados.append({
+            "id": None,
+            "sede_codigo": infra_sede,
+            "local": local or "NONE",
+            "categoria": "SST",
+            "subcategoria": "Matafuegos",
+            "tipo": tipo or "Matafuego",
+            "cantidad": 1,
+            "descripcion": descripcion,
+            "estado": estado_vto,
+            "fecha_relevamiento": f_vto,
+            "observaciones": observ,
+            "es_auto": 1,
+            "origen": "sst_auto",
+            "estado_vto_key": str(mf.get("estado_vto_key") or "").strip(),
+        })
+
+    items_unificados.sort(
+        key=lambda x: (
+            str(x.get("local") or ""),
+            str(x.get("categoria") or ""),
+            0 if int(x.get("es_auto") or 0) == 1 else 1,
+            -(int(x.get("id") or 0)),
+        )
+    )
+
     sede_nombre = ""
     for s in sedes_rows:
         if (s["codigo"] or "").upper() == infra_sede:
@@ -3694,6 +3770,7 @@ def bienes_sede():
         infra_sede=infra_sede,
         sede_nombre=sede_nombre,
         items=items,
+        items_unificados=items_unificados,
         edit_row=edit_row,
         categoria_opts=categoria_opts,
         subcategoria_opts=subcategoria_opts,

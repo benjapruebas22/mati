@@ -32,72 +32,12 @@
     {% if infra_sede %}
     <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;font-size:12px;">
       <span class="state info"><strong>{{ infra_sede }}</strong> - {{ sede_nombre }}</span>
-      <span class="state"><strong>Registros:</strong> {{ items|length }}</span>
-    </div>
-
-    <div style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;background:#fff;padding:10px;">
-      <div style="font-size:13px;font-weight:700;color:#334155;">SST de la sede · Matafuegos (automático)</div>
-      <div style="font-size:11px;color:#64748b;margin-top:2px;">Fuente: tabla matafuegos_sede (no requiere carga manual en esta pantalla).</div>
-      <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;font-size:12px;">
-        <span class="state info"><strong>Total:</strong> {{ matafuegos_kpi.total or 0 }}</span>
-        <span class="state danger"><strong>Vencidos:</strong> {{ matafuegos_kpi.vencidos or 0 }}</span>
-        <span class="state warn"><strong>Hoy:</strong> {{ matafuegos_kpi.vence_hoy or 0 }}</span>
-        <span class="state warn"><strong>&lt;=45d:</strong> {{ matafuegos_kpi.vence_45d or 0 }}</span>
-        <span class="state ok"><strong>Vigentes:</strong> {{ matafuegos_kpi.vigentes or 0 }}</span>
-        <span class="state"><strong>Sin fecha:</strong> {{ matafuegos_kpi.sin_fecha or 0 }}</span>
-      </div>
-      <div style="margin-top:8px;overflow:auto;border:1px solid #e5e7eb;border-radius:10px;">
-        <table style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;">
-          <thead style="background:#f1f5f9;">
-            <tr>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Local</th>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Ubicación</th>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Serie</th>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Tipo</th>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">Kg</th>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">Recarga</th>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">Vencimiento</th>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">Días</th>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% if matafuegos_rows and matafuegos_rows|length > 0 %}
-              {% for mf in matafuegos_rows %}
-              <tr>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ mf.codigo_local or '-' }}</td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ mf.ubicacion or '-' }}</td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ mf.numero_serie or '-' }}</td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ mf.tipo or '-' }}</td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ mf.capacidad_kg or '-' }}</td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ mf.fecha_recarga or '-' }}</td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ mf.fecha_vencimiento or '-' }}</td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{% if mf.dias_restantes is not none %}{{ mf.dias_restantes }}{% else %}-{% endif %}</td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
-                  {% if mf.estado_vto_key == 'vencido' %}
-                    <span class="state danger">Vencido</span>
-                  {% elif mf.estado_vto_key == 'hoy' %}
-                    <span class="state warn">Vence hoy</span>
-                  {% elif mf.estado_vto_key == '45d' %}
-                    <span class="state warn">Vence <=45d</span>
-                  {% elif mf.estado_vto_key == 'vigente' %}
-                    <span class="state ok">Vigente</span>
-                  {% elif mf.estado_vto_key == 'sin_fecha' %}
-                    <span class="state">Sin fecha</span>
-                  {% else %}
-                    <span class="state">Fecha invalida</span>
-                  {% endif %}
-                </td>
-              </tr>
-              {% endfor %}
-            {% else %}
-              <tr>
-                <td colspan="9" style="padding:10px;color:#64748b;">No hay matafuegos activos cargados para esta sede.</td>
-              </tr>
-            {% endif %}
-          </tbody>
-        </table>
-      </div>
+      <span class="state"><strong>Registros:</strong> {{ items_unificados|length }}</span>
+      <span class="state info"><strong>SST total:</strong> {{ matafuegos_kpi.total or 0 }}</span>
+      <span class="state danger"><strong>Vencidos:</strong> {{ matafuegos_kpi.vencidos or 0 }}</span>
+      <span class="state warn"><strong>Hoy:</strong> {{ matafuegos_kpi.vence_hoy or 0 }}</span>
+      <span class="state warn"><strong><=45d:</strong> {{ matafuegos_kpi.vence_45d or 0 }}</span>
+      <span class="state ok"><strong>Vigentes:</strong> {{ matafuegos_kpi.vigentes or 0 }}</span>
     </div>
 
     <div style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;background:#fff;padding:10px;">
@@ -187,8 +127,8 @@
           </tr>
         </thead>
         <tbody>
-          {% if items and items|length > 0 %}
-            {% for it in items %}
+          {% if items_unificados and items_unificados|length > 0 %}
+            {% for it in items_unificados %}
             <tr>
               <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ it.sede_codigo }}</td>
               <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ it.local or '-' }}</td>
@@ -202,17 +142,37 @@
               <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ it.tipo or '-' }}</td>
               <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ it.cantidad or 0 }}</td>
               <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ it.descripcion or '-' }}</td>
-              <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ it.estado or '-' }}</td>
+              <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
+                {% if it.es_auto %}
+                  {% if it.estado_vto_key == 'vencido' %}
+                    <span class="state danger">Vencido</span>
+                  {% elif it.estado_vto_key == 'hoy' %}
+                    <span class="state warn">Vence hoy</span>
+                  {% elif it.estado_vto_key == '45d' %}
+                    <span class="state warn">Vence <=45d</span>
+                  {% elif it.estado_vto_key == 'vigente' %}
+                    <span class="state ok">Vigente</span>
+                  {% else %}
+                    <span class="state">{{ it.estado or '-' }}</span>
+                  {% endif %}
+                {% else %}
+                  {{ it.estado or '-' }}
+                {% endif %}
+              </td>
               <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ it.fecha_relevamiento or '-' }}</td>
               <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ it.observaciones or '-' }}</td>
               <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
-                <a class="btn xs" href="{{ url_for('bienes_sede', infra_sede=infra_sede, edit_id=it.id) }}">Editar</a>
-                <form method="post" action="{{ url_for('bienes_sede') }}" style="display:inline;" onsubmit="return confirm('Eliminar bien?');">
-                  <input type="hidden" name="action" value="delete">
-                  <input type="hidden" name="infra_sede" value="{{ infra_sede }}">
-                  <input type="hidden" name="rid" value="{{ it.id }}">
-                  <button class="btn xs danger" type="submit">Eliminar</button>
-                </form>
+                {% if it.es_auto %}
+                  <span class="state">Auto</span>
+                {% else %}
+                  <a class="btn xs" href="{{ url_for('bienes_sede', infra_sede=infra_sede, edit_id=it.id) }}">Editar</a>
+                  <form method="post" action="{{ url_for('bienes_sede') }}" style="display:inline;" onsubmit="return confirm('Eliminar bien?');">
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="infra_sede" value="{{ infra_sede }}">
+                    <input type="hidden" name="rid" value="{{ it.id }}">
+                    <button class="btn xs danger" type="submit">Eliminar</button>
+                  </form>
+                {% endif %}
               </td>
             </tr>
             {% endfor %}

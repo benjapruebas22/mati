@@ -30,7 +30,7 @@ def register_auth(bp, get_db, ensure_auth_tables, default_redirect_for_role):
             row = con.execute("""
                 SELECT id, username, full_name, role, password_hash, must_change, activo
                 FROM usuarios
-                WHERE username = ?
+                WHERE LOWER(COALESCE(username,'')) = LOWER(?)
             """, (username,)).fetchone()
 
             if not row or not row["activo"]:
