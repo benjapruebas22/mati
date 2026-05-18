@@ -3585,6 +3585,16 @@ def bienes_sede():
         """, (edit_id, infra_sede)).fetchone()
 
     items = []
+    matafuegos_rows = []
+    matafuegos_kpi = {
+        "total": 0,
+        "vencidos": 0,
+        "vence_hoy": 0,
+        "vence_45d": 0,
+        "vigentes": 0,
+        "sin_fecha": 0,
+        "fecha_invalida": 0,
+    }
     if infra_sede:
         items = con.execute("""
             SELECT *
@@ -3596,6 +3606,80 @@ def bienes_sede():
                 COALESCE(local, '') ASC,
                 id DESC
         """, (infra_sede,)).fetchall()
+
+        mf_raw = con.execute("""
+            SELECT
+                UPPER(COALESCE(piso,'')) AS piso,
+                UPPER(COALESCE(codigo_local,'')) AS codigo_local,
+                COALESCE(ubicacion,'') AS ubicacion,
+                COALESCE(numero_serie,'') AS numero_serie,
+                COALESCE(tipo,'') AS tipo,
+                COALESCE(capacidad_kg,'') AS capacidad_kg,
+                COALESCE(estado,'') AS estado,
+                COALESCE(fecha_recarga,'') AS fecha_recarga,
+                COALESCE(fecha_vencimiento,'') AS fecha_vencimiento
+            FROM matafuegos_sede
+            WHERE UPPER(COALESCE(cod_sede,'')) = ?
+              AND COALESCE(activo,1)=1
+            ORDER BY
+                UPPER(COALESCE(codigo_local,'')) ASC,
+                COALESCE(ubicacion,'') ASC,
+                COALESCE(numero_serie,'') ASC
+        """, (infra_sede,)).fetchall()
+
+        hoy = date.today()
+        for mf in mf_raw:
+            f_vto = str(mf["fecha_vencimiento"] or "").strip()
+            dias_restantes = None
+            estado_vto = "Sin fecha"
+            estado_vto_key = "sin_fecha"
+            if f_vto:
+                try:
+                    fdate = datetime.strptime(f_vto, "%Y-%m-%d").date()
+                    dias_restantes = (fdate - hoy).days
+                    if dias_restantes < 0:
+                        estado_vto = "Vencido"
+                        estado_vto_key = "vencido"
+                    elif dias_restantes == 0:
+                        estado_vto = "Vence hoy"
+                        estado_vto_key = "hoy"
+                    elif dias_restantes <= 45:
+                        estado_vto = "Vence <=45d"
+                        estado_vto_key = "45d"
+                    else:
+                        estado_vto = "Vigente"
+                        estado_vto_key = "vigente"
+                except Exception:
+                    estado_vto = "Fecha invalida"
+                    estado_vto_key = "invalida"
+
+            matafuegos_rows.append({
+                "piso": str(mf["piso"] or "").strip(),
+                "codigo_local": str(mf["codigo_local"] or "").strip(),
+                "ubicacion": str(mf["ubicacion"] or "").strip(),
+                "numero_serie": str(mf["numero_serie"] or "").strip(),
+                "tipo": str(mf["tipo"] or "").strip(),
+                "capacidad_kg": str(mf["capacidad_kg"] or "").strip(),
+                "estado": str(mf["estado"] or "").strip(),
+                "fecha_recarga": str(mf["fecha_recarga"] or "").strip(),
+                "fecha_vencimiento": f_vto,
+                "dias_restantes": dias_restantes,
+                "estado_vto": estado_vto,
+                "estado_vto_key": estado_vto_key,
+            })
+            matafuegos_kpi["total"] += 1
+            if estado_vto_key == "vencido":
+                matafuegos_kpi["vencidos"] += 1
+            elif estado_vto_key == "hoy":
+                matafuegos_kpi["vence_hoy"] += 1
+            elif estado_vto_key == "45d":
+                matafuegos_kpi["vence_45d"] += 1
+            elif estado_vto_key == "vigente":
+                matafuegos_kpi["vigentes"] += 1
+            elif estado_vto_key == "sin_fecha":
+                matafuegos_kpi["sin_fecha"] += 1
+            elif estado_vto_key == "invalida":
+                matafuegos_kpi["fecha_invalida"] += 1
 
     sede_nombre = ""
     for s in sedes_rows:
@@ -3614,6 +3698,8 @@ def bienes_sede():
         categoria_opts=categoria_opts,
         subcategoria_opts=subcategoria_opts,
         estado_opts=estado_opts,
+        matafuegos_rows=matafuegos_rows,
+        matafuegos_kpi=matafuegos_kpi,
     )
 
 
