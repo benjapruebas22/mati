@@ -3587,6 +3587,8 @@ def bienes_sede():
     items = []
     items_unificados = []
     matafuegos_rows = []
+    puestos_trabajo_sede = 0
+    luminarias_total_sede = 0
     matafuegos_kpi = {
         "total": 0,
         "vencidos": 0,
@@ -3607,6 +3609,28 @@ def bienes_sede():
                 COALESCE(local, '') ASC,
                 id DESC
         """, (infra_sede,)).fetchall()
+        try:
+            puestos_trabajo_sede = int(con.execute("""
+                SELECT COALESCE(SUM(COALESCE(puestos_trabajo,0)),0)
+                FROM luminarias_sede
+                WHERE UPPER(COALESCE(codigo_sede,'')) = ?
+            """, (infra_sede,)).fetchone()[0] or 0)
+        except Exception:
+            puestos_trabajo_sede = 0
+
+        try:
+            luminarias_total_sede = int(con.execute("""
+                SELECT COALESCE(SUM(
+                    COALESCE(tubo_led_fria,0) +
+                    COALESCE(tubo_led_calido,0) +
+                    COALESCE(foco_comun,0) +
+                    COALESCE(panel_led,0)
+                ),0)
+                FROM luminarias_sede
+                WHERE UPPER(COALESCE(codigo_sede,'')) = ?
+            """, (infra_sede,)).fetchone()[0] or 0)
+        except Exception:
+            luminarias_total_sede = 0
 
         mf_raw = con.execute("""
             SELECT
@@ -3777,6 +3801,8 @@ def bienes_sede():
         estado_opts=estado_opts,
         matafuegos_rows=matafuegos_rows,
         matafuegos_kpi=matafuegos_kpi,
+        puestos_trabajo_sede=puestos_trabajo_sede,
+        luminarias_total_sede=luminarias_total_sede,
     )
 
 

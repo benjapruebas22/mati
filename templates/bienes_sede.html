@@ -33,6 +33,8 @@
     <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;font-size:12px;">
       <span class="state info"><strong>{{ infra_sede }}</strong> - {{ sede_nombre }}</span>
       <span class="state"><strong>Registros:</strong> {{ items_unificados|length }}</span>
+      <span class="state info"><strong>Puestos de trabajo (sede):</strong> {{ puestos_trabajo_sede or 0 }}</span>
+      <span class="state info"><strong>Luminarias (sede):</strong> {{ luminarias_total_sede or 0 }}</span>
       <span class="state info"><strong>SST total:</strong> {{ matafuegos_kpi.total or 0 }}</span>
       <span class="state danger"><strong>Vencidos:</strong> {{ matafuegos_kpi.vencidos or 0 }}</span>
       <span class="state warn"><strong>Hoy:</strong> {{ matafuegos_kpi.vence_hoy or 0 }}</span>
