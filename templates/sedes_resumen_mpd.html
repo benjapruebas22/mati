@@ -155,6 +155,72 @@
         </ul>
       </details>
 
+      <div style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;overflow:auto;background:#fff;">
+        <div style="padding:10px 12px;border-bottom:1px solid #e5e7eb;font-weight:700;color:#334155;">Resumen por sede</div>
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead style="background:#f8fafc;">
+            <tr>
+              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Sede</th>
+              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">Depósitos</th>
+              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">Razonables</th>
+              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">Bajo estándar</th>
+              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">Altos</th>
+              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">Revisar</th>
+              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if infra_resumen_sede and infra_resumen_sede|length > 0 %}
+              {% for rs in infra_resumen_sede %}
+              <tr>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>{{ rs.sede }}</strong> - {{ rs.sede_nombre }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ rs.total_depositos }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ rs.razonable }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ rs.bajo_estandar }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ rs.alto }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ rs.revisar }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
+                  <a class="btn xs" href="{{ url_for('sedes_resumen_mpd', infra_sede=rs.sede) }}#infra-analisis">Ver análisis</a>
+                </td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="7" style="padding:10px;color:#64748b;">No hay resumen por sede para los filtros actuales.</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if infra_sede %}
+      {% set ns = namespace(total=0,bajo=0,alto=0,cap=0,res=0,defi=0,rev=0,noap=0,raz=0) %}
+      {% for r in infra_rows %}
+        {% set rop = r.resultado_operativo or r.estado_general %}
+        {% set ns.total = ns.total + 1 %}
+        {% if rop == 'Bajo estandar' %}{% set ns.bajo = ns.bajo + 1 %}{% endif %}
+        {% if rop == 'Alto' %}{% set ns.alto = ns.alto + 1 %}{% endif %}
+        {% if rop == 'Capacidad disponible' %}{% set ns.cap = ns.cap + 1 %}{% endif %}
+        {% if rop == 'Reserva funcional' %}{% set ns.res = ns.res + 1 %}{% endif %}
+        {% if rop == 'Deficit espacial' %}{% set ns.defi = ns.defi + 1 %}{% endif %}
+        {% if rop.startswith('Revisar') %}{% set ns.rev = ns.rev + 1 %}{% endif %}
+        {% if rop == 'No aplica' %}{% set ns.noap = ns.noap + 1 %}{% endif %}
+        {% if rop in ['Razonable', 'Puesto compartido', 'Cubierto estructuralmente'] %}{% set ns.raz = ns.raz + 1 %}{% endif %}
+      {% endfor %}
+
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;font-size:12px;">
+        <span class="state info"><strong>{{ infra_sede }}</strong></span>
+        <span class="state info"><strong>Depósitos totales:</strong> {{ ns.total }}</span>
+        <span class="state warn"><strong>Bajo estándar:</strong> {{ ns.bajo }}</span>
+        <span class="state danger"><strong>Alto:</strong> {{ ns.alto }}</span>
+        <span class="state"><strong>Capacidad disponible:</strong> {{ ns.cap }}</span>
+        <span class="state"><strong>Reserva funcional:</strong> {{ ns.res }}</span>
+        <span class="state warn"><strong>Déficit espacial:</strong> {{ ns.defi }}</span>
+        <span class="state"><strong>Revisar:</strong> {{ ns.rev }}</span>
+        <span class="state"><strong>No aplica:</strong> {{ ns.noap }}</span>
+        <span class="state ok"><strong>Razonables:</strong> {{ ns.raz }}</span>
+      </div>
+
       <div style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;overflow:auto;">
         <table style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;">
           <thead style="background:#f8fafc;">
@@ -233,6 +299,11 @@
           </tbody>
         </table>
       </div>
+      {% else %}
+      <div style="margin-top:10px;padding:10px;border:1px dashed #cbd5e1;border-radius:12px;font-size:12px;color:#64748b;background:#fff;">
+        Selecciona una sede en <strong>Resumen por sede</strong> para ver solo los depósitos de esa sede.
+      </div>
+      {% endif %}
 
       {% if infra_detalle_row %}
       <div id="infra-detalle-modal" style="position:fixed;inset:0;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:18px;z-index:1200;">
@@ -271,83 +342,40 @@
       </div>
       {% endif %}
 
-      <div style="margin-top:12px;border:1px solid #e5e7eb;border-radius:12px;overflow:auto;background:#fff;">
-        <table style="width:100%;border-collapse:collapse;font-size:12px;">
-          <thead style="background:#f8fafc;">
-            <tr>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Sede</th>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">Depositos analizados</th>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">Sin criterio</th>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">No aplica</th>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">Especial</th>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">Razonables</th>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">Bajo estandar</th>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">Altos</th>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">Revisar</th>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Principales faltantes</th>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Posibles excedentes</th>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Conclusion</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% if infra_resumen_sede and infra_resumen_sede|length > 0 %}
-              {% for rs in infra_resumen_sede %}
+      <details style="margin-top:12px;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;background:#fff;">
+        <summary style="cursor:pointer;padding:10px 12px;font-size:13px;font-weight:700;color:#334155;">Tabla de criterios (referencia)</summary>
+        <div style="overflow:auto;border-top:1px solid #e5e7eb;">
+          <table style="width:100%;border-collapse:collapse;font-size:12px;">
+            <thead style="background:#f8fafc;">
               <tr>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>{{ rs.sede }}</strong> - {{ rs.sede_nombre }}</td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ rs.total_depositos }}</td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ rs.sin_criterio }}</td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ rs.no_aplica }}</td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ rs.especial }}</td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ rs.razonable }}</td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ rs.bajo_estandar }}</td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ rs.alto }}</td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ rs.revisar }}</td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ rs.principales_faltantes }}</td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ rs.posibles_excedentes }}</td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ rs.conclusion }}</td>
+                <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Criterio</th>
+                <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Esc prof</th>
+                <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Mesa PC</th>
+                <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Giratoria</th>
+                <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Fija</th>
+                <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Armario/Biblio</th>
+                <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Obs</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for cr in infra_criterios_ref %}
+              <tr>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>{{ cr.codigo }}</strong> - {{ cr.nombre }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ cr.esc_prof }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ cr.mesa_pc }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ cr.giratoria }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ cr.fija }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ cr.armario }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ cr.obs }}</td>
               </tr>
               {% endfor %}
-            {% else %}
-              <tr>
-                <td colspan="12" style="padding:10px;color:#64748b;">No hay resumen por sede para los filtros actuales.</td>
-              </tr>
-            {% endif %}
-          </tbody>
-        </table>
-      </div>
-
-      <div style="margin-top:12px;border:1px solid #e5e7eb;border-radius:12px;overflow:auto;background:#fff;">
-        <div style="padding:10px 12px;border-bottom:1px solid #e5e7eb;font-weight:700;color:#334155;">Referencia criterios</div>
-        <table style="width:100%;border-collapse:collapse;font-size:12px;">
-          <thead style="background:#f8fafc;">
-            <tr>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Criterio</th>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Esc prof</th>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Mesa PC</th>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Giratoria</th>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Fija</th>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Armario/Biblio</th>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Obs</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for cr in infra_criterios_ref %}
-            <tr>
-              <td style="padding:8px;border-bottom:1px solid #e5e7eb;"><strong>{{ cr.codigo }}</strong> - {{ cr.nombre }}</td>
-              <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ cr.esc_prof }}</td>
-              <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ cr.mesa_pc }}</td>
-              <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ cr.giratoria }}</td>
-              <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ cr.fija }}</td>
-              <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ cr.armario }}</td>
-              <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ cr.obs }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+            </tbody>
+          </table>
+        </div>
+      </details>
 
       <div id="infra-forms" style="margin-top:12px;display:grid;grid-template-columns:1fr;gap:12px;">
-        <details open>
+        <details>
           <summary style="cursor:pointer;font-size:13px;font-weight:700;color:#334155;">Criterios estandar por deposito/oficina (editable)</summary>
           <form method="post" style="margin-top:8px;border:1px solid #e5e7eb;border-radius:12px;padding:10px;background:#fff;">
             <input type="hidden" name="infra_action" value="save_criterio">
@@ -408,7 +436,7 @@
           </form>
         </details>
 
-        <details open>
+        <details>
           <summary style="cursor:pointer;font-size:13px;font-weight:700;color:#334155;">Asignar criterio a deposito/oficina</summary>
           <form method="post" style="margin-top:8px;border:1px solid #e5e7eb;border-radius:12px;padding:10px;background:#fff;">
             <input type="hidden" name="infra_action" value="assign_criterio">
