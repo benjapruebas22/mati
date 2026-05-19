@@ -1508,6 +1508,8 @@ def register_asignaciones(app, get_db):
         top_id = 0
         top_date = None
         for r in rows or []:
+            if _norm(r.get("estado")) != "realizado":
+                continue
             d = _parse_iso(r["fecha"])
             if not d:
                 continue
