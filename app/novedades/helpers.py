@@ -542,6 +542,54 @@ def _dashboard_agentes_opts(con):
                 vals.append(a)
     except Exception:
         pass
+    # Fallback/union: usuarios activos con roles operativos para asignacion
+    # (incluye choferes y perfiles de vehiculos/intendencia).
+    try:
+        if _table_exists(con, "usuarios"):
+            cols = _table_cols(con, "usuarios")
+            full_name_col = "full_name" if "full_name" in cols else "''"
+            role_col = "role" if "role" in cols else "''"
+            rol_col = "rol" if "rol" in cols else "''"
+            activo_expr = "COALESCE(activo,1)=1" if "activo" in cols else "1=1"
+            rows_u = con.execute(f"""
+                SELECT
+                    COALESCE({full_name_col}, '') AS full_name,
+                    LOWER(COALESCE({role_col}, '')) AS role_moderno,
+                    LOWER(COALESCE({rol_col}, '')) AS role_legacy
+                FROM usuarios
+                WHERE {activo_expr}
+                ORDER BY full_name
+            """).fetchall()
+
+            allow_roles = {
+                "full",
+                "admin",
+                "dashboard_vehiculos",
+                "int_vehiculos",
+                "chofer_intendencia",
+                "chofer_autorizado",
+                "sede_vehiculos",
+                "sst_vehiculos",
+                "obras_vehiculos",
+                "operativo_clave",
+            }
+            allow_legacy = {"admin", "operador"}
+
+            for ru in rows_u or []:
+                nombre = (_row_value(ru, "full_name", "") or "").strip()
+                role_m = (_row_value(ru, "role_moderno", "") or "").strip()
+                role_l = (_row_value(ru, "role_legacy", "") or "").strip()
+                if not nombre:
+                    continue
+                if (role_m not in allow_roles) and (role_l not in allow_legacy):
+                    continue
+                k = nombre.lower()
+                if k in seen:
+                    continue
+                seen.add(k)
+                vals.append(nombre)
+    except Exception:
+        pass
     return vals
 
 
