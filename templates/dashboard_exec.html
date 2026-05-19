@@ -3172,6 +3172,7 @@
       "Marcos Sorbello",
       "Maximiliano Abatedaga",
       "Francisco Savio",
+      "Gaston Villagra",
     ];
     var AGENTES_ALIAS = {
       "emiliano p de la puente": "Emiliano Perez de la Puente",
@@ -3183,6 +3184,9 @@
       "manuel flores": "Manuel Flores",
       "francisco savio": "Francisco Savio",
       "francisco savio intendencia": "Francisco Savio",
+      "gaston villagra": "Gaston Villagra",
+      "gvillagra": "Gaston Villagra",
+      "g villagra": "Gaston Villagra",
       "carlos vidaurre": "Carlos Vidaurre",
       "carlos vidaurrre": "Carlos Vidaurre",
       "admi": "Maximiliano Abatedaga",
@@ -4109,13 +4113,27 @@
         byNorm[norm] = raw;
       });
       var out = [];
+      var seen = {};
       AGENTES_PERMITIDOS.forEach(function (nom) {
         var key = normTxt(nom);
         var aliasMatch = byNorm[key];
         if (!aliasMatch && nom === "Emilino P de la Puente") {
           aliasMatch = byNorm["emiliano p de la puente"] || byNorm["emiliano perez de la puente"];
         }
-        out.push(aliasMatch || nom);
+        var chosen = aliasMatch || nom;
+        var ck = normTxt(chosen);
+        if (!ck || seen[ck]) return;
+        seen[ck] = true;
+        out.push(chosen);
+      });
+      // Sumar agentes adicionales que vengan del API (usuarios activos),
+      // evitando que nuevos ingresos queden ocultos por lista fija.
+      src.forEach(function (a) {
+        var raw = String(a || "").trim();
+        var norm = normTxt(raw);
+        if (!raw || !norm || seen[norm]) return;
+        seen[norm] = true;
+        out.push(raw);
       });
       return out;
     }
