@@ -1,5 +1,4 @@
 import csv
-import csv
 import io
 from datetime import date, datetime, timedelta
 
@@ -47,6 +46,25 @@ def register_asignaciones(app, get_db):
     ]
     ESTADOS_PLANILLA = ["Pendiente", "Asignado", "Realizado", "Cancelado"]
     PERIODOS_VALIDOS = [30, 60, 90, 365]
+    ROTACION_TIPOS = ["Itinerancia", "Ramal", "Norte", "Quebrada", "Especial"]
+    CHOFER_COLOR_SEED = {
+        "mauro vea murguia": "#7c3aed",      # violeta
+        "mauro vea murguía": "#7c3aed",
+        "gaston villagra": "#16a34a",        # verde
+        "gastón villagra": "#16a34a",
+        "jorge corbacho": "#2563eb",         # azul
+        "emiliano p. de la puente": "#92400e",  # marron
+    }
+    DESTINOS_REFERENCIA_SEED = [
+        ("Itinerancia", "Susques", "400 km aprox ida y vuelta", "7 hs aprox", "07:00", "21:00", "Pesado / jornada extendida", 1, "Viaje de jornada extendida."),
+        ("Norte", "La Quiaca", "600 km aprox ida y vuelta", "8 hs aprox", "07:00", "23:00", "Pesado / jornada extendida", 1, "Programar con anticipacion."),
+        ("Norte", "Abra Pampa", "500 km aprox ida y vuelta", "7 hs aprox", "07:00", "22:00", "Pesado / jornada extendida", 1, ""),
+        ("Ramal", "Ledesma", "230 km aprox ida y vuelta", "3 hs aprox", "13:00", "18:00", "Largo", 0, "Puede salir luego de las 13:00."),
+        ("Ramal", "San Pedro", "150 km aprox ida y vuelta", "2 hs aprox", "08:00", "12:00", "Medio", 0, ""),
+        ("Quebrada", "Tilcara", "200 km aprox ida y vuelta", "4 hs aprox", "07:00", "17:00", "Largo", 0, ""),
+        ("Quebrada", "Humahuaca", "260 km aprox ida y vuelta", "5 hs aprox", "07:00", "18:00", "Largo", 0, ""),
+        ("Especial", "Otro", "", "", "", "", "Medio", 0, "Completar segun operativa real."),
+    ]
 
     def _role() -> str:
         return (session.get("role") or "").strip().lower()
@@ -201,12 +219,47 @@ def register_asignaciones(app, get_db):
             )
             """
         )
+        con.execute(
+            """
+            CREATE TABLE IF NOT EXISTS rotacion_visual_items(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tipo_viaje TEXT NOT NULL,
+                posicion INTEGER NOT NULL,
+                chofer_id INTEGER NOT NULL,
+                fecha_programada TEXT,
+                observaciones TEXT,
+                activo INTEGER NOT NULL DEFAULT 1,
+                actualizado_en TEXT NOT NULL DEFAULT (datetime('now')),
+                UNIQUE(tipo_viaje, posicion)
+            )
+            """
+        )
+        con.execute(
+            """
+            CREATE TABLE IF NOT EXISTS destino_referencias(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                zona TEXT NOT NULL,
+                destino TEXT NOT NULL,
+                km_aprox TEXT,
+                horas_aprox TEXT,
+                salida_habitual TEXT,
+                llegada_habitual TEXT,
+                tipo_carga TEXT,
+                jornada_extendida INTEGER NOT NULL DEFAULT 0,
+                observaciones TEXT,
+                activo INTEGER NOT NULL DEFAULT 1,
+                UNIQUE(zona, destino)
+            )
+            """
+        )
         con.execute("CREATE INDEX IF NOT EXISTS idx_asig_fecha ON asignaciones_rotacion(fecha)")
         con.execute("CREATE INDEX IF NOT EXISTS idx_asig_chofer_fecha ON asignaciones_rotacion(chofer_id, fecha)")
         con.execute("CREATE INDEX IF NOT EXISTS idx_asig_zona_destino_fecha ON asignaciones_rotacion(zona, destino, fecha)")
         con.execute("CREATE INDEX IF NOT EXISTS idx_exc_chofer_activo ON exclusiones_chofer(chofer_id, activo, fecha_desde, fecha_hasta)")
         con.execute("CREATE INDEX IF NOT EXISTS idx_planilla_fecha_hora ON planilla_diaria(fecha, hora_salida)")
         con.execute("CREATE INDEX IF NOT EXISTS idx_planilla_chofer_fecha ON planilla_diaria(chofer_id, fecha)")
+        con.execute("CREATE INDEX IF NOT EXISTS idx_rv_tipo_pos ON rotacion_visual_items(tipo_viaje, posicion)")
+        con.execute("CREATE INDEX IF NOT EXISTS idx_ref_zona_destino ON destino_referencias(zona, destino)")
         con.execute(
             """
             INSERT OR IGNORE INTO configuracion_rotacion(id, periodo_default, criterio_empate, observaciones)
@@ -236,6 +289,22 @@ def register_asignaciones(app, get_db):
                 )
                 """,
                 (zona, destino, carga, puntaje, zona, destino),
+            )
+        for zona, destino, km, horas, salida, llegada, carga, jornada, obs in DESTINOS_REFERENCIA_SEED:
+            con.execute(
+                """
+                INSERT INTO destino_referencias(
+                    zona, destino, km_aprox, horas_aprox, salida_habitual, llegada_habitual,
+                    tipo_carga, jornada_extendida, observaciones, activo
+                )
+                SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, 1
+                WHERE NOT EXISTS(
+                    SELECT 1 FROM destino_referencias
+                    WHERE LOWER(COALESCE(zona,'')) = LOWER(?)
+                      AND LOWER(COALESCE(destino,'')) = LOWER(?)
+                )
+                """,
+                (zona, destino, km, horas, salida, llegada, carga, int(jornada), obs, zona, destino),
             )
         con.commit()
 
@@ -647,6 +716,386 @@ def register_asignaciones(app, get_db):
                 }
             )
         out.sort(key=lambda r: (r["zona"].lower(), r["destino"].lower()))
+        return out
+
+    def _chofer_color_hex(nombre):
+        return CHOFER_COLOR_SEED.get(_norm(nombre), "#64748b")
+
+    def _rotacion_tipo_from_request():
+        raw = (request.args.get("rv_tipo") or request.form.get("rv_tipo") or "").strip()
+        for t in ROTACION_TIPOS:
+            if _norm(raw) == _norm(t):
+                return t
+        return ROTACION_TIPOS[0]
+
+    def _normalize_rotacion_visual(con, tipo_viaje):
+        rows = con.execute(
+            """
+            SELECT id
+            FROM rotacion_visual_items
+            WHERE LOWER(COALESCE(tipo_viaje,'')) = LOWER(?)
+            ORDER BY COALESCE(posicion,9999), id
+            """,
+            ((tipo_viaje or "").strip(),),
+        ).fetchall()
+        for i, r in enumerate(rows, start=1):
+            con.execute("UPDATE rotacion_visual_items SET posicion=? WHERE id=?", (i, int(r["id"])))
+        con.commit()
+
+    def _ensure_rotacion_visual_base(con, tipo_viaje):
+        tipo = (tipo_viaje or "").strip() or ROTACION_TIPOS[0]
+        activos = _list_choferes(con, include_inactive=False)
+        rows = con.execute(
+            """
+            SELECT id, chofer_id, posicion
+            FROM rotacion_visual_items
+            WHERE LOWER(COALESCE(tipo_viaje,'')) = LOWER(?)
+            ORDER BY COALESCE(posicion,9999), id
+            """,
+            (tipo,),
+        ).fetchall()
+        existentes = {int(r["chofer_id"] or 0) for r in rows}
+        next_pos = (max([int(r["posicion"] or 0) for r in rows]) + 1) if rows else 1
+        for ch in activos:
+            cid = int(ch["id"] or 0)
+            if cid <= 0 or cid in existentes:
+                continue
+            con.execute(
+                """
+                INSERT INTO rotacion_visual_items(tipo_viaje, posicion, chofer_id, fecha_programada, observaciones, activo, actualizado_en)
+                VALUES (?,?,?,?,?,1,?)
+                """,
+                (tipo, next_pos, cid, "", "", _now_ts()),
+            )
+            next_pos += 1
+        con.commit()
+        _normalize_rotacion_visual(con, tipo)
+
+    def _list_rotacion_visual(con, tipo_viaje, ref_iso=None):
+        tipo = (tipo_viaje or "").strip() or ROTACION_TIPOS[0]
+        _ensure_rotacion_visual_base(con, tipo)
+        rows = con.execute(
+            """
+            SELECT
+                r.id,
+                COALESCE(r.tipo_viaje,'') AS tipo_viaje,
+                COALESCE(r.posicion,9999) AS posicion,
+                COALESCE(r.chofer_id,0) AS chofer_id,
+                COALESCE(c.nombre,'') AS chofer,
+                COALESCE(r.fecha_programada,'') AS fecha_programada,
+                COALESCE(r.observaciones,'') AS observaciones,
+                COALESCE(r.activo,1) AS activo
+            FROM rotacion_visual_items r
+            LEFT JOIN choferes_rotacion c ON c.id = r.chofer_id
+            WHERE LOWER(COALESCE(r.tipo_viaje,'')) = LOWER(?)
+            ORDER BY COALESCE(r.posicion,9999), r.id
+            """,
+            (tipo,),
+        ).fetchall()
+        out = []
+        for r in rows:
+            item = dict(r)
+            item["excluido"] = _is_chofer_excluded(con, int(item["chofer_id"] or 0), ref_iso)
+            item["color"] = _chofer_color_hex(item["chofer"])
+            out.append(item)
+        return out
+
+    def _reorder_rotacion_visual(con, tipo_viaje, ordered_ids):
+        tipo = (tipo_viaje or "").strip() or ROTACION_TIPOS[0]
+        existing_ids = [
+            int(r["id"])
+            for r in con.execute(
+                """
+                SELECT id
+                FROM rotacion_visual_items
+                WHERE LOWER(COALESCE(tipo_viaje,'')) = LOWER(?)
+                ORDER BY COALESCE(posicion,9999), id
+                """,
+                (tipo,),
+            ).fetchall()
+        ]
+        if not existing_ids:
+            return
+        unique_given = []
+        seen = set()
+        for rid in ordered_ids or []:
+            ir = _to_int(rid, 0)
+            if ir > 0 and ir in existing_ids and ir not in seen:
+                seen.add(ir)
+                unique_given.append(ir)
+        final_order = unique_given + [rid for rid in existing_ids if rid not in seen]
+        for i, rid in enumerate(final_order, start=1):
+            con.execute(
+                """
+                UPDATE rotacion_visual_items
+                SET posicion=?, actualizado_en=?
+                WHERE id=?
+                """,
+                (i, _now_ts(), int(rid)),
+            )
+        con.commit()
+
+    def _move_rotacion_visual(con, row_id, tipo_viaje, direction):
+        tipo = (tipo_viaje or "").strip() or ROTACION_TIPOS[0]
+        row = con.execute(
+            """
+            SELECT id, posicion
+            FROM rotacion_visual_items
+            WHERE id=?
+              AND LOWER(COALESCE(tipo_viaje,'')) = LOWER(?)
+            LIMIT 1
+            """,
+            (int(row_id), tipo),
+        ).fetchone()
+        if not row:
+            return False
+        pos = int(row["posicion"] or 0)
+        if direction == "up":
+            target = con.execute(
+                """
+                SELECT id, posicion
+                FROM rotacion_visual_items
+                WHERE LOWER(COALESCE(tipo_viaje,'')) = LOWER(?)
+                  AND COALESCE(posicion,9999) < ?
+                ORDER BY COALESCE(posicion,9999) DESC, id DESC
+                LIMIT 1
+                """,
+                (tipo, pos),
+            ).fetchone()
+        else:
+            target = con.execute(
+                """
+                SELECT id, posicion
+                FROM rotacion_visual_items
+                WHERE LOWER(COALESCE(tipo_viaje,'')) = LOWER(?)
+                  AND COALESCE(posicion,9999) > ?
+                ORDER BY COALESCE(posicion,9999) ASC, id ASC
+                LIMIT 1
+                """,
+                (tipo, pos),
+            ).fetchone()
+        if not target:
+            return False
+        con.execute("UPDATE rotacion_visual_items SET posicion=?, actualizado_en=? WHERE id=?", (int(target["posicion"]), _now_ts(), int(row["id"])))
+        con.execute("UPDATE rotacion_visual_items SET posicion=?, actualizado_en=? WHERE id=?", (pos, _now_ts(), int(target["id"])))
+        con.commit()
+        _normalize_rotacion_visual(con, tipo)
+        return True
+
+    def _update_rotacion_visual_row(con, row_id, tipo_viaje, payload):
+        tipo = (tipo_viaje or "").strip() or ROTACION_TIPOS[0]
+        rid = int(row_id or 0)
+        if rid <= 0:
+            return False
+        target_chofer_id = int(payload.get("chofer_id") or 0)
+        if target_chofer_id <= 0:
+            return False
+        curr = con.execute(
+            """
+            SELECT COALESCE(chofer_id,0) AS chofer_id
+            FROM rotacion_visual_items
+            WHERE id=?
+              AND LOWER(COALESCE(tipo_viaje,'')) = LOWER(?)
+            LIMIT 1
+            """,
+            (rid, tipo),
+        ).fetchone()
+        if not curr:
+            return False
+        curr_chofer_id = int(curr["chofer_id"] or 0)
+        other = con.execute(
+            """
+            SELECT id
+            FROM rotacion_visual_items
+            WHERE LOWER(COALESCE(tipo_viaje,'')) = LOWER(?)
+              AND COALESCE(chofer_id,0) = ?
+              AND id <> ?
+            LIMIT 1
+            """,
+            (tipo, target_chofer_id, rid),
+        ).fetchone()
+        if other and curr_chofer_id > 0:
+            con.execute(
+                """
+                UPDATE rotacion_visual_items
+                SET chofer_id=?, actualizado_en=?
+                WHERE id=?
+                """,
+                (curr_chofer_id, _now_ts(), int(other["id"])),
+            )
+        con.execute(
+            """
+            UPDATE rotacion_visual_items
+            SET chofer_id=?,
+                fecha_programada=?,
+                observaciones=?,
+                activo=?,
+                actualizado_en=?
+            WHERE id=?
+              AND LOWER(COALESCE(tipo_viaje,'')) = LOWER(?)
+            """,
+            (
+                target_chofer_id,
+                (payload.get("fecha_programada") or "").strip(),
+                (payload.get("observaciones") or "").strip(),
+                int(payload.get("activo") or 0),
+                _now_ts(),
+                rid,
+                tipo,
+            ),
+        )
+        con.commit()
+        return True
+
+    def _list_destinos_por_zona(con, zona):
+        z = (zona or "").strip()
+        rows = con.execute(
+            """
+            SELECT
+                COALESCE(destino,'') AS destino,
+                COALESCE(tipo_carga,'') AS tipo_carga
+            FROM destinos_rotacion
+            WHERE LOWER(COALESCE(zona,'')) = LOWER(?)
+              AND COALESCE(activo,1)=1
+            ORDER BY LOWER(COALESCE(destino,''))
+            """,
+            (z,),
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+    def _get_destino_referencia(con, zona, destino):
+        z = (zona or "").strip()
+        d = (destino or "").strip()
+        if not z or not d:
+            return None
+        row = con.execute(
+            """
+            SELECT
+                COALESCE(zona,'') AS zona,
+                COALESCE(destino,'') AS destino,
+                COALESCE(km_aprox,'') AS km_aprox,
+                COALESCE(horas_aprox,'') AS horas_aprox,
+                COALESCE(salida_habitual,'') AS salida_habitual,
+                COALESCE(llegada_habitual,'') AS llegada_habitual,
+                COALESCE(tipo_carga,'') AS tipo_carga,
+                COALESCE(jornada_extendida,0) AS jornada_extendida,
+                COALESCE(observaciones,'') AS observaciones
+            FROM destino_referencias
+            WHERE LOWER(COALESCE(zona,'')) = LOWER(?)
+              AND LOWER(COALESCE(destino,'')) = LOWER(?)
+            LIMIT 1
+            """,
+            (z, d),
+        ).fetchone()
+        if row:
+            return dict(row)
+        info = _destino_info(con, z, d)
+        return {
+            "zona": z,
+            "destino": d,
+            "km_aprox": "",
+            "horas_aprox": "",
+            "salida_habitual": "",
+            "llegada_habitual": "",
+            "tipo_carga": (info["tipo_carga"] if info else ""),
+            "jornada_extendida": 0,
+            "observaciones": "",
+        }
+
+    def _save_destino_referencia(con, zona, destino, payload):
+        z = (zona or "").strip()
+        d = (destino or "").strip()
+        if not z or not d:
+            return False
+        con.execute(
+            """
+            INSERT INTO destino_referencias(
+                zona, destino, km_aprox, horas_aprox, salida_habitual, llegada_habitual,
+                tipo_carga, jornada_extendida, observaciones, activo
+            )
+            VALUES (?,?,?,?,?,?,?,?,?,1)
+            ON CONFLICT(zona, destino)
+            DO UPDATE SET
+                km_aprox=excluded.km_aprox,
+                horas_aprox=excluded.horas_aprox,
+                salida_habitual=excluded.salida_habitual,
+                llegada_habitual=excluded.llegada_habitual,
+                tipo_carga=excluded.tipo_carga,
+                jornada_extendida=excluded.jornada_extendida,
+                observaciones=excluded.observaciones,
+                activo=1
+            """,
+            (
+                z,
+                d,
+                (payload.get("km_aprox") or "").strip(),
+                (payload.get("horas_aprox") or "").strip(),
+                (payload.get("salida_habitual") or "").strip(),
+                (payload.get("llegada_habitual") or "").strip(),
+                (payload.get("tipo_carga") or "").strip(),
+                1 if _norm(payload.get("jornada_extendida") or "") in {"1", "si", "true", "on"} else 0,
+                (payload.get("observaciones") or "").strip(),
+            ),
+        )
+        con.commit()
+        return True
+
+    def _ultimo_viaje_tipo(con, tipo_viaje):
+        tipo = (tipo_viaje or "").strip()
+        real = con.execute(
+            """
+            SELECT
+                COALESCE(a.fecha,'') AS fecha,
+                COALESCE(c.nombre,'') AS chofer
+            FROM asignaciones_rotacion a
+            LEFT JOIN choferes_rotacion c ON c.id = a.chofer_id
+            WHERE LOWER(COALESCE(a.zona,'')) = LOWER(?)
+              AND LOWER(COALESCE(a.estado,'')) = 'realizado'
+            ORDER BY date(a.fecha) DESC, a.id DESC
+            LIMIT 1
+            """,
+            (tipo,),
+        ).fetchone()
+        if real:
+            return {"fecha": real["fecha"], "chofer": real["chofer"]}
+        any_row = con.execute(
+            """
+            SELECT
+                COALESCE(a.fecha,'') AS fecha,
+                COALESCE(c.nombre,'') AS chofer
+            FROM asignaciones_rotacion a
+            LEFT JOIN choferes_rotacion c ON c.id = a.chofer_id
+            WHERE LOWER(COALESCE(a.zona,'')) = LOWER(?)
+              AND LOWER(COALESCE(a.estado,'')) <> 'cancelado'
+            ORDER BY date(a.fecha) DESC, a.id DESC
+            LIMIT 1
+            """,
+            (tipo,),
+        ).fetchone()
+        if any_row:
+            return {"fecha": any_row["fecha"], "chofer": any_row["chofer"]}
+        return {"fecha": "", "chofer": ""}
+
+    def _proximo_rotacion_tipo(rows):
+        for r in rows or []:
+            if int(r.get("activo") or 0) != 1:
+                continue
+            if bool(r.get("excluido")):
+                continue
+            return r
+        return None
+
+    def _build_indicadores_rotacion_visual(con, ref_iso=None):
+        out = {}
+        for t in ROTACION_TIPOS:
+            rows_t = _list_rotacion_visual(con, t, ref_iso)
+            last = _ultimo_viaje_tipo(con, t)
+            nxt = _proximo_rotacion_tipo(rows_t)
+            out[t] = {
+                "ultimo_chofer": (last.get("chofer") or "-"),
+                "ultimo_fecha": (last.get("fecha") or "-"),
+                "proximo_chofer": ((nxt.get("chofer") if nxt else "") or "-"),
+            }
         return out
 
     def listar_historial(con, filtros):
@@ -1095,6 +1544,41 @@ def register_asignaciones(app, get_db):
         planilla_rows = _list_planilla_diaria(con, filtros_planilla)
         planilla_row_alerts, planilla_alertas = _build_planilla_alerts(planilla_rows)
         planilla_copy_text = _build_planilla_copy_text(planilla_rows)
+        rv_tipo = ROTACION_TIPOS[0]
+        rv_rows = []
+        rv_destinos = []
+        rv_destino = ""
+        rv_ref = None
+        rv_sugerencia = {"sugerido": "", "puntaje": 0, "tipo_carga": ""}
+        rv_indicadores = {}
+        rv_ultimo = {"fecha": "", "chofer": ""}
+        rv_proximo = None
+        if view == "rotacion_visual":
+            rv_tipo = _rotacion_tipo_from_request()
+            rv_rows = _list_rotacion_visual(con, rv_tipo, ref_iso)
+            rv_destinos = _list_destinos_por_zona(con, rv_tipo)
+            rv_destino = (request.args.get("rv_destino") or request.form.get("rv_destino") or "").strip()
+            rv_destinos_nombres = [str(d.get("destino") or "").strip() for d in rv_destinos]
+            if rv_destinos_nombres and rv_destino not in rv_destinos_nombres:
+                rv_destino = rv_destinos_nombres[0]
+            if not rv_destino and rv_destinos_nombres:
+                rv_destino = rv_destinos_nombres[0]
+            rv_ref = _get_destino_referencia(con, rv_tipo, rv_destino) if rv_destino else None
+            rv_sugerencia = sugerir_proximo_chofer(
+                con,
+                rv_destino,
+                rv_tipo,
+                periodo,
+                ref_iso,
+                (rv_ref.get("tipo_carga") if rv_ref else ""),
+            ) if rv_destino else {"sugerido": "", "puntaje": 0, "tipo_carga": ""}
+            rv_indicadores = _build_indicadores_rotacion_visual(con, ref_iso)
+            rv_ultimo = _ultimo_viaje_tipo(con, rv_tipo)
+            rv_proximo = _proximo_rotacion_tipo(rv_rows)
+        chofer_color_by_id = {
+            int(c["id"]): _chofer_color_hex(c["nombre"])
+            for c in choferes
+        }
 
         exclusiones = con.execute(
             """
@@ -1133,6 +1617,17 @@ def register_asignaciones(app, get_db):
             planilla_row_alerts=planilla_row_alerts,
             planilla_alertas=planilla_alertas,
             planilla_copy_text=planilla_copy_text,
+            rv_tipo=rv_tipo,
+            rv_tipos=ROTACION_TIPOS,
+            rv_rows=rv_rows,
+            rv_destinos=rv_destinos,
+            rv_destino=rv_destino,
+            rv_ref=rv_ref,
+            rv_sugerencia=rv_sugerencia,
+            rv_indicadores=rv_indicadores,
+            rv_ultimo=rv_ultimo,
+            rv_proximo=rv_proximo,
+            chofer_color_by_id=chofer_color_by_id,
             estados=ESTADOS,
             estados_planilla=ESTADOS_PLANILLA,
             extra=extra,
@@ -1431,6 +1926,76 @@ def register_asignaciones(app, get_db):
                     pd_sort=request.args.get("pd_sort") or "hora",
                 )
             )
+        finally:
+            con.close()
+
+    @app.route("/asignaciones/rotacion-visual", methods=["GET", "POST"], endpoint="asignaciones_rotacion_visual")
+    def asignaciones_rotacion_visual():
+        if not _can_access():
+            return _deny()
+        con = get_db()
+        _ensure_schema(con)
+        try:
+            rv_tipo = _rotacion_tipo_from_request()
+            rv_destino = (request.args.get("rv_destino") or request.form.get("rv_destino") or "").strip()
+            periodo_q = request.args.get("periodo") or request.form.get("periodo") or ""
+            fecha_ref_q = request.args.get("fecha_ref") or request.form.get("fecha_ref") or ""
+
+            if request.method == "POST":
+                action = _norm(request.form.get("rv_action"))
+                if action == "update_row":
+                    row_id = _to_int(request.form.get("row_id"), 0)
+                    payload = {
+                        "chofer_id": _to_int(request.form.get("chofer_id"), 0),
+                        "fecha_programada": (request.form.get("fecha_programada") or "").strip(),
+                        "observaciones": (request.form.get("observaciones") or "").strip(),
+                        "activo": (1 if _norm(request.form.get("activo") or "") in {"1", "si", "true", "on"} else 0),
+                    }
+                    if row_id <= 0 or payload["chofer_id"] <= 0:
+                        flash("Fila o chofer invalido para actualizar la rueda.", "warning")
+                    else:
+                        _update_rotacion_visual_row(con, row_id, rv_tipo, payload)
+                        flash("Rueda manual actualizada.", "success")
+                elif action == "move_up":
+                    row_id = _to_int(request.form.get("row_id"), 0)
+                    if not _move_rotacion_visual(con, row_id, rv_tipo, "up"):
+                        flash("No se pudo mover mas arriba.", "warning")
+                elif action == "move_down":
+                    row_id = _to_int(request.form.get("row_id"), 0)
+                    if not _move_rotacion_visual(con, row_id, rv_tipo, "down"):
+                        flash("No se pudo mover mas abajo.", "warning")
+                elif action == "reorder":
+                    ordered_raw = (request.form.get("ordered_ids") or "").strip()
+                    ordered_ids = [x for x in ordered_raw.split(",") if x.strip()]
+                    _reorder_rotacion_visual(con, rv_tipo, ordered_ids)
+                    flash("Orden manual actualizado.", "success")
+                elif action == "save_ref":
+                    rv_destino = (request.form.get("rv_destino") or rv_destino or "").strip()
+                    if not rv_destino:
+                        flash("Selecciona destino para editar referencia.", "warning")
+                    else:
+                        payload = {
+                            "km_aprox": request.form.get("km_aprox"),
+                            "horas_aprox": request.form.get("horas_aprox"),
+                            "salida_habitual": request.form.get("salida_habitual"),
+                            "llegada_habitual": request.form.get("llegada_habitual"),
+                            "tipo_carga": request.form.get("tipo_carga"),
+                            "jornada_extendida": request.form.get("jornada_extendida"),
+                            "observaciones": request.form.get("observaciones"),
+                        }
+                        _save_destino_referencia(con, rv_tipo, rv_destino, payload)
+                        flash("Referencia de viaje actualizada.", "success")
+                return redirect(
+                    url_for(
+                        "asignaciones_rotacion_visual",
+                        periodo=periodo_q,
+                        fecha_ref=fecha_ref_q,
+                        rv_tipo=rv_tipo,
+                        rv_destino=rv_destino,
+                    )
+                )
+
+            return _render("rotacion_visual", con, {})
         finally:
             con.close()
 

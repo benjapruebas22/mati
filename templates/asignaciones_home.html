@@ -38,6 +38,7 @@
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <a class="btn" href="{{ url_for('dashboard_exec') }}">Centro operativo</a>
         <a class="btn" href="{{ url_for('asignaciones_nueva') }}">Nueva asignacion</a>
+        <a class="btn" href="{{ url_for('asignaciones_rotacion_visual') }}">Rotacion visual</a>
         <a class="btn" href="{{ url_for('asignaciones_planilla') }}">Planilla diaria</a>
         <a class="btn" href="{{ url_for('asignaciones_historial') }}">Ver historial</a>
         <a class="btn" href="{{ url_for('asignaciones_configuracion') }}">Configuracion</a>
@@ -73,6 +74,7 @@
 
     <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
       <a class="btn {% if view == 'resumen' %}primary{% endif %}" href="{{ url_for('asignaciones_home', periodo=periodo, fecha_ref=ref_iso) }}">Resumen rotacion</a>
+      <a class="btn {% if view == 'rotacion_visual' %}primary{% endif %}" href="{{ url_for('asignaciones_rotacion_visual', periodo=periodo, fecha_ref=ref_iso) }}">Rotacion visual</a>
       <a class="btn {% if view == 'nueva' %}primary{% endif %}" href="{{ url_for('asignaciones_nueva', periodo=periodo, fecha_ref=ref_iso) }}">Cargar asignacion</a>
       <a class="btn {% if view == 'planilla' %}primary{% endif %}" href="{{ url_for('asignaciones_planilla', periodo=periodo, fecha_ref=ref_iso) }}">Planilla diaria</a>
       <a class="btn {% if view == 'historial' %}primary{% endif %}" href="{{ url_for('asignaciones_historial', periodo=periodo, fecha_ref=ref_iso) }}">Historial</a>
@@ -253,6 +255,226 @@
         </form>
         <div id="asgSugResult" style="margin-top:10px;padding:8px 10px;border:1px dashed #cbd5e1;border-radius:10px;color:#475569;font-size:12px;">
           Sugerencia automatica por carga ponderada.
+        </div>
+      </div>
+    {% endif %}
+
+    {% if view == "rotacion_visual" %}
+      <div style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;background:#fff;padding:10px;">
+        <form method="get" action="{{ url_for('asignaciones_rotacion_visual') }}" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;align-items:end;">
+          <input type="hidden" name="periodo" value="{{ periodo }}">
+          <input type="hidden" name="fecha_ref" value="{{ ref_iso }}">
+          <div>
+            <label style="font-size:12px;color:#64748b;">Tipo de rueda</label>
+            <select name="rv_tipo" style="width:100%;padding:6px 10px;border:1px solid #e5e7eb;border-radius:10px;">
+              {% for t in rv_tipos %}
+                <option value="{{ t }}" {% if rv_tipo == t %}selected{% endif %}>{{ t }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px;color:#64748b;">Destino referencia</label>
+            <select name="rv_destino" style="width:100%;padding:6px 10px;border:1px solid #e5e7eb;border-radius:10px;">
+              {% for d in rv_destinos %}
+                <option value="{{ d.destino }}" {% if rv_destino == d.destino %}selected{% endif %}>{{ d.destino }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;">
+            <button class="btn" type="submit">Ver rueda</button>
+            {% for t in rv_tipos %}
+              <a class="btn {% if rv_tipo == t %}primary{% endif %}" href="{{ url_for('asignaciones_rotacion_visual', periodo=periodo, fecha_ref=ref_iso, rv_tipo=t, rv_destino=rv_destino) }}">{{ t }}</a>
+            {% endfor %}
+          </div>
+        </form>
+
+        <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;font-size:12px;">
+          {% for t in ['Itinerancia', 'Ramal'] %}
+            {% set ind = rv_indicadores[t] if rv_indicadores and (t in rv_indicadores) else None %}
+            <span class="state info"><strong>Ultimo {{ t }}:</strong> {{ ind.ultimo_chofer if ind else '-' }} {{ ('- ' ~ ind.ultimo_fecha) if ind and ind.ultimo_fecha else '' }}</span>
+            <span class="state ok"><strong>Proximo {{ t }}:</strong> {{ ind.proximo_chofer if ind else '-' }}</span>
+          {% endfor %}
+          <span class="state"><strong>Sugerencia automatica (ayuda):</strong> {{ rv_sugerencia.sugerido or '-' }}</span>
+        </div>
+      </div>
+
+      <div style="margin-top:10px;display:grid;grid-template-columns:minmax(0,1.9fr) minmax(300px,1fr);gap:10px;">
+        <div style="border:1px solid #e5e7eb;border-radius:12px;background:#fff;padding:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;">
+            <div style="font-size:14px;font-weight:700;color:#334155;">Rueda manual - {{ rv_tipo }}</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <span class="state"><strong>Ultimo realizado:</strong> {{ rv_ultimo.chofer or '-' }} {{ ('- ' ~ rv_ultimo.fecha) if rv_ultimo and rv_ultimo.fecha else '' }}</span>
+              <span class="state ok"><strong>Proximo manual:</strong> {{ rv_proximo.chofer if rv_proximo else '-' }}</span>
+            </div>
+          </div>
+
+          <div style="margin-top:8px;padding:8px;border:1px dashed #cbd5e1;border-radius:10px;background:#f8fafc;color:#475569;font-size:12px;">
+            Arrastra para reordenar la rueda. El orden manual tiene prioridad y no se cambia automaticamente.
+          </div>
+
+          <div style="margin-top:8px;border:1px solid #e5e7eb;border-radius:10px;overflow:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:12px;">
+              <thead style="background:#f8fafc;">
+                <tr>
+                  <th style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:left;">Tipo viaje</th>
+                  <th style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:left;">Fecha</th>
+                  <th style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:left;">Chofer</th>
+                  <th style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:left;">Orden</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;">{{ rv_tipo }}</td>
+                  <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;">{{ rv_ultimo.fecha or '-' }}</td>
+                  <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;">{{ rv_ultimo.chofer or '-' }}</td>
+                  <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;">Ultimo realizado</td>
+                </tr>
+                {% for r in rv_rows[:4] %}
+                  <tr>
+                    <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;">{{ rv_tipo }}</td>
+                    <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;">{{ r.fecha_programada or 'proxima' }}</td>
+                    <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;">{{ r.chofer or '-' }}</td>
+                    <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;">{{ r.posicion }}</td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <form id="rvReorderForm" method="post" action="{{ url_for('asignaciones_rotacion_visual', periodo=periodo, fecha_ref=ref_iso, rv_tipo=rv_tipo, rv_destino=rv_destino) }}" style="margin-top:8px;display:flex;justify-content:flex-end;">
+            <input type="hidden" name="rv_action" value="reorder">
+            <input type="hidden" name="rv_tipo" value="{{ rv_tipo }}">
+            <input type="hidden" name="rv_destino" value="{{ rv_destino }}">
+            <input type="hidden" id="rvOrderedIds" name="ordered_ids" value="">
+            <button id="btnGuardarOrdenVisual" class="btn" type="button">Guardar orden arrastrado</button>
+          </form>
+
+          <div id="rvList" style="margin-top:8px;display:flex;flex-direction:column;gap:8px;">
+            {% for r in rv_rows %}
+              <form class="rv-item" data-rid="{{ r.id }}" draggable="true" method="post" action="{{ url_for('asignaciones_rotacion_visual', periodo=periodo, fecha_ref=ref_iso, rv_tipo=rv_tipo, rv_destino=rv_destino) }}" style="border:1px solid #e5e7eb;border-radius:10px;padding:8px;background:#fff;">
+                <input type="hidden" name="rv_tipo" value="{{ rv_tipo }}">
+                <input type="hidden" name="rv_destino" value="{{ rv_destino }}">
+                <input type="hidden" name="row_id" value="{{ r.id }}">
+                <div style="display:grid;grid-template-columns:34px 1fr 140px 210px 110px 120px 1fr auto;gap:8px;align-items:end;">
+                  <div class="rv-drag-handle" title="Arrastrar" style="cursor:grab;padding:6px 8px;border:1px dashed #cbd5e1;border-radius:8px;text-align:center;color:#64748b;">::</div>
+                  <div>
+                    <label style="font-size:11px;color:#64748b;">Tipo viaje</label>
+                    <div style="padding:7px 8px;border:1px solid #e5e7eb;border-radius:8px;font-size:12px;">{{ rv_tipo }}</div>
+                  </div>
+                  <div>
+                    <label style="font-size:11px;color:#64748b;">Fecha</label>
+                    <input type="text" name="fecha_programada" value="{{ r.fecha_programada or 'proxima' }}" placeholder="18/05/2026 o proxima" style="width:100%;padding:6px 8px;border:1px solid #e5e7eb;border-radius:8px;font-size:12px;">
+                  </div>
+                  <div>
+                    <label style="font-size:11px;color:#64748b;">Chofer</label>
+                    <select name="chofer_id" style="width:100%;padding:6px 8px;border:1px solid #e5e7eb;border-radius:8px;font-size:12px;">
+                      {% for c in choferes if c.activo == 1 %}
+                        <option value="{{ c.id }}" {% if c.id|int == r.chofer_id|int %}selected{% endif %}>{{ c.nombre }}</option>
+                      {% endfor %}
+                    </select>
+                    <div style="margin-top:4px;">
+                      <span class="state" style="background:{{ r.color }}22;border-color:{{ r.color }}55;color:#1f2937;">{{ r.chofer or '-' }}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <label style="font-size:11px;color:#64748b;">Orden</label>
+                    <div style="padding:7px 8px;border:1px solid #e5e7eb;border-radius:8px;text-align:center;font-size:12px;">{{ r.posicion }}</div>
+                  </div>
+                  <div>
+                    <label style="font-size:11px;color:#64748b;">Activo</label>
+                    <select name="activo" style="width:100%;padding:6px 8px;border:1px solid #e5e7eb;border-radius:8px;font-size:12px;">
+                      <option value="1" {% if r.activo|int == 1 %}selected{% endif %}>Si</option>
+                      <option value="0" {% if r.activo|int == 0 %}selected{% endif %}>No</option>
+                    </select>
+                    {% if r.excluido %}
+                      <div style="margin-top:4px;"><span class="state warn">Excluido temporal</span></div>
+                    {% endif %}
+                  </div>
+                  <div>
+                    <label style="font-size:11px;color:#64748b;">Observaciones</label>
+                    <input type="text" name="observaciones" value="{{ r.observaciones or '' }}" style="width:100%;padding:6px 8px;border:1px solid #e5e7eb;border-radius:8px;font-size:12px;">
+                  </div>
+                  <div style="display:flex;gap:4px;align-items:end;flex-wrap:wrap;">
+                    <button class="btn xs" type="submit" name="rv_action" value="move_up">↑</button>
+                    <button class="btn xs" type="submit" name="rv_action" value="move_down">↓</button>
+                    <button class="btn xs primary" type="submit" name="rv_action" value="update_row">Guardar</button>
+                  </div>
+                </div>
+              </form>
+            {% else %}
+              <div style="padding:10px;color:#64748b;border:1px solid #e5e7eb;border-radius:10px;">No hay choferes en la rueda seleccionada.</div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div style="border:1px solid #e5e7eb;border-radius:12px;background:#fff;padding:10px;">
+          <div style="font-size:14px;font-weight:700;color:#334155;">Resumen destino</div>
+          {% if rv_ref %}
+            <div style="margin-top:8px;padding:8px;border:1px solid #e5e7eb;border-radius:10px;background:#f8fafc;">
+              <div style="font-weight:700;color:#1f2937;">{{ rv_ref.destino }}</div>
+              <div style="font-size:12px;color:#475569;margin-top:6px;">{{ rv_ref.km_aprox or '-' }}</div>
+              <div style="font-size:12px;color:#475569;">{{ rv_ref.horas_aprox or '-' }}</div>
+              <div style="font-size:12px;color:#475569;">Salida habitual: {{ rv_ref.salida_habitual or '-' }}</div>
+              <div style="font-size:12px;color:#475569;">Llegada habitual: {{ rv_ref.llegada_habitual or '-' }}</div>
+              <div style="margin-top:6px;">
+                <span class="state info">Tipo carga: {{ rv_ref.tipo_carga or '-' }}</span>
+                <span class="state {% if rv_ref.jornada_extendida|int == 1 %}warn{% else %}ok{% endif %}">Jornada extendida: {{ 'SI' if rv_ref.jornada_extendida|int == 1 else 'NO' }}</span>
+              </div>
+              {% if rv_ref.observaciones %}
+                <div style="font-size:12px;color:#475569;margin-top:6px;">Obs: {{ rv_ref.observaciones }}</div>
+              {% endif %}
+            </div>
+            <div style="margin-top:8px;">
+              <span class="state"><strong>Sugerido automatico:</strong> {{ rv_sugerencia.sugerido or '-' }}</span>
+            </div>
+
+            <details style="margin-top:10px;">
+              <summary class="btn" style="display:inline-block;cursor:pointer;">Editar referencia viaje</summary>
+              <form method="post" action="{{ url_for('asignaciones_rotacion_visual', periodo=periodo, fecha_ref=ref_iso, rv_tipo=rv_tipo, rv_destino=rv_destino) }}" style="margin-top:8px;display:grid;grid-template-columns:1fr;gap:8px;">
+                <input type="hidden" name="rv_action" value="save_ref">
+                <input type="hidden" name="rv_tipo" value="{{ rv_tipo }}">
+                <input type="hidden" name="rv_destino" value="{{ rv_destino }}">
+                <div>
+                  <label style="font-size:12px;color:#64748b;">Km aproximados ida y vuelta</label>
+                  <input type="text" name="km_aprox" value="{{ rv_ref.km_aprox or '' }}" style="width:100%;padding:6px 8px;border:1px solid #e5e7eb;border-radius:8px;">
+                </div>
+                <div>
+                  <label style="font-size:12px;color:#64748b;">Tiempo aproximado</label>
+                  <input type="text" name="horas_aprox" value="{{ rv_ref.horas_aprox or '' }}" style="width:100%;padding:6px 8px;border:1px solid #e5e7eb;border-radius:8px;">
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                  <div>
+                    <label style="font-size:12px;color:#64748b;">Salida habitual</label>
+                    <input type="text" name="salida_habitual" value="{{ rv_ref.salida_habitual or '' }}" style="width:100%;padding:6px 8px;border:1px solid #e5e7eb;border-radius:8px;">
+                  </div>
+                  <div>
+                    <label style="font-size:12px;color:#64748b;">Llegada habitual</label>
+                    <input type="text" name="llegada_habitual" value="{{ rv_ref.llegada_habitual or '' }}" style="width:100%;padding:6px 8px;border:1px solid #e5e7eb;border-radius:8px;">
+                  </div>
+                </div>
+                <div>
+                  <label style="font-size:12px;color:#64748b;">Tipo carga</label>
+                  <input type="text" name="tipo_carga" value="{{ rv_ref.tipo_carga or '' }}" style="width:100%;padding:6px 8px;border:1px solid #e5e7eb;border-radius:8px;">
+                </div>
+                <div>
+                  <label style="font-size:12px;color:#64748b;">Jornada extendida</label>
+                  <select name="jornada_extendida" style="width:100%;padding:6px 8px;border:1px solid #e5e7eb;border-radius:8px;">
+                    <option value="1" {% if rv_ref.jornada_extendida|int == 1 %}selected{% endif %}>SI</option>
+                    <option value="0" {% if rv_ref.jornada_extendida|int == 0 %}selected{% endif %}>NO</option>
+                  </select>
+                </div>
+                <div>
+                  <label style="font-size:12px;color:#64748b;">Observaciones</label>
+                  <input type="text" name="observaciones" value="{{ rv_ref.observaciones or '' }}" style="width:100%;padding:6px 8px;border:1px solid #e5e7eb;border-radius:8px;">
+                </div>
+                <div style="display:flex;justify-content:flex-end;">
+                  <button class="btn primary" type="submit">Guardar referencia</button>
+                </div>
+              </form>
+            </details>
+          {% else %}
+            <div style="margin-top:8px;color:#64748b;font-size:12px;">Sin destino seleccionado para mostrar referencia.</div>
+          {% endif %}
         </div>
       </div>
     {% endif %}
@@ -903,6 +1125,61 @@
         txt.select();
         document.execCommand("copy");
       }
+    });
+  })();
+
+  (function () {
+    const list = document.getElementById("rvList");
+    const reorderForm = document.getElementById("rvReorderForm");
+    const orderedInput = document.getElementById("rvOrderedIds");
+    const btnSaveOrder = document.getElementById("btnGuardarOrdenVisual");
+    if (!list || !reorderForm || !orderedInput || !btnSaveOrder) return;
+
+    let dragItem = null;
+
+    function currentIds() {
+      return Array.from(list.querySelectorAll(".rv-item[data-rid]"))
+        .map((el) => String(el.getAttribute("data-rid") || "").trim())
+        .filter(Boolean);
+    }
+
+    function syncOrderField() {
+      orderedInput.value = currentIds().join(",");
+    }
+
+    function wire(item) {
+      item.addEventListener("dragstart", function () {
+        dragItem = item;
+        item.style.opacity = "0.55";
+      });
+      item.addEventListener("dragend", function () {
+        item.style.opacity = "1";
+        dragItem = null;
+        syncOrderField();
+      });
+      item.addEventListener("dragover", function (ev) {
+        ev.preventDefault();
+      });
+      item.addEventListener("drop", function (ev) {
+        ev.preventDefault();
+        if (!dragItem || dragItem === item) return;
+        const rect = item.getBoundingClientRect();
+        const placeAfter = (ev.clientY - rect.top) > (rect.height / 2);
+        if (placeAfter) {
+          item.after(dragItem);
+        } else {
+          item.before(dragItem);
+        }
+        syncOrderField();
+      });
+    }
+
+    Array.from(list.querySelectorAll(".rv-item[data-rid]")).forEach(wire);
+    syncOrderField();
+
+    btnSaveOrder.addEventListener("click", function () {
+      syncOrderField();
+      reorderForm.submit();
     });
   })();
 </script>
