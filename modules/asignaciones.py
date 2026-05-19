@@ -900,14 +900,27 @@ def register_asignaciones(app, get_db):
                 seen.add(ir)
                 unique_given.append(ir)
         final_order = unique_given + [rid for rid in existing_ids if rid not in seen]
+        # Two-phase update to avoid UNIQUE(tipo_viaje, posicion) collisions
+        # while positions are being reassigned.
         for i, rid in enumerate(final_order, start=1):
             con.execute(
                 """
                 UPDATE rotacion_visual_items
                 SET posicion=?, actualizado_en=?
                 WHERE id=?
+                  AND LOWER(COALESCE(tipo_viaje,'')) = LOWER(?)
                 """,
-                (i, _now_ts(), int(rid)),
+                (-i, _now_ts(), int(rid), tipo),
+            )
+        for i, rid in enumerate(final_order, start=1):
+            con.execute(
+                """
+                UPDATE rotacion_visual_items
+                SET posicion=?, actualizado_en=?
+                WHERE id=?
+                  AND LOWER(COALESCE(tipo_viaje,'')) = LOWER(?)
+                """,
+                (i, _now_ts(), int(rid), tipo),
             )
         con.commit()
 
@@ -952,8 +965,35 @@ def register_asignaciones(app, get_db):
             ).fetchone()
         if not target:
             return False
-        con.execute("UPDATE rotacion_visual_items SET posicion=?, actualizado_en=? WHERE id=?", (int(target["posicion"]), _now_ts(), int(row["id"])))
-        con.execute("UPDATE rotacion_visual_items SET posicion=?, actualizado_en=? WHERE id=?", (pos, _now_ts(), int(target["id"])))
+        # Use a temporary position to avoid UNIQUE(tipo_viaje, posicion) collision.
+        temp_pos = -999000 - int(row["id"])
+        con.execute(
+            """
+            UPDATE rotacion_visual_items
+            SET posicion=?, actualizado_en=?
+            WHERE id=?
+              AND LOWER(COALESCE(tipo_viaje,'')) = LOWER(?)
+            """,
+            (temp_pos, _now_ts(), int(row["id"]), tipo),
+        )
+        con.execute(
+            """
+            UPDATE rotacion_visual_items
+            SET posicion=?, actualizado_en=?
+            WHERE id=?
+              AND LOWER(COALESCE(tipo_viaje,'')) = LOWER(?)
+            """,
+            (pos, _now_ts(), int(target["id"]), tipo),
+        )
+        con.execute(
+            """
+            UPDATE rotacion_visual_items
+            SET posicion=?, actualizado_en=?
+            WHERE id=?
+              AND LOWER(COALESCE(tipo_viaje,'')) = LOWER(?)
+            """,
+            (int(target["posicion"]), _now_ts(), int(row["id"]), tipo),
+        )
         con.commit()
         _normalize_rotacion_visual(con, tipo)
         return True
