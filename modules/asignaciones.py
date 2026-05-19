@@ -159,6 +159,22 @@ def register_asignaciones(app, get_db):
         return CARGA_TO_PUNTAJE.get(_norm(tipo_carga), 0)
 
     def _ensure_schema(con):
+        def _ensure_columns(table_name, col_defs):
+            try:
+                info = con.execute(f"PRAGMA table_info({table_name})").fetchall()
+                existing = {str(r["name"] or "").strip().lower() for r in info}
+            except Exception:
+                existing = set()
+            for col_name, col_def in col_defs:
+                if str(col_name or "").strip().lower() in existing:
+                    continue
+                try:
+                    con.execute(f"ALTER TABLE {table_name} ADD COLUMN {col_name} {col_def}")
+                except Exception:
+                    # Si la BD esta en un estado viejo/inconsistente,
+                    # no frenamos aqui: dejamos que el resto del esquema siga.
+                    pass
+
         con.execute(
             """
             CREATE TABLE IF NOT EXISTS choferes_rotacion(
@@ -296,6 +312,56 @@ def register_asignaciones(app, get_db):
             )
             """
         )
+
+        # Migraciones suaves para bases existentes (evita 500 por columnas faltantes).
+        _ensure_columns(
+            "choferes_rotacion",
+            [
+                ("activo", "INTEGER NOT NULL DEFAULT 1"),
+                ("orden_rotacion", "INTEGER NOT NULL DEFAULT 999"),
+                ("observaciones", "TEXT"),
+            ],
+        )
+        _ensure_columns(
+            "rotacion_simple_viajes",
+            [
+                ("orden", "INTEGER NOT NULL DEFAULT 999"),
+                ("estado", "TEXT NOT NULL DEFAULT 'Programado'"),
+                ("fecha", "TEXT"),
+                ("chofer_actual_id", "INTEGER"),
+                ("proximo_chofer_id", "INTEGER"),
+                ("observacion", "TEXT"),
+                ("actualizado_en", "TEXT NOT NULL DEFAULT (datetime('now'))"),
+            ],
+        )
+        _ensure_columns(
+            "planilla_diaria",
+            [
+                ("fecha", "TEXT"),
+                ("hora_salida", "TEXT"),
+                ("hora_regreso_estimada", "TEXT"),
+                ("chofer_id", "INTEGER"),
+                ("vehiculo", "TEXT"),
+                ("solicitante", "TEXT"),
+                ("destino", "TEXT"),
+                ("tipo_asignacion", "TEXT"),
+                ("estado", "TEXT NOT NULL DEFAULT 'Pendiente'"),
+                ("observaciones", "TEXT"),
+            ],
+        )
+        _ensure_columns(
+            "rotacion_visual_items",
+            [
+                ("tipo_viaje", "TEXT"),
+                ("posicion", "INTEGER"),
+                ("chofer_id", "INTEGER"),
+                ("fecha_programada", "TEXT"),
+                ("observaciones", "TEXT"),
+                ("activo", "INTEGER NOT NULL DEFAULT 1"),
+                ("actualizado_en", "TEXT NOT NULL DEFAULT (datetime('now'))"),
+            ],
+        )
+
         con.execute("CREATE INDEX IF NOT EXISTS idx_asig_fecha ON asignaciones_rotacion(fecha)")
         con.execute("CREATE INDEX IF NOT EXISTS idx_asig_chofer_fecha ON asignaciones_rotacion(chofer_id, fecha)")
         con.execute("CREATE INDEX IF NOT EXISTS idx_asig_zona_destino_fecha ON asignaciones_rotacion(zona, destino, fecha)")
