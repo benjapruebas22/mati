@@ -45,7 +45,16 @@ def register_asignaciones(app, get_db):
         "No afecta rotacion",
     ]
     ESTADOS_PLANILLA = ["Pendiente", "Asignado", "Realizado", "Cancelado"]
+    ESTADOS_ROT_SIMPLE = ["Programado", "Realizado", "Cancelado"]
     PERIODOS_VALIDOS = [30, 60, 90, 365]
+    ROTACION_SIMPLE_SEED = [
+        ("Itinerancia Susques", "Programado", "2026-05-21", "Gaston Villagra", "Mauro Vea Murguia", "Jornada extendida"),
+        ("Ledesma / San Pedro", "Programado", "", "Jorge Corbacho", "Emiliano P. de la Puente", ""),
+        ("Perico", "Programado", "", "Emiliano P. de la Puente", "Mauro Vea Murguia", ""),
+        ("La Quiaca", "Programado", "", "Mauro Vea Murguia", "Gaston Villagra", ""),
+        ("Viaje largo general", "Programado", "", "Jorge Corbacho", "Mauro Vea Murguia", ""),
+        ("Otro especial", "Programado", "", "Emiliano P. de la Puente", "Jorge Corbacho", ""),
+    ]
     ROTACION_TIPOS = ["Itinerancia", "Ramal", "Norte", "Quebrada", "Especial"]
     CHOFER_COLOR_SEED = {
         "mauro vea murguia": "#7c3aed",      # violeta
@@ -106,6 +115,12 @@ def register_asignaciones(app, get_db):
             return datetime.strptime(str(d or "").strip(), "%Y-%m-%d").date()
         except Exception:
             return None
+
+    def _fmt_dmy(iso_date):
+        d = _parse_iso(iso_date)
+        if not d:
+            return ""
+        return d.strftime("%d/%m/%Y")
 
     def _period_or_default(v, default=60):
         p = _to_int(v, default)
@@ -221,6 +236,21 @@ def register_asignaciones(app, get_db):
         )
         con.execute(
             """
+            CREATE TABLE IF NOT EXISTS rotacion_simple_viajes(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                orden INTEGER NOT NULL DEFAULT 999,
+                viaje_destino TEXT NOT NULL UNIQUE,
+                estado TEXT NOT NULL DEFAULT 'Programado',
+                fecha TEXT,
+                chofer_actual_id INTEGER,
+                proximo_chofer_id INTEGER,
+                observacion TEXT,
+                actualizado_en TEXT NOT NULL DEFAULT (datetime('now'))
+            )
+            """
+        )
+        con.execute(
+            """
             CREATE TABLE IF NOT EXISTS rotacion_visual_items(
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 tipo_viaje TEXT NOT NULL,
@@ -258,6 +288,7 @@ def register_asignaciones(app, get_db):
         con.execute("CREATE INDEX IF NOT EXISTS idx_exc_chofer_activo ON exclusiones_chofer(chofer_id, activo, fecha_desde, fecha_hasta)")
         con.execute("CREATE INDEX IF NOT EXISTS idx_planilla_fecha_hora ON planilla_diaria(fecha, hora_salida)")
         con.execute("CREATE INDEX IF NOT EXISTS idx_planilla_chofer_fecha ON planilla_diaria(chofer_id, fecha)")
+        con.execute("CREATE INDEX IF NOT EXISTS idx_rot_simple_orden ON rotacion_simple_viajes(orden)")
         con.execute("CREATE INDEX IF NOT EXISTS idx_rv_tipo_pos ON rotacion_visual_items(tipo_viaje, posicion)")
         con.execute("CREATE INDEX IF NOT EXISTS idx_ref_zona_destino ON destino_referencias(zona, destino)")
         con.execute(
@@ -305,6 +336,37 @@ def register_asignaciones(app, get_db):
                 )
                 """,
                 (zona, destino, km, horas, salida, llegada, carga, int(jornada), obs, zona, destino),
+            )
+        for i, (viaje, estado, fecha, chofer_actual, chofer_proximo, obs) in enumerate(ROTACION_SIMPLE_SEED, start=1):
+            ca = con.execute(
+                "SELECT id FROM choferes_rotacion WHERE LOWER(COALESCE(nombre,'')) = LOWER(?) LIMIT 1",
+                (chofer_actual,),
+            ).fetchone()
+            cp = con.execute(
+                "SELECT id FROM choferes_rotacion WHERE LOWER(COALESCE(nombre,'')) = LOWER(?) LIMIT 1",
+                (chofer_proximo,),
+            ).fetchone()
+            con.execute(
+                """
+                INSERT INTO rotacion_simple_viajes(
+                    orden, viaje_destino, estado, fecha, chofer_actual_id, proximo_chofer_id, observacion, actualizado_en
+                )
+                SELECT ?, ?, ?, ?, ?, ?, ?, ?
+                WHERE NOT EXISTS(
+                    SELECT 1 FROM rotacion_simple_viajes WHERE LOWER(COALESCE(viaje_destino,'')) = LOWER(?)
+                )
+                """,
+                (
+                    i,
+                    viaje,
+                    estado,
+                    fecha,
+                    int(ca["id"] if ca else 0) or None,
+                    int(cp["id"] if cp else 0) or None,
+                    obs,
+                    _now_ts(),
+                    viaje,
+                ),
             )
         con.commit()
 
@@ -1375,8 +1437,103 @@ def register_asignaciones(app, get_db):
             uniq_global.append(g)
         return per_row, uniq_global
 
-    def _build_planilla_copy_text(rows):
-        lines = ["Hora | Chofer | Vehiculo | Destino | Solicitante | Observacion"]
+    def _list_rotacion_simple(con):
+        return con.execute(
+            """
+            SELECT
+                r.id,
+                COALESCE(r.orden,999) AS orden,
+                COALESCE(r.viaje_destino,'') AS viaje_destino,
+                COALESCE(r.estado,'Programado') AS estado,
+                COALESCE(r.fecha,'') AS fecha,
+                COALESCE(r.chofer_actual_id,0) AS chofer_actual_id,
+                COALESCE(ca.nombre,'') AS chofer_actual,
+                COALESCE(r.proximo_chofer_id,0) AS proximo_chofer_id,
+                COALESCE(cp.nombre,'') AS proximo_chofer,
+                COALESCE(r.observacion,'') AS observacion
+            FROM rotacion_simple_viajes r
+            LEFT JOIN choferes_rotacion ca ON ca.id = r.chofer_actual_id
+            LEFT JOIN choferes_rotacion cp ON cp.id = r.proximo_chofer_id
+            ORDER BY COALESCE(r.orden,999), r.id
+            """
+        ).fetchall()
+
+    def _save_rotacion_simple_row(con, row_id, payload):
+        rid = int(row_id or 0)
+        if rid <= 0:
+            return False
+        estado = (payload.get("estado") or "Programado").strip()
+        if estado not in ESTADOS_ROT_SIMPLE:
+            estado = "Programado"
+        fecha = (payload.get("fecha") or "").strip()
+        if fecha and not _parse_iso(fecha):
+            fecha = ""
+        con.execute(
+            """
+            UPDATE rotacion_simple_viajes
+            SET estado=?,
+                fecha=?,
+                chofer_actual_id=?,
+                proximo_chofer_id=?,
+                observacion=?,
+                actualizado_en=?
+            WHERE id=?
+            """,
+            (
+                estado,
+                fecha,
+                (_to_int(payload.get("chofer_actual_id"), 0) or None),
+                (_to_int(payload.get("proximo_chofer_id"), 0) or None),
+                (payload.get("observacion") or "").strip(),
+                _now_ts(),
+                rid,
+            ),
+        )
+        con.commit()
+        return True
+
+    def _rotacion_last_row_id(rows):
+        top_id = 0
+        top_date = None
+        for r in rows or []:
+            d = _parse_iso(r["fecha"])
+            if not d:
+                continue
+            if (top_date is None) or (d > top_date):
+                top_date = d
+                top_id = int(r["id"] or 0)
+        return top_id
+
+    def _update_chofer_orden_simple(con, chofer_id, orden_rotacion, activo, observaciones):
+        cid = int(chofer_id or 0)
+        if cid <= 0:
+            return False
+        con.execute(
+            """
+            UPDATE choferes_rotacion
+            SET orden_rotacion=?,
+                activo=?,
+                observaciones=?
+            WHERE id=?
+            """,
+            (
+                int(orden_rotacion or 999),
+                int(activo or 0),
+                (observaciones or "").strip(),
+                cid,
+            ),
+        )
+        con.commit()
+        return True
+
+    def _build_planilla_copy_text(rows, fecha_iso=None):
+        fecha_txt = _fmt_dmy(fecha_iso) if fecha_iso else ""
+        lines = [
+            "ASIGNACIONES DEL DIA",
+            f"Fecha: {fecha_txt or '-'}",
+            "",
+            "Hora | Chofer | Vehiculo | Destino | Solicitante | Observacion",
+        ]
         for r in rows or []:
             h = f"{(r['hora_salida'] or '-')} - {(r['hora_regreso_estimada'] or '-')}"
             lines.append(
@@ -1515,132 +1672,75 @@ def register_asignaciones(app, get_db):
 
     def _render(view, con, extra=None):
         extra = extra or {}
-        cfg = _fetch_config(con)
-        periodo = _period_or_default(request.args.get("periodo"), cfg["periodo_default"])
         ref_iso = (request.args.get("fecha_ref") or "").strip() or _today_iso()
-        indicadores = _build_indicators(con, periodo, ref_iso)
-        resumen_destinos = _build_resumen_destinos(con, periodo, ref_iso)
-        resumen_chofer = calcular_resumen_rotacion(con, periodo, ref_iso)
         choferes = _list_choferes(con, include_inactive=True)
-        destinos = _list_destinos(con, include_inactive=True)
-        zonas_activas = sorted(
-            {str(d["zona"] or "").strip() for d in destinos if int(d["activo"] or 0) == 1 and str(d["zona"] or "").strip()},
-            key=lambda s: s.lower(),
-        )
+        choferes_orden = sorted(choferes, key=lambda c: (int(c["orden_rotacion"] or 999), _norm(c["nombre"])))
 
-        filtros_hist = {
-            "desde": (request.args.get("desde") or "").strip(),
-            "hasta": (request.args.get("hasta") or "").strip(),
-            "chofer_id": _to_int(request.args.get("chofer_id"), 0),
-            "zona": (request.args.get("zona") or "").strip(),
-            "destino": (request.args.get("destino") or "").strip(),
-            "tipo_carga": (request.args.get("tipo_carga") or "").strip(),
-            "estado": (request.args.get("estado") or "").strip(),
-        }
-        historial_rows = listar_historial(con, filtros_hist)
+        rot_simple_rows = _list_rotacion_simple(con)
+        rot_last_row_id = _rotacion_last_row_id(rot_simple_rows)
+
         filtros_planilla = _planilla_filters_from_request()
+        filtros_planilla["chofer_id"] = _to_int(filtros_planilla.get("chofer_id"), 0)
+        filtros_planilla["vehiculo"] = ""
+        filtros_planilla["estado"] = ""
+        filtros_planilla["sort"] = "hora"
         if not filtros_planilla.get("fecha"):
             filtros_planilla["fecha"] = ref_iso
         planilla_rows = _list_planilla_diaria(con, filtros_planilla)
-        planilla_row_alerts, planilla_alertas = _build_planilla_alerts(planilla_rows)
-        planilla_copy_text = _build_planilla_copy_text(planilla_rows)
-        rv_tipo = ROTACION_TIPOS[0]
-        rv_rows = []
-        rv_destinos = []
-        rv_destino = ""
-        rv_ref = None
-        rv_sugerencia = {"sugerido": "", "puntaje": 0, "tipo_carga": ""}
-        rv_indicadores = {}
-        rv_ultimo = {"fecha": "", "chofer": ""}
-        rv_proximo = None
-        if view == "rotacion_visual":
-            rv_tipo = _rotacion_tipo_from_request()
-            rv_rows = _list_rotacion_visual(con, rv_tipo, ref_iso)
-            rv_destinos = _list_destinos_por_zona(con, rv_tipo)
-            rv_destino = (request.args.get("rv_destino") or request.form.get("rv_destino") or "").strip()
-            rv_destinos_nombres = [str(d.get("destino") or "").strip() for d in rv_destinos]
-            if rv_destinos_nombres and rv_destino not in rv_destinos_nombres:
-                rv_destino = rv_destinos_nombres[0]
-            if not rv_destino and rv_destinos_nombres:
-                rv_destino = rv_destinos_nombres[0]
-            rv_ref = _get_destino_referencia(con, rv_tipo, rv_destino) if rv_destino else None
-            rv_sugerencia = sugerir_proximo_chofer(
-                con,
-                rv_destino,
-                rv_tipo,
-                periodo,
-                ref_iso,
-                (rv_ref.get("tipo_carga") if rv_ref else ""),
-            ) if rv_destino else {"sugerido": "", "puntaje": 0, "tipo_carga": ""}
-            rv_indicadores = _build_indicadores_rotacion_visual(con, ref_iso)
-            rv_ultimo = _ultimo_viaje_tipo(con, rv_tipo)
-            rv_proximo = _proximo_rotacion_tipo(rv_rows)
-        chofer_color_by_id = {
-            int(c["id"]): _chofer_color_hex(c["nombre"])
-            for c in choferes
-        }
-
-        exclusiones = con.execute(
-            """
-            SELECT
-                e.id,
-                e.chofer_id,
-                COALESCE(c.nombre,'') AS chofer,
-                COALESCE(e.fecha_desde,'') AS fecha_desde,
-                COALESCE(e.fecha_hasta,'') AS fecha_hasta,
-                COALESCE(e.motivo,'') AS motivo,
-                COALESCE(e.activo,1) AS activo
-            FROM exclusiones_chofer e
-            LEFT JOIN choferes_rotacion c ON c.id = e.chofer_id
-            ORDER BY COALESCE(e.activo,1) DESC, date(e.fecha_desde) DESC, e.id DESC
-            """
-        ).fetchall()
+        planilla_copy_text = _build_planilla_copy_text(planilla_rows, filtros_planilla.get("fecha"))
 
         return render_template(
             "asignaciones_home.html",
             view=view,
-            periodo=periodo,
-            periodos_validos=PERIODOS_VALIDOS,
             ref_iso=ref_iso,
-            config=cfg,
-            indicadores=indicadores,
-            resumen_destinos=resumen_destinos,
-            resumen_chofer=resumen_chofer,
             choferes=choferes,
-            destinos=destinos,
-            zonas_activas=zonas_activas,
-            exclusiones=exclusiones,
-            historial_rows=historial_rows,
-            filtros_hist=filtros_hist,
+            choferes_orden=choferes_orden,
+            rot_simple_rows=rot_simple_rows,
+            rot_last_row_id=rot_last_row_id,
             planilla_rows=planilla_rows,
             filtros_planilla=filtros_planilla,
-            planilla_row_alerts=planilla_row_alerts,
-            planilla_alertas=planilla_alertas,
             planilla_copy_text=planilla_copy_text,
-            rv_tipo=rv_tipo,
-            rv_tipos=ROTACION_TIPOS,
-            rv_rows=rv_rows,
-            rv_destinos=rv_destinos,
-            rv_destino=rv_destino,
-            rv_ref=rv_ref,
-            rv_sugerencia=rv_sugerencia,
-            rv_indicadores=rv_indicadores,
-            rv_ultimo=rv_ultimo,
-            rv_proximo=rv_proximo,
-            chofer_color_by_id=chofer_color_by_id,
-            estados=ESTADOS,
+            estados_rot_simple=ESTADOS_ROT_SIMPLE,
             estados_planilla=ESTADOS_PLANILLA,
             extra=extra,
+            fmt_dmy=_fmt_dmy,
         )
 
-    @app.route("/asignaciones", endpoint="asignaciones_home")
+    @app.route("/asignaciones", methods=["GET", "POST"], endpoint="asignaciones_home")
     def asignaciones_home():
         if not _can_access():
             return _deny()
         con = get_db()
         _ensure_schema(con)
         try:
-            return _render("resumen", con, {})
+            if request.method == "POST":
+                action = _norm(request.form.get("action"))
+                if action == "save_viaje":
+                    row_id = _to_int(request.form.get("row_id"), 0)
+                    payload = {
+                        "estado": (request.form.get("estado") or "Programado").strip(),
+                        "fecha": (request.form.get("fecha") or "").strip(),
+                        "chofer_actual_id": _to_int(request.form.get("chofer_actual_id"), 0),
+                        "proximo_chofer_id": _to_int(request.form.get("proximo_chofer_id"), 0),
+                        "observacion": (request.form.get("observacion") or "").strip(),
+                    }
+                    if row_id <= 0:
+                        flash("Fila de rotacion invalida.", "warning")
+                    else:
+                        _save_rotacion_simple_row(con, row_id, payload)
+                        flash("Rotacion actualizada.", "success")
+                elif action == "save_chofer_orden":
+                    chofer_id = _to_int(request.form.get("chofer_id"), 0)
+                    orden = _to_int(request.form.get("orden_rotacion"), 999)
+                    activo = 1 if _norm(request.form.get("activo") or "") in {"1", "si", "true", "on"} else 0
+                    obs = (request.form.get("observaciones") or "").strip()
+                    if chofer_id <= 0:
+                        flash("Chofer invalido.", "warning")
+                    else:
+                        _update_chofer_orden_simple(con, chofer_id, orden, activo, obs)
+                        flash("Orden de chofer actualizado.", "success")
+                return redirect(url_for("asignaciones_home"))
+            return _render("rotacion", con, {})
         finally:
             con.close()
 
@@ -1648,6 +1748,8 @@ def register_asignaciones(app, get_db):
     def asignaciones_nueva():
         if not _can_access():
             return _deny()
+        flash("Vista oculta. Usa Rotacion o Planilla diaria.", "info")
+        return redirect(url_for("asignaciones_home"))
         con = get_db()
         _ensure_schema(con)
         try:
@@ -1767,6 +1869,8 @@ def register_asignaciones(app, get_db):
     def asignaciones_historial():
         if not _can_access():
             return _deny()
+        flash("Vista oculta. Usa Rotacion o Planilla diaria.", "info")
+        return redirect(url_for("asignaciones_home"))
         con = get_db()
         _ensure_schema(con)
         try:
@@ -1857,9 +1961,6 @@ def register_asignaciones(app, get_db):
                         url_for(
                             "asignaciones_planilla",
                             pd_fecha=payload["fecha"],
-                            pd_sort=(request.args.get("pd_sort") or "hora"),
-                            periodo=request.args.get("periodo") or "",
-                            fecha_ref=request.args.get("fecha_ref") or "",
                         )
                     )
 
@@ -1920,10 +2021,6 @@ def register_asignaciones(app, get_db):
                 url_for(
                     "asignaciones_planilla",
                     pd_fecha=request.args.get("pd_fecha") or "",
-                    pd_chofer_id=request.args.get("pd_chofer_id") or "",
-                    pd_vehiculo=request.args.get("pd_vehiculo") or "",
-                    pd_estado=request.args.get("pd_estado") or "",
-                    pd_sort=request.args.get("pd_sort") or "hora",
                 )
             )
         finally:
@@ -1933,6 +2030,7 @@ def register_asignaciones(app, get_db):
     def asignaciones_rotacion_visual():
         if not _can_access():
             return _deny()
+        return redirect(url_for("asignaciones_home"))
         con = get_db()
         _ensure_schema(con)
         try:
@@ -2003,6 +2101,8 @@ def register_asignaciones(app, get_db):
     def asignaciones_choferes():
         if not _can_access():
             return _deny()
+        flash("Vista oculta. Usa Rotacion o Planilla diaria.", "info")
+        return redirect(url_for("asignaciones_home"))
         con = get_db()
         _ensure_schema(con)
         try:
@@ -2076,6 +2176,8 @@ def register_asignaciones(app, get_db):
     def asignaciones_configuracion():
         if not _can_access():
             return _deny()
+        flash("Vista oculta. Usa Rotacion o Planilla diaria.", "info")
+        return redirect(url_for("asignaciones_home"))
         con = get_db()
         _ensure_schema(con)
         try:
