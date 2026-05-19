@@ -122,6 +122,20 @@ def register_asignaciones(app, get_db):
             return ""
         return d.strftime("%d/%m/%Y")
 
+    def _to_iso_flexible(raw):
+        txt = str(raw or "").strip()
+        if not txt:
+            return ""
+        d = _parse_iso(txt)
+        if d:
+            return d.isoformat()
+        for fmt in ("%d/%m/%Y", "%d-%m-%Y"):
+            try:
+                return datetime.strptime(txt, fmt).date().isoformat()
+            except Exception:
+                pass
+        return ""
+
     def _period_or_default(v, default=60):
         p = _to_int(v, default)
         if p not in PERIODOS_VALIDOS:
@@ -1465,9 +1479,7 @@ def register_asignaciones(app, get_db):
         estado = (payload.get("estado") or "Programado").strip()
         if estado not in ESTADOS_ROT_SIMPLE:
             estado = "Programado"
-        fecha = (payload.get("fecha") or "").strip()
-        if fecha and not _parse_iso(fecha):
-            fecha = ""
+        fecha = _to_iso_flexible(payload.get("fecha"))
         con.execute(
             """
             UPDATE rotacion_simple_viajes

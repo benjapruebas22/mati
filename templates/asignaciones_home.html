@@ -30,67 +30,132 @@
     </div>
 
     {% if view == "rotacion" %}
-      <div style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;overflow:auto;background:#fff;">
-        <div style="padding:8px 10px;border-bottom:1px solid #e5e7eb;background:#f8fafc;font-weight:700;color:#334155;">Rotacion por viaje / destino</div>
-        <table style="width:100%;border-collapse:collapse;font-size:12px;">
-          <thead style="background:#f8fafc;">
-            <tr>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Viaje / destino</th>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Estado</th>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Fecha</th>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Ultimo / asignado</th>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Proximo chofer</th>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Observacion</th>
-              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">Accion</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for r in rot_simple_rows %}
-              {% set frow = 'rotRow' ~ r.id %}
-              <tr {% if rot_last_row_id and r.id|int == rot_last_row_id|int %}style="background:#fff7ed;"{% endif %}>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;font-weight:600;">{{ r.viaje_destino }}</td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
-                  <select form="{{ frow }}" name="estado" style="padding:5px 8px;border:1px solid #e5e7eb;border-radius:8px;">
-                    {% for e in estados_rot_simple %}
-                      <option value="{{ e }}" {% if r.estado == e %}selected{% endif %}>{{ e }}</option>
-                    {% endfor %}
-                  </select>
-                </td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
-                  <input form="{{ frow }}" type="date" name="fecha" value="{{ r.fecha or '' }}" style="padding:5px 8px;border:1px solid #e5e7eb;border-radius:8px;min-width:140px;">
-                </td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
-                  <select form="{{ frow }}" name="chofer_actual_id" style="width:100%;min-width:180px;padding:5px 8px;border:1px solid #e5e7eb;border-radius:8px;">
-                    <option value="0">-</option>
-                    {% for c in choferes_orden %}
-                      <option value="{{ c.id }}" {% if c.id|int == r.chofer_actual_id|int %}selected{% endif %}>{{ c.nombre }}</option>
-                    {% endfor %}
-                  </select>
-                </td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
-                  <select form="{{ frow }}" name="proximo_chofer_id" style="width:100%;min-width:180px;padding:5px 8px;border:1px solid #e5e7eb;border-radius:8px;">
-                    <option value="0">-</option>
-                    {% for c in choferes_orden %}
-                      <option value="{{ c.id }}" {% if c.id|int == r.proximo_chofer_id|int %}selected{% endif %}>{{ c.nombre }}</option>
-                    {% endfor %}
-                  </select>
-                </td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
-                  <input form="{{ frow }}" type="text" name="observacion" value="{{ r.observacion or '' }}" style="width:100%;min-width:220px;padding:5px 8px;border:1px solid #e5e7eb;border-radius:8px;">
-                </td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
-                  <form id="{{ frow }}" method="post" action="{{ url_for('asignaciones_home') }}">
-                    <input type="hidden" name="action" value="save_viaje">
-                    <input type="hidden" name="row_id" value="{{ r.id }}">
-                    <button type="submit" class="btn xs primary">Editar</button>
-                  </form>
-                </td>
-              </tr>
-            {% else %}
-              <tr><td colspan="7" style="padding:10px;color:#64748b;">Sin filas de rotacion.</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
+      <div style="margin-top:10px;display:grid;grid-template-columns:minmax(0,1.8fr) 290px;gap:10px;">
+        <div>
+          <div style="border:1px solid #e5e7eb;border-radius:12px;overflow:auto;background:#fff;">
+            <div style="padding:8px 10px;border-bottom:1px solid #e5e7eb;background:#f8fafc;font-weight:700;color:#334155;">Rotacion por viaje / Ultimo Asignado</div>
+            <table style="width:100%;border-collapse:collapse;font-size:12px;">
+              <thead style="background:#f8fafc;">
+                <tr>
+                  <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Viaje / destino</th>
+                  <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Estado</th>
+                  <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Fecha</th>
+                  <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Ultimo / asignado</th>
+                  <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">Accion</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in rot_simple_rows %}
+                  {% set lastf = 'rotLast' ~ r.id %}
+                  <tr {% if rot_last_row_id and r.id|int == rot_last_row_id|int %}style="background:#fff7ed;"{% endif %}>
+                    <td style="padding:8px;border-bottom:1px solid #e5e7eb;font-weight:600;">{{ r.viaje_destino }}</td>
+                    <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
+                      <select form="{{ lastf }}" name="estado" style="padding:5px 8px;border:1px solid #e5e7eb;border-radius:8px;">
+                        {% for e in estados_rot_simple %}
+                          <option value="{{ e }}" {% if r.estado == e %}selected{% endif %}>{{ e }}</option>
+                        {% endfor %}
+                      </select>
+                    </td>
+                    <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
+                      <input form="{{ lastf }}" type="text" name="fecha" value="{{ fmt_dmy(r.fecha) if r.fecha else '' }}" placeholder="dd/mm/aaaa" style="min-width:120px;padding:5px 8px;border:1px solid #e5e7eb;border-radius:8px;">
+                    </td>
+                    <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
+                      <select form="{{ lastf }}" name="chofer_actual_id" style="width:100%;min-width:180px;padding:5px 8px;border:1px solid #e5e7eb;border-radius:8px;">
+                        <option value="0">-</option>
+                        {% for c in choferes_orden %}
+                          <option value="{{ c.id }}" {% if c.id|int == r.chofer_actual_id|int %}selected{% endif %}>{{ c.nombre }}</option>
+                        {% endfor %}
+                      </select>
+                    </td>
+                    <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
+                      <form id="{{ lastf }}" method="post" action="{{ url_for('asignaciones_home') }}">
+                        <input type="hidden" name="action" value="save_viaje">
+                        <input type="hidden" name="row_id" value="{{ r.id }}">
+                        <input type="hidden" name="proximo_chofer_id" value="{{ r.proximo_chofer_id or 0 }}">
+                        <input type="hidden" name="observacion" value="{{ r.observacion or '' }}">
+                        <button type="submit" class="btn xs primary">Editar</button>
+                      </form>
+                    </td>
+                  </tr>
+                {% else %}
+                  <tr><td colspan="5" style="padding:10px;color:#64748b;">Sin filas de rotacion.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <div style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;overflow:auto;background:#fff;">
+            <div style="padding:8px 10px;border-bottom:1px solid #e5e7eb;background:#f8fafc;font-weight:700;color:#334155;">Rotacion por viaje / Proximo Asignado</div>
+            <table style="width:100%;border-collapse:collapse;font-size:12px;">
+              <thead style="background:#f8fafc;">
+                <tr>
+                  <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Viaje / destino</th>
+                  <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Fecha</th>
+                  <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Proximo asignado</th>
+                  <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Observacion</th>
+                  <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">Accion</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in rot_simple_rows %}
+                  {% set nextf = 'rotNext' ~ r.id %}
+                  <tr>
+                    <td style="padding:8px;border-bottom:1px solid #e5e7eb;font-weight:600;">{{ r.viaje_destino }}</td>
+                    <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
+                      <input form="{{ nextf }}" type="text" name="fecha" value="{{ fmt_dmy(r.fecha) if r.fecha else '' }}" placeholder="dd/mm/aaaa" style="min-width:120px;padding:5px 8px;border:1px solid #e5e7eb;border-radius:8px;">
+                    </td>
+                    <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
+                      <select form="{{ nextf }}" name="proximo_chofer_id" style="width:100%;min-width:180px;padding:5px 8px;border:1px solid #e5e7eb;border-radius:8px;">
+                        <option value="0">-</option>
+                        {% for c in choferes_orden %}
+                          <option value="{{ c.id }}" {% if c.id|int == r.proximo_chofer_id|int %}selected{% endif %}>{{ c.nombre }}</option>
+                        {% endfor %}
+                      </select>
+                    </td>
+                    <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
+                      <input form="{{ nextf }}" type="text" name="observacion" value="{{ r.observacion or '' }}" style="width:100%;min-width:220px;padding:5px 8px;border:1px solid #e5e7eb;border-radius:8px;">
+                    </td>
+                    <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
+                      <form id="{{ nextf }}" method="post" action="{{ url_for('asignaciones_home') }}">
+                        <input type="hidden" name="action" value="save_viaje">
+                        <input type="hidden" name="row_id" value="{{ r.id }}">
+                        <input type="hidden" name="estado" value="{{ r.estado }}">
+                        <input type="hidden" name="chofer_actual_id" value="{{ r.chofer_actual_id or 0 }}">
+                        <button type="submit" class="btn xs primary">Editar</button>
+                      </form>
+                    </td>
+                  </tr>
+                {% else %}
+                  <tr><td colspan="5" style="padding:10px;color:#64748b;">Sin filas de rotacion.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div>
+          <div style="border:1px solid #e5e7eb;border-radius:12px;overflow:auto;background:#fff;">
+            <div style="padding:8px 10px;border-bottom:1px solid #e5e7eb;background:#f8fafc;font-weight:700;color:#334155;">Referencia</div>
+            <table style="width:100%;border-collapse:collapse;font-size:12px;">
+              <thead style="background:#f8fafc;">
+                <tr>
+                  <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Orden</th>
+                  <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Chofer</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for c in choferes_orden %}
+                  <tr>
+                    <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ c.orden_rotacion }}</td>
+                    <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ c.nombre }}</td>
+                  </tr>
+                {% else %}
+                  <tr><td colspan="2" style="padding:10px;color:#64748b;">Sin choferes.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <div style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;overflow:auto;background:#fff;">
