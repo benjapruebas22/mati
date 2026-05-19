@@ -1260,9 +1260,11 @@ def register_asignaciones(app, get_db):
 
     def _proximo_rotacion_tipo(rows):
         for r in rows or []:
-            if int(r.get("activo") or 0) != 1:
+            activo = r["activo"] if "activo" in r.keys() else 0
+            excluido = r["excluido"] if "excluido" in r.keys() else 0
+            if int(activo or 0) != 1:
                 continue
-            if bool(r.get("excluido")):
+            if bool(excluido):
                 continue
             return r
         return None
@@ -1610,29 +1612,21 @@ def register_asignaciones(app, get_db):
         con.commit()
         return True
 
-    def _rowv(row, key, default=""):
-        try:
-            v = row[key]
-            return default if v is None else v
-        except Exception:
-            try:
-                v = row.get(key, default)
-                return default if v is None else v
-            except Exception:
-                return default
-
     def _rotacion_last_row_id(rows):
         top_id = 0
         top_date = None
         for r in rows or []:
-            if _norm(_rowv(r, "estado", "")) != "realizado":
+            estado = r["estado"] if "estado" in r.keys() else ""
+            if _norm(estado) != "realizado":
                 continue
-            d = _parse_iso(_rowv(r, "fecha", ""))
+            fecha = r["fecha"] if "fecha" in r.keys() else ""
+            d = _parse_iso(fecha)
             if not d:
                 continue
             if (top_date is None) or (d > top_date):
                 top_date = d
-                top_id = int(_rowv(r, "id", 0) or 0)
+                rid = r["id"] if "id" in r.keys() else 0
+                top_id = int(rid or 0)
         return top_id
 
     def _update_chofer_orden_simple(con, chofer_id, orden_rotacion, activo, observaciones):
@@ -1879,186 +1873,25 @@ def register_asignaciones(app, get_db):
     def asignaciones_nueva():
         if not _can_access():
             return _deny()
-        flash("Vista oculta. Usa Rotacion o Planilla diaria.", "info")
         return redirect(url_for("asignaciones_home"))
-        con = get_db()
-        _ensure_schema(con)
-        try:
-            form_data = {
-                "fecha": _today_iso(),
-                "zona": "",
-                "destino": "",
-                "tipo_viaje": "",
-                "tipo_carga": "",
-                "puntaje": 0,
-                "chofer_id": 0,
-                "vehiculo": "",
-                "afecta_rotacion": 1,
-                "estado": "Programado",
-                "motivo": "",
-                "observaciones": "",
-            }
-            if request.method == "POST":
-                payload, errores = _assignment_payload_from_form(con)
-                form_data.update(payload)
-                if errores:
-                    for e in errores:
-                        flash(e, "warning")
-                else:
-                    if payload["estado"] == "Salta turno":
-                        aid = registrar_salto_turno(con, payload)
-                    else:
-                        aid = registrar_asignacion(con, payload, 0)
-                    periodo = _period_or_default(request.args.get("periodo"), _fetch_config(con)["periodo_default"])
-                    alerts = verificar_alertas_asignacion(
-                        con,
-                        payload["chofer_id"],
-                        payload["destino"],
-                        payload["zona"],
-                        payload["tipo_carga"],
-                        payload["puntaje"],
-                        periodo,
-                        payload["observaciones"],
-                    )
-                    for a in alerts:
-                        flash(a, "warning")
-                    flash(f"Asignacion registrada (ID {aid}).", "success")
-                    return redirect(url_for("asignaciones_nueva"))
-
-            return _render("nueva", con, {"form_data": form_data})
-        finally:
-            con.close()
 
     @app.route("/asignaciones/editar/<int:asig_id>", methods=["GET", "POST"], endpoint="asignaciones_editar")
     def asignaciones_editar(asig_id):
         if not _can_access():
             return _deny()
-        con = get_db()
-        _ensure_schema(con)
-        try:
-            row = con.execute(
-                """
-                SELECT
-                    id, fecha, zona, destino, tipo_viaje, tipo_carga, puntaje, chofer_id,
-                    vehiculo, afecta_rotacion, estado, motivo, observaciones
-                FROM asignaciones_rotacion
-                WHERE id=?
-                LIMIT 1
-                """,
-                (int(asig_id),),
-            ).fetchone()
-            if not row:
-                flash("Asignacion inexistente.", "warning")
-                return redirect(url_for("asignaciones_historial"))
-
-            form_data = {
-                "id": int(row["id"]),
-                "fecha": (row["fecha"] or "").strip(),
-                "zona": (row["zona"] or "").strip(),
-                "destino": (row["destino"] or "").strip(),
-                "tipo_viaje": (row["tipo_viaje"] or "").strip(),
-                "tipo_carga": (row["tipo_carga"] or "").strip(),
-                "puntaje": int(row["puntaje"] or 0),
-                "chofer_id": int(row["chofer_id"] or 0),
-                "vehiculo": (row["vehiculo"] or "").strip(),
-                "afecta_rotacion": int(row["afecta_rotacion"] or 0),
-                "estado": (row["estado"] or "").strip(),
-                "motivo": (row["motivo"] or "").strip(),
-                "observaciones": (row["observaciones"] or "").strip(),
-            }
-
-            if request.method == "POST":
-                payload, errores = _assignment_payload_from_form(con)
-                form_data.update(payload)
-                if errores:
-                    for e in errores:
-                        flash(e, "warning")
-                else:
-                    registrar_asignacion(con, payload, asig_id)
-                    flash("Asignacion actualizada.", "success")
-                    return redirect(url_for("asignaciones_historial"))
-
-            return _render("nueva", con, {"form_data": form_data, "editing": True, "edit_id": asig_id})
-        finally:
-            con.close()
+        return redirect(url_for("asignaciones_home"))
 
     @app.route("/asignaciones/eliminar/<int:asig_id>", methods=["POST"], endpoint="asignaciones_eliminar")
     def asignaciones_eliminar(asig_id):
         if not _can_access():
             return _deny()
-        con = get_db()
-        _ensure_schema(con)
-        try:
-            con.execute("DELETE FROM asignaciones_rotacion WHERE id=?", (int(asig_id),))
-            con.commit()
-            flash("Asignacion eliminada.", "success")
-        finally:
-            con.close()
-        return redirect(url_for("asignaciones_historial"))
+        return redirect(url_for("asignaciones_home"))
 
     @app.route("/asignaciones/historial", endpoint="asignaciones_historial")
     def asignaciones_historial():
         if not _can_access():
             return _deny()
-        flash("Vista oculta. Usa Rotacion o Planilla diaria.", "info")
         return redirect(url_for("asignaciones_home"))
-        con = get_db()
-        _ensure_schema(con)
-        try:
-            filtros = {
-                "desde": (request.args.get("desde") or "").strip(),
-                "hasta": (request.args.get("hasta") or "").strip(),
-                "chofer_id": _to_int(request.args.get("chofer_id"), 0),
-                "zona": (request.args.get("zona") or "").strip(),
-                "destino": (request.args.get("destino") or "").strip(),
-                "tipo_carga": (request.args.get("tipo_carga") or "").strip(),
-                "estado": (request.args.get("estado") or "").strip(),
-            }
-            rows = listar_historial(con, filtros)
-            if _norm(request.args.get("export")) in {"1", "si", "true", "excel"}:
-                sio = io.StringIO()
-                wr = csv.writer(sio, delimiter=";")
-                wr.writerow(
-                    [
-                        "Fecha",
-                        "Zona",
-                        "Destino",
-                        "Chofer",
-                        "Tipo viaje",
-                        "Carga",
-                        "Puntaje",
-                        "Vehiculo",
-                        "Afecta rotacion",
-                        "Estado",
-                        "Motivo",
-                        "Observaciones",
-                    ]
-                )
-                for r in rows:
-                    wr.writerow(
-                        [
-                            r["fecha"],
-                            r["zona"],
-                            r["destino"],
-                            r["chofer"],
-                            r["tipo_viaje"],
-                            r["tipo_carga"],
-                            r["puntaje"],
-                            r["vehiculo"],
-                            ("Si" if int(r["afecta_rotacion"] or 0) == 1 else "No"),
-                            r["estado"],
-                            r["motivo"],
-                            r["observaciones"],
-                        ]
-                    )
-                resp = make_response(sio.getvalue())
-                resp.headers["Content-Type"] = "text/csv; charset=utf-8"
-                resp.headers["Content-Disposition"] = "attachment; filename=asignaciones_historial.csv"
-                return resp
-
-            return _render("historial", con, {})
-        finally:
-            con.close()
 
     @app.route("/asignaciones/planilla", methods=["GET", "POST"], endpoint="asignaciones_planilla")
     def asignaciones_planilla():
@@ -2162,256 +1995,21 @@ def register_asignaciones(app, get_db):
         if not _can_access():
             return _deny()
         return redirect(url_for("asignaciones_home"))
-        con = get_db()
-        _ensure_schema(con)
-        try:
-            rv_tipo = _rotacion_tipo_from_request()
-            rv_destino = (request.args.get("rv_destino") or request.form.get("rv_destino") or "").strip()
-            periodo_q = request.args.get("periodo") or request.form.get("periodo") or ""
-            fecha_ref_q = request.args.get("fecha_ref") or request.form.get("fecha_ref") or ""
-
-            if request.method == "POST":
-                action = _norm(request.form.get("rv_action"))
-                if action == "update_row":
-                    row_id = _to_int(request.form.get("row_id"), 0)
-                    payload = {
-                        "chofer_id": _to_int(request.form.get("chofer_id"), 0),
-                        "fecha_programada": (request.form.get("fecha_programada") or "").strip(),
-                        "observaciones": (request.form.get("observaciones") or "").strip(),
-                        "activo": (1 if _norm(request.form.get("activo") or "") in {"1", "si", "true", "on"} else 0),
-                    }
-                    if row_id <= 0 or payload["chofer_id"] <= 0:
-                        flash("Fila o chofer invalido para actualizar la rueda.", "warning")
-                    else:
-                        _update_rotacion_visual_row(con, row_id, rv_tipo, payload)
-                        flash("Rueda manual actualizada.", "success")
-                elif action == "move_up":
-                    row_id = _to_int(request.form.get("row_id"), 0)
-                    if not _move_rotacion_visual(con, row_id, rv_tipo, "up"):
-                        flash("No se pudo mover mas arriba.", "warning")
-                elif action == "move_down":
-                    row_id = _to_int(request.form.get("row_id"), 0)
-                    if not _move_rotacion_visual(con, row_id, rv_tipo, "down"):
-                        flash("No se pudo mover mas abajo.", "warning")
-                elif action == "reorder":
-                    ordered_raw = (request.form.get("ordered_ids") or "").strip()
-                    ordered_ids = [x for x in ordered_raw.split(",") if x.strip()]
-                    _reorder_rotacion_visual(con, rv_tipo, ordered_ids)
-                    flash("Orden manual actualizado.", "success")
-                elif action == "save_ref":
-                    rv_destino = (request.form.get("rv_destino") or rv_destino or "").strip()
-                    if not rv_destino:
-                        flash("Selecciona destino para editar referencia.", "warning")
-                    else:
-                        payload = {
-                            "km_aprox": request.form.get("km_aprox"),
-                            "horas_aprox": request.form.get("horas_aprox"),
-                            "salida_habitual": request.form.get("salida_habitual"),
-                            "llegada_habitual": request.form.get("llegada_habitual"),
-                            "tipo_carga": request.form.get("tipo_carga"),
-                            "jornada_extendida": request.form.get("jornada_extendida"),
-                            "observaciones": request.form.get("observaciones"),
-                        }
-                        _save_destino_referencia(con, rv_tipo, rv_destino, payload)
-                        flash("Referencia de viaje actualizada.", "success")
-                return redirect(
-                    url_for(
-                        "asignaciones_rotacion_visual",
-                        periodo=periodo_q,
-                        fecha_ref=fecha_ref_q,
-                        rv_tipo=rv_tipo,
-                        rv_destino=rv_destino,
-                    )
-                )
-
-            return _render("rotacion_visual", con, {})
-        finally:
-            con.close()
 
     @app.route("/asignaciones/choferes", methods=["GET", "POST"], endpoint="asignaciones_choferes")
     def asignaciones_choferes():
         if not _can_access():
             return _deny()
-        flash("Vista oculta. Usa Rotacion o Planilla diaria.", "info")
         return redirect(url_for("asignaciones_home"))
-        con = get_db()
-        _ensure_schema(con)
-        try:
-            if request.method == "POST":
-                action = _norm(request.form.get("action"))
-                if action == "add_chofer":
-                    nombre = (request.form.get("nombre") or "").strip()
-                    orden = _to_int(request.form.get("orden_rotacion"), 999)
-                    obs = (request.form.get("observaciones") or "").strip()
-                    if not nombre:
-                        flash("Nombre de chofer obligatorio.", "warning")
-                    else:
-                        con.execute(
-                            """
-                            INSERT INTO choferes_rotacion(nombre, activo, orden_rotacion, observaciones)
-                            SELECT ?, 1, ?, ?
-                            WHERE NOT EXISTS(
-                                SELECT 1 FROM choferes_rotacion WHERE LOWER(COALESCE(nombre,'')) = LOWER(?)
-                            )
-                            """,
-                            (nombre, orden, obs, nombre),
-                        )
-                        con.commit()
-                        flash("Chofer agregado.", "success")
-                elif action == "update_chofer":
-                    cid = _to_int(request.form.get("chofer_id"), 0)
-                    orden = _to_int(request.form.get("orden_rotacion"), 999)
-                    activo = 1 if _norm(request.form.get("activo") or "1") in {"1", "si", "true", "on"} else 0
-                    obs = (request.form.get("observaciones") or "").strip()
-                    if cid > 0:
-                        con.execute(
-                            """
-                            UPDATE choferes_rotacion
-                            SET orden_rotacion=?, activo=?, observaciones=?
-                            WHERE id=?
-                            """,
-                            (orden, activo, obs, cid),
-                        )
-                        con.commit()
-                        flash("Chofer actualizado.", "success")
-                elif action == "add_exclusion":
-                    cid = _to_int(request.form.get("chofer_id"), 0)
-                    d1 = (request.form.get("fecha_desde") or "").strip()
-                    d2 = (request.form.get("fecha_hasta") or "").strip()
-                    mot = (request.form.get("motivo") or "").strip()
-                    if cid <= 0 or not _parse_iso(d1) or not _parse_iso(d2) or not mot:
-                        flash("Exclusion incompleta: chofer, fechas y motivo son obligatorios.", "warning")
-                    else:
-                        con.execute(
-                            """
-                            INSERT INTO exclusiones_chofer(chofer_id, fecha_desde, fecha_hasta, motivo, activo)
-                            VALUES (?,?,?,?,1)
-                            """,
-                            (cid, d1, d2, mot),
-                        )
-                        con.commit()
-                        flash("Exclusion temporal registrada.", "success")
-                elif action == "close_exclusion":
-                    ex_id = _to_int(request.form.get("exclusion_id"), 0)
-                    if ex_id > 0:
-                        con.execute("UPDATE exclusiones_chofer SET activo=0 WHERE id=?", (ex_id,))
-                        con.commit()
-                        flash("Exclusion desactivada.", "success")
-                return redirect(url_for("asignaciones_choferes"))
-
-            return _render("choferes", con, {})
-        finally:
-            con.close()
 
     @app.route("/asignaciones/configuracion", methods=["GET", "POST"], endpoint="asignaciones_configuracion")
     def asignaciones_configuracion():
         if not _can_access():
             return _deny()
-        flash("Vista oculta. Usa Rotacion o Planilla diaria.", "info")
         return redirect(url_for("asignaciones_home"))
-        con = get_db()
-        _ensure_schema(con)
-        try:
-            if request.method == "POST":
-                action = _norm(request.form.get("action"))
-                if action == "save_config":
-                    periodo = _period_or_default(request.form.get("periodo_default"), 60)
-                    criterio = (request.form.get("criterio_empate") or "").strip()
-                    obs = (request.form.get("observaciones") or "").strip()
-                    con.execute(
-                        """
-                        UPDATE configuracion_rotacion
-                        SET periodo_default=?, criterio_empate=?, observaciones=?
-                        WHERE id=1
-                        """,
-                        (periodo, criterio, obs),
-                    )
-                    con.commit()
-                    flash("Configuracion guardada.", "success")
-                elif action == "add_destino":
-                    zona = (request.form.get("zona") or "").strip()
-                    destino = (request.form.get("destino") or "").strip()
-                    carga = (request.form.get("tipo_carga") or "").strip()
-                    puntaje = _to_int(request.form.get("puntaje"), 0)
-                    if not puntaje:
-                        puntaje = _puntaje_by_carga(carga)
-                    if not (zona and destino and carga and puntaje):
-                        flash("Completa zona, destino, tipo de carga y puntaje.", "warning")
-                    else:
-                        con.execute(
-                            """
-                            INSERT INTO destinos_rotacion(zona, destino, tipo_carga, puntaje, activo, observaciones)
-                            VALUES (?,?,?,?,1,'')
-                            ON CONFLICT(zona, destino)
-                            DO UPDATE SET tipo_carga=excluded.tipo_carga, puntaje=excluded.puntaje
-                            """,
-                            (zona, destino, carga, puntaje),
-                        )
-                        con.commit()
-                        flash("Destino guardado.", "success")
-                elif action == "toggle_destino":
-                    did = _to_int(request.form.get("destino_id"), 0)
-                    activo = 1 if _norm(request.form.get("activo") or "1") in {"1", "si", "true", "on"} else 0
-                    if did > 0:
-                        con.execute("UPDATE destinos_rotacion SET activo=? WHERE id=?", (activo, did))
-                        con.commit()
-                        flash("Destino actualizado.", "success")
-                elif action == "update_destino":
-                    did = _to_int(request.form.get("destino_id"), 0)
-                    zona = (request.form.get("zona") or "").strip()
-                    destino = (request.form.get("destino") or "").strip()
-                    carga = (request.form.get("tipo_carga") or "").strip()
-                    puntaje = _to_int(request.form.get("puntaje"), 0)
-                    obs = (request.form.get("observaciones") or "").strip()
-                    if did > 0 and zona and destino:
-                        con.execute(
-                            """
-                            UPDATE destinos_rotacion
-                            SET zona=?, destino=?, tipo_carga=?, puntaje=?, observaciones=?
-                            WHERE id=?
-                            """,
-                            (zona, destino, carga, puntaje, obs, did),
-                        )
-                        con.commit()
-                        flash("Destino editado.", "success")
-                return redirect(url_for("asignaciones_configuracion"))
-
-            return _render("config", con, {})
-        finally:
-            con.close()
 
     @app.route("/asignaciones/sugerir", endpoint="asignaciones_sugerir")
     def asignaciones_sugerir():
         if not _can_access():
             return jsonify({"ok": False, "error": "No autorizado"}), 403
-        con = get_db()
-        _ensure_schema(con)
-        try:
-            zona = (request.args.get("zona") or "").strip()
-            destino = (request.args.get("destino") or "").strip()
-            tipo_carga = (request.args.get("tipo_carga") or "").strip()
-            periodo = _period_or_default(request.args.get("periodo"), _fetch_config(con)["periodo_default"])
-            ref_iso = (request.args.get("fecha_ref") or "").strip() or _today_iso()
-            sug = sugerir_proximo_chofer(con, destino, zona, periodo, ref_iso, tipo_carga)
-            return jsonify(
-                {
-                    "ok": True,
-                    "sugerido_id": sug.get("sugerido_id"),
-                    "sugerido": sug.get("sugerido", ""),
-                    "tipo_carga": sug.get("tipo_carga", ""),
-                    "puntaje": sug.get("puntaje", 0),
-                    "orden": [
-                        {
-                            "chofer_id": int(r["chofer_id"]),
-                            "chofer": r["chofer"],
-                            "puntos": int(r["puntos"]),
-                            "viajes": int(r["viajes"]),
-                            "ultimo_pesado": r["ultimo_pesado"],
-                            "estado": r["estado_disponibilidad"],
-                        }
-                        for r in sug.get("orden_sugerido", [])
-                    ],
-                }
-            )
-        finally:
-            con.close()
+        return jsonify({"ok": False, "error": "Vista eliminada. Usar Rotacion/Planilla diaria."}), 410
