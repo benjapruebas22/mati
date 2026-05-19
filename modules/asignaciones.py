@@ -1,4 +1,5 @@
 import csv
+import csv
 import io
 from datetime import date, datetime, timedelta
 
@@ -44,6 +45,7 @@ def register_asignaciones(app, get_db):
         "Salta turno",
         "No afecta rotacion",
     ]
+    ESTADOS_PLANILLA = ["Pendiente", "Asignado", "Realizado", "Cancelado"]
     PERIODOS_VALIDOS = [30, 60, 90, 365]
 
     def _role() -> str:
@@ -180,10 +182,31 @@ def register_asignaciones(app, get_db):
             )
             """
         )
+        con.execute(
+            """
+            CREATE TABLE IF NOT EXISTS planilla_diaria(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                fecha TEXT NOT NULL,
+                hora_salida TEXT,
+                hora_regreso_estimada TEXT,
+                chofer_id INTEGER,
+                vehiculo TEXT,
+                solicitante TEXT,
+                destino TEXT,
+                tipo_asignacion TEXT,
+                estado TEXT NOT NULL DEFAULT 'Pendiente',
+                observaciones TEXT,
+                creado_en TEXT NOT NULL DEFAULT (datetime('now')),
+                actualizado_en TEXT NOT NULL DEFAULT (datetime('now'))
+            )
+            """
+        )
         con.execute("CREATE INDEX IF NOT EXISTS idx_asig_fecha ON asignaciones_rotacion(fecha)")
         con.execute("CREATE INDEX IF NOT EXISTS idx_asig_chofer_fecha ON asignaciones_rotacion(chofer_id, fecha)")
         con.execute("CREATE INDEX IF NOT EXISTS idx_asig_zona_destino_fecha ON asignaciones_rotacion(zona, destino, fecha)")
         con.execute("CREATE INDEX IF NOT EXISTS idx_exc_chofer_activo ON exclusiones_chofer(chofer_id, activo, fecha_desde, fecha_hasta)")
+        con.execute("CREATE INDEX IF NOT EXISTS idx_planilla_fecha_hora ON planilla_diaria(fecha, hora_salida)")
+        con.execute("CREATE INDEX IF NOT EXISTS idx_planilla_chofer_fecha ON planilla_diaria(chofer_id, fecha)")
         con.execute(
             """
             INSERT OR IGNORE INTO configuracion_rotacion(id, periodo_default, criterio_empate, observaciones)
@@ -676,6 +699,242 @@ def register_asignaciones(app, get_db):
             tuple(params),
         ).fetchall()
 
+    def _parse_hhmm(raw):
+        txt = str(raw or "").strip()
+        if not txt:
+            return None
+        try:
+            t = datetime.strptime(txt, "%H:%M")
+            return t.hour * 60 + t.minute
+        except Exception:
+            return None
+
+    def _planilla_payload_from_form():
+        fecha = (request.form.get("fecha") or "").strip() or _today_iso()
+        hora_salida = (request.form.get("hora_salida") or "").strip()
+        hora_regreso = (request.form.get("hora_regreso_estimada") or "").strip()
+        chofer_id = _to_int(request.form.get("chofer_id"), 0)
+        vehiculo = (request.form.get("vehiculo") or "").strip()
+        solicitante = (request.form.get("solicitante") or "").strip()
+        destino = (request.form.get("destino") or "").strip()
+        tipo_asignacion = (request.form.get("tipo_asignacion") or "").strip()
+        estado = (request.form.get("estado") or "Pendiente").strip()
+        observaciones = (request.form.get("observaciones") or "").strip()
+
+        errores = []
+        if not _parse_iso(fecha):
+            errores.append("Fecha invalida.")
+        if hora_salida and _parse_hhmm(hora_salida) is None:
+            errores.append("Hora salida invalida (usar HH:MM).")
+        if hora_regreso and _parse_hhmm(hora_regreso) is None:
+            errores.append("Hora regreso invalida (usar HH:MM).")
+        if estado not in ESTADOS_PLANILLA:
+            estado = "Pendiente"
+
+        payload = {
+            "fecha": fecha,
+            "hora_salida": hora_salida,
+            "hora_regreso_estimada": hora_regreso,
+            "chofer_id": (chofer_id if chofer_id > 0 else None),
+            "vehiculo": vehiculo,
+            "solicitante": solicitante,
+            "destino": destino,
+            "tipo_asignacion": tipo_asignacion,
+            "estado": estado,
+            "observaciones": observaciones,
+        }
+        return payload, errores
+
+    def _save_planilla_diaria(con, payload, row_id=0):
+        now = _now_ts()
+        if int(row_id or 0) > 0:
+            con.execute(
+                """
+                UPDATE planilla_diaria
+                SET fecha=?,
+                    hora_salida=?,
+                    hora_regreso_estimada=?,
+                    chofer_id=?,
+                    vehiculo=?,
+                    solicitante=?,
+                    destino=?,
+                    tipo_asignacion=?,
+                    estado=?,
+                    observaciones=?,
+                    actualizado_en=?
+                WHERE id=?
+                """,
+                (
+                    payload["fecha"],
+                    payload["hora_salida"],
+                    payload["hora_regreso_estimada"],
+                    payload["chofer_id"],
+                    payload["vehiculo"],
+                    payload["solicitante"],
+                    payload["destino"],
+                    payload["tipo_asignacion"],
+                    payload["estado"],
+                    payload["observaciones"],
+                    now,
+                    int(row_id),
+                ),
+            )
+            con.commit()
+            return int(row_id)
+        cur = con.execute(
+            """
+            INSERT INTO planilla_diaria(
+                fecha, hora_salida, hora_regreso_estimada, chofer_id, vehiculo,
+                solicitante, destino, tipo_asignacion, estado, observaciones, creado_en, actualizado_en
+            )
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+            """,
+            (
+                payload["fecha"],
+                payload["hora_salida"],
+                payload["hora_regreso_estimada"],
+                payload["chofer_id"],
+                payload["vehiculo"],
+                payload["solicitante"],
+                payload["destino"],
+                payload["tipo_asignacion"],
+                payload["estado"],
+                payload["observaciones"],
+                now,
+                now,
+            ),
+        )
+        con.commit()
+        return int(cur.lastrowid or 0)
+
+    def _planilla_filters_from_request():
+        return {
+            "fecha": (request.args.get("pd_fecha") or "").strip(),
+            "chofer_id": _to_int(request.args.get("pd_chofer_id"), 0),
+            "vehiculo": (request.args.get("pd_vehiculo") or "").strip(),
+            "estado": (request.args.get("pd_estado") or "").strip(),
+            "sort": (request.args.get("pd_sort") or "hora").strip().lower(),
+        }
+
+    def _list_planilla_diaria(con, filtros):
+        where = ["1=1"]
+        params = []
+        if filtros.get("fecha"):
+            where.append("date(p.fecha) = date(?)")
+            params.append(filtros["fecha"])
+        if filtros.get("chofer_id"):
+            where.append("p.chofer_id = ?")
+            params.append(int(filtros["chofer_id"]))
+        if filtros.get("vehiculo"):
+            where.append("LOWER(COALESCE(p.vehiculo,'')) LIKE LOWER(?)")
+            params.append(f"%{filtros['vehiculo']}%")
+        if filtros.get("estado"):
+            where.append("LOWER(COALESCE(p.estado,'')) = LOWER(?)")
+            params.append(filtros["estado"])
+
+        sort = filtros.get("sort") or "hora"
+        if sort == "chofer":
+            order = "LOWER(COALESCE(c.nombre,'')) ASC, COALESCE(p.hora_salida,'') ASC, p.id DESC"
+        elif sort == "vehiculo":
+            order = "LOWER(COALESCE(p.vehiculo,'')) ASC, COALESCE(p.hora_salida,'') ASC, p.id DESC"
+        else:
+            order = "date(p.fecha) DESC, COALESCE(p.hora_salida,'') ASC, p.id DESC"
+
+        return con.execute(
+            f"""
+            SELECT
+                p.id,
+                COALESCE(p.fecha,'') AS fecha,
+                COALESCE(p.hora_salida,'') AS hora_salida,
+                COALESCE(p.hora_regreso_estimada,'') AS hora_regreso_estimada,
+                COALESCE(p.chofer_id,0) AS chofer_id,
+                COALESCE(c.nombre,'') AS chofer,
+                COALESCE(p.vehiculo,'') AS vehiculo,
+                COALESCE(p.solicitante,'') AS solicitante,
+                COALESCE(p.destino,'') AS destino,
+                COALESCE(p.tipo_asignacion,'') AS tipo_asignacion,
+                COALESCE(p.estado,'Pendiente') AS estado,
+                COALESCE(p.observaciones,'') AS observaciones
+            FROM planilla_diaria p
+            LEFT JOIN choferes_rotacion c ON c.id = p.chofer_id
+            WHERE {' AND '.join(where)}
+            ORDER BY {order}
+            LIMIT 1500
+            """,
+            tuple(params),
+        ).fetchall()
+
+    def _build_planilla_alerts(rows):
+        per_row = {}
+        global_alerts = []
+
+        def _add_row_alert(rid, txt):
+            per_row.setdefault(int(rid), []).append(txt)
+            global_alerts.append(f"ID {rid}: {txt}")
+
+        rows_list = list(rows or [])
+        for r in rows_list:
+            rid = int(r["id"] or 0)
+            if int(r["chofer_id"] or 0) <= 0:
+                _add_row_alert(rid, "Falta chofer.")
+            if not (r["vehiculo"] or "").strip():
+                _add_row_alert(rid, "Falta vehiculo.")
+            if _parse_hhmm(r["hora_salida"]) is None or _parse_hhmm(r["hora_regreso_estimada"]) is None:
+                _add_row_alert(rid, "Falta horario completo (salida/regreso).")
+
+        for i in range(len(rows_list)):
+            a = rows_list[i]
+            a_date = (a["fecha"] or "").strip()
+            a_start = _parse_hhmm(a["hora_salida"])
+            a_end = _parse_hhmm(a["hora_regreso_estimada"])
+            if a_start is None or a_end is None:
+                continue
+            if a_end <= a_start:
+                a_end = a_start + 1
+            for j in range(i + 1, len(rows_list)):
+                b = rows_list[j]
+                if a_date != (b["fecha"] or "").strip():
+                    continue
+                b_start = _parse_hhmm(b["hora_salida"])
+                b_end = _parse_hhmm(b["hora_regreso_estimada"])
+                if b_start is None or b_end is None:
+                    continue
+                if b_end <= b_start:
+                    b_end = b_start + 1
+                overlap = (a_start < b_end) and (b_start < a_end)
+                if not overlap:
+                    continue
+
+                a_chofer = int(a["chofer_id"] or 0)
+                b_chofer = int(b["chofer_id"] or 0)
+                if a_chofer > 0 and a_chofer == b_chofer:
+                    _add_row_alert(int(a["id"]), "Chofer superpuesto en horario.")
+                    _add_row_alert(int(b["id"]), "Chofer superpuesto en horario.")
+
+                av = _norm(a["vehiculo"])
+                bv = _norm(b["vehiculo"])
+                if av and bv and av == bv:
+                    _add_row_alert(int(a["id"]), "Vehiculo superpuesto en horario.")
+                    _add_row_alert(int(b["id"]), "Vehiculo superpuesto en horario.")
+
+        uniq_global = []
+        seen = set()
+        for g in global_alerts:
+            if g in seen:
+                continue
+            seen.add(g)
+            uniq_global.append(g)
+        return per_row, uniq_global
+
+    def _build_planilla_copy_text(rows):
+        lines = ["Hora | Chofer | Vehiculo | Destino | Solicitante | Observacion"]
+        for r in rows or []:
+            h = f"{(r['hora_salida'] or '-')} - {(r['hora_regreso_estimada'] or '-')}"
+            lines.append(
+                f"{h} | {(r['chofer'] or '-')} | {(r['vehiculo'] or '-')} | {(r['destino'] or '-')} | {(r['solicitante'] or '-')} | {(r['observaciones'] or '-')}"
+            )
+        return "\n".join(lines)
+
     def _assignment_payload_from_form(con):
         fecha = (request.form.get("fecha") or "").strip() or _today_iso()
         zona = (request.form.get("zona") or "").strip()
@@ -830,6 +1089,12 @@ def register_asignaciones(app, get_db):
             "estado": (request.args.get("estado") or "").strip(),
         }
         historial_rows = listar_historial(con, filtros_hist)
+        filtros_planilla = _planilla_filters_from_request()
+        if not filtros_planilla.get("fecha"):
+            filtros_planilla["fecha"] = ref_iso
+        planilla_rows = _list_planilla_diaria(con, filtros_planilla)
+        planilla_row_alerts, planilla_alertas = _build_planilla_alerts(planilla_rows)
+        planilla_copy_text = _build_planilla_copy_text(planilla_rows)
 
         exclusiones = con.execute(
             """
@@ -863,7 +1128,13 @@ def register_asignaciones(app, get_db):
             exclusiones=exclusiones,
             historial_rows=historial_rows,
             filtros_hist=filtros_hist,
+            planilla_rows=planilla_rows,
+            filtros_planilla=filtros_planilla,
+            planilla_row_alerts=planilla_row_alerts,
+            planilla_alertas=planilla_alertas,
+            planilla_copy_text=planilla_copy_text,
             estados=ESTADOS,
+            estados_planilla=ESTADOS_PLANILLA,
             extra=extra,
         )
 
@@ -1056,6 +1327,110 @@ def register_asignaciones(app, get_db):
                 return resp
 
             return _render("historial", con, {})
+        finally:
+            con.close()
+
+    @app.route("/asignaciones/planilla", methods=["GET", "POST"], endpoint="asignaciones_planilla")
+    def asignaciones_planilla():
+        if not _can_access():
+            return _deny()
+        con = get_db()
+        _ensure_schema(con)
+        try:
+            form_data = {
+                "fecha": _today_iso(),
+                "hora_salida": "",
+                "hora_regreso_estimada": "",
+                "chofer_id": 0,
+                "vehiculo": "",
+                "solicitante": "",
+                "destino": "",
+                "tipo_asignacion": "",
+                "estado": "Pendiente",
+                "observaciones": "",
+            }
+            if request.method == "POST":
+                payload, errores = _planilla_payload_from_form()
+                form_data.update(payload)
+                if errores:
+                    for e in errores:
+                        flash(e, "warning")
+                else:
+                    rid = _save_planilla_diaria(con, payload, 0)
+                    flash(f"Asignacion diaria registrada (ID {rid}).", "success")
+                    return redirect(
+                        url_for(
+                            "asignaciones_planilla",
+                            pd_fecha=payload["fecha"],
+                            pd_sort=(request.args.get("pd_sort") or "hora"),
+                            periodo=request.args.get("periodo") or "",
+                            fecha_ref=request.args.get("fecha_ref") or "",
+                        )
+                    )
+
+            filtros = _planilla_filters_from_request()
+            rows = _list_planilla_diaria(con, filtros)
+            if _norm(request.args.get("export")) in {"1", "si", "true", "excel"}:
+                sio = io.StringIO()
+                wr = csv.writer(sio, delimiter=";")
+                wr.writerow(
+                    [
+                        "Fecha",
+                        "Hora salida",
+                        "Hora regreso estimada",
+                        "Chofer",
+                        "Vehiculo",
+                        "Solicitante",
+                        "Destino",
+                        "Tipo asignacion",
+                        "Estado",
+                        "Observaciones",
+                    ]
+                )
+                for r in rows:
+                    wr.writerow(
+                        [
+                            r["fecha"],
+                            r["hora_salida"],
+                            r["hora_regreso_estimada"],
+                            r["chofer"],
+                            r["vehiculo"],
+                            r["solicitante"],
+                            r["destino"],
+                            r["tipo_asignacion"],
+                            r["estado"],
+                            r["observaciones"],
+                        ]
+                    )
+                resp = make_response(sio.getvalue())
+                resp.headers["Content-Type"] = "text/csv; charset=utf-8"
+                resp.headers["Content-Disposition"] = "attachment; filename=asignaciones_planilla_diaria.csv"
+                return resp
+
+            return _render("planilla", con, {"planilla_form": form_data})
+        finally:
+            con.close()
+
+    @app.route("/asignaciones/planilla/eliminar/<int:row_id>", methods=["POST"], endpoint="asignaciones_planilla_eliminar")
+    def asignaciones_planilla_eliminar(row_id):
+        if not _can_access():
+            return _deny()
+        con = get_db()
+        _ensure_schema(con)
+        try:
+            con.execute("DELETE FROM planilla_diaria WHERE id=?", (int(row_id),))
+            con.commit()
+            flash("Fila eliminada de planilla diaria.", "success")
+            return redirect(
+                url_for(
+                    "asignaciones_planilla",
+                    pd_fecha=request.args.get("pd_fecha") or "",
+                    pd_chofer_id=request.args.get("pd_chofer_id") or "",
+                    pd_vehiculo=request.args.get("pd_vehiculo") or "",
+                    pd_estado=request.args.get("pd_estado") or "",
+                    pd_sort=request.args.get("pd_sort") or "hora",
+                )
+            )
         finally:
             con.close()
 

@@ -15,6 +15,18 @@
   "motivo": "",
   "observaciones": ""
 } %}
+{% set pf = extra.planilla_form if extra and extra.planilla_form else {
+  "fecha": filtros_planilla.fecha if filtros_planilla and filtros_planilla.fecha else ref_iso,
+  "hora_salida": "",
+  "hora_regreso_estimada": "",
+  "chofer_id": 0,
+  "vehiculo": "",
+  "solicitante": "",
+  "destino": "",
+  "tipo_asignacion": "",
+  "estado": "Pendiente",
+  "observaciones": ""
+} %}
 
 <section class="sedes-section sgi-sedes">
   <div class="cardx" style="padding:12px 14px;">
@@ -26,6 +38,7 @@
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <a class="btn" href="{{ url_for('dashboard_exec') }}">Centro operativo</a>
         <a class="btn" href="{{ url_for('asignaciones_nueva') }}">Nueva asignacion</a>
+        <a class="btn" href="{{ url_for('asignaciones_planilla') }}">Planilla diaria</a>
         <a class="btn" href="{{ url_for('asignaciones_historial') }}">Ver historial</a>
         <a class="btn" href="{{ url_for('asignaciones_configuracion') }}">Configuracion</a>
       </div>
@@ -61,6 +74,7 @@
     <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
       <a class="btn {% if view == 'resumen' %}primary{% endif %}" href="{{ url_for('asignaciones_home', periodo=periodo, fecha_ref=ref_iso) }}">Resumen rotacion</a>
       <a class="btn {% if view == 'nueva' %}primary{% endif %}" href="{{ url_for('asignaciones_nueva', periodo=periodo, fecha_ref=ref_iso) }}">Cargar asignacion</a>
+      <a class="btn {% if view == 'planilla' %}primary{% endif %}" href="{{ url_for('asignaciones_planilla', periodo=periodo, fecha_ref=ref_iso) }}">Planilla diaria</a>
       <a class="btn {% if view == 'historial' %}primary{% endif %}" href="{{ url_for('asignaciones_historial', periodo=periodo, fecha_ref=ref_iso) }}">Historial</a>
       <a class="btn {% if view == 'choferes' %}primary{% endif %}" href="{{ url_for('asignaciones_choferes', periodo=periodo, fecha_ref=ref_iso) }}">Carga por chofer</a>
       <a class="btn {% if view == 'config' %}primary{% endif %}" href="{{ url_for('asignaciones_configuracion', periodo=periodo, fecha_ref=ref_iso) }}">Configuracion</a>
@@ -240,6 +254,185 @@
         <div id="asgSugResult" style="margin-top:10px;padding:8px 10px;border:1px dashed #cbd5e1;border-radius:10px;color:#475569;font-size:12px;">
           Sugerencia automatica por carga ponderada.
         </div>
+      </div>
+    {% endif %}
+
+    {% if view == "planilla" %}
+      <div style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;background:#fff;padding:10px;">
+        <div style="font-size:14px;font-weight:700;color:#334155;margin-bottom:8px;">Nueva asignacion diaria</div>
+        <form method="post" action="{{ url_for('asignaciones_planilla', periodo=periodo, fecha_ref=ref_iso, pd_fecha=filtros_planilla.fecha, pd_chofer_id=filtros_planilla.chofer_id, pd_vehiculo=filtros_planilla.vehiculo, pd_estado=filtros_planilla.estado, pd_sort=filtros_planilla.sort) }}">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;">
+            <div>
+              <label style="font-size:12px;color:#64748b;">Fecha</label>
+              <input type="date" name="fecha" value="{{ pf.fecha }}" style="width:100%;padding:6px 10px;border:1px solid #e5e7eb;border-radius:10px;">
+            </div>
+            <div>
+              <label style="font-size:12px;color:#64748b;">Hora salida</label>
+              <input type="time" name="hora_salida" value="{{ pf.hora_salida }}" style="width:100%;padding:6px 10px;border:1px solid #e5e7eb;border-radius:10px;">
+            </div>
+            <div>
+              <label style="font-size:12px;color:#64748b;">Hora regreso estimada</label>
+              <input type="time" name="hora_regreso_estimada" value="{{ pf.hora_regreso_estimada }}" style="width:100%;padding:6px 10px;border:1px solid #e5e7eb;border-radius:10px;">
+            </div>
+            <div>
+              <label style="font-size:12px;color:#64748b;">Chofer</label>
+              <select name="chofer_id" style="width:100%;padding:6px 10px;border:1px solid #e5e7eb;border-radius:10px;">
+                <option value="0">Seleccionar</option>
+                {% for c in choferes if c.activo == 1 %}
+                  <option value="{{ c.id }}" {% if (pf.chofer_id|int) == (c.id|int) %}selected{% endif %}>{{ c.nombre }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <label style="font-size:12px;color:#64748b;">Vehiculo</label>
+              <input type="text" name="vehiculo" value="{{ pf.vehiculo }}" placeholder="Ej: AB123CD" style="width:100%;padding:6px 10px;border:1px solid #e5e7eb;border-radius:10px;">
+            </div>
+            <div>
+              <label style="font-size:12px;color:#64748b;">Solicitante</label>
+              <input type="text" name="solicitante" value="{{ pf.solicitante }}" style="width:100%;padding:6px 10px;border:1px solid #e5e7eb;border-radius:10px;">
+            </div>
+            <div>
+              <label style="font-size:12px;color:#64748b;">Destino</label>
+              <input type="text" name="destino" value="{{ pf.destino }}" style="width:100%;padding:6px 10px;border:1px solid #e5e7eb;border-radius:10px;">
+            </div>
+            <div>
+              <label style="font-size:12px;color:#64748b;">Tipo asignacion</label>
+              <input type="text" name="tipo_asignacion" value="{{ pf.tipo_asignacion }}" placeholder="Itinerancia / Especial / Traslado" style="width:100%;padding:6px 10px;border:1px solid #e5e7eb;border-radius:10px;">
+            </div>
+            <div>
+              <label style="font-size:12px;color:#64748b;">Estado</label>
+              <select name="estado" style="width:100%;padding:6px 10px;border:1px solid #e5e7eb;border-radius:10px;">
+                {% for e in estados_planilla %}
+                  <option value="{{ e }}" {% if pf.estado == e %}selected{% endif %}>{{ e }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div style="grid-column:1 / -1;">
+              <label style="font-size:12px;color:#64748b;">Observaciones</label>
+              <input type="text" name="observaciones" value="{{ pf.observaciones }}" style="width:100%;padding:6px 10px;border:1px solid #e5e7eb;border-radius:10px;">
+            </div>
+          </div>
+          <div style="margin-top:10px;display:flex;justify-content:flex-end;">
+            <button class="btn primary" type="submit">Nueva asignacion diaria</button>
+          </div>
+        </form>
+      </div>
+
+      <div style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;background:#fff;padding:10px;">
+        <form method="get" action="{{ url_for('asignaciones_planilla') }}" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;">
+          <input type="hidden" name="periodo" value="{{ periodo }}">
+          <input type="hidden" name="fecha_ref" value="{{ ref_iso }}">
+          <div>
+            <label style="font-size:12px;color:#64748b;">Fecha</label>
+            <input type="date" name="pd_fecha" value="{{ filtros_planilla.fecha }}" style="width:100%;padding:6px 10px;border:1px solid #e5e7eb;border-radius:10px;">
+          </div>
+          <div>
+            <label style="font-size:12px;color:#64748b;">Chofer</label>
+            <select name="pd_chofer_id" style="width:100%;padding:6px 10px;border:1px solid #e5e7eb;border-radius:10px;">
+              <option value="0">Todos</option>
+              {% for c in choferes if c.activo == 1 %}
+                <option value="{{ c.id }}" {% if filtros_planilla.chofer_id|int == c.id|int %}selected{% endif %}>{{ c.nombre }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px;color:#64748b;">Vehiculo</label>
+            <input type="text" name="pd_vehiculo" value="{{ filtros_planilla.vehiculo }}" style="width:100%;padding:6px 10px;border:1px solid #e5e7eb;border-radius:10px;">
+          </div>
+          <div>
+            <label style="font-size:12px;color:#64748b;">Estado</label>
+            <select name="pd_estado" style="width:100%;padding:6px 10px;border:1px solid #e5e7eb;border-radius:10px;">
+              <option value="">Todos</option>
+              {% for e in estados_planilla %}
+                <option value="{{ e }}" {% if filtros_planilla.estado == e %}selected{% endif %}>{{ e }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label style="font-size:12px;color:#64748b;">Orden</label>
+            <select name="pd_sort" style="width:100%;padding:6px 10px;border:1px solid #e5e7eb;border-radius:10px;">
+              <option value="hora" {% if filtros_planilla.sort == 'hora' %}selected{% endif %}>Ordenar por hora</option>
+              <option value="chofer" {% if filtros_planilla.sort == 'chofer' %}selected{% endif %}>Ver por chofer</option>
+              <option value="vehiculo" {% if filtros_planilla.sort == 'vehiculo' %}selected{% endif %}>Ver por vehiculo</option>
+            </select>
+          </div>
+          <div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;">
+            <button class="btn" type="submit">Aplicar</button>
+            <a class="btn" href="{{ url_for('asignaciones_planilla', periodo=periodo, fecha_ref=ref_iso, pd_fecha=filtros_planilla.fecha, pd_chofer_id=filtros_planilla.chofer_id, pd_vehiculo=filtros_planilla.vehiculo, pd_estado=filtros_planilla.estado, pd_sort='hora') }}">Ordenar por hora</a>
+            <a class="btn" href="{{ url_for('asignaciones_planilla', periodo=periodo, fecha_ref=ref_iso, pd_fecha=filtros_planilla.fecha, pd_chofer_id=filtros_planilla.chofer_id, pd_vehiculo=filtros_planilla.vehiculo, pd_estado=filtros_planilla.estado, pd_sort='chofer') }}">Ver por chofer</a>
+            <a class="btn" href="{{ url_for('asignaciones_planilla', periodo=periodo, fecha_ref=ref_iso, pd_fecha=filtros_planilla.fecha, pd_chofer_id=filtros_planilla.chofer_id, pd_vehiculo=filtros_planilla.vehiculo, pd_estado=filtros_planilla.estado, pd_sort='vehiculo') }}">Ver por vehiculo</a>
+            <a class="btn" href="{{ url_for('asignaciones_planilla', periodo=periodo, fecha_ref=ref_iso, pd_fecha=filtros_planilla.fecha, pd_chofer_id=filtros_planilla.chofer_id, pd_vehiculo=filtros_planilla.vehiculo, pd_estado=filtros_planilla.estado, pd_sort=filtros_planilla.sort, export=1) }}">Exportar Excel / CSV</a>
+            <button id="btnCopiarChoferes" class="btn" type="button">Copiar cuadro choferes</button>
+          </div>
+        </form>
+      </div>
+
+      {% if planilla_alertas and planilla_alertas|length > 0 %}
+      <div style="margin-top:10px;padding:8px 10px;border:1px solid #fbcfe8;border-radius:10px;background:#fff1f2;color:#9f1239;font-size:12px;">
+        <strong>Alertas:</strong>
+        {% for a in planilla_alertas %}
+          <div>- {{ a }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <div style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;overflow:auto;background:#fff;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead style="background:#f8fafc;">
+            <tr>
+              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Fecha</th>
+              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Hora salida</th>
+              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Hora regreso</th>
+              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Chofer</th>
+              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Vehiculo</th>
+              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Solicitante</th>
+              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Destino</th>
+              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Tipo</th>
+              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Estado</th>
+              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:left;">Observaciones</th>
+              <th style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">Accion</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in planilla_rows %}
+              <tr>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.fecha }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.hora_salida or '-' }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.hora_regreso_estimada or '-' }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.chofer or '-' }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.vehiculo or '-' }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.solicitante or '-' }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.destino or '-' }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.tipo_asignacion or '-' }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
+                  <span class="state {% if (r.estado or '').lower() in ['realizado'] %}ok{% elif (r.estado or '').lower() in ['asignado'] %}info{% elif (r.estado or '').lower() in ['cancelado'] %}warn{% endif %}">{{ r.estado or '-' }}</span>
+                </td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
+                  {{ r.observaciones or '-' }}
+                  {% if planilla_row_alerts and (r.id in planilla_row_alerts) %}
+                    <div style="margin-top:4px;">
+                      {% for al in planilla_row_alerts[r.id] %}
+                        <span class="state warn">{{ al }}</span>
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                </td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
+                  <form method="post" action="{{ url_for('asignaciones_planilla_eliminar', row_id=r.id, pd_fecha=filtros_planilla.fecha, pd_chofer_id=filtros_planilla.chofer_id, pd_vehiculo=filtros_planilla.vehiculo, pd_estado=filtros_planilla.estado, pd_sort=filtros_planilla.sort) }}" onsubmit="return confirm('Eliminar fila de planilla?');">
+                    <button type="submit" class="btn xs danger">Eliminar</button>
+                  </form>
+                </td>
+              </tr>
+            {% else %}
+              <tr><td colspan="11" style="padding:10px;color:#64748b;">Sin asignaciones diarias cargadas.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;background:#fff;padding:10px;">
+        <label style="font-size:12px;color:#64748b;">Cuadro para choferes (copiar y enviar)</label>
+        <textarea id="txtChoferes" style="margin-top:6px;width:100%;min-height:160px;padding:8px;border:1px solid #e5e7eb;border-radius:10px;font-size:12px;">{{ planilla_copy_text }}</textarea>
       </div>
     {% endif %}
 
@@ -689,6 +882,28 @@
     }
 
     updateDestinoOptions();
+  })();
+
+  (function () {
+    const btn = document.getElementById("btnCopiarChoferes");
+    const txt = document.getElementById("txtChoferes");
+    if (!btn || !txt) return;
+    btn.addEventListener("click", async function () {
+      try {
+        const content = txt.value || "";
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(content);
+        } else {
+          txt.select();
+          document.execCommand("copy");
+        }
+        btn.textContent = "Copiado";
+        setTimeout(function () { btn.textContent = "Copiar cuadro choferes"; }, 1200);
+      } catch (err) {
+        txt.select();
+        document.execCommand("copy");
+      }
+    });
   })();
 </script>
 
