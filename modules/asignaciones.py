@@ -1544,18 +1544,29 @@ def register_asignaciones(app, get_db):
         con.commit()
         return True
 
+    def _rowv(row, key, default=""):
+        try:
+            v = row[key]
+            return default if v is None else v
+        except Exception:
+            try:
+                v = row.get(key, default)
+                return default if v is None else v
+            except Exception:
+                return default
+
     def _rotacion_last_row_id(rows):
         top_id = 0
         top_date = None
         for r in rows or []:
-            if _norm(r.get("estado")) != "realizado":
+            if _norm(_rowv(r, "estado", "")) != "realizado":
                 continue
-            d = _parse_iso(r["fecha"])
+            d = _parse_iso(_rowv(r, "fecha", ""))
             if not d:
                 continue
             if (top_date is None) or (d > top_date):
                 top_date = d
-                top_id = int(r["id"] or 0)
+                top_id = int(_rowv(r, "id", 0) or 0)
         return top_id
 
     def _update_chofer_orden_simple(con, chofer_id, orden_rotacion, activo, observaciones):
