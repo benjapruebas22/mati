@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .as-simple-wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 10px 12px 18px;
+  }
+  .as-simple-title {
+    margin: 0 0 10px;
+    font-size: 22px;
+    color: #1f2937;
+    font-weight: 700;
+  }
+  .as-simple-sub {
+    margin: 0 0 14px;
+    color: #475569;
+    font-size: 13px;
+  }
+  .as-simple-card {
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    background: #ffffff;
+    margin-bottom: 14px;
+    overflow: hidden;
+  }
+  .as-simple-head {
+    background: #374151;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 700;
+    padding: 8px 10px;
+  }
+  .as-simple-pad {
+    padding: 10px;
+  }
+  .as-simple-toolbar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .as-simple-toolbar label {
+    font-size: 12px;
+    color: #334155;
+    font-weight: 600;
+  }
+  .as-simple-toolbar input[type="date"] {
+    padding: 6px 8px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 13px;
+  }
+  .as-btn {
+    border: 1px solid #94a3b8;
+    background: #f8fafc;
+    color: #1f2937;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 30px;
+  }
+  .as-btn.primary {
+    background: #e2e8f0;
+  }
+  .as-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .as-table th {
+    background: #4b5563;
+    color: #ffffff;
+    text-align: left;
+    padding: 6px 8px;
+    border: 1px solid #d1d5db;
+    font-weight: 700;
+  }
+  .as-table td {
+    border: 1px solid #d1d5db;
+    padding: 4px;
+  }
+  .as-table input {
+    width: 100%;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 5px 6px;
+    font-size: 13px;
+    background: #ffffff;
+  }
+  .as-subhead {
+    margin: 10px 0 6px;
+    font-size: 16px;
+    color: #111827;
+    font-weight: 700;
+  }
+  .as-copy-box {
+    width: 100%;
+    min-height: 90px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 12px;
+    color: #334155;
+    background: #f8fafc;
+    white-space: pre-wrap;
+  }
+  .as-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  @media (min-width: 980px) {
+    .as-grid-ref {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      gap: 12px;
+    }
+  }
+</style>
+
+<section class="as-simple-wrap">
+  <h2 class="as-simple-title">ASIGNACIONES SIMPLES</h2>
+  <p class="as-simple-sub">Planilla interna rapida para ordenar choferes, vehiculos y rotacion manual.</p>
+
+  <article class="as-simple-card">
+    <div class="as-simple-head">DIARIO</div>
+    <div class="as-simple-pad">
+      <form class="as-simple-toolbar" method="get" action="{{ url_for('asignaciones_simple_home') }}">
+        <label for="fecha">Fecha</label>
+        <input id="fecha" type="date" name="fecha" value="{{ fecha }}">
+        <button class="as-btn" type="submit">Abrir</button>
+      </form>
+
+      <form id="form-diario" method="post" action="{{ url_for('asignaciones_simple_guardar') }}">
+        <input type="hidden" name="action" value="guardar_diario">
+        <input type="hidden" name="fecha" value="{{ fecha }}">
+        <table id="tabla-diario" class="as-table">
+          <thead>
+            <tr>
+              <th>Chofer</th>
+              <th>Vehiculo</th>
+              <th>Destino</th>
+              <th>Solicitante</th>
+              <th>Hora llegada aprox</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in diario_rows %}
+              <tr>
+                <td>
+                  <input type="hidden" name="row_id" value="{{ r.id }}">
+                  <input type="hidden" name="orden" value="{{ r.orden if r.orden is not none else loop.index }}">
+                  <input type="text" name="chofer" value="{{ r.chofer or '' }}">
+                </td>
+                <td><input type="text" name="vehiculo" value="{{ r.vehiculo or '' }}"></td>
+                <td><input type="text" name="destino" value="{{ r.destino or '' }}"></td>
+                <td><input type="text" name="solicitante" value="{{ r.solicitante or '' }}"></td>
+                <td><input type="text" name="hora_llegada_aprox" value="{{ r.hora_llegada_aprox or '' }}"></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <div class="as-simple-toolbar" style="margin-top:8px;">
+          <button class="as-btn primary" type="submit">Guardar</button>
+          <button id="btn-copiar-cuadro" class="as-btn" type="button">Copiar cuadro</button>
+        </div>
+      </form>
+
+      <form method="post" action="{{ url_for('asignaciones_simple_limpiar_dia') }}">
+        <input type="hidden" name="fecha" value="{{ fecha }}">
+        <button class="as-btn" type="submit">Limpiar dia</button>
+      </form>
+
+      <textarea id="copy-output" class="as-copy-box" readonly style="margin-top:8px;"></textarea>
+    </div>
+  </article>
+
+  <article class="as-simple-card">
+    <div class="as-simple-head">ROTACION CHOFERES Y VEHICULOS</div>
+    <div class="as-simple-pad">
+      <div class="as-grid-ref">
+        <div>
+          <h3 class="as-subhead">Rotacion por viaje / Ultimo asignado</h3>
+          <table class="as-table">
+            <thead>
+              <tr>
+                <th>Viaje / destino</th>
+                <th>Fecha</th>
+                <th>Ultimo / asignado</th>
+                <th>Accion</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in rot_ultimo_rows %}
+                {% set f_ult = "fUlt" ~ r.id %}
+                <tr>
+                  <td>
+                    {{ r.viaje_destino }}
+                    <input form="{{ f_ult }}" type="hidden" name="action" value="guardar_ultimo">
+                    <input form="{{ f_ult }}" type="hidden" name="fecha" value="{{ fecha }}">
+                    <input form="{{ f_ult }}" type="hidden" name="row_id" value="{{ r.id }}">
+                  </td>
+                  <td><input form="{{ f_ult }}" type="text" name="fila_fecha" value="{{ r.fecha or '' }}"></td>
+                  <td><input form="{{ f_ult }}" type="text" name="fila_asignado" value="{{ r.ultimo_asignado or '' }}"></td>
+                  <td>
+                    <form id="{{ f_ult }}" method="post" action="{{ url_for('asignaciones_simple_guardar') }}">
+                      <button class="as-btn" type="submit">Editar</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+
+          <h3 class="as-subhead">Rotacion por viaje / Proximo asignado</h3>
+          <table class="as-table">
+            <thead>
+              <tr>
+                <th>Viaje / destino</th>
+                <th>Fecha</th>
+                <th>Proximo asignado</th>
+                <th>Accion</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in rot_proximo_rows %}
+                {% set f_prox = "fProx" ~ r.id %}
+                <tr>
+                  <td>
+                    {{ r.viaje_destino }}
+                    <input form="{{ f_prox }}" type="hidden" name="action" value="guardar_proximo">
+                    <input form="{{ f_prox }}" type="hidden" name="fecha" value="{{ fecha }}">
+                    <input form="{{ f_prox }}" type="hidden" name="row_id" value="{{ r.id }}">
+                  </td>
+                  <td><input form="{{ f_prox }}" type="text" name="fila_fecha" value="{{ r.fecha or '' }}"></td>
+                  <td><input form="{{ f_prox }}" type="text" name="fila_asignado" value="{{ r.proximo_asignado or '' }}"></td>
+                  <td>
+                    <form id="{{ f_prox }}" method="post" action="{{ url_for('asignaciones_simple_guardar') }}">
+                      <button class="as-btn" type="submit">Editar</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div>
+          <h3 class="as-subhead">Referencia</h3>
+          <table class="as-table">
+            <thead>
+              <tr>
+                <th>Orden</th>
+                <th>Chofer</th>
+                <th>Accion</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in referencia_rows %}
+                {% set f_ref = "fRef" ~ r.id %}
+                <tr>
+                  <td>
+                    <input form="{{ f_ref }}" type="hidden" name="action" value="guardar_referencia">
+                    <input form="{{ f_ref }}" type="hidden" name="fecha" value="{{ fecha }}">
+                    <input form="{{ f_ref }}" type="hidden" name="row_id" value="{{ r.id }}">
+                    <input form="{{ f_ref }}" type="text" name="orden" value="{{ r.orden if r.orden is not none else loop.index }}">
+                  </td>
+                  <td><input form="{{ f_ref }}" type="text" name="chofer" value="{{ r.chofer or '' }}"></td>
+                  <td>
+                    <form id="{{ f_ref }}" method="post" action="{{ url_for('asignaciones_simple_guardar') }}">
+                      <button class="as-btn" type="submit">Editar</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </article>
+</section>
+
+<script>
+  (function () {
+    const btn = document.getElementById("btn-copiar-cuadro");
+    const out = document.getElementById("copy-output");
+    const tabla = document.getElementById("tabla-diario");
+    if (!btn || !out || !tabla) return;
+
+    function buildText() {
+      const lines = [];
+      lines.push("DIARIO");
+      lines.push("Chofer | Vehiculo | Destino | Solicitante | Hora llegada aprox");
+      const rows = tabla.querySelectorAll("tbody tr");
+      rows.forEach((tr) => {
+        const vals = [];
+        tr.querySelectorAll("input[type='text']").forEach((inp) => vals.push((inp.value || "").trim()));
+        while (vals.length < 5) vals.push("");
+        lines.push(vals.join(" | "));
+      });
+      return lines.join("\n");
+    }
+
+    btn.addEventListener("click", async function () {
+      const text = buildText();
+      out.value = text;
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (e) {}
+    });
+  })();
+</script>
+{% endblock %}

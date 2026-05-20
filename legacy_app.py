@@ -19,7 +19,7 @@ from modules.vehiculos import register_vehiculos
 from modules.inventario_checklist import register_inventario_checklist
 from modules.inventario_general import register_inventario_general
 from modules.sst import register_sst
-from modules.asignaciones import register_asignaciones
+from modules.asignaciones_simple import register_asignaciones_simple
 from werkzeug.utils import secure_filename
 
 # =========================
@@ -186,7 +186,7 @@ def module_from_path(path: str) -> str:
         return "dashboard"
     if path.startswith("/api/dashboard"):
         return "dashboard"
-    if path.startswith("/asignaciones"):
+    if path.startswith("/asignaciones-simple"):
         return "dashboard"
     if path.startswith("/vehiculos"):
         return "vehiculos"
@@ -1869,7 +1869,7 @@ register_mapa(app, get_db)
 register_vehiculos(app, get_db, get_db_connection, ensure_cols, ensure_combustible_columns, rebuild_eventos_vehiculos)
 register_inventario_checklist(app, get_db)
 register_inventario_general(app, get_db, get_db_connection, ensure_luminarias_columns)
-register_asignaciones(app, get_db)
+register_asignaciones_simple(app, get_db)
 rebuild_eventos_limpieza_sede = register_sst(
     app,
     get_db,
