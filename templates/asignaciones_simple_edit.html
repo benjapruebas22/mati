@@ -65,7 +65,7 @@
     border: 1px solid #94a3b8;
     background: #f8fafc;
     color: #1f2937;
-    border-radius: 9px;
+    border-radius: 999px;
     padding: 7px 12px;
     font-size: 13px;
     font-weight: 700;
@@ -88,7 +88,7 @@
     <h2 class="as-edit-title">{{ titulo }}</h2>
     <p class="as-edit-sub">{{ subtitulo }}</p>
 
-    <form method="post" action="{{ url_for('asignaciones_simple_editar', tipo=tipo, row_id=row.id, fecha=fecha_ctx) }}">
+    <form method="post" action="{% if is_new %}{{ url_for('asignaciones_simple_nuevo_diario', fecha=fecha_ctx) }}{% else %}{{ url_for('asignaciones_simple_editar', tipo=tipo, row_id=row.id, fecha=fecha_ctx) }}{% endif %}">
       {% if tipo == 'diario' %}
         <div class="as-form-grid two">
           <div class="as-field">
@@ -105,11 +105,28 @@
           </div>
           <div class="as-field">
             <label>Chofer</label>
-            <input type="text" name="chofer" value="{{ row.chofer or '' }}">
+            <select name="chofer">
+              <option value="{{ choferes_opts.sin_asignar }}" {% if (row.chofer or '') == choferes_opts.sin_asignar %}selected{% endif %}>{{ choferes_opts.sin_asignar }}</option>
+              <optgroup label="CHOFERES INTENDENCIA">
+                {% for ch in choferes_opts.intendencia %}
+                  <option value="{{ ch }}" {% if (row.chofer or '') == ch %}selected{% endif %}>{{ ch }}</option>
+                {% endfor %}
+              </optgroup>
+              <optgroup label="CHOFERES AUTORIZADOS">
+                {% for ch in choferes_opts.autorizados %}
+                  <option value="{{ ch }}" {% if (row.chofer or '') == ch %}selected{% endif %}>{{ ch }}</option>
+                {% endfor %}
+              </optgroup>
+            </select>
           </div>
           <div class="as-field">
-            <label>Vehiculo</label>
-            <input type="text" name="vehiculo" value="{{ row.vehiculo or '' }}">
+            <label>Vehículo</label>
+            <select name="vehiculo">
+              <option value="" {% if not (row.vehiculo or '') %}selected{% endif %}>Sin asignar</option>
+              {% for vh in vehiculos_disponibles %}
+                <option value="{{ vh }}" {% if (row.vehiculo or '') == vh %}selected{% endif %}>{{ vh }}</option>
+              {% endfor %}
+            </select>
           </div>
           <div class="as-field">
             <label>Destino</label>
@@ -121,11 +138,11 @@
           </div>
           <div class="as-field">
             <label>Hora llegada aproximada</label>
-            <input type="text" name="hora_llegada_aprox" value="{{ row.hora_llegada_aprox or '' }}">
+            <input type="text" name="hora_llegada_aprox" value="{{ row.hora_llegada_aprox or '' }}" placeholder="Ej: 13:30">
           </div>
         </div>
         <div class="as-field" style="margin-top:10px;">
-          <label>Observacion</label>
+          <label>Observación</label>
           <textarea name="observacion">{{ row.observacion or '' }}</textarea>
         </div>
 
@@ -140,8 +157,20 @@
             <input type="text" name="fecha" value="{{ row.fecha or '' }}">
           </div>
           <div class="as-field">
-            <label>Ultimo / asignado</label>
-            <input type="text" name="asignado" value="{{ row.ultimo_asignado or '' }}">
+            <label>Último / asignado</label>
+            <select name="asignado">
+              <option value="{{ choferes_opts.sin_asignar }}" {% if (row.ultimo_asignado or '') == choferes_opts.sin_asignar %}selected{% endif %}>{{ choferes_opts.sin_asignar }}</option>
+              <optgroup label="CHOFERES INTENDENCIA">
+                {% for ch in choferes_opts.intendencia %}
+                  <option value="{{ ch }}" {% if (row.ultimo_asignado or '') == ch %}selected{% endif %}>{{ ch }}</option>
+                {% endfor %}
+              </optgroup>
+              <optgroup label="CHOFERES AUTORIZADOS">
+                {% for ch in choferes_opts.autorizados %}
+                  <option value="{{ ch }}" {% if (row.ultimo_asignado or '') == ch %}selected{% endif %}>{{ ch }}</option>
+                {% endfor %}
+              </optgroup>
+            </select>
           </div>
           <div class="as-field">
             <label>Estado</label>
@@ -153,7 +182,7 @@
           </div>
         </div>
         <div class="as-field" style="margin-top:10px;">
-          <label>Observacion</label>
+          <label>Observación</label>
           <textarea name="observacion">{{ row.observacion or '' }}</textarea>
         </div>
 
@@ -168,8 +197,20 @@
             <input type="text" name="fecha" value="{{ row.fecha or '' }}">
           </div>
           <div class="as-field">
-            <label>Proximo asignado</label>
-            <input type="text" name="asignado" value="{{ row.proximo_asignado or '' }}">
+            <label>Próximo asignado</label>
+            <select name="asignado">
+              <option value="{{ choferes_opts.sin_asignar }}" {% if (row.proximo_asignado or '') == choferes_opts.sin_asignar %}selected{% endif %}>{{ choferes_opts.sin_asignar }}</option>
+              <optgroup label="CHOFERES INTENDENCIA">
+                {% for ch in choferes_opts.intendencia %}
+                  <option value="{{ ch }}" {% if (row.proximo_asignado or '') == ch %}selected{% endif %}>{{ ch }}</option>
+                {% endfor %}
+              </optgroup>
+              <optgroup label="CHOFERES AUTORIZADOS">
+                {% for ch in choferes_opts.autorizados %}
+                  <option value="{{ ch }}" {% if (row.proximo_asignado or '') == ch %}selected{% endif %}>{{ ch }}</option>
+                {% endfor %}
+              </optgroup>
+            </select>
           </div>
           <div class="as-field">
             <label>Estado</label>
@@ -181,7 +222,7 @@
           </div>
         </div>
         <div class="as-field" style="margin-top:10px;">
-          <label>Observacion</label>
+          <label>Observación</label>
           <textarea name="observacion">{{ row.observacion or '' }}</textarea>
         </div>
 
@@ -193,18 +234,24 @@
           </div>
           <div class="as-field">
             <label>Chofer</label>
-            <input type="text" name="chofer" value="{{ row.chofer or '' }}">
+            <select name="chofer">
+              <optgroup label="CHOFERES INTENDENCIA">
+                {% for ch in choferes_opts.intendencia %}
+                  <option value="{{ ch }}" {% if (row.chofer or '') == ch %}selected{% endif %}>{{ ch }}</option>
+                {% endfor %}
+              </optgroup>
+            </select>
           </div>
           <div class="as-field">
             <label>Activo</label>
             <select name="activo">
-              <option value="1" {% if row.activo == 1 %}selected{% endif %}>Si</option>
-              <option value="0" {% if row.activo != 1 %}selected{% endif %}>No</option>
+              <option value="1" {% if row.activo == 1 %}selected{% endif %}>Activo</option>
+              <option value="0" {% if row.activo != 1 %}selected{% endif %}>Inactivo</option>
             </select>
           </div>
         </div>
         <div class="as-field" style="margin-top:10px;">
-          <label>Observacion</label>
+          <label>Observación</label>
           <textarea name="observacion">{{ row.observacion or '' }}</textarea>
         </div>
       {% endif %}

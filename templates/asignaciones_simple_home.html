@@ -56,7 +56,7 @@
     border: 1px solid #94a3b8;
     background: #f8fafc;
     color: #1f2937;
-    border-radius: 8px;
+    border-radius: 999px;
     padding: 6px 10px;
     font-size: 12px;
     font-weight: 600;
@@ -68,7 +68,14 @@
     min-height: 30px;
   }
   .as-btn.primary {
-    background: #e2e8f0;
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #ffffff;
+  }
+  .as-btn.danger {
+    background: #ffffff;
+    border-color: #fca5a5;
+    color: #991b1b;
   }
   .as-table {
     width: 100%;
@@ -92,6 +99,29 @@
   .as-table tbody tr:hover td {
     background: #f8fafc;
   }
+  .as-actions-cell {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .as-inline-form {
+    margin: 0;
+    display: inline;
+  }
+  .veh-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid #d1d5db;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+  }
+  .veh-badge.vh-marron { background: #f5f0ea; color: #6b4a2d; border-color: #e5d5c3; }
+  .veh-badge.vh-rojo { background: #fff1f2; color: #9f1239; border-color: #fecdd3; }
+  .veh-badge.vh-gris { background: #f3f4f6; color: #374151; border-color: #d1d5db; }
+  .veh-badge.vh-azulpet { background: #ecfeff; color: #155e75; border-color: #bae6fd; }
+  .veh-badge.vh-violeta { background: #f5f3ff; color: #5b21b6; border-color: #ddd6fe; }
   .as-subhead {
     margin: 10px 0 6px;
     font-size: 16px;
@@ -121,7 +151,7 @@
 
 <section class="as-simple-wrap">
   <h2 class="as-simple-title">ASIGNACIONES SIMPLES</h2>
-  <p class="as-simple-sub">Planilla interna rapida para ordenar choferes, vehiculos y rotacion manual.</p>
+  <p class="as-simple-sub">Planilla interna rápida para ordenar choferes, vehículos y rotación manual.</p>
 
   <article class="as-simple-card">
     <div class="as-simple-head">DIARIO</div>
@@ -130,31 +160,45 @@
         <label for="fecha">Fecha</label>
         <input id="fecha" type="date" name="fecha" value="{{ fecha }}">
         <button class="as-btn" type="submit">Abrir</button>
+        <a class="as-btn primary" href="{{ url_for('asignaciones_simple_nuevo_diario', fecha=fecha) }}">+ Agregar traslado</a>
       </form>
 
       <table id="tabla-diario" class="as-table">
         <thead>
           <tr>
             <th>Chofer</th>
-            <th>Vehiculo</th>
+            <th>Vehículo</th>
             <th>Destino</th>
             <th>Solicitante</th>
             <th>Hora llegada aprox</th>
             <th>Estado</th>
-            <th>Accion</th>
+            <th>Acción</th>
           </tr>
         </thead>
         <tbody>
           {% for r in diario_rows %}
             <tr>
               <td>{{ r.chofer or '-' }}</td>
-              <td>{{ r.vehiculo or '-' }}</td>
+              <td>
+                {% set vh = r.vehiculo or '-' %}
+                {% set vh_cls = vehiculo_badge_class.get(vh, '') %}
+                {% if vh != '-' %}
+                  <span class="veh-badge {{ vh_cls }}">{{ vh }}</span>
+                {% else %}
+                  {{ vh }}
+                {% endif %}
+              </td>
               <td>{{ r.destino or '-' }}</td>
               <td>{{ r.solicitante or '-' }}</td>
               <td>{{ r.hora_llegada_aprox or '-' }}</td>
               <td>{{ r.estado or '-' }}</td>
               <td>
-                <a class="as-btn" href="{{ url_for('asignaciones_simple_editar', tipo='diario', row_id=r.id, fecha=fecha) }}">Editar</a>
+                <span class="as-actions-cell">
+                  <a class="as-btn" href="{{ url_for('asignaciones_simple_editar', tipo='diario', row_id=r.id, fecha=fecha) }}">Editar</a>
+                  <form class="as-inline-form" method="post" action="{{ url_for('asignaciones_simple_eliminar', tipo='diario', row_id=r.id, fecha=fecha) }}" onsubmit="return confirm('¿Eliminar este traslado del día?');">
+                    <button class="as-btn danger" type="submit">Eliminar</button>
+                  </form>
+                </span>
               </td>
             </tr>
           {% endfor %}
@@ -164,35 +208,35 @@
       <div class="as-simple-toolbar" style="margin-top:8px;">
         <form method="post" action="{{ url_for('asignaciones_simple_guardar_dia') }}">
           <input type="hidden" name="fecha" value="{{ fecha }}">
-          <button class="as-btn primary" type="submit">Guardar dia</button>
+          <button class="as-btn primary" type="submit">Guardar día</button>
         </form>
 
         <button id="btn-copiar-cuadro" class="as-btn" type="button">Copiar cuadro</button>
 
         <form method="post" action="{{ url_for('asignaciones_simple_limpiar_dia') }}">
           <input type="hidden" name="fecha" value="{{ fecha }}">
-          <button class="as-btn" type="submit">Limpiar dia</button>
+          <button class="as-btn" type="submit">Limpiar día</button>
         </form>
       </div>
 
-      <textarea id="copy-output" class="as-copy-box" readonly></textarea>
+      <textarea id="copy-output" class="as-copy-box" readonly placeholder="Aquí se mostrará el cuadro copiado."></textarea>
     </div>
   </article>
 
   <article class="as-simple-card">
-    <div class="as-simple-head">ROTACION CHOFERES Y VEHICULOS</div>
+    <div class="as-simple-head">ROTACIÓN CHOFERES Y VEHÍCULOS</div>
     <div class="as-simple-pad">
       <div class="as-grid-ref">
         <div>
-          <h3 class="as-subhead">Rotacion por viaje / Ultimo asignado</h3>
+          <h3 class="as-subhead">Rotación por viaje / Último asignado</h3>
           <table class="as-table">
             <thead>
               <tr>
                 <th>Viaje / destino</th>
                 <th>Fecha</th>
-                <th>Ultimo / asignado</th>
+                <th>Último / asignado</th>
                 <th>Estado</th>
-                <th>Accion</th>
+                <th>Acción</th>
               </tr>
             </thead>
             <tbody>
@@ -210,15 +254,15 @@
             </tbody>
           </table>
 
-          <h3 class="as-subhead">Rotacion por viaje / Proximo asignado</h3>
+          <h3 class="as-subhead">Rotación por viaje / Próximo asignado</h3>
           <table class="as-table">
             <thead>
               <tr>
                 <th>Viaje / destino</th>
                 <th>Fecha</th>
-                <th>Proximo asignado</th>
+                <th>Próximo asignado</th>
                 <th>Estado</th>
-                <th>Accion</th>
+                <th>Acción</th>
               </tr>
             </thead>
             <tbody>
@@ -245,7 +289,7 @@
                 <th>Orden</th>
                 <th>Chofer</th>
                 <th>Estado</th>
-                <th>Accion</th>
+                <th>Acción</th>
               </tr>
             </thead>
             <tbody>
@@ -276,16 +320,20 @@
 
     function buildText() {
       const lines = [];
-      lines.push("DIARIO");
-      lines.push("Chofer | Vehiculo | Destino | Solicitante | Hora llegada aprox");
+      lines.push("ASIGNACIONES DEL DÍA");
+      lines.push("Fecha: {{ fecha_humana }}");
+      lines.push("");
+      lines.push("Hora llegada aprox | Chofer | Vehículo | Destino | Solicitante | Estado");
       const rows = tabla.querySelectorAll("tbody tr");
       rows.forEach((tr) => {
         const cells = tr.querySelectorAll("td");
-        const vals = [];
-        for (let i = 0; i < 5; i++) {
-          vals.push((cells[i] ? cells[i].innerText : "").trim());
-        }
-        lines.push(vals.join(" | "));
+        const hora = (cells[4] ? cells[4].innerText : "").trim();
+        const chofer = (cells[0] ? cells[0].innerText : "").trim();
+        const vehiculo = (cells[1] ? cells[1].innerText : "").trim();
+        const destino = (cells[2] ? cells[2].innerText : "").trim();
+        const solicitante = (cells[3] ? cells[3].innerText : "").trim();
+        const estado = (cells[5] ? cells[5].innerText : "").trim();
+        lines.push([hora, chofer, vehiculo, destino, solicitante, estado].join(" | "));
       });
       return lines.join("\n");
     }

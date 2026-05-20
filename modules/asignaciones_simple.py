@@ -8,12 +8,42 @@ def register_asignaciones_simple(app, get_db):
         return
     app._asignaciones_simple_registered = True
 
+    CHOFERES_INTENDENCIA = [
+        "Mauro Vea Murguía",
+        "Gastón Villagra",
+        "Jorge Corbacho",
+        "Emiliano P. de la Puente",
+    ]
+    CHOFERES_AUTORIZADOS = [
+        "Leonardo Avilés",
+        "Mauricio Zambrano",
+        "Mateo Montiel",
+        "Julio Daud",
+        "Manuel Flores",
+        "Marcos Durán",
+    ]
+    CHOFER_SIN_ASIGNAR = "Sin asignar"
+    VEHICULOS_DISPONIBLES = [
+        "AF277OA",
+        "AB946VK",
+        "AE856GD",
+        "AE856GE",
+        "AG846FR",
+    ]
+    VEHICULO_BADGE_CLASS = {
+        "AF277OA": "vh-marron",
+        "AB946VK": "vh-rojo",
+        "AE856GD": "vh-gris",
+        "AE856GE": "vh-azulpet",
+        "AG846FR": "vh-violeta",
+    }
+
     DAILY_DEFAULTS = [
         {
             "orden": 1,
             "chofer": "Leo",
             "vehiculo": "AF277OA",
-            "destino": "Palpala",
+            "destino": "Palpalá",
             "solicitante": "",
             "hora_llegada_aprox": "",
             "estado": "Pendiente",
@@ -31,7 +61,7 @@ def register_asignaciones_simple(app, get_db):
         },
         {
             "orden": 3,
-            "chofer": "Gaston",
+            "chofer": "Gastón",
             "vehiculo": "AG846FR",
             "destino": "",
             "solicitante": "",
@@ -49,10 +79,10 @@ def register_asignaciones_simple(app, get_db):
         (6, "Otro especial"),
     ]
     REFERENCIA_DEFAULTS = [
-        (1, "Mauro Vea Murguia"),
-        (2, "Gaston Villagra"),
+        (1, "Mauro Vea Murguía"),
+        (2, "Gastón Villagra"),
         (3, "Jorge Corbacho"),
-        (4, "Emiliano Perez"),
+        (4, "Emiliano Pérez"),
     ]
 
     DAILY_ESTADOS = ["Pendiente", "Asignado", "Realizado", "Cancelado"]
@@ -91,6 +121,20 @@ def register_asignaciones_simple(app, get_db):
 
     def _clean_text(v):
         return str(v or "").strip()
+
+    def _iso_to_ddmmyyyy(iso_value):
+        txt = _clean_text(iso_value)
+        parts = txt.split("-")
+        if len(parts) == 3 and all(parts):
+            return f"{parts[2]}/{parts[1]}/{parts[0]}"
+        return txt or "-"
+
+    def _choferes_opts():
+        return {
+            "sin_asignar": CHOFER_SIN_ASIGNAR,
+            "intendencia": CHOFERES_INTENDENCIA,
+            "autorizados": CHOFERES_AUTORIZADOS,
+        }
 
     def _table_cols(con, table):
         rows = con.execute(f"PRAGMA table_info({table})").fetchall()
@@ -255,6 +299,13 @@ def register_asignaciones_simple(app, get_db):
             (fecha,),
         ).fetchall()
 
+    def _next_orden_diario(con, fecha):
+        row = con.execute(
+            "SELECT COALESCE(MAX(COALESCE(orden,0)),0) AS max_orden FROM asignaciones_simples_diario WHERE fecha=?",
+            (fecha,),
+        ).fetchone()
+        return int((row["max_orden"] if row else 0) or 0) + 1
+
     def _list_rot_ultimo(con):
         return con.execute(
             """
@@ -339,10 +390,12 @@ def register_asignaciones_simple(app, get_db):
             return render_template(
                 "asignaciones_simple_home.html",
                 fecha=fecha,
+                fecha_humana=_iso_to_ddmmyyyy(fecha),
                 diario_rows=diario_rows,
                 rot_ultimo_rows=rot_ultimo_rows,
                 rot_proximo_rows=rot_proximo_rows,
                 referencia_rows=referencia_rows,
+                vehiculo_badge_class=VEHICULO_BADGE_CLASS,
             )
         finally:
             con.close()
@@ -356,8 +409,68 @@ def register_asignaciones_simple(app, get_db):
             _ensure_schema(con)
             fecha = _clean_text(request.form.get("fecha")) or _today_iso()
             _ensure_diario_for_fecha(con, fecha)
-            flash("Dia guardado.", "success")
+            flash("Día guardado.", "success")
             return redirect(url_for("asignaciones_simple_home", fecha=fecha))
+        finally:
+            con.close()
+
+    @app.route("/asignaciones-simple/nueva", methods=["GET", "POST"], endpoint="asignaciones_simple_nuevo_diario")
+    def asignaciones_simple_nuevo_diario():
+        if not _can_access():
+            return _deny()
+        con = get_db()
+        try:
+            _ensure_schema(con)
+            fecha_ctx = _clean_text(request.values.get("fecha")) or _today_iso()
+            if request.method == "POST":
+                fecha = _clean_text(request.form.get("fecha")) or fecha_ctx
+                con.execute(
+                    """
+                    INSERT INTO asignaciones_simples_diario(
+                        fecha, chofer, vehiculo, destino, solicitante, hora_llegada_aprox,
+                        estado, observacion, orden, actualizado_en
+                    ) VALUES (?,?,?,?,?,?,?,?,?, datetime('now'))
+                    """,
+                    (
+                        fecha,
+                        _clean_text(request.form.get("chofer")) or CHOFER_SIN_ASIGNAR,
+                        _clean_text(request.form.get("vehiculo")),
+                        _clean_text(request.form.get("destino")),
+                        _clean_text(request.form.get("solicitante")),
+                        _clean_text(request.form.get("hora_llegada_aprox")),
+                        _clean_text(request.form.get("estado")) or "Pendiente",
+                        _clean_text(request.form.get("observacion")),
+                        _next_orden_diario(con, fecha),
+                    ),
+                )
+                con.commit()
+                flash("Asignación diaria creada.", "success")
+                return redirect(url_for("asignaciones_simple_home", fecha=fecha))
+
+            row = {
+                "id": 0,
+                "fecha": fecha_ctx,
+                "chofer": CHOFER_SIN_ASIGNAR,
+                "vehiculo": "",
+                "destino": "",
+                "solicitante": "",
+                "hora_llegada_aprox": "",
+                "estado": "Pendiente",
+                "observacion": "",
+            }
+            return render_template(
+                "asignaciones_simple_edit.html",
+                tipo="diario",
+                row=row,
+                fecha_ctx=fecha_ctx,
+                titulo="Nueva asignación diaria",
+                subtitulo="Carga un nuevo traslado y vuelve a la tabla diaria.",
+                daily_estados=DAILY_ESTADOS,
+                rot_estados=ROT_ESTADOS,
+                choferes_opts=_choferes_opts(),
+                vehiculos_disponibles=VEHICULOS_DISPONIBLES,
+                is_new=True,
+            )
         finally:
             con.close()
 
@@ -405,7 +518,7 @@ def register_asignaciones_simple(app, get_db):
                         """,
                         (
                             nueva_fecha,
-                            _clean_text(request.form.get("chofer")),
+                            _clean_text(request.form.get("chofer")) or CHOFER_SIN_ASIGNAR,
                             _clean_text(request.form.get("vehiculo")),
                             _clean_text(request.form.get("destino")),
                             _clean_text(request.form.get("solicitante")),
@@ -416,7 +529,7 @@ def register_asignaciones_simple(app, get_db):
                         ),
                     )
                     con.commit()
-                    flash("Asignacion diaria actualizada.", "success")
+                    flash("Asignación diaria actualizada.", "success")
                     return redirect(url_for("asignaciones_simple_home", fecha=nueva_fecha))
 
                 if tipo == "ultimo":
@@ -440,7 +553,7 @@ def register_asignaciones_simple(app, get_db):
                         ),
                     )
                     con.commit()
-                    flash("Rotacion (ultimo asignado) actualizada.", "success")
+                    flash("Rotación (último asignado) actualizada.", "success")
                     return redirect(url_for("asignaciones_simple_home", fecha=fecha_ctx))
 
                 if tipo == "proximo":
@@ -464,7 +577,7 @@ def register_asignaciones_simple(app, get_db):
                         ),
                     )
                     con.commit()
-                    flash("Rotacion (proximo asignado) actualizada.", "success")
+                    flash("Rotación (próximo asignado) actualizada.", "success")
                     return redirect(url_for("asignaciones_simple_home", fecha=fecha_ctx))
 
                 if tipo == "referencia":
@@ -496,17 +609,17 @@ def register_asignaciones_simple(app, get_db):
                     return redirect(url_for("asignaciones_simple_home", fecha=fecha_ctx))
 
             if tipo == "diario":
-                titulo = "Editar asignacion diaria"
+                titulo = "Editar asignación diaria"
                 subtitulo = "Completa los datos y guarda para volver al listado principal."
             elif tipo == "ultimo":
-                titulo = "Editar rotacion ultimo asignado"
-                subtitulo = "Actualiza ultimo chofer registrado para ese viaje."
+                titulo = "Editar rotación último asignado"
+                subtitulo = "Actualiza último chofer registrado para ese viaje."
             elif tipo == "proximo":
-                titulo = "Editar rotacion proximo asignado"
-                subtitulo = "Actualiza proximo chofer programado para ese viaje."
+                titulo = "Editar rotación próximo asignado"
+                subtitulo = "Actualiza próximo chofer programado para ese viaje."
             else:
                 titulo = "Editar orden de chofer"
-                subtitulo = "Ajusta referencia de orden para rotacion manual."
+                subtitulo = "Ajusta referencia de orden para rotación manual."
 
             return render_template(
                 "asignaciones_simple_edit.html",
@@ -517,7 +630,31 @@ def register_asignaciones_simple(app, get_db):
                 subtitulo=subtitulo,
                 daily_estados=DAILY_ESTADOS,
                 rot_estados=ROT_ESTADOS,
+                choferes_opts=_choferes_opts(),
+                vehiculos_disponibles=VEHICULOS_DISPONIBLES,
+                is_new=False,
             )
+        finally:
+            con.close()
+
+    @app.route(
+        "/asignaciones-simple/eliminar/<string:tipo>/<int:row_id>",
+        methods=["POST"],
+        endpoint="asignaciones_simple_eliminar",
+    )
+    def asignaciones_simple_eliminar(tipo, row_id):
+        if not _can_access():
+            return _deny()
+        if tipo != "diario":
+            abort(404)
+        con = get_db()
+        try:
+            _ensure_schema(con)
+            fecha_ctx = _clean_text(request.values.get("fecha")) or _today_iso()
+            con.execute("DELETE FROM asignaciones_simples_diario WHERE id = ?", (row_id,))
+            con.commit()
+            flash("Asignación diaria eliminada.", "success")
+            return redirect(url_for("asignaciones_simple_home", fecha=fecha_ctx))
         finally:
             con.close()
 
