@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+{% block content %}
+<style>
+  .as-edit-wrap {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 10px 12px 18px;
+  }
+  .as-edit-card {
+    border: 1px solid #d1d5db;
+    border-radius: 12px;
+    background: #ffffff;
+    padding: 14px;
+  }
+  .as-edit-title {
+    margin: 0;
+    font-size: 22px;
+    color: #1f2937;
+    font-weight: 700;
+  }
+  .as-edit-sub {
+    margin: 4px 0 12px;
+    color: #64748b;
+    font-size: 13px;
+  }
+  .as-form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  @media (min-width: 900px) {
+    .as-form-grid.two {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  .as-field label {
+    display: block;
+    font-size: 12px;
+    color: #334155;
+    font-weight: 700;
+    margin-bottom: 5px;
+  }
+  .as-field input,
+  .as-field select,
+  .as-field textarea {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 9px 10px;
+    font-size: 14px;
+    color: #1f2937;
+    background: #ffffff;
+  }
+  .as-field textarea {
+    min-height: 88px;
+    resize: vertical;
+  }
+  .as-actions {
+    margin-top: 14px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .as-btn {
+    border: 1px solid #94a3b8;
+    background: #f8fafc;
+    color: #1f2937;
+    border-radius: 9px;
+    padding: 7px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+  }
+  .as-btn.primary {
+    background: #2563eb;
+    border-color: #2563eb;
+    color: #ffffff;
+  }
+</style>
+
+<section class="as-edit-wrap">
+  <article class="as-edit-card">
+    <h2 class="as-edit-title">{{ titulo }}</h2>
+    <p class="as-edit-sub">{{ subtitulo }}</p>
+
+    <form method="post" action="{{ url_for('asignaciones_simple_editar', tipo=tipo, row_id=row.id, fecha=fecha_ctx) }}">
+      {% if tipo == 'diario' %}
+        <div class="as-form-grid two">
+          <div class="as-field">
+            <label>Fecha</label>
+            <input type="date" name="fecha" value="{{ row.fecha or fecha_ctx }}">
+          </div>
+          <div class="as-field">
+            <label>Estado</label>
+            <select name="estado">
+              {% for s in daily_estados %}
+                <option value="{{ s }}" {% if (row.estado or '') == s %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="as-field">
+            <label>Chofer</label>
+            <input type="text" name="chofer" value="{{ row.chofer or '' }}">
+          </div>
+          <div class="as-field">
+            <label>Vehiculo</label>
+            <input type="text" name="vehiculo" value="{{ row.vehiculo or '' }}">
+          </div>
+          <div class="as-field">
+            <label>Destino</label>
+            <input type="text" name="destino" value="{{ row.destino or '' }}">
+          </div>
+          <div class="as-field">
+            <label>Solicitante</label>
+            <input type="text" name="solicitante" value="{{ row.solicitante or '' }}">
+          </div>
+          <div class="as-field">
+            <label>Hora llegada aproximada</label>
+            <input type="text" name="hora_llegada_aprox" value="{{ row.hora_llegada_aprox or '' }}">
+          </div>
+        </div>
+        <div class="as-field" style="margin-top:10px;">
+          <label>Observacion</label>
+          <textarea name="observacion">{{ row.observacion or '' }}</textarea>
+        </div>
+
+      {% elif tipo == 'ultimo' %}
+        <div class="as-form-grid two">
+          <div class="as-field">
+            <label>Viaje / destino</label>
+            <input type="text" name="viaje_destino" value="{{ row.viaje_destino or '' }}">
+          </div>
+          <div class="as-field">
+            <label>Fecha</label>
+            <input type="text" name="fecha" value="{{ row.fecha or '' }}">
+          </div>
+          <div class="as-field">
+            <label>Ultimo / asignado</label>
+            <input type="text" name="asignado" value="{{ row.ultimo_asignado or '' }}">
+          </div>
+          <div class="as-field">
+            <label>Estado</label>
+            <select name="estado">
+              {% for s in rot_estados %}
+                <option value="{{ s }}" {% if (row.estado or '') == s %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="as-field" style="margin-top:10px;">
+          <label>Observacion</label>
+          <textarea name="observacion">{{ row.observacion or '' }}</textarea>
+        </div>
+
+      {% elif tipo == 'proximo' %}
+        <div class="as-form-grid two">
+          <div class="as-field">
+            <label>Viaje / destino</label>
+            <input type="text" name="viaje_destino" value="{{ row.viaje_destino or '' }}">
+          </div>
+          <div class="as-field">
+            <label>Fecha programada</label>
+            <input type="text" name="fecha" value="{{ row.fecha or '' }}">
+          </div>
+          <div class="as-field">
+            <label>Proximo asignado</label>
+            <input type="text" name="asignado" value="{{ row.proximo_asignado or '' }}">
+          </div>
+          <div class="as-field">
+            <label>Estado</label>
+            <select name="estado">
+              {% for s in rot_estados %}
+                <option value="{{ s }}" {% if (row.estado or '') == s %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="as-field" style="margin-top:10px;">
+          <label>Observacion</label>
+          <textarea name="observacion">{{ row.observacion or '' }}</textarea>
+        </div>
+
+      {% else %}
+        <div class="as-form-grid two">
+          <div class="as-field">
+            <label>Orden</label>
+            <input type="number" name="orden" value="{{ row.orden if row.orden is not none else 999 }}">
+          </div>
+          <div class="as-field">
+            <label>Chofer</label>
+            <input type="text" name="chofer" value="{{ row.chofer or '' }}">
+          </div>
+          <div class="as-field">
+            <label>Activo</label>
+            <select name="activo">
+              <option value="1" {% if row.activo == 1 %}selected{% endif %}>Si</option>
+              <option value="0" {% if row.activo != 1 %}selected{% endif %}>No</option>
+            </select>
+          </div>
+        </div>
+        <div class="as-field" style="margin-top:10px;">
+          <label>Observacion</label>
+          <textarea name="observacion">{{ row.observacion or '' }}</textarea>
+        </div>
+      {% endif %}
+
+      <div class="as-actions">
+        <button type="submit" class="as-btn primary">Guardar</button>
+        <a class="as-btn" href="{{ url_for('asignaciones_simple_home', fecha=fecha_ctx) }}">Cancelar</a>
+        <a class="as-btn" href="{{ url_for('asignaciones_simple_home', fecha=fecha_ctx) }}">Volver</a>
+      </div>
+    </form>
+  </article>
+</section>
+{% endblock %}

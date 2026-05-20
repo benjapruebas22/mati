@@ -1,6 +1,6 @@
 from datetime import date
 
-from flask import flash, redirect, render_template, request, session, url_for
+from flask import abort, flash, redirect, render_template, request, session, url_for
 
 
 def register_asignaciones_simple(app, get_db):
@@ -9,9 +9,36 @@ def register_asignaciones_simple(app, get_db):
     app._asignaciones_simple_registered = True
 
     DAILY_DEFAULTS = [
-        {"orden": 1, "chofer": "Leo", "vehiculo": "AF277OA", "destino": "Palpala", "solicitante": "", "hora_llegada_aprox": ""},
-        {"orden": 2, "chofer": "Manuel", "vehiculo": "AE856GD", "destino": "", "solicitante": "", "hora_llegada_aprox": ""},
-        {"orden": 3, "chofer": "Gaston", "vehiculo": "AG846FR", "destino": "", "solicitante": "", "hora_llegada_aprox": ""},
+        {
+            "orden": 1,
+            "chofer": "Leo",
+            "vehiculo": "AF277OA",
+            "destino": "Palpala",
+            "solicitante": "",
+            "hora_llegada_aprox": "",
+            "estado": "Pendiente",
+            "observacion": "",
+        },
+        {
+            "orden": 2,
+            "chofer": "Manuel",
+            "vehiculo": "AE856GD",
+            "destino": "",
+            "solicitante": "",
+            "hora_llegada_aprox": "",
+            "estado": "Pendiente",
+            "observacion": "",
+        },
+        {
+            "orden": 3,
+            "chofer": "Gaston",
+            "vehiculo": "AG846FR",
+            "destino": "",
+            "solicitante": "",
+            "hora_llegada_aprox": "",
+            "estado": "Pendiente",
+            "observacion": "",
+        },
     ]
     ROTACION_VIAJES = [
         (1, "Itinerancia / Susques"),
@@ -28,6 +55,9 @@ def register_asignaciones_simple(app, get_db):
         (4, "Emiliano Perez"),
     ]
 
+    DAILY_ESTADOS = ["Pendiente", "Asignado", "Realizado", "Cancelado"]
+    ROT_ESTADOS = ["Programado", "Realizado", "Cancelado"]
+
     def _role() -> str:
         return (session.get("role") or "").strip().lower()
 
@@ -37,7 +67,15 @@ def register_asignaciones_simple(app, get_db):
     def _can_access() -> bool:
         role = _role()
         user = _username()
-        if role in {"full", "admin", "dashboard_vehiculos", "dashboard_solo", "operativo_clave", "int_vehiculos", "ejecutivo"}:
+        if role in {
+            "full",
+            "admin",
+            "dashboard_vehiculos",
+            "dashboard_solo",
+            "operativo_clave",
+            "int_vehiculos",
+            "ejecutivo",
+        }:
             return True
         return user in {"mcalderari", "admi", "ibaroni", "fsavio", "mduran", "cvidaurre"}
 
@@ -52,7 +90,15 @@ def register_asignaciones_simple(app, get_db):
         return date.today().isoformat()
 
     def _clean_text(v):
-        return (str(v or "").strip())
+        return str(v or "").strip()
+
+    def _table_cols(con, table):
+        rows = con.execute(f"PRAGMA table_info({table})").fetchall()
+        return {str(r["name"]) for r in rows}
+
+    def _ensure_column(con, table, column, ddl_tail):
+        if column not in _table_cols(con, table):
+            con.execute(f"ALTER TABLE {table} ADD COLUMN {column} {ddl_tail}")
 
     def _ensure_schema(con):
         con.execute(
@@ -65,6 +111,8 @@ def register_asignaciones_simple(app, get_db):
                 destino TEXT,
                 solicitante TEXT,
                 hora_llegada_aprox TEXT,
+                estado TEXT NOT NULL DEFAULT 'Pendiente',
+                observacion TEXT,
                 orden INTEGER NOT NULL DEFAULT 999,
                 actualizado_en TEXT NOT NULL DEFAULT (datetime('now'))
             )
@@ -77,6 +125,8 @@ def register_asignaciones_simple(app, get_db):
                 viaje_destino TEXT NOT NULL UNIQUE,
                 fecha TEXT,
                 ultimo_asignado TEXT,
+                estado TEXT NOT NULL DEFAULT 'Programado',
+                observacion TEXT,
                 orden INTEGER NOT NULL DEFAULT 999
             )
             """
@@ -88,6 +138,8 @@ def register_asignaciones_simple(app, get_db):
                 viaje_destino TEXT NOT NULL UNIQUE,
                 fecha TEXT,
                 proximo_asignado TEXT,
+                estado TEXT NOT NULL DEFAULT 'Programado',
+                observacion TEXT,
                 orden INTEGER NOT NULL DEFAULT 999
             )
             """
@@ -97,10 +149,25 @@ def register_asignaciones_simple(app, get_db):
             CREATE TABLE IF NOT EXISTS asignaciones_simples_referencia(
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 orden INTEGER NOT NULL DEFAULT 999,
-                chofer TEXT NOT NULL
+                chofer TEXT NOT NULL,
+                activo INTEGER NOT NULL DEFAULT 1,
+                observacion TEXT
             )
             """
         )
+
+        _ensure_column(con, "asignaciones_simples_diario", "estado", "TEXT NOT NULL DEFAULT 'Pendiente'")
+        _ensure_column(con, "asignaciones_simples_diario", "observacion", "TEXT")
+
+        _ensure_column(con, "asignaciones_simples_rotacion_ultimo", "estado", "TEXT NOT NULL DEFAULT 'Programado'")
+        _ensure_column(con, "asignaciones_simples_rotacion_ultimo", "observacion", "TEXT")
+
+        _ensure_column(con, "asignaciones_simples_rotacion_proximo", "estado", "TEXT NOT NULL DEFAULT 'Programado'")
+        _ensure_column(con, "asignaciones_simples_rotacion_proximo", "observacion", "TEXT")
+
+        _ensure_column(con, "asignaciones_simples_referencia", "activo", "INTEGER NOT NULL DEFAULT 1")
+        _ensure_column(con, "asignaciones_simples_referencia", "observacion", "TEXT")
+
         con.execute("CREATE INDEX IF NOT EXISTS idx_as_simple_diario_fecha_orden ON asignaciones_simples_diario(fecha, orden)")
         con.commit()
 
@@ -110,28 +177,32 @@ def register_asignaciones_simple(app, get_db):
             for orden, viaje in ROTACION_VIAJES:
                 con.execute(
                     """
-                    INSERT INTO asignaciones_simples_rotacion_ultimo(viaje_destino, fecha, ultimo_asignado, orden)
-                    VALUES (?, '', '', ?)
+                    INSERT INTO asignaciones_simples_rotacion_ultimo(
+                        viaje_destino, fecha, ultimo_asignado, estado, observacion, orden
+                    ) VALUES (?, '', '', 'Programado', '', ?)
                     """,
                     (viaje, orden),
                 )
+
         cnt_p = int(con.execute("SELECT COUNT(*) AS c FROM asignaciones_simples_rotacion_proximo").fetchone()["c"] or 0)
         if cnt_p == 0:
             for orden, viaje in ROTACION_VIAJES:
                 con.execute(
                     """
-                    INSERT INTO asignaciones_simples_rotacion_proximo(viaje_destino, fecha, proximo_asignado, orden)
-                    VALUES (?, '', '', ?)
+                    INSERT INTO asignaciones_simples_rotacion_proximo(
+                        viaje_destino, fecha, proximo_asignado, estado, observacion, orden
+                    ) VALUES (?, '', '', 'Programado', '', ?)
                     """,
                     (viaje, orden),
                 )
+
         cnt_r = int(con.execute("SELECT COUNT(*) AS c FROM asignaciones_simples_referencia").fetchone()["c"] or 0)
         if cnt_r == 0:
             for orden, chofer in REFERENCIA_DEFAULTS:
                 con.execute(
                     """
-                    INSERT INTO asignaciones_simples_referencia(orden, chofer)
-                    VALUES (?, ?)
+                    INSERT INTO asignaciones_simples_referencia(orden, chofer, activo, observacion)
+                    VALUES (?, ?, 1, '')
                     """,
                     (orden, chofer),
                 )
@@ -143,8 +214,9 @@ def register_asignaciones_simple(app, get_db):
             con.execute(
                 """
                 INSERT INTO asignaciones_simples_diario(
-                    fecha, chofer, vehiculo, destino, solicitante, hora_llegada_aprox, orden
-                ) VALUES (?,?,?,?,?,?,?)
+                    fecha, chofer, vehiculo, destino, solicitante, hora_llegada_aprox,
+                    estado, observacion, orden
+                ) VALUES (?,?,?,?,?,?,?,?,?)
                 """,
                 (
                     fecha,
@@ -153,6 +225,8 @@ def register_asignaciones_simple(app, get_db):
                     row["destino"],
                     row["solicitante"],
                     row["hora_llegada_aprox"],
+                    row["estado"],
+                    row["observacion"],
                     int(row["orden"]),
                 ),
             )
@@ -172,7 +246,8 @@ def register_asignaciones_simple(app, get_db):
     def _list_diario(con, fecha):
         return con.execute(
             """
-            SELECT id, fecha, chofer, vehiculo, destino, solicitante, hora_llegada_aprox, orden
+            SELECT id, fecha, chofer, vehiculo, destino, solicitante, hora_llegada_aprox,
+                   estado, observacion, orden
             FROM asignaciones_simples_diario
             WHERE fecha = ?
             ORDER BY COALESCE(orden,999), id
@@ -183,7 +258,7 @@ def register_asignaciones_simple(app, get_db):
     def _list_rot_ultimo(con):
         return con.execute(
             """
-            SELECT id, viaje_destino, fecha, ultimo_asignado, orden
+            SELECT id, viaje_destino, fecha, ultimo_asignado, estado, observacion, orden
             FROM asignaciones_simples_rotacion_ultimo
             ORDER BY COALESCE(orden,999), id
             """
@@ -192,7 +267,7 @@ def register_asignaciones_simple(app, get_db):
     def _list_rot_proximo(con):
         return con.execute(
             """
-            SELECT id, viaje_destino, fecha, proximo_asignado, orden
+            SELECT id, viaje_destino, fecha, proximo_asignado, estado, observacion, orden
             FROM asignaciones_simples_rotacion_proximo
             ORDER BY COALESCE(orden,999), id
             """
@@ -201,11 +276,51 @@ def register_asignaciones_simple(app, get_db):
     def _list_referencia(con):
         return con.execute(
             """
-            SELECT id, orden, chofer
+            SELECT id, orden, chofer, activo, observacion
             FROM asignaciones_simples_referencia
             ORDER BY COALESCE(orden,999), id
             """
         ).fetchall()
+
+    def _get_row(con, tipo, row_id):
+        if tipo == "diario":
+            return con.execute(
+                """
+                SELECT id, fecha, chofer, vehiculo, destino, solicitante, hora_llegada_aprox,
+                       estado, observacion, orden
+                FROM asignaciones_simples_diario
+                WHERE id=?
+                """,
+                (row_id,),
+            ).fetchone()
+        if tipo == "ultimo":
+            return con.execute(
+                """
+                SELECT id, viaje_destino, fecha, ultimo_asignado, estado, observacion, orden
+                FROM asignaciones_simples_rotacion_ultimo
+                WHERE id=?
+                """,
+                (row_id,),
+            ).fetchone()
+        if tipo == "proximo":
+            return con.execute(
+                """
+                SELECT id, viaje_destino, fecha, proximo_asignado, estado, observacion, orden
+                FROM asignaciones_simples_rotacion_proximo
+                WHERE id=?
+                """,
+                (row_id,),
+            ).fetchone()
+        if tipo == "referencia":
+            return con.execute(
+                """
+                SELECT id, orden, chofer, activo, observacion
+                FROM asignaciones_simples_referencia
+                WHERE id=?
+                """,
+                (row_id,),
+            ).fetchone()
+        return None
 
     @app.route("/asignaciones-simple", endpoint="asignaciones_simple_home")
     def asignaciones_simple_home():
@@ -232,110 +347,177 @@ def register_asignaciones_simple(app, get_db):
         finally:
             con.close()
 
-    @app.route("/asignaciones-simple/guardar", methods=["POST"], endpoint="asignaciones_simple_guardar")
-    def asignaciones_simple_guardar():
+    @app.route("/asignaciones-simple/guardar-dia", methods=["POST"], endpoint="asignaciones_simple_guardar_dia")
+    def asignaciones_simple_guardar_dia():
         if not _can_access():
             return _deny()
         con = get_db()
         try:
             _ensure_schema(con)
-            _seed_rotacion(con)
-            action = _clean_text(request.form.get("action"))
             fecha = _clean_text(request.form.get("fecha")) or _today_iso()
+            _ensure_diario_for_fecha(con, fecha)
+            flash("Dia guardado.", "success")
+            return redirect(url_for("asignaciones_simple_home", fecha=fecha))
+        finally:
+            con.close()
 
-            if action == "guardar_diario":
-                _ensure_diario_for_fecha(con, fecha)
-                row_ids = request.form.getlist("row_id")
-                choferes = request.form.getlist("chofer")
-                vehiculos = request.form.getlist("vehiculo")
-                destinos = request.form.getlist("destino")
-                solicitantes = request.form.getlist("solicitante")
-                horas = request.form.getlist("hora_llegada_aprox")
-                ordenes = request.form.getlist("orden")
+    @app.route(
+        "/asignaciones-simple/editar/<string:tipo>/<int:row_id>",
+        methods=["GET", "POST"],
+        endpoint="asignaciones_simple_editar",
+    )
+    def asignaciones_simple_editar(tipo, row_id):
+        if not _can_access():
+            return _deny()
+        if tipo not in {"diario", "ultimo", "proximo", "referencia"}:
+            abort(404)
 
-                n = len(row_ids)
-                for i in range(n):
-                    rid = int(row_ids[i] or 0)
-                    if rid <= 0:
-                        continue
-                    chofer = _clean_text(choferes[i] if i < len(choferes) else "")
-                    vehiculo = _clean_text(vehiculos[i] if i < len(vehiculos) else "")
-                    destino = _clean_text(destinos[i] if i < len(destinos) else "")
-                    solicitante = _clean_text(solicitantes[i] if i < len(solicitantes) else "")
-                    hora = _clean_text(horas[i] if i < len(horas) else "")
-                    orden = int((ordenes[i] if i < len(ordenes) else "999") or 999)
+        con = get_db()
+        try:
+            _ensure_schema(con)
+            _seed_rotacion(con)
+
+            fecha_ctx = _clean_text(request.values.get("fecha")) or _today_iso()
+            if tipo == "diario":
+                _ensure_diario_for_fecha(con, fecha_ctx)
+
+            row = _get_row(con, tipo, row_id)
+            if row is None:
+                flash("Registro no encontrado.", "warning")
+                return redirect(url_for("asignaciones_simple_home", fecha=fecha_ctx))
+
+            if request.method == "POST":
+                if tipo == "diario":
+                    nueva_fecha = _clean_text(request.form.get("fecha")) or fecha_ctx
                     con.execute(
                         """
                         UPDATE asignaciones_simples_diario
-                        SET chofer=?,
+                        SET fecha=?,
+                            chofer=?,
                             vehiculo=?,
                             destino=?,
                             solicitante=?,
                             hora_llegada_aprox=?,
-                            orden=?,
+                            estado=?,
+                            observacion=?,
                             actualizado_en=datetime('now')
-                        WHERE id=? AND fecha=?
+                        WHERE id=?
                         """,
-                        (chofer, vehiculo, destino, solicitante, hora, orden, rid, fecha),
+                        (
+                            nueva_fecha,
+                            _clean_text(request.form.get("chofer")),
+                            _clean_text(request.form.get("vehiculo")),
+                            _clean_text(request.form.get("destino")),
+                            _clean_text(request.form.get("solicitante")),
+                            _clean_text(request.form.get("hora_llegada_aprox")),
+                            _clean_text(request.form.get("estado")) or "Pendiente",
+                            _clean_text(request.form.get("observacion")),
+                            row_id,
+                        ),
                     )
-                con.commit()
-                flash("Diario guardado.", "success")
+                    con.commit()
+                    flash("Asignacion diaria actualizada.", "success")
+                    return redirect(url_for("asignaciones_simple_home", fecha=nueva_fecha))
 
-            elif action == "guardar_ultimo":
-                rid = int(request.form.get("row_id") or 0)
-                if rid > 0:
+                if tipo == "ultimo":
                     con.execute(
                         """
                         UPDATE asignaciones_simples_rotacion_ultimo
-                        SET fecha=?,
-                            ultimo_asignado=?
+                        SET viaje_destino=?,
+                            fecha=?,
+                            ultimo_asignado=?,
+                            estado=?,
+                            observacion=?
                         WHERE id=?
                         """,
                         (
-                            _clean_text(request.form.get("fila_fecha")),
-                            _clean_text(request.form.get("fila_asignado")),
-                            rid,
+                            _clean_text(request.form.get("viaje_destino")),
+                            _clean_text(request.form.get("fecha")),
+                            _clean_text(request.form.get("asignado")),
+                            _clean_text(request.form.get("estado")) or "Programado",
+                            _clean_text(request.form.get("observacion")),
+                            row_id,
                         ),
                     )
                     con.commit()
-                    flash("Fila de ultimo asignado actualizada.", "success")
+                    flash("Rotacion (ultimo asignado) actualizada.", "success")
+                    return redirect(url_for("asignaciones_simple_home", fecha=fecha_ctx))
 
-            elif action == "guardar_proximo":
-                rid = int(request.form.get("row_id") or 0)
-                if rid > 0:
+                if tipo == "proximo":
                     con.execute(
                         """
                         UPDATE asignaciones_simples_rotacion_proximo
-                        SET fecha=?,
-                            proximo_asignado=?
+                        SET viaje_destino=?,
+                            fecha=?,
+                            proximo_asignado=?,
+                            estado=?,
+                            observacion=?
                         WHERE id=?
                         """,
                         (
-                            _clean_text(request.form.get("fila_fecha")),
-                            _clean_text(request.form.get("fila_asignado")),
-                            rid,
+                            _clean_text(request.form.get("viaje_destino")),
+                            _clean_text(request.form.get("fecha")),
+                            _clean_text(request.form.get("asignado")),
+                            _clean_text(request.form.get("estado")) or "Programado",
+                            _clean_text(request.form.get("observacion")),
+                            row_id,
                         ),
                     )
                     con.commit()
-                    flash("Fila de proximo asignado actualizada.", "success")
+                    flash("Rotacion (proximo asignado) actualizada.", "success")
+                    return redirect(url_for("asignaciones_simple_home", fecha=fecha_ctx))
 
-            elif action == "guardar_referencia":
-                rid = int(request.form.get("row_id") or 0)
-                if rid > 0:
-                    orden = int(request.form.get("orden") or 999)
-                    chofer = _clean_text(request.form.get("chofer"))
+                if tipo == "referencia":
+                    try:
+                        orden = int(request.form.get("orden") or 999)
+                    except Exception:
+                        orden = 999
+                    activo_raw = _clean_text(request.form.get("activo")).lower()
+                    activo = 1 if activo_raw in {"1", "si", "true", "activo"} else 0
                     con.execute(
                         """
                         UPDATE asignaciones_simples_referencia
-                        SET orden=?, chofer=?
+                        SET orden=?,
+                            chofer=?,
+                            activo=?,
+                            observacion=?
                         WHERE id=?
                         """,
-                        (orden, chofer, rid),
+                        (
+                            orden,
+                            _clean_text(request.form.get("chofer")),
+                            activo,
+                            _clean_text(request.form.get("observacion")),
+                            row_id,
+                        ),
                     )
                     con.commit()
-                    flash("Referencia actualizada.", "success")
+                    flash("Referencia de chofer actualizada.", "success")
+                    return redirect(url_for("asignaciones_simple_home", fecha=fecha_ctx))
 
-            return redirect(url_for("asignaciones_simple_home", fecha=fecha))
+            if tipo == "diario":
+                titulo = "Editar asignacion diaria"
+                subtitulo = "Completa los datos y guarda para volver al listado principal."
+            elif tipo == "ultimo":
+                titulo = "Editar rotacion ultimo asignado"
+                subtitulo = "Actualiza ultimo chofer registrado para ese viaje."
+            elif tipo == "proximo":
+                titulo = "Editar rotacion proximo asignado"
+                subtitulo = "Actualiza proximo chofer programado para ese viaje."
+            else:
+                titulo = "Editar orden de chofer"
+                subtitulo = "Ajusta referencia de orden para rotacion manual."
+
+            return render_template(
+                "asignaciones_simple_edit.html",
+                tipo=tipo,
+                row=row,
+                fecha_ctx=fecha_ctx,
+                titulo=titulo,
+                subtitulo=subtitulo,
+                daily_estados=DAILY_ESTADOS,
+                rot_estados=ROT_ESTADOS,
+            )
         finally:
             con.close()
 

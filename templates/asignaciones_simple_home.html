@@ -2,7 +2,7 @@
 {% block content %}
 <style>
   .as-simple-wrap {
-    max-width: 1180px;
+    max-width: 1220px;
     margin: 0 auto;
     padding: 10px 12px 18px;
   }
@@ -39,7 +39,7 @@
     gap: 8px;
     flex-wrap: wrap;
     align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
   }
   .as-simple-toolbar label {
     font-size: 12px;
@@ -79,21 +79,18 @@
     background: #4b5563;
     color: #ffffff;
     text-align: left;
-    padding: 6px 8px;
+    padding: 7px 8px;
     border: 1px solid #d1d5db;
     font-weight: 700;
   }
   .as-table td {
     border: 1px solid #d1d5db;
-    padding: 4px;
-  }
-  .as-table input {
-    width: 100%;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    padding: 5px 6px;
-    font-size: 13px;
+    padding: 7px 8px;
+    color: #1f2937;
     background: #ffffff;
+  }
+  .as-table tbody tr:hover td {
+    background: #f8fafc;
   }
   .as-subhead {
     margin: 10px 0 6px;
@@ -111,16 +108,12 @@
     color: #334155;
     background: #f8fafc;
     white-space: pre-wrap;
-  }
-  .as-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 12px;
+    margin-top: 8px;
   }
   @media (min-width: 980px) {
     .as-grid-ref {
       display: grid;
-      grid-template-columns: 1fr 300px;
+      grid-template-columns: 1fr 320px;
       gap: 12px;
     }
   }
@@ -139,48 +132,50 @@
         <button class="as-btn" type="submit">Abrir</button>
       </form>
 
-      <form id="form-diario" method="post" action="{{ url_for('asignaciones_simple_guardar') }}">
-        <input type="hidden" name="action" value="guardar_diario">
-        <input type="hidden" name="fecha" value="{{ fecha }}">
-        <table id="tabla-diario" class="as-table">
-          <thead>
+      <table id="tabla-diario" class="as-table">
+        <thead>
+          <tr>
+            <th>Chofer</th>
+            <th>Vehiculo</th>
+            <th>Destino</th>
+            <th>Solicitante</th>
+            <th>Hora llegada aprox</th>
+            <th>Estado</th>
+            <th>Accion</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in diario_rows %}
             <tr>
-              <th>Chofer</th>
-              <th>Vehiculo</th>
-              <th>Destino</th>
-              <th>Solicitante</th>
-              <th>Hora llegada aprox</th>
+              <td>{{ r.chofer or '-' }}</td>
+              <td>{{ r.vehiculo or '-' }}</td>
+              <td>{{ r.destino or '-' }}</td>
+              <td>{{ r.solicitante or '-' }}</td>
+              <td>{{ r.hora_llegada_aprox or '-' }}</td>
+              <td>{{ r.estado or '-' }}</td>
+              <td>
+                <a class="as-btn" href="{{ url_for('asignaciones_simple_editar', tipo='diario', row_id=r.id, fecha=fecha) }}">Editar</a>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {% for r in diario_rows %}
-              <tr>
-                <td>
-                  <input type="hidden" name="row_id" value="{{ r.id }}">
-                  <input type="hidden" name="orden" value="{{ r.orden if r.orden is not none else loop.index }}">
-                  <input type="text" name="chofer" value="{{ r.chofer or '' }}">
-                </td>
-                <td><input type="text" name="vehiculo" value="{{ r.vehiculo or '' }}"></td>
-                <td><input type="text" name="destino" value="{{ r.destino or '' }}"></td>
-                <td><input type="text" name="solicitante" value="{{ r.solicitante or '' }}"></td>
-                <td><input type="text" name="hora_llegada_aprox" value="{{ r.hora_llegada_aprox or '' }}"></td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+          {% endfor %}
+        </tbody>
+      </table>
 
-        <div class="as-simple-toolbar" style="margin-top:8px;">
-          <button class="as-btn primary" type="submit">Guardar</button>
-          <button id="btn-copiar-cuadro" class="as-btn" type="button">Copiar cuadro</button>
-        </div>
-      </form>
+      <div class="as-simple-toolbar" style="margin-top:8px;">
+        <form method="post" action="{{ url_for('asignaciones_simple_guardar_dia') }}">
+          <input type="hidden" name="fecha" value="{{ fecha }}">
+          <button class="as-btn primary" type="submit">Guardar dia</button>
+        </form>
 
-      <form method="post" action="{{ url_for('asignaciones_simple_limpiar_dia') }}">
-        <input type="hidden" name="fecha" value="{{ fecha }}">
-        <button class="as-btn" type="submit">Limpiar dia</button>
-      </form>
+        <button id="btn-copiar-cuadro" class="as-btn" type="button">Copiar cuadro</button>
 
-      <textarea id="copy-output" class="as-copy-box" readonly style="margin-top:8px;"></textarea>
+        <form method="post" action="{{ url_for('asignaciones_simple_limpiar_dia') }}">
+          <input type="hidden" name="fecha" value="{{ fecha }}">
+          <button class="as-btn" type="submit">Limpiar dia</button>
+        </form>
+      </div>
+
+      <textarea id="copy-output" class="as-copy-box" readonly></textarea>
     </div>
   </article>
 
@@ -196,25 +191,19 @@
                 <th>Viaje / destino</th>
                 <th>Fecha</th>
                 <th>Ultimo / asignado</th>
+                <th>Estado</th>
                 <th>Accion</th>
               </tr>
             </thead>
             <tbody>
               {% for r in rot_ultimo_rows %}
-                {% set f_ult = "fUlt" ~ r.id %}
                 <tr>
+                  <td>{{ r.viaje_destino }}</td>
+                  <td>{{ r.fecha or '-' }}</td>
+                  <td>{{ r.ultimo_asignado or '-' }}</td>
+                  <td>{{ r.estado or '-' }}</td>
                   <td>
-                    {{ r.viaje_destino }}
-                    <input form="{{ f_ult }}" type="hidden" name="action" value="guardar_ultimo">
-                    <input form="{{ f_ult }}" type="hidden" name="fecha" value="{{ fecha }}">
-                    <input form="{{ f_ult }}" type="hidden" name="row_id" value="{{ r.id }}">
-                  </td>
-                  <td><input form="{{ f_ult }}" type="text" name="fila_fecha" value="{{ r.fecha or '' }}"></td>
-                  <td><input form="{{ f_ult }}" type="text" name="fila_asignado" value="{{ r.ultimo_asignado or '' }}"></td>
-                  <td>
-                    <form id="{{ f_ult }}" method="post" action="{{ url_for('asignaciones_simple_guardar') }}">
-                      <button class="as-btn" type="submit">Editar</button>
-                    </form>
+                    <a class="as-btn" href="{{ url_for('asignaciones_simple_editar', tipo='ultimo', row_id=r.id, fecha=fecha) }}">Editar</a>
                   </td>
                 </tr>
               {% endfor %}
@@ -228,25 +217,19 @@
                 <th>Viaje / destino</th>
                 <th>Fecha</th>
                 <th>Proximo asignado</th>
+                <th>Estado</th>
                 <th>Accion</th>
               </tr>
             </thead>
             <tbody>
               {% for r in rot_proximo_rows %}
-                {% set f_prox = "fProx" ~ r.id %}
                 <tr>
+                  <td>{{ r.viaje_destino }}</td>
+                  <td>{{ r.fecha or '-' }}</td>
+                  <td>{{ r.proximo_asignado or '-' }}</td>
+                  <td>{{ r.estado or '-' }}</td>
                   <td>
-                    {{ r.viaje_destino }}
-                    <input form="{{ f_prox }}" type="hidden" name="action" value="guardar_proximo">
-                    <input form="{{ f_prox }}" type="hidden" name="fecha" value="{{ fecha }}">
-                    <input form="{{ f_prox }}" type="hidden" name="row_id" value="{{ r.id }}">
-                  </td>
-                  <td><input form="{{ f_prox }}" type="text" name="fila_fecha" value="{{ r.fecha or '' }}"></td>
-                  <td><input form="{{ f_prox }}" type="text" name="fila_asignado" value="{{ r.proximo_asignado or '' }}"></td>
-                  <td>
-                    <form id="{{ f_prox }}" method="post" action="{{ url_for('asignaciones_simple_guardar') }}">
-                      <button class="as-btn" type="submit">Editar</button>
-                    </form>
+                    <a class="as-btn" href="{{ url_for('asignaciones_simple_editar', tipo='proximo', row_id=r.id, fecha=fecha) }}">Editar</a>
                   </td>
                 </tr>
               {% endfor %}
@@ -261,24 +244,18 @@
               <tr>
                 <th>Orden</th>
                 <th>Chofer</th>
+                <th>Estado</th>
                 <th>Accion</th>
               </tr>
             </thead>
             <tbody>
               {% for r in referencia_rows %}
-                {% set f_ref = "fRef" ~ r.id %}
                 <tr>
+                  <td>{{ r.orden if r.orden is not none else '-' }}</td>
+                  <td>{{ r.chofer or '-' }}</td>
+                  <td>{% if r.activo == 1 %}Activo{% else %}Inactivo{% endif %}</td>
                   <td>
-                    <input form="{{ f_ref }}" type="hidden" name="action" value="guardar_referencia">
-                    <input form="{{ f_ref }}" type="hidden" name="fecha" value="{{ fecha }}">
-                    <input form="{{ f_ref }}" type="hidden" name="row_id" value="{{ r.id }}">
-                    <input form="{{ f_ref }}" type="text" name="orden" value="{{ r.orden if r.orden is not none else loop.index }}">
-                  </td>
-                  <td><input form="{{ f_ref }}" type="text" name="chofer" value="{{ r.chofer or '' }}"></td>
-                  <td>
-                    <form id="{{ f_ref }}" method="post" action="{{ url_for('asignaciones_simple_guardar') }}">
-                      <button class="as-btn" type="submit">Editar</button>
-                    </form>
+                    <a class="as-btn" href="{{ url_for('asignaciones_simple_editar', tipo='referencia', row_id=r.id, fecha=fecha) }}">Editar</a>
                   </td>
                 </tr>
               {% endfor %}
@@ -303,9 +280,11 @@
       lines.push("Chofer | Vehiculo | Destino | Solicitante | Hora llegada aprox");
       const rows = tabla.querySelectorAll("tbody tr");
       rows.forEach((tr) => {
+        const cells = tr.querySelectorAll("td");
         const vals = [];
-        tr.querySelectorAll("input[type='text']").forEach((inp) => vals.push((inp.value || "").trim()));
-        while (vals.length < 5) vals.push("");
+        for (let i = 0; i < 5; i++) {
+          vals.push((cells[i] ? cells[i].innerText : "").trim());
+        }
         lines.push(vals.join(" | "));
       });
       return lines.join("\n");
