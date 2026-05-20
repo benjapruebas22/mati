@@ -529,7 +529,7 @@ def _infer_esperando_respuesta_de(row) -> str:
     norm_db = _norm_esperando_respuesta_de(raw_db)
     if norm_db != "nadie":
         return norm_db
-    # Fallback (compatibilidad): inferir por Ãºltimo chat NO sistema.
+    # Fallback (compatibilidad): inferir por último chat NO sistema.
     ult_user = (_row_value(row, "chat_ult_autor_username", "") or "").strip()
     ult_name = (_row_value(row, "chat_ult_autor", "") or "").strip()
     if not (ult_user or ult_name):

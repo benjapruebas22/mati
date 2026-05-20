@@ -4475,7 +4475,7 @@
     cursor: pointer;
     user-select: none;
   }
-  /* Estado del chip (Dxx) segÃºn resultado del depÃ³sito (UI) */
+  /* Estado del chip (Dxx) según resultado del depósito (UI) */
   .cll-chip.none{
     border-color: #d7e2f3;
     background: #f8fafc;
@@ -4534,7 +4534,7 @@
     padding: 10px 10px 12px;
     box-shadow: 0 10px 18px rgba(15, 23, 42, .04);
   }
-  /* Estado de tarjeta segÃºn resultado (UI) */
+  /* Estado de tarjeta según resultado (UI) */
   .cll-card.none { border-color: #dbe5f4; background: #fff; }
   .cll-card.ok { border-color: #bbf7d0; background: #f0fdf4; }
   .cll-card.obs { border-color: #fed7aa; background: #fff7ed; }
@@ -4686,7 +4686,7 @@
   }
   .cll-obs.hidden { display: none; }
 
-  /* Bloque inferior (informe + chat): colapsable para ganar espacio en mÃ³vil */
+  /* Bloque inferior (informe + chat): colapsable para ganar espacio en móvil */
   .cll-extra{
     border-top: 1px dashed #e2e8f0;
     background: #fff;
@@ -10329,7 +10329,7 @@
       const deps = Array.isArray(DATA.depositos) ? DATA.depositos : [];
       const checklist = Array.isArray(DATA.checklist) ? DATA.checklist : [];
 
-      // Bloque superior: Control del dÃ­a (compacto y visible)
+      // Bloque superior: Control del día (compacto y visible)
       controlEl.classList.remove("hidden");
       controlEl.innerHTML = (sedeCod === "S12")
         ? controlDiaS12Html(dia)

@@ -1,4 +1,4 @@
-﻿{% extends "base.html" %}
+{% extends "base.html" %}
 
 {% block head_extra %}
   {{ super() }}
@@ -339,7 +339,7 @@
     cursor: default;
   }
 
-  /* Accesos rÃ¡pidos (agrupados) */
+  /* Accesos rápidos (agrupados) */
   .daily-actions-row{
     margin-top: 12px;
     display: flex;
@@ -433,7 +433,7 @@
   .ops-kpi-foot { display: none; }
   .ops-kpi-foot.muted { color: var(--ctl-soft); }
 
-  /* sin fondos por mÃ³dulo: el estado se comunica con el badge */
+  /* sin fondos por módulo: el estado se comunica con el badge */
   .ops-kpi-mata,
   .ops-kpi-desinf,
   .ops-kpi-veh,
@@ -842,7 +842,7 @@
     color: var(--run-tx);
   }
 
-  /* Leyenda: chips suaves con color para interpretar el semÃ¡foro */
+  /* Leyenda: chips suaves con color para interpretar el semáforo */
   span.btn-inline.row-gestion.turn-tu-respuesta {
     border-color: #e2e8f0;
     background: #ffffff;
@@ -1142,7 +1142,7 @@
     gap: 8px;
     flex-wrap: wrap;
   }
-  /* sin color por grupo: solo semÃ¡foro (rojo/amarillo/verde) y azul institucional */
+  /* sin color por grupo: solo semáforo (rojo/amarillo/verde) y azul institucional */
   .gestion-rubro-tab {
     border: 1px solid #e2e8f0;
     background: #ffffff;
@@ -1213,7 +1213,7 @@
     background: #ffffff;
   }
 
-  /* GestiÃ³n (Centro Operativo): limpieza final */
+  /* Gestión (Centro Operativo): limpieza final */
   .card-operativa {
     gap: 12px;
   }
@@ -2147,7 +2147,7 @@
   }
 
   /* =========================
-     Modal: Planos depÃ³sito
+     Modal: Planos depósito
      ========================= */
   .depplan-toolbar {
     display: flex;
@@ -2243,20 +2243,20 @@
       <h1>Centro de control operativo - Intendencia</h1>
       <div class="card-head-actions">
         <button id="btnCargarTop" type="button" class="btn-dark">+ Cargar</button>
-        <a href="{{ url_for('asignaciones_simple_home') }}" class="btn-soft">ASIGNACIONES</a>
-        <button id="btnPlanosDeposito" type="button" class="btn-soft">Planos depÃ³sito</button>
+        <a href="{{ url_for('asignaciones_simple_home') }}" class="btn-soft">Asignaciones</a>
+        <button id="btnPlanosDeposito" type="button" class="btn-soft">Planos depósito</button>
       </div>
     </div>
-    <p class="control-header-intro">Pendientes activos y acceso rapido a la gestion interna (chat, estados, fotos y trazabilidad).</p>
+    <p class="control-header-intro">Pendientes activos y acceso rápido a la gestión interna (chat, estados, fotos y trazabilidad).</p>
   </header>
 
   <article id="nextCoffeeRow" class="control-card control-workspace-section card-next-coffee" data-workspaces="gestion" style="display:none;" aria-live="polite">
     <div class="next-coffee-wrap">
       <div class="next-coffee-left">
-        <div class="next-coffee-kicker">â˜• PrÃ³ximo Coffee</div>
+        <div class="next-coffee-kicker">Próximo Coffee</div>
         <div class="next-coffee-line">
           <span id="nextCoffeeDays" class="next-coffee-days">-</span>
-          <span class="sep">â€¢</span>
+          <span class="sep">·</span>
           <span id="nextCoffeeMeta" class="next-coffee-meta">-</span>
         </div>
       </div>
@@ -2273,12 +2273,12 @@
 
   <article class="control-card control-workspace-section card-resumen" data-workspaces="gestion">
     <div class="card-head">
-      <h2>Situacion operativa actual</h2>
+      <h2>Situación operativa actual</h2>
     </div>
 
     <div class="kpi-grid resumen-base">
       <div class="kpi total">
-        <div class="k-label">Total del dia</div>
+        <div class="k-label">Total del día</div>
         <div class="k-val" id="kpiTotal">0</div>
       </div>
       <div class="kpi info">
@@ -2346,7 +2346,7 @@
       <div id="mataCard" class="ops-kpi-card ops-kpi-mata ops-kpi-link" data-href="{{ url_for('matafuegos_home') }}">
         <div class="ops-kpi-head">
           <div class="ops-kpi-left">
-            <div class="ops-kpi-icon" aria-hidden="true">&#129519;</div>
+            <div class="ops-kpi-icon" aria-hidden="true"></div>
             <div class="ops-kpi-title">Matafuegos</div>
           </div>
           <div class="ops-kpi-head-actions">
@@ -2356,13 +2356,13 @@
         </div>
         <div class="ops-kpi-body">
           <div>
-            <div class="ops-kpi-date-label">PrÃ³ximo vencimiento</div>
+            <div class="ops-kpi-date-label">Próximo vencimiento</div>
             <div id="mataNextDate" class="ops-kpi-date">-</div>
           </div>
           <div class="ops-kpi-line">
             <span>Estado: <strong id="mataStatus">-</strong></span>
-            <span id="mataLoteWrap" style="display:none;">Â· Lote: <strong id="mataLote">-</strong></span>
-            <span id="mataSoonWrap" style="display:none;">Â· 45d: <strong id="mataSoon">0</strong></span>
+            <span id="mataLoteWrap" style="display:none;">· Lote: <strong id="mataLote">-</strong></span>
+            <span id="mataSoonWrap" style="display:none;">· 45d: <strong id="mataSoon">0</strong></span>
           </div>
           <div id="mataSedes" class="ops-kpi-foot">0 sedes: -</div>
         </div>
@@ -2371,8 +2371,8 @@
       <div id="desinfCard" class="ops-kpi-card ops-kpi-desinf ops-kpi-link" data-href="{{ url_for('obras_home', panel='panel-desinf') }}">
         <div class="ops-kpi-head">
           <div class="ops-kpi-left">
-            <div class="ops-kpi-icon" aria-hidden="true">&#129514;</div>
-            <div class="ops-kpi-title">DesinfecciÃ³n</div>
+            <div class="ops-kpi-icon" aria-hidden="true"></div>
+            <div class="ops-kpi-title">Desinfección</div>
           </div>
           <div class="ops-kpi-head-actions">
             <span id="desinfBadge" class="ops-badge na">-</span>
@@ -2381,24 +2381,24 @@
         </div>
         <div class="ops-kpi-body">
           <div>
-            <div class="ops-kpi-date-label">PrÃ³xima programada</div>
+            <div class="ops-kpi-date-label">Próxima programada</div>
             <div id="desinfNextDate" class="ops-kpi-date">-</div>
           </div>
           <div class="ops-kpi-line">
             <span>Estado: <strong id="desinfStatus">-</strong></span>
-            <span id="desinfNextLabelWrap" style="display:none;">Â· <strong id="desinfNextLabel">-</strong></span>
-            <span id="desinfGrupoWrap" style="display:none;">Â· <strong id="desinfGrupo">-</strong></span>
+            <span id="desinfNextLabelWrap" style="display:none;">· <strong id="desinfNextLabel">-</strong></span>
+            <span id="desinfGrupoWrap" style="display:none;">· <strong id="desinfGrupo">-</strong></span>
           </div>
           <div id="desinfSedes" class="ops-kpi-foot">0 sedes: -</div>
-          <div id="desinfUltima" class="ops-kpi-foot muted">Ãšltima: -</div>
+          <div id="desinfUltima" class="ops-kpi-foot muted">Última: -</div>
         </div>
       </div>
 
       <div id="vehOpsCard" class="ops-kpi-card ops-kpi-veh ops-kpi-link" data-href="{{ url_for('vehiculos_documentacion') }}">
         <div class="ops-kpi-head">
           <div class="ops-kpi-left">
-            <div class="ops-kpi-icon" aria-hidden="true">&#128663;</div>
-            <div class="ops-kpi-title">VehÃ­culos</div>
+            <div class="ops-kpi-icon" aria-hidden="true"></div>
+            <div class="ops-kpi-title">Vehículos</div>
           </div>
           <div class="ops-kpi-head-actions">
             <span id="vehOpsBadge" class="ops-badge na">-</span>
@@ -2412,8 +2412,8 @@
           </div>
           <div class="ops-kpi-line">
             <span>En uso: <strong id="vehOpsInUse">-</strong></span>
-            <span id="vehOpsPendWrap">Â· Pend. cierre: <strong id="vehOpsPend">-</strong></span>
-            <span id="vehOpsNoDispWrap" style="display:none;">Â· No disp.: <strong id="vehOpsNoDisp">-</strong></span>
+            <span id="vehOpsPendWrap">· Pend. cierre: <strong id="vehOpsPend">-</strong></span>
+            <span id="vehOpsNoDispWrap" style="display:none;">· No disp.: <strong id="vehOpsNoDisp">-</strong></span>
           </div>
           <div id="vehOpsFoot" class="ops-kpi-foot muted">-</div>
         </div>
@@ -2422,7 +2422,7 @@
       <div id="obrasOpsCard" class="ops-kpi-card ops-kpi-obras ops-kpi-link" data-href="{{ url_for('obras_home') }}">
         <div class="ops-kpi-head">
           <div class="ops-kpi-left">
-            <div class="ops-kpi-icon" aria-hidden="true">&#127959;</div>
+            <div class="ops-kpi-icon" aria-hidden="true"></div>
             <div class="ops-kpi-title">Obras</div>
           </div>
           <div class="ops-kpi-head-actions">
@@ -2432,29 +2432,29 @@
         </div>
         <div class="ops-kpi-body">
           <div>
-            <div class="ops-kpi-date-label">En ejecuciÃ³n hoy</div>
+            <div class="ops-kpi-date-label">En ejecución hoy</div>
             <div id="obrasOpsRun" class="ops-kpi-date">-</div>
           </div>
           <div class="ops-kpi-line">
             <span>Cerradas: <strong id="obrasOpsDone">-</strong></span>
-            <span id="obrasOpsUrgWrap">Â· Urgencias: <strong id="obrasOpsUrg">-</strong></span>
+            <span id="obrasOpsUrgWrap">· Urgencias: <strong id="obrasOpsUrg">-</strong></span>
           </div>
           <div id="obrasOpsFoot" class="ops-kpi-foot muted">-</div>
         </div>
       </div>
     </div>
 
-    <div class="daily-actions-row" aria-label="Accesos rÃ¡pidos">
+    <div class="daily-actions-row" aria-label="Accesos rápidos">
       <div class="daily-group">
         <div class="daily-group-title">Limpieza</div>
         <div class="daily-group-items">
           <a id="limpiezaAction" class="daily-action" href="{{ url_for('sedes_control_limpieza_supervision') }}">
-            <span class="icon" aria-hidden="true">ðŸ§¹</span>
+            <span class="icon" aria-hidden="true"></span>
             <span id="limpiezaLabel" class="label">Limpieza</span>
             <span id="limpiezaBadge" class="ops-badge na" style="display:none;">0</span>
           </a>
           <a class="daily-action" href="{{ url_for('sedes_control_limpieza_historial') }}">
-            <span class="icon" aria-hidden="true">ðŸ“š</span>
+            <span class="icon" aria-hidden="true"></span>
             <span class="label">Historial limpieza</span>
           </a>
         </div>
@@ -2464,8 +2464,8 @@
         <div class="daily-group-title">SST</div>
         <div class="daily-group-items">
           <a class="daily-action" href="{{ url_for('sst_general') }}">
-            <span class="icon" aria-hidden="true">âš ï¸</span>
-            <span class="label">SGâ€‘SST</span>
+            <span class="icon" aria-hidden="true"></span>
+            <span class="label">SG-SST</span>
           </a>
         </div>
       </div>
@@ -2480,11 +2480,11 @@
     </ul>
   </article>
 
-  {# Estado de vehÃ­culos: oculto por default (acceso vÃ­a botÃ³n VehÃ­culos) #}
+  {# Estado de vehículos: oculto por default (acceso vía botón Vehículos) #}
   <article class="control-card control-workspace-section card-vehiculos" data-workspaces="gestion recursos" style="display:none;">
     <div class="card-head">
-      <h2>Estado de vehiculos</h2>
-      <a class="btn-soft" href="{{ url_for('vehiculos_documentacion') }}">Ir a modulo vehiculos</a>
+      <h2>Estado de vehículos</h2>
+      <a class="btn-soft" href="{{ url_for('vehiculos_documentacion') }}">Ir a módulo vehículos</a>
     </div>
     <div id="vehiculosWrap" class="veh-grid">
       <div class="veh-card"><div class="veh-code">-</div><div class="veh-pat">-</div><div class="veh-est">Sin datos</div></div>
@@ -2892,7 +2892,7 @@
               <button id="gestionGrupoAdd" type="button" class="btn-inline">Agregar</button>
             </div>
             <div id="gestionGrupoList" class="gestion-grupo-list"></div>
-            <div class="gestion-tools-help">PodÃƒÂ©s asignar 1 a 4 personas del equipo.</div>
+            <div class="gestion-tools-help">Podés asignar 1 a 4 personas del equipo.</div>
           </div>
         </div>
         <div class="gestion-field-card">
@@ -2983,11 +2983,11 @@
             <img id="gestionCoffeeLayoutPreview" class="coffee-layout-preview-img" alt="Plano seleccionado" style="display:none;">
             <div class="coffee-layout-preview-meta">
               <div id="gestionCoffeeLayoutTitle" class="coffee-layout-preview-title">Elegir plano</div>
-              <div id="gestionCoffeeLayoutDesc" class="coffee-layout-preview-desc">ElegÃ­ una opcion para que Logistica arme el salon.</div>
+              <div id="gestionCoffeeLayoutDesc" class="coffee-layout-preview-desc">Elegí una opción para que Logística arme el salón.</div>
             </div>
           </div>
           <div id="gestionCoffeeLayoutOptions" class="coffee-layout-options"></div>
-          <div class="coffee-layout-note">GuardÃ¡ logÃ­stica para confirmar el plano elegido.</div>
+          <div class="coffee-layout-note">Guardá logística para confirmar el plano elegido.</div>
         </div>
       </details>
     </div>
@@ -3036,7 +3036,7 @@
   <div class="gestion-backdrop" data-close-depplan="1"></div>
   <div class="gestion-dialog" role="dialog" aria-modal="true" aria-labelledby="depositosPlanosTitle">
     <div class="gestion-head">
-      <h3 id="depositosPlanosTitle" class="gestion-title">Planos depÃ³sito</h3>
+      <h3 id="depositosPlanosTitle" class="gestion-title">Planos depósito</h3>
       <button id="depositosPlanosClose" type="button" class="btn-soft">Cerrar</button>
     </div>
 
@@ -3056,11 +3056,11 @@
 
     <div class="depplan-body">
       <div class="depplan-search-row">
-        <input id="depositosPlanosSearch" class="ctl-inp" type="text" maxlength="50" placeholder="Buscar depÃ³sito / local (D01, etc.)">
+        <input id="depositosPlanosSearch" class="ctl-inp" type="text" maxlength="50" placeholder="Buscar depósito / local (D01, etc.)">
       </div>
       <div id="depositosPlanosMsg" class="aux-msg" style="display:none;"></div>
       <div id="depositosPlanosList" class="depplan-table-wrap">
-        <div class="depplan-empty">SeleccionÃ¡ una sede para ver depÃ³sitos.</div>
+        <div class="depplan-empty">Seleccioná una sede para ver depósitos.</div>
       </div>
     </div>
   </div>
@@ -3860,7 +3860,7 @@
       if (!el.gestionCoffeeInsumoNuevo) return;
       var raw = String(el.gestionCoffeeInsumoNuevo.value || "").trim();
       if (!raw) {
-        setGestionMsg("EscribÃ­ un insumo para agregar.", true);
+        setGestionMsg("Escribí un insumo para agregar.", true);
         return;
       }
       if (raw.length > 80) raw = raw.slice(0, 80);
@@ -3868,7 +3868,7 @@
         return normTxt(it && it.item) === normTxt(raw);
       });
       if (exists) {
-        setGestionMsg("Ese insumo ya estÃ¡ en la lista.", true);
+        setGestionMsg("Ese insumo ya está en la lista.", true);
         return;
       }
       var next = Array.isArray(GESTION_COFFEE_INSUMOS) ? GESTION_COFFEE_INSUMOS.slice() : [];
@@ -4021,7 +4021,7 @@
           el.gestionCoffeeLayoutPreview.style.display = "none";
           el.gestionCoffeeLayoutPreviewEmpty.style.display = "grid";
           el.gestionCoffeeLayoutTitle.textContent = "Elegir plano";
-          el.gestionCoffeeLayoutDesc.textContent = "ElegÃ­ una opcion para que Logistica arme el salon.";
+          el.gestionCoffeeLayoutDesc.textContent = "Elegí una opción para que Logística arme el salón.";
         } else {
           el.gestionCoffeeLayoutPreview.src = meta2.img || "";
           el.gestionCoffeeLayoutPreview.style.display = "block";
@@ -4539,7 +4539,7 @@
       var shown = a.slice(0, max);
       var more = Math.max(a.length - shown.length, 0);
       var text = shown.join(", ");
-      if (more > 0) text = (text ? (text + "â€¦ +" + String(more)) : ("+" + String(more)));
+      if (more > 0) text = (text ? (text + "… +" + String(more)) : ("+" + String(more)));
       return { count: a.length, text: text || "-" };
     }
 
@@ -4600,10 +4600,10 @@
         }
       }
 
-      var ultimaTxt = "Ãšltima: " + (lastDate ? fmtIsoShort(lastDate) : "-");
+      var ultimaTxt = "Última: " + (lastDate ? fmtIsoShort(lastDate) : "-");
       if (lastSedes.length) {
         var briefLast = briefCodes(lastSedes, 6);
-        ultimaTxt += " Â· " + String(briefLast.count) + " sedes: " + (briefLast.text || "-");
+        ultimaTxt += " · " + String(briefLast.count) + " sedes: " + (briefLast.text || "-");
       }
       el.desinfUltima.textContent = ultimaTxt;
 
@@ -5005,7 +5005,7 @@
         var evMs = _isoToUtcMs(f);
         if (!evMs) continue;
         var diff = Math.round((evMs - baseMs) / 86400000);
-        if (diff < 1 || diff > 2) continue; // 1 o 2 dÃ­as antes
+        if (diff < 1 || diff > 2) continue; // 1 o 2 días antes
         var hora = String((r.coffee_horario_evento || r.hora || "")).trim();
         var sede = String((r.coffee_sede_destino || r.sede_codigo || "")).trim().toUpperCase() || "-";
         var subtipo = String(r.subtipo || "Coffee").trim() || "Coffee";
@@ -5071,9 +5071,9 @@
       var subtipo = String((best.row && best.row.subtipo) || "Coffee").trim() || "Coffee";
       var meta = _fmtIso(best.fecha);
       if (best.hora) meta += " " + best.hora;
-      if (sede) meta += " â€¢ " + sede;
-      meta += " â€¢ " + subtipo;
-      if (cant > 0) meta += " â€¢ " + String(cant) + " pers";
+      if (sede) meta += " · " + sede;
+      meta += " · " + subtipo;
+      if (cant > 0) meta += " · " + String(cant) + " pers";
       el.nextCoffeeDays.textContent = diasTxt;
       el.nextCoffeeMeta.textContent = meta;
       el.nextCoffeeBtn.setAttribute("data-id", String((best.row && best.row.id) || ""));
@@ -5217,14 +5217,14 @@
         return (
           '<tr data-text="' + escapeHtml(text) + '">' +
             '<td class="depplan-code">' + escapeHtml(c) + "</td>" +
-            "<td>" + (desc ? escapeHtml(desc) : "<span style=\"color:#6f86a5;\">â€”</span>") + "</td>" +
+            "<td>" + (desc ? escapeHtml(desc) : "<span style=\"color:#6f86a5;\">—</span>") + "</td>" +
             actionsCell +
           "</tr>"
         );
       }).filter(Boolean);
 
       if (!rows.length) {
-        el.depositosPlanosList.innerHTML = '<div class="depplan-empty">(sin depÃ³sitos cargados en ' + escapeHtml(sede) + ")</div>";
+        el.depositosPlanosList.innerHTML = '<div class="depplan-empty">(sin depósitos cargados en ' + escapeHtml(sede) + ")</div>";
         return;
       }
 
@@ -5232,7 +5232,7 @@
         '<table class="depplan-table">' +
           "<thead><tr>" +
             "<th>Local</th>" +
-            "<th>DescripciÃ³n</th>" +
+            "<th>Descripción</th>" +
             (canUse ? "<th></th>" : "") +
           "</tr></thead>" +
           "<tbody>" + rows.join("") + "</tbody>" +
@@ -5261,12 +5261,12 @@
 
       if (!el.depositosPlanosList) return;
       if (!sede) {
-        el.depositosPlanosList.innerHTML = '<div class="depplan-empty">SeleccionÃ¡ una sede para ver depÃ³sitos.</div>';
+        el.depositosPlanosList.innerHTML = '<div class="depplan-empty">Seleccioná una sede para ver depósitos.</div>';
         setDepplanMsg("", false);
         return;
       }
 
-      setDepplanMsg("Cargando depÃ³sitos de " + sede + "...", false);
+      setDepplanMsg("Cargando depósitos de " + sede + "...", false);
       el.depositosPlanosList.innerHTML = '<div class="depplan-empty">Cargando...</div>';
       fetchDepositosBySede(sede)
         .then(function (deps) {
@@ -5274,8 +5274,8 @@
           depplanRenderDepositos(sede, deps);
         })
         .catch(function () {
-          setDepplanMsg("No se pudieron cargar depÃ³sitos.", true);
-          el.depositosPlanosList.innerHTML = '<div class="depplan-empty">Error al cargar depÃ³sitos.</div>';
+          setDepplanMsg("No se pudieron cargar depósitos.", true);
+          el.depositosPlanosList.innerHTML = '<div class="depplan-empty">Error al cargar depósitos.</div>';
         });
     }
 
@@ -5283,7 +5283,7 @@
       if (!el.depositosPlanosModal) return;
       var sedes = depplanSedesOpts();
       if (el.depositosPlanosSedeSelect) {
-        fillSelect(el.depositosPlanosSedeSelect, sedes, true, "ElegÃ­ sede...");
+        fillSelect(el.depositosPlanosSedeSelect, sedes, true, "Elegí sede...");
       }
       depplanRenderSedeGrid(sedes, "");
 
@@ -5427,18 +5427,18 @@
         return { label: "Revisado y cerrado", cls: "gs-cerrado", hint: "Tarea cerrada" };
       }
       if (estGen === "resuelto") {
-        return { label: "Finalizado por agente", cls: "gs-finalizado", hint: "Esperando revisiÃ³n" };
+        return { label: "Finalizado por agente", cls: "gs-finalizado", hint: "Esperando revisión" };
       }
       if (estGen === "en gestion" || estGen === "en proceso" || estGen === "en revision" || estGen === "esperando respuesta" || estGen === "esperando_respuesta") {
-        return { label: "En curso", cls: "gs-curso", hint: "En gestiÃ³n" };
+        return { label: "En curso", cls: "gs-curso", hint: "En gestión" };
       }
       if (tareaTxt && (estTarea === "finalizado" || estTarea === "finalizada" || estTarea === "completado" || estTarea === "completada" || estTarea === "terminado" || estTarea === "terminada")) {
-        return { label: "Finalizado por agente", cls: "gs-finalizado", hint: "Esperando revisiÃ³n" };
+        return { label: "Finalizado por agente", cls: "gs-finalizado", hint: "Esperando revisión" };
       }
       if (tareaTxt && (estTarea === "en curso" || estTarea === "en_curso")) {
-        return { label: "En curso", cls: "gs-curso", hint: "En ejecuciÃ³n por agente" };
+        return { label: "En curso", cls: "gs-curso", hint: "En ejecución por agente" };
       }
-      return { label: "Pendiente", cls: "gs-pendiente", hint: tareaTxt ? "Pendiente de ejecuciÃ³n" : "Pendiente" };
+      return { label: "Pendiente", cls: "gs-pendiente", hint: tareaTxt ? "Pendiente de ejecución" : "Pendiente" };
     }
 
     function coffeeLayoutMeta(code) {
@@ -5478,10 +5478,10 @@
             headKpi("Tipo", tipoLbl, !tipoLbl) +
             headKpiHtml("Estado actual", estHtml, false) +
             headKpi("Sede", sedeT, sedeT === "-") +
-            headKpi("DepÃ³sito", depTxt, depTxt === "-") +
+            headKpi("Depósito", depTxt, depTxt === "-") +
             headKpi("Subtipo", subtipo || "-", !subtipo) +
             headKpiHtml("Agente asignado", agenteAsig ? agenteCell(agenteAsig) : '<span class="muted">-</span>', !agenteAsig) +
-            headKpi("Ãšltima actividad", ultimaAct, ultimaAct === "Sin mensajes") +
+            headKpi("Última actividad", ultimaAct, ultimaAct === "Sin mensajes") +
           "</div>";
 
         var detalle = String(item.observacion || "").trim();
@@ -5502,7 +5502,7 @@
       if (isCoffee) {
         actions =
           '<div class="gestion-meta-actions">' +
-            '<button type="button" class="btn-mini" data-meta-act="salon">SalÃ³n</button>' +
+            '<button type="button" class="btn-mini" data-meta-act="salon">Salón</button>' +
             '<button type="button" class="btn-mini" data-meta-act="chofer">Chofer</button>' +
           "</div>";
       }
@@ -5533,9 +5533,9 @@
             metaKpi("Evento", evento, false) +
             metaKpi("Personas", cant ? String(cant) : "-", !cant) +
             metaKpi("Destino", destino, destino === "-") +
-            metaKpi("LogÃ­stica", logOk ? "Aprobada" : "Pendiente", !logOk) +
+            metaKpi("Logística", logOk ? "Aprobada" : "Pendiente", !logOk) +
             metaKpi("Plano", plano, plano === "-") +
-            metaKpi("Armado salÃ³n", armado, armado === "-") +
+            metaKpi("Armado salón", armado, armado === "-") +
             metaKpi("Chofer", chofer, chofer === "-") +
             metaKpi("Limpieza", limpieza, limpieza === "-") +
           "</div>";
@@ -5545,7 +5545,7 @@
             metaKpi("Sede", sede || "-", !sede) +
             metaKpi("Subtipo", subtipo || "-", !subtipo) +
             metaKpi("Detalle", String(item.observacion || "").trim() || "-", !String(item.observacion || "").trim()) +
-            metaKpi("Ãšltimo chat", String(item.chat_ult_creado_en || "").trim() || "Sin mensajes", !String(item.chat_ult_creado_en || "").trim()) +
+            metaKpi("Último chat", String(item.chat_ult_creado_en || "").trim() || "Sin mensajes", !String(item.chat_ult_creado_en || "").trim()) +
           "</div>";
       }
       return '<div class="gestion-meta-card ' + tCls + '">' + top + grid + "</div>";
@@ -5575,15 +5575,15 @@
       var plano = layout ? String(layout.label || layout.code) : String(log.salon_layout || "").trim();
       var lines = [];
       if (act === "compras") lines.push("[COMPRAS] Revisar compra Coffee #" + (id || "-") + " (" + subtipo + ")");
-      else if (act === "salon") lines.push("[SALÃ“N] Armado de salÃ³n Coffee #" + (id || "-") + " (" + subtipo + ")");
-      else if (act === "chofer") lines.push("[CHOFER] LogÃ­stica / traslado Coffee #" + (id || "-") + " (" + subtipo + ")");
+      else if (act === "salon") lines.push("[SALÓN] Armado de salón Coffee #" + (id || "-") + " (" + subtipo + ")");
+      else if (act === "chofer") lines.push("[CHOFER] Logística / traslado Coffee #" + (id || "-") + " (" + subtipo + ")");
       else lines.push("Coffee #" + (id || "-") + " (" + subtipo + ")");
 
       var baseBits = [];
       if (fechaEv || horaEv) baseBits.push("Evento: " + (fechaEv || "-") + (horaEv ? (" " + horaEv) : ""));
       if (cant) baseBits.push("Personas: " + String(cant));
       if (destino) baseBits.push("Destino: " + destino);
-      if (baseBits.length) lines.push(baseBits.join(" Â· "));
+      if (baseBits.length) lines.push(baseBits.join(" · "));
 
       var logBits = [];
       var armado = String(log.armado_salon || "").trim();
@@ -5591,16 +5591,16 @@
       var limpieza = String(log.personal || "").trim();
       var turno = coffeeTurnoLabel(log.turno || "");
       if (plano) logBits.push("Plano: " + plano);
-      if (armado) logBits.push("Armado salÃ³n: " + armado);
+      if (armado) logBits.push("Armado salón: " + armado);
       if (chofer) logBits.push("Chofer: " + chofer);
-      if (turno) logBits.push("Turno: " + (turno === "manana" ? "MaÃ±ana" : "Tarde"));
+      if (turno) logBits.push("Turno: " + (turno === "manana" ? "Mañana" : "Tarde"));
       if (limpieza) logBits.push("Limpieza: " + limpieza);
-      if (logBits.length) lines.push("LogÃ­stica: " + logBits.join(" Â· "));
+      if (logBits.length) lines.push("Logística: " + logBits.join(" · "));
 
       if (act === "compras") {
         lines.push("Revisar faltantes en Control de insumos.");
       } else if (act === "salon") {
-        lines.push("Confirmar armado segÃºn el plano seleccionado.");
+        lines.push("Confirmar armado según el plano seleccionado.");
       } else if (act === "chofer") {
         lines.push("Confirmar chofer / traslado y cargas necesarias.");
       }
@@ -6191,7 +6191,7 @@
           if (fechaEv || horaEv) bits.push("Evento: " + (fechaEv || "-") + (horaEv ? (" " + horaEv) : ""));
           if (cant) bits.push(String(cant) + " pers.");
           if (destino) bits.push("Destino: " + destino);
-          if (bits.length) extra = '<div class="tipo-sub">' + escapeHtml(bits.join(" Â· ")) + "</div>";
+          if (bits.length) extra = '<div class="tipo-sub">' + escapeHtml(bits.join(" · ")) + "</div>";
         }
         var subtipoTxt = String((r && r.subtipo) || "-");
         var obsTxt = String((r && r.observacion) || "-");
@@ -6220,15 +6220,15 @@
       var turno = String((r && r.gestion_turno) || "").trim();
       var estTxt = String(estadoRaw || "").trim();
       if (turno === "tu_respuesta") {
-        return '<span class="turn-chip turn-tu-respuesta" title="' + escapeHtml("Pendiente Â· " + (estTxt || "Pendiente")) + '">Pendiente</span>';
+        return '<span class="turn-chip turn-tu-respuesta" title="' + escapeHtml("Pendiente · " + (estTxt || "Pendiente")) + '">Pendiente</span>';
       }
       if (turno === "esperando") {
-        return '<span class="turn-chip turn-esperando" title="' + escapeHtml("Esperando Â· " + (estTxt || "Pendiente")) + '">Esperando</span>';
+        return '<span class="turn-chip turn-esperando" title="' + escapeHtml("Esperando · " + (estTxt || "Pendiente")) + '">Esperando</span>';
       }
       if (filaEnSeguimiento(r)) {
-        return '<span class="turn-chip turn-seguimiento" title="' + escapeHtml("En seguimiento Â· " + (estTxt || "En curso")) + '">Seguimiento</span>';
+        return '<span class="turn-chip turn-seguimiento" title="' + escapeHtml("En seguimiento · " + (estTxt || "En curso")) + '">Seguimiento</span>';
       }
-      return '<span class="turn-chip turn-tu-respuesta" title="' + escapeHtml("Pendiente Â· " + (estTxt || "Pendiente")) + '">Pendiente</span>';
+      return '<span class="turn-chip turn-tu-respuesta" title="' + escapeHtml("Pendiente · " + (estTxt || "Pendiente")) + '">Pendiente</span>';
     }
 
     function renderRecordatoriosRows(target, items) {
@@ -6501,7 +6501,7 @@
           if (!x.ok || !x.b.ok) throw new Error(x.b.error || "No se pudo guardar");
           setMsg(
             isTask
-              ? (x.b.duplicado ? "La tarea ya estaba cargada (se evitÃ³ duplicado)." : (isPrivateTaskOwner() ? "Recordatorio privado guardado." : "Tarea asignada."))
+              ? (x.b.duplicado ? "La tarea ya estaba cargada (se evitó duplicado)." : (isPrivateTaskOwner() ? "Recordatorio privado guardado." : "Tarea asignada."))
               : (payload.id > 0 ? "Novedad actualizada." : "Novedad registrada."),
             false
           );
@@ -6955,7 +6955,7 @@
         }
         GESTION_COFFEE_INSUMOS = (GESTION_COFFEE_INSUMOS || []).filter(function (_it, i) { return i !== idx; });
         renderGestionCoffeeInsumos(GESTION_DATA && GESTION_DATA.novedad);
-        setGestionMsg("Insumo quitado (guardÃ¡ para aplicar).", false);
+        setGestionMsg("Insumo quitado (guardá para aplicar).", false);
       });
     }
     if (el.coffeeRemitoFile) {
@@ -7021,7 +7021,7 @@
         if (!GESTION_COFFEE_LOGISTICA) GESTION_COFFEE_LOGISTICA = {};
         GESTION_COFFEE_LOGISTICA.salon_layout = code;
         renderGestionCoffeeLogistica(GESTION_DATA && GESTION_DATA.novedad);
-        setGestionMsg("Plano seleccionado. GuardÃ¡ logÃ­stica para confirmar.", false);
+        setGestionMsg("Plano seleccionado. Guardá logística para confirmar.", false);
       });
     }
     if (el.gestionMeta) {
@@ -7031,7 +7031,7 @@
         var act = String(btn.getAttribute("data-meta-act") || "").trim();
         if (!act) return;
         setGestionCompose(buildCoffeeQuickMessage(act));
-        setGestionMsg("Mensaje listo en el chat (podÃ©s editarlo y enviarlo).", false);
+        setGestionMsg("Mensaje listo en el chat (podés editarlo y enviarlo).", false);
       });
     }
     if (el.taskAlertList) {

@@ -1488,6 +1488,14 @@ def init_tabla_calendario_eventos():
 app = Flask(__name__)
 app.secret_key = "mpd-intendencia-2025"
 
+
+@app.after_request
+def enforce_utf8_html(response):
+    ct = response.headers.get("Content-Type", "")
+    if ct.startswith("text/html") and "charset" not in ct.lower():
+        response.headers["Content-Type"] = "text/html; charset=utf-8"
+    return response
+
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), "uploads", "remitos")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
