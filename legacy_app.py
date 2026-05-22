@@ -5856,7 +5856,7 @@ def sede_ficha(codigo):
 
         where.append(aires_valid_where("a"))
 
-        aires_rows = db.execute(f"""
+        aires_rows_raw = db.execute(f"""
             SELECT
                 a.id,
                 a.sede_codigo,
@@ -5876,6 +5876,38 @@ def sede_ficha(codigo):
             WHERE {" AND ".join(where)}
             ORDER BY COALESCE(a.ambiente,''), COALESCE(a.marca,'')
         """, params).fetchall()
+
+        def _norm_ambiente_label(raw: str) -> str:
+            s = (raw or "").strip().lower()
+            repl = {
+                "á": "a", "é": "e", "í": "i", "ó": "o", "ú": "u", "ü": "u", "ñ": "n",
+                "?": "n",
+            }
+            for k, v in repl.items():
+                s = s.replace(k, v)
+            for ch in (".", ",", ";", ":", "-", "_", "/", "\\", "(", ")"):
+                s = s.replace(ch, " ")
+            return " ".join(s.split())
+
+        dep_codes_by_desc = {}
+        for dep_code, dep_desc in (locales_desc or {}).items():
+            key = _norm_ambiente_label(dep_desc)
+            if not key:
+                continue
+            dep_codes_by_desc.setdefault(key, set()).add(dep_code)
+
+        aires_rows = []
+        for r in aires_rows_raw:
+            item = dict(r)
+            amb_key = _norm_ambiente_label(item.get("ambiente_desc") or item.get("ambiente") or "")
+            dep_codes = sorted(dep_codes_by_desc.get(amb_key) or [])
+            if len(dep_codes) == 1:
+                item["deposito_codigo"] = dep_codes[0]
+            elif len(dep_codes) > 1:
+                item["deposito_codigo"] = "/".join(dep_codes[:2]) + ("+" if len(dep_codes) > 2 else "")
+            else:
+                item["deposito_codigo"] = "-"
+            aires_rows.append(item)
 
         k = db.execute(f"""
             SELECT
