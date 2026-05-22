@@ -47,6 +47,7 @@
             <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Bibliotecas bajas</th>
             <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Aires</th>
             <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Total mobiliario</th>
+            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Abrir sede</th>
             <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Bienes p/sede</th>
             <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Análisis depósitos</th>
           </tr>
@@ -57,7 +58,11 @@
           {% set cls = fuero_map.get(code, 'fuero-neutral') %}
           {% set total_mob = (r.mesa_pc or 0) + (r.escritorio_prof or 0) + (r.silla_giratoria or 0) + (r.silla_fija or 0) + (r.armario_alto or 0) + (r.biblioteca_baja or 0) + (r.aires_total or 0) %}
           <tr>
-            <td style="padding:8px;border-bottom:1px solid #e5e7eb;"><span class="sede-badge-soft {{ cls }}">{{ r.codigo }}</span></td>
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
+              <a href="{{ url_for('sede_ficha', codigo=r.codigo) }}" style="text-decoration:none;">
+                <span class="sede-badge-soft {{ cls }}">{{ r.codigo }}</span>
+              </a>
+            </td>
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.nombre }}</td>
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.mesa_pc }}</td>
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.escritorio_prof }}</td>
@@ -67,6 +72,9 @@
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.biblioteca_baja }}</td>
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.aires_total }}</td>
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;font-weight:600;">{{ total_mob }}</td>
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
+              <a class="btn xs" href="{{ url_for('sede_ficha', codigo=r.codigo) }}">Abrir sede</a>
+            </td>
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
               <a class="btn xs btn-sede-bienes" href="{{ url_for('bienes_sede', infra_sede=r.codigo) }}">Ver bienes p/sede</a>
             </td>
@@ -88,6 +96,7 @@
             <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.biblioteca_baja }}</td>
             <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.aires_total }}</td>
             <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ total_mob_all }}</td>
+            <td style="padding:8px;border-top:1px solid #e5e7eb;"></td>
             <td style="padding:8px;border-top:1px solid #e5e7eb;"></td>
             <td style="padding:8px;border-top:1px solid #e5e7eb;"></td>
           </tr>
