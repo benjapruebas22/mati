@@ -1742,6 +1742,30 @@
 
   }
 
+  .sede-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #64748b;
+    flex-wrap: wrap;
+  }
+
+  .sede-breadcrumb a {
+    color: #365278;
+    text-decoration: none;
+    font-weight: 800;
+  }
+
+  .sede-breadcrumb a:hover {
+    text-decoration: underline;
+  }
+
+  .sede-breadcrumb .current {
+    color: #1f3554;
+    font-weight: 900;
+  }
+
 
 
 
@@ -6345,6 +6369,11 @@
 
 
     <div class="head">
+      <div class="sede-breadcrumb" aria-label="Navegacion de sedes">
+        <a href="{{ url_for('sedes_resumen_mpd') }}">Sedes</a>
+        <span>/</span>
+        <span class="current">{{ sede.codigo }} {{ sede.nombre }}</span>
+      </div>
       <div class="head-top">
 
         <div class="h-left">
@@ -6401,7 +6430,7 @@
 
       <div class="h-actions">
         <button type="button" class="btn btn-checklist-limpieza" id="btnChecklistLimpieza" data-sede="{{ sede.codigo }}">Checklist Control Limpieza</button>
-        <a class="btn btn-volver" href="{{ url_for('dashboard') }}">Volver</a>
+        <a class="btn btn-volver" href="{{ url_for('sedes_resumen_mpd') }}">Volver a resumen sedes</a>
 
         <details class="h-actions-more">
           <summary class="btn btn-calendario" aria-label="Más acciones">Acciones</summary>

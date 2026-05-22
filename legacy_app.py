@@ -265,7 +265,7 @@ def default_redirect_for_role(role: str):
     if role == ROLE_CONTROL_SEDES:
         return _first_url("sedes_resumen_mpd", "dashboard_ejecutivo", "dashboard")
     if role == ROLE_SEDE_VEHICULOS:
-        s = _first_url("sede_ficha", codigo="S01", home=1)
+        s = _first_url("sedes_resumen_mpd", "sedes_home")
         if s != "/":
             return s
         return _first_url("dashboard", "dashboard_exec", "dashboard_ejecutivo")
@@ -1741,7 +1741,7 @@ def enforce_auth():
         if role == ROLE_CONTROL_SEDES:
             return redirect(url_for("sedes_resumen_mpd"))
         if role == ROLE_SEDE_VEHICULOS:
-            return redirect(url_for("sede_ficha", codigo="S01", home=1))
+            return redirect(url_for("sedes_resumen_mpd"))
         if role == ROLE_SST_VEHICULOS:
             return redirect(url_for("sst_general"))
         if role == ROLE_OBRAS_VEHICULOS:

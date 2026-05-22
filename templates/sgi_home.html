@@ -896,7 +896,7 @@
       <div class="sgi-menu-group secondary">
         <p class="grp-title">Infraestructura</p>
         <div class="grp-links">
-          <a class="btn sedes" href="{{ url_for('sede_ficha', codigo='S01', home=1) }}">Sedes</a>
+          <a class="btn sedes" href="{{ url_for('sedes_resumen_mpd') }}">Sedes</a>
           <a class="btn mapa" href="{{ url_for('mapa_ssj') }}">Mapa</a>
         </div>
       </div>
@@ -906,7 +906,7 @@
         <div class="grp-links">
           <a class="btn personal" href="{{ url_for('personal_sede_home') }}">Personal MPD</a>
           <a class="btn agentes" href="{{ url_for('agentes_home') }}">Agentes</a>
-          <a class="btn mapa" href="{{ url_for('sede_ficha', codigo='S01', home=1, cal='1') }}">Calendario</a>
+          <a class="btn mapa" href="{{ url_for('sedes_resumen_mpd') }}">Calendario</a>
         </div>
       </div>
     </div>
@@ -1120,7 +1120,7 @@
         </div>
         <p class="sgi-mod-kpi">Inventario institucional y condiciones edilicias.</p>
         <div class="sgi-mod-actions">
-          <a class="btn" href="{{ url_for('sede_ficha', codigo='S01', home=1) }}">Ver modulo</a>
+          <a class="btn" href="{{ url_for('sedes_resumen_mpd') }}">Ver modulo</a>
         </div>
         <details class="sgi-link-panel">
           <summary>Enlace operativo</summary>

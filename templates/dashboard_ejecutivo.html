@@ -583,7 +583,7 @@
   <section class="exec-block sedes-block">
     <div class="exec-block-head">
       <h2>Sedes (prioridad)</h2>
-      <a class="exec-btn" href="{{ url_for('sede_ficha', codigo='S01', home=1) }}">Ver todas las sedes ({{ sedes_total }})</a>
+      <a class="exec-btn" href="{{ url_for('sedes_resumen_mpd') }}">Ver todas las sedes ({{ sedes_total }})</a>
     </div>
     {% set ns = namespace(ok=0, warn=0, bad=0, na=0) %}
     {% for s in sedes_cards %}

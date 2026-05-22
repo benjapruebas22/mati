@@ -1,11 +1,9 @@
 from importlib import import_module
 from modules.ordenes_mantenimiento import register_ordenes_mantenimiento
-from modules.album_mundial import register_album_mundial
 
 def create_app():
     legacy = import_module("legacy_app")
     register_ordenes_mantenimiento(legacy.app)
-    register_album_mundial(legacy.app)
 
     # Sin tocar legacy_app.py: habilita rutas extra bajo permisos de dashboard.
     if hasattr(legacy, "module_from_path") and not getattr(legacy, "_ordenes_module_patch", False):
@@ -13,8 +11,6 @@ def create_app():
 
         def _module_from_path_with_ordenes(path: str) -> str:
             if str(path or "").startswith("/ordenes"):
-                return "dashboard"
-            if str(path or "").startswith("/album-mundial"):
                 return "dashboard"
             return _orig_module_from_path(path)
 
