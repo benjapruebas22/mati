@@ -73,7 +73,7 @@
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.aires_total }}</td>
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;font-weight:600;">{{ total_mob }}</td>
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
-              <a class="btn xs" href="{{ url_for('sede_ficha', codigo=r.codigo) }}">Abrir sede</a>
+              <a class="btn xs btn-sede-abrir {{ cls }}" href="{{ url_for('sede_ficha', codigo=r.codigo) }}">Abrir sede</a>
             </td>
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
               <a class="btn xs btn-sede-bienes" href="{{ url_for('bienes_sede', infra_sede=r.codigo) }}">Ver bienes p/sede</a>
@@ -740,6 +740,57 @@
 
   #infra-analisis table tbody tr:hover td {
     background: #f8fafc;
+  }
+
+  .btn-sede-abrir {
+    font-weight: 700;
+    border-width: 1px !important;
+  }
+
+  .btn-sede-abrir.fuero-penal {
+    background: #efedff !important;
+    border-color: #c9bfff !important;
+    color: #3f2f7a !important;
+  }
+
+  .btn-sede-abrir.fuero-penal:hover {
+    background: #e3ddff !important;
+  }
+
+  .btn-sede-abrir.fuero-admin {
+    background: #fde8dd !important;
+    border-color: #f5b089 !important;
+    color: #6b3c1f !important;
+  }
+
+  .btn-sede-abrir.fuero-admin:hover {
+    background: #fcdac7 !important;
+  }
+
+  .btn-sede-abrir.fuero-menores {
+    background: #e6f4ff !important;
+    border-color: #9fd7ff !important;
+    color: #1c4c77 !important;
+  }
+
+  .btn-sede-abrir.fuero-menores:hover {
+    background: #d7eeff !important;
+  }
+
+  .btn-sede-abrir.fuero-social {
+    background: #ffe6f1 !important;
+    border-color: #f7a7c8 !important;
+    color: #7a2a4b !important;
+  }
+
+  .btn-sede-abrir.fuero-social:hover {
+    background: #ffd8e9 !important;
+  }
+
+  .btn-sede-abrir.fuero-neutral {
+    background: #f3f4f6 !important;
+    border-color: #d1d5db !important;
+    color: #374151 !important;
   }
 
   .btn-sede-bienes {
