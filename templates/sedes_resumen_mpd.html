@@ -25,26 +25,32 @@
     {'key':'el_ramal','label':'El Ramal','title':'EL RAMAL'},
     {'key':'quebrada_puna','label':'Quebrada y Puna','title':'QUEBRADA Y PUNA'}
   ] %}
+  {% set region_exec_cards = [
+    {'key':'san_salvador','class':'region-san-salvador','title':'SAN SALVADOR','sedes':5,'personas':157,'m2':1450,'ocupacion':91,'ocupacion_key':'alta','estado':'Alto','estado_key':'alto','disponibilidad_key':'baja'},
+    {'key':'aledanias','class':'region-aledanias','title':'ALEDANAS','sedes':6,'personas':64,'m2':710,'ocupacion':73,'ocupacion_key':'media','estado':'Medio','estado_key':'medio','disponibilidad_key':'media'},
+    {'key':'el_ramal','class':'region-el-ramal','title':'EL RAMAL','sedes':3,'personas':33,'m2':420,'ocupacion':84,'ocupacion_key':'alta','estado':'Alto','estado_key':'alto','disponibilidad_key':'baja'},
+    {'key':'quebrada_puna','class':'region-quebrada-puna','title':'QUEBRADA Y PUNA','sedes':5,'personas':72,'m2':980,'ocupacion':62,'ocupacion_key':'disponible','estado':'Disponible','estado_key':'disponible','disponibilidad_key':'alta'}
+  ] %}
   {% set mapa_sedes = [
-    {'codigo':'S01','region':'san_salvador','fueros':['penal'],'nombre':'Independencia 202 - Penal'},
-    {'codigo':'S02','region':'el_ramal','fueros':['penal','social','menores'],'nombre':'San Pedro Penal / Juridico Social / Menores'},
-    {'codigo':'S03','region':'aledanias','fueros':['penal'],'nombre':'Perico Penal'},
-    {'codigo':'S04','region':'aledanias','fueros':['penal'],'nombre':'Alto Comedero Penal'},
-    {'codigo':'S05','region':'quebrada_puna','fueros':['penal'],'nombre':'Humahuaca Penal'},
-    {'codigo':'S06','region':'el_ramal','fueros':['penal','menores'],'nombre':'Ledesma Penal / Menores'},
-    {'codigo':'S07','region':'aledanias','fueros':['penal'],'nombre':'Palpala Penal'},
-    {'codigo':'S08','region':'san_salvador','fueros':['administracion','penal'],'nombre':'San Martin 137 - Administracion General + Violencia Institucional'},
-    {'codigo':'S10','region':'aledanias','fueros':['penal','social','menores'],'nombre':'El Carmen Penal'},
-    {'codigo':'S11','region':'san_salvador','fueros':['social'],'nombre':'Gorriti 791 - Juridico Social'},
-    {'codigo':'S12','region':'san_salvador','fueros':['administracion','penal'],'nombre':'Belgrano - Equipo Interdisciplinario + Ejecucion de Pena'},
-    {'codigo':'S13','region':'san_salvador','fueros':['menores'],'nombre':'San Martin 271 - Menores / Incapaces / Capacidad restringida'},
-    {'codigo':'S14','region':'quebrada_puna','fueros':['social','menores'],'nombre':'Tilcara Juridico Social / Menores'},
-    {'codigo':'S15','region':'quebrada_puna','fueros':['social','menores'],'nombre':'Abra Pampa Juridico Social / Menores'},
-    {'codigo':'S16','region':'quebrada_puna','fueros':['social','menores'],'nombre':'La Quiaca Juridico Social / Menores'},
-    {'codigo':'S17','region':'aledanias','fueros':['social','menores'],'nombre':'Perico Civil'},
-    {'codigo':'S18','region':'quebrada_puna','fueros':['social','menores'],'nombre':'Humahuaca Civil'},
-    {'codigo':'S19','region':'el_ramal','fueros':['social'],'nombre':'Ledesma Civil'},
-    {'codigo':'S20','region':'aledanias','fueros':['social','menores'],'nombre':'Palpala Civil'}
+    {'codigo':'S01','region':'san_salvador','fueros':['penal'],'nombre':'Independencia 202','ocupacion':'alta','estado':'alto','disponibilidad':'baja'},
+    {'codigo':'S02','region':'el_ramal','fueros':['penal','social','menores'],'nombre':'San Pedro','ocupacion':'alta','estado':'alto','disponibilidad':'baja'},
+    {'codigo':'S03','region':'aledanias','fueros':['penal'],'nombre':'Perico Penal','ocupacion':'media','estado':'medio','disponibilidad':'media'},
+    {'codigo':'S04','region':'aledanias','fueros':['penal'],'nombre':'Alto Comedero','ocupacion':'media','estado':'medio','disponibilidad':'media'},
+    {'codigo':'S05','region':'quebrada_puna','fueros':['penal'],'nombre':'Humahuaca Penal','ocupacion':'disponible','estado':'disponible','disponibilidad':'alta'},
+    {'codigo':'S06','region':'el_ramal','fueros':['penal','menores'],'nombre':'Ledesma Penal','ocupacion':'alta','estado':'alto','disponibilidad':'baja'},
+    {'codigo':'S07','region':'aledanias','fueros':['penal'],'nombre':'Palpala Penal','ocupacion':'media','estado':'medio','disponibilidad':'media'},
+    {'codigo':'S08','region':'san_salvador','fueros':['administracion','penal'],'nombre':'San Martin 137','ocupacion':'alta','estado':'alto','disponibilidad':'baja'},
+    {'codigo':'S10','region':'aledanias','fueros':['penal','social','menores'],'nombre':'El Carmen','ocupacion':'media','estado':'medio','disponibilidad':'media'},
+    {'codigo':'S11','region':'san_salvador','fueros':['social'],'nombre':'Gorriti 791','ocupacion':'alta','estado':'alto','disponibilidad':'baja'},
+    {'codigo':'S12','region':'san_salvador','fueros':['administracion','penal'],'nombre':'Belgrano','ocupacion':'alta','estado':'alto','disponibilidad':'baja'},
+    {'codigo':'S13','region':'san_salvador','fueros':['menores'],'nombre':'San Martin 271','ocupacion':'alta','estado':'alto','disponibilidad':'baja'},
+    {'codigo':'S14','region':'quebrada_puna','fueros':['social','menores'],'nombre':'Tilcara','ocupacion':'disponible','estado':'disponible','disponibilidad':'alta'},
+    {'codigo':'S15','region':'quebrada_puna','fueros':['social','menores'],'nombre':'Abra Pampa','ocupacion':'disponible','estado':'disponible','disponibilidad':'alta'},
+    {'codigo':'S16','region':'quebrada_puna','fueros':['social','menores'],'nombre':'La Quiaca','ocupacion':'disponible','estado':'disponible','disponibilidad':'alta'},
+    {'codigo':'S17','region':'aledanias','fueros':['social','menores'],'nombre':'Perico Civil','ocupacion':'media','estado':'medio','disponibilidad':'media'},
+    {'codigo':'S18','region':'quebrada_puna','fueros':['social','menores'],'nombre':'Humahuaca Civil','ocupacion':'disponible','estado':'disponible','disponibilidad':'alta'},
+    {'codigo':'S19','region':'el_ramal','fueros':['social'],'nombre':'Ledesma Civil','ocupacion':'alta','estado':'alto','disponibilidad':'baja'},
+    {'codigo':'S20','region':'aledanias','fueros':['social','menores'],'nombre':'Palpala Civil','ocupacion':'media','estado':'medio','disponibilidad':'media'}
   ] %}
   <div class="cardx sedes-shell {{ 'is-infra' if show_infra else 'is-resumen' }}" style="padding:12px 14px;">
     {% if not show_infra %}
@@ -61,91 +67,37 @@
 
     <div id="contexto-territorial" class="sedes-context-box">
       <h2 style="margin:0;font-size:15px;color:#0f172a;font-weight:700;">Contexto territorial</h2>
-      <p style="margin:6px 0 0;font-size:12px;color:#475569;line-height:1.45;">
-        El despliegue de sedes del MPD se organiza por regiones para asegurar cobertura territorial, respuesta por fuero y cercanía operativa en toda la provincia.
-      </p>
-      <div class="sedes-flow">
-        <span>SEDES</span>
-        <span>Contexto territorial</span>
-        <span>Resumen operativo general</span>
-        <span>Abrir sede específica</span>
-        <span>Ficha operativa individual</span>
-      </div>
-      <div style="margin-top:8px;font-size:11px;color:#64748b;">
-        Color principal: origen histórico/función principal. Puntos secundarios: fueros o usos complementarios actuales.
-      </div>
+      <p style="margin:6px 0 0;font-size:12px;color:#475569;line-height:1.45;">Vista ejecutiva por regiones. El detalle por sede y fuero se navega en Mapa Operativo Territorial.</p>
       <div class="sedes-context-actions">
         <a class="btn xs" href="{{ url_for('sedes_contexto_historico_mpd') }}">Contexto histórico MPD</a>
       </div>
     </div>
 
-    <div class="sedes-region-grid">
-      <article class="sedes-region-card region-san-salvador">
-        <h3>SAN SALVADOR DE JUJUY</h3>
-        <div class="sedes-region-meta">
-          <span><strong>Cantidad de sedes:</strong> 5</span>
-          <span><strong>Cobertura:</strong> Capital</span>
-          <span><strong>Fueros presentes:</strong> Penal, Jurídico Social, Menores / Incapaces</span>
+    <div class="sedes-region-grid sedes-region-grid-exec">
+      {% for region in region_exec_cards %}
+      <article class="sedes-region-card sedes-region-exec {{ region.class }}">
+        <h3>{{ region.title }}</h3>
+        <div class="sedes-region-kpis">
+          <span><strong>Sedes:</strong> {{ region.sedes }}</span>
+          <span><strong>Personas:</strong> {{ region.personas }}</span>
+          <span><strong>m²:</strong> {{ region.m2 }}</span>
+          <span><strong>Ocupación:</strong> {{ region.ocupacion }}%</span>
         </div>
-        <ul>
-          <li>{{ render_sede_badge('S01') }} Independencia 202 - Penal</li>
-          <li>{{ render_sede_badge('S08') }} San Martín 137 - Administración General + Violencia Institucional</li>
-          <li>{{ render_sede_badge('S11') }} Gorriti 791 - Jurídico Social</li>
-          <li>{{ render_sede_badge('S12') }} Belgrano - Equipo Interdisciplinario + Ejecución de Pena</li>
-          <li>{{ render_sede_badge('S13') }} San Martín 271 - Menores / Incapaces / Capacidad restringida</li>
-        </ul>
-        <a class="btn xs js-region-focus" href="#resumen-operativo-general" data-region-target="san_salvador">Ver sedes San Salvador</a>
+        <div class="sedes-region-foot">
+          <span class="exec-estado {{ 'is-alto' if region.estado_key == 'alto' else ('is-medio' if region.estado_key == 'medio' else 'is-disponible') }}">Estado: {{ region.estado }}</span>
+          <a class="btn xs js-exec-detail" href="#mapa-operativo-territorial" data-map-region-target="{{ region.key }}">Ver detalle</a>
+        </div>
       </article>
+      {% endfor %}
+    </div>
 
-      <article class="sedes-region-card region-aledanias">
-        <h3>ALEDAÑAS</h3>
-        <div class="sedes-region-meta">
-          <span><strong>Cantidad de sedes:</strong> 6</span>
-          <span><strong>Cobertura:</strong> Perico, Palpalá, Alto Comedero, El Carmen</span>
-          <span><strong>Fueros presentes:</strong> Penal, Jurídico Social</span>
-        </div>
-        <ul>
-          <li>{{ render_sede_badge('S03') }} Perico Penal</li>
-          <li>{{ render_sede_badge('S04') }} Alto Comedero Penal</li>
-          <li>{{ render_sede_badge('S07') }} Palpalá Penal</li>
-          <li>{{ render_sede_badge('S10') }} El Carmen Penal</li>
-          <li>{{ render_sede_badge('S17') }} Perico Civil</li>
-          <li>{{ render_sede_badge('S20') }} Palpalá Civil</li>
-        </ul>
-        <a class="btn xs js-region-focus" href="#resumen-operativo-general" data-region-target="aledanias">Ver sedes Aledañas</a>
-      </article>
-
-      <article class="sedes-region-card region-el-ramal">
-        <h3>EL RAMAL</h3>
-        <div class="sedes-region-meta">
-          <span><strong>Cantidad de sedes:</strong> 3</span>
-          <span><strong>Cobertura:</strong> San Pedro, Ledesma</span>
-          <span><strong>Fueros presentes:</strong> Penal, Jurídico Social, Menores / Incapaces</span>
-        </div>
-        <ul>
-          <li>{{ render_sede_badge('S02') }} San Pedro Penal / Jurídico Social / Menores</li>
-          <li>{{ render_sede_badge('S06') }} Ledesma Penal / Menores</li>
-          <li>{{ render_sede_badge('S19') }} Ledesma Civil</li>
-        </ul>
-        <a class="btn xs js-region-focus" href="#resumen-operativo-general" data-region-target="el_ramal">Ver sedes El Ramal</a>
-      </article>
-
-      <article class="sedes-region-card region-quebrada-puna">
-        <h3>QUEBRADA Y PUNA</h3>
-        <div class="sedes-region-meta">
-          <span><strong>Cantidad de sedes:</strong> 5</span>
-          <span><strong>Cobertura:</strong> Tilcara, Humahuaca, Abra Pampa, La Quiaca</span>
-          <span><strong>Fueros presentes:</strong> Penal, Jurídico Social, Menores / Incapaces</span>
-        </div>
-        <ul>
-          <li>{{ render_sede_badge('S05') }} Humahuaca Penal</li>
-          <li>{{ render_sede_badge('S14') }} Tilcara Jurídico Social / Menores</li>
-          <li>{{ render_sede_badge('S15') }} Abra Pampa Jurídico Social / Menores</li>
-          <li>{{ render_sede_badge('S16') }} La Quiaca Jurídico Social / Menores</li>
-          <li>{{ render_sede_badge('S18') }} Humahuaca Civil</li>
-        </ul>
-        <a class="btn xs js-region-focus" href="#resumen-operativo-general" data-region-target="quebrada_puna">Ver sedes Quebrada y Puna</a>
-      </article>
+    <div id="resumen-operativo-general" class="sedes-tech-head">
+      <h2>RESUMEN OPERATIVO GENERAL</h2>
+      <p>Vista técnica resumida de infraestructura e inventario operativo por sede.</p>
+      <div class="sedes-region-filter">
+        <span id="regionFilterStatus">Mostrando todas las regiones.</span>
+        <button id="clearRegionFilterBtn" class="btn xs" type="button" style="display:none;">Quitar filtro regional</button>
+      </div>
     </div>
 
     <div id="mapa-operativo-territorial" class="sedes-mapa-box">
@@ -153,8 +105,11 @@
         <h2>MAPA OPERATIVO TERRITORIAL</h2>
         <p>Vista r&aacute;pida de sedes por regi&oacute;n y fuero. Permite combinar filtros para identificar cobertura operativa.</p>
       </div>
+      <div class="sedes-mapa-controls">
+        <button id="mapToggleFiltersBtn" type="button" class="btn xs">Mostrar filtros</button>
+      </div>
 
-      <div class="sedes-mapa-filters">
+      <div id="mapFiltersPanel" class="sedes-mapa-filters" hidden>
         <div class="sedes-mapa-filter-row">
           <span class="sedes-mapa-filter-label">Fuero</span>
           <div class="sedes-mapa-chip-group" id="mapFueroChips">
@@ -166,13 +121,40 @@
           </div>
         </div>
         <div class="sedes-mapa-filter-row">
-          <span class="sedes-mapa-filter-label">Region</span>
+          <span class="sedes-mapa-filter-label">Región</span>
           <div class="sedes-mapa-chip-group" id="mapRegionChips">
-            <button type="button" class="btn xs is-selected js-map-region" data-region="all">Todas las regiones</button>
-            <button type="button" class="btn xs js-map-region" data-region="san_salvador">San Salvador de Jujuy</button>
-            <button type="button" class="btn xs js-map-region" data-region="aledanias">Aleda&ntilde;as</button>
+            <button type="button" class="btn xs is-selected js-map-region" data-region="all">Todas</button>
+            <button type="button" class="btn xs js-map-region" data-region="san_salvador">San Salvador</button>
+            <button type="button" class="btn xs js-map-region" data-region="aledanias">Aledañas</button>
             <button type="button" class="btn xs js-map-region" data-region="el_ramal">El Ramal</button>
             <button type="button" class="btn xs js-map-region" data-region="quebrada_puna">Quebrada y Puna</button>
+          </div>
+        </div>
+        <div class="sedes-mapa-filter-row">
+          <span class="sedes-mapa-filter-label">Ocupación</span>
+          <div class="sedes-mapa-chip-group" id="mapOcupacionChips">
+            <button type="button" class="btn xs is-selected js-map-ocupacion" data-ocupacion="all">Todas</button>
+            <button type="button" class="btn xs js-map-ocupacion" data-ocupacion="alta">Alta</button>
+            <button type="button" class="btn xs js-map-ocupacion" data-ocupacion="media">Media</button>
+            <button type="button" class="btn xs js-map-ocupacion" data-ocupacion="disponible">Disponible</button>
+          </div>
+        </div>
+        <div class="sedes-mapa-filter-row">
+          <span class="sedes-mapa-filter-label">Estado</span>
+          <div class="sedes-mapa-chip-group" id="mapEstadoChips">
+            <button type="button" class="btn xs is-selected js-map-estado" data-estado="all">Todos</button>
+            <button type="button" class="btn xs js-map-estado" data-estado="alto">Alto</button>
+            <button type="button" class="btn xs js-map-estado" data-estado="medio">Medio</button>
+            <button type="button" class="btn xs js-map-estado" data-estado="disponible">Disponible</button>
+          </div>
+        </div>
+        <div class="sedes-mapa-filter-row">
+          <span class="sedes-mapa-filter-label">Dispon.</span>
+          <div class="sedes-mapa-chip-group" id="mapDisponibilidadChips">
+            <button type="button" class="btn xs is-selected js-map-disponibilidad" data-disponibilidad="all">Todas</button>
+            <button type="button" class="btn xs js-map-disponibilidad" data-disponibilidad="alta">Alta</button>
+            <button type="button" class="btn xs js-map-disponibilidad" data-disponibilidad="media">Media</button>
+            <button type="button" class="btn xs js-map-disponibilidad" data-disponibilidad="baja">Baja</button>
           </div>
         </div>
       </div>
@@ -187,6 +169,9 @@
                href="{{ url_for('sede_ficha', codigo=sede.codigo) }}"
                data-region="{{ sede.region }}"
                data-fueros="{{ sede.fueros|join('|') }}"
+               data-ocupacion="{{ sede.ocupacion }}"
+               data-estado="{{ sede.estado }}"
+               data-disponibilidad="{{ sede.disponibilidad }}"
                title="{{ sede.codigo }} - {{ sede.nombre }}"
                aria-label="{{ sede.codigo }} - {{ sede.nombre }}">
               {{ render_sede_badge(sede.codigo) }}
@@ -197,16 +182,7 @@
         {% endfor %}
       </div>
       <div id="mapaOperativoEmpty" class="sedes-mapa-empty" hidden>
-        No hay sedes para la combinacion de filtros seleccionada.
-      </div>
-    </div>
-
-    <div id="resumen-operativo-general" class="sedes-tech-head">
-      <h2>RESUMEN OPERATIVO GENERAL</h2>
-      <p>Vista técnica resumida de infraestructura e inventario operativo por sede.</p>
-      <div class="sedes-region-filter">
-        <span id="regionFilterStatus">Mostrando todas las regiones.</span>
-        <button id="clearRegionFilterBtn" class="btn xs" type="button" style="display:none;">Quitar filtro regional</button>
+        No hay sedes para la combinación de filtros seleccionada.
       </div>
     </div>
 
@@ -1039,6 +1015,10 @@
     gap: 10px;
   }
 
+  .sedes-region-grid-exec {
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+
   .sedes-region-card {
     background: #ffffff;
     border: 1px solid #e5e7eb;
@@ -1071,6 +1051,55 @@
     font-size: 15px;
     color: #0f172a;
     font-weight: 700;
+  }
+
+  .sedes-region-exec {
+    gap: 10px;
+  }
+
+  .sedes-region-kpis {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px 10px;
+    font-size: 12px;
+    color: #334155;
+  }
+
+  .sedes-region-foot {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .exec-estado {
+    border-radius: 999px;
+    padding: 4px 9px;
+    border: 1px solid #d9e2f2;
+    background: #f8fafc;
+    color: #334155;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .exec-estado.is-alto {
+    border-color: #f2c9b8;
+    background: #fff7f3;
+    color: #b45309;
+  }
+
+  .exec-estado.is-medio {
+    border-color: #c5d8f5;
+    background: #f3f8ff;
+    color: #1f5fcc;
+  }
+
+  .exec-estado.is-disponible {
+    border-color: #c8e7dc;
+    background: #f4fbf8;
+    color: #0f766e;
   }
 
   .sedes-region-meta {
@@ -1119,6 +1148,17 @@
     gap: 8px;
   }
 
+  .sedes-mapa-filters[hidden] {
+    display: none !important;
+  }
+
+  .sedes-mapa-controls {
+    margin-top: 8px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
   .sedes-mapa-filter-row {
     display: flex;
     gap: 8px;
@@ -1127,7 +1167,7 @@
   }
 
   .sedes-mapa-filter-label {
-    min-width: 44px;
+    min-width: 74px;
     font-size: 12px;
     color: #334155;
     font-weight: 700;
@@ -1272,13 +1312,19 @@
 
 <script>
   const regionButtons = document.querySelectorAll(".js-region-focus");
+  const execDetailButtons = document.querySelectorAll(".js-exec-detail");
   const regionFilterStatus = document.getElementById("regionFilterStatus");
   const clearRegionFilterBtn = document.getElementById("clearRegionFilterBtn");
   const mapFueroButtons = document.querySelectorAll(".js-map-fuero");
   const mapRegionButtons = document.querySelectorAll(".js-map-region");
+  const mapOcupacionButtons = document.querySelectorAll(".js-map-ocupacion");
+  const mapEstadoButtons = document.querySelectorAll(".js-map-estado");
+  const mapDisponibilidadButtons = document.querySelectorAll(".js-map-disponibilidad");
   const mapSedeItems = document.querySelectorAll(".js-map-sede");
   const mapRegionBlocks = document.querySelectorAll(".js-map-region-block");
   const mapEmptyState = document.getElementById("mapaOperativoEmpty");
+  const mapFiltersPanel = document.getElementById("mapFiltersPanel");
+  const mapToggleFiltersBtn = document.getElementById("mapToggleFiltersBtn");
   const regionNames = {
     san_salvador: "San Salvador de Jujuy",
     aledanias: "Aledañas",
@@ -1288,6 +1334,9 @@
 
   let activeMapFuero = "all";
   let activeMapRegion = "all";
+  let activeMapOcupacion = "all";
+  let activeMapEstado = "all";
+  let activeMapDisponibilidad = "all";
   const filtroSede = document.getElementById("filtroSede");
   const filtroElemento = document.getElementById("filtroElemento");
   const mfFiltroSede = document.getElementById("mfFiltroSede");
@@ -1425,9 +1474,15 @@
     mapSedeItems.forEach(item => {
       const itemRegion = item.dataset.region || "";
       const fueros = (item.dataset.fueros || "").split("|").filter(Boolean);
+      const itemOcupacion = item.dataset.ocupacion || "";
+      const itemEstado = item.dataset.estado || "";
+      const itemDisponibilidad = item.dataset.disponibilidad || "";
       const matchRegion = (activeMapRegion === "all" || itemRegion === activeMapRegion);
       const matchFuero = (activeMapFuero === "all" || fueros.includes(activeMapFuero));
-      const show = matchRegion && matchFuero;
+      const matchOcupacion = (activeMapOcupacion === "all" || itemOcupacion === activeMapOcupacion);
+      const matchEstado = (activeMapEstado === "all" || itemEstado === activeMapEstado);
+      const matchDisponibilidad = (activeMapDisponibilidad === "all" || itemDisponibilidad === activeMapDisponibilidad);
+      const show = matchRegion && matchFuero && matchOcupacion && matchEstado && matchDisponibilidad;
       item.style.display = show ? "" : "none";
       if (show) visibleCount += 1;
     });
@@ -1452,6 +1507,18 @@
       const value = btn.dataset.region || "all";
       btn.classList.toggle("is-selected", value === activeMapRegion);
     });
+    mapOcupacionButtons.forEach(btn => {
+      const value = btn.dataset.ocupacion || "all";
+      btn.classList.toggle("is-selected", value === activeMapOcupacion);
+    });
+    mapEstadoButtons.forEach(btn => {
+      const value = btn.dataset.estado || "all";
+      btn.classList.toggle("is-selected", value === activeMapEstado);
+    });
+    mapDisponibilidadButtons.forEach(btn => {
+      const value = btn.dataset.disponibilidad || "all";
+      btn.classList.toggle("is-selected", value === activeMapDisponibilidad);
+    });
   }
 
   if (mapFueroButtons.length > 0) {
@@ -1467,6 +1534,64 @@
     mapRegionButtons.forEach(btn => {
       btn.addEventListener("click", () => {
         activeMapRegion = btn.dataset.region || "all";
+        applyMapaOperativoFilters();
+      });
+    });
+  }
+
+  if (mapOcupacionButtons.length > 0) {
+    mapOcupacionButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        activeMapOcupacion = btn.dataset.ocupacion || "all";
+        applyMapaOperativoFilters();
+      });
+    });
+  }
+
+  if (mapEstadoButtons.length > 0) {
+    mapEstadoButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        activeMapEstado = btn.dataset.estado || "all";
+        applyMapaOperativoFilters();
+      });
+    });
+  }
+
+  if (mapDisponibilidadButtons.length > 0) {
+    mapDisponibilidadButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        activeMapDisponibilidad = btn.dataset.disponibilidad || "all";
+        applyMapaOperativoFilters();
+      });
+    });
+  }
+
+  function setMapFiltersVisible(show) {
+    if (!mapFiltersPanel || !mapToggleFiltersBtn) return;
+    if (show) {
+      mapFiltersPanel.removeAttribute("hidden");
+      mapToggleFiltersBtn.textContent = "Ocultar filtros";
+      mapToggleFiltersBtn.classList.add("is-selected");
+    } else {
+      mapFiltersPanel.setAttribute("hidden", "hidden");
+      mapToggleFiltersBtn.textContent = "Mostrar filtros";
+      mapToggleFiltersBtn.classList.remove("is-selected");
+    }
+  }
+
+  if (mapToggleFiltersBtn) {
+    mapToggleFiltersBtn.addEventListener("click", () => {
+      const isHidden = !!(mapFiltersPanel && mapFiltersPanel.hasAttribute("hidden"));
+      setMapFiltersVisible(isHidden);
+    });
+    setMapFiltersVisible(false);
+  }
+
+  if (execDetailButtons.length > 0) {
+    execDetailButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const region = btn.dataset.mapRegionTarget || "all";
+        activeMapRegion = region;
         applyMapaOperativoFilters();
       });
     });
