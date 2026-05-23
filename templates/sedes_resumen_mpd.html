@@ -19,6 +19,33 @@
     'S02':'el_ramal','S06':'el_ramal','S19':'el_ramal',
     'S05':'quebrada_puna','S14':'quebrada_puna','S15':'quebrada_puna','S16':'quebrada_puna','S18':'quebrada_puna'
   } %}
+  {% set mapa_regions = [
+    {'key':'san_salvador','label':'San Salvador de Jujuy','title':'SAN SALVADOR DE JUJUY'},
+    {'key':'aledanias','label':'Aledanas','title':'ALEDANAS'},
+    {'key':'el_ramal','label':'El Ramal','title':'EL RAMAL'},
+    {'key':'quebrada_puna','label':'Quebrada y Puna','title':'QUEBRADA Y PUNA'}
+  ] %}
+  {% set mapa_sedes = [
+    {'codigo':'S01','region':'san_salvador','fueros':['penal']},
+    {'codigo':'S02','region':'el_ramal','fueros':['penal','social','menores']},
+    {'codigo':'S03','region':'aledanias','fueros':['penal']},
+    {'codigo':'S04','region':'aledanias','fueros':['penal']},
+    {'codigo':'S05','region':'quebrada_puna','fueros':['penal']},
+    {'codigo':'S06','region':'el_ramal','fueros':['penal','menores']},
+    {'codigo':'S07','region':'aledanias','fueros':['penal']},
+    {'codigo':'S08','region':'san_salvador','fueros':['administracion','penal']},
+    {'codigo':'S10','region':'aledanias','fueros':['penal','social','menores']},
+    {'codigo':'S11','region':'san_salvador','fueros':['social']},
+    {'codigo':'S12','region':'san_salvador','fueros':['administracion','penal']},
+    {'codigo':'S13','region':'san_salvador','fueros':['menores']},
+    {'codigo':'S14','region':'quebrada_puna','fueros':['social','menores']},
+    {'codigo':'S15','region':'quebrada_puna','fueros':['social','menores']},
+    {'codigo':'S16','region':'quebrada_puna','fueros':['social','menores']},
+    {'codigo':'S17','region':'aledanias','fueros':['social','menores']},
+    {'codigo':'S18','region':'quebrada_puna','fueros':['social','menores']},
+    {'codigo':'S19','region':'el_ramal','fueros':['social']},
+    {'codigo':'S20','region':'aledanias','fueros':['social','menores']}
+  ] %}
   <div class="cardx sedes-shell {{ 'is-infra' if show_infra else 'is-resumen' }}" style="padding:12px 14px;">
     {% if not show_infra %}
     <div class="sedes-portada-main">
@@ -119,6 +146,58 @@
         </ul>
         <a class="btn xs js-region-focus" href="#resumen-operativo-general" data-region-target="quebrada_puna">Ver sedes Quebrada y Puna</a>
       </article>
+    </div>
+
+    <div id="mapa-operativo-territorial" class="sedes-mapa-box">
+      <div class="sedes-mapa-head">
+        <h2>MAPA OPERATIVO TERRITORIAL</h2>
+        <p>Vista rapida de sedes por region y fuero. Permite combinar filtros para identificar cobertura operativa.</p>
+      </div>
+
+      <div class="sedes-mapa-filters">
+        <div class="sedes-mapa-filter-row">
+          <span class="sedes-mapa-filter-label">Fuero</span>
+          <div class="sedes-mapa-chip-group" id="mapFueroChips">
+            <button type="button" class="btn xs is-selected js-map-fuero" data-fuero="all">Todos</button>
+            <button type="button" class="btn xs js-map-fuero" data-fuero="penal">Penal</button>
+            <button type="button" class="btn xs js-map-fuero" data-fuero="social">Juridico Social</button>
+            <button type="button" class="btn xs js-map-fuero" data-fuero="menores">Menores / Incapaces</button>
+            <button type="button" class="btn xs js-map-fuero" data-fuero="administracion">Administracion</button>
+          </div>
+        </div>
+        <div class="sedes-mapa-filter-row">
+          <span class="sedes-mapa-filter-label">Region</span>
+          <div class="sedes-mapa-chip-group" id="mapRegionChips">
+            <button type="button" class="btn xs is-selected js-map-region" data-region="all">Todas las regiones</button>
+            <button type="button" class="btn xs js-map-region" data-region="san_salvador">San Salvador de Jujuy</button>
+            <button type="button" class="btn xs js-map-region" data-region="aledanias">Aledanas</button>
+            <button type="button" class="btn xs js-map-region" data-region="el_ramal">El Ramal</button>
+            <button type="button" class="btn xs js-map-region" data-region="quebrada_puna">Quebrada y Puna</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="mapaOperativoResults" class="sedes-mapa-results">
+        {% for region in mapa_regions %}
+        <section class="sedes-mapa-region js-map-region-block" data-region="{{ region.key }}">
+          <h3>{{ region.title }}</h3>
+          <div class="sedes-mapa-badges">
+            {% for sede in mapa_sedes if sede.region == region.key %}
+            <a class="sedes-mapa-badge-link js-map-sede"
+               href="{{ url_for('sede_ficha', codigo=sede.codigo) }}"
+               data-region="{{ sede.region }}"
+               data-fueros="{{ sede.fueros|join('|') }}"
+               title="Abrir sede {{ sede.codigo }}">
+              {{ render_sede_badge(sede.codigo) }}
+            </a>
+            {% endfor %}
+          </div>
+        </section>
+        {% endfor %}
+      </div>
+      <div id="mapaOperativoEmpty" class="sedes-mapa-empty" hidden>
+        No hay sedes para la combinacion de filtros seleccionada.
+      </div>
     </div>
 
     <div id="resumen-operativo-general" class="sedes-tech-head">
@@ -1011,6 +1090,101 @@
     line-height: 1.4;
   }
 
+  .sedes-mapa-box {
+    margin-top: 10px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px;
+  }
+
+  .sedes-mapa-head h2 {
+    margin: 0;
+    font-size: 17px;
+    color: #1f2a44;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+  }
+
+  .sedes-mapa-head p {
+    margin: 4px 0 0;
+    color: #64748b;
+    font-size: 12px;
+  }
+
+  .sedes-mapa-filters {
+    margin-top: 10px;
+    display: grid;
+    gap: 8px;
+  }
+
+  .sedes-mapa-filter-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .sedes-mapa-filter-label {
+    min-width: 44px;
+    font-size: 12px;
+    color: #334155;
+    font-weight: 700;
+  }
+
+  .sedes-mapa-chip-group {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .sedes-mapa-results {
+    margin-top: 10px;
+    display: grid;
+    gap: 8px;
+  }
+
+  .sedes-mapa-region {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 8px 10px;
+    background: #fcfdff;
+  }
+
+  .sedes-mapa-region h3 {
+    margin: 0 0 6px;
+    font-size: 12px;
+    color: #1f2a44;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+  }
+
+  .sedes-mapa-badges {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .sedes-mapa-badge-link {
+    text-decoration: none;
+  }
+
+  .sedes-mapa-badge-link:focus-visible {
+    outline: 2px solid #bfd2f3;
+    outline-offset: 2px;
+    border-radius: 999px;
+  }
+
+  .sedes-mapa-empty {
+    margin-top: 10px;
+    border: 1px dashed #d9e2f2;
+    border-radius: 10px;
+    padding: 9px 10px;
+    font-size: 12px;
+    color: #64748b;
+    background: #f8fafc;
+  }
+
   .sedes-tech-head {
     margin-top: 12px;
     background: #ffffff;
@@ -1099,6 +1273,11 @@
   const regionButtons = document.querySelectorAll(".js-region-focus");
   const regionFilterStatus = document.getElementById("regionFilterStatus");
   const clearRegionFilterBtn = document.getElementById("clearRegionFilterBtn");
+  const mapFueroButtons = document.querySelectorAll(".js-map-fuero");
+  const mapRegionButtons = document.querySelectorAll(".js-map-region");
+  const mapSedeItems = document.querySelectorAll(".js-map-sede");
+  const mapRegionBlocks = document.querySelectorAll(".js-map-region-block");
+  const mapEmptyState = document.getElementById("mapaOperativoEmpty");
   const regionNames = {
     san_salvador: "San Salvador de Jujuy",
     aledanias: "Aledañas",
@@ -1106,6 +1285,8 @@
     quebrada_puna: "Quebrada y Puna"
   };
 
+  let activeMapFuero = "all";
+  let activeMapRegion = "all";
   const filtroSede = document.getElementById("filtroSede");
   const filtroElemento = document.getElementById("filtroElemento");
   const mfFiltroSede = document.getElementById("mfFiltroSede");
@@ -1235,6 +1416,62 @@
       });
     });
   }
+
+  function applyMapaOperativoFilters() {
+    if (!mapSedeItems.length) return;
+    let visibleCount = 0;
+
+    mapSedeItems.forEach(item => {
+      const itemRegion = item.dataset.region || "";
+      const fueros = (item.dataset.fueros || "").split("|").filter(Boolean);
+      const matchRegion = (activeMapRegion === "all" || itemRegion === activeMapRegion);
+      const matchFuero = (activeMapFuero === "all" || fueros.includes(activeMapFuero));
+      const show = matchRegion && matchFuero;
+      item.style.display = show ? "" : "none";
+      if (show) visibleCount += 1;
+    });
+
+    mapRegionBlocks.forEach(block => {
+      let hasVisible = false;
+      block.querySelectorAll(".js-map-sede").forEach(item => {
+        if (item.style.display !== "none") hasVisible = true;
+      });
+      block.style.display = hasVisible ? "" : "none";
+    });
+
+    if (mapEmptyState) {
+      mapEmptyState.hidden = visibleCount > 0;
+    }
+
+    mapFueroButtons.forEach(btn => {
+      const value = btn.dataset.fuero || "all";
+      btn.classList.toggle("is-selected", value === activeMapFuero);
+    });
+    mapRegionButtons.forEach(btn => {
+      const value = btn.dataset.region || "all";
+      btn.classList.toggle("is-selected", value === activeMapRegion);
+    });
+  }
+
+  if (mapFueroButtons.length > 0) {
+    mapFueroButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        activeMapFuero = btn.dataset.fuero || "all";
+        applyMapaOperativoFilters();
+      });
+    });
+  }
+
+  if (mapRegionButtons.length > 0) {
+    mapRegionButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        activeMapRegion = btn.dataset.region || "all";
+        applyMapaOperativoFilters();
+      });
+    });
+  }
+
+  applyMapaOperativoFilters();
 
 </script>
 
