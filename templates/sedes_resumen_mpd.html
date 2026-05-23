@@ -12,22 +12,118 @@
   } %}
   {% set show_infra = is_infra_screen|default(false) %}
   {% set infra_nav_endpoint = 'infra_analisis' if show_infra else 'sedes_resumen_mpd' %}
+  {% set region_map = {
+    'S01':'san_salvador','S08':'san_salvador','S11':'san_salvador','S12':'san_salvador','S13':'san_salvador',
+    'S03':'aledanias','S04':'aledanias','S07':'aledanias','S10':'aledanias','S17':'aledanias','S20':'aledanias',
+    'S02':'el_ramal','S06':'el_ramal','S19':'el_ramal',
+    'S05':'quebrada_puna','S14':'quebrada_puna','S15':'quebrada_puna','S16':'quebrada_puna','S18':'quebrada_puna'
+  } %}
   <div class="cardx" style="padding:12px 14px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;background:#ffffff;border:1px solid #e5e7eb;padding:10px 12px;border-radius:12px;">
+    {% if not show_infra %}
+    <div class="sedes-portada-main">
       <div>
-        <h2 style="margin:0;font-size:18px;color:#334155;font-weight:600;">{{ 'Analisis depositos por sede' if show_infra else 'Resumen sedes' }}</h2>
-        <div style="font-size:12px;color:#64748b;margin-top:2px;">{{ 'Diagnostico operativo por deposito con filtros y criterios.' if show_infra else 'Vista general de inventario operativo principal por sede.' }}</div>
+        <div class="sedes-portada-kicker">SEDES</div>
+        <h1 class="sedes-portada-title">MPD - Sedes Operativas</h1>
+        <p class="sedes-portada-subtitle">Distribución territorial, cobertura y estructura operativa de sedes del Ministerio Público de la Defensa de la Provincia de Jujuy.</p>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        {% if show_infra %}
-        <a class="btn" href="{{ url_for('sedes_resumen_mpd') }}">Resumen sedes</a>
-        {% endif %}
+      <div class="sedes-portada-actions">
         <a class="btn" href="{{ url_for('depositos_home') }}" title="Stock operativo institucional: banners, camillas, escaleras y elementos protocolares.">GENERAL MPD</a>
       </div>
     </div>
 
-    {% if not show_infra %}
-    <div id="resumen-inventario-top" style="margin-top:12px;border:1px solid #e5e7eb;border-radius:12px;overflow:auto;background:#fff;">
+    <div id="contexto-territorial" class="sedes-context-box">
+      <h2 style="margin:0;font-size:15px;color:#0f172a;font-weight:700;">Contexto territorial</h2>
+      <p style="margin:6px 0 0;font-size:12px;color:#475569;line-height:1.45;">
+        El despliegue de sedes del MPD se organiza por regiones para asegurar cobertura territorial, respuesta por fuero y cercanía operativa en toda la provincia.
+      </p>
+      <div class="sedes-flow">
+        <span>SEDES</span>
+        <span>Contexto territorial</span>
+        <span>Resumen operativo general</span>
+        <span>Abrir sede específica</span>
+        <span>Ficha operativa individual</span>
+      </div>
+    </div>
+
+    <div class="sedes-region-grid">
+      <article class="sedes-region-card">
+        <h3>SAN SALVADOR DE JUJUY</h3>
+        <div class="sedes-region-meta">
+          <span><strong>Cantidad de sedes:</strong> 5</span>
+          <span><strong>Cobertura:</strong> Capital</span>
+          <span><strong>Fueros presentes:</strong> Penal, Jurídico Social, Menores / Incapaces</span>
+        </div>
+        <ul>
+          <li>S01 - Independencia 202 - Penal</li>
+          <li>S08 - San Martín 137 - Administración General + Violencia Institucional</li>
+          <li>S11 - Gorriti 791 - Jurídico Social</li>
+          <li>S12 - Belgrano - Equipo Interdisciplinario + Ejecución de Pena</li>
+          <li>S13 - San Martín 271 - Menores / Incapaces / Capacidad restringida</li>
+        </ul>
+        <a class="btn xs js-region-focus" href="#resumen-operativo-general" data-region-target="san_salvador">Ver sedes San Salvador</a>
+      </article>
+
+      <article class="sedes-region-card">
+        <h3>ALEDAÑAS</h3>
+        <div class="sedes-region-meta">
+          <span><strong>Cantidad de sedes:</strong> 6</span>
+          <span><strong>Cobertura:</strong> Perico, Palpalá, Alto Comedero, El Carmen</span>
+          <span><strong>Fueros presentes:</strong> Penal, Jurídico Social</span>
+        </div>
+        <ul>
+          <li>S03 - Perico Penal</li>
+          <li>S04 - Alto Comedero Penal</li>
+          <li>S07 - Palpalá Penal</li>
+          <li>S10 - El Carmen Penal</li>
+          <li>S17 - Perico Civil</li>
+          <li>S20 - Palpalá Civil</li>
+        </ul>
+        <a class="btn xs js-region-focus" href="#resumen-operativo-general" data-region-target="aledanias">Ver sedes Aledañas</a>
+      </article>
+
+      <article class="sedes-region-card">
+        <h3>EL RAMAL</h3>
+        <div class="sedes-region-meta">
+          <span><strong>Cantidad de sedes:</strong> 3</span>
+          <span><strong>Cobertura:</strong> San Pedro, Ledesma</span>
+          <span><strong>Fueros presentes:</strong> Penal, Jurídico Social, Menores / Incapaces</span>
+        </div>
+        <ul>
+          <li>S02 - San Pedro Penal / Jurídico Social / Menores</li>
+          <li>S06 - Ledesma Penal / Menores</li>
+          <li>S19 - Ledesma Civil</li>
+        </ul>
+        <a class="btn xs js-region-focus" href="#resumen-operativo-general" data-region-target="el_ramal">Ver sedes El Ramal</a>
+      </article>
+
+      <article class="sedes-region-card">
+        <h3>QUEBRADA Y PUNA</h3>
+        <div class="sedes-region-meta">
+          <span><strong>Cantidad de sedes:</strong> 5</span>
+          <span><strong>Cobertura:</strong> Tilcara, Humahuaca, Abra Pampa, La Quiaca</span>
+          <span><strong>Fueros presentes:</strong> Penal, Jurídico Social, Menores / Incapaces</span>
+        </div>
+        <ul>
+          <li>S05 - Humahuaca Penal</li>
+          <li>S14 - Tilcara Jurídico Social / Menores</li>
+          <li>S15 - Abra Pampa Jurídico Social / Menores</li>
+          <li>S16 - La Quiaca Jurídico Social / Menores</li>
+          <li>S18 - Humahuaca Civil</li>
+        </ul>
+        <a class="btn xs js-region-focus" href="#resumen-operativo-general" data-region-target="quebrada_puna">Ver sedes Quebrada y Puna</a>
+      </article>
+    </div>
+
+    <div id="resumen-operativo-general" class="sedes-tech-head">
+      <h2>RESUMEN OPERATIVO GENERAL</h2>
+      <p>Vista técnica resumida de infraestructura e inventario operativo por sede.</p>
+      <div class="sedes-region-filter">
+        <span id="regionFilterStatus">Mostrando todas las regiones.</span>
+        <button id="clearRegionFilterBtn" class="btn xs" type="button" style="display:none;">Quitar filtro regional</button>
+      </div>
+    </div>
+
+    <div id="resumen-inventario-top" style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;overflow:auto;background:#fff;">
       <div style="padding:10px 12px;border-bottom:1px solid #e5e7eb;font-weight:700;color:#334155;">Resumen inventario operativo por sede</div>
       <div style="padding:8px 12px;border-bottom:1px solid #e5e7eb;display:flex;gap:8px;flex-wrap:wrap;font-size:12px;background:#fafafa;">
         <span class="state info"><strong>Puestos de trabajo (total):</strong> {{ totals.puestos_trabajo or 0 }}</span>
@@ -56,8 +152,9 @@
           {% for r in rows %}
           {% set code = (r.codigo or '')|upper %}
           {% set cls = fuero_map.get(code, 'fuero-neutral') %}
+          {% set region_key = region_map.get(code, '') %}
           {% set total_mob = (r.mesa_pc or 0) + (r.escritorio_prof or 0) + (r.silla_giratoria or 0) + (r.silla_fija or 0) + (r.armario_alto or 0) + (r.biblioteca_baja or 0) + (r.aires_total or 0) %}
-          <tr>
+          <tr data-region="{{ region_key }}">
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
               <a href="{{ url_for('sede_ficha', codigo=r.codigo) }}" style="text-decoration:none;">
                 <span class="sede-badge-soft {{ cls }}">{{ r.codigo }}</span>
@@ -105,6 +202,17 @@
       {% else %}
       <div style="padding:10px;color:#64748b;font-size:12px;">No hay datos de inventario para mostrar.</div>
       {% endif %}
+    </div>
+    {% else %}
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;background:#ffffff;border:1px solid #e5e7eb;padding:10px 12px;border-radius:12px;">
+      <div>
+        <h2 style="margin:0;font-size:18px;color:#334155;font-weight:600;">Analisis depositos por sede</h2>
+        <div style="font-size:12px;color:#64748b;margin-top:2px;">Diagnostico operativo por deposito con filtros y criterios.</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <a class="btn" href="{{ url_for('sedes_resumen_mpd') }}">Resumen sedes</a>
+        <a class="btn" href="{{ url_for('depositos_home') }}" title="Stock operativo institucional: banners, camillas, escaleras y elementos protocolares.">GENERAL MPD</a>
+      </div>
     </div>
     {% endif %}
 
@@ -730,6 +838,149 @@
 </section>
 
 <style>
+  .sedes-portada-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    padding: 14px;
+    border-radius: 12px;
+    flex-wrap: wrap;
+  }
+
+  .sedes-portada-kicker {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: #64748b;
+    font-weight: 700;
+  }
+
+  .sedes-portada-title {
+    margin: 4px 0 0;
+    font-size: 24px;
+    color: #0f172a;
+    font-weight: 700;
+  }
+
+  .sedes-portada-subtitle {
+    margin: 8px 0 0;
+    color: #475569;
+    font-size: 13px;
+    max-width: 900px;
+    line-height: 1.45;
+  }
+
+  .sedes-portada-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .sedes-context-box {
+    margin-top: 10px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px;
+  }
+
+  .sedes-flow {
+    margin-top: 10px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .sedes-flow span {
+    font-size: 11px;
+    color: #334155;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    padding: 4px 10px;
+  }
+
+  .sedes-region-grid {
+    margin-top: 10px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 10px;
+  }
+
+  .sedes-region-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .sedes-region-card h3 {
+    margin: 0;
+    font-size: 15px;
+    color: #0f172a;
+    font-weight: 700;
+  }
+
+  .sedes-region-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-size: 12px;
+    color: #334155;
+  }
+
+  .sedes-region-card ul {
+    margin: 0;
+    padding-left: 18px;
+    display: grid;
+    gap: 2px;
+    font-size: 12px;
+    color: #475569;
+    line-height: 1.4;
+  }
+
+  .sedes-tech-head {
+    margin-top: 12px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px;
+  }
+
+  .sedes-tech-head h2 {
+    margin: 0;
+    font-size: 16px;
+    color: #0f172a;
+    letter-spacing: 0.02em;
+  }
+
+  .sedes-tech-head p {
+    margin: 4px 0 0;
+    color: #64748b;
+    font-size: 12px;
+  }
+
+  .sedes-region-filter {
+    margin-top: 8px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: #475569;
+  }
+
+  @media (max-width: 700px) {
+    .sedes-portada-title {
+      font-size: 20px;
+    }
+  }
+
   #resumen-inventario-top thead th {
     background: #eef2f7;
   }
@@ -815,6 +1066,16 @@
 </style>
 
 <script>
+  const regionButtons = document.querySelectorAll(".js-region-focus");
+  const regionFilterStatus = document.getElementById("regionFilterStatus");
+  const clearRegionFilterBtn = document.getElementById("clearRegionFilterBtn");
+  const regionNames = {
+    san_salvador: "San Salvador de Jujuy",
+    aledanias: "Aledañas",
+    el_ramal: "El Ramal",
+    quebrada_puna: "Quebrada y Puna"
+  };
+
   const filtroSede = document.getElementById("filtroSede");
   const filtroElemento = document.getElementById("filtroElemento");
   const mfFiltroSede = document.getElementById("mfFiltroSede");
@@ -838,6 +1099,25 @@
         el.style.display = show ? "" : "none";
       });
     });
+  }
+
+  function applyRegionTableFilter(regionKey) {
+    const rows = document.querySelectorAll("#resumen-inventario-top tbody tr[data-region]");
+    if (!rows.length) return;
+
+    rows.forEach(tr => {
+      const rowRegion = tr.dataset.region || "";
+      tr.style.display = (!regionKey || rowRegion === regionKey) ? "" : "none";
+    });
+
+    if (regionFilterStatus) {
+      regionFilterStatus.textContent = regionKey
+        ? `Mostrando región: ${regionNames[regionKey] || regionKey}.`
+        : "Mostrando todas las regiones.";
+    }
+    if (clearRegionFilterBtn) {
+      clearRegionFilterBtn.style.display = regionKey ? "" : "none";
+    }
   }
 
   function applyResumenFiltros() {
@@ -903,6 +1183,18 @@
     mfFiltroSede.addEventListener("change", applyMatafuegosFiltros);
     mfFiltroEstado.addEventListener("change", applyMatafuegosFiltros);
     applyMatafuegosFiltros();
+  }
+
+  if (clearRegionFilterBtn) {
+    clearRegionFilterBtn.addEventListener("click", () => applyRegionTableFilter(""));
+  }
+
+  if (regionButtons.length > 0) {
+    regionButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        applyRegionTableFilter(btn.dataset.regionTarget || "");
+      });
+    });
   }
 
 </script>
