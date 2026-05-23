@@ -20,16 +20,16 @@
     'S05':'quebrada_puna','S14':'quebrada_puna','S15':'quebrada_puna','S16':'quebrada_puna','S18':'quebrada_puna'
   } %}
   {% set mapa_regions = [
-    {'key':'san_salvador','label':'San Salvador de Jujuy','title':'SAN SALVADOR DE JUJUY'},
-    {'key':'aledanias','label':'Aledañas','title':'ALEDANAS'},
-    {'key':'el_ramal','label':'El Ramal','title':'EL RAMAL'},
-    {'key':'quebrada_puna','label':'Quebrada y Puna','title':'QUEBRADA Y PUNA'}
+    {'key':'san_salvador','label':'San Salvador de Jujuy','title':'San Salvador'},
+    {'key':'aledanias','label':'Aledañas','title':'Aledañas'},
+    {'key':'el_ramal','label':'El Ramal','title':'El Ramal'},
+    {'key':'quebrada_puna','label':'Quebrada y Puna','title':'Quebrada y Puna'}
   ] %}
   {% set region_exec_cards = [
-    {'key':'san_salvador','class':'region-san-salvador','title':'SAN SALVADOR','sedes':5,'personas':157,'m2':1450,'ocupacion':91,'ocupacion_key':'alta','estado':'Alto','estado_key':'alto','disponibilidad_key':'baja'},
-    {'key':'aledanias','class':'region-aledanias','title':'ALEDANAS','sedes':6,'personas':64,'m2':710,'ocupacion':73,'ocupacion_key':'media','estado':'Medio','estado_key':'medio','disponibilidad_key':'media'},
-    {'key':'el_ramal','class':'region-el-ramal','title':'EL RAMAL','sedes':3,'personas':33,'m2':420,'ocupacion':84,'ocupacion_key':'alta','estado':'Alto','estado_key':'alto','disponibilidad_key':'baja'},
-    {'key':'quebrada_puna','class':'region-quebrada-puna','title':'QUEBRADA Y PUNA','sedes':5,'personas':72,'m2':980,'ocupacion':62,'ocupacion_key':'disponible','estado':'Disponible','estado_key':'disponible','disponibilidad_key':'alta'}
+    {'key':'san_salvador','class':'region-san-salvador','title':'San Salvador','sedes':5,'personas':157,'m2':1450,'ocupacion':91,'ocupacion_key':'alta','estado':'Alto','estado_key':'alto','disponibilidad_key':'baja'},
+    {'key':'aledanias','class':'region-aledanias','title':'Aledañas','sedes':6,'personas':64,'m2':710,'ocupacion':73,'ocupacion_key':'media','estado':'Medio','estado_key':'medio','disponibilidad_key':'media'},
+    {'key':'el_ramal','class':'region-el-ramal','title':'El Ramal','sedes':3,'personas':33,'m2':420,'ocupacion':84,'ocupacion_key':'alta','estado':'Alto','estado_key':'alto','disponibilidad_key':'baja'},
+    {'key':'quebrada_puna','class':'region-quebrada-puna','title':'Quebrada y Puna','sedes':5,'personas':72,'m2':980,'ocupacion':62,'ocupacion_key':'disponible','estado':'Disponible','estado_key':'disponible','disponibilidad_key':'alta'}
   ] %}
   {% set region_m2_totals = {'san_salvador':1450,'aledanias':710,'el_ramal':420,'quebrada_puna':980} %}
   {% set region_sede_counts = {'san_salvador':5,'aledanias':6,'el_ramal':3,'quebrada_puna':5} %}
@@ -69,7 +69,7 @@
 
     <div id="contexto-territorial" class="sedes-context-box">
       <h2 style="margin:0;font-size:15px;color:#0f172a;font-weight:700;">Contexto territorial</h2>
-      <p style="margin:6px 0 0;font-size:12px;color:#475569;line-height:1.45;">Vista ejecutiva por regiones. El detalle por sede y fuero se navega en Mapa Operativo Territorial.</p>
+      <p class="sedes-subtitle-soft">Vista ejecutiva por regiones. El detalle por sede y fuero se navega en Mapa Operativo Territorial.</p>
       <div class="sedes-context-actions">
         <a class="btn xs" href="{{ url_for('sedes_contexto_historico_mpd') }}">Contexto histórico MPD</a>
       </div>
@@ -895,6 +895,19 @@
 </section>
 
 <style>
+  .sgi-sedes {
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+  }
+
+  .sedes-portada-main,
+  .sedes-context-box,
+  .sedes-region-grid,
+  .sedes-tech-head,
+  .sedes-mapa-box,
+  #resumen-inventario-top {
+    margin-bottom: 18px;
+  }
+
   .sedes-portada-main {
     display: flex;
     justify-content: space-between;
@@ -923,8 +936,9 @@
 
   .sedes-portada-subtitle {
     margin: 6px 0 0;
-    color: #475569;
-    font-size: 12px;
+    color: #5f6b7a;
+    font-size: 13px;
+    font-weight: 500;
     max-width: 900px;
     line-height: 1.38;
   }
@@ -945,7 +959,18 @@
 
   .sedes-context-box h2 {
     color: #1f2a44 !important;
-    font-weight: 800 !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.3px;
+    margin-bottom: 10px;
+  }
+
+  .sedes-subtitle-soft,
+  .sedes-context-box p,
+  .sedes-mapa-head p,
+  .sedes-tech-head p {
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    color: #5f6b7a !important;
   }
 
   .sedes-flow {
@@ -980,13 +1005,16 @@
     padding: 4px 10px !important;
     min-height: 30px !important;
     font-weight: 600 !important;
+    font-size: 13px !important;
+    text-transform: none !important;
     box-shadow: none !important;
   }
 
   .sedes-shell.is-resumen .btn.xs,
   .sedes-shell.is-resumen button.btn.xs {
-    padding: 6px 10px !important;
-    font-size: 12px !important;
+    padding: 4px 10px !important;
+    min-height: 30px !important;
+    font-size: 13px !important;
   }
 
   .sedes-shell.is-resumen .btn:hover,
@@ -1017,13 +1045,19 @@
   .sedes-region-card {
     background: #ffffff;
     border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 10px 10px 9px;
+    border-radius: 16px;
+    padding: 22px;
     position: relative;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     gap: 8px;
+    transition: all 0.18s ease;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+  }
+
+  .sedes-region-card:hover {
+    transform: translateY(-1px);
   }
 
   .sedes-region-card::before {
@@ -1043,9 +1077,12 @@
 
   .sedes-region-card h3 {
     margin: 0;
-    font-size: 15px;
+    font-size: 28px;
     color: #0f172a;
     font-weight: 700;
+    text-transform: none;
+    letter-spacing: 0.3px;
+    margin-bottom: 10px;
   }
 
   .sedes-region-exec {
@@ -1071,12 +1108,12 @@
 
   .exec-estado {
     border-radius: 999px;
-    padding: 4px 9px;
+    padding: 4px 10px;
     border: 1px solid #d9e2f2;
     background: #f8fafc;
     color: #334155;
-    font-size: 11px;
-    font-weight: 700;
+    font-size: 12px;
+    font-weight: 600;
   }
 
   .exec-estado.is-alto {
@@ -1127,15 +1164,12 @@
     margin: 0;
     font-size: 17px;
     color: #1f2a44;
-    font-weight: 800;
-    letter-spacing: 0.02em;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    margin-bottom: 10px;
   }
 
-  .sedes-mapa-head p {
-    margin: 4px 0 0;
-    color: #64748b;
-    font-size: 12px;
-  }
+  .sedes-mapa-head p { margin: 4px 0 0; }
 
   .sedes-mapa-filters {
     margin-top: 8px;
@@ -1269,15 +1303,12 @@
     margin: 0;
     font-size: 17px;
     color: #1f2a44;
-    font-weight: 800;
-    letter-spacing: 0.02em;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    margin-bottom: 10px;
   }
 
-  .sedes-tech-head p {
-    margin: 4px 0 0;
-    color: #64748b;
-    font-size: 12px;
-  }
+  .sedes-tech-head p { margin: 4px 0 0; }
 
   .sedes-region-filter {
     margin-top: 8px;
