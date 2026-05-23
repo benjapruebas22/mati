@@ -1,5 +1,12 @@
 {% macro render_sede_badge(codigo_sede, extra_class='') -%}
   {% set code = (codigo_sede or '')|upper %}
+  {% set color_map = {
+    'fuero-penal': '#6666CC',
+    'fuero-social': '#F14B94',
+    'fuero-menores': '#65BFE4',
+    'fuero-admin': '#F58A5E',
+    'fuero-neutral': '#4D4D4D'
+  } %}
   {% set principal_map = {
     'S01': 'fuero-penal',
     'S02': 'fuero-penal',
@@ -35,13 +42,16 @@
     'S20': ['fuero-menores']
   } %}
   {% set principal_cls = principal_map.get(code, 'fuero-neutral') %}
+  {% set principal_color = color_map.get(principal_cls, '#4D4D4D') %}
   {% set secondary = secondary_map.get(code, []) %}
-  <span class="sede-badge-historic {{ principal_cls }} {{ extra_class }}">
+  <span class="sede-badge-historic {{ principal_cls }} {{ extra_class }}"
+        style="display:inline-flex;align-items:center;gap:6px;padding:2px 9px;border:1px solid {{ principal_color }};border-radius:999px;background:#ffffff;color:{{ principal_color }};font-weight:600;font-size:11px;line-height:1.2;white-space:nowrap;vertical-align:middle;">
     <span class="sede-badge-code">{{ code }}</span>
     {% if secondary %}
-    <span class="sede-mini-indicators" aria-hidden="true">
+    <span class="sede-mini-indicators" aria-hidden="true" style="display:inline-flex;gap:3px;align-items:center;">
       {% for sec in secondary %}
-      <span class="sede-mini-dot {{ sec }}"></span>
+      <span class="sede-mini-dot {{ sec }}"
+            style="width:6px;height:6px;border-radius:999px;display:inline-block;background:{{ color_map.get(sec, '#4D4D4D') }};border:1px solid rgba(255,255,255,.92);box-shadow:0 0 0 1px rgba(15,23,42,.06);"></span>
       {% endfor %}
     </span>
     {% endif %}
