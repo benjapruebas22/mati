@@ -23,7 +23,7 @@
   --texto-principal: #4D4D4D;
 
   --fuero-penal: #6666cc;
-  --fuero-menores: #65BFF4;
+  --fuero-menores: #65BFE4;
   --fuero-social: #F14B94;
   --fuero-admin: #f58a5e;
 
@@ -92,6 +92,61 @@
   background: var(--fuero-bg, var(--sedes-bg)) !important;
 }
 
+/* -----------------------------------
+   Badge histórico de sede (reutilizable)
+------------------------------------ */
+.sgi-sedes .sede-badge-historic,
+.sgi-sedes .sede-badge-soft {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 2px 9px;
+  border: 1px solid var(--fuero-accent, var(--sedes-border));
+  background: #ffffff;
+  color: var(--fuero-accent, var(--sedes-ink));
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.sgi-sedes .sede-badge-historic.sede-badge-lg {
+  font-size: 12px;
+  padding: 4px 11px;
+}
+
+.sgi-sedes a .sede-badge-historic {
+  text-decoration: none;
+}
+
+.sgi-sedes .sede-badge-historic .sede-badge-code,
+.sgi-sedes .sede-badge-soft .sede-badge-code {
+  display: inline-block;
+}
+
+.sgi-sedes .sede-mini-indicators {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.sgi-sedes .sede-mini-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  display: inline-block;
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.06);
+}
+
+.sgi-sedes .sede-mini-dot.fuero-penal { background: #6666CC; }
+.sgi-sedes .sede-mini-dot.fuero-social { background: #F14B94; }
+.sgi-sedes .sede-mini-dot.fuero-menores { background: #65BFE4; }
+.sgi-sedes .sede-mini-dot.fuero-admin { background: #F58A5E; }
+.sgi-sedes .sede-mini-dot.fuero-neutral { background: #4D4D4D; }
+
 .sgi-sedes .sede-badge {
   display: inline-flex;
   align-items: center;
@@ -103,20 +158,6 @@
   background: var(--sedes-bg-soft);
   font-weight: 600;
 }
-.sgi-sedes .sede-badge-soft {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2px 8px;
-  border-radius: 999px;
-  border: 1px solid var(--sedes-border);
-  background: var(--sedes-bg-soft);
-  font-size: 11px;
-  font-weight: 600;
-  line-height: 1.2;
-  white-space: nowrap;
-}
-
 /* -------------------------
    Botones (estándar SGI)
 -------------------------- */
@@ -265,6 +306,15 @@
   color: var(--fuero-accent, var(--sedes-ink)) !important;
   font-weight: 600;
 }
+.sgi-sedes .sede-nav a.sede-chip {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: var(--sedes-ink) !important;
+  padding: 2px 4px !important;
+}
+.sgi-sedes .sede-nav a.sede-chip .sede-badge-historic {
+  pointer-events: none;
+}
 .sgi-sedes .sede-nav a.active {
   background: var(--fuero-bg, var(--sedes-primary-soft)) !important;
   border-color: var(--fuero-accent, #bfdbfe) !important;
@@ -272,10 +322,20 @@
   box-shadow: none !important;
   border-width: 1px !important;
 }
+.sgi-sedes .sede-nav a.sede-chip.active {
+  background: #eef4ff !important;
+  border-color: #bfd2f3 !important;
+  color: #1f5fcc !important;
+}
 .sgi-sedes .sede-nav a:hover {
   background: var(--fuero-bg, var(--sedes-primary-soft)) !important;
   border-color: var(--fuero-accent, #bfdbfe) !important;
   color: var(--fuero-accent, #1d4ed8) !important;
+}
+.sgi-sedes .sede-nav a.sede-chip:hover {
+  background: #f7f9fc !important;
+  border-color: #d9e2f2 !important;
+  color: var(--sedes-ink) !important;
 }
 
 /* Listado de sedes (identidad por fuero como acento, sin saturar) */

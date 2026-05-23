@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
+{% from "_sedes_badges.html" import render_sede_badge %}
 
 <link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-10-01') }}">
 
@@ -14,7 +15,7 @@
   <header style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px">
     <div>
       <h2 style="margin:0 0 6px 0">
-        Depositos · {{ sede.nombre }} · <span class="sede-badge-soft {{ sede_fuero_cls }}">{{ sede.codigo }}</span>
+        Depositos · {{ sede.nombre }} · {{ render_sede_badge(sede.codigo) }}
       </h2>
       <p style="margin:0;color:#64748b;font-size:12px">
         Edita los locales (D01, D02, etc.) y sus descripciones.

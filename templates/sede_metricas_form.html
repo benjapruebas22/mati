@@ -1,6 +1,7 @@
 
 {% extends "base.html" %}
 {% block content %}
+{% from "_sedes_badges.html" import render_sede_badge %}
 
 <style>
   :root{
@@ -99,7 +100,7 @@
 
     <div class="head">
       <div>
-        <h1 class="h-title">Metricas de sede · <span class="sede-badge-soft {{ sede_fuero_cls }}">{{ sede.codigo }}</span></h1>
+        <h1 class="h-title">Metricas de sede · {{ render_sede_badge(sede.codigo) }}</h1>
         <p class="h-sub">Carga manual de m2, personas, oficinas y depositos.</p>
       </div>
 

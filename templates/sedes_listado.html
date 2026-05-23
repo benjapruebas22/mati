@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
+{% from "_sedes_badges.html" import render_sede_badge %}
 
 <style>
     /* ====== LISTADO SEDES — PRESENTACIÓN (SIN FOTOS) ====== */
@@ -100,17 +101,10 @@
     }
 
     .sede-circle {
-        width: 56px;
-        height: 56px;
-        border-radius: 999px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: 600;
-        letter-spacing: .3px;
-        color: #334155;
-        border: 1px solid #e5e7eb;
-        background: #f8fafc;
+        min-width: 76px;
         flex: 0 0 auto;
     }
 
@@ -246,7 +240,7 @@
 
         <a class="sede-card" href="{{ url_for('sede_ficha', codigo=s.codigo) }}"
             data-text="{{ (s.codigo or '') ~ ' ' ~ (s.ciudad or '') ~ ' ' ~ (s.direccion or '') ~ ' ' ~ fuero_txt }}">
-            <div class="sede-circle sede-badge {{ cls }}">{{ s.codigo }}</div>
+            <div class="sede-circle">{{ render_sede_badge(s.codigo) }}</div>
 
             <div class="sede-info">
                 <div class="sede-topline">

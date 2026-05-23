@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
+{% from "_sedes_badges.html" import render_sede_badge %}
 
 <style>
   :root{
@@ -81,7 +82,7 @@
           {% set code = (r.codigo or '')|upper %}
           {% set cls = fuero_map.get(code, 'fuero-neutral') %}
           <tr>
-            <td><span class="sede-badge-soft {{ cls }}">{{ r.codigo }}</span></td>
+            <td>{{ render_sede_badge(r.codigo) }}</td>
             <td>{{ r.nombre }}</td>
             <td>{{ r.ciudad or "" }}</td>
             <td>{{ (r.fuero or "")|replace("_"," ")|capitalize }}</td>

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
+{% from "_sedes_badges.html" import render_sede_badge %}
 
 <style>
   .limp-main{
@@ -140,9 +141,7 @@
               text-align:center;">
             <div style="font-size:11px;color:#64748b;">Código</div>
             <div style="margin-top:6px;">
-              <span class="sede-badge-soft {{ sede_fuero_cls }}" style="font-size:12px;padding:4px 10px;">
-                {{ sede.codigo }}
-              </span>
+              {{ render_sede_badge(sede.codigo) }}
             </div>
             <div style="margin-top:8px;font-size:11px;color:#334155;">
               {{ sede.fuero|capitalize }}

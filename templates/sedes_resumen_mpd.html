@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
+{% from "_sedes_badges.html" import render_sede_badge %}
 
 <link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-10-01') }}">
 
@@ -17,10 +18,6 @@
     'S03':'aledanias','S04':'aledanias','S07':'aledanias','S10':'aledanias','S17':'aledanias','S20':'aledanias',
     'S02':'el_ramal','S06':'el_ramal','S19':'el_ramal',
     'S05':'quebrada_puna','S14':'quebrada_puna','S15':'quebrada_puna','S16':'quebrada_puna','S18':'quebrada_puna'
-  } %}
-  {% set integrated_map = {
-    'S02': ['fuero-social', 'fuero-menores'],
-    'S20': ['fuero-neutral']
   } %}
   <div class="cardx sedes-shell {{ 'is-infra' if show_infra else 'is-resumen' }}" style="padding:12px 14px;">
     {% if not show_infra %}
@@ -47,6 +44,9 @@
         <span>Abrir sede específica</span>
         <span>Ficha operativa individual</span>
       </div>
+      <div style="margin-top:8px;font-size:11px;color:#64748b;">
+        Color principal: origen histórico/función principal. Puntos secundarios: fueros o usos complementarios actuales.
+      </div>
       <div class="sedes-context-actions">
         <a class="btn xs" href="{{ url_for('sedes_contexto_historico_mpd') }}">Contexto histórico MPD</a>
       </div>
@@ -61,11 +61,11 @@
           <span><strong>Fueros presentes:</strong> Penal, Jurídico Social, Menores / Incapaces</span>
         </div>
         <ul>
-          <li>S01 - Independencia 202 - Penal</li>
-          <li>S08 - San Martín 137 - Administración General + Violencia Institucional</li>
-          <li>S11 - Gorriti 791 - Jurídico Social</li>
-          <li>S12 - Belgrano - Equipo Interdisciplinario + Ejecución de Pena</li>
-          <li>S13 - San Martín 271 - Menores / Incapaces / Capacidad restringida</li>
+          <li>{{ render_sede_badge('S01') }} Independencia 202 - Penal</li>
+          <li>{{ render_sede_badge('S08') }} San Martín 137 - Administración General + Violencia Institucional</li>
+          <li>{{ render_sede_badge('S11') }} Gorriti 791 - Jurídico Social</li>
+          <li>{{ render_sede_badge('S12') }} Belgrano - Equipo Interdisciplinario + Ejecución de Pena</li>
+          <li>{{ render_sede_badge('S13') }} San Martín 271 - Menores / Incapaces / Capacidad restringida</li>
         </ul>
         <a class="btn xs js-region-focus" href="#resumen-operativo-general" data-region-target="san_salvador">Ver sedes San Salvador</a>
       </article>
@@ -78,12 +78,12 @@
           <span><strong>Fueros presentes:</strong> Penal, Jurídico Social</span>
         </div>
         <ul>
-          <li>S03 - Perico Penal</li>
-          <li>S04 - Alto Comedero Penal</li>
-          <li>S07 - Palpalá Penal</li>
-          <li>S10 - El Carmen Penal</li>
-          <li>S17 - Perico Civil</li>
-          <li>S20 - Palpalá Civil</li>
+          <li>{{ render_sede_badge('S03') }} Perico Penal</li>
+          <li>{{ render_sede_badge('S04') }} Alto Comedero Penal</li>
+          <li>{{ render_sede_badge('S07') }} Palpalá Penal</li>
+          <li>{{ render_sede_badge('S10') }} El Carmen Penal</li>
+          <li>{{ render_sede_badge('S17') }} Perico Civil</li>
+          <li>{{ render_sede_badge('S20') }} Palpalá Civil</li>
         </ul>
         <a class="btn xs js-region-focus" href="#resumen-operativo-general" data-region-target="aledanias">Ver sedes Aledañas</a>
       </article>
@@ -96,9 +96,9 @@
           <span><strong>Fueros presentes:</strong> Penal, Jurídico Social, Menores / Incapaces</span>
         </div>
         <ul>
-          <li>S02 - San Pedro Penal / Jurídico Social / Menores</li>
-          <li>S06 - Ledesma Penal / Menores</li>
-          <li>S19 - Ledesma Civil</li>
+          <li>{{ render_sede_badge('S02') }} San Pedro Penal / Jurídico Social / Menores</li>
+          <li>{{ render_sede_badge('S06') }} Ledesma Penal / Menores</li>
+          <li>{{ render_sede_badge('S19') }} Ledesma Civil</li>
         </ul>
         <a class="btn xs js-region-focus" href="#resumen-operativo-general" data-region-target="el_ramal">Ver sedes El Ramal</a>
       </article>
@@ -111,11 +111,11 @@
           <span><strong>Fueros presentes:</strong> Penal, Jurídico Social, Menores / Incapaces</span>
         </div>
         <ul>
-          <li>S05 - Humahuaca Penal</li>
-          <li>S14 - Tilcara Jurídico Social / Menores</li>
-          <li>S15 - Abra Pampa Jurídico Social / Menores</li>
-          <li>S16 - La Quiaca Jurídico Social / Menores</li>
-          <li>S18 - Humahuaca Civil</li>
+          <li>{{ render_sede_badge('S05') }} Humahuaca Penal</li>
+          <li>{{ render_sede_badge('S14') }} Tilcara Jurídico Social / Menores</li>
+          <li>{{ render_sede_badge('S15') }} Abra Pampa Jurídico Social / Menores</li>
+          <li>{{ render_sede_badge('S16') }} La Quiaca Jurídico Social / Menores</li>
+          <li>{{ render_sede_badge('S18') }} Humahuaca Civil</li>
         </ul>
         <a class="btn xs js-region-focus" href="#resumen-operativo-general" data-region-target="quebrada_puna">Ver sedes Quebrada y Puna</a>
       </article>
@@ -159,22 +159,12 @@
           {% for r in rows %}
           {% set code = (r.codigo or '')|upper %}
           {% set cls = fuero_map.get(code, 'fuero-neutral') %}
-          {% set secondary_fueros = integrated_map.get(code, []) %}
           {% set region_key = region_map.get(code, '') %}
           {% set total_mob = (r.mesa_pc or 0) + (r.escritorio_prof or 0) + (r.silla_giratoria or 0) + (r.silla_fija or 0) + (r.armario_alto or 0) + (r.biblioteca_baja or 0) + (r.aires_total or 0) %}
           <tr data-region="{{ region_key }}">
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
               <a href="{{ url_for('sede_ficha', codigo=r.codigo) }}" style="text-decoration:none;">
-                <span class="sede-badge-soft {{ cls }}">
-                  <span class="sede-badge-code">{{ r.codigo }}</span>
-                  {% if secondary_fueros %}
-                  <span class="sede-mini-indicators" aria-hidden="true">
-                    {% for sec in secondary_fueros %}
-                    <span class="sede-mini-dot {{ sec }}"></span>
-                    {% endfor %}
-                  </span>
-                  {% endif %}
-                </span>
+                {{ render_sede_badge(r.codigo) }}
               </a>
             </td>
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.nombre }}</td>
@@ -403,7 +393,7 @@
               {% for r in infra_rows %}
               {% set cls = fuero_map.get((r.sede or '')|upper, 'fuero-neutral') %}
               <tr>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;"><span class="sede-badge-soft {{ cls }}">{{ r.sede }}</span></td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ render_sede_badge(r.sede) }}</td>
                 <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.deposito }}</td>
                 <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.descripcion_inventario or r.nombre_referencia }}</td>
                 <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ r.personas_reales }}</td>
@@ -711,7 +701,7 @@
               data-val-luminarias_total="{{ r.luminarias_total }}"
               data-val-puestos_trabajo="{{ r.puestos_trabajo }}">
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
-              <span class="sede-badge-soft {{ cls }}">{{ r.codigo }}</span>
+              {{ render_sede_badge(r.codigo) }}
             </td>
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.nombre }}</td>
             <td data-col="mesa_pc" style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.mesa_pc }}</td>
@@ -804,7 +794,7 @@
             {% set mf_cls = fuero_map.get(mf_code, 'fuero-neutral') %}
             <tr data-mf-sede="{{ mf.sede_codigo }}" data-mf-estado="{{ mf.estado_vto_key }}">
               <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
-                <span class="sede-badge-soft {{ mf_cls }}">{{ mf.sede_codigo }}</span>
+                {{ render_sede_badge(mf.sede_codigo) }}
               </td>
               <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ mf.sede_nombre or '-' }}</td>
               <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
@@ -1094,74 +1084,6 @@
   #infra-analisis table tbody tr:hover td {
     background: #f8fafc;
   }
-
-  .sede-badge-soft {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    border-radius: 999px;
-    border: 1px solid transparent;
-    padding: 3px 9px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.01em;
-    line-height: 1.1;
-  }
-
-  .sede-badge-code {
-    display: inline-block;
-  }
-
-  .sede-badge-soft.fuero-penal {
-    background: #f1f1ff;
-    color: #4646b3;
-    border-color: #cfcff8;
-  }
-
-  .sede-badge-soft.fuero-social {
-    background: #fff0f7;
-    color: #c23f7a;
-    border-color: #f7c6dc;
-  }
-
-  .sede-badge-soft.fuero-menores {
-    background: #ecf8fd;
-    color: #2f8db2;
-    border-color: #bde6f4;
-  }
-
-  .sede-badge-soft.fuero-admin {
-    background: #fff3ec;
-    color: #c76e42;
-    border-color: #f5cfbc;
-  }
-
-  .sede-badge-soft.fuero-neutral {
-    background: #f4f4f5;
-    color: #4d4d4d;
-    border-color: #d9d9db;
-  }
-
-  .sede-mini-indicators {
-    display: inline-flex;
-    gap: 3px;
-    align-items: center;
-  }
-
-  .sede-mini-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 999px;
-    display: inline-block;
-    border: 1px solid rgba(255, 255, 255, 0.85);
-    box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.05);
-  }
-
-  .sede-mini-dot.fuero-penal { background: #6666CC; }
-  .sede-mini-dot.fuero-social { background: #F14B94; }
-  .sede-mini-dot.fuero-menores { background: #65BFE4; }
-  .sede-mini-dot.fuero-admin { background: #F58A5E; }
-  .sede-mini-dot.fuero-neutral { background: #4D4D4D; }
 
   .sedes-shell.is-resumen .btn-sede-abrir,
   .sedes-shell.is-resumen .btn-sede-bienes,

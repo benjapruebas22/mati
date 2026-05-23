@@ -1,0 +1,49 @@
+{% macro render_sede_badge(codigo_sede, extra_class='') -%}
+  {% set code = (codigo_sede or '')|upper %}
+  {% set principal_map = {
+    'S01': 'fuero-penal',
+    'S02': 'fuero-penal',
+    'S03': 'fuero-penal',
+    'S04': 'fuero-penal',
+    'S05': 'fuero-penal',
+    'S06': 'fuero-penal',
+    'S07': 'fuero-penal',
+    'S10': 'fuero-penal',
+    'S08': 'fuero-admin',
+    'S12': 'fuero-admin',
+    'S13': 'fuero-menores',
+    'S11': 'fuero-social',
+    'S14': 'fuero-social',
+    'S15': 'fuero-social',
+    'S16': 'fuero-social',
+    'S17': 'fuero-social',
+    'S18': 'fuero-social',
+    'S19': 'fuero-social',
+    'S20': 'fuero-social'
+  } %}
+  {% set secondary_map = {
+    'S02': ['fuero-social', 'fuero-menores'],
+    'S06': ['fuero-menores'],
+    'S08': ['fuero-penal'],
+    'S10': ['fuero-social', 'fuero-menores'],
+    'S12': ['fuero-penal'],
+    'S14': ['fuero-menores'],
+    'S15': ['fuero-menores'],
+    'S16': ['fuero-menores'],
+    'S17': ['fuero-menores'],
+    'S18': ['fuero-menores'],
+    'S20': ['fuero-menores']
+  } %}
+  {% set principal_cls = principal_map.get(code, 'fuero-neutral') %}
+  {% set secondary = secondary_map.get(code, []) %}
+  <span class="sede-badge-historic {{ principal_cls }} {{ extra_class }}">
+    <span class="sede-badge-code">{{ code }}</span>
+    {% if secondary %}
+    <span class="sede-mini-indicators" aria-hidden="true">
+      {% for sec in secondary %}
+      <span class="sede-mini-dot {{ sec }}"></span>
+      {% endfor %}
+    </span>
+    {% endif %}
+  </span>
+{%- endmacro %}

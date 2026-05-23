@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
+{% from "_sedes_badges.html" import render_sede_badge %}
 
 {% set titulo_fuero = {
   "penal": "Defensorías Penales",
@@ -106,19 +107,6 @@
     position:relative;
     z-index:1;
   }
-  .sede-code-pill{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    height:28px;
-    padding:0 10px;
-    border-radius:999px;
-    border:1px solid #e5e7eb;
-    background:#f8fafc;
-    font-size:12px;
-    font-weight:600;
-    color:#0f172a;
-  }
   .sede-fuero-pill{
     font-size:11px;
     padding:2px 7px;
@@ -203,7 +191,7 @@
         <div class="sede-mainrow">
           <div style="flex:1;min-width:0;">
             <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
-              <span class="sede-code-pill">{{ s.codigo }}</span>
+              {{ render_sede_badge(s.codigo) }}
               <span class="sede-fuero-pill">
                 {{ s.fuero|replace('_',' ')|capitalize }}
               </span>

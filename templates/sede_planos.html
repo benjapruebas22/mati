@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
+{% from "_sedes_badges.html" import render_sede_badge %}
 
 <style>
   /* Layout específico de la pantalla de planos */
@@ -129,7 +130,7 @@
       <div>
         <h2 class="planos-header-title">Planos de la sede</h2>
         <p class="planos-header-sub">
-          Sede <span class="sede-badge-soft {{ sede_fuero_cls }}">{{ sede.codigo }}</span> · {{ sede.nombre }} – {{ sede.ciudad }}
+          Sede {{ render_sede_badge(sede.codigo) }} · {{ sede.nombre }} – {{ sede.ciudad }}
         </p>
       </div>
       <div>

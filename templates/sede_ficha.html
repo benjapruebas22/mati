@@ -3,6 +3,7 @@
 
 
 {% block content %}
+{% from "_sedes_badges.html" import render_sede_badge %}
 
 
 
@@ -6372,7 +6373,7 @@
       <div class="sede-breadcrumb" aria-label="Navegacion de sedes">
         <a href="{{ url_for('sedes_resumen_mpd') }}">Sedes</a>
         <span>/</span>
-        <span class="current">{{ sede.codigo }} {{ sede.nombre }}</span>
+        <span class="current">{{ render_sede_badge(sede.codigo) }} {{ sede.nombre }}</span>
       </div>
       <div class="head-top">
 
@@ -6387,7 +6388,7 @@
         } %}
         {% set sede_fuero_cls = fuero_map.get(sede.codigo, 'fuero-neutral') %}
 
-        <div class="chip sede-badge {{ sede_fuero_cls }}">{{ sede.codigo }}</div>
+        {{ render_sede_badge(sede.codigo, 'sede-badge-lg') }}
 
 
 
@@ -6490,7 +6491,7 @@
            data-fuero="{{ s.fuero }}"
            data-code="{{ s.codigo }}"
            title="{{ _t if _t else 'Sede' }}"
-           href="{{ url_for('sede_ficha', codigo=s.codigo, piso=piso, tab=tab, view=view) }}">{{ s.codigo }}</a>
+           href="{{ url_for('sede_ficha', codigo=s.codigo, piso=piso, tab=tab, view=view) }}">{{ render_sede_badge(s.codigo) }}</a>
         {% endfor %}
       </div>
 
@@ -8040,7 +8041,7 @@
     <summary class="sedes-docs-summary">
       <span class="sedes-docs-title">Documentos vinculados (SGI)</span>
       <span class="sedes-docs-badge">
-        <span class="sede-badge-soft {{ sede_fuero_cls }}">{{ sede.codigo }}</span>
+        {{ render_sede_badge(sede.codigo) }}
         <span>Documentación</span>
       </span>
     </summary>
@@ -8450,7 +8451,7 @@
 
 
         <div class="badge">
-          <span class="sede-badge-soft {{ sede_fuero_cls }}">{{ sede.codigo }}</span>
+          {{ render_sede_badge(sede.codigo) }}
           <span>· {{ piso }}{% if local %} · {{ local }}{% endif %}</span>
         </div>
 
