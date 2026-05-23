@@ -87,29 +87,19 @@
         </div>
         <div class="sedes-region-foot">
           <span class="exec-estado {{ 'is-alto' if region.estado_key == 'alto' else ('is-medio' if region.estado_key == 'medio' else 'is-disponible') }}">Estado: {{ region.estado }}</span>
-          <a class="btn xs js-exec-detail" href="#mapa-operativo-territorial" data-map-region-target="{{ region.key }}">Ver detalle</a>
+          <a class="btn xs btn-secondary js-exec-detail" href="#mapa-operativo-territorial" data-map-region-target="{{ region.key }}">Ver detalle</a>
         </div>
       </article>
       {% endfor %}
     </div>
 
-    <div id="resumen-operativo-general" class="sedes-tech-head">
-      <h2>RESUMEN OPERATIVO GENERAL</h2>
-      <p>Vista técnica resumida de infraestructura e inventario operativo por sede.</p>
-      <div class="sedes-region-filter">
-        <span id="regionFilterStatus">Mostrando todas las regiones.</span>
-        <button id="clearRegionFilterBtn" class="btn xs" type="button" style="display:none;">Quitar filtro regional</button>
-      </div>
-    </div>
-
     <div id="mapa-operativo-territorial" class="sedes-mapa-box">
       <div class="sedes-mapa-head">
-        <h2>MAPA OPERATIVO TERRITORIAL</h2>
-        <p>Vista r&aacute;pida de sedes por regi&oacute;n y fuero. Permite combinar filtros para identificar cobertura operativa.</p>
+        <h2>Mapa operativo territorial</h2>
       </div>
       <div class="sedes-mapa-controls">
-        <button id="mapToggleContentBtn" type="button" class="btn xs">Mostrar mapa</button>
-        <button id="mapToggleFiltersBtn" type="button" class="btn xs" hidden>Mostrar filtros</button>
+        <button id="mapToggleContentBtn" type="button" class="btn xs btn-secondary">Mostrar mapa</button>
+        <button id="mapToggleFiltersBtn" type="button" class="btn xs btn-secondary" hidden>Mostrar filtros</button>
       </div>
 
       <div id="mapFiltersPanel" class="sedes-mapa-filters" hidden>
@@ -169,8 +159,9 @@
       </div>
     </div>
 
+    <div id="resumen-operativo-general"></div>
     <div id="resumen-inventario-top" style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;overflow:auto;background:#fff;">
-      <div style="padding:10px 12px;border-bottom:1px solid #e5e7eb;font-weight:700;color:#334155;">Resumen inventario operativo por sede</div>
+      <div style="padding:10px 12px;border-bottom:1px solid #e5e7eb;font-weight:700;color:#334155;">Resumen operativo por sede</div>
       <div style="padding:8px 12px;border-bottom:1px solid #e5e7eb;display:flex;gap:8px;flex-wrap:wrap;font-size:12px;background:#fafafa;">
         <span class="state info"><strong>Puestos de trabajo (total):</strong> {{ totals.puestos_trabajo or 0 }}</span>
         <span class="state info"><strong>Personas (total):</strong> {{ totals.personas_total or 0 }}</span>
@@ -954,7 +945,7 @@
     background: #fbfcff;
     border: 1px solid #dde6f3;
     border-radius: 12px;
-    padding: 10px 12px;
+    padding: 12px 14px;
   }
 
   .sedes-context-box h2 {
@@ -992,7 +983,8 @@
   .sedes-context-actions {
     margin-top: 8px;
     display: flex;
-    gap: 8px;
+    gap: 6px;
+    justify-content: flex-end;
     flex-wrap: wrap;
   }
 
@@ -1012,9 +1004,19 @@
 
   .sedes-shell.is-resumen .btn.xs,
   .sedes-shell.is-resumen button.btn.xs {
-    padding: 4px 10px !important;
+    padding: 5px 10px !important;
     min-height: 30px !important;
-    font-size: 13px !important;
+    font-size: 12px !important;
+  }
+
+  .sedes-shell.is-resumen .btn-secondary {
+    border: 1px solid #cfd8e3 !important;
+    background: #fff !important;
+    border-radius: 10px !important;
+    padding: 5px 10px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #1f2a44 !important;
   }
 
   .sedes-shell.is-resumen .btn:hover,
@@ -1046,7 +1048,7 @@
     background: #ffffff;
     border: 1px solid #e5e7eb;
     border-radius: 16px;
-    padding: 22px;
+    padding: 14px 16px;
     position: relative;
     overflow: hidden;
     display: flex;
@@ -1077,7 +1079,7 @@
 
   .sedes-region-card h3 {
     margin: 0;
-    font-size: 28px;
+    font-size: 20px;
     color: #0f172a;
     font-weight: 700;
     text-transform: none;
@@ -1094,6 +1096,7 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 6px 10px;
     font-size: 12px;
+    line-height: 1.4;
     color: #334155;
   }
 
@@ -1162,11 +1165,12 @@
 
   .sedes-mapa-head h2 {
     margin: 0;
-    font-size: 17px;
+    font-size: 15px;
     color: #1f2a44;
     font-weight: 700;
-    letter-spacing: 0.3px;
-    margin-bottom: 10px;
+    letter-spacing: 0;
+    text-transform: none;
+    margin-bottom: 4px;
   }
 
   .sedes-mapa-head p { margin: 4px 0 0; }
@@ -1301,10 +1305,11 @@
 
   .sedes-tech-head h2 {
     margin: 0;
-    font-size: 17px;
+    font-size: 15px;
     color: #1f2a44;
     font-weight: 700;
-    letter-spacing: 0.3px;
+    letter-spacing: 0;
+    text-transform: none;
     margin-bottom: 10px;
   }
 
@@ -1442,10 +1447,15 @@
     }
 
     if (regionFilterStatus) {
-      regionFilterStatus.textContent = regionKey
-        ? `Mostrando región: ${regionNames[regionKey] || regionKey}.`
-        : "Mostrando todas las regiones.";
-      regionFilterStatus.classList.toggle("is-active", !!regionKey);
+      if (regionKey) {
+        regionFilterStatus.textContent = `Mostrando región: ${regionNames[regionKey] || regionKey}.`;
+        regionFilterStatus.classList.add("is-active");
+        regionFilterStatus.style.display = "";
+      } else {
+        regionFilterStatus.textContent = "";
+        regionFilterStatus.classList.remove("is-active");
+        regionFilterStatus.style.display = "none";
+      }
     }
     if (clearRegionFilterBtn) {
       clearRegionFilterBtn.style.display = regionKey ? "" : "none";
