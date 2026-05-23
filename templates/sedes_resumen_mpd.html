@@ -26,25 +26,25 @@
     {'key':'quebrada_puna','label':'Quebrada y Puna','title':'QUEBRADA Y PUNA'}
   ] %}
   {% set mapa_sedes = [
-    {'codigo':'S01','region':'san_salvador','fueros':['penal']},
-    {'codigo':'S02','region':'el_ramal','fueros':['penal','social','menores']},
-    {'codigo':'S03','region':'aledanias','fueros':['penal']},
-    {'codigo':'S04','region':'aledanias','fueros':['penal']},
-    {'codigo':'S05','region':'quebrada_puna','fueros':['penal']},
-    {'codigo':'S06','region':'el_ramal','fueros':['penal','menores']},
-    {'codigo':'S07','region':'aledanias','fueros':['penal']},
-    {'codigo':'S08','region':'san_salvador','fueros':['administracion','penal']},
-    {'codigo':'S10','region':'aledanias','fueros':['penal','social','menores']},
-    {'codigo':'S11','region':'san_salvador','fueros':['social']},
-    {'codigo':'S12','region':'san_salvador','fueros':['administracion','penal']},
-    {'codigo':'S13','region':'san_salvador','fueros':['menores']},
-    {'codigo':'S14','region':'quebrada_puna','fueros':['social','menores']},
-    {'codigo':'S15','region':'quebrada_puna','fueros':['social','menores']},
-    {'codigo':'S16','region':'quebrada_puna','fueros':['social','menores']},
-    {'codigo':'S17','region':'aledanias','fueros':['social','menores']},
-    {'codigo':'S18','region':'quebrada_puna','fueros':['social','menores']},
-    {'codigo':'S19','region':'el_ramal','fueros':['social']},
-    {'codigo':'S20','region':'aledanias','fueros':['social','menores']}
+    {'codigo':'S01','region':'san_salvador','fueros':['penal'],'nombre':'Independencia 202 - Penal'},
+    {'codigo':'S02','region':'el_ramal','fueros':['penal','social','menores'],'nombre':'San Pedro Penal / Juridico Social / Menores'},
+    {'codigo':'S03','region':'aledanias','fueros':['penal'],'nombre':'Perico Penal'},
+    {'codigo':'S04','region':'aledanias','fueros':['penal'],'nombre':'Alto Comedero Penal'},
+    {'codigo':'S05','region':'quebrada_puna','fueros':['penal'],'nombre':'Humahuaca Penal'},
+    {'codigo':'S06','region':'el_ramal','fueros':['penal','menores'],'nombre':'Ledesma Penal / Menores'},
+    {'codigo':'S07','region':'aledanias','fueros':['penal'],'nombre':'Palpala Penal'},
+    {'codigo':'S08','region':'san_salvador','fueros':['administracion','penal'],'nombre':'San Martin 137 - Administracion General + Violencia Institucional'},
+    {'codigo':'S10','region':'aledanias','fueros':['penal','social','menores'],'nombre':'El Carmen Penal'},
+    {'codigo':'S11','region':'san_salvador','fueros':['social'],'nombre':'Gorriti 791 - Juridico Social'},
+    {'codigo':'S12','region':'san_salvador','fueros':['administracion','penal'],'nombre':'Belgrano - Equipo Interdisciplinario + Ejecucion de Pena'},
+    {'codigo':'S13','region':'san_salvador','fueros':['menores'],'nombre':'San Martin 271 - Menores / Incapaces / Capacidad restringida'},
+    {'codigo':'S14','region':'quebrada_puna','fueros':['social','menores'],'nombre':'Tilcara Juridico Social / Menores'},
+    {'codigo':'S15','region':'quebrada_puna','fueros':['social','menores'],'nombre':'Abra Pampa Juridico Social / Menores'},
+    {'codigo':'S16','region':'quebrada_puna','fueros':['social','menores'],'nombre':'La Quiaca Juridico Social / Menores'},
+    {'codigo':'S17','region':'aledanias','fueros':['social','menores'],'nombre':'Perico Civil'},
+    {'codigo':'S18','region':'quebrada_puna','fueros':['social','menores'],'nombre':'Humahuaca Civil'},
+    {'codigo':'S19','region':'el_ramal','fueros':['social'],'nombre':'Ledesma Civil'},
+    {'codigo':'S20','region':'aledanias','fueros':['social','menores'],'nombre':'Palpala Civil'}
   ] %}
   <div class="cardx sedes-shell {{ 'is-infra' if show_infra else 'is-resumen' }}" style="padding:12px 14px;">
     {% if not show_infra %}
@@ -187,7 +187,8 @@
                href="{{ url_for('sede_ficha', codigo=sede.codigo) }}"
                data-region="{{ sede.region }}"
                data-fueros="{{ sede.fueros|join('|') }}"
-               title="Abrir sede {{ sede.codigo }}">
+               title="{{ sede.codigo }} - {{ sede.nombre }}"
+               aria-label="{{ sede.codigo }} - {{ sede.nombre }}">
               {{ render_sede_badge(sede.codigo) }}
             </a>
             {% endfor %}
