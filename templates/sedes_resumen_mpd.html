@@ -108,7 +108,8 @@
         <p>Vista r&aacute;pida de sedes por regi&oacute;n y fuero. Permite combinar filtros para identificar cobertura operativa.</p>
       </div>
       <div class="sedes-mapa-controls">
-        <button id="mapToggleFiltersBtn" type="button" class="btn xs">Mostrar filtros</button>
+        <button id="mapToggleContentBtn" type="button" class="btn xs">Mostrar mapa</button>
+        <button id="mapToggleFiltersBtn" type="button" class="btn xs" hidden>Mostrar filtros</button>
       </div>
 
       <div id="mapFiltersPanel" class="sedes-mapa-filters" hidden>
@@ -143,7 +144,7 @@
         </div>
       </div>
 
-      <div id="mapaOperativoResults" class="sedes-mapa-results">
+      <div id="mapaOperativoResults" class="sedes-mapa-results" hidden>
         {% for region in mapa_regions %}
         <section class="sedes-mapa-region js-map-region-block" data-region="{{ region.key }}">
           <h3>{{ region.title }}</h3>
@@ -1339,7 +1340,9 @@
   const mapSedeItems = document.querySelectorAll(".js-map-sede");
   const mapRegionBlocks = document.querySelectorAll(".js-map-region-block");
   const mapEmptyState = document.getElementById("mapaOperativoEmpty");
+  const mapResultsPanel = document.getElementById("mapaOperativoResults");
   const mapFiltersPanel = document.getElementById("mapFiltersPanel");
+  const mapToggleContentBtn = document.getElementById("mapToggleContentBtn");
   const mapToggleFiltersBtn = document.getElementById("mapToggleFiltersBtn");
   const tablaInventarioPrincipal = document.getElementById("tablaInventarioPrincipal");
   const toggleInvSecColsBtn = document.getElementById("toggleInvSecColsBtn");
@@ -1353,6 +1356,7 @@
   let activeMapFuero = "all";
   let activeMapRegion = "all";
   let activeMapOcupacion = "all";
+  let mapContentVisible = false;
   const filtroSede = document.getElementById("filtroSede");
   const filtroElemento = document.getElementById("filtroElemento");
   const mfFiltroSede = document.getElementById("mfFiltroSede");
@@ -1507,8 +1511,11 @@
       block.style.display = hasVisible ? "" : "none";
     });
 
+    if (mapResultsPanel) {
+      mapResultsPanel.hidden = !mapContentVisible;
+    }
     if (mapEmptyState) {
-      mapEmptyState.hidden = visibleCount > 0;
+      mapEmptyState.hidden = (!mapContentVisible || visibleCount > 0);
     }
 
     mapFueroButtons.forEach(btn => {
@@ -1565,19 +1572,41 @@
     }
   }
 
+  function setMapContentVisible(show) {
+    mapContentVisible = !!show;
+    if (mapToggleContentBtn) {
+      mapToggleContentBtn.textContent = show ? "Ocultar mapa" : "Mostrar mapa";
+      mapToggleContentBtn.classList.toggle("is-selected", !!show);
+    }
+    if (mapToggleFiltersBtn) {
+      mapToggleFiltersBtn.hidden = !show;
+    }
+    if (!show) {
+      setMapFiltersVisible(false);
+    }
+    applyMapaOperativoFilters();
+  }
+
   if (mapToggleFiltersBtn) {
     mapToggleFiltersBtn.addEventListener("click", () => {
       const isHidden = !!(mapFiltersPanel && mapFiltersPanel.hasAttribute("hidden"));
       setMapFiltersVisible(isHidden);
     });
-    setMapFiltersVisible(false);
   }
+
+  if (mapToggleContentBtn) {
+    mapToggleContentBtn.addEventListener("click", () => {
+      setMapContentVisible(!mapContentVisible);
+    });
+  }
+  setMapContentVisible(false);
 
   if (execDetailButtons.length > 0) {
     execDetailButtons.forEach(btn => {
       btn.addEventListener("click", () => {
         const region = btn.dataset.mapRegionTarget || "all";
         activeMapRegion = region;
+        setMapContentVisible(true);
         applyMapaOperativoFilters();
       });
     });
