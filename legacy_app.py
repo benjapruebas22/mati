@@ -8342,6 +8342,12 @@ def sedes_resumen_mpd():
         except Exception:
             return 0
 
+    def safe_float_val(raw):
+        try:
+            return float(raw or 0)
+        except Exception:
+            return 0.0
+
     def _redirect_infra():
         params = {}
         for k in ("infra_sede", "infra_deposito", "infra_fuero", "infra_criterio", "infra_estado_general", "infra_elemento", "edit_criterio", "asig_sede", "asig_deposito", "asig_criterio"):
@@ -8470,14 +8476,75 @@ def sedes_resumen_mpd():
         SELECT
             UPPER(COALESCE(codigo,'')) AS codigo,
             COALESCE(nombre,'') AS nombre,
-            UPPER(COALESCE(fuero,'')) AS fuero
+            UPPER(COALESCE(fuero,'')) AS fuero,
+            COALESCE(ciudad,'') AS ciudad,
+            COALESCE(direccion,'') AS direccion
         FROM sedes_mpd
         ORDER BY codigo
     """).fetchall()
     sedes_codigos = [str(r["codigo"] or "").strip().upper() for r in sedes_rows]
     sedes_nombre = {str(r["codigo"] or "").strip().upper(): str(r["nombre"] or "").strip() for r in sedes_rows}
     sedes_fuero = {str(r["codigo"] or "").strip().upper(): str(r["fuero"] or "").strip().upper() for r in sedes_rows}
+    sedes_ciudad = {str(r["codigo"] or "").strip().upper(): str(r["ciudad"] or "").strip() for r in sedes_rows}
+    sedes_direccion = {str(r["codigo"] or "").strip().upper(): str(r["direccion"] or "").strip() for r in sedes_rows}
     infra_fueros = sorted({f for f in sedes_fuero.values() if f})
+
+    sedes_region_defs = [
+        {"key": "san_salvador", "title": "San Salvador", "label": "San Salvador de Jujuy", "class": "region-san-salvador"},
+        {"key": "aledanias", "title": "Aledañas", "label": "Aledañas", "class": "region-aledanias"},
+        {"key": "el_ramal", "title": "El Ramal", "label": "El Ramal", "class": "region-el-ramal"},
+        {"key": "quebrada_puna", "title": "Quebrada y Puna", "label": "Quebrada y Puna", "class": "region-quebrada-puna"},
+    ]
+    sedes_region_map = {
+        "S01": "san_salvador",
+        "S08": "san_salvador",
+        "S11": "san_salvador",
+        "S12": "san_salvador",
+        "S13": "san_salvador",
+        "S03": "aledanias",
+        "S04": "aledanias",
+        "S07": "aledanias",
+        "S10": "aledanias",
+        "S17": "aledanias",
+        "S20": "aledanias",
+        "S02": "el_ramal",
+        "S06": "el_ramal",
+        "S19": "el_ramal",
+        "S05": "quebrada_puna",
+        "S14": "quebrada_puna",
+        "S15": "quebrada_puna",
+        "S16": "quebrada_puna",
+        "S18": "quebrada_puna",
+    }
+    sedes_fuero_map = {
+        "S01": {"principal": "penal", "secundarios": []},
+        "S02": {"principal": "penal", "secundarios": ["social", "menores"]},
+        "S03": {"principal": "penal", "secundarios": []},
+        "S04": {"principal": "penal", "secundarios": []},
+        "S05": {"principal": "penal", "secundarios": []},
+        "S06": {"principal": "penal", "secundarios": ["menores"]},
+        "S07": {"principal": "penal", "secundarios": []},
+        "S08": {"principal": "administracion", "secundarios": ["penal"]},
+        "S10": {"principal": "penal", "secundarios": ["social", "menores"]},
+        "S11": {"principal": "social", "secundarios": []},
+        "S12": {"principal": "administracion", "secundarios": ["penal"]},
+        "S13": {"principal": "menores", "secundarios": []},
+        "S14": {"principal": "social", "secundarios": ["menores"]},
+        "S15": {"principal": "social", "secundarios": ["menores"]},
+        "S16": {"principal": "social", "secundarios": ["menores"]},
+        "S17": {"principal": "social", "secundarios": ["menores"]},
+        "S18": {"principal": "social", "secundarios": ["menores"]},
+        "S19": {"principal": "social", "secundarios": []},
+        "S20": {"principal": "social", "secundarios": ["menores"]},
+    }
+    sedes_fuero_labels = {
+        "penal": "Penal",
+        "social": "Jurídico Social",
+        "menores": "Menores / Incapaces",
+        "administracion": "Administración",
+        "general": "General",
+    }
+    sedes_region_meta = {r["key"]: r for r in sedes_region_defs}
 
     dep_catalog = {}
     dep_filter_map = {}
@@ -9329,6 +9396,8 @@ def sedes_resumen_mpd():
     # ------------------------------------------------------------
     resumen_sedes_rows = []
     resumen_sedes_totals = {
+        "personas_total": 0,
+        "m2_total": 0.0,
         "mesa_pc": 0,
         "escritorio_prof": 0,
         "aires_total": 0,
@@ -9389,6 +9458,23 @@ def sedes_resumen_mpd():
             FROM luminarias_sede
             WHERE codigo_sede = ?
         """, (cod,))
+        m2_total = safe_float_val(safe_scalar("""
+            SELECT COALESCE(m2_totales,0)
+            FROM sedes_metricas
+            WHERE UPPER(COALESCE(sede_codigo,'')) = ?
+            ORDER BY datetime(COALESCE(actualizado_en,'1970-01-01')) DESC
+            LIMIT 1
+        """, (cod,)))
+        if m2_total <= 0:
+            m2_total = safe_float_val(safe_scalar("""
+                SELECT COALESCE(
+                    MAX(CASE WHEN COALESCE(m2_totales,0) > 0 THEN m2_totales END),
+                    MAX(CASE WHEN COALESCE(mts2_total,0) > 0 THEN mts2_total END),
+                    0
+                )
+                FROM sedes_infraestructura
+                WHERE UPPER(COALESCE(sede_codigo,'')) = ?
+            """, (cod,)))
         personas_total = safe_scalar("""
             SELECT COALESCE(COUNT(1),0)
             FROM personal_sede
@@ -9396,10 +9482,52 @@ def sedes_resumen_mpd():
               AND COALESCE(activo,1)=1
         """, (cod,))
         ocupacion_pct = int(round((float(personas_total) * 100.0) / float(puestos_trabajo))) if (puestos_trabajo or 0) > 0 else 0
+        if ocupacion_pct >= 80:
+            ocupacion_bucket = "alta"
+        elif ocupacion_pct >= 70:
+            ocupacion_bucket = "media"
+        else:
+            ocupacion_bucket = "disponible"
+
+        fuero_cfg = sedes_fuero_map.get(cod, {"principal": "general", "secundarios": []})
+        fuero_principal = str(fuero_cfg.get("principal") or "general").strip().lower()
+        fuero_secundarios = []
+        for f in (fuero_cfg.get("secundarios") or []):
+            fv = str(f or "").strip().lower()
+            if fv and fv != fuero_principal and fv not in fuero_secundarios:
+                fuero_secundarios.append(fv)
+        fueros_all = [fuero_principal] + fuero_secundarios
+        region_key = str(sedes_region_map.get(cod, "") or "").strip()
+        region_meta = sedes_region_meta.get(region_key) or {}
+        region_label = str(region_meta.get("label") or "Sin región")
+        region_title = str(region_meta.get("title") or region_label)
+
+        nombre_sede = str(s["nombre"] or "").strip()
+        direccion_sede = str(sedes_direccion.get(cod) or "").strip()
+        tooltip_parts = [f"{cod} - {nombre_sede or cod}"]
+        if direccion_sede and direccion_sede.lower() not in nombre_sede.lower():
+            tooltip_parts.append(direccion_sede)
+        tooltip_parts.append(" / ".join([sedes_fuero_labels.get(f, str(f).title()) for f in fueros_all]))
+        tooltip = "\n".join([p for p in tooltip_parts if p])
 
         resumen_sedes_rows.append({
             "codigo": cod,
             "nombre": s["nombre"],
+            "ciudad": sedes_ciudad.get(cod, ""),
+            "direccion": sedes_direccion.get(cod, ""),
+            "region_key": region_key,
+            "region_label": region_label,
+            "region_title": region_title,
+            "fuero_principal": fuero_principal,
+            "fuero_secundarios": fuero_secundarios,
+            "fueros_all": fueros_all,
+            "fuero_css_class": {
+                "penal": "fuero-penal",
+                "social": "fuero-social",
+                "menores": "fuero-menores",
+                "administracion": "fuero-admin",
+            }.get(fuero_principal, "fuero-neutral"),
+            "m2_total": m2_total,
             "mesa_pc": mesa_pc,
             "escritorio_prof": escritorio_prof,
             "silla_giratoria": silla_giratoria,
@@ -9411,6 +9539,8 @@ def sedes_resumen_mpd():
             "puestos_trabajo": puestos_trabajo,
             "personas_total": personas_total,
             "ocupacion_pct": ocupacion_pct,
+            "ocupacion_bucket": ocupacion_bucket,
+            "tooltip": tooltip,
         })
 
     def safe_row_val(row, key):
@@ -9421,6 +9551,7 @@ def sedes_resumen_mpd():
 
     for k in (
         "personas_total",
+        "m2_total",
         "mesa_pc",
         "escritorio_prof",
         "silla_giratoria",
@@ -9435,6 +9566,7 @@ def sedes_resumen_mpd():
 
     for r in resumen_sedes_rows:
         resumen_sedes_totals["personas_total"] += safe_row_val(r, "personas_total") or 0
+        resumen_sedes_totals["m2_total"] += safe_float_val(safe_row_val(r, "m2_total") or 0)
         resumen_sedes_totals["mesa_pc"] += safe_row_val(r, "mesa_pc") or 0
         resumen_sedes_totals["escritorio_prof"] += safe_row_val(r, "escritorio_prof") or 0
         resumen_sedes_totals["silla_giratoria"] += safe_row_val(r, "silla_giratoria") or 0
@@ -9444,6 +9576,47 @@ def sedes_resumen_mpd():
         resumen_sedes_totals["aires_total"] += safe_row_val(r, "aires_total") or 0
         resumen_sedes_totals["luminarias_total"] += safe_row_val(r, "luminarias_total") or 0
         resumen_sedes_totals["puestos_trabajo"] += safe_row_val(r, "puestos_trabajo") or 0
+
+    resumen_region_cards = {}
+    for region in sedes_region_defs:
+        resumen_region_cards[region["key"]] = {
+            "key": region["key"],
+            "title": region["title"],
+            "label": region["label"],
+            "class": region["class"],
+            "sedes": 0,
+            "personas": 0,
+            "m2_total": 0.0,
+            "puestos_trabajo": 0,
+            "ocupacion_pct": 0,
+            "estado": "Disponible",
+            "estado_key": "disponible",
+        }
+
+    for r in resumen_sedes_rows:
+        rk = str(r.get("region_key") or "").strip()
+        if rk not in resumen_region_cards:
+            continue
+        item = resumen_region_cards[rk]
+        item["sedes"] += 1
+        item["personas"] += int(r.get("personas_total") or 0)
+        item["m2_total"] += safe_float_val(r.get("m2_total") or 0)
+        item["puestos_trabajo"] += int(r.get("puestos_trabajo") or 0)
+
+    for rk, item in resumen_region_cards.items():
+        puestos_r = int(item.get("puestos_trabajo") or 0)
+        personas_r = int(item.get("personas") or 0)
+        ocup = int(round((float(personas_r) * 100.0) / float(puestos_r))) if puestos_r > 0 else 0
+        item["ocupacion_pct"] = ocup
+        if ocup >= 80:
+            item["estado"] = "Alto"
+            item["estado_key"] = "alto"
+        elif ocup >= 70:
+            item["estado"] = "Medio"
+            item["estado_key"] = "medio"
+        else:
+            item["estado"] = "Disponible"
+            item["estado_key"] = "disponible"
 
     # Vencimientos globales de matafuegos (todas las sedes).
     matafuegos_vto_raw = db.execute("""
@@ -9528,6 +9701,9 @@ def sedes_resumen_mpd():
         is_infra_screen=(request.endpoint == "infra_analisis"),
         rows=resumen_sedes_rows,
         totals=resumen_sedes_totals,
+        sedes_region_defs=sedes_region_defs,
+        sedes_region_cards=resumen_region_cards,
+        sedes_fuero_labels=sedes_fuero_labels,
         infra_rows=infra_rows,
         infra_totals=infra_totals,
         infra_sede=infra_sede,

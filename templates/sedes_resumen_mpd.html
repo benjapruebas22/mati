@@ -13,80 +13,35 @@
   } %}
   {% set show_infra = is_infra_screen|default(false) %}
   {% set infra_nav_endpoint = 'infra_analisis' if show_infra else 'sedes_resumen_mpd' %}
-  {% set region_map = {
-    'S01':'san_salvador','S08':'san_salvador','S11':'san_salvador','S12':'san_salvador','S13':'san_salvador',
-    'S03':'aledanias','S04':'aledanias','S07':'aledanias','S10':'aledanias','S17':'aledanias','S20':'aledanias',
-    'S02':'el_ramal','S06':'el_ramal','S19':'el_ramal',
-    'S05':'quebrada_puna','S14':'quebrada_puna','S15':'quebrada_puna','S16':'quebrada_puna','S18':'quebrada_puna'
-  } %}
-  {% set mapa_regions = [
-    {'key':'san_salvador','label':'San Salvador de Jujuy','title':'San Salvador'},
-    {'key':'aledanias','label':'Aledañas','title':'Aledañas'},
-    {'key':'el_ramal','label':'El Ramal','title':'El Ramal'},
-    {'key':'quebrada_puna','label':'Quebrada y Puna','title':'Quebrada y Puna'}
-  ] %}
-  {% set region_exec_cards = [
-    {'key':'san_salvador','class':'region-san-salvador','title':'San Salvador','sedes':5,'personas':157,'m2':1450,'ocupacion':91,'ocupacion_key':'alta','estado':'Alto','estado_key':'alto','disponibilidad_key':'baja'},
-    {'key':'aledanias','class':'region-aledanias','title':'Aledañas','sedes':6,'personas':64,'m2':710,'ocupacion':73,'ocupacion_key':'media','estado':'Medio','estado_key':'medio','disponibilidad_key':'media'},
-    {'key':'el_ramal','class':'region-el-ramal','title':'El Ramal','sedes':3,'personas':33,'m2':420,'ocupacion':84,'ocupacion_key':'alta','estado':'Alto','estado_key':'alto','disponibilidad_key':'baja'},
-    {'key':'quebrada_puna','class':'region-quebrada-puna','title':'Quebrada y Puna','sedes':5,'personas':72,'m2':980,'ocupacion':62,'ocupacion_key':'disponible','estado':'Disponible','estado_key':'disponible','disponibilidad_key':'alta'}
-  ] %}
-  {% set region_m2_totals = {'san_salvador':1450,'aledanias':710,'el_ramal':420,'quebrada_puna':980} %}
-  {% set region_sede_counts = {'san_salvador':5,'aledanias':6,'el_ramal':3,'quebrada_puna':5} %}
-  {% set mapa_sedes = [
-    {'codigo':'S01','region':'san_salvador','fueros':['penal'],'nombre':'Independencia 202','tooltip':'S01 - Independencia 202 - Penal','ocupacion':'alta'},
-    {'codigo':'S02','region':'el_ramal','fueros':['penal','social','menores'],'nombre':'San Pedro','tooltip':'S02 - San Pedro Penal / Juridico Social / Menores','ocupacion':'alta'},
-    {'codigo':'S03','region':'aledanias','fueros':['penal'],'nombre':'Perico Penal','tooltip':'S03 - Perico Penal','ocupacion':'media'},
-    {'codigo':'S04','region':'aledanias','fueros':['penal'],'nombre':'Alto Comedero','tooltip':'S04 - Alto Comedero Penal','ocupacion':'media'},
-    {'codigo':'S05','region':'quebrada_puna','fueros':['penal'],'nombre':'Humahuaca Penal','tooltip':'S05 - Humahuaca Penal','ocupacion':'disponible'},
-    {'codigo':'S06','region':'el_ramal','fueros':['penal','menores'],'nombre':'Ledesma Penal','tooltip':'S06 - Ledesma Penal / Menores','ocupacion':'alta'},
-    {'codigo':'S07','region':'aledanias','fueros':['penal'],'nombre':'Palpala Penal','tooltip':'S07 - Palpala Penal','ocupacion':'media'},
-    {'codigo':'S08','region':'san_salvador','fueros':['administracion','penal'],'nombre':'San Martin 137','tooltip':'S08 - San Martin 137&#10;Administracion General + Violencia Institucional','ocupacion':'alta'},
-    {'codigo':'S10','region':'aledanias','fueros':['penal','social','menores'],'nombre':'El Carmen','tooltip':'S10 - El Carmen Penal','ocupacion':'media'},
-    {'codigo':'S11','region':'san_salvador','fueros':['social'],'nombre':'Gorriti 791','tooltip':'S11 - Gorriti 791 - Juridico Social','ocupacion':'alta'},
-    {'codigo':'S12','region':'san_salvador','fueros':['administracion','penal'],'nombre':'Belgrano','tooltip':'S12 - Belgrano&#10;Equipo Interdisciplinario + Ejecucion de Pena','ocupacion':'alta'},
-    {'codigo':'S13','region':'san_salvador','fueros':['menores'],'nombre':'San Martin 271','tooltip':'S13 - San Martin 271 - Menores / Incapaces','ocupacion':'alta'},
-    {'codigo':'S14','region':'quebrada_puna','fueros':['social','menores'],'nombre':'Tilcara','tooltip':'S14 - Tilcara Juridico Social / Menores','ocupacion':'disponible'},
-    {'codigo':'S15','region':'quebrada_puna','fueros':['social','menores'],'nombre':'Abra Pampa','tooltip':'S15 - Abra Pampa Juridico Social / Menores','ocupacion':'disponible'},
-    {'codigo':'S16','region':'quebrada_puna','fueros':['social','menores'],'nombre':'La Quiaca','tooltip':'S16 - La Quiaca Juridico Social / Menores','ocupacion':'disponible'},
-    {'codigo':'S17','region':'aledanias','fueros':['social','menores'],'nombre':'Perico Civil','tooltip':'S17 - Perico Civil','ocupacion':'media'},
-    {'codigo':'S18','region':'quebrada_puna','fueros':['social','menores'],'nombre':'Humahuaca Civil','tooltip':'S18 - Humahuaca Civil','ocupacion':'disponible'},
-    {'codigo':'S19','region':'el_ramal','fueros':['social'],'nombre':'Ledesma Civil','tooltip':'S19 - Ledesma Civil','ocupacion':'alta'},
-    {'codigo':'S20','region':'aledanias','fueros':['social','menores'],'nombre':'Palpala Civil','tooltip':'S20 - Palpala Civil','ocupacion':'media'}
-  ] %}
+  {% set mapa_regions = sedes_region_defs|default([]) %}
+  {% set region_exec_cards = sedes_region_cards|default({}) %}
   <div class="cardx sedes-shell {{ 'is-infra' if show_infra else 'is-resumen' }}" style="padding:10px 12px;">
     {% if not show_infra %}
     <div class="sedes-portada-main">
       <div>
         <div class="sedes-portada-kicker">SEDES</div>
         <h1 class="sedes-portada-title">MPD - Sedes Operativas</h1>
-        <p class="sedes-portada-subtitle">Distribución territorial, cobertura y estructura operativa de sedes del Ministerio Público de la Defensa de la Provincia de Jujuy.</p>
+        <p class="sedes-portada-subtitle">Vista ejecutiva territorial por sedes, fueros y ocupacion.</p>
       </div>
       <div class="sedes-portada-actions">
         <a class="btn" href="{{ url_for('depositos_home') }}" title="Stock operativo institucional: banners, camillas, escaleras y elementos protocolares.">GENERAL MPD</a>
+        <a class="btn xs" href="{{ url_for('sedes_contexto_historico_mpd') }}">Contexto historico MPD</a>
       </div>
     </div>
 
-    <div id="contexto-territorial" class="sedes-context-box">
-      <h2 style="margin:0;font-size:15px;color:#0f172a;font-weight:700;">Contexto territorial</h2>
-      <p class="sedes-subtitle-soft">Vista ejecutiva por regiones. El detalle por sede y fuero se navega en Mapa Operativo Territorial.</p>
-      <div class="sedes-context-actions">
-        <a class="btn xs" href="{{ url_for('sedes_contexto_historico_mpd') }}">Contexto histórico MPD</a>
-      </div>
-    </div>
-
-    <div class="sedes-region-grid sedes-region-grid-exec">
-      {% for region in region_exec_cards %}
-      <article class="sedes-region-card sedes-region-exec {{ region.class }}">
+    <div class="sedes-region-grid sedes-region-grid-exec" id="sedesRegionCards">
+      {% for region in mapa_regions %}
+      {% set stats = region_exec_cards.get(region.key, {}) %}
+      <article class="sedes-region-card sedes-region-exec {{ region.class }} js-region-card" data-region-card="{{ region.key }}">
         <h3>{{ region.title }}</h3>
         <div class="sedes-region-kpis">
-          <span><strong>Sedes:</strong> {{ region.sedes }}</span>
-          <span><strong>Personas:</strong> {{ region.personas }}</span>
-          <span><strong>m²:</strong> {{ region.m2 }}</span>
-          <span><strong>Ocupación:</strong> {{ region.ocupacion }}%</span>
+          <span><strong>Sedes:</strong> <span class="js-card-sedes">{{ stats.sedes or 0 }}</span></span>
+          <span><strong>Personas:</strong> <span class="js-card-personas">{{ stats.personas or 0 }}</span></span>
+          <span><strong>m2:</strong> <span class="js-card-m2">{{ (stats.m2_total or 0)|round(0)|int }}</span></span>
+          <span><strong>Ocupacion:</strong> <span class="js-card-ocupacion">{{ stats.ocupacion_pct or 0 }}</span>%</span>
         </div>
         <div class="sedes-region-foot">
-          <span class="exec-estado {{ 'is-alto' if region.estado_key == 'alto' else ('is-medio' if region.estado_key == 'medio' else 'is-disponible') }}">Estado: {{ region.estado }}</span>
+          <span class="exec-estado js-card-estado {{ 'is-alto' if stats.estado_key == 'alto' else ('is-medio' if stats.estado_key == 'medio' else 'is-disponible') }}">Estado: {{ stats.estado or 'Disponible' }}</span>
           <a class="btn xs btn-secondary js-exec-detail" href="#mapa-operativo-territorial" data-map-region-target="{{ region.key }}">Ver detalle</a>
         </div>
       </article>
@@ -108,23 +63,23 @@
           <div class="sedes-mapa-chip-group" id="mapFueroChips">
             <button type="button" class="btn xs is-selected js-map-fuero" data-fuero="all">Todos</button>
             <button type="button" class="btn xs js-map-fuero" data-fuero="penal">Penal</button>
-            <button type="button" class="btn xs js-map-fuero" data-fuero="social">Jur&iacute;dico Social</button>
+            <button type="button" class="btn xs js-map-fuero" data-fuero="social">Juridico Social</button>
             <button type="button" class="btn xs js-map-fuero" data-fuero="menores">Menores / Incapaces</button>
-            <button type="button" class="btn xs js-map-fuero" data-fuero="administracion">Administraci&oacute;n</button>
+            <button type="button" class="btn xs js-map-fuero" data-fuero="administracion">Administracion</button>
           </div>
         </div>
         <div class="sedes-mapa-filter-row">
-          <span class="sedes-mapa-filter-label">Región</span>
+          <span class="sedes-mapa-filter-label">Region</span>
           <div class="sedes-mapa-chip-group" id="mapRegionChips">
             <button type="button" class="btn xs is-selected js-map-region" data-region="all">Todas</button>
             <button type="button" class="btn xs js-map-region" data-region="san_salvador">San Salvador</button>
-            <button type="button" class="btn xs js-map-region" data-region="aledanias">Aledañas</button>
+            <button type="button" class="btn xs js-map-region" data-region="aledanias">Aledanas</button>
             <button type="button" class="btn xs js-map-region" data-region="el_ramal">El Ramal</button>
             <button type="button" class="btn xs js-map-region" data-region="quebrada_puna">Quebrada y Puna</button>
           </div>
         </div>
         <div class="sedes-mapa-filter-row">
-          <span class="sedes-mapa-filter-label">Ocupación</span>
+          <span class="sedes-mapa-filter-label">Ocupacion</span>
           <div class="sedes-mapa-chip-group" id="mapOcupacionChips">
             <button type="button" class="btn xs is-selected js-map-ocupacion" data-ocupacion="all">Todas</button>
             <button type="button" class="btn xs js-map-ocupacion" data-ocupacion="alta">Alta</button>
@@ -139,14 +94,15 @@
         <section class="sedes-mapa-region js-map-region-block" data-region="{{ region.key }}">
           <h3>{{ region.title }}</h3>
           <div class="sedes-mapa-badges">
-            {% for sede in mapa_sedes if sede.region == region.key %}
+            {% for sede in rows if sede.region_key == region.key %}
             <a class="sedes-mapa-badge-link js-map-sede"
                href="{{ url_for('sede_ficha', codigo=sede.codigo) }}"
-               data-region="{{ sede.region }}"
-               data-fueros="{{ sede.fueros|join('|') }}"
-               data-ocupacion="{{ sede.ocupacion }}"
-               title="{{ sede.tooltip }}"
-               aria-label="{{ sede.tooltip|replace('&#10;',' - ') }}">
+               data-sede="{{ sede.codigo }}"
+               data-region="{{ sede.region_key }}"
+               data-fueros="{{ (sede.fueros_all or [])|join('|') }}"
+               data-ocupacion="{{ sede.ocupacion_bucket }}"
+               title="{{ (sede.tooltip or (sede.codigo ~ ' - ' ~ sede.nombre))|replace('\n', ' - ') }}"
+               aria-label="{{ (sede.tooltip or (sede.codigo ~ ' - ' ~ sede.nombre))|replace('\n', ' - ') }}">
               {{ render_sede_badge(sede.codigo) }}
             </a>
             {% endfor %}
@@ -155,17 +111,19 @@
         {% endfor %}
       </div>
       <div id="mapaOperativoEmpty" class="sedes-mapa-empty" hidden>
-        No hay sedes para la combinación de filtros seleccionada.
+        No hay sedes para la combinacion de filtros seleccionada.
       </div>
     </div>
 
-    <div id="resumen-operativo-general"></div>
     <div id="resumen-inventario-top" style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;overflow:auto;background:#fff;">
       <div style="padding:10px 12px;border-bottom:1px solid #e5e7eb;font-weight:700;color:#334155;">Resumen operativo por sede</div>
-      <div style="padding:8px 12px;border-bottom:1px solid #e5e7eb;display:flex;gap:8px;flex-wrap:wrap;font-size:12px;background:#fafafa;">
-        <span class="state info"><strong>Puestos de trabajo (total):</strong> {{ totals.puestos_trabajo or 0 }}</span>
-        <span class="state info"><strong>Personas (total):</strong> {{ totals.personas_total or 0 }}</span>
-        <span class="state info"><strong>Luminarias (total):</strong> {{ totals.luminarias_total or 0 }}</span>
+      <div id="sedesSummaryBar" style="padding:8px 12px;border-bottom:1px solid #e5e7eb;display:flex;gap:8px;flex-wrap:wrap;font-size:12px;background:#fafafa;">
+        <span class="state info" id="summaryFilterScope"><strong>Mostrando:</strong> Todas las regiones</span>
+        <span class="state info"><strong>Sedes:</strong> <span id="summarySedes">{{ rows|length }}</span></span>
+        <span class="state info"><strong>Personas:</strong> <span id="summaryPersonas">{{ totals.personas_total or 0 }}</span></span>
+        <span class="state info"><strong>m2:</strong> <span id="summaryM2">{{ (totals.m2_total or 0)|round(0)|int }}</span></span>
+        <span class="state info"><strong>Puestos:</strong> <span id="summaryPuestos">{{ totals.puestos_trabajo or 0 }}</span></span>
+        <span class="state info"><strong>Luminarias:</strong> <span id="summaryLuminarias">{{ totals.luminarias_total or 0 }}</span></span>
       </div>
       <div class="sedes-table-toolbar">
         <button id="toggleInvSecColsBtn" type="button" class="btn xs">Mostrar columnas secundarias</button>
@@ -176,8 +134,8 @@
           <tr>
             <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Sede</th>
             <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Personas</th>
-            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">m²</th>
-            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Ocupación</th>
+            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">m?</th>
+            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Ocupacion</th>
             <th class="inv-sec-col" style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Nombre</th>
             <th class="inv-sec-col" style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Mesas PC</th>
             <th class="inv-sec-col" style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Escritorios profesionales</th>
@@ -192,19 +150,31 @@
         </thead>
         <tbody>
           {% for r in rows %}
-          {% set code = (r.codigo or '')|upper %}
-          {% set cls = fuero_map.get(code, 'fuero-neutral') %}
-          {% set region_key = region_map.get(code, '') %}
-          {% set m2_ref = (region_m2_totals.get(region_key, 0) / region_sede_counts.get(region_key, 1)) if region_key else 0 %}
           {% set total_mob = (r.mesa_pc or 0) + (r.escritorio_prof or 0) + (r.silla_giratoria or 0) + (r.silla_fija or 0) + (r.armario_alto or 0) + (r.biblioteca_baja or 0) + (r.aires_total or 0) %}
-          <tr data-region="{{ region_key }}">
+          <tr class="js-resumen-row"
+              data-sede="{{ r.codigo }}"
+              data-region="{{ r.region_key or '' }}"
+              data-fueros="{{ (r.fueros_all or [])|join('|') }}"
+              data-ocupacion="{{ r.ocupacion_bucket or 'disponible' }}"
+              data-val-personas="{{ r.personas_total or 0 }}"
+              data-val-m2="{{ r.m2_total or 0 }}"
+              data-val-puestos="{{ r.puestos_trabajo or 0 }}"
+              data-val-luminarias="{{ r.luminarias_total or 0 }}"
+              data-val-mesa_pc="{{ r.mesa_pc or 0 }}"
+              data-val-escritorio_prof="{{ r.escritorio_prof or 0 }}"
+              data-val-silla_giratoria="{{ r.silla_giratoria or 0 }}"
+              data-val-silla_fija="{{ r.silla_fija or 0 }}"
+              data-val-armario_alto="{{ r.armario_alto or 0 }}"
+              data-val-biblioteca_baja="{{ r.biblioteca_baja or 0 }}"
+              data-val-aires_total="{{ r.aires_total or 0 }}"
+              data-val-total_mob="{{ total_mob }}">
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
-              <a href="{{ url_for('sede_ficha', codigo=r.codigo) }}" style="text-decoration:none;">
+              <a href="{{ url_for('sede_ficha', codigo=r.codigo) }}" style="text-decoration:none;" title="{{ (r.tooltip or (r.codigo ~ ' - ' ~ r.nombre))|replace('\n', ' - ') }}">
                 {{ render_sede_badge(r.codigo) }}
               </a>
             </td>
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.personas_total or 0 }}</td>
-            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ m2_ref|round(0)|int if m2_ref > 0 else '-' }}</td>
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ (r.m2_total or 0)|round(0)|int if (r.m2_total or 0) > 0 else '-' }}</td>
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.ocupacion_pct or 0 }}%</td>
             <td class="inv-sec-col" style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.nombre }}</td>
             <td class="inv-sec-col" style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.mesa_pc }}</td>
@@ -217,9 +187,9 @@
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;font-weight:600;">{{ total_mob }}</td>
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
               <div class="inv-actions-cell">
-                <a class="btn xs btn-sede-abrir {{ cls }}" href="{{ url_for('sede_ficha', codigo=r.codigo) }}">Abrir</a>
+                <a class="btn xs btn-sede-abrir {{ r.fuero_css_class or 'fuero-neutral' }}" href="{{ url_for('sede_ficha', codigo=r.codigo) }}">Abrir</a>
                 <a class="btn xs btn-sede-bienes" href="{{ url_for('bienes_sede', infra_sede=r.codigo) }}">Bienes</a>
-                <a class="btn xs btn-sede-analisis" href="{{ url_for('infra_analisis', sede=r.codigo) }}#infra-analisis">Análisis</a>
+                <a class="btn xs btn-sede-analisis" href="{{ url_for('infra_analisis', sede=r.codigo) }}#infra-analisis">Analisis</a>
               </div>
             </td>
           </tr>
@@ -227,22 +197,21 @@
         </tbody>
         <tfoot style="background:#f8fafc;">
           {% set total_mob_all = (totals.mesa_pc or 0) + (totals.escritorio_prof or 0) + (totals.silla_giratoria or 0) + (totals.silla_fija or 0) + (totals.armario_alto or 0) + (totals.biblioteca_baja or 0) + (totals.aires_total or 0) %}
-          {% set total_m2_all = 3560 %}
           {% set ocupacion_total = (((totals.personas_total or 0) * 100) / (totals.puestos_trabajo or 1)) if (totals.puestos_trabajo or 0) > 0 else 0 %}
           <tr>
             <td style="padding:8px;border-top:1px solid #e5e7eb;font-weight:700;">Totales</td>
-            <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.personas_total or 0 }}</td>
-            <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ total_m2_all|int }}</td>
-            <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ ocupacion_total|round(0)|int }}%</td>
+            <td id="tfootPersonas" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.personas_total or 0 }}</td>
+            <td id="tfootM2" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ (totals.m2_total or 0)|round(0)|int }}</td>
+            <td id="tfootOcupacion" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ ocupacion_total|round(0)|int }}%</td>
             <td class="inv-sec-col" style="padding:8px;border-top:1px solid #e5e7eb;"></td>
-            <td class="inv-sec-col" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.mesa_pc }}</td>
-            <td class="inv-sec-col" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.escritorio_prof }}</td>
-            <td class="inv-sec-col" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.silla_giratoria }}</td>
-            <td class="inv-sec-col" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.silla_fija }}</td>
-            <td class="inv-sec-col" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.armario_alto }}</td>
-            <td class="inv-sec-col" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.biblioteca_baja }}</td>
-            <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.aires_total }}</td>
-            <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ total_mob_all }}</td>
+            <td id="tfootMesaPc" class="inv-sec-col" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.mesa_pc }}</td>
+            <td id="tfootEscritorioProf" class="inv-sec-col" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.escritorio_prof }}</td>
+            <td id="tfootSillaGiratoria" class="inv-sec-col" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.silla_giratoria }}</td>
+            <td id="tfootSillaFija" class="inv-sec-col" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.silla_fija }}</td>
+            <td id="tfootArmarioAlto" class="inv-sec-col" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.armario_alto }}</td>
+            <td id="tfootBibliotecaBaja" class="inv-sec-col" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.biblioteca_baja }}</td>
+            <td id="tfootAires" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.aires_total }}</td>
+            <td id="tfootTotalMob" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ total_mob_all }}</td>
             <td style="padding:8px;border-top:1px solid #e5e7eb;"></td>
           </tr>
         </tfoot>
@@ -1325,21 +1294,6 @@
     color: #475569;
   }
 
-  #regionFilterStatus {
-    background: #f7f9fc;
-    border: 1px solid #d9e2f2;
-    color: #334155;
-    border-radius: 999px;
-    padding: 4px 10px;
-    font-weight: 600;
-  }
-
-  #regionFilterStatus.is-active {
-    background: #eef4ff;
-    border-color: #bfd2f3;
-    color: #1f5fcc;
-  }
-
   @media (max-width: 700px) {
     .sedes-portada-title {
       font-size: 20px;
@@ -1378,113 +1332,133 @@
 </style>
 
 <script>
-  const regionButtons = document.querySelectorAll(".js-region-focus");
-  const execDetailButtons = document.querySelectorAll(".js-exec-detail");
-  const regionFilterStatus = document.getElementById("regionFilterStatus");
-  const clearRegionFilterBtn = document.getElementById("clearRegionFilterBtn");
-  const mapFueroButtons = document.querySelectorAll(".js-map-fuero");
-  const mapRegionButtons = document.querySelectorAll(".js-map-region");
-  const mapOcupacionButtons = document.querySelectorAll(".js-map-ocupacion");
-  const mapSedeItems = document.querySelectorAll(".js-map-sede");
-  const mapRegionBlocks = document.querySelectorAll(".js-map-region-block");
-  const mapEmptyState = document.getElementById("mapaOperativoEmpty");
-  const mapResultsPanel = document.getElementById("mapaOperativoResults");
-  const mapFiltersPanel = document.getElementById("mapFiltersPanel");
-  const mapToggleContentBtn = document.getElementById("mapToggleContentBtn");
-  const mapToggleFiltersBtn = document.getElementById("mapToggleFiltersBtn");
-  const tablaInventarioPrincipal = document.getElementById("tablaInventarioPrincipal");
-  const toggleInvSecColsBtn = document.getElementById("toggleInvSecColsBtn");
-  const regionNames = {
-    san_salvador: "San Salvador de Jujuy",
-    aledanias: "Aledañas",
-    el_ramal: "El Ramal",
-    quebrada_puna: "Quebrada y Puna"
+  const isInfraScreen = {{ 'true' if show_infra else 'false' }};
+
+  const mapFueroButtons = document.querySelectorAll('.js-map-fuero');
+  const mapRegionButtons = document.querySelectorAll('.js-map-region');
+  const mapOcupacionButtons = document.querySelectorAll('.js-map-ocupacion');
+  const mapSedeItems = document.querySelectorAll('.js-map-sede');
+  const mapRegionBlocks = document.querySelectorAll('.js-map-region-block');
+  const mapEmptyState = document.getElementById('mapaOperativoEmpty');
+  const mapResultsPanel = document.getElementById('mapaOperativoResults');
+  const mapFiltersPanel = document.getElementById('mapFiltersPanel');
+  const mapToggleContentBtn = document.getElementById('mapToggleContentBtn');
+  const mapToggleFiltersBtn = document.getElementById('mapToggleFiltersBtn');
+
+  const resumenRows = document.querySelectorAll('.js-resumen-row');
+  const regionCards = document.querySelectorAll('.js-region-card');
+  const execDetailButtons = document.querySelectorAll('.js-exec-detail');
+  const tablaInventarioPrincipal = document.getElementById('tablaInventarioPrincipal');
+  const toggleInvSecColsBtn = document.getElementById('toggleInvSecColsBtn');
+
+  const summaryFilterScope = document.getElementById('summaryFilterScope');
+  const summarySedes = document.getElementById('summarySedes');
+  const summaryPersonas = document.getElementById('summaryPersonas');
+  const summaryM2 = document.getElementById('summaryM2');
+  const summaryPuestos = document.getElementById('summaryPuestos');
+  const summaryLuminarias = document.getElementById('summaryLuminarias');
+
+  const tfootPersonas = document.getElementById('tfootPersonas');
+  const tfootM2 = document.getElementById('tfootM2');
+  const tfootOcupacion = document.getElementById('tfootOcupacion');
+  const tfootMesaPc = document.getElementById('tfootMesaPc');
+  const tfootEscritorioProf = document.getElementById('tfootEscritorioProf');
+  const tfootSillaGiratoria = document.getElementById('tfootSillaGiratoria');
+  const tfootSillaFija = document.getElementById('tfootSillaFija');
+  const tfootArmarioAlto = document.getElementById('tfootArmarioAlto');
+  const tfootBibliotecaBaja = document.getElementById('tfootBibliotecaBaja');
+  const tfootAires = document.getElementById('tfootAires');
+  const tfootTotalMob = document.getElementById('tfootTotalMob');
+
+  const regionLabels = {
+    san_salvador: 'San Salvador de Jujuy',
+    aledanias: 'Aledanas',
+    el_ramal: 'El Ramal',
+    quebrada_puna: 'Quebrada y Puna'
+  };
+  const fueroLabels = {
+    penal: 'Penal',
+    social: 'Juridico Social',
+    menores: 'Menores / Incapaces',
+    administracion: 'Administracion'
+  };
+  const ocupacionLabels = {
+    alta: 'Ocupacion alta',
+    media: 'Ocupacion media',
+    disponible: 'Disponibilidad'
   };
 
-  let activeMapFuero = "all";
-  let activeMapRegion = "all";
-  let activeMapOcupacion = "all";
-  let mapContentVisible = false;
-  const filtroSede = document.getElementById("filtroSede");
-  const filtroElemento = document.getElementById("filtroElemento");
-  const mfFiltroSede = document.getElementById("mfFiltroSede");
-  const mfFiltroEstado = document.getElementById("mfFiltroEstado");
   const allCols = [
-    "mesa_pc",
-    "escritorio_prof",
-    "silla_giratoria",
-    "silla_fija",
-    "armario_alto",
-    "biblioteca_baja",
-    "aires_total",
-    "luminarias_total",
-    "puestos_trabajo"
+    'mesa_pc',
+    'escritorio_prof',
+    'silla_giratoria',
+    'silla_fija',
+    'armario_alto',
+    'biblioteca_baja',
+    'aires_total',
+    'luminarias_total',
+    'puestos_trabajo'
   ];
+
+  const filtroSede = document.getElementById('filtroSede');
+  const filtroElemento = document.getElementById('filtroElemento');
+  const mfFiltroSede = document.getElementById('mfFiltroSede');
+  const mfFiltroEstado = document.getElementById('mfFiltroEstado');
+
+  let mapContentVisible = false;
+  const activeFilters = {
+    fuero: 'all',
+    region: 'all',
+    ocupacion: 'all'
+  };
+
+  function toNum(raw) {
+    const n = Number(raw || 0);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function ocupacionKeyFromPct(pct) {
+    if (pct >= 80) return 'alta';
+    if (pct >= 70) return 'media';
+    return 'disponible';
+  }
+
+  function estadoFromPct(pct) {
+    if (pct >= 80) return { key: 'alto', label: 'Alto' };
+    if (pct >= 70) return { key: 'medio', label: 'Medio' };
+    return { key: 'disponible', label: 'Disponible' };
+  }
 
   function setColumnVisibility(selected) {
     allCols.forEach(col => {
       const show = !selected || selected === col;
       document.querySelectorAll(`[data-col="${col}"]`).forEach(el => {
-        el.style.display = show ? "" : "none";
+        el.style.display = show ? '' : 'none';
       });
     });
-  }
-
-  function applyRegionTableFilter(regionKey) {
-    const rows = document.querySelectorAll("#resumen-inventario-top tbody tr[data-region]");
-    if (!rows.length) return;
-
-    rows.forEach(tr => {
-      const rowRegion = tr.dataset.region || "";
-      tr.style.display = (!regionKey || rowRegion === regionKey) ? "" : "none";
-    });
-
-    if (regionButtons.length > 0) {
-      regionButtons.forEach(btn => {
-        const same = (btn.dataset.regionTarget || "") === (regionKey || "");
-        btn.classList.toggle("is-selected", !!same && !!regionKey);
-      });
-    }
-
-    if (regionFilterStatus) {
-      if (regionKey) {
-        regionFilterStatus.textContent = `Mostrando región: ${regionNames[regionKey] || regionKey}.`;
-        regionFilterStatus.classList.add("is-active");
-        regionFilterStatus.style.display = "";
-      } else {
-        regionFilterStatus.textContent = "";
-        regionFilterStatus.classList.remove("is-active");
-        regionFilterStatus.style.display = "none";
-      }
-    }
-    if (clearRegionFilterBtn) {
-      clearRegionFilterBtn.style.display = regionKey ? "" : "none";
-      clearRegionFilterBtn.classList.toggle("is-selected", !!regionKey);
-    }
   }
 
   function applyResumenFiltros() {
-    const sede = filtroSede.value || "";
-    const item = filtroElemento.value || "";
+    if (!filtroSede || !filtroElemento) return;
+    const sede = filtroSede.value || '';
+    const item = filtroElemento.value || '';
     setColumnVisibility(item);
 
-    document.querySelectorAll("tbody tr[data-sede]").forEach(tr => {
-      const rowSede = tr.dataset.sede || "";
-      tr.style.display = (!sede || rowSede === sede) ? "" : "none";
+    document.querySelectorAll('tbody tr[data-sede]').forEach(tr => {
+      const rowSede = tr.dataset.sede || '';
+      tr.style.display = (!sede || rowSede === sede) ? '' : 'none';
     });
 
     const totals = {};
     allCols.forEach(c => totals[c] = 0);
-    document.querySelectorAll("tbody tr[data-sede]").forEach(tr => {
-      if (tr.style.display === "none") {
-        return;
-      }
+    document.querySelectorAll('tbody tr[data-sede]').forEach(tr => {
+      if (tr.style.display === 'none') return;
       allCols.forEach(c => {
         const attr = tr.getAttribute(`data-val-${c}`);
-        const val = parseFloat(attr || "0") || 0;
-        totals[c] += val;
+        totals[c] += toNum(attr);
       });
     });
+
     allCols.forEach(c => {
       const cell = document.getElementById(`total_${c}`);
       if (cell) cell.textContent = totals[c];
@@ -1493,196 +1467,282 @@
 
   function resetFiltrosResumen() {
     if (!filtroSede || !filtroElemento) return;
-    filtroSede.value = "";
-    filtroElemento.value = "";
+    filtroSede.value = '';
+    filtroElemento.value = '';
     applyResumenFiltros();
   }
 
+  window.resetFiltrosResumen = resetFiltrosResumen;
+
   if (filtroSede && filtroElemento) {
-    filtroSede.addEventListener("change", applyResumenFiltros);
-    filtroElemento.addEventListener("change", applyResumenFiltros);
+    filtroSede.addEventListener('change', applyResumenFiltros);
+    filtroElemento.addEventListener('change', applyResumenFiltros);
     applyResumenFiltros();
   }
 
   function applyMatafuegosFiltros() {
     if (!mfFiltroSede || !mfFiltroEstado) return;
-    const sede = mfFiltroSede.value || "";
-    const est = mfFiltroEstado.value || "";
-    document.querySelectorAll("#mfVtoBody tr[data-mf-sede]").forEach(tr => {
-      const okSede = (!sede || (tr.dataset.mfSede || "") === sede);
-      const okEst = (!est || (tr.dataset.mfEstado || "") === est);
-      tr.style.display = (okSede && okEst) ? "" : "none";
+    const sede = mfFiltroSede.value || '';
+    const est = mfFiltroEstado.value || '';
+    document.querySelectorAll('#mfVtoBody tr[data-mf-sede]').forEach(tr => {
+      const okSede = (!sede || (tr.dataset.mfSede || '') === sede);
+      const okEst = (!est || (tr.dataset.mfEstado || '') === est);
+      tr.style.display = (okSede && okEst) ? '' : 'none';
     });
   }
 
   function resetFiltrosMatafuegos() {
     if (!mfFiltroSede || !mfFiltroEstado) return;
-    mfFiltroSede.value = "";
-    mfFiltroEstado.value = "";
+    mfFiltroSede.value = '';
+    mfFiltroEstado.value = '';
     applyMatafuegosFiltros();
   }
+
+  window.resetFiltrosMatafuegos = resetFiltrosMatafuegos;
 
   if (mfFiltroSede && mfFiltroEstado) {
-    mfFiltroSede.addEventListener("change", applyMatafuegosFiltros);
-    mfFiltroEstado.addEventListener("change", applyMatafuegosFiltros);
+    mfFiltroSede.addEventListener('change', applyMatafuegosFiltros);
+    mfFiltroEstado.addEventListener('change', applyMatafuegosFiltros);
     applyMatafuegosFiltros();
   }
 
-  if (clearRegionFilterBtn) {
-    clearRegionFilterBtn.addEventListener("click", () => applyRegionTableFilter(""));
+  function setInvSecondaryVisible(show) {
+    if (!tablaInventarioPrincipal || !toggleInvSecColsBtn) return;
+    tablaInventarioPrincipal.classList.toggle('show-secondary', !!show);
+    toggleInvSecColsBtn.textContent = show ? 'Ocultar columnas secundarias' : 'Mostrar columnas secundarias';
+    toggleInvSecColsBtn.classList.toggle('is-selected', !!show);
   }
 
-  if (regionButtons.length > 0) {
-    regionButtons.forEach(btn => {
-      btn.addEventListener("click", () => {
-        applyRegionTableFilter(btn.dataset.regionTarget || "");
-      });
+  if (toggleInvSecColsBtn) {
+    let invSecVisible = false;
+    setInvSecondaryVisible(invSecVisible);
+    toggleInvSecColsBtn.addEventListener('click', () => {
+      invSecVisible = !invSecVisible;
+      setInvSecondaryVisible(invSecVisible);
     });
   }
 
-  function applyMapaOperativoFilters() {
-    if (!mapSedeItems.length) return;
-    let visibleCount = 0;
+  function rowMatchesFilters(rowLike) {
+    const region = rowLike.dataset.region || '';
+    const fueros = (rowLike.dataset.fueros || '').split('|').filter(Boolean);
+    const ocupacion = rowLike.dataset.ocupacion || 'disponible';
+
+    if (activeFilters.region !== 'all' && region !== activeFilters.region) return false;
+    if (activeFilters.fuero !== 'all' && !fueros.includes(activeFilters.fuero)) return false;
+    if (activeFilters.ocupacion !== 'all' && ocupacion !== activeFilters.ocupacion) return false;
+    return true;
+  }
+
+  function applyUnifiedSedesFilters() {
+    if (isInfraScreen || !resumenRows.length) return;
+
+    const regionAgg = {};
+    const totals = {
+      sedes: 0,
+      personas: 0,
+      m2: 0,
+      puestos: 0,
+      luminarias: 0,
+      mesa_pc: 0,
+      escritorio_prof: 0,
+      silla_giratoria: 0,
+      silla_fija: 0,
+      armario_alto: 0,
+      biblioteca_baja: 0,
+      aires_total: 0,
+      total_mob: 0
+    };
+
+    resumenRows.forEach(row => {
+      const show = rowMatchesFilters(row);
+      row.style.display = show ? '' : 'none';
+      if (!show) return;
+
+      const region = row.dataset.region || '';
+      if (!regionAgg[region]) {
+        regionAgg[region] = { sedes: 0, personas: 0, m2: 0, puestos: 0 };
+      }
+
+      const personas = toNum(row.dataset.valPersonas);
+      const m2 = toNum(row.dataset.valM2);
+      const puestos = toNum(row.dataset.valPuestos);
+
+      regionAgg[region].sedes += 1;
+      regionAgg[region].personas += personas;
+      regionAgg[region].m2 += m2;
+      regionAgg[region].puestos += puestos;
+
+      totals.sedes += 1;
+      totals.personas += personas;
+      totals.m2 += m2;
+      totals.puestos += puestos;
+      totals.luminarias += toNum(row.dataset.valLuminarias);
+      totals.mesa_pc += toNum(row.dataset.valMesaPc);
+      totals.escritorio_prof += toNum(row.dataset.valEscritorioProf);
+      totals.silla_giratoria += toNum(row.dataset.valSillaGiratoria);
+      totals.silla_fija += toNum(row.dataset.valSillaFija);
+      totals.armario_alto += toNum(row.dataset.valArmarioAlto);
+      totals.biblioteca_baja += toNum(row.dataset.valBibliotecaBaja);
+      totals.aires_total += toNum(row.dataset.valAiresTotal);
+      totals.total_mob += toNum(row.dataset.valTotalMob);
+    });
+
+    regionCards.forEach(card => {
+      const region = card.dataset.regionCard || '';
+      const stats = regionAgg[region] || { sedes: 0, personas: 0, m2: 0, puestos: 0 };
+      const showCard = (activeFilters.region === 'all') ? (stats.sedes > 0) : (region === activeFilters.region);
+      card.style.display = showCard ? '' : 'none';
+
+      const occ = stats.puestos > 0 ? Math.round((stats.personas * 100) / stats.puestos) : 0;
+      const estado = estadoFromPct(occ);
+
+      const sedesEl = card.querySelector('.js-card-sedes');
+      const personasEl = card.querySelector('.js-card-personas');
+      const m2El = card.querySelector('.js-card-m2');
+      const ocupacionEl = card.querySelector('.js-card-ocupacion');
+      const estadoEl = card.querySelector('.js-card-estado');
+
+      if (sedesEl) sedesEl.textContent = stats.sedes;
+      if (personasEl) personasEl.textContent = stats.personas;
+      if (m2El) m2El.textContent = Math.round(stats.m2);
+      if (ocupacionEl) ocupacionEl.textContent = occ;
+      if (estadoEl) {
+        estadoEl.textContent = `Estado: ${estado.label}`;
+        estadoEl.classList.remove('is-alto', 'is-medio', 'is-disponible');
+        estadoEl.classList.add(estado.key === 'alto' ? 'is-alto' : (estado.key === 'medio' ? 'is-medio' : 'is-disponible'));
+      }
+    });
 
     mapSedeItems.forEach(item => {
-      const itemRegion = item.dataset.region || "";
-      const fueros = (item.dataset.fueros || "").split("|").filter(Boolean);
-      const itemOcupacion = item.dataset.ocupacion || "";
-      const matchRegion = (activeMapRegion === "all" || itemRegion === activeMapRegion);
-      const matchFuero = (activeMapFuero === "all" || fueros.includes(activeMapFuero));
-      const matchOcupacion = (activeMapOcupacion === "all" || itemOcupacion === activeMapOcupacion);
-      const show = matchRegion && matchFuero && matchOcupacion;
-      item.style.display = show ? "" : "none";
-      if (show) visibleCount += 1;
+      const show = rowMatchesFilters(item);
+      item.style.display = show ? '' : 'none';
     });
 
+    let visibleMapBadges = 0;
     mapRegionBlocks.forEach(block => {
       let hasVisible = false;
-      block.querySelectorAll(".js-map-sede").forEach(item => {
-        if (item.style.display !== "none") hasVisible = true;
+      block.querySelectorAll('.js-map-sede').forEach(item => {
+        if (item.style.display !== 'none') {
+          hasVisible = true;
+          visibleMapBadges += 1;
+        }
       });
-      block.style.display = hasVisible ? "" : "none";
+      block.style.display = hasVisible ? '' : 'none';
     });
 
-    if (mapResultsPanel) {
-      mapResultsPanel.hidden = !mapContentVisible;
-    }
-    if (mapEmptyState) {
-      mapEmptyState.hidden = (!mapContentVisible || visibleCount > 0);
-    }
+    if (mapResultsPanel) mapResultsPanel.hidden = !mapContentVisible;
+    if (mapEmptyState) mapEmptyState.hidden = (!mapContentVisible || visibleMapBadges > 0);
 
     mapFueroButtons.forEach(btn => {
-      const value = btn.dataset.fuero || "all";
-      btn.classList.toggle("is-selected", value === activeMapFuero);
+      btn.classList.toggle('is-selected', (btn.dataset.fuero || 'all') === activeFilters.fuero);
     });
     mapRegionButtons.forEach(btn => {
-      const value = btn.dataset.region || "all";
-      btn.classList.toggle("is-selected", value === activeMapRegion);
+      btn.classList.toggle('is-selected', (btn.dataset.region || 'all') === activeFilters.region);
     });
     mapOcupacionButtons.forEach(btn => {
-      const value = btn.dataset.ocupacion || "all";
-      btn.classList.toggle("is-selected", value === activeMapOcupacion);
+      btn.classList.toggle('is-selected', (btn.dataset.ocupacion || 'all') === activeFilters.ocupacion);
     });
-  }
 
-  if (mapFueroButtons.length > 0) {
-    mapFueroButtons.forEach(btn => {
-      btn.addEventListener("click", () => {
-        activeMapFuero = btn.dataset.fuero || "all";
-        applyMapaOperativoFilters();
-      });
-    });
-  }
+    const occTotal = totals.puestos > 0 ? Math.round((totals.personas * 100) / totals.puestos) : 0;
 
-  if (mapRegionButtons.length > 0) {
-    mapRegionButtons.forEach(btn => {
-      btn.addEventListener("click", () => {
-        activeMapRegion = btn.dataset.region || "all";
-        applyMapaOperativoFilters();
-      });
-    });
-  }
+    if (summarySedes) summarySedes.textContent = totals.sedes;
+    if (summaryPersonas) summaryPersonas.textContent = totals.personas;
+    if (summaryM2) summaryM2.textContent = Math.round(totals.m2);
+    if (summaryPuestos) summaryPuestos.textContent = totals.puestos;
+    if (summaryLuminarias) summaryLuminarias.textContent = totals.luminarias;
 
-  if (mapOcupacionButtons.length > 0) {
-    mapOcupacionButtons.forEach(btn => {
-      btn.addEventListener("click", () => {
-        activeMapOcupacion = btn.dataset.ocupacion || "all";
-        applyMapaOperativoFilters();
-      });
-    });
+    if (summaryFilterScope) {
+      const parts = [];
+      if (activeFilters.region !== 'all') parts.push(regionLabels[activeFilters.region] || activeFilters.region);
+      if (activeFilters.fuero !== 'all') parts.push(fueroLabels[activeFilters.fuero] || activeFilters.fuero);
+      if (activeFilters.ocupacion !== 'all') parts.push(ocupacionLabels[activeFilters.ocupacion] || activeFilters.ocupacion);
+      const label = parts.length ? parts.join(' ? ') : 'Todas las regiones';
+      summaryFilterScope.innerHTML = `<strong>Mostrando:</strong> ${label}`;
+    }
+
+    if (tfootPersonas) tfootPersonas.textContent = totals.personas;
+    if (tfootM2) tfootM2.textContent = Math.round(totals.m2);
+    if (tfootOcupacion) tfootOcupacion.textContent = `${occTotal}%`;
+    if (tfootMesaPc) tfootMesaPc.textContent = totals.mesa_pc;
+    if (tfootEscritorioProf) tfootEscritorioProf.textContent = totals.escritorio_prof;
+    if (tfootSillaGiratoria) tfootSillaGiratoria.textContent = totals.silla_giratoria;
+    if (tfootSillaFija) tfootSillaFija.textContent = totals.silla_fija;
+    if (tfootArmarioAlto) tfootArmarioAlto.textContent = totals.armario_alto;
+    if (tfootBibliotecaBaja) tfootBibliotecaBaja.textContent = totals.biblioteca_baja;
+    if (tfootAires) tfootAires.textContent = totals.aires_total;
+    if (tfootTotalMob) tfootTotalMob.textContent = totals.total_mob;
   }
 
   function setMapFiltersVisible(show) {
     if (!mapFiltersPanel || !mapToggleFiltersBtn) return;
     if (show) {
-      mapFiltersPanel.removeAttribute("hidden");
-      mapToggleFiltersBtn.textContent = "Ocultar filtros";
-      mapToggleFiltersBtn.classList.add("is-selected");
+      mapFiltersPanel.removeAttribute('hidden');
+      mapToggleFiltersBtn.textContent = 'Ocultar filtros';
+      mapToggleFiltersBtn.classList.add('is-selected');
     } else {
-      mapFiltersPanel.setAttribute("hidden", "hidden");
-      mapToggleFiltersBtn.textContent = "Mostrar filtros";
-      mapToggleFiltersBtn.classList.remove("is-selected");
+      mapFiltersPanel.setAttribute('hidden', 'hidden');
+      mapToggleFiltersBtn.textContent = 'Mostrar filtros';
+      mapToggleFiltersBtn.classList.remove('is-selected');
     }
   }
 
   function setMapContentVisible(show) {
     mapContentVisible = !!show;
     if (mapToggleContentBtn) {
-      mapToggleContentBtn.textContent = show ? "Ocultar mapa" : "Mostrar mapa";
-      mapToggleContentBtn.classList.toggle("is-selected", !!show);
+      mapToggleContentBtn.textContent = show ? 'Ocultar mapa' : 'Mostrar mapa';
+      mapToggleContentBtn.classList.toggle('is-selected', !!show);
     }
     if (mapToggleFiltersBtn) {
       mapToggleFiltersBtn.hidden = !show;
     }
-    if (!show) {
-      setMapFiltersVisible(false);
-    }
-    applyMapaOperativoFilters();
+    if (!show) setMapFiltersVisible(false);
+    applyUnifiedSedesFilters();
   }
 
+  mapFueroButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeFilters.fuero = btn.dataset.fuero || 'all';
+      applyUnifiedSedesFilters();
+    });
+  });
+  mapRegionButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeFilters.region = btn.dataset.region || 'all';
+      applyUnifiedSedesFilters();
+    });
+  });
+  mapOcupacionButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeFilters.ocupacion = btn.dataset.ocupacion || 'all';
+      applyUnifiedSedesFilters();
+    });
+  });
+
   if (mapToggleFiltersBtn) {
-    mapToggleFiltersBtn.addEventListener("click", () => {
-      const isHidden = !!(mapFiltersPanel && mapFiltersPanel.hasAttribute("hidden"));
+    mapToggleFiltersBtn.addEventListener('click', () => {
+      const isHidden = !!(mapFiltersPanel && mapFiltersPanel.hasAttribute('hidden'));
       setMapFiltersVisible(isHidden);
     });
   }
 
   if (mapToggleContentBtn) {
-    mapToggleContentBtn.addEventListener("click", () => {
+    mapToggleContentBtn.addEventListener('click', () => {
       setMapContentVisible(!mapContentVisible);
     });
   }
-  setMapContentVisible(false);
 
-  if (execDetailButtons.length > 0) {
-    execDetailButtons.forEach(btn => {
-      btn.addEventListener("click", () => {
-        const region = btn.dataset.mapRegionTarget || "all";
-        activeMapRegion = region;
-        setMapContentVisible(true);
-        applyMapaOperativoFilters();
-      });
+  execDetailButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeFilters.region = btn.dataset.mapRegionTarget || 'all';
+      setMapContentVisible(true);
+      applyUnifiedSedesFilters();
     });
+  });
+
+  if (!isInfraScreen) {
+    setMapContentVisible(false);
+    applyUnifiedSedesFilters();
   }
-
-  function setInvSecondaryVisible(show) {
-    if (!tablaInventarioPrincipal || !toggleInvSecColsBtn) return;
-    tablaInventarioPrincipal.classList.toggle("show-secondary", !!show);
-    toggleInvSecColsBtn.textContent = show ? "Ocultar columnas secundarias" : "Mostrar columnas secundarias";
-    toggleInvSecColsBtn.classList.toggle("is-selected", !!show);
-  }
-
-  if (toggleInvSecColsBtn) {
-    let invSecVisible = false;
-    setInvSecondaryVisible(invSecVisible);
-    toggleInvSecColsBtn.addEventListener("click", () => {
-      invSecVisible = !invSecVisible;
-      setInvSecondaryVisible(invSecVisible);
-    });
-  }
-
-  applyMapaOperativoFilters();
-
 </script>
 
 {% endblock %}
