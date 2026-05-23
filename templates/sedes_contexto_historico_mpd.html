@@ -1,0 +1,305 @@
+{% extends "base.html" %}
+{% block content %}
+
+<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-10-01') }}">
+
+<section class="sedes-section sgi-sedes">
+  <div class="cardx hist-wrap">
+    <article class="hist-main-card">
+      <div class="hist-kicker">SEDES · CONTEXTO HISTORICO MPD</div>
+      <h1>Contexto histórico y territorial del MPD</h1>
+      <p>Evolución operativa de sedes, crecimiento institucional, Ley 6365 y criterio de codificación.</p>
+      <div class="hist-actions">
+        <a class="btn" href="{{ url_for('sedes_resumen_mpd') }}">Volver a Sedes</a>
+        <a class="btn" href="{{ url_for('sedes_resumen_mpd') }}#resumen-operativo-general">Ver resumen operativo general</a>
+      </div>
+    </article>
+
+    <div class="hist-grid">
+      <article class="hist-card">
+        <h2>Etapa inicial</h2>
+        <p>El Ministerio Público de la Defensa Penal funcionaba inicialmente con estructura propia, administrativa y operativa, concentrada principalmente en sedes del fuero penal.</p>
+        <p>La codificación inicial respondió al crecimiento operativo existente en ese momento.</p>
+      </article>
+
+      <article class="hist-card">
+        <h2>Ampliación institucional</h2>
+        <p>A partir de la Ley 6365, el MPD incorpora nuevas áreas y fueros, ampliando su cobertura territorial y funcional.</p>
+        <p>Esto generó incorporación de sedes, mudanzas, comodatos, sedes compartidas y reorganización de espacios.</p>
+      </article>
+
+      <article class="hist-card">
+        <h2>Criterio de codificación</h2>
+        <p>La numeración de sedes no responde estrictamente a un orden territorial actual.</p>
+        <p>La codificación refleja el crecimiento histórico del MPD, movimientos edilicios, bajas de inmuebles, incorporación de nuevos fueros y reorganizaciones internas.</p>
+        <p>Por este motivo se mantiene la codificación histórica para evitar pérdida de trazabilidad.</p>
+      </article>
+
+      <article class="hist-card">
+        <h2>Organización territorial actual</h2>
+        <p>Para facilitar la lectura operativa, las sedes se organizan visualmente por regiones:</p>
+        <ul>
+          <li>San Salvador de Jujuy</li>
+          <li>Aledañas</li>
+          <li>El Ramal</li>
+          <li>Quebrada y Puna</li>
+        </ul>
+        <p>Esta organización no reemplaza la codificación histórica. Solo ordena la navegación y permite identificar rápidamente cada sede.</p>
+      </article>
+
+      <article class="hist-card hist-card-wide">
+        <h2>Modelos de sede</h2>
+        <div class="hist-table-wrap">
+          <table class="hist-table">
+            <thead>
+              <tr>
+                <th>Modelo</th>
+                <th>Descripción</th>
+                <th>Ejemplo</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Sede penal histórica</td>
+                <td>Sede original del fuero penal</td>
+                <td>S01, S03, S05</td>
+              </tr>
+              <tr>
+                <td>Sede integrada</td>
+                <td>Varios fueros en un mismo inmueble</td>
+                <td>S02</td>
+              </tr>
+              <tr>
+                <td>Sede compartida con Poder Judicial</td>
+                <td>MPD funciona dentro de edificio judicial</td>
+                <td>S19, S17</td>
+              </tr>
+              <tr>
+                <td>Sede administrativa</td>
+                <td>Administración / áreas centrales</td>
+                <td>S08</td>
+              </tr>
+              <tr>
+                <td>Sede con atención territorial</td>
+                <td>Sede principal con atención periódica de otros fueros</td>
+                <td>S10</td>
+              </tr>
+              <tr>
+                <td>Sede en reorganización</td>
+                <td>Sede con traslado o integración proyectada</td>
+                <td>S20</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="hist-card hist-card-wide">
+        <h2>Colores por fuero</h2>
+        <div class="fuero-legend">
+          <div class="fuero-item"><span class="fuero-dot penal"></span><span>Violeta #6666CC = Penal</span></div>
+          <div class="fuero-item"><span class="fuero-dot social"></span><span>Rosa #F14B94 = Jurídico Social</span></div>
+          <div class="fuero-item"><span class="fuero-dot menores"></span><span>Celeste #65BFE4 = Menores / Incapaces</span></div>
+          <div class="fuero-item"><span class="fuero-dot admin"></span><span>Naranja #F58A5E = Administración / Violencia Institucional</span></div>
+          <div class="fuero-item"><span class="fuero-dot general"></span><span>Gris #4D4D4D = General / sin clasificación específica</span></div>
+        </div>
+        <div class="hist-rules">
+          <p><strong>Regla visual:</strong></p>
+          <ul>
+            <li>Sedes simples: color único según fuero principal.</li>
+            <li>Sedes integradas: color principal histórico + indicadores secundarios pequeños para otros fueros.</li>
+            <li>No usar degradados.</li>
+            <li>No usar colores fuertes de fondo.</li>
+            <li>Mantener badges suaves.</li>
+          </ul>
+        </div>
+      </article>
+
+      <article class="hist-card">
+        <h2>Objetivo</h2>
+        <p>El objetivo de esta vista es que cualquier persona pueda comprender la organización territorial del MPD sin conocer previamente la historia de mudanzas, crecimiento institucional o codificación de sedes.</p>
+      </article>
+    </div>
+
+    <div class="hist-actions hist-actions-bottom">
+      <a class="btn" href="{{ url_for('sedes_resumen_mpd') }}">Volver a Sedes</a>
+      <a class="btn" href="{{ url_for('sedes_resumen_mpd') }}#resumen-operativo-general">Ver resumen operativo general</a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hist-wrap {
+    padding: 14px;
+    display: grid;
+    gap: 10px;
+  }
+
+  .hist-main-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 14px;
+  }
+
+  .hist-kicker {
+    font-size: 11px;
+    color: #64748b;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+  }
+
+  .hist-main-card h1 {
+    margin: 6px 0 0;
+    font-size: 24px;
+    color: #0f172a;
+    font-weight: 700;
+  }
+
+  .hist-main-card p {
+    margin: 8px 0 0;
+    font-size: 13px;
+    color: #475569;
+    line-height: 1.45;
+  }
+
+  .hist-actions {
+    margin-top: 12px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .hist-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 10px;
+  }
+
+  .hist-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 12px;
+  }
+
+  .hist-card h2 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .hist-card p {
+    margin: 8px 0 0;
+    color: #475569;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .hist-card ul {
+    margin: 8px 0 0;
+    padding-left: 18px;
+    color: #475569;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .hist-card-wide {
+    grid-column: 1 / -1;
+  }
+
+  .hist-table-wrap {
+    margin-top: 8px;
+    overflow: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+  }
+
+  .hist-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    background: #ffffff;
+  }
+
+  .hist-table thead th {
+    background: #f8fafc;
+    color: #334155;
+    font-weight: 700;
+    text-align: left;
+    padding: 8px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .hist-table tbody td {
+    padding: 8px;
+    border-bottom: 1px solid #e5e7eb;
+    color: #475569;
+    vertical-align: top;
+  }
+
+  .hist-table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .fuero-legend {
+    margin-top: 8px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 8px;
+  }
+
+  .fuero-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 7px 9px;
+    background: #fafafa;
+    font-size: 12px;
+    color: #334155;
+  }
+
+  .fuero-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 999px;
+    display: inline-block;
+    flex: 0 0 12px;
+  }
+
+  .fuero-dot.penal { background: #6666CC; }
+  .fuero-dot.social { background: #F14B94; }
+  .fuero-dot.menores { background: #65BFE4; }
+  .fuero-dot.admin { background: #F58A5E; }
+  .fuero-dot.general { background: #4D4D4D; }
+
+  .hist-rules {
+    margin-top: 10px;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 8px;
+  }
+
+  .hist-rules p {
+    margin: 0;
+    color: #334155;
+  }
+
+  .hist-rules ul {
+    margin-top: 6px;
+  }
+
+  .hist-actions-bottom {
+    margin-top: 2px;
+  }
+
+  @media (max-width: 700px) {
+    .hist-main-card h1 {
+      font-size: 21px;
+    }
+  }
+</style>
+
+{% endblock %}

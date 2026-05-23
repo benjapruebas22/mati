@@ -9536,6 +9536,10 @@ def sedes_resumen_mpd():
         matafuegos_vto_kpi=matafuegos_vto_kpi,
     )
 
+@app.route("/sedes/contexto-historico-mpd", methods=["GET"], endpoint="sedes_contexto_historico_mpd")
+def sedes_contexto_historico_mpd():
+    return render_template("sedes_contexto_historico_mpd.html")
+
 # ============================================================
 # MOBILIARIO: NUEVO
 # ============================================================
