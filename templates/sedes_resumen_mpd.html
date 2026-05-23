@@ -18,7 +18,11 @@
     'S02':'el_ramal','S06':'el_ramal','S19':'el_ramal',
     'S05':'quebrada_puna','S14':'quebrada_puna','S15':'quebrada_puna','S16':'quebrada_puna','S18':'quebrada_puna'
   } %}
-  <div class="cardx" style="padding:12px 14px;">
+  {% set integrated_map = {
+    'S02': ['fuero-social', 'fuero-menores'],
+    'S20': ['fuero-neutral']
+  } %}
+  <div class="cardx sedes-shell {{ 'is-infra' if show_infra else 'is-resumen' }}" style="padding:12px 14px;">
     {% if not show_infra %}
     <div class="sedes-portada-main">
       <div>
@@ -49,7 +53,7 @@
     </div>
 
     <div class="sedes-region-grid">
-      <article class="sedes-region-card">
+      <article class="sedes-region-card region-san-salvador">
         <h3>SAN SALVADOR DE JUJUY</h3>
         <div class="sedes-region-meta">
           <span><strong>Cantidad de sedes:</strong> 5</span>
@@ -66,7 +70,7 @@
         <a class="btn xs js-region-focus" href="#resumen-operativo-general" data-region-target="san_salvador">Ver sedes San Salvador</a>
       </article>
 
-      <article class="sedes-region-card">
+      <article class="sedes-region-card region-aledanias">
         <h3>ALEDAÑAS</h3>
         <div class="sedes-region-meta">
           <span><strong>Cantidad de sedes:</strong> 6</span>
@@ -84,7 +88,7 @@
         <a class="btn xs js-region-focus" href="#resumen-operativo-general" data-region-target="aledanias">Ver sedes Aledañas</a>
       </article>
 
-      <article class="sedes-region-card">
+      <article class="sedes-region-card region-el-ramal">
         <h3>EL RAMAL</h3>
         <div class="sedes-region-meta">
           <span><strong>Cantidad de sedes:</strong> 3</span>
@@ -99,7 +103,7 @@
         <a class="btn xs js-region-focus" href="#resumen-operativo-general" data-region-target="el_ramal">Ver sedes El Ramal</a>
       </article>
 
-      <article class="sedes-region-card">
+      <article class="sedes-region-card region-quebrada-puna">
         <h3>QUEBRADA Y PUNA</h3>
         <div class="sedes-region-meta">
           <span><strong>Cantidad de sedes:</strong> 5</span>
@@ -155,12 +159,22 @@
           {% for r in rows %}
           {% set code = (r.codigo or '')|upper %}
           {% set cls = fuero_map.get(code, 'fuero-neutral') %}
+          {% set secondary_fueros = integrated_map.get(code, []) %}
           {% set region_key = region_map.get(code, '') %}
           {% set total_mob = (r.mesa_pc or 0) + (r.escritorio_prof or 0) + (r.silla_giratoria or 0) + (r.silla_fija or 0) + (r.armario_alto or 0) + (r.biblioteca_baja or 0) + (r.aires_total or 0) %}
           <tr data-region="{{ region_key }}">
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
               <a href="{{ url_for('sede_ficha', codigo=r.codigo) }}" style="text-decoration:none;">
-                <span class="sede-badge-soft {{ cls }}">{{ r.codigo }}</span>
+                <span class="sede-badge-soft {{ cls }}">
+                  <span class="sede-badge-code">{{ r.codigo }}</span>
+                  {% if secondary_fueros %}
+                  <span class="sede-mini-indicators" aria-hidden="true">
+                    {% for sec in secondary_fueros %}
+                    <span class="sede-mini-dot {{ sec }}"></span>
+                    {% endfor %}
+                  </span>
+                  {% endif %}
+                </span>
               </a>
             </td>
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.nombre }}</td>
@@ -883,10 +897,15 @@
 
   .sedes-context-box {
     margin-top: 10px;
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
+    background: #fbfcff;
+    border: 1px solid #dde6f3;
     border-radius: 12px;
     padding: 12px;
+  }
+
+  .sedes-context-box h2 {
+    color: #1f2a44 !important;
+    font-weight: 800 !important;
   }
 
   .sedes-flow {
@@ -912,6 +931,37 @@
     flex-wrap: wrap;
   }
 
+  .sedes-shell.is-resumen .btn,
+  .sedes-shell.is-resumen button.btn {
+    background: #f7f9fc !important;
+    border: 1px solid #d9e2f2 !important;
+    color: #1f2a44 !important;
+    border-radius: 10px !important;
+    padding: 7px 12px !important;
+    font-weight: 600 !important;
+    box-shadow: none !important;
+  }
+
+  .sedes-shell.is-resumen .btn.xs,
+  .sedes-shell.is-resumen button.btn.xs {
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+  }
+
+  .sedes-shell.is-resumen .btn:hover,
+  .sedes-shell.is-resumen button.btn:hover {
+    background: #eef4ff !important;
+    border-color: #bfd2f3 !important;
+    color: #1f2a44 !important;
+  }
+
+  .sedes-shell.is-resumen .btn.is-selected,
+  .sedes-shell.is-resumen button.btn.is-selected {
+    background: #eaf2ff !important;
+    border-color: #7ba7f7 !important;
+    color: #1f5fcc !important;
+  }
+
   .sedes-region-grid {
     margin-top: 10px;
     display: grid;
@@ -924,10 +974,27 @@
     border: 1px solid #e5e7eb;
     border-radius: 12px;
     padding: 12px;
+    position: relative;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     gap: 8px;
   }
+
+  .sedes-region-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #d9e2f2;
+  }
+
+  .sedes-region-card.region-san-salvador::before { background: #6666CC; }
+  .sedes-region-card.region-aledanias::before { background: #65BFE4; }
+  .sedes-region-card.region-el-ramal::before { background: #F58A5E; }
+  .sedes-region-card.region-quebrada-puna::before { background: #F14B94; }
 
   .sedes-region-card h3 {
     margin: 0;
@@ -964,8 +1031,9 @@
 
   .sedes-tech-head h2 {
     margin: 0;
-    font-size: 16px;
-    color: #0f172a;
+    font-size: 17px;
+    color: #1f2a44;
+    font-weight: 800;
     letter-spacing: 0.02em;
   }
 
@@ -985,6 +1053,21 @@
     color: #475569;
   }
 
+  #regionFilterStatus {
+    background: #f7f9fc;
+    border: 1px solid #d9e2f2;
+    color: #334155;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-weight: 600;
+  }
+
+  #regionFilterStatus.is-active {
+    background: #eef4ff;
+    border-color: #bfd2f3;
+    color: #1f5fcc;
+  }
+
   @media (max-width: 700px) {
     .sedes-portada-title {
       font-size: 20px;
@@ -992,7 +1075,16 @@
   }
 
   #resumen-inventario-top thead th {
-    background: #eef2f7;
+    background: #eaf0f8 !important;
+    color: #1f2a44;
+    font-weight: 700;
+    border-bottom-color: #d6e0ef !important;
+  }
+
+  #resumen-inventario-top > div:first-child {
+    background: #f4f7fc;
+    color: #1f2a44 !important;
+    font-weight: 800 !important;
   }
 
   #resumen-inventario-top tbody tr:hover td {
@@ -1003,75 +1095,81 @@
     background: #f8fafc;
   }
 
-  .btn-sede-abrir {
+  .sede-badge-soft {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    padding: 3px 9px;
+    font-size: 11px;
     font-weight: 700;
-    border-width: 1px !important;
+    letter-spacing: 0.01em;
+    line-height: 1.1;
   }
 
-  .btn-sede-abrir.fuero-penal {
-    background: #efedff !important;
-    border-color: #c9bfff !important;
-    color: #3f2f7a !important;
+  .sede-badge-code {
+    display: inline-block;
   }
 
-  .btn-sede-abrir.fuero-penal:hover {
-    background: #e3ddff !important;
+  .sede-badge-soft.fuero-penal {
+    background: #f1f1ff;
+    color: #4646b3;
+    border-color: #cfcff8;
   }
 
-  .btn-sede-abrir.fuero-admin {
-    background: #fde8dd !important;
-    border-color: #f5b089 !important;
-    color: #6b3c1f !important;
+  .sede-badge-soft.fuero-social {
+    background: #fff0f7;
+    color: #c23f7a;
+    border-color: #f7c6dc;
   }
 
-  .btn-sede-abrir.fuero-admin:hover {
-    background: #fcdac7 !important;
+  .sede-badge-soft.fuero-menores {
+    background: #ecf8fd;
+    color: #2f8db2;
+    border-color: #bde6f4;
   }
 
-  .btn-sede-abrir.fuero-menores {
-    background: #e6f4ff !important;
-    border-color: #9fd7ff !important;
-    color: #1c4c77 !important;
+  .sede-badge-soft.fuero-admin {
+    background: #fff3ec;
+    color: #c76e42;
+    border-color: #f5cfbc;
   }
 
-  .btn-sede-abrir.fuero-menores:hover {
-    background: #d7eeff !important;
+  .sede-badge-soft.fuero-neutral {
+    background: #f4f4f5;
+    color: #4d4d4d;
+    border-color: #d9d9db;
   }
 
-  .btn-sede-abrir.fuero-social {
-    background: #ffe6f1 !important;
-    border-color: #f7a7c8 !important;
-    color: #7a2a4b !important;
+  .sede-mini-indicators {
+    display: inline-flex;
+    gap: 3px;
+    align-items: center;
   }
 
-  .btn-sede-abrir.fuero-social:hover {
-    background: #ffd8e9 !important;
+  .sede-mini-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    display: inline-block;
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.05);
   }
 
-  .btn-sede-abrir.fuero-neutral {
-    background: #f3f4f6 !important;
-    border-color: #d1d5db !important;
-    color: #374151 !important;
-  }
+  .sede-mini-dot.fuero-penal { background: #6666CC; }
+  .sede-mini-dot.fuero-social { background: #F14B94; }
+  .sede-mini-dot.fuero-menores { background: #65BFE4; }
+  .sede-mini-dot.fuero-admin { background: #F58A5E; }
+  .sede-mini-dot.fuero-neutral { background: #4D4D4D; }
 
-  .btn-sede-bienes {
-    background: #f3f4f6 !important;
-    border-color: #d1d5db !important;
-    color: #374151 !important;
-  }
-
-  .btn-sede-bienes:hover {
-    background: #e5e7eb !important;
-  }
-
-  .btn-sede-analisis {
-    background: #e0f2fe !important;
-    border-color: #bae6fd !important;
-    color: #0c4a6e !important;
-  }
-
-  .btn-sede-analisis:hover {
-    background: #bae6fd !important;
+  .sedes-shell.is-resumen .btn-sede-abrir,
+  .sedes-shell.is-resumen .btn-sede-bienes,
+  .sedes-shell.is-resumen .btn-sede-analisis {
+    background: #f7f9fc !important;
+    border-color: #d9e2f2 !important;
+    color: #1f2a44 !important;
+    font-weight: 600 !important;
   }
 </style>
 
@@ -1120,13 +1218,22 @@
       tr.style.display = (!regionKey || rowRegion === regionKey) ? "" : "none";
     });
 
+    if (regionButtons.length > 0) {
+      regionButtons.forEach(btn => {
+        const same = (btn.dataset.regionTarget || "") === (regionKey || "");
+        btn.classList.toggle("is-selected", !!same && !!regionKey);
+      });
+    }
+
     if (regionFilterStatus) {
       regionFilterStatus.textContent = regionKey
         ? `Mostrando región: ${regionNames[regionKey] || regionKey}.`
         : "Mostrando todas las regiones.";
+      regionFilterStatus.classList.toggle("is-active", !!regionKey);
     }
     if (clearRegionFilterBtn) {
       clearRegionFilterBtn.style.display = regionKey ? "" : "none";
+      clearRegionFilterBtn.classList.toggle("is-selected", !!regionKey);
     }
   }
 
