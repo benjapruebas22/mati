@@ -9338,60 +9338,79 @@ def sedes_resumen_mpd():
 
     for s in sedes_rows:
         cod = s["codigo"]
+        mesa_pc = safe_scalar("""
+            SELECT COALESCE(SUM(COALESCE(mesa_pc,0)),0)
+            FROM mobiliario_sede
+            WHERE codigo_sede = ? AND COALESCE(activo,1)=1
+        """, (cod,))
+        escritorio_prof = safe_scalar("""
+            SELECT COALESCE(SUM(COALESCE(escritorio_prof,0)),0)
+            FROM mobiliario_sede
+            WHERE codigo_sede = ? AND COALESCE(activo,1)=1
+        """, (cod,))
+        silla_giratoria = safe_scalar("""
+            SELECT COALESCE(SUM(COALESCE(silla_giratoria,0)),0)
+            FROM mobiliario_sede
+            WHERE codigo_sede = ? AND COALESCE(activo,1)=1
+        """, (cod,))
+        silla_fija = safe_scalar("""
+            SELECT COALESCE(SUM(COALESCE(silla_fija,0)),0)
+            FROM mobiliario_sede
+            WHERE codigo_sede = ? AND COALESCE(activo,1)=1
+        """, (cod,))
+        armario_alto = safe_scalar("""
+            SELECT COALESCE(SUM(COALESCE(armario_alto,0)),0)
+            FROM mobiliario_sede
+            WHERE codigo_sede = ? AND COALESCE(activo,1)=1
+        """, (cod,))
+        biblioteca_baja = safe_scalar("""
+            SELECT COALESCE(SUM(COALESCE(biblioteca_baja,0)),0)
+            FROM mobiliario_sede
+            WHERE codigo_sede = ? AND COALESCE(activo,1)=1
+        """, (cod,))
+        aires_total = safe_scalar("""
+            SELECT COALESCE(COUNT(*),0)
+            FROM aires_mpd
+            WHERE sede_codigo = ?
+              AND {aires_valid}
+        """.format(aires_valid=aires_valid_where("aires_mpd")), (cod,))
+        luminarias_total = safe_scalar("""
+            SELECT COALESCE(SUM(
+                COALESCE(tubo_led_fria,0) +
+                COALESCE(tubo_led_calido,0) +
+                COALESCE(foco_comun,0) +
+                COALESCE(panel_led,0)
+            ),0)
+            FROM luminarias_sede
+            WHERE codigo_sede = ?
+        """, (cod,))
+        puestos_trabajo = safe_scalar("""
+            SELECT COALESCE(SUM(COALESCE(puestos_trabajo,0)),0)
+            FROM luminarias_sede
+            WHERE codigo_sede = ?
+        """, (cod,))
+        personas_total = safe_scalar("""
+            SELECT COALESCE(COUNT(1),0)
+            FROM personal_sede
+            WHERE UPPER(COALESCE(codigo_sede,'')) = ?
+              AND COALESCE(activo,1)=1
+        """, (cod,))
+        ocupacion_pct = int(round((float(personas_total) * 100.0) / float(puestos_trabajo))) if (puestos_trabajo or 0) > 0 else 0
+
         resumen_sedes_rows.append({
             "codigo": cod,
             "nombre": s["nombre"],
-            "mesa_pc": safe_scalar("""
-                SELECT COALESCE(SUM(COALESCE(mesa_pc,0)),0)
-                FROM mobiliario_sede
-                WHERE codigo_sede = ? AND COALESCE(activo,1)=1
-            """, (cod,)),
-            "escritorio_prof": safe_scalar("""
-                SELECT COALESCE(SUM(COALESCE(escritorio_prof,0)),0)
-                FROM mobiliario_sede
-                WHERE codigo_sede = ? AND COALESCE(activo,1)=1
-            """, (cod,)),
-            "silla_giratoria": safe_scalar("""
-                SELECT COALESCE(SUM(COALESCE(silla_giratoria,0)),0)
-                FROM mobiliario_sede
-                WHERE codigo_sede = ? AND COALESCE(activo,1)=1
-            """, (cod,)),
-            "silla_fija": safe_scalar("""
-                SELECT COALESCE(SUM(COALESCE(silla_fija,0)),0)
-                FROM mobiliario_sede
-                WHERE codigo_sede = ? AND COALESCE(activo,1)=1
-            """, (cod,)),
-            "armario_alto": safe_scalar("""
-                SELECT COALESCE(SUM(COALESCE(armario_alto,0)),0)
-                FROM mobiliario_sede
-                WHERE codigo_sede = ? AND COALESCE(activo,1)=1
-            """, (cod,)),
-            "biblioteca_baja": safe_scalar("""
-                SELECT COALESCE(SUM(COALESCE(biblioteca_baja,0)),0)
-                FROM mobiliario_sede
-                WHERE codigo_sede = ? AND COALESCE(activo,1)=1
-            """, (cod,)),
-            "aires_total": safe_scalar("""
-                SELECT COALESCE(COUNT(*),0)
-                FROM aires_mpd
-                WHERE sede_codigo = ?
-                  AND {aires_valid}
-            """.format(aires_valid=aires_valid_where("aires_mpd")), (cod,)),
-            "luminarias_total": safe_scalar("""
-                SELECT COALESCE(SUM(
-                    COALESCE(tubo_led_fria,0) +
-                    COALESCE(tubo_led_calido,0) +
-                    COALESCE(foco_comun,0) +
-                    COALESCE(panel_led,0)
-                ),0)
-                FROM luminarias_sede
-                WHERE codigo_sede = ?
-            """, (cod,)),
-            "puestos_trabajo": safe_scalar("""
-                SELECT COALESCE(SUM(COALESCE(puestos_trabajo,0)),0)
-                FROM luminarias_sede
-                WHERE codigo_sede = ?
-            """, (cod,)),
+            "mesa_pc": mesa_pc,
+            "escritorio_prof": escritorio_prof,
+            "silla_giratoria": silla_giratoria,
+            "silla_fija": silla_fija,
+            "armario_alto": armario_alto,
+            "biblioteca_baja": biblioteca_baja,
+            "aires_total": aires_total,
+            "luminarias_total": luminarias_total,
+            "puestos_trabajo": puestos_trabajo,
+            "personas_total": personas_total,
+            "ocupacion_pct": ocupacion_pct,
         })
 
     def safe_row_val(row, key):
@@ -9401,6 +9420,7 @@ def sedes_resumen_mpd():
             return 0
 
     for k in (
+        "personas_total",
         "mesa_pc",
         "escritorio_prof",
         "silla_giratoria",
@@ -9414,6 +9434,7 @@ def sedes_resumen_mpd():
         resumen_sedes_totals.setdefault(k, 0)
 
     for r in resumen_sedes_rows:
+        resumen_sedes_totals["personas_total"] += safe_row_val(r, "personas_total") or 0
         resumen_sedes_totals["mesa_pc"] += safe_row_val(r, "mesa_pc") or 0
         resumen_sedes_totals["escritorio_prof"] += safe_row_val(r, "escritorio_prof") or 0
         resumen_sedes_totals["silla_giratoria"] += safe_row_val(r, "silla_giratoria") or 0

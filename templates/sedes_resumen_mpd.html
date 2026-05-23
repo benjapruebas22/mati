@@ -31,28 +31,30 @@
     {'key':'el_ramal','class':'region-el-ramal','title':'EL RAMAL','sedes':3,'personas':33,'m2':420,'ocupacion':84,'ocupacion_key':'alta','estado':'Alto','estado_key':'alto','disponibilidad_key':'baja'},
     {'key':'quebrada_puna','class':'region-quebrada-puna','title':'QUEBRADA Y PUNA','sedes':5,'personas':72,'m2':980,'ocupacion':62,'ocupacion_key':'disponible','estado':'Disponible','estado_key':'disponible','disponibilidad_key':'alta'}
   ] %}
+  {% set region_m2_totals = {'san_salvador':1450,'aledanias':710,'el_ramal':420,'quebrada_puna':980} %}
+  {% set region_sede_counts = {'san_salvador':5,'aledanias':6,'el_ramal':3,'quebrada_puna':5} %}
   {% set mapa_sedes = [
-    {'codigo':'S01','region':'san_salvador','fueros':['penal'],'nombre':'Independencia 202','ocupacion':'alta','estado':'alto','disponibilidad':'baja'},
-    {'codigo':'S02','region':'el_ramal','fueros':['penal','social','menores'],'nombre':'San Pedro','ocupacion':'alta','estado':'alto','disponibilidad':'baja'},
-    {'codigo':'S03','region':'aledanias','fueros':['penal'],'nombre':'Perico Penal','ocupacion':'media','estado':'medio','disponibilidad':'media'},
-    {'codigo':'S04','region':'aledanias','fueros':['penal'],'nombre':'Alto Comedero','ocupacion':'media','estado':'medio','disponibilidad':'media'},
-    {'codigo':'S05','region':'quebrada_puna','fueros':['penal'],'nombre':'Humahuaca Penal','ocupacion':'disponible','estado':'disponible','disponibilidad':'alta'},
-    {'codigo':'S06','region':'el_ramal','fueros':['penal','menores'],'nombre':'Ledesma Penal','ocupacion':'alta','estado':'alto','disponibilidad':'baja'},
-    {'codigo':'S07','region':'aledanias','fueros':['penal'],'nombre':'Palpala Penal','ocupacion':'media','estado':'medio','disponibilidad':'media'},
-    {'codigo':'S08','region':'san_salvador','fueros':['administracion','penal'],'nombre':'San Martin 137','ocupacion':'alta','estado':'alto','disponibilidad':'baja'},
-    {'codigo':'S10','region':'aledanias','fueros':['penal','social','menores'],'nombre':'El Carmen','ocupacion':'media','estado':'medio','disponibilidad':'media'},
-    {'codigo':'S11','region':'san_salvador','fueros':['social'],'nombre':'Gorriti 791','ocupacion':'alta','estado':'alto','disponibilidad':'baja'},
-    {'codigo':'S12','region':'san_salvador','fueros':['administracion','penal'],'nombre':'Belgrano','ocupacion':'alta','estado':'alto','disponibilidad':'baja'},
-    {'codigo':'S13','region':'san_salvador','fueros':['menores'],'nombre':'San Martin 271','ocupacion':'alta','estado':'alto','disponibilidad':'baja'},
-    {'codigo':'S14','region':'quebrada_puna','fueros':['social','menores'],'nombre':'Tilcara','ocupacion':'disponible','estado':'disponible','disponibilidad':'alta'},
-    {'codigo':'S15','region':'quebrada_puna','fueros':['social','menores'],'nombre':'Abra Pampa','ocupacion':'disponible','estado':'disponible','disponibilidad':'alta'},
-    {'codigo':'S16','region':'quebrada_puna','fueros':['social','menores'],'nombre':'La Quiaca','ocupacion':'disponible','estado':'disponible','disponibilidad':'alta'},
-    {'codigo':'S17','region':'aledanias','fueros':['social','menores'],'nombre':'Perico Civil','ocupacion':'media','estado':'medio','disponibilidad':'media'},
-    {'codigo':'S18','region':'quebrada_puna','fueros':['social','menores'],'nombre':'Humahuaca Civil','ocupacion':'disponible','estado':'disponible','disponibilidad':'alta'},
-    {'codigo':'S19','region':'el_ramal','fueros':['social'],'nombre':'Ledesma Civil','ocupacion':'alta','estado':'alto','disponibilidad':'baja'},
-    {'codigo':'S20','region':'aledanias','fueros':['social','menores'],'nombre':'Palpala Civil','ocupacion':'media','estado':'medio','disponibilidad':'media'}
+    {'codigo':'S01','region':'san_salvador','fueros':['penal'],'nombre':'Independencia 202','tooltip':'S01 - Independencia 202 - Penal','ocupacion':'alta'},
+    {'codigo':'S02','region':'el_ramal','fueros':['penal','social','menores'],'nombre':'San Pedro','tooltip':'S02 - San Pedro Penal / Juridico Social / Menores','ocupacion':'alta'},
+    {'codigo':'S03','region':'aledanias','fueros':['penal'],'nombre':'Perico Penal','tooltip':'S03 - Perico Penal','ocupacion':'media'},
+    {'codigo':'S04','region':'aledanias','fueros':['penal'],'nombre':'Alto Comedero','tooltip':'S04 - Alto Comedero Penal','ocupacion':'media'},
+    {'codigo':'S05','region':'quebrada_puna','fueros':['penal'],'nombre':'Humahuaca Penal','tooltip':'S05 - Humahuaca Penal','ocupacion':'disponible'},
+    {'codigo':'S06','region':'el_ramal','fueros':['penal','menores'],'nombre':'Ledesma Penal','tooltip':'S06 - Ledesma Penal / Menores','ocupacion':'alta'},
+    {'codigo':'S07','region':'aledanias','fueros':['penal'],'nombre':'Palpala Penal','tooltip':'S07 - Palpala Penal','ocupacion':'media'},
+    {'codigo':'S08','region':'san_salvador','fueros':['administracion','penal'],'nombre':'San Martin 137','tooltip':'S08 - San Martin 137&#10;Administracion General + Violencia Institucional','ocupacion':'alta'},
+    {'codigo':'S10','region':'aledanias','fueros':['penal','social','menores'],'nombre':'El Carmen','tooltip':'S10 - El Carmen Penal','ocupacion':'media'},
+    {'codigo':'S11','region':'san_salvador','fueros':['social'],'nombre':'Gorriti 791','tooltip':'S11 - Gorriti 791 - Juridico Social','ocupacion':'alta'},
+    {'codigo':'S12','region':'san_salvador','fueros':['administracion','penal'],'nombre':'Belgrano','tooltip':'S12 - Belgrano&#10;Equipo Interdisciplinario + Ejecucion de Pena','ocupacion':'alta'},
+    {'codigo':'S13','region':'san_salvador','fueros':['menores'],'nombre':'San Martin 271','tooltip':'S13 - San Martin 271 - Menores / Incapaces','ocupacion':'alta'},
+    {'codigo':'S14','region':'quebrada_puna','fueros':['social','menores'],'nombre':'Tilcara','tooltip':'S14 - Tilcara Juridico Social / Menores','ocupacion':'disponible'},
+    {'codigo':'S15','region':'quebrada_puna','fueros':['social','menores'],'nombre':'Abra Pampa','tooltip':'S15 - Abra Pampa Juridico Social / Menores','ocupacion':'disponible'},
+    {'codigo':'S16','region':'quebrada_puna','fueros':['social','menores'],'nombre':'La Quiaca','tooltip':'S16 - La Quiaca Juridico Social / Menores','ocupacion':'disponible'},
+    {'codigo':'S17','region':'aledanias','fueros':['social','menores'],'nombre':'Perico Civil','tooltip':'S17 - Perico Civil','ocupacion':'media'},
+    {'codigo':'S18','region':'quebrada_puna','fueros':['social','menores'],'nombre':'Humahuaca Civil','tooltip':'S18 - Humahuaca Civil','ocupacion':'disponible'},
+    {'codigo':'S19','region':'el_ramal','fueros':['social'],'nombre':'Ledesma Civil','tooltip':'S19 - Ledesma Civil','ocupacion':'alta'},
+    {'codigo':'S20','region':'aledanias','fueros':['social','menores'],'nombre':'Palpala Civil','tooltip':'S20 - Palpala Civil','ocupacion':'media'}
   ] %}
-  <div class="cardx sedes-shell {{ 'is-infra' if show_infra else 'is-resumen' }}" style="padding:12px 14px;">
+  <div class="cardx sedes-shell {{ 'is-infra' if show_infra else 'is-resumen' }}" style="padding:10px 12px;">
     {% if not show_infra %}
     <div class="sedes-portada-main">
       <div>
@@ -139,24 +141,6 @@
             <button type="button" class="btn xs js-map-ocupacion" data-ocupacion="disponible">Disponible</button>
           </div>
         </div>
-        <div class="sedes-mapa-filter-row">
-          <span class="sedes-mapa-filter-label">Estado</span>
-          <div class="sedes-mapa-chip-group" id="mapEstadoChips">
-            <button type="button" class="btn xs is-selected js-map-estado" data-estado="all">Todos</button>
-            <button type="button" class="btn xs js-map-estado" data-estado="alto">Alto</button>
-            <button type="button" class="btn xs js-map-estado" data-estado="medio">Medio</button>
-            <button type="button" class="btn xs js-map-estado" data-estado="disponible">Disponible</button>
-          </div>
-        </div>
-        <div class="sedes-mapa-filter-row">
-          <span class="sedes-mapa-filter-label">Dispon.</span>
-          <div class="sedes-mapa-chip-group" id="mapDisponibilidadChips">
-            <button type="button" class="btn xs is-selected js-map-disponibilidad" data-disponibilidad="all">Todas</button>
-            <button type="button" class="btn xs js-map-disponibilidad" data-disponibilidad="alta">Alta</button>
-            <button type="button" class="btn xs js-map-disponibilidad" data-disponibilidad="media">Media</button>
-            <button type="button" class="btn xs js-map-disponibilidad" data-disponibilidad="baja">Baja</button>
-          </div>
-        </div>
       </div>
 
       <div id="mapaOperativoResults" class="sedes-mapa-results">
@@ -170,10 +154,8 @@
                data-region="{{ sede.region }}"
                data-fueros="{{ sede.fueros|join('|') }}"
                data-ocupacion="{{ sede.ocupacion }}"
-               data-estado="{{ sede.estado }}"
-               data-disponibilidad="{{ sede.disponibilidad }}"
-               title="{{ sede.codigo }} - {{ sede.nombre }}"
-               aria-label="{{ sede.codigo }} - {{ sede.nombre }}">
+               title="{{ sede.tooltip }}"
+               aria-label="{{ sede.tooltip|replace('&#10;',' - ') }}">
               {{ render_sede_badge(sede.codigo) }}
             </a>
             {% endfor %}
@@ -190,25 +172,30 @@
       <div style="padding:10px 12px;border-bottom:1px solid #e5e7eb;font-weight:700;color:#334155;">Resumen inventario operativo por sede</div>
       <div style="padding:8px 12px;border-bottom:1px solid #e5e7eb;display:flex;gap:8px;flex-wrap:wrap;font-size:12px;background:#fafafa;">
         <span class="state info"><strong>Puestos de trabajo (total):</strong> {{ totals.puestos_trabajo or 0 }}</span>
+        <span class="state info"><strong>Personas (total):</strong> {{ totals.personas_total or 0 }}</span>
         <span class="state info"><strong>Luminarias (total):</strong> {{ totals.luminarias_total or 0 }}</span>
       </div>
+      <div class="sedes-table-toolbar">
+        <button id="toggleInvSecColsBtn" type="button" class="btn xs">Mostrar columnas secundarias</button>
+      </div>
       {% if rows and rows|length > 0 %}
-      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+      <table id="tablaInventarioPrincipal" style="width:100%;border-collapse:collapse;font-size:12px;">
         <thead style="background:#f1f5f9;">
           <tr>
             <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Sede</th>
-            <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Nombre</th>
-            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Mesas PC</th>
-            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Escritorios profesionales</th>
-            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Sillas giratorias</th>
-            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Sillas fijas</th>
-            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Armarios altos</th>
-            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Bibliotecas bajas</th>
+            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Personas</th>
+            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">m²</th>
+            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Ocupación</th>
+            <th class="inv-sec-col" style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Nombre</th>
+            <th class="inv-sec-col" style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Mesas PC</th>
+            <th class="inv-sec-col" style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Escritorios profesionales</th>
+            <th class="inv-sec-col" style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Sillas giratorias</th>
+            <th class="inv-sec-col" style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Sillas fijas</th>
+            <th class="inv-sec-col" style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Armarios altos</th>
+            <th class="inv-sec-col" style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Bibliotecas bajas</th>
             <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Aires</th>
             <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Total mobiliario</th>
-            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Abrir sede</th>
-            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Bienes p/sede</th>
-            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Análisis depósitos</th>
+            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -216,6 +203,7 @@
           {% set code = (r.codigo or '')|upper %}
           {% set cls = fuero_map.get(code, 'fuero-neutral') %}
           {% set region_key = region_map.get(code, '') %}
+          {% set m2_ref = (region_m2_totals.get(region_key, 0) / region_sede_counts.get(region_key, 1)) if region_key else 0 %}
           {% set total_mob = (r.mesa_pc or 0) + (r.escritorio_prof or 0) + (r.silla_giratoria or 0) + (r.silla_fija or 0) + (r.armario_alto or 0) + (r.biblioteca_baja or 0) + (r.aires_total or 0) %}
           <tr data-region="{{ region_key }}">
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
@@ -223,41 +211,46 @@
                 {{ render_sede_badge(r.codigo) }}
               </a>
             </td>
-            <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.nombre }}</td>
-            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.mesa_pc }}</td>
-            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.escritorio_prof }}</td>
-            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.silla_giratoria }}</td>
-            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.silla_fija }}</td>
-            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.armario_alto }}</td>
-            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.biblioteca_baja }}</td>
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.personas_total or 0 }}</td>
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ m2_ref|round(0)|int if m2_ref > 0 else '-' }}</td>
+            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.ocupacion_pct or 0 }}%</td>
+            <td class="inv-sec-col" style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.nombre }}</td>
+            <td class="inv-sec-col" style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.mesa_pc }}</td>
+            <td class="inv-sec-col" style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.escritorio_prof }}</td>
+            <td class="inv-sec-col" style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.silla_giratoria }}</td>
+            <td class="inv-sec-col" style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.silla_fija }}</td>
+            <td class="inv-sec-col" style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.armario_alto }}</td>
+            <td class="inv-sec-col" style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.biblioteca_baja }}</td>
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.aires_total }}</td>
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;font-weight:600;">{{ total_mob }}</td>
             <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
-              <a class="btn xs btn-sede-abrir {{ cls }}" href="{{ url_for('sede_ficha', codigo=r.codigo) }}">Abrir sede</a>
-            </td>
-            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
-              <a class="btn xs btn-sede-bienes" href="{{ url_for('bienes_sede', infra_sede=r.codigo) }}">Ver bienes p/sede</a>
-            </td>
-            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
-              <a class="btn xs btn-sede-analisis" href="{{ url_for('infra_analisis', sede=r.codigo) }}#infra-analisis">Análisis depósitos</a>
+              <div class="inv-actions-cell">
+                <a class="btn xs btn-sede-abrir {{ cls }}" href="{{ url_for('sede_ficha', codigo=r.codigo) }}">Abrir</a>
+                <a class="btn xs btn-sede-bienes" href="{{ url_for('bienes_sede', infra_sede=r.codigo) }}">Bienes</a>
+                <a class="btn xs btn-sede-analisis" href="{{ url_for('infra_analisis', sede=r.codigo) }}#infra-analisis">Análisis</a>
+              </div>
             </td>
           </tr>
           {% endfor %}
         </tbody>
         <tfoot style="background:#f8fafc;">
           {% set total_mob_all = (totals.mesa_pc or 0) + (totals.escritorio_prof or 0) + (totals.silla_giratoria or 0) + (totals.silla_fija or 0) + (totals.armario_alto or 0) + (totals.biblioteca_baja or 0) + (totals.aires_total or 0) %}
+          {% set total_m2_all = 3560 %}
+          {% set ocupacion_total = (((totals.personas_total or 0) * 100) / (totals.puestos_trabajo or 1)) if (totals.puestos_trabajo or 0) > 0 else 0 %}
           <tr>
-            <td colspan="2" style="padding:8px;border-top:1px solid #e5e7eb;font-weight:700;">Totales</td>
-            <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.mesa_pc }}</td>
-            <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.escritorio_prof }}</td>
-            <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.silla_giratoria }}</td>
-            <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.silla_fija }}</td>
-            <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.armario_alto }}</td>
-            <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.biblioteca_baja }}</td>
+            <td style="padding:8px;border-top:1px solid #e5e7eb;font-weight:700;">Totales</td>
+            <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.personas_total or 0 }}</td>
+            <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ total_m2_all|int }}</td>
+            <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ ocupacion_total|round(0)|int }}%</td>
+            <td class="inv-sec-col" style="padding:8px;border-top:1px solid #e5e7eb;"></td>
+            <td class="inv-sec-col" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.mesa_pc }}</td>
+            <td class="inv-sec-col" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.escritorio_prof }}</td>
+            <td class="inv-sec-col" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.silla_giratoria }}</td>
+            <td class="inv-sec-col" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.silla_fija }}</td>
+            <td class="inv-sec-col" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.armario_alto }}</td>
+            <td class="inv-sec-col" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.biblioteca_baja }}</td>
             <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.aires_total }}</td>
             <td style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ total_mob_all }}</td>
-            <td style="padding:8px;border-top:1px solid #e5e7eb;"></td>
-            <td style="padding:8px;border-top:1px solid #e5e7eb;"></td>
             <td style="padding:8px;border-top:1px solid #e5e7eb;"></td>
           </tr>
         </tfoot>
@@ -905,10 +898,10 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    gap: 12px;
+    gap: 10px;
     background: #ffffff;
     border: 1px solid #e5e7eb;
-    padding: 14px;
+    padding: 10px 12px;
     border-radius: 12px;
     flex-wrap: wrap;
   }
@@ -922,17 +915,17 @@
 
   .sedes-portada-title {
     margin: 4px 0 0;
-    font-size: 24px;
+    font-size: 22px;
     color: #0f172a;
     font-weight: 700;
   }
 
   .sedes-portada-subtitle {
-    margin: 8px 0 0;
+    margin: 6px 0 0;
     color: #475569;
-    font-size: 13px;
+    font-size: 12px;
     max-width: 900px;
-    line-height: 1.45;
+    line-height: 1.38;
   }
 
   .sedes-portada-actions {
@@ -942,11 +935,11 @@
   }
 
   .sedes-context-box {
-    margin-top: 10px;
+    margin-top: 8px;
     background: #fbfcff;
     border: 1px solid #dde6f3;
     border-radius: 12px;
-    padding: 12px;
+    padding: 10px 12px;
   }
 
   .sedes-context-box h2 {
@@ -971,7 +964,7 @@
   }
 
   .sedes-context-actions {
-    margin-top: 10px;
+    margin-top: 8px;
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
@@ -983,7 +976,8 @@
     border: 1px solid #d9e2f2 !important;
     color: #1f2a44 !important;
     border-radius: 10px !important;
-    padding: 7px 12px !important;
+    padding: 4px 10px !important;
+    min-height: 30px !important;
     font-weight: 600 !important;
     box-shadow: none !important;
   }
@@ -1009,10 +1003,10 @@
   }
 
   .sedes-region-grid {
-    margin-top: 10px;
+    margin-top: 8px;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 10px;
+    gap: 8px;
   }
 
   .sedes-region-grid-exec {
@@ -1023,7 +1017,7 @@
     background: #ffffff;
     border: 1px solid #e5e7eb;
     border-radius: 12px;
-    padding: 12px;
+    padding: 10px 10px 9px;
     position: relative;
     overflow: hidden;
     display: flex;
@@ -1121,11 +1115,11 @@
   }
 
   .sedes-mapa-box {
-    margin-top: 10px;
+    margin-top: 8px;
     background: #ffffff;
     border: 1px solid #e5e7eb;
     border-radius: 12px;
-    padding: 12px;
+    padding: 10px;
   }
 
   .sedes-mapa-head h2 {
@@ -1143,9 +1137,9 @@
   }
 
   .sedes-mapa-filters {
-    margin-top: 10px;
+    margin-top: 8px;
     display: grid;
-    gap: 8px;
+    gap: 6px;
   }
 
   .sedes-mapa-filters[hidden] {
@@ -1153,7 +1147,7 @@
   }
 
   .sedes-mapa-controls {
-    margin-top: 8px;
+    margin-top: 6px;
     display: flex;
     gap: 8px;
     align-items: center;
@@ -1161,7 +1155,7 @@
 
   .sedes-mapa-filter-row {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     align-items: center;
     flex-wrap: wrap;
   }
@@ -1175,20 +1169,20 @@
 
   .sedes-mapa-chip-group {
     display: flex;
-    gap: 6px;
+    gap: 5px;
     flex-wrap: wrap;
   }
 
   .sedes-mapa-results {
-    margin-top: 10px;
+    margin-top: 8px;
     display: grid;
-    gap: 8px;
+    gap: 6px;
   }
 
   .sedes-mapa-region {
     border: 1px solid #e5e7eb;
     border-radius: 10px;
-    padding: 8px 10px;
+    padding: 6px 8px;
     background: #fcfdff;
   }
 
@@ -1227,11 +1221,35 @@
   }
 
   .sedes-tech-head {
-    margin-top: 12px;
+    margin-top: 8px;
     background: #ffffff;
     border: 1px solid #e5e7eb;
     border-radius: 12px;
-    padding: 12px;
+    padding: 10px;
+  }
+
+  .sedes-table-toolbar {
+    padding: 6px 12px;
+    border-bottom: 1px solid #e5e7eb;
+    background: #fcfdff;
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+
+  #tablaInventarioPrincipal .inv-sec-col {
+    display: none;
+  }
+
+  #tablaInventarioPrincipal.show-secondary .inv-sec-col {
+    display: table-cell;
+  }
+
+  .inv-actions-cell {
+    display: inline-flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
   .sedes-tech-head h2 {
@@ -1318,13 +1336,13 @@
   const mapFueroButtons = document.querySelectorAll(".js-map-fuero");
   const mapRegionButtons = document.querySelectorAll(".js-map-region");
   const mapOcupacionButtons = document.querySelectorAll(".js-map-ocupacion");
-  const mapEstadoButtons = document.querySelectorAll(".js-map-estado");
-  const mapDisponibilidadButtons = document.querySelectorAll(".js-map-disponibilidad");
   const mapSedeItems = document.querySelectorAll(".js-map-sede");
   const mapRegionBlocks = document.querySelectorAll(".js-map-region-block");
   const mapEmptyState = document.getElementById("mapaOperativoEmpty");
   const mapFiltersPanel = document.getElementById("mapFiltersPanel");
   const mapToggleFiltersBtn = document.getElementById("mapToggleFiltersBtn");
+  const tablaInventarioPrincipal = document.getElementById("tablaInventarioPrincipal");
+  const toggleInvSecColsBtn = document.getElementById("toggleInvSecColsBtn");
   const regionNames = {
     san_salvador: "San Salvador de Jujuy",
     aledanias: "Aledañas",
@@ -1335,8 +1353,6 @@
   let activeMapFuero = "all";
   let activeMapRegion = "all";
   let activeMapOcupacion = "all";
-  let activeMapEstado = "all";
-  let activeMapDisponibilidad = "all";
   const filtroSede = document.getElementById("filtroSede");
   const filtroElemento = document.getElementById("filtroElemento");
   const mfFiltroSede = document.getElementById("mfFiltroSede");
@@ -1475,14 +1491,10 @@
       const itemRegion = item.dataset.region || "";
       const fueros = (item.dataset.fueros || "").split("|").filter(Boolean);
       const itemOcupacion = item.dataset.ocupacion || "";
-      const itemEstado = item.dataset.estado || "";
-      const itemDisponibilidad = item.dataset.disponibilidad || "";
       const matchRegion = (activeMapRegion === "all" || itemRegion === activeMapRegion);
       const matchFuero = (activeMapFuero === "all" || fueros.includes(activeMapFuero));
       const matchOcupacion = (activeMapOcupacion === "all" || itemOcupacion === activeMapOcupacion);
-      const matchEstado = (activeMapEstado === "all" || itemEstado === activeMapEstado);
-      const matchDisponibilidad = (activeMapDisponibilidad === "all" || itemDisponibilidad === activeMapDisponibilidad);
-      const show = matchRegion && matchFuero && matchOcupacion && matchEstado && matchDisponibilidad;
+      const show = matchRegion && matchFuero && matchOcupacion;
       item.style.display = show ? "" : "none";
       if (show) visibleCount += 1;
     });
@@ -1511,14 +1523,6 @@
       const value = btn.dataset.ocupacion || "all";
       btn.classList.toggle("is-selected", value === activeMapOcupacion);
     });
-    mapEstadoButtons.forEach(btn => {
-      const value = btn.dataset.estado || "all";
-      btn.classList.toggle("is-selected", value === activeMapEstado);
-    });
-    mapDisponibilidadButtons.forEach(btn => {
-      const value = btn.dataset.disponibilidad || "all";
-      btn.classList.toggle("is-selected", value === activeMapDisponibilidad);
-    });
   }
 
   if (mapFueroButtons.length > 0) {
@@ -1543,24 +1547,6 @@
     mapOcupacionButtons.forEach(btn => {
       btn.addEventListener("click", () => {
         activeMapOcupacion = btn.dataset.ocupacion || "all";
-        applyMapaOperativoFilters();
-      });
-    });
-  }
-
-  if (mapEstadoButtons.length > 0) {
-    mapEstadoButtons.forEach(btn => {
-      btn.addEventListener("click", () => {
-        activeMapEstado = btn.dataset.estado || "all";
-        applyMapaOperativoFilters();
-      });
-    });
-  }
-
-  if (mapDisponibilidadButtons.length > 0) {
-    mapDisponibilidadButtons.forEach(btn => {
-      btn.addEventListener("click", () => {
-        activeMapDisponibilidad = btn.dataset.disponibilidad || "all";
         applyMapaOperativoFilters();
       });
     });
@@ -1594,6 +1580,22 @@
         activeMapRegion = region;
         applyMapaOperativoFilters();
       });
+    });
+  }
+
+  function setInvSecondaryVisible(show) {
+    if (!tablaInventarioPrincipal || !toggleInvSecColsBtn) return;
+    tablaInventarioPrincipal.classList.toggle("show-secondary", !!show);
+    toggleInvSecColsBtn.textContent = show ? "Ocultar columnas secundarias" : "Mostrar columnas secundarias";
+    toggleInvSecColsBtn.classList.toggle("is-selected", !!show);
+  }
+
+  if (toggleInvSecColsBtn) {
+    let invSecVisible = false;
+    setInvSecondaryVisible(invSecVisible);
+    toggleInvSecColsBtn.addEventListener("click", () => {
+      invSecVisible = !invSecVisible;
+      setInvSecondaryVisible(invSecVisible);
     });
   }
 
