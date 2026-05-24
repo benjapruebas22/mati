@@ -9668,6 +9668,19 @@
               <div class="k">Fuera de servicio</div>
               <div class="v">{{ aires_kpi.fuera_servicio or 0 }}</div>
             </div>
+            <div class="panel-kpi-card">
+              <div class="k">Operativos por fuero</div>
+              <div class="v" style="font-size:15px;line-height:1.25;">
+                <span style="display:inline-flex;gap:6px;align-items:center;">
+                  <span style="display:inline-block;width:8px;height:8px;border-radius:999px;background:#6666CC;"></span>
+                  Penal: {{ aires_fuero_kpi.operativos_penal or 0 }}
+                </span>
+                <span style="display:inline-flex;gap:6px;align-items:center;margin-left:10px;">
+                  <span style="display:inline-block;width:8px;height:8px;border-radius:999px;background:#F58A5E;"></span>
+                  Adm: {{ aires_fuero_kpi.operativos_administracion or 0 }}
+                </span>
+              </div>
+            </div>
           </div>
 
 
@@ -9794,6 +9807,12 @@
 
                 <td style="padding:8px;border-bottom:1px solid #f1f5f9;text-align:right;white-space:nowrap;">
                   <a class="btn xs outline-slate" href="{{ url_for('aire_editar', codigo=sede.codigo, aid=a.id) }}">Editar</a>
+                  <form method="post"
+                        action="{{ url_for('aire_borrar', codigo=sede.codigo, aid=a.id) }}"
+                        style="display:inline;"
+                        onsubmit="return confirm('¿Eliminar este equipo de aire?');">
+                    <button class="btn xs danger" type="submit">Eliminar</button>
+                  </form>
                 </td>
 
 
