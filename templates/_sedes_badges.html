@@ -72,10 +72,15 @@
   {% set badge_cls = '' %}
   {% set badge_title = '' %}
 
-  {# S08: penal fijo por D01/D02/D21. #}
-  {% if sede == 'S08' and dep_norm in ['D01', 'D02', 'D21'] %}
-    {% set badge_cls = 'dep-local-badge-penal' %}
-    {% set badge_title = 'Deposito penal (S08)' %}
+  {# S08: D01/D02/D21 penal; resto administracion. #}
+  {% if not badge_cls and sede == 'S08' and dep_num > 0 %}
+    {% if dep_norm in ['D01', 'D02', 'D21'] %}
+      {% set badge_cls = 'dep-local-badge-penal' %}
+      {% set badge_title = 'Deposito penal (S08)' %}
+    {% else %}
+      {% set badge_cls = 'dep-local-badge-admin' %}
+      {% set badge_title = 'Administracion / Violencia Institucional (S08)' %}
+    {% endif %}
   {% endif %}
 
   {# S03/S04/S05/S07: sedes penales puras (todos los depositos). #}

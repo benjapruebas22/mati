@@ -2094,8 +2094,11 @@
       }
       return { local, cls: 'dep-local-badge-social', title: 'Juridico Social (S11)' };
     }
-    if (sede === 'S08' && ['D01', 'D02', 'D21'].includes(local)) {
-      return { local, cls: 'dep-local-badge-penal', title: 'Deposito penal (S08)' };
+    if (sede === 'S08' && Number.isFinite(n) && n > 0) {
+      if (['D01', 'D02', 'D21'].includes(local)) {
+        return { local, cls: 'dep-local-badge-penal', title: 'Deposito penal (S08)' };
+      }
+      return { local, cls: 'dep-local-badge-admin', title: 'Administracion / Violencia Institucional (S08)' };
     }
     if (sede === 'S12' && Number.isFinite(n) && n > 0) {
       if (['D04', 'D09', 'D24', 'D25'].includes(local)) {
