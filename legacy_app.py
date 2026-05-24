@@ -6025,6 +6025,20 @@ def sede_ficha(codigo):
                 ftxt = _fuero_from_text(ambiente_txt)
                 return ftxt or "social"
 
+            if sede_up == "S18":
+                if dep in ("D04", "D05"):
+                    return "menores"
+                if dep:
+                    return "social"
+                ftxt = _fuero_from_text(ambiente_txt)
+                return ftxt or "social"
+
+            if sede_up in ("S19", "S20"):
+                if dep:
+                    return "social"
+                ftxt = _fuero_from_text(ambiente_txt)
+                return ftxt or "social"
+
             if sede_up == "S08":
                 if dep in ("D01", "D02", "D21"):
                     return "penal"
@@ -9765,6 +9779,8 @@ def sedes_resumen_mpd():
     _set_range("S14", 8, 13, "menores")
     _set_override("S15", "D03", "menores")
     _set_override("S16", "D02", "menores")
+    _set_override("S18", "D04", "menores")
+    _set_override("S18", "D05", "menores")
     for d in ("D04", "D09", "D24", "D25"):
         _set_override("S12", d, "penal")
     for d in ("D36", "D37", "D38"):
@@ -9968,6 +9984,12 @@ def sedes_resumen_mpd():
         # S17: D03/D05 menores; resto juridico social.
         if not fuero_local and sede == "S17":
             fuero_local = "menores" if dep in ("D03", "D05") else "social"
+        # S18: D04/D05 menores; resto juridico social.
+        if not fuero_local and sede == "S18":
+            fuero_local = "menores" if dep in ("D04", "D05") else "social"
+        # S19/S20: juridico social puro.
+        if not fuero_local and sede in ("S19", "S20"):
+            fuero_local = "social"
         # S03/S04/S05/S07: sedes penales puras (todos los depositos).
         if not fuero_local and sede in ("S03", "S04", "S05", "S07"):
             fuero_local = "penal"
