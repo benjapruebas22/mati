@@ -5951,6 +5951,9 @@ def sede_ficha(codigo):
             t = _norm_ambiente_label(raw_txt)
             if not t:
                 return ""
+            # "Penal Menores" pertenece al fuero Penal (no a Menores/Incapaces).
+            if "penal" in t and any(k in t for k in ("menores", "incapaces", "capacidad restringida")):
+                return "penal"
             if any(k in t for k in ("menores", "incapaces", "capacidad restringida")):
                 return "menores"
             if any(k in t for k in ("juridico social", "juridico", "social", "civil", "ajs")):
@@ -9722,6 +9725,9 @@ def sedes_resumen_mpd():
         txt = infra_norm_text(raw_txt)
         if not txt:
             return ""
+        # "Penal Menores" pertenece al fuero Penal (no a Menores/Incapaces).
+        if "penal" in txt and any(k in txt for k in ("menores", "incapaces", "capacidad restringida")):
+            return "penal"
         if any(k in txt for k in ("menores", "incapaces", "capacidad restringida")):
             return "menores"
         if any(k in txt for k in ("juridico social", "civil", " ajs ", "ajs", "delegacion civil", "social")):
@@ -9954,6 +9960,12 @@ def sedes_resumen_mpd():
         ]).strip()
 
         fuero_local = fuero_local_overrides.get((sede, dep), "")
+        # Regla fija S01: D02/D04/D12/D18 = Administracion; resto = Penal.
+        if not fuero_local and sede == "S01":
+            if dep in ("D02", "D04", "D12", "D18"):
+                fuero_local = "administracion"
+            else:
+                fuero_local = "penal"
         # Regla fija S08: D01/D02/D21 = Penal; resto = Administracion.
         # Evita que heurísticas de texto/dependencia clasifiquen mal S08.
         if not fuero_local and sede == "S08":
