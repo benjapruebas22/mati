@@ -14,7 +14,64 @@
   {% set show_infra = is_infra_screen|default(false) %}
   {% set infra_nav_endpoint = 'infra_analisis' if show_infra else 'sedes_resumen_mpd' %}
   {% set mapa_regions = sedes_region_defs|default([]) %}
-  {% set region_exec_cards = sedes_region_cards|default({}) %}
+  {% set region_reference_cards = {
+    'san_salvador': [
+      {'codigo': 'S01', 'resumen': 'Penal'},
+      {'codigo': 'S08', 'resumen': 'Administracion General'},
+      {'codigo': 'S11', 'resumen': 'Juridico Social'},
+      {'codigo': 'S12', 'resumen': 'Equipo Interdisciplinario'},
+      {'codigo': 'S13', 'resumen': 'Menores / Incapaces'}
+    ],
+    'aledanias': [
+      {'codigo': 'S03', 'resumen': 'Perico Penal'},
+      {'codigo': 'S04', 'resumen': 'Alto Comedero'},
+      {'codigo': 'S07', 'resumen': 'Palpala Penal'},
+      {'codigo': 'S10', 'resumen': 'El Carmen'},
+      {'codigo': 'S17', 'resumen': 'Perico Civil'},
+      {'codigo': 'S20', 'resumen': 'Palpala Civil'}
+    ],
+    'el_ramal': [
+      {'codigo': 'S02', 'resumen': 'San Pedro (mixta)'},
+      {'codigo': 'S06', 'resumen': 'Ledesma (mixta)'},
+      {'codigo': 'S19', 'resumen': 'Ledesma Civil'}
+    ],
+    'quebrada_puna': [
+      {'codigo': 'S05', 'resumen': 'Humahuaca Penal'},
+      {'codigo': 'S14', 'resumen': 'Tilcara Juridico Social / Menores'},
+      {'codigo': 'S15', 'resumen': 'Abra Pampa Juridico Social / Menores'},
+      {'codigo': 'S16', 'resumen': 'La Quiaca Juridico Social / Menores'},
+      {'codigo': 'S18', 'resumen': 'Humahuaca Civil'}
+    ]
+  } %}
+  {% set region_reference_details = {
+    'san_salvador': [
+      {'codigo':'S01','nombre':'Independencia 202','fueros':'Penal','bloques':[{'fuero':'Penal','rangos':'Depositos penales operativos'}]},
+      {'codigo':'S08','nombre':'San Martin 137','fueros':'Administracion / Penal','bloques':[{'fuero':'Violencia Institucional','rangos':'D01, D02, D21'},{'fuero':'Administracion General','rangos':'Uso central'}]},
+      {'codigo':'S11','nombre':'Gorriti 791','fueros':'Juridico Social','bloques':[{'fuero':'Juridico Social','rangos':'Operacion civil y social'}]},
+      {'codigo':'S12','nombre':'Belgrano','fueros':'Equipo Interdisciplinario / Penal','bloques':[{'fuero':'Ejecucion de Pena','rangos':'D04, D09, D24, D25'}]},
+      {'codigo':'S13','nombre':'San Martin 271','fueros':'Menores / Incapaces','bloques':[{'fuero':'Menores / Incapaces','rangos':'Operacion especifica'}]}
+    ],
+    'aledanias': [
+      {'codigo':'S03','nombre':'Perico Penal','fueros':'Penal','bloques':[{'fuero':'Penal','rangos':'Operacion penal'}]},
+      {'codigo':'S04','nombre':'Alto Comedero','fueros':'Penal','bloques':[{'fuero':'Penal','rangos':'Operacion penal'}]},
+      {'codigo':'S07','nombre':'Palpala Penal','fueros':'Penal','bloques':[{'fuero':'Penal','rangos':'Operacion penal'}]},
+      {'codigo':'S10','nombre':'El Carmen','fueros':'Penal / Juridico Social / Menores','bloques':[{'fuero':'Penal fijo','rangos':'Base operativa'},{'fuero':'JS / Menores','rangos':'D01, D02, D03, D04 segun uso interno'}]},
+      {'codigo':'S17','nombre':'Perico Civil','fueros':'Juridico Social / Menores','bloques':[{'fuero':'Juridico Social','rangos':'D02 a D04'},{'fuero':'Menores','rangos':'D03'},{'fuero':'Uso multiple','rangos':'D01'}]},
+      {'codigo':'S20','nombre':'Palpala Civil','fueros':'Juridico Social / Menores','bloques':[{'fuero':'Juridico Social','rangos':'Operacion civil'},{'fuero':'Menores','rangos':'Integracion proyectada'}]}
+    ],
+    'el_ramal': [
+      {'codigo':'S02','nombre':'San Pedro','fueros':'Penal / Juridico Social / Menores','bloques':[{'fuero':'Penal','rangos':'D01 a D10'},{'fuero':'Juridico Social','rangos':'D11 a D28'},{'fuero':'Menores / Incapaces','rangos':'D29 a D38'}]},
+      {'codigo':'S06','nombre':'Ledesma','fueros':'Penal / Menores','bloques':[{'fuero':'Penal','rangos':'D01 a D07'},{'fuero':'Menores / Incapaces','rangos':'D08 a D11'}]},
+      {'codigo':'S19','nombre':'Ledesma Civil','fueros':'Juridico Social','bloques':[{'fuero':'Juridico Social','rangos':'Operacion civil'}]}
+    ],
+    'quebrada_puna': [
+      {'codigo':'S05','nombre':'Humahuaca Penal','fueros':'Penal','bloques':[{'fuero':'Penal','rangos':'Operacion penal'}]},
+      {'codigo':'S14','nombre':'Tilcara','fueros':'Juridico Social / Menores','bloques':[{'fuero':'Menores','rangos':'D01, D13, D09'}]},
+      {'codigo':'S15','nombre':'Abra Pampa','fueros':'Juridico Social / Menores','bloques':[{'fuero':'Menores','rangos':'D01, D05, D04'}]},
+      {'codigo':'S16','nombre':'La Quiaca','fueros':'Juridico Social / Menores','bloques':[{'fuero':'Menores','rangos':'D01, D05, D04'}]},
+      {'codigo':'S18','nombre':'Humahuaca Civil','fueros':'Juridico Social / Menores','bloques':[{'fuero':'Juridico Social / Menores','rangos':'Operacion civil integrada'}]}
+    ]
+  } %}
   <div class="cardx sedes-shell {{ 'is-infra' if show_infra else 'is-resumen' }}" style="padding:6px 8px;">
     {% if not show_infra %}
     <div class="sedes-portada-main">
@@ -29,20 +86,40 @@
       </div>
     </div>
 
+    <div class="sedes-region-ref-head">
+      <h2>REFERENCIAS OPERATIVAS POR REGION</h2>
+      <p>Distribucion rapida de sedes, fueros y depositos para interpretar los filtros.</p>
+    </div>
+
     <div class="sedes-region-grid sedes-region-grid-exec" id="sedesRegionCards">
       {% for region in mapa_regions %}
-      {% set stats = region_exec_cards.get(region.key, {}) %}
+      {% set ref_items = region_reference_cards.get(region.key, []) %}
+      {% set ref_details = region_reference_details.get(region.key, []) %}
       <article class="sedes-region-card sedes-region-exec {{ region.class }} js-region-card" data-region-card="{{ region.key }}">
         <h3>{{ region.title }}</h3>
-        <div class="sedes-region-kpis">
-          <span><strong>Sedes:</strong> <span class="js-card-sedes">{{ stats.sedes or 0 }}</span></span>
-          <span><strong>Personas:</strong> <span class="js-card-personas">{{ stats.personas or 0 }}</span></span>
-          <span><strong>m2:</strong> <span class="js-card-m2">{{ (stats.m2_total or 0)|round(0)|int }}</span></span>
-          <span><strong>Ocupacion:</strong> <span class="js-card-ocupacion">{{ stats.ocupacion_pct or 0 }}</span>%</span>
+        <div class="sedes-ref-list">
+          {% for item in ref_items %}
+          <div class="sedes-ref-row">
+            <span class="sedes-ref-badge">{{ render_sede_badge(item.codigo) }}</span>
+            <span class="sedes-ref-text">{{ item.resumen }}</span>
+          </div>
+          {% endfor %}
         </div>
-        <div class="sedes-region-foot">
-          <span class="exec-estado js-card-estado {{ 'is-alto' if stats.estado_key == 'alto' else ('is-medio' if stats.estado_key == 'medio' else 'is-disponible') }}">Estado: {{ stats.estado or 'Disponible' }}</span>
-          <a class="btn xs btn-secondary js-exec-detail" href="#mapa-operativo-territorial" data-map-region-target="{{ region.key }}">Ver detalle</a>
+        <div class="sedes-region-foot footer-card">
+          <button type="button" class="btn xs btn-secondary js-region-detail-toggle">Ver detalle</button>
+        </div>
+        <div class="sedes-region-detail js-region-detail" hidden>
+          {% for d in ref_details %}
+          <div class="sedes-region-detail-item">
+            <div class="sedes-region-detail-head"><strong>{{ d.codigo }}</strong> · {{ d.nombre }}</div>
+            <div class="sedes-region-detail-fueros">{{ d.fueros }}</div>
+            <ul>
+              {% for b in d.bloques %}
+              <li><strong>{{ b.fuero }}:</strong> {{ b.rangos }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endfor %}
         </div>
       </article>
       {% endfor %}
@@ -79,17 +156,6 @@
             <option value="social">Juridico Social</option>
             <option value="menores">Menores / Incapaces</option>
             <option value="administracion">Administracion</option>
-          </select>
-        </div>
-        <div class="sedes-master-filter-row">
-          <label for="masterFilterOcupacion">Ocupacion</label>
-          <select id="masterFilterOcupacion" class="sedes-master-select">
-            <option value="all">Todas</option>
-            <option value="alta">Alta</option>
-            <option value="media">Media</option>
-            <option value="disponible">Disponible</option>
-            <option value="bajo_uso">Bajo uso</option>
-            <option value="sobreocupada">Sobreocupada</option>
           </select>
         </div>
         <div class="sedes-master-filter-row">
@@ -245,17 +311,6 @@
             <button type="button" class="btn xs js-map-region" data-region="aledanias">Aledanas</button>
             <button type="button" class="btn xs js-map-region" data-region="el_ramal">El Ramal</button>
             <button type="button" class="btn xs js-map-region" data-region="quebrada_puna">Quebrada y Puna</button>
-          </div>
-        </div>
-        <div class="sedes-mapa-filter-row">
-          <span class="sedes-mapa-filter-label">Ocupacion</span>
-          <div class="sedes-mapa-chip-group" id="mapOcupacionChips">
-            <button type="button" class="btn xs is-selected js-map-ocupacion" data-ocupacion="all">Todas</button>
-            <button type="button" class="btn xs js-map-ocupacion" data-ocupacion="sobreocupada">Sobreocupada</button>
-            <button type="button" class="btn xs js-map-ocupacion" data-ocupacion="alta">Alta</button>
-            <button type="button" class="btn xs js-map-ocupacion" data-ocupacion="media">Media</button>
-            <button type="button" class="btn xs js-map-ocupacion" data-ocupacion="disponible">Disponible</button>
-            <button type="button" class="btn xs js-map-ocupacion" data-ocupacion="bajo_uso">Bajo uso</button>
           </div>
         </div>
       </div>
@@ -1144,38 +1199,57 @@
     gap: 6px;
   }
 
-  .sedes-region-kpis {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 4px 10px;
+  .sedes-region-ref-head {
+    margin-top: 6px;
+    margin-bottom: 4px;
+  }
+
+  .sedes-region-ref-head h2 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1f2a44;
+    letter-spacing: 0.02em;
+  }
+
+  .sedes-region-ref-head p {
+    margin: 3px 0 0;
     font-size: 11px;
-    line-height: 1.35;
+    color: #64748b;
+  }
+
+  .sedes-ref-list {
+    display: grid;
+    gap: 4px;
+  }
+
+  .sedes-ref-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
     color: #334155;
+    line-height: 1.25;
+  }
+
+  .sedes-ref-row .sedes-ref-badge {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .sedes-ref-row .sedes-ref-text {
+    min-width: 0;
   }
 
   .sedes-region-foot,
   .footer-card {
-    margin-top: auto;
+    margin-top: 8px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-end;
     gap: 8px;
     flex-wrap: wrap;
-    margin-top: 8px;
-  }
-
-  .exec-estado {
-    border-radius: 999px;
-    padding: 2px 8px;
-    border: 1px solid #d9e2f2;
-    background: #f8fafc;
-    color: #334155;
-    font-size: 10px;
-    font-weight: 600;
-    height: 24px;
-    line-height: 20px;
-    display: inline-flex;
-    align-items: center;
   }
 
   .sedes-region-exec .js-exec-detail {
@@ -1184,6 +1258,49 @@
     line-height: 28px !important;
     padding: 0 12px !important;
     font-size: 11px !important;
+  }
+
+  .sedes-region-exec .js-region-detail-toggle {
+    min-height: 28px !important;
+    height: 28px !important;
+    line-height: 28px !important;
+    padding: 0 12px !important;
+    font-size: 11px !important;
+  }
+
+  .sedes-region-detail {
+    margin-top: 8px;
+    border-top: 1px dashed #d9e2f2;
+    padding-top: 8px;
+    display: grid;
+    gap: 6px;
+  }
+
+  .sedes-region-detail-item {
+    border: 1px solid #e5e7eb;
+    background: #fcfdff;
+    border-radius: 8px;
+    padding: 6px 8px;
+  }
+
+  .sedes-region-detail-head {
+    font-size: 11px;
+    color: #1f2a44;
+    line-height: 1.25;
+  }
+
+  .sedes-region-detail-fueros {
+    font-size: 10px;
+    color: #64748b;
+    margin-top: 2px;
+  }
+
+  .sedes-region-detail-item ul {
+    margin: 4px 0 0;
+    padding-left: 16px;
+    font-size: 10px;
+    color: #334155;
+    line-height: 1.25;
   }
 
   .exec-estado.is-alto {
@@ -1605,13 +1722,11 @@
   const masterFiltersPanel = document.getElementById('masterFiltersPanel');
   const masterFilterRegion = document.getElementById('masterFilterRegion');
   const masterFilterFuero = document.getElementById('masterFilterFuero');
-  const masterFilterOcupacion = document.getElementById('masterFilterOcupacion');
   const masterFilterDensidad = document.getElementById('masterFilterDensidad');
   const masterFilterReset = document.getElementById('masterFilterReset');
 
   const mapFueroButtons = document.querySelectorAll('.js-map-fuero');
   const mapRegionButtons = document.querySelectorAll('.js-map-region');
-  const mapOcupacionButtons = document.querySelectorAll('.js-map-ocupacion');
   const mapSedeItems = document.querySelectorAll('.js-map-sede');
   const mapRegionBlocks = document.querySelectorAll('.js-map-region-block');
   const mapEmptyState = document.getElementById('mapaOperativoEmpty');
@@ -1622,7 +1737,7 @@
 
   const resumenRows = document.querySelectorAll('.js-resumen-row');
   const regionCards = document.querySelectorAll('.js-region-card');
-  const execDetailButtons = document.querySelectorAll('.js-exec-detail');
+  const regionDetailToggles = document.querySelectorAll('.js-region-detail-toggle');
   const tablaInventarioPrincipal = document.getElementById('tablaInventarioPrincipal');
   const toggleInvSecColsBtn = document.getElementById('toggleInvSecColsBtn');
 
@@ -1668,14 +1783,6 @@
     administracion: 'Administracion'
   };
 
-  const ocupacionLabels = {
-    sobreocupada: 'Sobreocupada',
-    alta: 'Alta',
-    media: 'Media',
-    disponible: 'Disponible',
-    bajo_uso: 'Bajo uso'
-  };
-
   const densidadLabels = {
     alta: 'Densidad alta',
     media: 'Densidad media',
@@ -1705,7 +1812,6 @@
   const activeFilters = {
     region: 'all',
     fuero: 'all',
-    ocupacion: 'all',
     densidad: 'all'
   };
 
@@ -2157,7 +2263,6 @@
   function syncFilterControls() {
     if (masterFilterRegion) masterFilterRegion.value = activeFilters.region;
     if (masterFilterFuero) masterFilterFuero.value = activeFilters.fuero;
-    if (masterFilterOcupacion) masterFilterOcupacion.value = activeFilters.ocupacion;
     if (masterFilterDensidad) masterFilterDensidad.value = activeFilters.densidad;
 
     mapFueroButtons.forEach(btn => {
@@ -2165,9 +2270,6 @@
     });
     mapRegionButtons.forEach(btn => {
       btn.classList.toggle('is-selected', (btn.dataset.region || 'all') === activeFilters.region);
-    });
-    mapOcupacionButtons.forEach(btn => {
-      btn.classList.toggle('is-selected', (btn.dataset.ocupacion || 'all') === activeFilters.ocupacion);
     });
   }
 
@@ -2195,12 +2297,10 @@
       .split('|')
       .map(normalizeFueroCode)
       .filter(Boolean);
-    const ocupacion = rowLike.dataset.ocupacion || 'disponible';
     const densidad = rowLike.dataset.densidadBucket || 'baja';
 
     if (activeFilters.region !== 'all' && region !== activeFilters.region) return false;
     if (activeFilters.fuero !== 'all' && !fueros.includes(activeFilters.fuero)) return false;
-    if (activeFilters.ocupacion !== 'all' && ocupacion !== activeFilters.ocupacion) return false;
     if (activeFilters.densidad !== 'all' && densidad !== activeFilters.densidad) return false;
     if (!rowMatchesSearchState(rowLike)) return false;
     return true;
@@ -2265,25 +2365,6 @@
       const stats = regionAgg[region] || { sedes: 0, personas: 0, m2: 0, puestos: 0 };
       const showCard = (activeFilters.region === 'all') ? (stats.sedes > 0) : (region === activeFilters.region);
       card.style.display = showCard ? '' : 'none';
-
-      const occ = stats.puestos > 0 ? Math.round((stats.personas * 100) / stats.puestos) : 0;
-      const estado = estadoFromPct(occ);
-
-      const sedesEl = card.querySelector('.js-card-sedes');
-      const personasEl = card.querySelector('.js-card-personas');
-      const m2El = card.querySelector('.js-card-m2');
-      const ocupacionEl = card.querySelector('.js-card-ocupacion');
-      const estadoEl = card.querySelector('.js-card-estado');
-
-      if (sedesEl) sedesEl.textContent = stats.sedes;
-      if (personasEl) personasEl.textContent = stats.personas;
-      if (m2El) m2El.textContent = Math.round(stats.m2);
-      if (ocupacionEl) ocupacionEl.textContent = occ;
-      if (estadoEl) {
-        estadoEl.textContent = `Estado: ${estado.label}`;
-        estadoEl.classList.remove('is-alto', 'is-medio', 'is-disponible');
-        estadoEl.classList.add(estado.key === 'alto' ? 'is-alto' : (estado.key === 'medio' ? 'is-medio' : 'is-disponible'));
-      }
     });
 
     mapSedeItems.forEach(item => {
@@ -2320,7 +2401,6 @@
       const hasManualFilters =
         (activeFilters.region !== 'all') ||
         (activeFilters.fuero !== 'all') ||
-        (activeFilters.ocupacion !== 'all') ||
         (activeFilters.densidad !== 'all');
       const hasSemanticSearchScope =
         !!globalSearchState.autoSede ||
@@ -2337,7 +2417,6 @@
         const parts = [];
         if (activeFilters.region !== 'all') parts.push(regionLabels[activeFilters.region] || activeFilters.region);
         if (activeFilters.fuero !== 'all') parts.push(fueroLabels[activeFilters.fuero] || activeFilters.fuero);
-        if (activeFilters.ocupacion !== 'all') parts.push(ocupacionLabels[activeFilters.ocupacion] || activeFilters.ocupacion);
         if (activeFilters.densidad !== 'all') parts.push(densidadLabels[activeFilters.densidad] || activeFilters.densidad);
         if (globalSearchState.normalized) {
           if (hasSemanticSearchScope) {
@@ -2371,7 +2450,6 @@
   function applyMasterFilterChanges() {
     if (masterFilterRegion) activeFilters.region = masterFilterRegion.value || 'all';
     if (masterFilterFuero) activeFilters.fuero = masterFilterFuero.value || 'all';
-    if (masterFilterOcupacion) activeFilters.ocupacion = masterFilterOcupacion.value || 'all';
     if (masterFilterDensidad) activeFilters.densidad = masterFilterDensidad.value || 'all';
     applyUnifiedSedesFilters();
   }
@@ -2379,7 +2457,6 @@
   function resetMasterFilters() {
     activeFilters.region = 'all';
     activeFilters.fuero = 'all';
-    activeFilters.ocupacion = 'all';
     activeFilters.densidad = 'all';
     applyUnifiedSedesFilters();
   }
@@ -2398,7 +2475,6 @@
 
   if (masterFilterRegion) masterFilterRegion.addEventListener('change', applyMasterFilterChanges);
   if (masterFilterFuero) masterFilterFuero.addEventListener('change', applyMasterFilterChanges);
-  if (masterFilterOcupacion) masterFilterOcupacion.addEventListener('change', applyMasterFilterChanges);
   if (masterFilterDensidad) masterFilterDensidad.addEventListener('change', applyMasterFilterChanges);
   if (masterFilterReset) masterFilterReset.addEventListener('click', resetMasterFilters);
 
@@ -2434,13 +2510,6 @@
     });
   });
 
-  mapOcupacionButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      activeFilters.ocupacion = btn.dataset.ocupacion || 'all';
-      applyUnifiedSedesFilters();
-    });
-  });
-
   if (mapToggleFiltersBtn) {
     mapToggleFiltersBtn.addEventListener('click', () => {
       const isHidden = !!(mapFiltersPanel && mapFiltersPanel.hasAttribute('hidden'));
@@ -2454,11 +2523,20 @@
     });
   }
 
-  execDetailButtons.forEach(btn => {
+  regionDetailToggles.forEach(btn => {
     btn.addEventListener('click', () => {
-      activeFilters.region = btn.dataset.mapRegionTarget || 'all';
-      setMapContentVisible(true);
-      applyUnifiedSedesFilters();
+      const card = btn.closest('.js-region-card');
+      if (!card) return;
+      const detail = card.querySelector('.js-region-detail');
+      if (!detail) return;
+      const isOpen = !detail.hasAttribute('hidden');
+      if (isOpen) {
+        detail.setAttribute('hidden', 'hidden');
+        btn.textContent = 'Ver detalle';
+      } else {
+        detail.removeAttribute('hidden');
+        btn.textContent = 'Ocultar detalle';
+      }
     });
   });
 
