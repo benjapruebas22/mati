@@ -50,6 +50,11 @@
 
     <div id="resumen-inventario-top" class="sedes-master-table" style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;overflow:auto;background:#fff;">
       <div class="sedes-master-head" style="padding:10px 12px;border-bottom:1px solid #e5e7eb;font-weight:700;color:#334155;">Tabla maestra operativa por sede</div>
+      <div class="sedes-global-searchbar">
+        <input id="globalSearchInput" type="text" class="sedes-master-input" placeholder="Buscar sede, codigo, persona, direccion, region, fuero o deposito...">
+        <button id="globalSearchClear" type="button" class="btn xs btn-secondary">Limpiar busqueda</button>
+      </div>
+      <div id="globalSearchResults" class="sedes-search-results" hidden></div>
       <div class="sedes-table-toolbar">
         <button id="masterFiltersToggleBtn" type="button" class="btn xs btn-secondary">Mostrar filtros</button>
         <button id="toggleInvSecColsBtn" type="button" class="btn xs">Ver inventario detallado</button>
@@ -96,10 +101,6 @@
             <option value="baja">Baja</option>
           </select>
         </div>
-        <div class="sedes-master-filter-row sedes-master-search-row">
-          <label for="masterFilterSearch">Buscar</label>
-          <input id="masterFilterSearch" class="sedes-master-input" type="text" placeholder="Codigo, nombre o localidad">
-        </div>
         <div class="sedes-master-filter-row sedes-master-actions-row">
           <button id="masterFilterReset" type="button" class="btn xs btn-secondary">Limpiar filtros</button>
         </div>
@@ -141,11 +142,17 @@
           {% set total_mob = (r.mesa_pc or 0) + (r.escritorio_prof or 0) + (r.silla_giratoria or 0) + (r.silla_fija or 0) + (r.armario_alto or 0) + (r.biblioteca_baja or 0) + (r.aires_total or 0) %}
           <tr class="js-resumen-row"
               data-sede="{{ r.codigo }}"
+              data-nombre="{{ (r.nombre or '') }}"
+              data-ciudad="{{ (r.ciudad or '') }}"
+              data-direccion="{{ (r.direccion or '') }}"
+              data-tooltip="{{ (r.tooltip_inline or (r.codigo ~ ' - ' ~ r.nombre)) }}"
               data-region="{{ r.region_key or '' }}"
+              data-region-title="{{ r.region_title or '' }}"
               data-fueros="{{ (r.fueros_all or [])|join('|') }}"
+              data-fuero-principal="{{ r.fuero_principal or '' }}"
               data-ocupacion="{{ r.ocupacion_bucket or 'disponible' }}"
               data-densidad-bucket="{{ r.densidad_bucket or 'baja' }}"
-              data-search="{{ ((r.codigo or '') ~ ' ' ~ (r.nombre or '') ~ ' ' ~ (r.ciudad or '') ~ ' ' ~ (r.direccion or ''))|lower }}"
+              data-search="{{ ((r.codigo or '') ~ ' ' ~ (r.nombre or '') ~ ' ' ~ (r.ciudad or '') ~ ' ' ~ (r.direccion or '') ~ ' ' ~ (r.region_title or '') ~ ' ' ~ (r.fuero_principal or '') ~ ' ' ~ ((r.fueros_all or [])|join(' ')))|lower }}"
               data-val-personas="{{ r.personas_total or 0 }}"
               data-val-m2="{{ r.m2_total or 0 }}"
               data-val-puestos="{{ r.puestos_trabajo or 0 }}"
@@ -1365,6 +1372,68 @@
     justify-content: flex-end;
   }
 
+  .sedes-global-searchbar {
+    padding: 8px 12px;
+    border-bottom: 1px solid #e5e7eb;
+    background: #fcfdff;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .sedes-global-searchbar .sedes-master-input {
+    flex: 1 1 360px;
+    min-width: 220px;
+  }
+
+  .sedes-search-results {
+    border-bottom: 1px solid #e5e7eb;
+    background: #f8fafc;
+    padding: 8px 12px;
+    display: grid;
+    gap: 8px;
+  }
+
+  .sedes-search-results[hidden] {
+    display: none !important;
+  }
+
+  .sedes-search-group {
+    border: 1px solid #d9e2f2;
+    border-radius: 10px;
+    background: #fff;
+    padding: 8px 10px;
+  }
+
+  .sedes-search-group h4 {
+    margin: 0 0 6px;
+    font-size: 12px;
+    color: #1f2a44;
+    font-weight: 700;
+  }
+
+  .sedes-search-list {
+    display: grid;
+    gap: 6px;
+  }
+
+  .sedes-search-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: #334155;
+  }
+
+  .sedes-search-item-actions {
+    display: inline-flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
   #tablaInventarioPrincipal .inv-sec-col {
     display: none;
   }
@@ -1447,13 +1516,16 @@
 <script>
   const isInfraScreen = {{ 'true' if show_infra else 'false' }};
 
+  const globalSearchInput = document.getElementById('globalSearchInput');
+  const globalSearchClear = document.getElementById('globalSearchClear');
+  const globalSearchResults = document.getElementById('globalSearchResults');
+
   const masterFiltersToggleBtn = document.getElementById('masterFiltersToggleBtn');
   const masterFiltersPanel = document.getElementById('masterFiltersPanel');
   const masterFilterRegion = document.getElementById('masterFilterRegion');
   const masterFilterFuero = document.getElementById('masterFilterFuero');
   const masterFilterOcupacion = document.getElementById('masterFilterOcupacion');
   const masterFilterDensidad = document.getElementById('masterFilterDensidad');
-  const masterFilterSearch = document.getElementById('masterFilterSearch');
   const masterFilterReset = document.getElementById('masterFilterReset');
 
   const mapFueroButtons = document.querySelectorAll('.js-map-fuero');
@@ -1493,6 +1565,13 @@
   const tfootSillaFija = document.getElementById('tfootSillaFija');
   const tfootArmarioAlto = document.getElementById('tfootArmarioAlto');
   const tfootBibliotecaBaja = document.getElementById('tfootBibliotecaBaja');
+
+  const sedesPersonasSearchRaw = {{ (sedes_personas_search or [])|tojson|safe }};
+  const sedesDepositosSearchRaw = {{ (sedes_depositos_search or [])|tojson|safe }};
+
+  const sedeFichaUrlTpl = "{{ url_for('sede_ficha', codigo='__SEDE__') }}";
+  const bienesSedeUrlTpl = "{{ url_for('bienes_sede', infra_sede='__SEDE__') }}";
+  const analisisSedeUrlTpl = "{{ url_for('infra_analisis', sede='__SEDE__') }}#infra-analisis";
 
   const regionLabels = {
     san_salvador: 'San Salvador',
@@ -1546,8 +1625,20 @@
     region: 'all',
     fuero: 'all',
     ocupacion: 'all',
-    densidad: 'all',
-    search: ''
+    densidad: 'all'
+  };
+
+  let globalSearchState = {
+    raw: '',
+    normalized: '',
+    autoRegion: 'all',
+    autoFuero: 'all',
+    autoSede: '',
+    freeText: '',
+    scopeLabel: '',
+    sedeMatches: [],
+    personaMatches: [],
+    depositoMatches: []
   };
 
   function toNum(raw) {
@@ -1560,8 +1651,70 @@
     return toNum(el.getAttribute(attrName));
   }
 
+  function normalizeSearch(raw) {
+    return String(raw || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, ' ')
+      .trim();
+  }
+
   function normalizeText(raw) {
-    return String(raw || '').toLowerCase().trim();
+    return normalizeSearch(raw);
+  }
+
+  function compactToken(raw) {
+    return normalizeSearch(raw).replace(/[^a-z0-9]/g, '');
+  }
+
+  function normalizeSedeCode(raw) {
+    const c = compactToken(raw);
+    const m = c.match(/^s?(\d{1,2})$/);
+    if (!m) return '';
+    return `S${String(m[1]).padStart(2, '0')}`;
+  }
+
+  function normalizeLocalCode(raw) {
+    const c = compactToken(raw);
+    const m = c.match(/^d?(\d{1,3})$/);
+    if (!m) return '';
+    return `D${String(m[1]).padStart(2, '0')}`;
+  }
+
+  function normalizeFueroCode(raw) {
+    const v = normalizeSearch(raw);
+    if (!v) return '';
+    if (v.includes('penal')) return 'penal';
+    if (v.includes('menores') || v.includes('incapaces')) return 'menores';
+    if (v.includes('administracion') || v.includes('admin') || v.includes('violencia institucional')) return 'administracion';
+    if (v.includes('juridico social') || v === 'js' || v.includes('juridico') || v.includes('social')) return 'social';
+    if (v === 'general') return 'general';
+    return v;
+  }
+
+  function escapeHtml(raw) {
+    return String(raw || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function buildSedeUrl(templateUrl, sedeCode) {
+    return String(templateUrl || '').replace('__SEDE__', encodeURIComponent(String(sedeCode || '').toUpperCase()));
+  }
+
+  function buildAnalisisUrl(sedeCode, localCode) {
+    const base = buildSedeUrl(analisisSedeUrlTpl, sedeCode);
+    if (!localCode) return base;
+    const hashIndex = base.indexOf('#');
+    const hash = hashIndex >= 0 ? base.slice(hashIndex) : '';
+    const path = hashIndex >= 0 ? base.slice(0, hashIndex) : base;
+    const sep = path.includes('?') ? '&' : '?';
+    const local = normalizeLocalCode(localCode);
+    return `${path}${sep}infra_sede=${encodeURIComponent(String(sedeCode || '').toUpperCase())}&infra_deposito=${encodeURIComponent(local || String(localCode || ''))}${hash}`;
   }
 
   function estadoFromPct(pct) {
@@ -1626,12 +1779,305 @@
     applyUnifiedSedesFilters();
   }
 
+  function ensureSearchNorm(rowLike) {
+    if (!rowLike || !rowLike.dataset) return '';
+    if (rowLike.dataset.searchNorm) return rowLike.dataset.searchNorm;
+    const bits = [
+      rowLike.dataset.search || '',
+      rowLike.dataset.regionTitle || '',
+      rowLike.dataset.region || '',
+      rowLike.dataset.fueroPrincipal || '',
+      (rowLike.dataset.fueros || '').replace(/\|/g, ' ')
+    ];
+    const norm = normalizeSearch(bits.join(' '));
+    rowLike.dataset.searchNorm = norm;
+    return norm;
+  }
+
+  const rowMetaBySede = new Map();
+  resumenRows.forEach(row => {
+    const sedeCode = normalizeSedeCode(row.dataset.sede || '');
+    if (!sedeCode) return;
+    const fueros = (row.dataset.fueros || '')
+      .split('|')
+      .map(normalizeFueroCode)
+      .filter(Boolean);
+    rowMetaBySede.set(sedeCode, {
+      sede: sedeCode,
+      nombre: String(row.dataset.nombre || '').trim(),
+      ciudad: String(row.dataset.ciudad || '').trim(),
+      direccion: String(row.dataset.direccion || '').trim(),
+      tooltip: String(row.dataset.tooltip || '').trim(),
+      region: String(row.dataset.region || '').trim(),
+      regionTitle: String(row.dataset.regionTitle || '').trim(),
+      fueros,
+      searchNorm: ensureSearchNorm(row)
+    });
+  });
+
+  const sedesPersonasSearch = (Array.isArray(sedesPersonasSearchRaw) ? sedesPersonasSearchRaw : []).map(p => {
+    const sede = normalizeSedeCode(p.sede_codigo || '');
+    const local = normalizeLocalCode(p.codigo_local || '');
+    const nombre = String(p.nombre || '').trim();
+    const dependencia = String(p.dependencia || '').trim();
+    const email = String(p.email || '').trim();
+    const sedeNombre = String(p.sede_nombre || '').trim();
+    const searchNorm = normalizeSearch([sede, sedeNombre, local, nombre, dependencia, email].join(' '));
+    return {
+      sede_codigo: sede,
+      sede_nombre: sedeNombre,
+      codigo_local: local,
+      nombre,
+      dependencia,
+      email,
+      _search_norm: searchNorm
+    };
+  });
+
+  const sedesDepositosSearch = (Array.isArray(sedesDepositosSearchRaw) ? sedesDepositosSearchRaw : []).map(d => {
+    const sede = normalizeSedeCode(d.sede_codigo || '');
+    const local = normalizeLocalCode(d.codigo_local || '');
+    const sedeNombre = String(d.sede_nombre || '').trim();
+    const descripcion = String(d.descripcion || '').trim();
+    const nombre = String(d.nombre || '').trim();
+    const ubicacion = String(d.ubicacion || '').trim();
+    const tipo = String(d.tipo || '').trim();
+    const referencia = String(d.referencia || '').trim();
+    const searchNorm = normalizeSearch([sede, sedeNombre, local, descripcion, nombre, ubicacion, tipo, referencia].join(' '));
+    return {
+      sede_codigo: sede,
+      sede_nombre: sedeNombre,
+      codigo_local: local,
+      descripcion,
+      nombre,
+      ubicacion,
+      tipo,
+      referencia,
+      _search_norm: searchNorm
+    };
+  });
+
+  function detectRegionFromQuery(qNorm) {
+    const q = ` ${qNorm || ''} `;
+    if (q.includes(' san salvador de jujuy ') || q.includes(' san salvador ') || q.includes(' capital ')) return 'san_salvador';
+    if (q.includes(' aledanas ') || q.includes(' aledanias ') || q.includes(' alrededor ')) return 'aledanias';
+    if (q.includes(' el ramal ') || q.includes(' ramal ')) return 'el_ramal';
+    if (q.includes(' quebrada y puna ') || q.includes(' quebrada puna ') || q.includes(' quebrada ') || q.includes(' puna ')) return 'quebrada_puna';
+    return '';
+  }
+
+  function detectFueroFromQuery(qNorm) {
+    const q = ` ${qNorm || ''} `;
+    if (q.includes(' violencia institucional ') || q.includes(' administracion ') || q.includes(' admin ')) return 'administracion';
+    if (q.includes(' juridico social ') || q.includes(' juridico ') || q.includes(' js ') || q.includes(' social ')) return 'social';
+    if (q.includes(' menores ') || q.includes(' incapaces ')) return 'menores';
+    if (q.includes(' penal ')) return 'penal';
+    return '';
+  }
+
+  function parseDepositoFromQuery(qNorm) {
+    const c = compactToken(qNorm);
+    const m1 = c.match(/^s?(\d{1,2})d(\d{1,3})$/);
+    if (m1) {
+      return {
+        sede: `S${String(m1[1]).padStart(2, '0')}`,
+        local: `D${String(m1[2]).padStart(2, '0')}`
+      };
+    }
+    const m2 = c.match(/^d(\d{1,3})$/);
+    if (m2) {
+      return { sede: '', local: `D${String(m2[1]).padStart(2, '0')}` };
+    }
+    return null;
+  }
+
+  function matchesMetaSearch(meta, state) {
+    if (!meta) return false;
+    if (state.autoSede && meta.sede !== state.autoSede) return false;
+    if (state.autoRegion !== 'all' && meta.region !== state.autoRegion) return false;
+    if (state.autoFuero !== 'all' && !meta.fueros.includes(state.autoFuero)) return false;
+    if (state.freeText && !String(meta.searchNorm || '').includes(state.freeText)) return false;
+    return !!(state.autoSede || state.autoRegion !== 'all' || state.autoFuero !== 'all' || state.freeText);
+  }
+
+  function findPersonaMatches(state) {
+    if (!state.normalized) return [];
+    const depParsed = parseDepositoFromQuery(state.normalized);
+    const exactSede = normalizeSedeCode(state.raw || state.normalized);
+    return sedesPersonasSearch.filter(p => {
+      if (!p.sede_codigo) return false;
+      if (exactSede && p.sede_codigo === exactSede) return true;
+      if (depParsed && depParsed.local) {
+        const localOk = p.codigo_local === depParsed.local;
+        const sedeOk = !depParsed.sede || p.sede_codigo === depParsed.sede;
+        if (localOk && sedeOk) return true;
+      }
+      return p._search_norm.includes(state.normalized);
+    });
+  }
+
+  function findDepositoMatches(state) {
+    if (!state.normalized) return [];
+    const depParsed = parseDepositoFromQuery(state.normalized);
+    const exactSede = normalizeSedeCode(state.raw || state.normalized);
+    return sedesDepositosSearch.filter(d => {
+      if (!d.sede_codigo) return false;
+      if (exactSede && d.sede_codigo === exactSede) return true;
+      if (depParsed && depParsed.local) {
+        const localOk = d.codigo_local === depParsed.local;
+        const sedeOk = !depParsed.sede || d.sede_codigo === depParsed.sede;
+        if (localOk && sedeOk) return true;
+      }
+      return d._search_norm.includes(state.normalized);
+    });
+  }
+
+  function buildGlobalSearchState(rawQuery) {
+    const next = {
+      raw: String(rawQuery || '').trim(),
+      normalized: normalizeSearch(rawQuery || ''),
+      autoRegion: 'all',
+      autoFuero: 'all',
+      autoSede: '',
+      freeText: '',
+      scopeLabel: '',
+      sedeMatches: [],
+      personaMatches: [],
+      depositoMatches: []
+    };
+
+    if (!next.normalized) return next;
+
+    const exactSede = normalizeSedeCode(next.raw || next.normalized);
+    const regionKey = detectRegionFromQuery(next.normalized);
+    const fueroKey = detectFueroFromQuery(next.normalized);
+    const depParsed = parseDepositoFromQuery(next.normalized);
+
+    if (exactSede && rowMetaBySede.has(exactSede)) {
+      next.autoSede = exactSede;
+      next.scopeLabel = `Sede ${exactSede}`;
+    } else {
+      if (regionKey) next.autoRegion = regionKey;
+      if (fueroKey) next.autoFuero = fueroKey;
+      if (!regionKey && !fueroKey) next.freeText = next.normalized;
+    }
+
+    if (!next.autoSede && depParsed && depParsed.sede && rowMetaBySede.has(depParsed.sede)) {
+      next.autoSede = depParsed.sede;
+      next.scopeLabel = depParsed.local ? `Sede ${depParsed.sede} / ${depParsed.local}` : `Sede ${depParsed.sede}`;
+      next.freeText = '';
+      next.autoRegion = 'all';
+      next.autoFuero = 'all';
+    }
+
+    next.personaMatches = findPersonaMatches(next);
+    next.depositoMatches = findDepositoMatches(next);
+
+    next.sedeMatches = Array.from(rowMetaBySede.values()).filter(meta => matchesMetaSearch(meta, next));
+
+    if (next.freeText && next.sedeMatches.length === 0 && (next.personaMatches.length > 0 || next.depositoMatches.length > 0)) {
+      next.freeText = '';
+      next.sedeMatches = [];
+      if (!next.scopeLabel) next.scopeLabel = 'Busqueda en personas/depositos';
+    }
+
+    if (!next.scopeLabel) {
+      const tags = [];
+      if (next.autoRegion !== 'all') tags.push(regionLabels[next.autoRegion] || next.autoRegion);
+      if (next.autoFuero !== 'all') tags.push(fueroLabels[next.autoFuero] || next.autoFuero);
+      if (next.freeText) tags.push(`Texto: ${next.raw || next.normalized}`);
+      next.scopeLabel = tags.join(' / ') || `Busqueda: ${next.raw || next.normalized}`;
+    }
+
+    return next;
+  }
+
+  function renderSedeResultItems(items) {
+    if (!items.length) return '';
+    const rows = items.slice(0, 20).map(meta => {
+      const code = meta.sede;
+      const mainLabel = meta.nombre || meta.tooltip || code;
+      const extra = [meta.direccion, meta.ciudad].filter(Boolean).join(' - ');
+      return `<div class="sedes-search-item">
+        <div><strong>${escapeHtml(code)}</strong> - ${escapeHtml(mainLabel)}${extra ? ` <span style="color:#64748b;">(${escapeHtml(extra)})</span>` : ''}</div>
+        <div class="sedes-search-item-actions">
+          <a class="btn xs btn-secondary" href="${escapeHtml(buildSedeUrl(sedeFichaUrlTpl, code))}">Abrir</a>
+          <a class="btn xs btn-secondary" href="${escapeHtml(buildSedeUrl(bienesSedeUrlTpl, code))}">Bienes</a>
+          <a class="btn xs btn-secondary" href="${escapeHtml(buildSedeUrl(analisisSedeUrlTpl, code))}">Analisis</a>
+        </div>
+      </div>`;
+    }).join('');
+    return `<section class="sedes-search-group"><h4>Sedes (${items.length})</h4><div class="sedes-search-list">${rows}</div></section>`;
+  }
+
+  function renderPersonaResultItems(items) {
+    if (!items.length) return '';
+    const rows = items.slice(0, 20).map(p => {
+      const code = p.sede_codigo || '';
+      const local = p.codigo_local || '';
+      const dep = p.dependencia || '';
+      const info = [code, local, dep].filter(Boolean).join(' - ');
+      const localBtn = local
+        ? `<a class="btn xs btn-secondary" href="${escapeHtml(buildAnalisisUrl(code, local))}">Ver local</a>`
+        : '';
+      return `<div class="sedes-search-item">
+        <div><strong>${escapeHtml(p.nombre || '-')}</strong>${info ? ` - ${escapeHtml(info)}` : ''}${p.email ? ` <span style="color:#64748b;">${escapeHtml(p.email)}</span>` : ''}</div>
+        <div class="sedes-search-item-actions">
+          <a class="btn xs btn-secondary" href="${escapeHtml(buildSedeUrl(sedeFichaUrlTpl, code))}">Abrir sede</a>
+          <a class="btn xs btn-secondary" href="${escapeHtml(buildSedeUrl(analisisSedeUrlTpl, code))}">Analisis</a>
+          ${localBtn}
+        </div>
+      </div>`;
+    }).join('');
+    return `<section class="sedes-search-group"><h4>Personas (${items.length})</h4><div class="sedes-search-list">${rows}</div></section>`;
+  }
+
+  function renderDepositoResultItems(items) {
+    if (!items.length) return '';
+    const rows = items.slice(0, 20).map(d => {
+      const code = d.sede_codigo || '';
+      const local = d.codigo_local || '';
+      const ref = d.referencia || d.descripcion || d.nombre || d.ubicacion || d.tipo || '';
+      return `<div class="sedes-search-item">
+        <div><strong>${escapeHtml(code)}</strong>${local ? ` - ${escapeHtml(local)}` : ''}${ref ? ` - ${escapeHtml(ref)}` : ''}</div>
+        <div class="sedes-search-item-actions">
+          <a class="btn xs btn-secondary" href="${escapeHtml(buildSedeUrl(sedeFichaUrlTpl, code))}">Abrir sede</a>
+          <a class="btn xs btn-secondary" href="${escapeHtml(buildSedeUrl(bienesSedeUrlTpl, code))}">Bienes</a>
+          <a class="btn xs btn-secondary" href="${escapeHtml(buildAnalisisUrl(code, local))}">Analisis</a>
+        </div>
+      </div>`;
+    }).join('');
+    return `<section class="sedes-search-group"><h4>Depositos / locales (${items.length})</h4><div class="sedes-search-list">${rows}</div></section>`;
+  }
+
+  function renderGlobalSearchResults() {
+    if (!globalSearchResults) return;
+    if (!globalSearchState.normalized) {
+      globalSearchResults.hidden = true;
+      globalSearchResults.innerHTML = '';
+      return;
+    }
+
+    const header = `<div style="font-size:12px;color:#334155;font-weight:700;">Resultados de busqueda</div>`;
+    const groups = [];
+    groups.push(renderSedeResultItems(globalSearchState.sedeMatches));
+    groups.push(renderPersonaResultItems(globalSearchState.personaMatches));
+    groups.push(renderDepositoResultItems(globalSearchState.depositoMatches));
+    const content = groups.filter(Boolean).join('');
+
+    if (!content) {
+      globalSearchResults.innerHTML = `${header}<section class="sedes-search-group"><div style="font-size:12px;color:#64748b;">Sin coincidencias directas. Se mantiene la tabla con los filtros activos.</div></section>`;
+    } else {
+      globalSearchResults.innerHTML = `${header}${content}`;
+    }
+    globalSearchResults.hidden = false;
+  }
+
   function syncFilterControls() {
     if (masterFilterRegion) masterFilterRegion.value = activeFilters.region;
     if (masterFilterFuero) masterFilterFuero.value = activeFilters.fuero;
     if (masterFilterOcupacion) masterFilterOcupacion.value = activeFilters.ocupacion;
     if (masterFilterDensidad) masterFilterDensidad.value = activeFilters.densidad;
-    if (masterFilterSearch) masterFilterSearch.value = activeFilters.search;
 
     mapFueroButtons.forEach(btn => {
       btn.classList.toggle('is-selected', (btn.dataset.fuero || 'all') === activeFilters.fuero);
@@ -1644,18 +2090,38 @@
     });
   }
 
+  function rowMatchesSearchState(rowLike) {
+    if (!globalSearchState.normalized) return true;
+
+    const sede = normalizeSedeCode(rowLike.dataset.sede || '');
+    const region = String(rowLike.dataset.region || '').trim();
+    const fueros = (rowLike.dataset.fueros || '')
+      .split('|')
+      .map(normalizeFueroCode)
+      .filter(Boolean);
+    const haystack = ensureSearchNorm(rowLike);
+
+    if (globalSearchState.autoSede && sede !== globalSearchState.autoSede) return false;
+    if (globalSearchState.autoRegion !== 'all' && region !== globalSearchState.autoRegion) return false;
+    if (globalSearchState.autoFuero !== 'all' && !fueros.includes(globalSearchState.autoFuero)) return false;
+    if (globalSearchState.freeText && !haystack.includes(globalSearchState.freeText)) return false;
+    return true;
+  }
+
   function rowMatchesFilters(rowLike) {
-    const region = rowLike.dataset.region || '';
-    const fueros = (rowLike.dataset.fueros || '').split('|').filter(Boolean);
+    const region = String(rowLike.dataset.region || '').trim();
+    const fueros = (rowLike.dataset.fueros || '')
+      .split('|')
+      .map(normalizeFueroCode)
+      .filter(Boolean);
     const ocupacion = rowLike.dataset.ocupacion || 'disponible';
     const densidad = rowLike.dataset.densidadBucket || 'baja';
-    const haystack = normalizeText(rowLike.dataset.search || '');
 
     if (activeFilters.region !== 'all' && region !== activeFilters.region) return false;
     if (activeFilters.fuero !== 'all' && !fueros.includes(activeFilters.fuero)) return false;
     if (activeFilters.ocupacion !== 'all' && ocupacion !== activeFilters.ocupacion) return false;
     if (activeFilters.densidad !== 'all' && densidad !== activeFilters.densidad) return false;
-    if (activeFilters.search && !haystack.includes(activeFilters.search)) return false;
+    if (!rowMatchesSearchState(rowLike)) return false;
     return true;
   }
 
@@ -1775,9 +2241,9 @@
       if (activeFilters.fuero !== 'all') parts.push(fueroLabels[activeFilters.fuero] || activeFilters.fuero);
       if (activeFilters.ocupacion !== 'all') parts.push(ocupacionLabels[activeFilters.ocupacion] || activeFilters.ocupacion);
       if (activeFilters.densidad !== 'all') parts.push(densidadLabels[activeFilters.densidad] || activeFilters.densidad);
-      if (activeFilters.search) parts.push(`Busqueda: ${activeFilters.search}`);
-      const label = parts.length ? parts.join(' ? ') : 'Todas las regiones';
-      summaryFilterScope.innerHTML = `<strong>Mostrando:</strong> ${label}`;
+      if (globalSearchState.normalized) parts.push(globalSearchState.scopeLabel || `Busqueda: ${globalSearchState.raw || globalSearchState.normalized}`);
+      const label = parts.length ? parts.join(' / ') : 'Todas las regiones';
+      summaryFilterScope.innerHTML = `<strong>Mostrando:</strong> ${escapeHtml(label)}`;
     }
 
     if (tfootPersonas) tfootPersonas.textContent = totals.personas;
@@ -1793,6 +2259,7 @@
     if (tfootBibliotecaBaja) tfootBibliotecaBaja.textContent = totals.biblioteca_baja;
 
     syncFilterControls();
+    renderGlobalSearchResults();
   }
 
   function applyMasterFilterChanges() {
@@ -1800,7 +2267,6 @@
     if (masterFilterFuero) activeFilters.fuero = masterFilterFuero.value || 'all';
     if (masterFilterOcupacion) activeFilters.ocupacion = masterFilterOcupacion.value || 'all';
     if (masterFilterDensidad) activeFilters.densidad = masterFilterDensidad.value || 'all';
-    if (masterFilterSearch) activeFilters.search = normalizeText(masterFilterSearch.value || '');
     applyUnifiedSedesFilters();
   }
 
@@ -1809,7 +2275,18 @@
     activeFilters.fuero = 'all';
     activeFilters.ocupacion = 'all';
     activeFilters.densidad = 'all';
-    activeFilters.search = '';
+    applyUnifiedSedesFilters();
+  }
+
+  function applyGlobalSearchChanges() {
+    const raw = globalSearchInput ? globalSearchInput.value : '';
+    globalSearchState = buildGlobalSearchState(raw);
+    applyUnifiedSedesFilters();
+  }
+
+  function clearGlobalSearch() {
+    if (globalSearchInput) globalSearchInput.value = '';
+    globalSearchState = buildGlobalSearchState('');
     applyUnifiedSedesFilters();
   }
 
@@ -1817,8 +2294,10 @@
   if (masterFilterFuero) masterFilterFuero.addEventListener('change', applyMasterFilterChanges);
   if (masterFilterOcupacion) masterFilterOcupacion.addEventListener('change', applyMasterFilterChanges);
   if (masterFilterDensidad) masterFilterDensidad.addEventListener('change', applyMasterFilterChanges);
-  if (masterFilterSearch) masterFilterSearch.addEventListener('input', applyMasterFilterChanges);
   if (masterFilterReset) masterFilterReset.addEventListener('click', resetMasterFilters);
+
+  if (globalSearchInput) globalSearchInput.addEventListener('input', applyGlobalSearchChanges);
+  if (globalSearchClear) globalSearchClear.addEventListener('click', clearGlobalSearch);
 
   if (masterFiltersToggleBtn) {
     masterFiltersToggleBtn.addEventListener('click', () => {

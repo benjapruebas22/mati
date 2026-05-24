@@ -8699,6 +8699,59 @@ def sedes_resumen_mpd():
         WHERE COALESCE(activo,1)=1
     """).fetchall()
 
+    # Indices de busqueda operativa (solo lectura, sin modificar logica central).
+    sedes_personas_search = []
+    _seen_persona_search = set()
+    for p in per_rows:
+        sede = str(p["sede_codigo"] or "").strip().upper()
+        if not sede:
+            continue
+        dep = normalizar_local_clave(p["codigo_local"])
+        nombre = str(p["nombre"] or "").strip()
+        if not nombre:
+            continue
+        dependencia = str(p["dependencia"] or "").strip()
+        email = str(p["email_admin"] or "").strip().lower()
+        key = (sede, dep, nombre.lower(), dependencia.lower(), email)
+        if key in _seen_persona_search:
+            continue
+        _seen_persona_search.add(key)
+        sedes_personas_search.append({
+            "sede_codigo": sede,
+            "sede_nombre": str(sedes_nombre.get(sede) or sede).strip(),
+            "codigo_local": dep,
+            "nombre": nombre,
+            "dependencia": dependencia,
+            "email": email,
+        })
+
+    sedes_depositos_search = []
+    _seen_deposito_search = set()
+    for d in dep_rows:
+        sede = str(d["sede_codigo"] or "").strip().upper()
+        dep = normalizar_local_clave(d["codigo_local"])
+        if not sede or not dep:
+            continue
+        descripcion = str(d["descripcion"] or "").strip()
+        nombre = str(d["nombre"] or "").strip()
+        ubicacion = str(d["ubicacion"] or "").strip()
+        tipo = str(d["tipo"] or "").strip()
+        ref = descripcion or nombre or ubicacion or tipo
+        key = (sede, dep, ref.lower())
+        if key in _seen_deposito_search:
+            continue
+        _seen_deposito_search.add(key)
+        sedes_depositos_search.append({
+            "sede_codigo": sede,
+            "sede_nombre": str(sedes_nombre.get(sede) or sede).strip(),
+            "codigo_local": dep,
+            "descripcion": descripcion,
+            "nombre": nombre,
+            "ubicacion": ubicacion,
+            "tipo": tipo,
+            "referencia": ref,
+        })
+
     def _persona_signature(nombre_raw, email_raw):
         mail = str(email_raw or "").strip().lower()
         nom = infra_norm_text(nombre_raw)
@@ -9720,6 +9773,8 @@ def sedes_resumen_mpd():
         sedes_region_defs=sedes_region_defs,
         sedes_region_cards=resumen_region_cards,
         sedes_fuero_labels=sedes_fuero_labels,
+        sedes_personas_search=sedes_personas_search,
+        sedes_depositos_search=sedes_depositos_search,
         infra_rows=infra_rows,
         infra_totals=infra_totals,
         infra_sede=infra_sede,
