@@ -122,14 +122,11 @@
     {% endif %}
   {% endif %}
 
-  {# S02: D01-D09 penal, D11-D28 social, D10 + D29-D38 menores. #}
+  {# S02: D01-D10 penal, D11-D28 social, D29-D38 menores. #}
   {% if not badge_cls and sede == 'S02' and dep_num > 0 %}
-    {% if dep_num <= 9 %}
+    {% if dep_num <= 10 %}
       {% set badge_cls = 'dep-local-badge-penal' %}
       {% set badge_title = 'Penal (S02)' %}
-    {% elif dep_num == 10 %}
-      {% set badge_cls = 'dep-local-badge-menores' %}
-      {% set badge_title = 'Menores / Incapaces (S02)' %}
     {% elif dep_num <= 28 %}
       {% set badge_cls = 'dep-local-badge-social' %}
       {% set badge_title = 'Juridico Social (S02)' %}

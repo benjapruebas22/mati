@@ -60,7 +60,7 @@
       {'codigo':'S20','nombre':'Palpala Civil','fueros':'Juridico Social / Menores','bloques':[{'fuero':'Juridico Social','rangos':'Operacion civil'},{'fuero':'Menores','rangos':'Integracion proyectada'}]}
     ],
     'el_ramal': [
-      {'codigo':'S02','nombre':'San Pedro','fueros':'Penal / Juridico Social / Menores','bloques':[{'fuero':'Penal','rangos':'D01 a D09'},{'fuero':'Juridico Social','rangos':'D11 a D28'},{'fuero':'Menores / Incapaces','rangos':'D10 y D29 a D38'}]},
+      {'codigo':'S02','nombre':'San Pedro','fueros':'Penal / Juridico Social / Menores','bloques':[{'fuero':'Penal','rangos':'D01 a D10'},{'fuero':'Juridico Social','rangos':'D11 a D28'},{'fuero':'Menores / Incapaces','rangos':'D29 a D38'}]},
       {'codigo':'S06','nombre':'Ledesma','fueros':'Penal / Menores','bloques':[{'fuero':'Penal','rangos':'D01 a D07'},{'fuero':'Menores / Incapaces','rangos':'D08 a D11'}]},
       {'codigo':'S19','nombre':'Ledesma Civil','fueros':'Juridico Social','bloques':[{'fuero':'Juridico Social','rangos':'Operacion civil'}]}
     ],
@@ -2107,8 +2107,7 @@
       return { local, cls: 'dep-local-badge-admin', title: 'Equipo Interdisciplinario / Administracion (S12)' };
     }
     if (sede === 'S02' && Number.isFinite(n) && n > 0) {
-      if (n <= 9) return { local, cls: 'dep-local-badge-penal', title: 'Penal (S02)' };
-      if (n === 10) return { local, cls: 'dep-local-badge-menores', title: 'Menores / Incapaces (S02)' };
+      if (n <= 10) return { local, cls: 'dep-local-badge-penal', title: 'Penal (S02)' };
       if (n <= 28) return { local, cls: 'dep-local-badge-social', title: 'Juridico Social (S02)' };
       if (n <= 38) return { local, cls: 'dep-local-badge-menores', title: 'Menores / Incapaces (S02)' };
     }
