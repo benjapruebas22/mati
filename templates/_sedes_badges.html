@@ -106,6 +106,17 @@
     {% endif %}
   {% endif %}
 
+  {# S13 San Martin 271: D36/D37/D38 administracion; resto menores. #}
+  {% if not badge_cls and sede == 'S13' and dep_num > 0 %}
+    {% if dep_norm in ['D36', 'D37', 'D38'] %}
+      {% set badge_cls = 'dep-local-badge-admin' %}
+      {% set badge_title = 'Administracion / Defensoria General (S13)' %}
+    {% else %}
+      {% set badge_cls = 'dep-local-badge-menores' %}
+      {% set badge_title = 'Menores / Incapaces (S13)' %}
+    {% endif %}
+  {% endif %}
+
   {% if badge_cls %}
     <span class="dep-local-badge {{ badge_cls }} {{ extra_class }}"
           {% if badge_title %}title="{{ badge_title }}"{% endif %}>

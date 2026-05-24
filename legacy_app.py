@@ -5966,6 +5966,14 @@ def sede_ficha(codigo):
             dep = normalize_local_code(dep_cod or "")
 
             # Overrides operativos de sedes mixtas
+            if sede_up == "S13":
+                if dep in ("D36", "D37", "D38"):
+                    return "administracion"
+                if dep:
+                    return "menores"
+                ftxt = _fuero_from_text(ambiente_txt)
+                return ftxt or "menores"
+
             if sede_up == "S11":
                 return "social"
 
@@ -9877,6 +9885,12 @@ def sedes_resumen_mpd():
                 fuero_local = "penal"
             else:
                 fuero_local = "administracion"
+        # Regla fija S13: D36/D37/D38 = Administracion; resto = Menores.
+        if not fuero_local and sede == "S13":
+            if dep in ("D36", "D37", "D38"):
+                fuero_local = "administracion"
+            else:
+                fuero_local = "menores"
         if not fuero_local:
             if _is_shared_space(referencias_txt):
                 fuero_local = "compartido"
