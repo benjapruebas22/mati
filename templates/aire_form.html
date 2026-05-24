@@ -51,6 +51,21 @@
     <form method="post" style="max-width:520px;display:flex;flex-direction:column;gap:12px;">
 
       <div>
+        <label>Depósito / local</label>
+        <select name="codigo_local"
+                style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;">
+          <option value="">-- Sin depósito específico --</option>
+          {% set local_sel = ((aire.codigo_local if aire and aire.codigo_local is defined else '') or '')|upper %}
+          {% for loc in (locales_opts or []) %}
+            {% set c = (loc.codigo_local or '')|upper %}
+            <option value="{{ c }}" {% if c == local_sel %}selected{% endif %}>
+              {{ c }}{% if loc.descripcion %} · {{ loc.descripcion }}{% endif %}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
         <label>Ambiente</label>
         <input type="text" name="ambiente" required
                value="{{ aire.ambiente if aire else '' }}"

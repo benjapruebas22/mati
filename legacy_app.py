@@ -1845,6 +1845,7 @@ def ensure_aires_mpd_columns():
         CREATE TABLE IF NOT EXISTS aires_mpd(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             sede_codigo TEXT NOT NULL,
+            codigo_local TEXT,
             ambiente    TEXT,
             marca       TEXT,
             gas         TEXT,
@@ -1860,6 +1861,8 @@ def ensure_aires_mpd_columns():
         );
     """)
     cols = [r["name"] for r in cur.execute("PRAGMA table_info(aires_mpd)").fetchall()]
+    if "codigo_local" not in cols:
+        cur.execute("ALTER TABLE aires_mpd ADD COLUMN codigo_local TEXT")
     if "gas" not in cols:
         cur.execute("ALTER TABLE aires_mpd ADD COLUMN gas TEXT")
     if "fecha_ultimo_service" not in cols:
@@ -5860,6 +5863,7 @@ def sede_ficha(codigo):
             SELECT
                 a.id,
                 a.sede_codigo,
+                COALESCE(a.codigo_local,'') AS codigo_local,
                 NULL AS piso,
                 NULL AS ambiente_codigo,
                 a.ambiente AS ambiente_desc,
@@ -5899,14 +5903,18 @@ def sede_ficha(codigo):
         aires_rows = []
         for r in aires_rows_raw:
             item = dict(r)
-            amb_key = _norm_ambiente_label(item.get("ambiente_desc") or item.get("ambiente") or "")
-            dep_codes = sorted(dep_codes_by_desc.get(amb_key) or [])
-            if len(dep_codes) == 1:
-                item["deposito_codigo"] = dep_codes[0]
-            elif len(dep_codes) > 1:
-                item["deposito_codigo"] = "/".join(dep_codes[:2]) + ("+" if len(dep_codes) > 2 else "")
+            dep_direct = normalize_local_code(item.get("codigo_local") or "")
+            if dep_direct:
+                item["deposito_codigo"] = dep_direct
             else:
-                item["deposito_codigo"] = "-"
+                amb_key = _norm_ambiente_label(item.get("ambiente_desc") or item.get("ambiente") or "")
+                dep_codes = sorted(dep_codes_by_desc.get(amb_key) or [])
+                if len(dep_codes) == 1:
+                    item["deposito_codigo"] = dep_codes[0]
+                elif len(dep_codes) > 1:
+                    item["deposito_codigo"] = "/".join(dep_codes[:2]) + ("+" if len(dep_codes) > 2 else "")
+                else:
+                    item["deposito_codigo"] = "-"
             aires_rows.append(item)
 
         k = db.execute(f"""
@@ -9836,8 +9844,13 @@ def sedes_resumen_mpd():
             st["puestos_trabajo"] = int(round(float(st.get("puestos_trabajo") or 0)))
             st["total_mobiliario"] = int(round(float(st.get("total_mobiliario") or 0)))
             st["m2_total"] = float(st.get("m2_total") or 0.0)
-            puestos = int(st.get("puestos_trabajo") or 0)
             personas = int(st.get("personas_total") or 0)
+            puestos = int(st.get("puestos_trabajo") or 0)
+            # Fallback operativo: si no hay puestos cargados pero hay personal,
+            # evitamos 0% falso usando capacidad equivalente a personas.
+            if puestos <= 0 and personas > 0:
+                puestos = personas
+                st["puestos_trabajo"] = puestos
             m2_loc = float(st.get("m2_total") or 0.0)
             occ = int(round((float(personas) * 100.0) / float(puestos))) if puestos > 0 else 0
             dens = (float(personas) / float(m2_loc)) if m2_loc > 0 else 0.0

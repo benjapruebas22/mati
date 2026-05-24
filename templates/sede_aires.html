@@ -203,7 +203,8 @@
         <table class="aires-table">
           <thead>
             <tr>
-               <th>Ambiente</th>
+              <th>Ambiente</th>
+              <th>Depósito</th>
               <th>Marca</th>
               <th>Gas</th>
               <th>Frigorías</th>
@@ -219,6 +220,7 @@
             {% for a in aires %}
               <tr>
                 <td>{{ a.ambiente }}</td>
+                <td>{{ a.deposito_label or (a.codigo_local or 'â€”') }}</td>
                 <td>
                   {{ a.marca or '' }}
                   {% if a.modelo %}

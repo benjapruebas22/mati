@@ -5921,6 +5921,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             CREATE TABLE IF NOT EXISTS aires_mpd(
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 sede_codigo TEXT NOT NULL,
+                codigo_local TEXT,
                 ambiente    TEXT,
                 marca       TEXT,
                 gas         TEXT,
@@ -5936,6 +5937,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             );
         """)
         cols = [r[1] for r in cur.execute("PRAGMA table_info(aires_mpd)").fetchall()]
+        if "codigo_local" not in cols:
+            cur.execute("ALTER TABLE aires_mpd ADD COLUMN codigo_local TEXT")
         if "gas" not in cols:
             cur.execute("ALTER TABLE aires_mpd ADD COLUMN gas TEXT")
         if "fecha_ultimo_service" not in cols:
@@ -5953,10 +5956,45 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             abort(404)
         return con, cur, sede
 
+    def _norm_local_code(raw):
+        txt = str(raw or "").upper().strip()
+        if not txt:
+            return ""
+        if "-" in txt:
+            txt = txt.split("-")[-1].strip()
+        if txt.startswith("D") and txt[1:].isdigit():
+            return f"D{int(txt[1:]):02d}"
+        if txt.isdigit():
+            return f"D{int(txt):02d}"
+        return ""
+
+    def _locales_sede(cur, codigo):
+        rows = cur.execute("""
+            SELECT COALESCE(codigo_local,'') AS codigo_local, COALESCE(descripcion,'') AS descripcion
+            FROM sedes_depositos
+            WHERE codigo_sede = ?
+            ORDER BY codigo_local
+        """, (codigo,)).fetchall()
+        out = []
+        seen = set()
+        for r in rows:
+            c = _norm_local_code(r["codigo_local"])
+            if not c or c in seen:
+                continue
+            seen.add(c)
+            out.append({
+                "codigo_local": c,
+                "descripcion": (r["descripcion"] or "").strip(),
+            })
+        out.sort(key=lambda x: x["codigo_local"])
+        return out
+
 
     @app.route("/sedes/<codigo>/aires")
     def sede_aires(codigo):
         con, cur, sede = obtener_sede(codigo)
+        locales_opts = _locales_sede(cur, codigo)
+        locales_desc = {x["codigo_local"]: x["descripcion"] for x in locales_opts}
 
         sedes_nav = cur.execute("""
             SELECT codigo
@@ -5965,14 +6003,26 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         """).fetchall()
 
         cur.execute("""
-            SELECT id, sede_codigo, ambiente, marca, gas, modelo, tipo,
+            SELECT id, sede_codigo, COALESCE(codigo_local,'') AS codigo_local, ambiente, marca, gas, modelo, tipo,
                    frigorias, estado, fecha_instalacion,
                    fecha_ultima_limpieza, fecha_ultimo_service, frecuencia_meses, observaciones
             FROM aires_mpd
             WHERE sede_codigo = ?
             ORDER BY ambiente
         """, (codigo,))
-        aires = cur.fetchall()
+        aires_raw = cur.fetchall()
+        aires = []
+        for a in aires_raw:
+            item = dict(a)
+            dep = _norm_local_code(item.get("codigo_local"))
+            if dep:
+                item["codigo_local"] = dep
+                dsc = (locales_desc.get(dep) or "").strip()
+                item["deposito_label"] = f"{dep} · {dsc}" if dsc else dep
+            else:
+                item["codigo_local"] = ""
+                item["deposito_label"] = "-"
+            aires.append(item)
 
         # Estadísticas simples
         total = len(aires)
@@ -5997,14 +6047,17 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             sedes_nav=sedes_nav,
             aires=aires,
             stats=stats,
+            locales_opts=locales_opts,
         )
 
 
     @app.route("/sedes/<codigo>/aires/nuevo", methods=["GET", "POST"])
     def aire_nuevo(codigo):
         con, cur, sede = obtener_sede(codigo)
+        locales_opts = _locales_sede(cur, codigo)
 
         if request.method == "POST":
+            codigo_local = _norm_local_code(request.form.get("codigo_local", ""))
             ambiente = request.form.get("ambiente", "").strip()
             marca = request.form.get("marca", "").strip()
             gas = request.form.get("gas", "").strip()
@@ -6020,13 +6073,13 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
 
             cur.execute("""
                 INSERT INTO aires_mpd (
-                    sede_codigo, ambiente, marca, gas, modelo, tipo, frigorias,
+                    sede_codigo, codigo_local, ambiente, marca, gas, modelo, tipo, frigorias,
                     estado, fecha_instalacion, fecha_ultima_limpieza,
                     fecha_ultimo_service, frecuencia_meses, observaciones
                 )
-                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """, (
-                codigo, ambiente, marca, gas, modelo, tipo, frigorias,
+                codigo, (codigo_local or None), ambiente, marca, gas, modelo, tipo, frigorias,
                 estado, fecha_instalacion, fecha_ultima_limpieza,
                 fecha_ultimo_service, frecuencia_meses, observaciones
             ))
@@ -6035,12 +6088,13 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
 
             # si algo falla, vuelve a mostrar el formulario
 
-        return render_template("aire_form.html", sede=sede, aire=None)
+        return render_template("aire_form.html", sede=sede, aire=None, locales_opts=locales_opts)
 
 
     @app.route("/sedes/<codigo>/aires/<int:aid>/editar", methods=["GET", "POST"])
     def aire_editar(codigo, aid):
         con, cur, sede = obtener_sede(codigo)
+        locales_opts = _locales_sede(cur, codigo)
 
         cur.execute("""
             SELECT *
@@ -6052,6 +6106,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             abort(404)
 
         if request.method == "POST":
+            codigo_local = _norm_local_code(request.form.get("codigo_local", ""))
             ambiente = request.form.get("ambiente", "").strip()
             marca = request.form.get("marca", "").strip()
             gas = request.form.get("gas", "").strip()
@@ -6067,7 +6122,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
 
             cur.execute("""
                 UPDATE aires_mpd
-                   SET ambiente = ?,
+                   SET codigo_local = ?,
+                       ambiente = ?,
                        marca = ?,
                        gas = ?,
                        modelo = ?,
@@ -6081,7 +6137,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                        observaciones = ?
                  WHERE id = ? AND sede_codigo = ?
             """, (
-                ambiente, marca, gas, modelo, tipo, frigorias, estado,
+                (codigo_local or None), ambiente, marca, gas, modelo, tipo, frigorias, estado,
                 fecha_instalacion, fecha_ultima_limpieza,
                 fecha_ultimo_service, frecuencia_meses, observaciones,
                 aid, codigo
@@ -6089,7 +6145,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             con.commit()
             return redirect(url_for("sede_aires", codigo=codigo))
 
-        return render_template("aire_form.html", sede=sede, aire=aire)
+        return render_template("aire_form.html", sede=sede, aire=aire, locales_opts=locales_opts)
 
 
     @app.route("/sedes/<codigo>/aires/<int:aid>/borrar", methods=["POST"])
