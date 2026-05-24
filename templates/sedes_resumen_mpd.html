@@ -939,12 +939,13 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    gap: 6px;
+    gap: 8px;
     background: #ffffff;
     border: 1px solid #e5e7eb;
-    padding: 6px 10px;
+    padding: 10px 14px;
     border-radius: 10px;
     flex-wrap: wrap;
+    margin-bottom: 10px;
   }
 
   .sedes-portada-kicker {
@@ -961,7 +962,7 @@
     color: #0f172a;
     font-weight: 700;
     line-height: 1.2;
-    margin-bottom: 2px;
+    margin-bottom: 4px;
   }
 
   .sedes-portada-subtitle {
@@ -1081,8 +1082,8 @@
   }
 
   .sedes-region-grid {
-    margin-top: 4px;
-    margin-bottom: 2px;
+    margin-top: 10px;
+    margin-bottom: 10px;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 6px;
@@ -1096,16 +1097,17 @@
     background: #ffffff;
     border: 1px solid #e5e7eb;
     border-radius: 12px;
-    padding: 9px 11px;
+    padding: 12px 14px;
     position: relative;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
     transition: all 0.18s ease;
     box-shadow: 0 2px 6px rgba(0,0,0,0.03);
-    min-height: 82px;
-    max-height: 92px;
+    min-height: 110px;
+    height: auto;
+    justify-content: space-between;
   }
 
   .sedes-region-card:hover {
@@ -1129,51 +1131,59 @@
 
   .sedes-region-card h3 {
     margin: 0;
-    font-size: 13px;
+    font-size: 14px;
     color: #0f172a;
     font-weight: 700;
     text-transform: none;
     letter-spacing: 0.3px;
-    margin-bottom: 4px;
+    margin-bottom: 8px;
+    line-height: 1.2;
   }
 
   .sedes-region-exec {
-    gap: 4px;
+    gap: 6px;
   }
 
   .sedes-region-kpis {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 2px 8px;
-    font-size: 10px;
-    line-height: 1.2;
+    gap: 4px 10px;
+    font-size: 11px;
+    line-height: 1.35;
     color: #334155;
   }
 
-  .sedes-region-foot {
+  .sedes-region-foot,
+  .footer-card {
     margin-top: auto;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 4px;
+    gap: 8px;
     flex-wrap: wrap;
+    margin-top: 8px;
   }
 
   .exec-estado {
     border-radius: 999px;
-    padding: 1px 6px;
+    padding: 2px 8px;
     border: 1px solid #d9e2f2;
     background: #f8fafc;
     color: #334155;
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 600;
+    height: 24px;
+    line-height: 20px;
+    display: inline-flex;
+    align-items: center;
   }
 
   .sedes-region-exec .js-exec-detail {
-    min-height: 24px !important;
-    height: 24px !important;
-    padding: 0 8px !important;
-    font-size: 9px !important;
+    min-height: 28px !important;
+    height: 28px !important;
+    line-height: 28px !important;
+    padding: 0 12px !important;
+    font-size: 11px !important;
   }
 
   .exec-estado.is-alto {
@@ -1221,7 +1231,7 @@
   }
 
   #resumen-inventario-top {
-    margin-top: 4px !important;
+    margin-top: 10px !important;
   }
 
   .sedes-mapa-head h2 {
@@ -1515,9 +1525,6 @@
   @media (max-width: 700px) {
     .sedes-portada-title {
       font-size: 16px;
-    }
-    .sedes-region-card {
-      max-height: none;
     }
   }
 
