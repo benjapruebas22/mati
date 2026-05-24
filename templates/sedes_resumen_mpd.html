@@ -15,7 +15,7 @@
   {% set infra_nav_endpoint = 'infra_analisis' if show_infra else 'sedes_resumen_mpd' %}
   {% set mapa_regions = sedes_region_defs|default([]) %}
   {% set region_exec_cards = sedes_region_cards|default({}) %}
-  <div class="cardx sedes-shell {{ 'is-infra' if show_infra else 'is-resumen' }}" style="padding:10px 12px;">
+  <div class="cardx sedes-shell {{ 'is-infra' if show_infra else 'is-resumen' }}" style="padding:6px 8px;">
     {% if not show_infra %}
     <div class="sedes-portada-main">
       <div>
@@ -48,8 +48,8 @@
       {% endfor %}
     </div>
 
-    <div id="resumen-inventario-top" class="sedes-master-table" style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;overflow:auto;background:#fff;">
-      <div class="sedes-master-head" style="padding:10px 12px;border-bottom:1px solid #e5e7eb;font-weight:700;color:#334155;">Tabla maestra operativa por sede</div>
+    <div id="resumen-inventario-top" class="sedes-master-table" style="margin-top:4px;border:1px solid #e5e7eb;border-radius:12px;overflow:auto;background:#fff;">
+      <div class="sedes-master-head" style="padding:6px 10px;border-bottom:1px solid #e5e7eb;font-weight:700;color:#334155;">Tabla maestra operativa por sede</div>
       <div class="sedes-global-searchbar">
         <input id="globalSearchInput" type="text" class="sedes-master-input" placeholder="Buscar sede, persona, deposito o localidad...">
       </div>
@@ -106,7 +106,7 @@
         </div>
       </div>
 
-      <div id="sedesSummaryBar" style="padding:8px 12px;border-bottom:1px solid #e5e7eb;display:flex;gap:8px;flex-wrap:wrap;font-size:12px;background:#fafafa;">
+      <div id="sedesSummaryBar" style="padding:6px 10px;border-bottom:1px solid #e5e7eb;display:flex;gap:6px;flex-wrap:wrap;font-size:12px;background:#fafafa;">
         <span class="state info" id="summaryFilterScope"><strong>Resultado:</strong> Todas las regiones</span>
         <span class="state info"><strong>Sedes:</strong> <span id="summarySedes">{{ rows|length }}</span></span>
         <span class="state info"><strong>Personas:</strong> <span id="summaryPersonas">{{ totals.personas_total or 0 }}</span></span>
@@ -932,35 +932,36 @@
   .sedes-tech-head,
   .sedes-mapa-box,
   #resumen-inventario-top {
-    margin-bottom: 10px;
+    margin-bottom: 6px;
   }
 
   .sedes-portada-main {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    gap: 10px;
+    gap: 6px;
     background: #ffffff;
     border: 1px solid #e5e7eb;
-    padding: 10px 12px;
-    border-radius: 12px;
+    padding: 6px 10px;
+    border-radius: 10px;
     flex-wrap: wrap;
   }
 
   .sedes-portada-kicker {
-    font-size: 11px;
+    font-size: 10px;
     letter-spacing: 0.08em;
     color: #64748b;
     font-weight: 700;
+    line-height: 1.1;
   }
 
   .sedes-portada-title {
-    margin: 4px 0 0;
+    margin: 2px 0 0;
     font-size: 16px;
     color: #0f172a;
     font-weight: 700;
     line-height: 1.2;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
   }
 
   .sedes-portada-subtitle {
@@ -969,12 +970,12 @@
     font-size: 11px;
     font-weight: 500;
     max-width: 900px;
-    line-height: 1.38;
+    line-height: 1.2;
   }
 
   .sedes-portada-actions {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     flex-wrap: wrap;
   }
 
@@ -1080,11 +1081,11 @@
   }
 
   .sedes-region-grid {
-    margin-top: 6px;
-    margin-bottom: 0;
+    margin-top: 4px;
+    margin-bottom: 2px;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 8px;
+    gap: 6px;
   }
 
   .sedes-region-grid-exec {
@@ -1094,17 +1095,17 @@
   .sedes-region-card {
     background: #ffffff;
     border: 1px solid #e5e7eb;
-    border-radius: 14px;
-    padding: 12px 14px;
+    border-radius: 12px;
+    padding: 9px 11px;
     position: relative;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
     transition: all 0.18s ease;
     box-shadow: 0 2px 6px rgba(0,0,0,0.03);
-    min-height: 95px;
-    max-height: 105px;
+    min-height: 82px;
+    max-height: 92px;
   }
 
   .sedes-region-card:hover {
@@ -1128,24 +1129,24 @@
 
   .sedes-region-card h3 {
     margin: 0;
-    font-size: 14px;
+    font-size: 13px;
     color: #0f172a;
     font-weight: 700;
     text-transform: none;
     letter-spacing: 0.3px;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
   }
 
   .sedes-region-exec {
-    gap: 8px;
+    gap: 4px;
   }
 
   .sedes-region-kpis {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 4px 10px;
-    font-size: 11px;
-    line-height: 1.3;
+    gap: 2px 8px;
+    font-size: 10px;
+    line-height: 1.2;
     color: #334155;
   }
 
@@ -1154,25 +1155,25 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 6px;
+    gap: 4px;
     flex-wrap: wrap;
   }
 
   .exec-estado {
     border-radius: 999px;
-    padding: 2px 8px;
+    padding: 1px 6px;
     border: 1px solid #d9e2f2;
     background: #f8fafc;
     color: #334155;
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 600;
   }
 
   .sedes-region-exec .js-exec-detail {
-    min-height: 26px !important;
-    height: 26px !important;
-    padding: 0 10px !important;
-    font-size: 10px !important;
+    min-height: 24px !important;
+    height: 24px !important;
+    padding: 0 8px !important;
+    font-size: 9px !important;
   }
 
   .exec-estado.is-alto {
@@ -1220,7 +1221,7 @@
   }
 
   #resumen-inventario-top {
-    margin-top: 10px !important;
+    margin-top: 4px !important;
   }
 
   .sedes-mapa-head h2 {
@@ -1341,23 +1342,23 @@
   }
 
   .sedes-table-toolbar {
-    padding: 6px 12px;
+    padding: 4px 10px;
     border-bottom: 1px solid #e5e7eb;
     background: #fcfdff;
     display: flex;
-    gap: 6px;
+    gap: 4px;
     justify-content: flex-start;
     align-items: center;
     flex-wrap: wrap;
   }
 
   .sedes-master-filters {
-    padding: 8px 12px;
+    padding: 6px 10px;
     border-bottom: 1px solid #e5e7eb;
     background: #f8fafc;
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 8px 10px;
+    gap: 6px 8px;
     align-items: end;
   }
 
@@ -1398,7 +1399,7 @@
   }
 
   .sedes-global-searchbar {
-    padding: 8px 12px 6px;
+    padding: 6px 10px 4px;
     border-bottom: 1px solid #e5e7eb;
     background: #fcfdff;
     display: block;
@@ -1406,10 +1407,10 @@
 
   .sedes-global-searchbar .sedes-master-input {
     width: 100%;
-    min-height: 38px;
+    min-height: 34px;
     border-radius: 10px;
     font-size: 13px;
-    padding: 8px 10px;
+    padding: 6px 10px;
   }
 
   .sedes-global-searchbar .sedes-master-input::placeholder {
@@ -1419,7 +1420,7 @@
   .sedes-search-results {
     border-bottom: 1px solid #e5e7eb;
     background: #f8fafc;
-    padding: 6px 12px;
+    padding: 5px 10px;
     display: grid;
     gap: 6px;
   }
