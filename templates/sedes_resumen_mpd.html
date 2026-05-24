@@ -2124,6 +2124,14 @@
       if (n <= 7) return { local, cls: 'dep-local-badge-social', title: 'Juridico Social (S14)' };
       if (n <= 13) return { local, cls: 'dep-local-badge-menores', title: 'Menores / Incapaces (S14)' };
     }
+    if (sede === 'S15' && Number.isFinite(n) && n > 0) {
+      if (local === 'D03') return { local, cls: 'dep-local-badge-menores', title: 'Menores / Incapaces (S15)' };
+      return { local, cls: 'dep-local-badge-social', title: 'Juridico Social (S15)' };
+    }
+    if (sede === 'S16' && Number.isFinite(n) && n > 0) {
+      if (local === 'D02') return { local, cls: 'dep-local-badge-menores', title: 'Menores / Incapaces (S16)' };
+      return { local, cls: 'dep-local-badge-social', title: 'Juridico Social (S16)' };
+    }
     if (sede === 'S13' && Number.isFinite(n) && n > 0) {
       if (['D36', 'D37', 'D38'].includes(local)) {
         return { local, cls: 'dep-local-badge-admin', title: 'Administracion / Defensoria General (S13)' };

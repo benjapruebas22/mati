@@ -172,6 +172,28 @@
     {% endif %}
   {% endif %}
 
+  {# S15 Abra Pampa: D03 menores, resto juridico social. #}
+  {% if not badge_cls and sede == 'S15' and dep_num > 0 %}
+    {% if dep_norm == 'D03' %}
+      {% set badge_cls = 'dep-local-badge-menores' %}
+      {% set badge_title = 'Menores / Incapaces (S15)' %}
+    {% else %}
+      {% set badge_cls = 'dep-local-badge-social' %}
+      {% set badge_title = 'Juridico Social (S15)' %}
+    {% endif %}
+  {% endif %}
+
+  {# S16 La Quiaca: D02 menores, resto juridico social. #}
+  {% if not badge_cls and sede == 'S16' and dep_num > 0 %}
+    {% if dep_norm == 'D02' %}
+      {% set badge_cls = 'dep-local-badge-menores' %}
+      {% set badge_title = 'Menores / Incapaces (S16)' %}
+    {% else %}
+      {% set badge_cls = 'dep-local-badge-social' %}
+      {% set badge_title = 'Juridico Social (S16)' %}
+    {% endif %}
+  {% endif %}
+
   {# S13 San Martin 271: D36/D37/D38 administracion; resto menores. #}
   {% if not badge_cls and sede == 'S13' and dep_num > 0 %}
     {% if dep_norm in ['D36', 'D37', 'D38'] %}
