@@ -45,11 +45,11 @@
   } %}
   {% set region_reference_details = {
     'san_salvador': [
-      {'codigo':'S01','nombre':'Independencia 202','fueros':'Penal','bloques':[{'fuero':'Penal','rangos':'Depositos penales operativos'}]},
+      {'codigo':'S01','nombre':'Independencia 202','fueros':'Penal / Administracion','bloques':[{'fuero':'Administracion','rangos':'D02, D04, D12, D18'},{'fuero':'Penal','rangos':'Resto operativo'}]},
       {'codigo':'S08','nombre':'San Martin 137','fueros':'Administracion / Penal','bloques':[{'fuero':'Violencia Institucional','rangos':'D01, D02, D21'},{'fuero':'Administracion General','rangos':'Uso central'}]},
-      {'codigo':'S11','nombre':'Gorriti 791','fueros':'Juridico Social','bloques':[{'fuero':'Juridico Social','rangos':'Operacion civil y social'}]},
+      {'codigo':'S11','nombre':'Gorriti 791','fueros':'Juridico Social / Administracion','bloques':[{'fuero':'Administracion','rangos':'D43, D51, D56, D57'},{'fuero':'Juridico Social','rangos':'Resto operativo'}]},
       {'codigo':'S12','nombre':'Belgrano','fueros':'Equipo Interdisciplinario / Penal','bloques':[{'fuero':'Ejecucion de Pena','rangos':'D04, D09, D24, D25'}]},
-      {'codigo':'S13','nombre':'San Martin 271','fueros':'Menores / Incapaces','bloques':[{'fuero':'Menores / Incapaces','rangos':'Operacion especifica'}]}
+      {'codigo':'S13','nombre':'San Martin 271','fueros':'Menores / Incapaces / Administracion','bloques':[{'fuero':'Administracion','rangos':'D36, D37, D38'},{'fuero':'Menores / Incapaces','rangos':'Resto operativo'}]}
     ],
     'aledanias': [
       {'codigo':'S03','nombre':'Perico Penal','fueros':'Penal','bloques':[{'fuero':'Penal','rangos':'Operacion penal'}]},
@@ -120,6 +120,26 @@
                   {{ render_local_badge('S08', 'D01', 'D01')|safe }},
                   {{ render_local_badge('S08', 'D02', 'D02')|safe }},
                   {{ render_local_badge('S08', 'D21', 'D21')|safe }}
+                </li>
+              {% elif d.codigo == 'S01' and (b.rangos or '') == 'D02, D04, D12, D18' %}
+                <li><strong>{{ b.fuero }}:</strong>
+                  {{ render_local_badge('S01', 'D02', 'D02')|safe }},
+                  {{ render_local_badge('S01', 'D04', 'D04')|safe }},
+                  {{ render_local_badge('S01', 'D12', 'D12')|safe }},
+                  {{ render_local_badge('S01', 'D18', 'D18')|safe }}
+                </li>
+              {% elif d.codigo == 'S11' and (b.rangos or '') == 'D43, D51, D56, D57' %}
+                <li><strong>{{ b.fuero }}:</strong>
+                  {{ render_local_badge('S11', 'D43', 'D43')|safe }},
+                  {{ render_local_badge('S11', 'D51', 'D51')|safe }},
+                  {{ render_local_badge('S11', 'D56', 'D56')|safe }},
+                  {{ render_local_badge('S11', 'D57', 'D57')|safe }}
+                </li>
+              {% elif d.codigo == 'S13' and (b.rangos or '') == 'D36, D37, D38' %}
+                <li><strong>{{ b.fuero }}:</strong>
+                  {{ render_local_badge('S13', 'D36', 'D36')|safe }},
+                  {{ render_local_badge('S13', 'D37', 'D37')|safe }},
+                  {{ render_local_badge('S13', 'D38', 'D38')|safe }}
                 </li>
               {% else %}
                 <li><strong>{{ b.fuero }}:</strong> {{ b.rangos }}</li>
