@@ -161,6 +161,17 @@
     {% endif %}
   {% endif %}
 
+  {# S14 Tilcara: D01-D07 juridico social, D08-D13 menores. #}
+  {% if not badge_cls and sede == 'S14' and dep_num > 0 %}
+    {% if dep_num <= 7 %}
+      {% set badge_cls = 'dep-local-badge-social' %}
+      {% set badge_title = 'Juridico Social (S14)' %}
+    {% elif dep_num <= 13 %}
+      {% set badge_cls = 'dep-local-badge-menores' %}
+      {% set badge_title = 'Menores / Incapaces (S14)' %}
+    {% endif %}
+  {% endif %}
+
   {# S13 San Martin 271: D36/D37/D38 administracion; resto menores. #}
   {% if not badge_cls and sede == 'S13' and dep_num > 0 %}
     {% if dep_norm in ['D36', 'D37', 'D38'] %}

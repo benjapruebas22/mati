@@ -5995,6 +5995,20 @@ def sede_ficha(codigo):
                 ftxt = _fuero_from_text(ambiente_txt)
                 return ftxt or "menores"
 
+            if sede_up == "S14":
+                if dep.startswith("D") and dep[1:].isdigit():
+                    n = int(dep[1:])
+                    # S14 Tilcara: sin penal.
+                    # D01-D07 juridico social; D08-D13 menores (subrogancias).
+                    if 1 <= n <= 7:
+                        return "social"
+                    if 8 <= n <= 13:
+                        return "menores"
+                if dep:
+                    return "social"
+                ftxt = _fuero_from_text(ambiente_txt)
+                return ftxt or "social"
+
             if sede_up == "S08":
                 if dep in ("D01", "D02", "D21"):
                     return "penal"
@@ -9731,8 +9745,8 @@ def sedes_resumen_mpd():
     _set_override("S17", "D02", "social")
     _set_override("S17", "D03", "menores")
     _set_override("S17", "D04", "social")
-    for d in ("D01", "D09", "D13"):
-        _set_override("S14", d, "menores")
+    _set_range("S14", 1, 7, "social")
+    _set_range("S14", 8, 13, "menores")
     for d in ("D01", "D04", "D05"):
         _set_override("S15", d, "menores")
         _set_override("S16", d, "menores")
