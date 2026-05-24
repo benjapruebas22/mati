@@ -8710,7 +8710,7 @@ def sedes_resumen_mpd():
 
     sedes_region_defs = [
         {"key": "san_salvador", "title": "San Salvador", "label": "San Salvador de Jujuy", "class": "region-san-salvador"},
-        {"key": "aledanias", "title": "Aledañas", "label": "Aledañas", "class": "region-aledanias"},
+        {"key": "aledanias", "title": "Interior Centro", "label": "Interior Centro", "class": "region-aledanias"},
         {"key": "el_ramal", "title": "El Ramal", "label": "El Ramal", "class": "region-el-ramal"},
         {"key": "quebrada_puna", "title": "Quebrada y Puna", "label": "Quebrada y Puna", "class": "region-quebrada-puna"},
     ]

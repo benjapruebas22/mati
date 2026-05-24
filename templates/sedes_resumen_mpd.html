@@ -55,21 +55,21 @@
       {'codigo':'S03','nombre':'Perico Penal','fueros':'Penal','bloques':[{'fuero':'Penal','rangos':'Operacion penal'}]},
       {'codigo':'S04','nombre':'Alto Comedero','fueros':'Penal','bloques':[{'fuero':'Penal','rangos':'Operacion penal'}]},
       {'codigo':'S07','nombre':'Palpala Penal','fueros':'Penal','bloques':[{'fuero':'Penal','rangos':'Operacion penal'}]},
-      {'codigo':'S10','nombre':'El Carmen','fueros':'Penal / Juridico Social / Menores','bloques':[{'fuero':'Penal fijo','rangos':'Base operativa'},{'fuero':'JS / Menores','rangos':'D01, D02, D03, D04 segun uso interno'}]},
-      {'codigo':'S17','nombre':'Perico Civil','fueros':'Juridico Social / Menores','bloques':[{'fuero':'Juridico Social','rangos':'D02 a D04'},{'fuero':'Menores','rangos':'D03'},{'fuero':'Uso multiple','rangos':'D01'}]},
+      {'codigo':'S10','nombre':'El Carmen','fueros':'Penal / Juridico Social / Menores','bloques':[{'fuero':'Penal','rangos':'D01, D02'},{'fuero':'Menores','rangos':'D03'},{'fuero':'Juridico Social','rangos':'Resto operativo'}]},
+      {'codigo':'S17','nombre':'Perico Civil','fueros':'Juridico Social / Menores','bloques':[{'fuero':'Menores','rangos':'D03, D05'},{'fuero':'Juridico Social','rangos':'Resto operativo'}]},
       {'codigo':'S20','nombre':'Palpala Civil','fueros':'Juridico Social / Menores','bloques':[{'fuero':'Juridico Social','rangos':'Operacion civil'},{'fuero':'Menores','rangos':'Integracion proyectada'}]}
     ],
     'el_ramal': [
       {'codigo':'S02','nombre':'San Pedro','fueros':'Penal / Juridico Social / Menores','bloques':[{'fuero':'Penal','rangos':'D01 a D10'},{'fuero':'Juridico Social','rangos':'D11 a D28'},{'fuero':'Menores / Incapaces','rangos':'D29 a D38'}]},
-      {'codigo':'S06','nombre':'Ledesma','fueros':'Penal / Menores','bloques':[{'fuero':'Penal','rangos':'D01 a D07'},{'fuero':'Menores / Incapaces','rangos':'D08 a D11'}]},
+      {'codigo':'S06','nombre':'Ledesma','fueros':'Penal / Menores','bloques':[{'fuero':'Penal','rangos':'D01 a D07 y D09 a D11'},{'fuero':'Menores / Incapaces','rangos':'D08'}]},
       {'codigo':'S19','nombre':'Ledesma Civil','fueros':'Juridico Social','bloques':[{'fuero':'Juridico Social','rangos':'Operacion civil'}]}
     ],
     'quebrada_puna': [
       {'codigo':'S05','nombre':'Humahuaca Penal','fueros':'Penal','bloques':[{'fuero':'Penal','rangos':'Operacion penal'}]},
-      {'codigo':'S14','nombre':'Tilcara','fueros':'Juridico Social / Menores','bloques':[{'fuero':'Menores','rangos':'D01, D13, D09'}]},
-      {'codigo':'S15','nombre':'Abra Pampa','fueros':'Juridico Social / Menores','bloques':[{'fuero':'Menores','rangos':'D01, D05, D04'}]},
-      {'codigo':'S16','nombre':'La Quiaca','fueros':'Juridico Social / Menores','bloques':[{'fuero':'Menores','rangos':'D01, D05, D04'}]},
-      {'codigo':'S18','nombre':'Humahuaca Civil','fueros':'Juridico Social / Menores','bloques':[{'fuero':'Juridico Social / Menores','rangos':'Operacion civil integrada'}]}
+      {'codigo':'S14','nombre':'Tilcara','fueros':'Juridico Social / Menores','bloques':[{'fuero':'Juridico Social','rangos':'D01 a D07'},{'fuero':'Menores','rangos':'D08 a D13'}]},
+      {'codigo':'S15','nombre':'Abra Pampa','fueros':'Juridico Social / Menores','bloques':[{'fuero':'Menores','rangos':'D03'},{'fuero':'Juridico Social','rangos':'Resto operativo'}]},
+      {'codigo':'S16','nombre':'La Quiaca','fueros':'Juridico Social / Menores','bloques':[{'fuero':'Menores','rangos':'D02'},{'fuero':'Juridico Social','rangos':'Resto operativo'}]},
+      {'codigo':'S18','nombre':'Humahuaca Civil','fueros':'Juridico Social / Menores','bloques':[{'fuero':'Menores','rangos':'D04, D05'},{'fuero':'Juridico Social','rangos':'Resto operativo'}]}
     ]
   } %}
   <div class="cardx sedes-shell {{ 'is-infra' if show_infra else 'is-resumen' }}" style="padding:6px 8px;">
@@ -155,7 +155,7 @@
           <select id="masterFilterRegion" class="sedes-master-select">
             <option value="all">Todas</option>
             <option value="san_salvador">San Salvador</option>
-            <option value="aledanias">Aledanas</option>
+            <option value="aledanias">Interior Centro</option>
             <option value="el_ramal">El Ramal</option>
             <option value="quebrada_puna">Quebrada y Puna</option>
           </select>
@@ -321,7 +321,7 @@
           <div class="sedes-mapa-chip-group" id="mapRegionChips">
             <button type="button" class="btn xs is-selected js-map-region" data-region="all">Todas</button>
             <button type="button" class="btn xs js-map-region" data-region="san_salvador">San Salvador</button>
-            <button type="button" class="btn xs js-map-region" data-region="aledanias">Aledanas</button>
+            <button type="button" class="btn xs js-map-region" data-region="aledanias">Interior Centro</button>
             <button type="button" class="btn xs js-map-region" data-region="el_ramal">El Ramal</button>
             <button type="button" class="btn xs js-map-region" data-region="quebrada_puna">Quebrada y Puna</button>
           </div>
@@ -1832,7 +1832,7 @@
 
   const regionLabels = {
     san_salvador: 'San Salvador',
-    aledanias: 'Aledanas',
+    aledanias: 'Interior Centro',
     el_ramal: 'El Ramal',
     quebrada_puna: 'Quebrada y Puna'
   };
