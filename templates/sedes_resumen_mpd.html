@@ -2079,6 +2079,9 @@
     if (!local) return { local: '', cls: '', title: '' };
 
     const n = Number(local.slice(1));
+    if (['S03', 'S04', 'S05', 'S07'].includes(sede) && Number.isFinite(n) && n > 0) {
+      return { local, cls: 'dep-local-badge-penal', title: 'Penal' };
+    }
     if (sede === 'S01' && Number.isFinite(n) && n > 0) {
       if (['D02', 'D04', 'D12', 'D18'].includes(local)) {
         return { local, cls: 'dep-local-badge-admin', title: 'Administracion / Defensoria General (S01)' };
