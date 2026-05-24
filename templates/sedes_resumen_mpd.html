@@ -141,6 +141,40 @@
                   {{ render_local_badge('S13', 'D37', 'D37')|safe }},
                   {{ render_local_badge('S13', 'D38', 'D38')|safe }}
                 </li>
+              {% elif d.codigo == 'S12' and (b.rangos or '') == 'D04, D09, D24, D25' %}
+                <li><strong>{{ b.fuero }}:</strong>
+                  {{ render_local_badge('S12', 'D04', 'D04')|safe }},
+                  {{ render_local_badge('S12', 'D09', 'D09')|safe }},
+                  {{ render_local_badge('S12', 'D24', 'D24')|safe }},
+                  {{ render_local_badge('S12', 'D25', 'D25')|safe }}
+                </li>
+              {% elif d.codigo == 'S10' and (b.rangos or '') == 'D01, D02' %}
+                <li><strong>{{ b.fuero }}:</strong>
+                  {{ render_local_badge('S10', 'D01', 'D01')|safe }},
+                  {{ render_local_badge('S10', 'D02', 'D02')|safe }}
+                </li>
+              {% elif d.codigo == 'S10' and (b.rangos or '') == 'D03' %}
+                <li><strong>{{ b.fuero }}:</strong>
+                  {{ render_local_badge('S10', 'D03', 'D03')|safe }}
+                </li>
+              {% elif d.codigo == 'S15' and (b.rangos or '') == 'D03' %}
+                <li><strong>{{ b.fuero }}:</strong>
+                  {{ render_local_badge('S15', 'D03', 'D03')|safe }}
+                </li>
+              {% elif d.codigo == 'S16' and (b.rangos or '') == 'D02' %}
+                <li><strong>{{ b.fuero }}:</strong>
+                  {{ render_local_badge('S16', 'D02', 'D02')|safe }}
+                </li>
+              {% elif d.codigo == 'S17' and (b.rangos or '') == 'D03, D05' %}
+                <li><strong>{{ b.fuero }}:</strong>
+                  {{ render_local_badge('S17', 'D03', 'D03')|safe }},
+                  {{ render_local_badge('S17', 'D05', 'D05')|safe }}
+                </li>
+              {% elif d.codigo == 'S18' and (b.rangos or '') == 'D04, D05' %}
+                <li><strong>{{ b.fuero }}:</strong>
+                  {{ render_local_badge('S18', 'D04', 'D04')|safe }},
+                  {{ render_local_badge('S18', 'D05', 'D05')|safe }}
+                </li>
               {% else %}
                 <li><strong>{{ b.fuero }}:</strong> {{ b.rangos }}</li>
               {% endif %}
