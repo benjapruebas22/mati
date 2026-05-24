@@ -5981,7 +5981,7 @@ def sede_ficha(codigo):
                 return ftxt or "penal"
 
             if sede_up == "S11":
-                if dep in ("D51", "D56", "D57"):
+                if dep in ("D43", "D51", "D56", "D57"):
                     return "administracion"
                 if dep:
                     return "social"
@@ -6002,6 +6002,18 @@ def sede_ficha(codigo):
                     return "administracion"
                 ftxt = _fuero_from_text(ambiente_txt)
                 return ftxt or "administracion"
+
+            if sede_up == "S10":
+                if dep in ("D01", "D02"):
+                    return "penal"
+                if dep == "D03":
+                    return "menores"
+                ftxt = _fuero_from_text(ambiente_txt)
+                if ftxt:
+                    return ftxt
+                if dep:
+                    return "penal"
+                return "penal"
 
             if sede_up == "S12":
                 if dep in ("D04", "D09", "D24", "D25"):
@@ -9702,7 +9714,7 @@ def sedes_resumen_mpd():
     # Reglas operativas solicitadas para sedes mixtas
     for d in ("D02", "D04", "D12", "D18"):
         _set_override("S01", d, "administracion")
-    for d in ("D51", "D56", "D57"):
+    for d in ("D43", "D51", "D56", "D57"):
         _set_override("S11", d, "administracion")
     _set_range("S02", 1, 10, "penal")
     _set_override("S02", "D10", "menores")
@@ -9712,6 +9724,9 @@ def sedes_resumen_mpd():
     _set_range("S06", 8, 11, "menores")
     for d in ("D01", "D02", "D21"):
         _set_override("S08", d, "penal")
+    for d in ("D01", "D02"):
+        _set_override("S10", d, "penal")
+    _set_override("S10", "D03", "menores")
     _set_override("S17", "D01", "compartido")
     _set_override("S17", "D02", "social")
     _set_override("S17", "D03", "menores")

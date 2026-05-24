@@ -95,9 +95,9 @@
     {% endif %}
   {% endif %}
 
-  {# S11 Gorriti: D51/D56/D57 administracion; resto juridico social. #}
+  {# S11 Gorriti: D43/D51/D56/D57 administracion; resto juridico social. #}
   {% if not badge_cls and sede == 'S11' and dep_num > 0 %}
-    {% if dep_norm in ['D51', 'D56', 'D57'] %}
+    {% if dep_norm in ['D43', 'D51', 'D56', 'D57'] %}
       {% set badge_cls = 'dep-local-badge-admin' %}
       {% set badge_title = 'Administracion / Defensoria General (S11)' %}
     {% else %}
@@ -142,6 +142,17 @@
     {% elif dep_num <= 11 %}
       {% set badge_cls = 'dep-local-badge-menores' %}
       {% set badge_title = 'Menores / Incapaces (S06)' %}
+    {% endif %}
+  {% endif %}
+
+  {# S10 El Carmen: D01/D02 penal, D03 menores. #}
+  {% if not badge_cls and sede == 'S10' and dep_num > 0 %}
+    {% if dep_norm in ['D01', 'D02'] %}
+      {% set badge_cls = 'dep-local-badge-penal' %}
+      {% set badge_title = 'Penal (S10)' %}
+    {% elif dep_norm == 'D03' %}
+      {% set badge_cls = 'dep-local-badge-menores' %}
+      {% set badge_title = 'Menores / Incapaces (S10)' %}
     {% endif %}
   {% endif %}
 
