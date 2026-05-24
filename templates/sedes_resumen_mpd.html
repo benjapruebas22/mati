@@ -139,9 +139,13 @@
         <input id="globalSearchInput" type="text" class="sedes-master-input" placeholder="Buscar sede, persona, deposito o localidad...">
       </div>
       <div class="sedes-table-toolbar">
-        <button id="masterFiltersToggleBtn" type="button" class="btn xs btn-secondary">Mostrar filtros avanzados</button>
-        <button id="toggleInvSecColsBtn" type="button" class="btn xs">Ver inventario detallado</button>
-        <button id="globalSearchClear" type="button" class="btn xs btn-secondary">Limpiar busqueda</button>
+        <div class="sedes-table-toolbar-left">
+          <button id="masterFiltersToggleBtn" type="button" class="btn xs btn-secondary">Mostrar filtros avanzados</button>
+          <button id="globalSearchClear" type="button" class="btn xs btn-secondary">Limpiar busqueda</button>
+        </div>
+        <div class="sedes-table-toolbar-right">
+          <button id="toggleInvSecColsBtn" type="button" class="btn xs">Ver inventario detallado</button>
+        </div>
       </div>
       <div id="globalSearchResults" class="sedes-search-results" hidden></div>
 
@@ -1518,10 +1522,22 @@
     border-bottom: 1px solid #e5e7eb;
     background: #fcfdff;
     display: flex;
-    gap: 4px;
-    justify-content: flex-start;
+    gap: 8px;
+    justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
+  }
+
+  .sedes-table-toolbar-left,
+  .sedes-table-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .sedes-table-toolbar-right {
+    margin-left: auto;
   }
 
   .sedes-master-filters {
