@@ -5234,13 +5234,15 @@ def sede_ficha(codigo):
         return (1, code)
 
     def aires_valid_where(alias: str) -> str:
+        estado_norm = f"LOWER(TRIM(COALESCE({alias}.estado,'')))"
         return (
-            f"((NULLIF(TRIM({alias}.marca),'') IS NOT NULL "
+            f"({estado_norm} NOT IN ('no va a ir','no va ir','sin aire','n/a','no aplica') "
+            f"AND ((NULLIF(TRIM({alias}.marca),'') IS NOT NULL "
             f"AND UPPER(TRIM({alias}.marca)) NOT IN ('-','PENDIENTE')) "
             f"OR (NULLIF(TRIM({alias}.estado),'') IS NOT NULL) "
             f"OR {alias}.fecha_ultima_limpieza IS NOT NULL "
             f"OR {alias}.fecha_ultimo_service IS NOT NULL "
-            f"OR {alias}.observaciones IS NOT NULL)"
+            f"OR {alias}.observaciones IS NOT NULL))"
         )
 
     # Normalize to Dxx to match personal/mobiliario/luminarias codes.
@@ -5593,6 +5595,14 @@ def sede_ficha(codigo):
 
     aires_rows = []
     aires_kpi = {"total": 0, "operativos": 0, "fuera_servicio": 0}
+    aires_fuero_kpi = {
+        "operativos_penal": 0,
+        "operativos_administracion": 0,
+        "operativos_social": 0,
+        "operativos_menores": 0,
+        "operativos_compartido": 0,
+        "operativos_sin_local": 0,
+    }
     resumen_sedes_rows = []
     resumen_sedes_totals = {
         "mesa_pc": 0,
@@ -5916,6 +5926,91 @@ def sede_ficha(codigo):
                 else:
                     item["deposito_codigo"] = "-"
             aires_rows.append(item)
+
+        def _estado_norm(v):
+            return str(v or "").strip().lower()
+
+        def _is_operativo_estado(v):
+            return _estado_norm(v) in ("operativo", "ok", "en servicio")
+
+        def _fuero_from_text(raw_txt):
+            t = _norm_ambiente_label(raw_txt)
+            if not t:
+                return ""
+            if any(k in t for k in ("menores", "incapaces", "capacidad restringida")):
+                return "menores"
+            if any(k in t for k in ("juridico social", "juridico", "social", "civil", "ajs")):
+                return "social"
+            if any(k in t for k in ("administracion", "intendencia", "compras", "sistema", "personal", "contaduria", "tesoreria", "secretaria")):
+                return "administracion"
+            if any(k in t for k in ("penal", "violencia institucional", "defensoria penal", "ejecucion de pena")):
+                return "penal"
+            return ""
+
+        def _fuero_for_aire(sede_cod, dep_cod, ambiente_txt):
+            sede_up = str(sede_cod or "").strip().upper()
+            dep = normalize_local_code(dep_cod or "")
+
+            # Overrides operativos de sedes mixtas
+            if sede_up == "S08":
+                if dep in ("D01", "D02", "D21"):
+                    return "penal"
+                if dep:
+                    return "administracion"
+                ftxt = _fuero_from_text(ambiente_txt)
+                return ftxt or "administracion"
+
+            if sede_up == "S12" and dep in ("D04", "D09", "D24", "D25"):
+                return "penal"
+            if sede_up == "S17":
+                if dep == "D01":
+                    return "compartido"
+                if dep in ("D02", "D04"):
+                    return "social"
+                if dep == "D03":
+                    return "menores"
+
+            if sede_up == "S02":
+                if dep.startswith("D") and dep[1:].isdigit():
+                    n = int(dep[1:])
+                    if 1 <= n <= 10:
+                        return "penal"
+                    if 11 <= n <= 28:
+                        return "social"
+                    if 29 <= n <= 38:
+                        return "menores"
+            if sede_up == "S06":
+                if dep.startswith("D") and dep[1:].isdigit():
+                    n = int(dep[1:])
+                    if 1 <= n <= 7:
+                        return "penal"
+                    if 8 <= n <= 11:
+                        return "menores"
+
+            ftxt = _fuero_from_text(ambiente_txt)
+            if ftxt:
+                return ftxt
+            if dep:
+                # Fallback: si hay deposito pero no regla, asumimos fuero principal de sede.
+                try:
+                    sede_fuero_txt = str((sede["fuero"] if sede and "fuero" in sede.keys() else "") or "")
+                except Exception:
+                    sede_fuero_txt = ""
+                fsede = _fuero_from_text(sede_fuero_txt)
+                return fsede or "compartido"
+            return "sin_local"
+
+        for a in aires_rows:
+            if not _is_operativo_estado(a.get("estado")):
+                continue
+            fu = _fuero_for_aire(
+                codigo,
+                a.get("deposito_codigo") or a.get("codigo_local") or "",
+                a.get("ambiente_desc") or a.get("ambiente") or "",
+            )
+            if fu not in ("penal", "administracion", "social", "menores", "compartido", "sin_local"):
+                fu = "compartido"
+            aires_fuero_kpi[f"operativos_{fu}"] += 1
 
         k = db.execute(f"""
             SELECT
@@ -6289,6 +6384,7 @@ def sede_ficha(codigo):
         matafuegos_kpi=matafuegos_kpi,
         aires_rows=aires_rows,
         aires_kpi=aires_kpi,
+        aires_fuero_kpi=aires_fuero_kpi,
         resumen_sedes_rows=resumen_sedes_rows,
         resumen_sedes_totals=resumen_sedes_totals,
         parti_rows=parti_rows,
@@ -8334,13 +8430,15 @@ def sedes_resumen_mpd():
     ensure_infra_criterios_schema(db)
 
     def aires_valid_where(alias: str) -> str:
+        estado_norm = f"LOWER(TRIM(COALESCE({alias}.estado,'')))"
         return (
-            f"((NULLIF(TRIM({alias}.marca),'') IS NOT NULL "
+            f"({estado_norm} NOT IN ('no va a ir','no va ir','sin aire','n/a','no aplica') "
+            f"AND ((NULLIF(TRIM({alias}.marca),'') IS NOT NULL "
             f"AND UPPER(TRIM({alias}.marca)) NOT IN ('-','PENDIENTE')) "
             f"OR (NULLIF(TRIM({alias}.estado),'') IS NOT NULL) "
             f"OR {alias}.fecha_ultima_limpieza IS NOT NULL "
             f"OR {alias}.fecha_ultimo_service IS NOT NULL "
-            f"OR {alias}.observaciones IS NOT NULL)"
+            f"OR {alias}.observaciones IS NOT NULL))"
         )
 
     def safe_scalar(sql, params=()):
@@ -9655,16 +9753,20 @@ def sedes_resumen_mpd():
     aires_rows = db.execute(f"""
         SELECT
             UPPER(COALESCE(sede_codigo,'')) AS sede_codigo,
+            COALESCE(codigo_local,'') AS codigo_local,
             COALESCE(ambiente,'') AS ambiente
         FROM aires_mpd
         WHERE {aires_valid_where('aires_mpd')}
     """).fetchall()
     for ar in aires_rows:
         sede = str(ar["sede_codigo"] or "").strip().upper()
+        codigo_local = str(ar["codigo_local"] or "").strip()
         ambiente = str(ar["ambiente"] or "").strip()
         if not sede:
             continue
-        dep_direct = normalizar_local_clave(ambiente)
+        dep_direct = normalizar_local_clave(codigo_local)
+        if not dep_direct:
+            dep_direct = normalizar_local_clave(ambiente)
         if dep_direct and (sede, dep_direct) in all_keys_resumen:
             aires_local_map[(sede, dep_direct)] += 1
             continue
@@ -9707,6 +9809,13 @@ def sedes_resumen_mpd():
         ]).strip()
 
         fuero_local = fuero_local_overrides.get((sede, dep), "")
+        # Regla fija S08: D01/D02/D21 = Penal; resto = Administracion.
+        # Evita que heurísticas de texto/dependencia clasifiquen mal S08.
+        if not fuero_local and sede == "S08":
+            if dep in ("D01", "D02", "D21"):
+                fuero_local = "penal"
+            else:
+                fuero_local = "administracion"
         if not fuero_local:
             if _is_shared_space(referencias_txt):
                 fuero_local = "compartido"
@@ -9829,6 +9938,10 @@ def sedes_resumen_mpd():
             extra_aires = int(round(float(aires_sede_unmatched.get(cod, 0) or 0)))
             stats_map["all"]["aires_total"] += extra_aires
             stats_map["all"]["total_mobiliario"] += extra_aires
+            # Regla fija S08: aires sin mapeo local se imputan a Administracion.
+            if cod == "S08":
+                stats_map["administracion"]["aires_total"] += extra_aires
+                stats_map["administracion"]["total_mobiliario"] += extra_aires
 
         for fk in FUERO_KEYS:
             st = stats_map[fk]

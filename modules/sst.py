@@ -6025,20 +6025,37 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             aires.append(item)
 
         # Estadísticas simples
-        total = len(aires)
-        sin_limpieza = sum(1 for a in aires
-                           if not (a["fecha_ultima_limpieza"] or "").strip())
+        def _estado_norm(v):
+            return str(v or "").strip().lower()
+
+        def _equipo_computable(item):
+            return _estado_norm(item.get("estado")) not in (
+                "no va a ir", "no va ir", "sin aire", "n/a", "no aplica"
+            )
+
+        aires_computables = [a for a in aires if _equipo_computable(a)]
+        total = len(aires_computables)
+        sin_limpieza = sum(
+            1 for a in aires_computables
+            if not (a["fecha_ultima_limpieza"] or "").strip()
+        )
         fuera_servicio = sum(
-            1 for a in aires
-            if (a["estado"] or "").strip().lower() in (
+            1 for a in aires_computables
+            if _estado_norm(a.get("estado")) in (
                 "fuera de servicio", "no funciona", "baja"
             )
+        )
+        operativos = sum(
+            1 for a in aires_computables
+            if _estado_norm(a.get("estado")) in ("operativo", "ok", "en servicio")
         )
 
         stats = {
             "total": total,
             "sin_limpieza": sin_limpieza,
             "fuera_servicio": fuera_servicio,
+            "operativos": operativos,
+            "total_registros": len(aires),
         }
 
         return render_template(
