@@ -1555,6 +1555,11 @@
     return Number.isFinite(n) ? n : 0;
   }
 
+  function attrNum(el, attrName) {
+    if (!el) return 0;
+    return toNum(el.getAttribute(attrName));
+  }
+
   function normalizeText(raw) {
     return String(raw || '').toLowerCase().trim();
   }
@@ -1684,9 +1689,9 @@
         regionAgg[region] = { sedes: 0, personas: 0, m2: 0, puestos: 0 };
       }
 
-      const personas = toNum(row.dataset.valPersonas);
-      const m2 = toNum(row.dataset.valM2);
-      const puestos = toNum(row.dataset.valPuestos);
+      const personas = attrNum(row, 'data-val-personas');
+      const m2 = attrNum(row, 'data-val-m2');
+      const puestos = attrNum(row, 'data-val-puestos');
 
       regionAgg[region].sedes += 1;
       regionAgg[region].personas += personas;
@@ -1697,15 +1702,15 @@
       totals.personas += personas;
       totals.m2 += m2;
       totals.puestos += puestos;
-      totals.luminarias += toNum(row.dataset.valLuminarias);
-      totals.aires_total += toNum(row.dataset.valAiresTotal);
-      totals.total_mob += toNum(row.dataset.valTotalMob);
-      totals.mesa_pc += toNum(row.dataset.valMesaPc);
-      totals.escritorio_prof += toNum(row.dataset.valEscritorioProf);
-      totals.silla_giratoria += toNum(row.dataset.valSillaGiratoria);
-      totals.silla_fija += toNum(row.dataset.valSillaFija);
-      totals.armario_alto += toNum(row.dataset.valArmarioAlto);
-      totals.biblioteca_baja += toNum(row.dataset.valBibliotecaBaja);
+      totals.luminarias += attrNum(row, 'data-val-luminarias');
+      totals.aires_total += attrNum(row, 'data-val-aires_total');
+      totals.total_mob += attrNum(row, 'data-val-total_mob');
+      totals.mesa_pc += attrNum(row, 'data-val-mesa_pc');
+      totals.escritorio_prof += attrNum(row, 'data-val-escritorio_prof');
+      totals.silla_giratoria += attrNum(row, 'data-val-silla_giratoria');
+      totals.silla_fija += attrNum(row, 'data-val-silla_fija');
+      totals.armario_alto += attrNum(row, 'data-val-armario_alto');
+      totals.biblioteca_baja += attrNum(row, 'data-val-biblioteca_baja');
     });
 
     regionCards.forEach(card => {
