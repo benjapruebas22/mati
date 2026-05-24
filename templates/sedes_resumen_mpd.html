@@ -48,6 +48,168 @@
       {% endfor %}
     </div>
 
+    <div id="resumen-inventario-top" class="sedes-master-table" style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;overflow:auto;background:#fff;">
+      <div class="sedes-master-head" style="padding:10px 12px;border-bottom:1px solid #e5e7eb;font-weight:700;color:#334155;">Tabla maestra operativa por sede</div>
+      <div class="sedes-table-toolbar">
+        <button id="masterFiltersToggleBtn" type="button" class="btn xs btn-secondary">Mostrar filtros</button>
+        <button id="toggleInvSecColsBtn" type="button" class="btn xs">Ver inventario detallado</button>
+      </div>
+
+      <div id="masterFiltersPanel" class="sedes-master-filters" hidden>
+        <div class="sedes-master-filter-row">
+          <label for="masterFilterRegion">Region</label>
+          <select id="masterFilterRegion" class="sedes-master-select">
+            <option value="all">Todas</option>
+            <option value="san_salvador">San Salvador</option>
+            <option value="aledanias">Aledanas</option>
+            <option value="el_ramal">El Ramal</option>
+            <option value="quebrada_puna">Quebrada y Puna</option>
+          </select>
+        </div>
+        <div class="sedes-master-filter-row">
+          <label for="masterFilterFuero">Fuero</label>
+          <select id="masterFilterFuero" class="sedes-master-select">
+            <option value="all">Todos</option>
+            <option value="penal">Penal</option>
+            <option value="social">Juridico Social</option>
+            <option value="menores">Menores / Incapaces</option>
+            <option value="administracion">Administracion</option>
+          </select>
+        </div>
+        <div class="sedes-master-filter-row">
+          <label for="masterFilterOcupacion">Ocupacion</label>
+          <select id="masterFilterOcupacion" class="sedes-master-select">
+            <option value="all">Todas</option>
+            <option value="alta">Alta</option>
+            <option value="media">Media</option>
+            <option value="disponible">Disponible</option>
+            <option value="bajo_uso">Bajo uso</option>
+            <option value="sobreocupada">Sobreocupada</option>
+          </select>
+        </div>
+        <div class="sedes-master-filter-row">
+          <label for="masterFilterDensidad">Densidad</label>
+          <select id="masterFilterDensidad" class="sedes-master-select">
+            <option value="all">Todas</option>
+            <option value="alta">Alta</option>
+            <option value="media">Media</option>
+            <option value="baja">Baja</option>
+          </select>
+        </div>
+        <div class="sedes-master-filter-row sedes-master-search-row">
+          <label for="masterFilterSearch">Buscar</label>
+          <input id="masterFilterSearch" class="sedes-master-input" type="text" placeholder="Codigo, nombre o localidad">
+        </div>
+        <div class="sedes-master-filter-row sedes-master-actions-row">
+          <button id="masterFilterReset" type="button" class="btn xs btn-secondary">Limpiar filtros</button>
+        </div>
+      </div>
+
+      <div id="sedesSummaryBar" style="padding:8px 12px;border-bottom:1px solid #e5e7eb;display:flex;gap:8px;flex-wrap:wrap;font-size:12px;background:#fafafa;">
+        <span class="state info" id="summaryFilterScope"><strong>Mostrando:</strong> Todas las regiones</span>
+        <span class="state info"><strong>Sedes:</strong> <span id="summarySedes">{{ rows|length }}</span></span>
+        <span class="state info"><strong>Personas:</strong> <span id="summaryPersonas">{{ totals.personas_total or 0 }}</span></span>
+        <span class="state info"><strong>m2:</strong> <span id="summaryM2">{{ (totals.m2_total or 0)|round(0)|int }}</span></span>
+        <span class="state info"><strong>Puestos:</strong> <span id="summaryPuestos">{{ totals.puestos_trabajo or 0 }}</span></span>
+        <span class="state info"><strong>Luminarias:</strong> <span id="summaryLuminarias">{{ totals.luminarias_total or 0 }}</span></span>
+        <span class="state info"><strong>Aires:</strong> <span id="summaryAires">{{ totals.aires_total or 0 }}</span></span>
+        <span class="state info"><strong>Total mobiliario:</strong> <span id="summaryTotalMob">{{ ((totals.mesa_pc or 0) + (totals.escritorio_prof or 0) + (totals.silla_giratoria or 0) + (totals.silla_fija or 0) + (totals.armario_alto or 0) + (totals.biblioteca_baja or 0) + (totals.aires_total or 0)) }}</span></span>
+      </div>
+
+      {% if rows and rows|length > 0 %}
+      <table id="tablaInventarioPrincipal" class="sedes-master-grid" style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead style="background:#f1f5f9;">
+          <tr>
+            <th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e5e7eb;">Sede</th>
+            <th style="text-align:left;padding:6px 8px;border-bottom:1px solid #e5e7eb;">Nombre</th>
+            <th style="text-align:center;padding:6px 8px;border-bottom:1px solid #e5e7eb;">Personas</th>
+            <th style="text-align:center;padding:6px 8px;border-bottom:1px solid #e5e7eb;">m2</th>
+            <th style="text-align:center;padding:6px 8px;border-bottom:1px solid #e5e7eb;">Ocupacion</th>
+            <th style="text-align:center;padding:6px 8px;border-bottom:1px solid #e5e7eb;">Aires</th>
+            <th style="text-align:center;padding:6px 8px;border-bottom:1px solid #e5e7eb;">Total mobiliario</th>
+            <th class="inv-sec-col" style="text-align:center;padding:6px 8px;border-bottom:1px solid #e5e7eb;">Mesas PC</th>
+            <th class="inv-sec-col" style="text-align:center;padding:6px 8px;border-bottom:1px solid #e5e7eb;">Escritorios prof</th>
+            <th class="inv-sec-col" style="text-align:center;padding:6px 8px;border-bottom:1px solid #e5e7eb;">Sillas giratorias</th>
+            <th class="inv-sec-col" style="text-align:center;padding:6px 8px;border-bottom:1px solid #e5e7eb;">Sillas fijas</th>
+            <th class="inv-sec-col" style="text-align:center;padding:6px 8px;border-bottom:1px solid #e5e7eb;">Armarios altos</th>
+            <th class="inv-sec-col" style="text-align:center;padding:6px 8px;border-bottom:1px solid #e5e7eb;">Bibliotecas bajas</th>
+            <th style="text-align:center;padding:6px 8px;border-bottom:1px solid #e5e7eb;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in rows %}
+          {% set total_mob = (r.mesa_pc or 0) + (r.escritorio_prof or 0) + (r.silla_giratoria or 0) + (r.silla_fija or 0) + (r.armario_alto or 0) + (r.biblioteca_baja or 0) + (r.aires_total or 0) %}
+          <tr class="js-resumen-row"
+              data-sede="{{ r.codigo }}"
+              data-region="{{ r.region_key or '' }}"
+              data-fueros="{{ (r.fueros_all or [])|join('|') }}"
+              data-ocupacion="{{ r.ocupacion_bucket or 'disponible' }}"
+              data-densidad-bucket="{{ r.densidad_bucket or 'baja' }}"
+              data-search="{{ ((r.codigo or '') ~ ' ' ~ (r.nombre or '') ~ ' ' ~ (r.ciudad or '') ~ ' ' ~ (r.direccion or ''))|lower }}"
+              data-val-personas="{{ r.personas_total or 0 }}"
+              data-val-m2="{{ r.m2_total or 0 }}"
+              data-val-puestos="{{ r.puestos_trabajo or 0 }}"
+              data-val-luminarias="{{ r.luminarias_total or 0 }}"
+              data-val-mesa_pc="{{ r.mesa_pc or 0 }}"
+              data-val-escritorio_prof="{{ r.escritorio_prof or 0 }}"
+              data-val-silla_giratoria="{{ r.silla_giratoria or 0 }}"
+              data-val-silla_fija="{{ r.silla_fija or 0 }}"
+              data-val-armario_alto="{{ r.armario_alto or 0 }}"
+              data-val-biblioteca_baja="{{ r.biblioteca_baja or 0 }}"
+              data-val-aires_total="{{ r.aires_total or 0 }}"
+              data-val-total_mob="{{ total_mob }}">
+            <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;white-space:nowrap;">
+              <a href="{{ url_for('sede_ficha', codigo=r.codigo) }}" style="text-decoration:none;" title="{{ r.tooltip_inline or (r.codigo ~ ' - ' ~ r.nombre) }}">
+                {{ render_sede_badge(r.codigo) }}
+              </a>
+            </td>
+            <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;max-width:280px;line-height:1.25;" title="{{ (r.nombre or '') ~ ' - ' ~ (r.ciudad or '') }}">{{ r.nombre }}</td>
+            <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.personas_total or 0 }}</td>
+            <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ (r.m2_total or 0)|round(0)|int if (r.m2_total or 0) > 0 else '-' }}</td>
+            <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.ocupacion_pct or 0 }}%</td>
+            <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.aires_total }}</td>
+            <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;font-weight:600;">{{ total_mob }}</td>
+            <td class="inv-sec-col" style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.mesa_pc }}</td>
+            <td class="inv-sec-col" style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.escritorio_prof }}</td>
+            <td class="inv-sec-col" style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.silla_giratoria }}</td>
+            <td class="inv-sec-col" style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.silla_fija }}</td>
+            <td class="inv-sec-col" style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.armario_alto }}</td>
+            <td class="inv-sec-col" style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.biblioteca_baja }}</td>
+            <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">
+              <div class="inv-actions-cell">
+                <a class="btn xs btn-sede-abrir {{ r.fuero_css_class or 'fuero-neutral' }}" href="{{ url_for('sede_ficha', codigo=r.codigo) }}">Abrir</a>
+                <a class="btn xs btn-sede-bienes" href="{{ url_for('bienes_sede', infra_sede=r.codigo) }}">Bienes</a>
+                <a class="btn xs btn-sede-analisis" href="{{ url_for('infra_analisis', sede=r.codigo) }}#infra-analisis">Analisis</a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot style="background:#f8fafc;">
+          {% set total_mob_all = (totals.mesa_pc or 0) + (totals.escritorio_prof or 0) + (totals.silla_giratoria or 0) + (totals.silla_fija or 0) + (totals.armario_alto or 0) + (totals.biblioteca_baja or 0) + (totals.aires_total or 0) %}
+          {% set ocupacion_total = (((totals.personas_total or 0) * 100) / (totals.puestos_trabajo or 1)) if (totals.puestos_trabajo or 0) > 0 else 0 %}
+          <tr>
+            <td colspan="2" style="padding:6px 8px;border-top:1px solid #e5e7eb;font-weight:700;">Totales</td>
+            <td id="tfootPersonas" style="padding:6px 8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.personas_total or 0 }}</td>
+            <td id="tfootM2" style="padding:6px 8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ (totals.m2_total or 0)|round(0)|int }}</td>
+            <td id="tfootOcupacion" style="padding:6px 8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ ocupacion_total|round(0)|int }}%</td>
+            <td id="tfootAires" style="padding:6px 8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.aires_total }}</td>
+            <td id="tfootTotalMob" style="padding:6px 8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ total_mob_all }}</td>
+            <td id="tfootMesaPc" class="inv-sec-col" style="padding:6px 8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.mesa_pc }}</td>
+            <td id="tfootEscritorioProf" class="inv-sec-col" style="padding:6px 8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.escritorio_prof }}</td>
+            <td id="tfootSillaGiratoria" class="inv-sec-col" style="padding:6px 8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.silla_giratoria }}</td>
+            <td id="tfootSillaFija" class="inv-sec-col" style="padding:6px 8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.silla_fija }}</td>
+            <td id="tfootArmarioAlto" class="inv-sec-col" style="padding:6px 8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.armario_alto }}</td>
+            <td id="tfootBibliotecaBaja" class="inv-sec-col" style="padding:6px 8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.biblioteca_baja }}</td>
+            <td style="padding:6px 8px;border-top:1px solid #e5e7eb;"></td>
+          </tr>
+        </tfoot>
+      </table>
+      {% else %}
+      <div style="padding:10px;color:#64748b;font-size:12px;">No hay datos de inventario para mostrar.</div>
+      {% endif %}
+    </div>
+
     <div id="mapa-operativo-territorial" class="sedes-mapa-box">
       <div class="sedes-mapa-head">
         <h2>Mapa operativo territorial</h2>
@@ -82,9 +244,11 @@
           <span class="sedes-mapa-filter-label">Ocupacion</span>
           <div class="sedes-mapa-chip-group" id="mapOcupacionChips">
             <button type="button" class="btn xs is-selected js-map-ocupacion" data-ocupacion="all">Todas</button>
+            <button type="button" class="btn xs js-map-ocupacion" data-ocupacion="sobreocupada">Sobreocupada</button>
             <button type="button" class="btn xs js-map-ocupacion" data-ocupacion="alta">Alta</button>
             <button type="button" class="btn xs js-map-ocupacion" data-ocupacion="media">Media</button>
             <button type="button" class="btn xs js-map-ocupacion" data-ocupacion="disponible">Disponible</button>
+            <button type="button" class="btn xs js-map-ocupacion" data-ocupacion="bajo_uso">Bajo uso</button>
           </div>
         </div>
       </div>
@@ -101,8 +265,10 @@
                data-region="{{ sede.region_key }}"
                data-fueros="{{ (sede.fueros_all or [])|join('|') }}"
                data-ocupacion="{{ sede.ocupacion_bucket }}"
-               title="{{ (sede.tooltip or (sede.codigo ~ ' - ' ~ sede.nombre))|replace('\n', ' - ') }}"
-               aria-label="{{ (sede.tooltip or (sede.codigo ~ ' - ' ~ sede.nombre))|replace('\n', ' - ') }}">
+               data-densidad-bucket="{{ sede.densidad_bucket or 'baja' }}"
+               data-search="{{ ((sede.codigo or '') ~ ' ' ~ (sede.nombre or '') ~ ' ' ~ (sede.ciudad or '') ~ ' ' ~ (sede.direccion or ''))|lower }}"
+               title="{{ sede.tooltip_inline or (sede.codigo ~ ' - ' ~ sede.nombre) }}"
+               aria-label="{{ sede.tooltip_inline or (sede.codigo ~ ' - ' ~ sede.nombre) }}">
               {{ render_sede_badge(sede.codigo) }}
             </a>
             {% endfor %}
@@ -113,112 +279,6 @@
       <div id="mapaOperativoEmpty" class="sedes-mapa-empty" hidden>
         No hay sedes para la combinacion de filtros seleccionada.
       </div>
-    </div>
-
-    <div id="resumen-inventario-top" style="margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;overflow:auto;background:#fff;">
-      <div style="padding:10px 12px;border-bottom:1px solid #e5e7eb;font-weight:700;color:#334155;">Resumen operativo por sede</div>
-      <div id="sedesSummaryBar" style="padding:8px 12px;border-bottom:1px solid #e5e7eb;display:flex;gap:8px;flex-wrap:wrap;font-size:12px;background:#fafafa;">
-        <span class="state info" id="summaryFilterScope"><strong>Mostrando:</strong> Todas las regiones</span>
-        <span class="state info"><strong>Sedes:</strong> <span id="summarySedes">{{ rows|length }}</span></span>
-        <span class="state info"><strong>Personas:</strong> <span id="summaryPersonas">{{ totals.personas_total or 0 }}</span></span>
-        <span class="state info"><strong>m2:</strong> <span id="summaryM2">{{ (totals.m2_total or 0)|round(0)|int }}</span></span>
-        <span class="state info"><strong>Puestos:</strong> <span id="summaryPuestos">{{ totals.puestos_trabajo or 0 }}</span></span>
-        <span class="state info"><strong>Luminarias:</strong> <span id="summaryLuminarias">{{ totals.luminarias_total or 0 }}</span></span>
-      </div>
-      <div class="sedes-table-toolbar">
-        <button id="toggleInvSecColsBtn" type="button" class="btn xs">Mostrar columnas secundarias</button>
-      </div>
-      {% if rows and rows|length > 0 %}
-      <table id="tablaInventarioPrincipal" style="width:100%;border-collapse:collapse;font-size:12px;">
-        <thead style="background:#f1f5f9;">
-          <tr>
-            <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Sede</th>
-            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Personas</th>
-            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">m?</th>
-            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Ocupacion</th>
-            <th class="inv-sec-col" style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb;">Nombre</th>
-            <th class="inv-sec-col" style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Mesas PC</th>
-            <th class="inv-sec-col" style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Escritorios profesionales</th>
-            <th class="inv-sec-col" style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Sillas giratorias</th>
-            <th class="inv-sec-col" style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Sillas fijas</th>
-            <th class="inv-sec-col" style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Armarios altos</th>
-            <th class="inv-sec-col" style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Bibliotecas bajas</th>
-            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Aires</th>
-            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Total mobiliario</th>
-            <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb;">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for r in rows %}
-          {% set total_mob = (r.mesa_pc or 0) + (r.escritorio_prof or 0) + (r.silla_giratoria or 0) + (r.silla_fija or 0) + (r.armario_alto or 0) + (r.biblioteca_baja or 0) + (r.aires_total or 0) %}
-          <tr class="js-resumen-row"
-              data-sede="{{ r.codigo }}"
-              data-region="{{ r.region_key or '' }}"
-              data-fueros="{{ (r.fueros_all or [])|join('|') }}"
-              data-ocupacion="{{ r.ocupacion_bucket or 'disponible' }}"
-              data-val-personas="{{ r.personas_total or 0 }}"
-              data-val-m2="{{ r.m2_total or 0 }}"
-              data-val-puestos="{{ r.puestos_trabajo or 0 }}"
-              data-val-luminarias="{{ r.luminarias_total or 0 }}"
-              data-val-mesa_pc="{{ r.mesa_pc or 0 }}"
-              data-val-escritorio_prof="{{ r.escritorio_prof or 0 }}"
-              data-val-silla_giratoria="{{ r.silla_giratoria or 0 }}"
-              data-val-silla_fija="{{ r.silla_fija or 0 }}"
-              data-val-armario_alto="{{ r.armario_alto or 0 }}"
-              data-val-biblioteca_baja="{{ r.biblioteca_baja or 0 }}"
-              data-val-aires_total="{{ r.aires_total or 0 }}"
-              data-val-total_mob="{{ total_mob }}">
-            <td style="padding:8px;border-bottom:1px solid #e5e7eb;">
-              <a href="{{ url_for('sede_ficha', codigo=r.codigo) }}" style="text-decoration:none;" title="{{ (r.tooltip or (r.codigo ~ ' - ' ~ r.nombre))|replace('\n', ' - ') }}">
-                {{ render_sede_badge(r.codigo) }}
-              </a>
-            </td>
-            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.personas_total or 0 }}</td>
-            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ (r.m2_total or 0)|round(0)|int if (r.m2_total or 0) > 0 else '-' }}</td>
-            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.ocupacion_pct or 0 }}%</td>
-            <td class="inv-sec-col" style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.nombre }}</td>
-            <td class="inv-sec-col" style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.mesa_pc }}</td>
-            <td class="inv-sec-col" style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.escritorio_prof }}</td>
-            <td class="inv-sec-col" style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.silla_giratoria }}</td>
-            <td class="inv-sec-col" style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.silla_fija }}</td>
-            <td class="inv-sec-col" style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.armario_alto }}</td>
-            <td class="inv-sec-col" style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.biblioteca_baja }}</td>
-            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.aires_total }}</td>
-            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;font-weight:600;">{{ total_mob }}</td>
-            <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
-              <div class="inv-actions-cell">
-                <a class="btn xs btn-sede-abrir {{ r.fuero_css_class or 'fuero-neutral' }}" href="{{ url_for('sede_ficha', codigo=r.codigo) }}">Abrir</a>
-                <a class="btn xs btn-sede-bienes" href="{{ url_for('bienes_sede', infra_sede=r.codigo) }}">Bienes</a>
-                <a class="btn xs btn-sede-analisis" href="{{ url_for('infra_analisis', sede=r.codigo) }}#infra-analisis">Analisis</a>
-              </div>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-        <tfoot style="background:#f8fafc;">
-          {% set total_mob_all = (totals.mesa_pc or 0) + (totals.escritorio_prof or 0) + (totals.silla_giratoria or 0) + (totals.silla_fija or 0) + (totals.armario_alto or 0) + (totals.biblioteca_baja or 0) + (totals.aires_total or 0) %}
-          {% set ocupacion_total = (((totals.personas_total or 0) * 100) / (totals.puestos_trabajo or 1)) if (totals.puestos_trabajo or 0) > 0 else 0 %}
-          <tr>
-            <td style="padding:8px;border-top:1px solid #e5e7eb;font-weight:700;">Totales</td>
-            <td id="tfootPersonas" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.personas_total or 0 }}</td>
-            <td id="tfootM2" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ (totals.m2_total or 0)|round(0)|int }}</td>
-            <td id="tfootOcupacion" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ ocupacion_total|round(0)|int }}%</td>
-            <td class="inv-sec-col" style="padding:8px;border-top:1px solid #e5e7eb;"></td>
-            <td id="tfootMesaPc" class="inv-sec-col" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.mesa_pc }}</td>
-            <td id="tfootEscritorioProf" class="inv-sec-col" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.escritorio_prof }}</td>
-            <td id="tfootSillaGiratoria" class="inv-sec-col" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.silla_giratoria }}</td>
-            <td id="tfootSillaFija" class="inv-sec-col" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.silla_fija }}</td>
-            <td id="tfootArmarioAlto" class="inv-sec-col" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.armario_alto }}</td>
-            <td id="tfootBibliotecaBaja" class="inv-sec-col" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.biblioteca_baja }}</td>
-            <td id="tfootAires" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ totals.aires_total }}</td>
-            <td id="tfootTotalMob" style="padding:8px;border-top:1px solid #e5e7eb;text-align:center;font-weight:700;">{{ total_mob_all }}</td>
-            <td style="padding:8px;border-top:1px solid #e5e7eb;"></td>
-          </tr>
-        </tfoot>
-      </table>
-      {% else %}
-      <div style="padding:10px;color:#64748b;font-size:12px;">No hay datos de inventario para mostrar.</div>
-      {% endif %}
     </div>
     {% else %}
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;background:#ffffff;border:1px solid #e5e7eb;padding:10px 12px;border-radius:12px;">
@@ -1254,6 +1314,54 @@
     background: #fcfdff;
     display: flex;
     gap: 8px;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .sedes-master-filters {
+    padding: 8px 12px;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f8fafc;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 8px 10px;
+    align-items: end;
+  }
+
+  .sedes-master-filters[hidden] {
+    display: none !important;
+  }
+
+  .sedes-master-filter-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .sedes-master-filter-row label {
+    font-size: 11px;
+    color: #475569;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .sedes-master-select,
+  .sedes-master-input {
+    border: 1px solid #d9e2f2;
+    border-radius: 8px;
+    background: #fff;
+    color: #1f2a44;
+    font-size: 12px;
+    padding: 5px 8px;
+    min-height: 30px;
+  }
+
+  .sedes-master-search-row {
+    grid-column: span 2;
+  }
+
+  .sedes-master-actions-row {
     justify-content: flex-end;
   }
 
@@ -1270,6 +1378,11 @@
     gap: 4px;
     flex-wrap: wrap;
     justify-content: center;
+  }
+
+  .sedes-master-grid td,
+  .sedes-master-grid th {
+    line-height: 1.2;
   }
 
   .sedes-tech-head h2 {
@@ -1334,6 +1447,15 @@
 <script>
   const isInfraScreen = {{ 'true' if show_infra else 'false' }};
 
+  const masterFiltersToggleBtn = document.getElementById('masterFiltersToggleBtn');
+  const masterFiltersPanel = document.getElementById('masterFiltersPanel');
+  const masterFilterRegion = document.getElementById('masterFilterRegion');
+  const masterFilterFuero = document.getElementById('masterFilterFuero');
+  const masterFilterOcupacion = document.getElementById('masterFilterOcupacion');
+  const masterFilterDensidad = document.getElementById('masterFilterDensidad');
+  const masterFilterSearch = document.getElementById('masterFilterSearch');
+  const masterFilterReset = document.getElementById('masterFilterReset');
+
   const mapFueroButtons = document.querySelectorAll('.js-map-fuero');
   const mapRegionButtons = document.querySelectorAll('.js-map-region');
   const mapOcupacionButtons = document.querySelectorAll('.js-map-ocupacion');
@@ -1357,35 +1479,47 @@
   const summaryM2 = document.getElementById('summaryM2');
   const summaryPuestos = document.getElementById('summaryPuestos');
   const summaryLuminarias = document.getElementById('summaryLuminarias');
+  const summaryAires = document.getElementById('summaryAires');
+  const summaryTotalMob = document.getElementById('summaryTotalMob');
 
   const tfootPersonas = document.getElementById('tfootPersonas');
   const tfootM2 = document.getElementById('tfootM2');
   const tfootOcupacion = document.getElementById('tfootOcupacion');
+  const tfootAires = document.getElementById('tfootAires');
+  const tfootTotalMob = document.getElementById('tfootTotalMob');
   const tfootMesaPc = document.getElementById('tfootMesaPc');
   const tfootEscritorioProf = document.getElementById('tfootEscritorioProf');
   const tfootSillaGiratoria = document.getElementById('tfootSillaGiratoria');
   const tfootSillaFija = document.getElementById('tfootSillaFija');
   const tfootArmarioAlto = document.getElementById('tfootArmarioAlto');
   const tfootBibliotecaBaja = document.getElementById('tfootBibliotecaBaja');
-  const tfootAires = document.getElementById('tfootAires');
-  const tfootTotalMob = document.getElementById('tfootTotalMob');
 
   const regionLabels = {
-    san_salvador: 'San Salvador de Jujuy',
+    san_salvador: 'San Salvador',
     aledanias: 'Aledanas',
     el_ramal: 'El Ramal',
     quebrada_puna: 'Quebrada y Puna'
   };
+
   const fueroLabels = {
     penal: 'Penal',
     social: 'Juridico Social',
     menores: 'Menores / Incapaces',
     administracion: 'Administracion'
   };
+
   const ocupacionLabels = {
-    alta: 'Ocupacion alta',
-    media: 'Ocupacion media',
-    disponible: 'Disponibilidad'
+    sobreocupada: 'Sobreocupada',
+    alta: 'Alta',
+    media: 'Media',
+    disponible: 'Disponible',
+    bajo_uso: 'Bajo uso'
+  };
+
+  const densidadLabels = {
+    alta: 'Densidad alta',
+    media: 'Densidad media',
+    baja: 'Densidad baja'
   };
 
   const allCols = [
@@ -1406,10 +1540,14 @@
   const mfFiltroEstado = document.getElementById('mfFiltroEstado');
 
   let mapContentVisible = false;
+  let masterFiltersVisible = false;
+
   const activeFilters = {
-    fuero: 'all',
     region: 'all',
-    ocupacion: 'all'
+    fuero: 'all',
+    ocupacion: 'all',
+    densidad: 'all',
+    search: ''
   };
 
   function toNum(raw) {
@@ -1417,108 +1555,87 @@
     return Number.isFinite(n) ? n : 0;
   }
 
-  function ocupacionKeyFromPct(pct) {
-    if (pct >= 80) return 'alta';
-    if (pct >= 70) return 'media';
-    return 'disponible';
+  function normalizeText(raw) {
+    return String(raw || '').toLowerCase().trim();
   }
 
   function estadoFromPct(pct) {
+    if (pct > 100) return { key: 'alto', label: 'Alto' };
     if (pct >= 80) return { key: 'alto', label: 'Alto' };
-    if (pct >= 70) return { key: 'medio', label: 'Medio' };
+    if (pct >= 60) return { key: 'medio', label: 'Medio' };
     return { key: 'disponible', label: 'Disponible' };
   }
 
-  function setColumnVisibility(selected) {
-    allCols.forEach(col => {
-      const show = !selected || selected === col;
-      document.querySelectorAll(`[data-col="${col}"]`).forEach(el => {
-        el.style.display = show ? '' : 'none';
-      });
-    });
-  }
-
-  function applyResumenFiltros() {
-    if (!filtroSede || !filtroElemento) return;
-    const sede = filtroSede.value || '';
-    const item = filtroElemento.value || '';
-    setColumnVisibility(item);
-
-    document.querySelectorAll('tbody tr[data-sede]').forEach(tr => {
-      const rowSede = tr.dataset.sede || '';
-      tr.style.display = (!sede || rowSede === sede) ? '' : 'none';
-    });
-
-    const totals = {};
-    allCols.forEach(c => totals[c] = 0);
-    document.querySelectorAll('tbody tr[data-sede]').forEach(tr => {
-      if (tr.style.display === 'none') return;
-      allCols.forEach(c => {
-        const attr = tr.getAttribute(`data-val-${c}`);
-        totals[c] += toNum(attr);
-      });
-    });
-
-    allCols.forEach(c => {
-      const cell = document.getElementById(`total_${c}`);
-      if (cell) cell.textContent = totals[c];
-    });
-  }
-
-  function resetFiltrosResumen() {
-    if (!filtroSede || !filtroElemento) return;
-    filtroSede.value = '';
-    filtroElemento.value = '';
-    applyResumenFiltros();
-  }
-
-  window.resetFiltrosResumen = resetFiltrosResumen;
-
-  if (filtroSede && filtroElemento) {
-    filtroSede.addEventListener('change', applyResumenFiltros);
-    filtroElemento.addEventListener('change', applyResumenFiltros);
-    applyResumenFiltros();
-  }
-
-  function applyMatafuegosFiltros() {
-    if (!mfFiltroSede || !mfFiltroEstado) return;
-    const sede = mfFiltroSede.value || '';
-    const est = mfFiltroEstado.value || '';
-    document.querySelectorAll('#mfVtoBody tr[data-mf-sede]').forEach(tr => {
-      const okSede = (!sede || (tr.dataset.mfSede || '') === sede);
-      const okEst = (!est || (tr.dataset.mfEstado || '') === est);
-      tr.style.display = (okSede && okEst) ? '' : 'none';
-    });
-  }
-
-  function resetFiltrosMatafuegos() {
-    if (!mfFiltroSede || !mfFiltroEstado) return;
-    mfFiltroSede.value = '';
-    mfFiltroEstado.value = '';
-    applyMatafuegosFiltros();
-  }
-
-  window.resetFiltrosMatafuegos = resetFiltrosMatafuegos;
-
-  if (mfFiltroSede && mfFiltroEstado) {
-    mfFiltroSede.addEventListener('change', applyMatafuegosFiltros);
-    mfFiltroEstado.addEventListener('change', applyMatafuegosFiltros);
-    applyMatafuegosFiltros();
+  function setColumnVisibility(showDetailed) {
+    if (!tablaInventarioPrincipal) return;
+    tablaInventarioPrincipal.classList.toggle('show-secondary', !!showDetailed);
   }
 
   function setInvSecondaryVisible(show) {
-    if (!tablaInventarioPrincipal || !toggleInvSecColsBtn) return;
-    tablaInventarioPrincipal.classList.toggle('show-secondary', !!show);
-    toggleInvSecColsBtn.textContent = show ? 'Ocultar columnas secundarias' : 'Mostrar columnas secundarias';
+    if (!toggleInvSecColsBtn) return;
+    setColumnVisibility(show);
+    toggleInvSecColsBtn.textContent = show ? 'Ocultar inventario detallado' : 'Ver inventario detallado';
     toggleInvSecColsBtn.classList.toggle('is-selected', !!show);
   }
 
-  if (toggleInvSecColsBtn) {
-    let invSecVisible = false;
-    setInvSecondaryVisible(invSecVisible);
-    toggleInvSecColsBtn.addEventListener('click', () => {
-      invSecVisible = !invSecVisible;
-      setInvSecondaryVisible(invSecVisible);
+  function setMasterFiltersVisible(show) {
+    masterFiltersVisible = !!show;
+    if (masterFiltersPanel) {
+      if (show) {
+        masterFiltersPanel.removeAttribute('hidden');
+      } else {
+        masterFiltersPanel.setAttribute('hidden', 'hidden');
+      }
+    }
+    if (masterFiltersToggleBtn) {
+      masterFiltersToggleBtn.textContent = show ? 'Ocultar filtros' : 'Mostrar filtros';
+      masterFiltersToggleBtn.classList.toggle('is-selected', !!show);
+    }
+  }
+
+  function setMapFiltersVisible(show) {
+    if (!mapFiltersPanel || !mapToggleFiltersBtn) return;
+    if (show) {
+      mapFiltersPanel.removeAttribute('hidden');
+      mapToggleFiltersBtn.textContent = 'Ocultar filtros';
+      mapToggleFiltersBtn.classList.add('is-selected');
+    } else {
+      mapFiltersPanel.setAttribute('hidden', 'hidden');
+      mapToggleFiltersBtn.textContent = 'Mostrar filtros';
+      mapToggleFiltersBtn.classList.remove('is-selected');
+    }
+  }
+
+  function setMapContentVisible(show) {
+    mapContentVisible = !!show;
+    if (mapToggleContentBtn) {
+      mapToggleContentBtn.textContent = show ? 'Ocultar mapa' : 'Mostrar mapa';
+      mapToggleContentBtn.classList.toggle('is-selected', !!show);
+    }
+    if (mapToggleFiltersBtn) {
+      mapToggleFiltersBtn.hidden = !show;
+    }
+    if (!show) {
+      setMapFiltersVisible(false);
+    }
+    applyUnifiedSedesFilters();
+  }
+
+  function syncFilterControls() {
+    if (masterFilterRegion) masterFilterRegion.value = activeFilters.region;
+    if (masterFilterFuero) masterFilterFuero.value = activeFilters.fuero;
+    if (masterFilterOcupacion) masterFilterOcupacion.value = activeFilters.ocupacion;
+    if (masterFilterDensidad) masterFilterDensidad.value = activeFilters.densidad;
+    if (masterFilterSearch) masterFilterSearch.value = activeFilters.search;
+
+    mapFueroButtons.forEach(btn => {
+      btn.classList.toggle('is-selected', (btn.dataset.fuero || 'all') === activeFilters.fuero);
+    });
+    mapRegionButtons.forEach(btn => {
+      btn.classList.toggle('is-selected', (btn.dataset.region || 'all') === activeFilters.region);
+    });
+    mapOcupacionButtons.forEach(btn => {
+      btn.classList.toggle('is-selected', (btn.dataset.ocupacion || 'all') === activeFilters.ocupacion);
     });
   }
 
@@ -1526,10 +1643,14 @@
     const region = rowLike.dataset.region || '';
     const fueros = (rowLike.dataset.fueros || '').split('|').filter(Boolean);
     const ocupacion = rowLike.dataset.ocupacion || 'disponible';
+    const densidad = rowLike.dataset.densidadBucket || 'baja';
+    const haystack = normalizeText(rowLike.dataset.search || '');
 
     if (activeFilters.region !== 'all' && region !== activeFilters.region) return false;
     if (activeFilters.fuero !== 'all' && !fueros.includes(activeFilters.fuero)) return false;
     if (activeFilters.ocupacion !== 'all' && ocupacion !== activeFilters.ocupacion) return false;
+    if (activeFilters.densidad !== 'all' && densidad !== activeFilters.densidad) return false;
+    if (activeFilters.search && !haystack.includes(activeFilters.search)) return false;
     return true;
   }
 
@@ -1543,14 +1664,14 @@
       m2: 0,
       puestos: 0,
       luminarias: 0,
+      aires_total: 0,
+      total_mob: 0,
       mesa_pc: 0,
       escritorio_prof: 0,
       silla_giratoria: 0,
       silla_fija: 0,
       armario_alto: 0,
-      biblioteca_baja: 0,
-      aires_total: 0,
-      total_mob: 0
+      biblioteca_baja: 0
     };
 
     resumenRows.forEach(row => {
@@ -1577,14 +1698,14 @@
       totals.m2 += m2;
       totals.puestos += puestos;
       totals.luminarias += toNum(row.dataset.valLuminarias);
+      totals.aires_total += toNum(row.dataset.valAiresTotal);
+      totals.total_mob += toNum(row.dataset.valTotalMob);
       totals.mesa_pc += toNum(row.dataset.valMesaPc);
       totals.escritorio_prof += toNum(row.dataset.valEscritorioProf);
       totals.silla_giratoria += toNum(row.dataset.valSillaGiratoria);
       totals.silla_fija += toNum(row.dataset.valSillaFija);
       totals.armario_alto += toNum(row.dataset.valArmarioAlto);
       totals.biblioteca_baja += toNum(row.dataset.valBibliotecaBaja);
-      totals.aires_total += toNum(row.dataset.valAiresTotal);
-      totals.total_mob += toNum(row.dataset.valTotalMob);
     });
 
     regionCards.forEach(card => {
@@ -1633,16 +1754,6 @@
     if (mapResultsPanel) mapResultsPanel.hidden = !mapContentVisible;
     if (mapEmptyState) mapEmptyState.hidden = (!mapContentVisible || visibleMapBadges > 0);
 
-    mapFueroButtons.forEach(btn => {
-      btn.classList.toggle('is-selected', (btn.dataset.fuero || 'all') === activeFilters.fuero);
-    });
-    mapRegionButtons.forEach(btn => {
-      btn.classList.toggle('is-selected', (btn.dataset.region || 'all') === activeFilters.region);
-    });
-    mapOcupacionButtons.forEach(btn => {
-      btn.classList.toggle('is-selected', (btn.dataset.ocupacion || 'all') === activeFilters.ocupacion);
-    });
-
     const occTotal = totals.puestos > 0 ? Math.round((totals.personas * 100) / totals.puestos) : 0;
 
     if (summarySedes) summarySedes.textContent = totals.sedes;
@@ -1650,12 +1761,16 @@
     if (summaryM2) summaryM2.textContent = Math.round(totals.m2);
     if (summaryPuestos) summaryPuestos.textContent = totals.puestos;
     if (summaryLuminarias) summaryLuminarias.textContent = totals.luminarias;
+    if (summaryAires) summaryAires.textContent = totals.aires_total;
+    if (summaryTotalMob) summaryTotalMob.textContent = totals.total_mob;
 
     if (summaryFilterScope) {
       const parts = [];
       if (activeFilters.region !== 'all') parts.push(regionLabels[activeFilters.region] || activeFilters.region);
       if (activeFilters.fuero !== 'all') parts.push(fueroLabels[activeFilters.fuero] || activeFilters.fuero);
       if (activeFilters.ocupacion !== 'all') parts.push(ocupacionLabels[activeFilters.ocupacion] || activeFilters.ocupacion);
+      if (activeFilters.densidad !== 'all') parts.push(densidadLabels[activeFilters.densidad] || activeFilters.densidad);
+      if (activeFilters.search) parts.push(`Busqueda: ${activeFilters.search}`);
       const label = parts.length ? parts.join(' ? ') : 'Todas las regiones';
       summaryFilterScope.innerHTML = `<strong>Mostrando:</strong> ${label}`;
     }
@@ -1663,40 +1778,56 @@
     if (tfootPersonas) tfootPersonas.textContent = totals.personas;
     if (tfootM2) tfootM2.textContent = Math.round(totals.m2);
     if (tfootOcupacion) tfootOcupacion.textContent = `${occTotal}%`;
+    if (tfootAires) tfootAires.textContent = totals.aires_total;
+    if (tfootTotalMob) tfootTotalMob.textContent = totals.total_mob;
     if (tfootMesaPc) tfootMesaPc.textContent = totals.mesa_pc;
     if (tfootEscritorioProf) tfootEscritorioProf.textContent = totals.escritorio_prof;
     if (tfootSillaGiratoria) tfootSillaGiratoria.textContent = totals.silla_giratoria;
     if (tfootSillaFija) tfootSillaFija.textContent = totals.silla_fija;
     if (tfootArmarioAlto) tfootArmarioAlto.textContent = totals.armario_alto;
     if (tfootBibliotecaBaja) tfootBibliotecaBaja.textContent = totals.biblioteca_baja;
-    if (tfootAires) tfootAires.textContent = totals.aires_total;
-    if (tfootTotalMob) tfootTotalMob.textContent = totals.total_mob;
+
+    syncFilterControls();
   }
 
-  function setMapFiltersVisible(show) {
-    if (!mapFiltersPanel || !mapToggleFiltersBtn) return;
-    if (show) {
-      mapFiltersPanel.removeAttribute('hidden');
-      mapToggleFiltersBtn.textContent = 'Ocultar filtros';
-      mapToggleFiltersBtn.classList.add('is-selected');
-    } else {
-      mapFiltersPanel.setAttribute('hidden', 'hidden');
-      mapToggleFiltersBtn.textContent = 'Mostrar filtros';
-      mapToggleFiltersBtn.classList.remove('is-selected');
-    }
-  }
-
-  function setMapContentVisible(show) {
-    mapContentVisible = !!show;
-    if (mapToggleContentBtn) {
-      mapToggleContentBtn.textContent = show ? 'Ocultar mapa' : 'Mostrar mapa';
-      mapToggleContentBtn.classList.toggle('is-selected', !!show);
-    }
-    if (mapToggleFiltersBtn) {
-      mapToggleFiltersBtn.hidden = !show;
-    }
-    if (!show) setMapFiltersVisible(false);
+  function applyMasterFilterChanges() {
+    if (masterFilterRegion) activeFilters.region = masterFilterRegion.value || 'all';
+    if (masterFilterFuero) activeFilters.fuero = masterFilterFuero.value || 'all';
+    if (masterFilterOcupacion) activeFilters.ocupacion = masterFilterOcupacion.value || 'all';
+    if (masterFilterDensidad) activeFilters.densidad = masterFilterDensidad.value || 'all';
+    if (masterFilterSearch) activeFilters.search = normalizeText(masterFilterSearch.value || '');
     applyUnifiedSedesFilters();
+  }
+
+  function resetMasterFilters() {
+    activeFilters.region = 'all';
+    activeFilters.fuero = 'all';
+    activeFilters.ocupacion = 'all';
+    activeFilters.densidad = 'all';
+    activeFilters.search = '';
+    applyUnifiedSedesFilters();
+  }
+
+  if (masterFilterRegion) masterFilterRegion.addEventListener('change', applyMasterFilterChanges);
+  if (masterFilterFuero) masterFilterFuero.addEventListener('change', applyMasterFilterChanges);
+  if (masterFilterOcupacion) masterFilterOcupacion.addEventListener('change', applyMasterFilterChanges);
+  if (masterFilterDensidad) masterFilterDensidad.addEventListener('change', applyMasterFilterChanges);
+  if (masterFilterSearch) masterFilterSearch.addEventListener('input', applyMasterFilterChanges);
+  if (masterFilterReset) masterFilterReset.addEventListener('click', resetMasterFilters);
+
+  if (masterFiltersToggleBtn) {
+    masterFiltersToggleBtn.addEventListener('click', () => {
+      setMasterFiltersVisible(!masterFiltersVisible);
+    });
+  }
+
+  if (toggleInvSecColsBtn) {
+    let invSecVisible = false;
+    setInvSecondaryVisible(invSecVisible);
+    toggleInvSecColsBtn.addEventListener('click', () => {
+      invSecVisible = !invSecVisible;
+      setInvSecondaryVisible(invSecVisible);
+    });
   }
 
   mapFueroButtons.forEach(btn => {
@@ -1705,12 +1836,14 @@
       applyUnifiedSedesFilters();
     });
   });
+
   mapRegionButtons.forEach(btn => {
     btn.addEventListener('click', () => {
       activeFilters.region = btn.dataset.region || 'all';
       applyUnifiedSedesFilters();
     });
   });
+
   mapOcupacionButtons.forEach(btn => {
     btn.addEventListener('click', () => {
       activeFilters.ocupacion = btn.dataset.ocupacion || 'all';
@@ -1739,7 +1872,66 @@
     });
   });
 
+  function applyResumenFiltros() {
+    if (!filtroSede || !filtroElemento) return;
+    const sede = filtroSede.value || '';
+    const item = filtroElemento.value || '';
+    allCols.forEach(col => {
+      const show = !item || item === col;
+      document.querySelectorAll(`[data-col="${col}"]`).forEach(el => {
+        el.style.display = show ? '' : 'none';
+      });
+    });
+
+    document.querySelectorAll('tbody tr[data-sede]').forEach(tr => {
+      const rowSede = tr.dataset.sede || '';
+      tr.style.display = (!sede || rowSede === sede) ? '' : 'none';
+    });
+  }
+
+  function resetFiltrosResumen() {
+    if (!filtroSede || !filtroElemento) return;
+    filtroSede.value = '';
+    filtroElemento.value = '';
+    applyResumenFiltros();
+  }
+
+  window.resetFiltrosResumen = resetFiltrosResumen;
+
+  if (filtroSede && filtroElemento) {
+    filtroSede.addEventListener('change', applyResumenFiltros);
+    filtroElemento.addEventListener('change', applyResumenFiltros);
+    applyResumenFiltros();
+  }
+
+  function applyMatafuegosFiltros() {
+    if (!mfFiltroSede || !mfFiltroEstado) return;
+    const sede = mfFiltroSede.value || '';
+    const est = mfFiltroEstado.value || '';
+    document.querySelectorAll('#mfVtoBody tr[data-mf-sede]').forEach(tr => {
+      const okSede = (!sede || (tr.dataset.mfSede || '') === sede);
+      const okEst = (!est || (tr.dataset.mfEstado || '') === est);
+      tr.style.display = (okSede && okEst) ? '' : 'none';
+    });
+  }
+
+  function resetFiltrosMatafuegos() {
+    if (!mfFiltroSede || !mfFiltroEstado) return;
+    mfFiltroSede.value = '';
+    mfFiltroEstado.value = '';
+    applyMatafuegosFiltros();
+  }
+
+  window.resetFiltrosMatafuegos = resetFiltrosMatafuegos;
+
+  if (mfFiltroSede && mfFiltroEstado) {
+    mfFiltroSede.addEventListener('change', applyMatafuegosFiltros);
+    mfFiltroEstado.addEventListener('change', applyMatafuegosFiltros);
+    applyMatafuegosFiltros();
+  }
+
   if (!isInfraScreen) {
+    setMasterFiltersVisible(false);
     setMapContentVisible(false);
     applyUnifiedSedesFilters();
   }

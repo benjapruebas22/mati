@@ -9482,12 +9482,24 @@ def sedes_resumen_mpd():
               AND COALESCE(activo,1)=1
         """, (cod,))
         ocupacion_pct = int(round((float(personas_total) * 100.0) / float(puestos_trabajo))) if (puestos_trabajo or 0) > 0 else 0
-        if ocupacion_pct >= 80:
+        if ocupacion_pct > 100:
+            ocupacion_bucket = "sobreocupada"
+        elif ocupacion_pct >= 80:
             ocupacion_bucket = "alta"
-        elif ocupacion_pct >= 70:
+        elif ocupacion_pct >= 60:
             ocupacion_bucket = "media"
-        else:
+        elif ocupacion_pct >= 40:
             ocupacion_bucket = "disponible"
+        else:
+            ocupacion_bucket = "bajo_uso"
+
+        densidad_val = (float(personas_total) / float(m2_total)) if (m2_total or 0) > 0 else 0.0
+        if densidad_val >= 0.18:
+            densidad_bucket = "alta"
+        elif densidad_val >= 0.12:
+            densidad_bucket = "media"
+        else:
+            densidad_bucket = "baja"
 
         fuero_cfg = sedes_fuero_map.get(cod, {"principal": "general", "secundarios": []})
         fuero_principal = str(fuero_cfg.get("principal") or "general").strip().lower()
@@ -9509,6 +9521,7 @@ def sedes_resumen_mpd():
             tooltip_parts.append(direccion_sede)
         tooltip_parts.append(" / ".join([sedes_fuero_labels.get(f, str(f).title()) for f in fueros_all]))
         tooltip = "\n".join([p for p in tooltip_parts if p])
+        tooltip_inline = " - ".join([p for p in tooltip_parts if p])
 
         resumen_sedes_rows.append({
             "codigo": cod,
@@ -9540,7 +9553,10 @@ def sedes_resumen_mpd():
             "personas_total": personas_total,
             "ocupacion_pct": ocupacion_pct,
             "ocupacion_bucket": ocupacion_bucket,
+            "densidad_val": round(densidad_val, 4),
+            "densidad_bucket": densidad_bucket,
             "tooltip": tooltip,
+            "tooltip_inline": tooltip_inline,
         })
 
     def safe_row_val(row, key):
