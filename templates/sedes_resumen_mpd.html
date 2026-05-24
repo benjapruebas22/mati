@@ -2,7 +2,7 @@
 {% block content %}
 {% from "_sedes_badges.html" import render_sede_badge, render_local_badge %}
 
-<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-24-03') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-24-04') }}">
 
 <section class="sedes-section sgi-sedes">
   {% set fuero_map = {
@@ -2073,19 +2073,29 @@
       .replace(/'/g, '&#39;');
   }
 
-  function isS08PenalLocal(sedeCode, localCode) {
+  function getLocalBadgeMeta(sedeCode, localCode) {
     const sede = String(sedeCode || '').toUpperCase().trim();
     const local = normalizeLocalCode(localCode);
-    return sede === 'S08' && ['D01', 'D02', 'D21'].includes(local);
+    if (!local) return { local: '', cls: '', title: '' };
+
+    const n = Number(local.slice(1));
+    if (sede === 'S08' && ['D01', 'D02', 'D21'].includes(local)) {
+      return { local, cls: 'dep-local-badge-penal', title: 'Deposito penal (S08)' };
+    }
+    if (sede === 'S02' && Number.isFinite(n) && n > 0) {
+      if (n <= 10) return { local, cls: 'dep-local-badge-penal', title: 'Penal (S02)' };
+      if (n <= 28) return { local, cls: 'dep-local-badge-social', title: 'Juridico Social (S02)' };
+      if (n <= 38) return { local, cls: 'dep-local-badge-menores', title: 'Menores / Incapaces (S02)' };
+    }
+    return { local, cls: '', title: '' };
   }
 
   function renderLocalBadgeHtml(sedeCode, localCode) {
-    const local = normalizeLocalCode(localCode);
-    if (!local) return '';
-    if (isS08PenalLocal(sedeCode, local)) {
-      return `<span class="dep-local-badge dep-local-badge-penal">${escapeHtml(local)}</span>`;
-    }
-    return `<span class="dep-local-badge">${escapeHtml(local)}</span>`;
+    const meta = getLocalBadgeMeta(sedeCode, localCode);
+    if (!meta.local) return '';
+    const cls = meta.cls ? ` ${meta.cls}` : '';
+    const title = meta.title ? ` title="${escapeHtml(meta.title)}"` : '';
+    return `<span class="dep-local-badge${cls}"${title}>${escapeHtml(meta.local)}</span>`;
   }
 
   function buildSedeUrl(templateUrl, sedeCode) {

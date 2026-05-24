@@ -64,10 +64,37 @@
   {% set dep_parts = dep.split('-') if dep else [] %}
   {% set dep_norm = dep_parts[-1] if dep_parts and (dep_parts[-1]|length >= 2 and dep_parts[-1][0] == 'D') else dep %}
   {% set txt = (label if label is not none else dep) %}
-  {% set is_s08_penal = (sede == 'S08' and dep_norm in ['D01', 'D02', 'D21']) %}
-  {% if is_s08_penal %}
-    <span class="dep-local-badge dep-local-badge-penal {{ extra_class }}"
-          title="Depósito penal (S08)">
+  {% set dep_num = -1 %}
+  {% if dep_norm and dep_norm|length > 1 and dep_norm[0] == 'D' and dep_norm[1:].isdigit() %}
+    {% set dep_num = dep_norm[1:]|int %}
+  {% endif %}
+
+  {% set badge_cls = '' %}
+  {% set badge_title = '' %}
+
+  {# S08: penal fijo por D01/D02/D21. #}
+  {% if sede == 'S08' and dep_norm in ['D01', 'D02', 'D21'] %}
+    {% set badge_cls = 'dep-local-badge-penal' %}
+    {% set badge_title = 'Deposito penal (S08)' %}
+  {% endif %}
+
+  {# S02: D01-D10 penal, D11-D28 social, D29-D38 menores. #}
+  {% if not badge_cls and sede == 'S02' and dep_num > 0 %}
+    {% if dep_num <= 10 %}
+      {% set badge_cls = 'dep-local-badge-penal' %}
+      {% set badge_title = 'Penal (S02)' %}
+    {% elif dep_num <= 28 %}
+      {% set badge_cls = 'dep-local-badge-social' %}
+      {% set badge_title = 'Juridico Social (S02)' %}
+    {% elif dep_num <= 38 %}
+      {% set badge_cls = 'dep-local-badge-menores' %}
+      {% set badge_title = 'Menores / Incapaces (S02)' %}
+    {% endif %}
+  {% endif %}
+
+  {% if badge_cls %}
+    <span class="dep-local-badge {{ badge_cls }} {{ extra_class }}"
+          {% if badge_title %}title="{{ badge_title }}"{% endif %}>
       {{ txt }}
     </span>
   {% else %}

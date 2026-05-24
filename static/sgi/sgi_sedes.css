@@ -907,3 +907,27 @@
   color: #4f46b8;
   font-weight: 600;
 }
+.sgi-sedes .dep-local-badge-social {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(241, 75, 148, 0.45);
+  background: rgba(241, 75, 148, 0.10);
+  color: #be2f74;
+  font-weight: 600;
+}
+.sgi-sedes .dep-local-badge-menores {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(101, 191, 228, 0.55);
+  background: rgba(101, 191, 228, 0.14);
+  color: #1f77a6;
+  font-weight: 600;
+}
+.sgi-sedes .dep-local-badge-admin {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(245, 138, 94, 0.45);
+  background: rgba(245, 138, 94, 0.10);
+  color: #ba5f36;
+  font-weight: 600;
+}
