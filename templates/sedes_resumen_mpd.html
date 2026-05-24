@@ -1162,7 +1162,7 @@
     box-shadow: 0 2px 6px rgba(0,0,0,0.03);
     min-height: 110px;
     height: auto;
-    justify-content: space-between;
+    justify-content: flex-start;
   }
 
   .sedes-region-card:hover {
@@ -1221,6 +1221,7 @@
   .sedes-ref-list {
     display: grid;
     gap: 4px;
+    align-content: start;
   }
 
   .sedes-ref-row {
@@ -1250,6 +1251,10 @@
     justify-content: flex-end;
     gap: 8px;
     flex-wrap: wrap;
+  }
+
+  .sedes-region-exec .sedes-region-foot {
+    margin-top: auto;
   }
 
   .sedes-region-exec .js-exec-detail {
