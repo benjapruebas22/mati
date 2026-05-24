@@ -215,6 +215,7 @@
               data-region="{{ r.region_key or '' }}"
               data-region-title="{{ r.region_title or '' }}"
               data-fueros="{{ (r.fueros_all or [])|join('|') }}"
+              data-fuero-stats='{{ (r.fuero_stats or {})|tojson|safe }}'
               data-fuero-principal="{{ r.fuero_principal or '' }}"
               data-ocupacion="{{ r.ocupacion_bucket or 'disponible' }}"
               data-densidad-bucket="{{ r.densidad_bucket or 'baja' }}"
@@ -237,17 +238,17 @@
               </a>
             </td>
             <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;max-width:280px;line-height:1.25;" title="{{ (r.nombre or '') ~ ' - ' ~ (r.ciudad or '') }}">{{ r.nombre }}</td>
-            <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.personas_total or 0 }}</td>
-            <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ (r.m2_total or 0)|round(0)|int if (r.m2_total or 0) > 0 else '-' }}</td>
-            <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.ocupacion_pct or 0 }}%</td>
-            <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.aires_total }}</td>
-            <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;font-weight:600;">{{ total_mob }}</td>
-            <td class="inv-sec-col" style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.mesa_pc }}</td>
-            <td class="inv-sec-col" style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.escritorio_prof }}</td>
-            <td class="inv-sec-col" style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.silla_giratoria }}</td>
-            <td class="inv-sec-col" style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.silla_fija }}</td>
-            <td class="inv-sec-col" style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.armario_alto }}</td>
-            <td class="inv-sec-col" style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.biblioteca_baja }}</td>
+            <td class="js-cell-personas" style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.personas_total or 0 }}</td>
+            <td class="js-cell-m2" style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ (r.m2_total or 0)|round(0)|int if (r.m2_total or 0) > 0 else '-' }}</td>
+            <td class="js-cell-ocupacion" style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.ocupacion_pct or 0 }}%</td>
+            <td class="js-cell-aires" style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.aires_total }}</td>
+            <td class="js-cell-total-mob" style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;font-weight:600;">{{ total_mob }}</td>
+            <td class="inv-sec-col js-cell-mesa-pc" style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.mesa_pc }}</td>
+            <td class="inv-sec-col js-cell-escritorio-prof" style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.escritorio_prof }}</td>
+            <td class="inv-sec-col js-cell-silla-giratoria" style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.silla_giratoria }}</td>
+            <td class="inv-sec-col js-cell-silla-fija" style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.silla_fija }}</td>
+            <td class="inv-sec-col js-cell-armario-alto" style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.armario_alto }}</td>
+            <td class="inv-sec-col js-cell-biblioteca-baja" style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">{{ r.biblioteca_baja }}</td>
             <td style="padding:6px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">
               <div class="inv-actions-cell">
                 <a class="btn xs btn-sede-abrir {{ r.fuero_css_class or 'fuero-neutral' }}" href="{{ url_for('sede_ficha', codigo=r.codigo) }}">Abrir</a>
@@ -326,6 +327,7 @@
                data-sede="{{ sede.codigo }}"
                data-region="{{ sede.region_key }}"
                data-fueros="{{ (sede.fueros_all or [])|join('|') }}"
+               data-fuero-stats='{{ (sede.fuero_stats or {})|tojson|safe }}'
                data-ocupacion="{{ sede.ocupacion_bucket }}"
                data-densidad-bucket="{{ sede.densidad_bucket or 'baja' }}"
                data-search="{{ ((sede.codigo or '') ~ ' ' ~ (sede.nombre or '') ~ ' ' ~ (sede.ciudad or '') ~ ' ' ~ (sede.direccion or ''))|lower }}"
@@ -1847,6 +1849,128 @@
     return toNum(el.getAttribute(attrName));
   }
 
+  const ZERO_FUERO_METRICS = {
+    locales: 0,
+    personas_total: 0,
+    m2_total: 0,
+    mesa_pc: 0,
+    escritorio_prof: 0,
+    silla_giratoria: 0,
+    silla_fija: 0,
+    armario_alto: 0,
+    biblioteca_baja: 0,
+    aires_total: 0,
+    luminarias_total: 0,
+    puestos_trabajo: 0,
+    total_mobiliario: 0,
+    ocupacion_pct: 0,
+    ocupacion_bucket: 'bajo_uso',
+    densidad_val: 0,
+    densidad_bucket: 'baja'
+  };
+
+  function cloneFueroMetrics(src) {
+    const out = { ...ZERO_FUERO_METRICS };
+    if (!src || typeof src !== 'object') return out;
+    Object.keys(out).forEach((k) => {
+      if (Object.prototype.hasOwnProperty.call(src, k)) out[k] = src[k];
+    });
+    out.locales = toNum(out.locales);
+    out.personas_total = toNum(out.personas_total);
+    out.m2_total = toNum(out.m2_total);
+    out.mesa_pc = toNum(out.mesa_pc);
+    out.escritorio_prof = toNum(out.escritorio_prof);
+    out.silla_giratoria = toNum(out.silla_giratoria);
+    out.silla_fija = toNum(out.silla_fija);
+    out.armario_alto = toNum(out.armario_alto);
+    out.biblioteca_baja = toNum(out.biblioteca_baja);
+    out.aires_total = toNum(out.aires_total);
+    out.luminarias_total = toNum(out.luminarias_total);
+    out.puestos_trabajo = toNum(out.puestos_trabajo);
+    out.total_mobiliario = toNum(out.total_mobiliario);
+    out.ocupacion_pct = toNum(out.ocupacion_pct);
+    out.densidad_val = toNum(out.densidad_val);
+    out.ocupacion_bucket = String(out.ocupacion_bucket || 'bajo_uso');
+    out.densidad_bucket = String(out.densidad_bucket || 'baja');
+    return out;
+  }
+
+  function parseFueroStats(rowLike) {
+    if (!rowLike || !rowLike.dataset) return { all: cloneFueroMetrics(ZERO_FUERO_METRICS) };
+    if (rowLike._fueroStatsParsed) return rowLike._fueroStatsParsed;
+    let parsed = {};
+    try {
+      parsed = JSON.parse(rowLike.dataset.fueroStats || '{}') || {};
+    } catch (err) {
+      parsed = {};
+    }
+    const map = {};
+    ['all', 'penal', 'social', 'menores', 'administracion'].forEach((k) => {
+      map[k] = cloneFueroMetrics(parsed[k] || {});
+    });
+    rowLike._fueroStatsParsed = map;
+    return map;
+  }
+
+  function getMetricsForFuero(rowLike, fueroKey) {
+    const map = parseFueroStats(rowLike);
+    const key = (fueroKey && fueroKey !== 'all') ? fueroKey : 'all';
+    return cloneFueroMetrics(map[key] || map.all || ZERO_FUERO_METRICS);
+  }
+
+  function rowSupportsFuero(rowLike, fueroKey) {
+    if (!fueroKey || fueroKey === 'all') return true;
+    const m = getMetricsForFuero(rowLike, fueroKey);
+    return (
+      m.locales > 0 ||
+      m.personas_total > 0 ||
+      m.puestos_trabajo > 0 ||
+      m.total_mobiliario > 0 ||
+      m.luminarias_total > 0 ||
+      m.aires_total > 0 ||
+      m.m2_total > 0
+    );
+  }
+
+  function metricsDensidadBucket(metrics) {
+    const d = toNum(metrics.densidad_val);
+    if (d >= 0.18) return 'alta';
+    if (d >= 0.12) return 'media';
+    return 'baja';
+  }
+
+  function formatMetricM2(value) {
+    const v = toNum(value);
+    return v > 0 ? Math.round(v) : '-';
+  }
+
+  function applyRowMetrics(row, metrics) {
+    if (!row || !metrics) return;
+    const personasEl = row.querySelector('.js-cell-personas');
+    const m2El = row.querySelector('.js-cell-m2');
+    const ocupEl = row.querySelector('.js-cell-ocupacion');
+    const airesEl = row.querySelector('.js-cell-aires');
+    const totalMobEl = row.querySelector('.js-cell-total-mob');
+    const mesaEl = row.querySelector('.js-cell-mesa-pc');
+    const escEl = row.querySelector('.js-cell-escritorio-prof');
+    const girEl = row.querySelector('.js-cell-silla-giratoria');
+    const fijaEl = row.querySelector('.js-cell-silla-fija');
+    const armEl = row.querySelector('.js-cell-armario-alto');
+    const bibEl = row.querySelector('.js-cell-biblioteca-baja');
+
+    if (personasEl) personasEl.textContent = toNum(metrics.personas_total);
+    if (m2El) m2El.textContent = formatMetricM2(metrics.m2_total);
+    if (ocupEl) ocupEl.textContent = `${toNum(metrics.ocupacion_pct)}%`;
+    if (airesEl) airesEl.textContent = toNum(metrics.aires_total);
+    if (totalMobEl) totalMobEl.textContent = toNum(metrics.total_mobiliario);
+    if (mesaEl) mesaEl.textContent = toNum(metrics.mesa_pc);
+    if (escEl) escEl.textContent = toNum(metrics.escritorio_prof);
+    if (girEl) girEl.textContent = toNum(metrics.silla_giratoria);
+    if (fijaEl) fijaEl.textContent = toNum(metrics.silla_fija);
+    if (armEl) armEl.textContent = toNum(metrics.armario_alto);
+    if (bibEl) bibEl.textContent = toNum(metrics.biblioteca_baja);
+  }
+
   function normalizeSearch(raw) {
     return String(raw || '')
       .toLowerCase()
@@ -2007,6 +2131,7 @@
       region: String(row.dataset.region || '').trim(),
       regionTitle: String(row.dataset.regionTitle || '').trim(),
       fueros,
+      fueroStats: parseFueroStats(row),
       searchNorm: ensureSearchNorm(row)
     });
   });
@@ -2091,7 +2216,18 @@
     if (!meta) return false;
     if (state.autoSede && meta.sede !== state.autoSede) return false;
     if (state.autoRegion !== 'all' && meta.region !== state.autoRegion) return false;
-    if (state.autoFuero !== 'all' && !meta.fueros.includes(state.autoFuero)) return false;
+    if (state.autoFuero !== 'all') {
+      const fm = (((meta.fueroStats || {})[state.autoFuero]) || {});
+      const hasFuero = (
+        toNum(fm.locales) > 0 ||
+        toNum(fm.personas_total) > 0 ||
+        toNum(fm.puestos_trabajo) > 0 ||
+        toNum(fm.total_mobiliario) > 0 ||
+        toNum(fm.luminarias_total) > 0 ||
+        toNum(fm.aires_total) > 0
+      );
+      if (!hasFuero) return false;
+    }
     if (state.freeText && !String(meta.searchNorm || '').includes(state.freeText)) return false;
     return !!(state.autoSede || state.autoRegion !== 'all' || state.autoFuero !== 'all' || state.freeText);
   }
@@ -2287,29 +2423,22 @@
 
     const sede = normalizeSedeCode(rowLike.dataset.sede || '');
     const region = String(rowLike.dataset.region || '').trim();
-    const fueros = (rowLike.dataset.fueros || '')
-      .split('|')
-      .map(normalizeFueroCode)
-      .filter(Boolean);
     const haystack = ensureSearchNorm(rowLike);
 
     if (globalSearchState.autoSede && sede !== globalSearchState.autoSede) return false;
     if (globalSearchState.autoRegion !== 'all' && region !== globalSearchState.autoRegion) return false;
-    if (globalSearchState.autoFuero !== 'all' && !fueros.includes(globalSearchState.autoFuero)) return false;
+    if (globalSearchState.autoFuero !== 'all' && !rowSupportsFuero(rowLike, globalSearchState.autoFuero)) return false;
     if (globalSearchState.freeText && !haystack.includes(globalSearchState.freeText)) return false;
     return true;
   }
 
   function rowMatchesFilters(rowLike) {
     const region = String(rowLike.dataset.region || '').trim();
-    const fueros = (rowLike.dataset.fueros || '')
-      .split('|')
-      .map(normalizeFueroCode)
-      .filter(Boolean);
-    const densidad = rowLike.dataset.densidadBucket || 'baja';
+    const metrics = getMetricsForFuero(rowLike, activeFilters.fuero);
+    const densidad = metrics.densidad_bucket || metricsDensidadBucket(metrics);
 
     if (activeFilters.region !== 'all' && region !== activeFilters.region) return false;
-    if (activeFilters.fuero !== 'all' && !fueros.includes(activeFilters.fuero)) return false;
+    if (activeFilters.fuero !== 'all' && !rowSupportsFuero(rowLike, activeFilters.fuero)) return false;
     if (activeFilters.densidad !== 'all' && densidad !== activeFilters.densidad) return false;
     if (!rowMatchesSearchState(rowLike)) return false;
     return true;
@@ -2340,14 +2469,17 @@
       row.style.display = show ? '' : 'none';
       if (!show) return;
 
+      const metrics = getMetricsForFuero(row, activeFilters.fuero);
+      applyRowMetrics(row, metrics);
+
       const region = row.dataset.region || '';
       if (!regionAgg[region]) {
         regionAgg[region] = { sedes: 0, personas: 0, m2: 0, puestos: 0 };
       }
 
-      const personas = attrNum(row, 'data-val-personas');
-      const m2 = attrNum(row, 'data-val-m2');
-      const puestos = attrNum(row, 'data-val-puestos');
+      const personas = toNum(metrics.personas_total);
+      const m2 = toNum(metrics.m2_total);
+      const puestos = toNum(metrics.puestos_trabajo);
 
       regionAgg[region].sedes += 1;
       regionAgg[region].personas += personas;
@@ -2358,15 +2490,15 @@
       totals.personas += personas;
       totals.m2 += m2;
       totals.puestos += puestos;
-      totals.luminarias += attrNum(row, 'data-val-luminarias');
-      totals.aires_total += attrNum(row, 'data-val-aires_total');
-      totals.total_mob += attrNum(row, 'data-val-total_mob');
-      totals.mesa_pc += attrNum(row, 'data-val-mesa_pc');
-      totals.escritorio_prof += attrNum(row, 'data-val-escritorio_prof');
-      totals.silla_giratoria += attrNum(row, 'data-val-silla_giratoria');
-      totals.silla_fija += attrNum(row, 'data-val-silla_fija');
-      totals.armario_alto += attrNum(row, 'data-val-armario_alto');
-      totals.biblioteca_baja += attrNum(row, 'data-val-biblioteca_baja');
+      totals.luminarias += toNum(metrics.luminarias_total);
+      totals.aires_total += toNum(metrics.aires_total);
+      totals.total_mob += toNum(metrics.total_mobiliario);
+      totals.mesa_pc += toNum(metrics.mesa_pc);
+      totals.escritorio_prof += toNum(metrics.escritorio_prof);
+      totals.silla_giratoria += toNum(metrics.silla_giratoria);
+      totals.silla_fija += toNum(metrics.silla_fija);
+      totals.armario_alto += toNum(metrics.armario_alto);
+      totals.biblioteca_baja += toNum(metrics.biblioteca_baja);
     });
 
     regionCards.forEach(card => {

@@ -9445,7 +9445,7 @@ def sedes_resumen_mpd():
         return csv_txt, 200, headers
 
     # ------------------------------------------------------------
-    # RESUMEN ACTUAL (inventario operativo)
+    # RESUMEN ACTUAL (inventario operativo) - base real por local/fuero
     # ------------------------------------------------------------
     resumen_sedes_rows = []
     resumen_sedes_totals = {
@@ -9458,59 +9458,302 @@ def sedes_resumen_mpd():
         "puestos_trabajo": 0,
     }
 
-    for s in sedes_rows:
-        cod = s["codigo"]
-        mesa_pc = safe_scalar("""
-            SELECT COALESCE(SUM(COALESCE(mesa_pc,0)),0)
-            FROM mobiliario_sede
-            WHERE codigo_sede = ? AND COALESCE(activo,1)=1
-        """, (cod,))
-        escritorio_prof = safe_scalar("""
-            SELECT COALESCE(SUM(COALESCE(escritorio_prof,0)),0)
-            FROM mobiliario_sede
-            WHERE codigo_sede = ? AND COALESCE(activo,1)=1
-        """, (cod,))
-        silla_giratoria = safe_scalar("""
-            SELECT COALESCE(SUM(COALESCE(silla_giratoria,0)),0)
-            FROM mobiliario_sede
-            WHERE codigo_sede = ? AND COALESCE(activo,1)=1
-        """, (cod,))
-        silla_fija = safe_scalar("""
-            SELECT COALESCE(SUM(COALESCE(silla_fija,0)),0)
-            FROM mobiliario_sede
-            WHERE codigo_sede = ? AND COALESCE(activo,1)=1
-        """, (cod,))
-        armario_alto = safe_scalar("""
-            SELECT COALESCE(SUM(COALESCE(armario_alto,0)),0)
-            FROM mobiliario_sede
-            WHERE codigo_sede = ? AND COALESCE(activo,1)=1
-        """, (cod,))
-        biblioteca_baja = safe_scalar("""
-            SELECT COALESCE(SUM(COALESCE(biblioteca_baja,0)),0)
-            FROM mobiliario_sede
-            WHERE codigo_sede = ? AND COALESCE(activo,1)=1
-        """, (cod,))
-        aires_total = safe_scalar("""
-            SELECT COALESCE(COUNT(*),0)
-            FROM aires_mpd
-            WHERE sede_codigo = ?
-              AND {aires_valid}
-        """.format(aires_valid=aires_valid_where("aires_mpd")), (cod,))
-        luminarias_total = safe_scalar("""
-            SELECT COALESCE(SUM(
+    FUERO_KEYS = ("all", "penal", "social", "menores", "administracion")
+
+    def _resumen_bucket_ocupacion(pct: int) -> str:
+        if pct > 100:
+            return "sobreocupada"
+        if pct >= 80:
+            return "alta"
+        if pct >= 60:
+            return "media"
+        if pct >= 40:
+            return "disponible"
+        return "bajo_uso"
+
+    def _resumen_bucket_densidad(densidad: float) -> str:
+        if densidad >= 0.18:
+            return "alta"
+        if densidad >= 0.12:
+            return "media"
+        return "baja"
+
+    def _resumen_stats_zero():
+        return {
+            "locales": 0,
+            "personas_total": 0,
+            "m2_total": 0.0,
+            "mesa_pc": 0,
+            "escritorio_prof": 0,
+            "silla_giratoria": 0,
+            "silla_fija": 0,
+            "armario_alto": 0,
+            "biblioteca_baja": 0,
+            "aires_total": 0,
+            "luminarias_total": 0,
+            "puestos_trabajo": 0,
+            "total_mobiliario": 0,
+            "ocupacion_pct": 0,
+            "ocupacion_bucket": "bajo_uso",
+            "densidad_val": 0.0,
+            "densidad_bucket": "baja",
+        }
+
+    def _fuero_from_keywords(raw_txt: str) -> str:
+        txt = infra_norm_text(raw_txt)
+        if not txt:
+            return ""
+        if any(k in txt for k in ("menores", "incapaces", "capacidad restringida")):
+            return "menores"
+        if any(k in txt for k in ("juridico social", "civil", " ajs ", "ajs", "delegacion civil", "social")):
+            return "social"
+        if any(k in txt for k in ("administracion", "intendencia", "contaduria", "sistemas", "compras", "prensa", "personal", "tesoreria", "secretaria general")):
+            return "administracion"
+        if any(k in txt for k in ("penal", "narcomenudeo", "ejecucion de pena", "violencia institucional", "defensoria penal")):
+            return "penal"
+        return ""
+
+    def _is_shared_space(raw_txt: str) -> bool:
+        txt = infra_norm_text(raw_txt)
+        if not txt:
+            return False
+        shared_kw = (
+            "bano", "cocina", "pasillo", "patio",
+            "hall", "recepcion", "sala de espera", "deposito",
+            "archivo", "escalera", "salon", "mesa de entrada",
+        )
+        return any(k in txt for k in shared_kw)
+
+    fuero_local_overrides = {}
+
+    def _set_override(sede: str, dep: str, fuero: str):
+        fuero_local_overrides[(str(sede or "").upper(), normalizar_local_clave(dep))] = str(fuero or "").lower()
+
+    def _set_range(sede: str, d_from: int, d_to: int, fuero: str):
+        for n in range(int(d_from), int(d_to) + 1):
+            _set_override(sede, f"D{n:02d}", fuero)
+
+    # Reglas operativas solicitadas para sedes mixtas
+    _set_range("S02", 1, 10, "penal")
+    _set_range("S02", 11, 28, "social")
+    _set_range("S02", 29, 38, "menores")
+    _set_range("S06", 1, 7, "penal")
+    _set_range("S06", 8, 11, "menores")
+    for d in ("D01", "D02", "D21"):
+        _set_override("S08", d, "penal")
+    _set_override("S17", "D01", "compartido")
+    _set_override("S17", "D02", "social")
+    _set_override("S17", "D03", "menores")
+    _set_override("S17", "D04", "social")
+    for d in ("D01", "D09", "D13"):
+        _set_override("S14", d, "menores")
+    for d in ("D01", "D04", "D05"):
+        _set_override("S15", d, "menores")
+        _set_override("S16", d, "menores")
+    for d in ("D04", "D09", "D24", "D25"):
+        _set_override("S12", d, "penal")
+
+    mobiliario_local_det = defaultdict(lambda: {
+        "mesa_pc": 0,
+        "escritorio_prof": 0,
+        "silla_giratoria": 0,
+        "silla_fija": 0,
+        "armario_alto": 0,
+        "biblioteca_baja": 0,
+    })
+    mob_det_rows = db.execute("""
+        SELECT
+            UPPER(COALESCE(codigo_sede,'')) AS sede_codigo,
+            COALESCE(codigo_local,'') AS codigo_local,
+            COALESCE(SUM(COALESCE(mesa_pc,0)),0) AS mesa_pc,
+            COALESCE(SUM(COALESCE(escritorio_prof,0)),0) AS escritorio_prof,
+            COALESCE(SUM(COALESCE(silla_giratoria,0)),0) AS silla_giratoria,
+            COALESCE(SUM(COALESCE(silla_fija,0)),0) AS silla_fija,
+            COALESCE(SUM(COALESCE(armario_alto,0)),0) AS armario_alto,
+            COALESCE(SUM(COALESCE(biblioteca_baja,0)),0) AS biblioteca_baja
+        FROM mobiliario_sede
+        WHERE COALESCE(activo,1)=1
+        GROUP BY UPPER(COALESCE(codigo_sede,'')), COALESCE(codigo_local,'')
+    """).fetchall()
+    for mr in mob_det_rows:
+        sede = str(mr["sede_codigo"] or "").strip().upper()
+        dep = normalizar_local_clave(mr["codigo_local"])
+        if not sede or not dep:
+            continue
+        mobiliario_local_det[(sede, dep)] = {
+            "mesa_pc": int(round(float(mr["mesa_pc"] or 0))),
+            "escritorio_prof": int(round(float(mr["escritorio_prof"] or 0))),
+            "silla_giratoria": int(round(float(mr["silla_giratoria"] or 0))),
+            "silla_fija": int(round(float(mr["silla_fija"] or 0))),
+            "armario_alto": int(round(float(mr["armario_alto"] or 0))),
+            "biblioteca_baja": int(round(float(mr["biblioteca_baja"] or 0))),
+        }
+
+    luminarias_local_map = defaultdict(float)
+    lum_rows = db.execute("""
+        SELECT
+            UPPER(COALESCE(codigo_sede,'')) AS sede_codigo,
+            COALESCE(codigo_local,'') AS codigo_local,
+            COALESCE(SUM(
                 COALESCE(tubo_led_fria,0) +
                 COALESCE(tubo_led_calido,0) +
                 COALESCE(foco_comun,0) +
                 COALESCE(panel_led,0)
-            ),0)
-            FROM luminarias_sede
-            WHERE codigo_sede = ?
-        """, (cod,))
-        puestos_trabajo = safe_scalar("""
-            SELECT COALESCE(SUM(COALESCE(puestos_trabajo,0)),0)
-            FROM luminarias_sede
-            WHERE codigo_sede = ?
-        """, (cod,))
+            ),0) AS luminarias_total
+        FROM luminarias_sede
+        WHERE COALESCE(activo,1)=1
+        GROUP BY UPPER(COALESCE(codigo_sede,'')), COALESCE(codigo_local,'')
+    """).fetchall()
+    for lr in lum_rows:
+        sede = str(lr["sede_codigo"] or "").strip().upper()
+        dep = normalizar_local_clave(lr["codigo_local"])
+        if not sede or not dep:
+            continue
+        luminarias_local_map[(sede, dep)] = float(lr["luminarias_total"] or 0)
+
+    all_keys_resumen = set(all_keys) | set(luminarias_local_map.keys()) | set(mobiliario_local_det.keys())
+    all_keys_resumen = {k for k in all_keys_resumen if k[0] and k[1]}
+    all_keys_filtrado_resumen = set()
+    for k in all_keys_resumen:
+        sede_k, dep_k = k
+        valid_set = valid_locals_by_sede.get(sede_k) or set()
+        if valid_set and dep_k not in valid_set:
+            continue
+        all_keys_filtrado_resumen.add(k)
+    all_keys_resumen = all_keys_filtrado_resumen
+
+    aires_local_map = defaultdict(float)
+    aires_sede_unmatched = defaultdict(float)
+    local_ref_tokens = defaultdict(dict)
+    for sede, dep in all_keys_resumen:
+        refs = []
+        info = dep_catalog.get((sede, dep), {})
+        inv_info = mobiliario_map.get((sede, dep), {})
+        refs.extend([
+            dep,
+            info.get("descripcion"),
+            info.get("nombre"),
+            info.get("ubicacion"),
+            info.get("tipo"),
+            inv_info.get("descripcion"),
+        ])
+        norm_refs = []
+        for rtxt in refs:
+            n = infra_norm_text(rtxt)
+            if n and n not in norm_refs:
+                norm_refs.append(n)
+        local_ref_tokens[sede][dep] = norm_refs
+
+    aires_rows = db.execute(f"""
+        SELECT
+            UPPER(COALESCE(sede_codigo,'')) AS sede_codigo,
+            COALESCE(ambiente,'') AS ambiente
+        FROM aires_mpd
+        WHERE {aires_valid_where('aires_mpd')}
+    """).fetchall()
+    for ar in aires_rows:
+        sede = str(ar["sede_codigo"] or "").strip().upper()
+        ambiente = str(ar["ambiente"] or "").strip()
+        if not sede:
+            continue
+        dep_direct = normalizar_local_clave(ambiente)
+        if dep_direct and (sede, dep_direct) in all_keys_resumen:
+            aires_local_map[(sede, dep_direct)] += 1
+            continue
+
+        amb_norm = infra_norm_text(ambiente)
+        best_dep = ""
+        best_score = -1
+        for dep, refs in (local_ref_tokens.get(sede) or {}).items():
+            score = 0
+            for ref in refs:
+                if not ref:
+                    continue
+                if amb_norm == ref:
+                    score = max(score, 100 + len(ref))
+                elif ref in amb_norm:
+                    score = max(score, 20 + len(ref))
+                elif amb_norm in ref and len(amb_norm) >= 4:
+                    score = max(score, 10 + len(amb_norm))
+            if score > best_score:
+                best_score = score
+                best_dep = dep
+        if best_dep and best_score >= 10:
+            aires_local_map[(sede, best_dep)] += 1
+        else:
+            aires_sede_unmatched[sede] += 1
+
+    local_metrics = {}
+    sede_locales = defaultdict(list)
+    for sede, dep in sorted(all_keys_resumen, key=lambda x: (x[0], x[1])):
+        info = dep_catalog.get((sede, dep), {})
+        inv_info = mobiliario_map.get((sede, dep), {})
+        dep_counter = personal_map.get((sede, dep), {}).get("dependencias", {})
+        referencias_txt = " ".join([
+            str(info.get("descripcion") or ""),
+            str(info.get("nombre") or ""),
+            str(info.get("ubicacion") or ""),
+            str(info.get("tipo") or ""),
+            str(inv_info.get("descripcion") or ""),
+            str(" ".join(dep_counter.keys()) if dep_counter else ""),
+        ]).strip()
+
+        fuero_local = fuero_local_overrides.get((sede, dep), "")
+        if not fuero_local:
+            if _is_shared_space(referencias_txt):
+                fuero_local = "compartido"
+            else:
+                scores = {"penal": 0, "social": 0, "menores": 0, "administracion": 0}
+                for dep_name, cnt in dep_counter.items():
+                    fdep = _fuero_from_keywords(dep_name)
+                    if fdep in scores:
+                        scores[fdep] += int(cnt or 0)
+                if any(v > 0 for v in scores.values()):
+                    fuero_local = sorted(scores.items(), key=lambda x: (-int(x[1]), str(x[0])))[0][0]
+                else:
+                    ftxt = _fuero_from_keywords(referencias_txt)
+                    if ftxt:
+                        fuero_local = ftxt
+        if not fuero_local:
+            fuero_cfg = sedes_fuero_map.get(sede, {"principal": "general"})
+            fuero_local = str(fuero_cfg.get("principal") or "general").strip().lower()
+            if fuero_local not in ("penal", "social", "menores", "administracion"):
+                fuero_local = "compartido"
+
+        mob = mobiliario_local_det.get((sede, dep), {})
+        mesa_pc = int(mob.get("mesa_pc") or 0)
+        escritorio_prof = int(mob.get("escritorio_prof") or 0)
+        silla_giratoria = int(mob.get("silla_giratoria") or 0)
+        silla_fija = int(mob.get("silla_fija") or 0)
+        armario_alto = int(mob.get("armario_alto") or 0)
+        biblioteca_baja = int(mob.get("biblioteca_baja") or 0)
+        aires_total_local = int(round(float(aires_local_map.get((sede, dep), 0) or 0)))
+        luminarias_total_local = int(round(float(luminarias_local_map.get((sede, dep), 0) or 0)))
+        puestos_local = int(round(float(puestos_map.get((sede, dep), 0) or 0)))
+        personas_local = int(round(float(personal_map.get((sede, dep), {}).get("personas_reales", 0) or 0)))
+
+        local_metrics[(sede, dep)] = {
+            "sede": sede,
+            "local": dep,
+            "fuero_local": fuero_local,
+            "personas_total": personas_local,
+            "m2_total": 0.0,
+            "mesa_pc": mesa_pc,
+            "escritorio_prof": escritorio_prof,
+            "silla_giratoria": silla_giratoria,
+            "silla_fija": silla_fija,
+            "armario_alto": armario_alto,
+            "biblioteca_baja": biblioteca_baja,
+            "aires_total": aires_total_local,
+            "luminarias_total": luminarias_total_local,
+            "puestos_trabajo": puestos_local,
+            "total_mobiliario": mesa_pc + escritorio_prof + silla_giratoria + silla_fija + armario_alto + biblioteca_baja + aires_total_local,
+        }
+        sede_locales[sede].append(dep)
+
+    sede_m2_map = {}
+    for s in sedes_rows:
+        cod = str(s["codigo"] or "").strip().upper()
         m2_total = safe_float_val(safe_scalar("""
             SELECT COALESCE(m2_totales,0)
             FROM sedes_metricas
@@ -9528,32 +9771,82 @@ def sedes_resumen_mpd():
                 FROM sedes_infraestructura
                 WHERE UPPER(COALESCE(sede_codigo,'')) = ?
             """, (cod,)))
-        personas_total = safe_scalar("""
-            SELECT COALESCE(COUNT(1),0)
-            FROM personal_sede
-            WHERE UPPER(COALESCE(codigo_sede,'')) = ?
-              AND COALESCE(activo,1)=1
-        """, (cod,))
-        ocupacion_pct = int(round((float(personas_total) * 100.0) / float(puestos_trabajo))) if (puestos_trabajo or 0) > 0 else 0
-        if ocupacion_pct > 100:
-            ocupacion_bucket = "sobreocupada"
-        elif ocupacion_pct >= 80:
-            ocupacion_bucket = "alta"
-        elif ocupacion_pct >= 60:
-            ocupacion_bucket = "media"
-        elif ocupacion_pct >= 40:
-            ocupacion_bucket = "disponible"
-        else:
-            ocupacion_bucket = "bajo_uso"
+        sede_m2_map[cod] = float(m2_total or 0.0)
 
-        densidad_val = (float(personas_total) / float(m2_total)) if (m2_total or 0) > 0 else 0.0
-        if densidad_val >= 0.18:
-            densidad_bucket = "alta"
-        elif densidad_val >= 0.12:
-            densidad_bucket = "media"
-        else:
-            densidad_bucket = "baja"
+    for sede, deps in sede_locales.items():
+        if not deps:
+            continue
+        m2_sede = float(sede_m2_map.get(sede) or 0.0)
+        if m2_sede <= 0:
+            continue
+        weights = {}
+        total_w = 0.0
+        for dep in deps:
+            lm = local_metrics.get((sede, dep), {})
+            w = float(lm.get("puestos_trabajo") or 0)
+            if w <= 0:
+                w = float(lm.get("personas_total") or 0)
+            if w <= 0:
+                w = 1.0
+            weights[dep] = w
+            total_w += w
+        if total_w <= 0:
+            continue
+        for dep in deps:
+            local_metrics[(sede, dep)]["m2_total"] = m2_sede * (weights.get(dep, 0.0) / total_w)
 
+    def _sum_stat(dst: dict, src: dict):
+        dst["locales"] += 1
+        for k in (
+            "personas_total", "m2_total", "mesa_pc", "escritorio_prof",
+            "silla_giratoria", "silla_fija", "armario_alto", "biblioteca_baja",
+            "aires_total", "luminarias_total", "puestos_trabajo", "total_mobiliario",
+        ):
+            dst[k] += src.get(k, 0) or 0
+
+    for s in sedes_rows:
+        cod = str(s["codigo"] or "").strip().upper()
+        stats_map = {fk: _resumen_stats_zero() for fk in FUERO_KEYS}
+        deps = list(sede_locales.get(cod, []))
+        for dep in deps:
+            lm = local_metrics.get((cod, dep))
+            if not lm:
+                continue
+            _sum_stat(stats_map["all"], lm)
+            fk = str(lm.get("fuero_local") or "").strip().lower()
+            if fk in ("penal", "social", "menores", "administracion"):
+                _sum_stat(stats_map[fk], lm)
+
+        if float(aires_sede_unmatched.get(cod, 0) or 0) > 0:
+            extra_aires = int(round(float(aires_sede_unmatched.get(cod, 0) or 0)))
+            stats_map["all"]["aires_total"] += extra_aires
+            stats_map["all"]["total_mobiliario"] += extra_aires
+
+        for fk in FUERO_KEYS:
+            st = stats_map[fk]
+            st["personas_total"] = int(round(float(st.get("personas_total") or 0)))
+            st["mesa_pc"] = int(round(float(st.get("mesa_pc") or 0)))
+            st["escritorio_prof"] = int(round(float(st.get("escritorio_prof") or 0)))
+            st["silla_giratoria"] = int(round(float(st.get("silla_giratoria") or 0)))
+            st["silla_fija"] = int(round(float(st.get("silla_fija") or 0)))
+            st["armario_alto"] = int(round(float(st.get("armario_alto") or 0)))
+            st["biblioteca_baja"] = int(round(float(st.get("biblioteca_baja") or 0)))
+            st["aires_total"] = int(round(float(st.get("aires_total") or 0)))
+            st["luminarias_total"] = int(round(float(st.get("luminarias_total") or 0)))
+            st["puestos_trabajo"] = int(round(float(st.get("puestos_trabajo") or 0)))
+            st["total_mobiliario"] = int(round(float(st.get("total_mobiliario") or 0)))
+            st["m2_total"] = float(st.get("m2_total") or 0.0)
+            puestos = int(st.get("puestos_trabajo") or 0)
+            personas = int(st.get("personas_total") or 0)
+            m2_loc = float(st.get("m2_total") or 0.0)
+            occ = int(round((float(personas) * 100.0) / float(puestos))) if puestos > 0 else 0
+            dens = (float(personas) / float(m2_loc)) if m2_loc > 0 else 0.0
+            st["ocupacion_pct"] = occ
+            st["ocupacion_bucket"] = _resumen_bucket_ocupacion(occ)
+            st["densidad_val"] = round(dens, 4)
+            st["densidad_bucket"] = _resumen_bucket_densidad(dens)
+
+        base = stats_map["all"]
         fuero_cfg = sedes_fuero_map.get(cod, {"principal": "general", "secundarios": []})
         fuero_principal = str(fuero_cfg.get("principal") or "general").strip().lower()
         fuero_secundarios = []
@@ -9561,10 +9854,22 @@ def sedes_resumen_mpd():
             fv = str(f or "").strip().lower()
             if fv and fv != fuero_principal and fv not in fuero_secundarios:
                 fuero_secundarios.append(fv)
-        fueros_all = [fuero_principal] + fuero_secundarios
+
+        row_fueros = []
+        for fk in ("penal", "social", "menores", "administracion"):
+            if int(stats_map.get(fk, {}).get("locales") or 0) > 0:
+                row_fueros.append(fk)
+        if fuero_principal and fuero_principal not in row_fueros and fuero_principal in ("penal", "social", "menores", "administracion"):
+            row_fueros.insert(0, fuero_principal)
+        for fs in fuero_secundarios:
+            if fs in ("penal", "social", "menores", "administracion") and fs not in row_fueros:
+                row_fueros.append(fs)
+        if not row_fueros:
+            row_fueros = [fuero_principal] if fuero_principal else ["general"]
+
         region_key = str(sedes_region_map.get(cod, "") or "").strip()
         region_meta = sedes_region_meta.get(region_key) or {}
-        region_label = str(region_meta.get("label") or "Sin región")
+        region_label = str(region_meta.get("label") or "Sin region")
         region_title = str(region_meta.get("title") or region_label)
 
         nombre_sede = str(s["nombre"] or "").strip()
@@ -9572,7 +9877,7 @@ def sedes_resumen_mpd():
         tooltip_parts = [f"{cod} - {nombre_sede or cod}"]
         if direccion_sede and direccion_sede.lower() not in nombre_sede.lower():
             tooltip_parts.append(direccion_sede)
-        tooltip_parts.append(" / ".join([sedes_fuero_labels.get(f, str(f).title()) for f in fueros_all]))
+        tooltip_parts.append(" / ".join([sedes_fuero_labels.get(f, str(f).title()) for f in row_fueros]))
         tooltip = "\n".join([p for p in tooltip_parts if p])
         tooltip_inline = " - ".join([p for p in tooltip_parts if p])
 
@@ -9586,30 +9891,31 @@ def sedes_resumen_mpd():
             "region_title": region_title,
             "fuero_principal": fuero_principal,
             "fuero_secundarios": fuero_secundarios,
-            "fueros_all": fueros_all,
+            "fueros_all": row_fueros,
             "fuero_css_class": {
                 "penal": "fuero-penal",
                 "social": "fuero-social",
                 "menores": "fuero-menores",
                 "administracion": "fuero-admin",
             }.get(fuero_principal, "fuero-neutral"),
-            "m2_total": m2_total,
-            "mesa_pc": mesa_pc,
-            "escritorio_prof": escritorio_prof,
-            "silla_giratoria": silla_giratoria,
-            "silla_fija": silla_fija,
-            "armario_alto": armario_alto,
-            "biblioteca_baja": biblioteca_baja,
-            "aires_total": aires_total,
-            "luminarias_total": luminarias_total,
-            "puestos_trabajo": puestos_trabajo,
-            "personas_total": personas_total,
-            "ocupacion_pct": ocupacion_pct,
-            "ocupacion_bucket": ocupacion_bucket,
-            "densidad_val": round(densidad_val, 4),
-            "densidad_bucket": densidad_bucket,
+            "m2_total": float(base.get("m2_total") or 0.0),
+            "mesa_pc": int(base.get("mesa_pc") or 0),
+            "escritorio_prof": int(base.get("escritorio_prof") or 0),
+            "silla_giratoria": int(base.get("silla_giratoria") or 0),
+            "silla_fija": int(base.get("silla_fija") or 0),
+            "armario_alto": int(base.get("armario_alto") or 0),
+            "biblioteca_baja": int(base.get("biblioteca_baja") or 0),
+            "aires_total": int(base.get("aires_total") or 0),
+            "luminarias_total": int(base.get("luminarias_total") or 0),
+            "puestos_trabajo": int(base.get("puestos_trabajo") or 0),
+            "personas_total": int(base.get("personas_total") or 0),
+            "ocupacion_pct": int(base.get("ocupacion_pct") or 0),
+            "ocupacion_bucket": str(base.get("ocupacion_bucket") or "bajo_uso"),
+            "densidad_val": float(base.get("densidad_val") or 0.0),
+            "densidad_bucket": str(base.get("densidad_bucket") or "baja"),
             "tooltip": tooltip,
             "tooltip_inline": tooltip_inline,
+            "fuero_stats": stats_map,
         })
 
     def safe_row_val(row, key):
