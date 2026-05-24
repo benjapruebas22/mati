@@ -57,3 +57,20 @@
     {% endif %}
   </span>
 {%- endmacro %}
+
+{% macro render_local_badge(codigo_sede, codigo_local, label=None, extra_class='') -%}
+  {% set sede = (codigo_sede or '')|upper %}
+  {% set dep = (codigo_local or '')|upper %}
+  {% set dep_parts = dep.split('-') if dep else [] %}
+  {% set dep_norm = dep_parts[-1] if dep_parts and (dep_parts[-1]|length >= 2 and dep_parts[-1][0] == 'D') else dep %}
+  {% set txt = (label if label is not none else dep) %}
+  {% set is_s08_penal = (sede == 'S08' and dep_norm in ['D01', 'D02', 'D21']) %}
+  {% if is_s08_penal %}
+    <span class="dep-local-badge dep-local-badge-penal {{ extra_class }}"
+          title="Depósito penal (S08)">
+      {{ txt }}
+    </span>
+  {% else %}
+    <span class="dep-local-badge {{ extra_class }}">{{ txt }}</span>
+  {% endif %}
+{%- endmacro %}

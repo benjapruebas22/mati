@@ -3,7 +3,7 @@
 
 
 {% block content %}
-{% from "_sedes_badges.html" import render_sede_badge %}
+{% from "_sedes_badges.html" import render_sede_badge, render_local_badge %}
 
 
 
@@ -5360,7 +5360,7 @@
 
 </style>
 
-<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-10-02') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-24-03') }}">
 
 
 
@@ -8365,7 +8365,7 @@
           {% if local %}
           {% set _ldesc = (locales_desc.get(local) if locales_desc is defined else '') %}
           <div class="plan-selected" {% if _ldesc %}title="{{ _ldesc }}"{% endif %}>
-            Local <strong>{{ local }}</strong>
+            Local <strong>{{ render_local_badge(sede.codigo, local, local)|safe }}</strong>
             {% if _ldesc %}<span class="desc">— {{ _ldesc }}</span>{% endif %}
           </div>
           {% endif %}
@@ -8394,7 +8394,7 @@
 
         <a class="loc {% if local==d %}active{% endif %}"
           title="{{ (locales_desc.get(d) if locales_desc is defined else '') }}"
-          href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=d, tab=tab, view=view) }}">{{ d }}</a>
+          href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=d, tab=tab, view=view) }}">{{ render_local_badge(sede.codigo, d, d)|safe }}</a>
 
 
 
@@ -8493,7 +8493,7 @@
             {% if personal_rows and personal_rows|length > 0 %}
               <div class="panel-mini-list">
                 {% for p in personal_rows[:3] %}
-                  <div><strong>{{ p.nombre_apellido }}</strong> ? {{ p.codigo_local }}</div>
+                  <div><strong>{{ p.nombre_apellido }}</strong> ? {{ render_local_badge(sede.codigo, p.codigo_local, p.codigo_local)|safe }}</div>
                 {% endfor %}
               </div>
             {% else %}
@@ -8575,7 +8575,7 @@
 
 
 
-                <td style="padding:8px;border-bottom:1px solid var(--border);font-weight:800;">{{ p.codigo_local }}</td>
+                <td style="padding:8px;border-bottom:1px solid var(--border);font-weight:800;">{{ render_local_badge(sede.codigo, p.codigo_local, p.codigo_local)|safe }}</td>
 
 
 
@@ -8755,7 +8755,7 @@
 
 
 
-                <td class="cell-code" style="padding:8px;border-bottom:1px solid var(--border);">{{ m.codigo_local }}</td>
+                <td class="cell-code" style="padding:8px;border-bottom:1px solid var(--border);">{{ render_local_badge(sede.codigo, m.codigo_local, m.codigo_local)|safe }}</td>
 
 
 
@@ -8966,7 +8966,7 @@
 
 
                 <td class="cell-code" style="padding:8px;border-bottom:1px solid var(--border);">
-                  <span title="{{ sede.codigo }} {{ d.codigo_local }}{% if d.descripcion %} - {{ d.descripcion }}{% endif %}">{{ d.codigo_local }}</span>
+                  <span title="{{ sede.codigo }} {{ d.codigo_local }}{% if d.descripcion %} - {{ d.descripcion }}{% endif %}">{{ render_local_badge(sede.codigo, d.codigo_local, d.codigo_local)|safe }}</span>
                 </td>
 
 
@@ -9127,7 +9127,7 @@
 
 
 
-                <td class="cell-code" style="padding:8px;border-bottom:1px solid var(--border);">{{ l.codigo_local }}</td>
+                <td class="cell-code" style="padding:8px;border-bottom:1px solid var(--border);">{{ render_local_badge(sede.codigo, l.codigo_local, l.codigo_local)|safe }}</td>
 
 
 
@@ -9348,7 +9348,7 @@
 
 
 
-                <td class="cell-code" style="padding:8px;border-bottom:1px solid var(--border);">{{ mf.codigo_local }}
+                <td class="cell-code" style="padding:8px;border-bottom:1px solid var(--border);">{{ render_local_badge(sede.codigo, mf.codigo_local, mf.codigo_local)|safe }}
 
 
 
@@ -9758,7 +9758,7 @@
 
                 <td style="padding:8px;border-bottom:1px solid #f1f5f9;font-weight:600;">{{ a.ambiente_desc or a.ambiente_codigo or '-' }}</td>
 
-                <td style="padding:8px;border-bottom:1px solid #f1f5f9;">{{ a.deposito_codigo or '-' }}</td>
+                <td style="padding:8px;border-bottom:1px solid #f1f5f9;">{% if a.deposito_codigo %}{{ render_local_badge(sede.codigo, a.deposito_codigo, a.deposito_codigo)|safe }}{% else %}-{% endif %}</td>
 
 
 

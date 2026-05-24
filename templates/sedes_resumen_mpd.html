@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
-{% from "_sedes_badges.html" import render_sede_badge %}
+{% from "_sedes_badges.html" import render_sede_badge, render_local_badge %}
 
-<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-10-01') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-24-03') }}">
 
 <section class="sedes-section sgi-sedes">
   {% set fuero_map = {
@@ -115,7 +115,15 @@
             <div class="sedes-region-detail-fueros">{{ d.fueros }}</div>
             <ul>
               {% for b in d.bloques %}
-              <li><strong>{{ b.fuero }}:</strong> {{ b.rangos }}</li>
+              {% if d.codigo == 'S08' and (b.rangos or '') == 'D01, D02, D21' %}
+                <li><strong>{{ b.fuero }}:</strong>
+                  {{ render_local_badge('S08', 'D01', 'D01')|safe }},
+                  {{ render_local_badge('S08', 'D02', 'D02')|safe }},
+                  {{ render_local_badge('S08', 'D21', 'D21')|safe }}
+                </li>
+              {% else %}
+                <li><strong>{{ b.fuero }}:</strong> {{ b.rangos }}</li>
+              {% endif %}
               {% endfor %}
             </ul>
           </div>
@@ -528,7 +536,7 @@
               {% set cls = fuero_map.get((r.sede or '')|upper, 'fuero-neutral') %}
               <tr>
                 <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ render_sede_badge(r.sede) }}</td>
-                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.deposito }}</td>
+                <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ render_local_badge(r.sede, r.deposito, r.deposito)|safe }}</td>
                 <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.descripcion_inventario or r.nombre_referencia }}</td>
                 <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right;">{{ r.personas_reales }}</td>
                 <td style="padding:8px;border-bottom:1px solid #e5e7eb;">{{ r.dependencia_detectada or '-' }}</td>
@@ -596,7 +604,7 @@
           <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid #e5e7eb;">
             <div>
               <div style="font-size:15px;font-weight:700;color:#0f172a;">Detalle técnico inventario</div>
-              <div style="font-size:12px;color:#64748b;">{{ infra_detalle_row.sede }} - {{ infra_detalle_row.deposito }} | {{ infra_detalle_row.descripcion_inventario or '-' }}</div>
+              <div style="font-size:12px;color:#64748b;">{{ infra_detalle_row.sede }} - {{ render_local_badge(infra_detalle_row.sede, infra_detalle_row.deposito, infra_detalle_row.deposito)|safe }} | {{ infra_detalle_row.descripcion_inventario or '-' }}</div>
             </div>
             <a class="btn xs" href="{{ url_for(infra_nav_endpoint, infra_sede=infra_sede or None, infra_deposito=infra_deposito or None, infra_fuero=infra_fuero or None, infra_criterio=infra_criterio or None, infra_estado_general=infra_estado_general or None, infra_elemento=infra_elemento or None, edit_criterio=edit_criterio or None) }}">Cerrar</a>
           </div>
@@ -934,7 +942,7 @@
               <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center;">
                 {% if mf.codigo_local %}
                   <span title="{{ mf.sede_codigo }} {{ mf.codigo_local }}{% if mf.ubicacion %} - {{ mf.ubicacion }}{% endif %}">
-                    {{ mf.piso or '-' }} / {{ mf.codigo_local }}
+                    {{ mf.piso or '-' }} / {{ render_local_badge(mf.sede_codigo, mf.codigo_local, mf.codigo_local)|safe }}
                   </span>
                 {% else %}
                   {{ mf.piso or '-' }}
@@ -2023,7 +2031,8 @@
 
   function normalizeLocalCode(raw) {
     const c = compactToken(raw);
-    const m = c.match(/^d?(\d{1,3})$/);
+    let m = c.match(/^d?(\d{1,3})$/);
+    if (!m) m = c.match(/d(\d{1,3})$/);
     if (!m) return '';
     return `D${String(m[1]).padStart(2, '0')}`;
   }
@@ -2046,6 +2055,21 @@
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#39;');
+  }
+
+  function isS08PenalLocal(sedeCode, localCode) {
+    const sede = String(sedeCode || '').toUpperCase().trim();
+    const local = normalizeLocalCode(localCode);
+    return sede === 'S08' && ['D01', 'D02', 'D21'].includes(local);
+  }
+
+  function renderLocalBadgeHtml(sedeCode, localCode) {
+    const local = normalizeLocalCode(localCode);
+    if (!local) return '';
+    if (isS08PenalLocal(sedeCode, local)) {
+      return `<span class="dep-local-badge dep-local-badge-penal">${escapeHtml(local)}</span>`;
+    }
+    return `<span class="dep-local-badge">${escapeHtml(local)}</span>`;
   }
 
   function buildSedeUrl(templateUrl, sedeCode) {
@@ -2374,7 +2398,11 @@
       const code = p.sede_codigo || '';
       const local = p.codigo_local || '';
       const dep = p.dependencia || '';
-      const info = [code, local, dep].filter(Boolean).join(' &middot; ');
+      const infoChunks = [];
+      if (code) infoChunks.push(escapeHtml(code));
+      if (local) infoChunks.push(renderLocalBadgeHtml(code, local));
+      if (dep) infoChunks.push(escapeHtml(dep));
+      const info = infoChunks.join(' &middot; ');
       const localBtn = local
         ? `<a class="btn xs btn-secondary" href="${escapeHtml(buildAnalisisUrl(code, local))}">Ver local</a>`
         : '';
@@ -2396,8 +2424,9 @@
       const code = d.sede_codigo || '';
       const local = d.codigo_local || '';
       const ref = d.referencia || d.descripcion || d.nombre || d.ubicacion || d.tipo || '';
+      const localHtml = local ? renderLocalBadgeHtml(code, local) : '';
       return `<div class="sedes-search-item">
-        <div><strong>${escapeHtml(code)}</strong>${local ? ` &middot; ${escapeHtml(local)}` : ''}${ref ? ` &middot; ${escapeHtml(ref)}` : ''}</div>
+        <div><strong>${escapeHtml(code)}</strong>${localHtml ? ` &middot; ${localHtml}` : ''}${ref ? ` &middot; ${escapeHtml(ref)}` : ''}</div>
         <div class="sedes-search-item-actions">
           <a class="btn xs btn-secondary" href="${escapeHtml(buildSedeUrl(sedeFichaUrlTpl, code))}">Abrir sede</a>
           <a class="btn xs btn-secondary" href="${escapeHtml(buildSedeUrl(bienesSedeUrlTpl, code))}">Bienes</a>

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block content %}
+{% from "_sedes_badges.html" import render_local_badge %}
 
 <style>
   .aires-layout{
@@ -122,7 +123,7 @@
   }
 </style>
 
-<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-10-01') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-24-03') }}">
 
 <section class="aires-layout sgi-sedes">
   {% set fuero_map = {
@@ -220,7 +221,13 @@
             {% for a in aires %}
               <tr>
                 <td>{{ a.ambiente }}</td>
-                <td>{{ a.deposito_label or (a.codigo_local or 'â€”') }}</td>
+                <td>
+                  {% if a.codigo_local %}
+                    {{ render_local_badge(sede.codigo, a.codigo_local, a.codigo_local)|safe }}
+                  {% else %}
+                    {{ a.deposito_label or '-' }}
+                  {% endif %}
+                </td>
                 <td>
                   {{ a.marca or '' }}
                   {% if a.modelo %}

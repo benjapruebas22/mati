@@ -892,3 +892,18 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Depósitos/locales: acento suave por fuero (solo cuando aplique). */
+.sgi-sedes .dep-local-badge {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1.2;
+}
+.sgi-sedes .dep-local-badge-penal {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(102, 102, 204, 0.45);
+  background: rgba(102, 102, 204, 0.10);
+  color: #4f46b8;
+  font-weight: 600;
+}
