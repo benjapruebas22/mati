@@ -6085,10 +6085,10 @@ def sede_ficha(codigo):
             if sede_up == "S06":
                 if dep.startswith("D") and dep[1:].isdigit():
                     n = int(dep[1:])
-                    if 1 <= n <= 7:
-                        return "penal"
-                    if 8 <= n <= 11:
+                    if n == 8:
                         return "menores"
+                    if n >= 1:
+                        return "penal"
 
             ftxt = _fuero_from_text(ambiente_txt)
             if ftxt:
@@ -9761,7 +9761,8 @@ def sedes_resumen_mpd():
     _set_range("S02", 11, 28, "social")
     _set_range("S02", 29, 38, "menores")
     _set_range("S06", 1, 7, "penal")
-    _set_range("S06", 8, 11, "menores")
+    _set_override("S06", "D08", "menores")
+    _set_range("S06", 9, 11, "penal")
     for d in ("D01", "D02", "D21"):
         _set_override("S08", d, "penal")
     for d in ("D01", "D02"):
