@@ -6029,9 +6029,18 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             return str(v or "").strip().lower()
 
         def _equipo_computable(item):
-            return _estado_norm(item.get("estado")) not in (
+            if _estado_norm(item.get("estado")) in (
                 "no va a ir", "no va ir", "sin aire", "n/a", "no aplica"
-            )
+            ):
+                return False
+            sede_code = str((item.get("sede_codigo") or "")).strip().upper()
+            local_code = _norm_local_code(item.get("codigo_local"))
+            if sede_code == "S01" and local_code in ("D22", "D23", "D24"):
+                return False
+            # Regla operativa: equipos "central" se muestran en listado,
+            # pero no se cuentan como unidad independiente de split.
+            obs = _estado_norm(item.get("observaciones"))
+            return "central" not in obs
 
         aires_computables = [a for a in aires if _equipo_computable(a)]
         total = len(aires_computables)

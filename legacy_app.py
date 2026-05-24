@@ -5235,8 +5235,10 @@ def sede_ficha(codigo):
 
     def aires_valid_where(alias: str) -> str:
         estado_norm = f"LOWER(TRIM(COALESCE({alias}.estado,'')))"
+        obs_norm = f"LOWER(TRIM(COALESCE({alias}.observaciones,'')))"
         return (
             f"({estado_norm} NOT IN ('no va a ir','no va ir','sin aire','n/a','no aplica') "
+            f"AND {obs_norm} NOT LIKE '%central%' "
             f"AND ((NULLIF(TRIM({alias}.marca),'') IS NOT NULL "
             f"AND UPPER(TRIM({alias}.marca)) NOT IN ('-','PENDIENTE')) "
             f"OR (NULLIF(TRIM({alias}.estado),'') IS NOT NULL) "
@@ -5911,6 +5913,18 @@ def sede_ficha(codigo):
             dep_codes_by_desc.setdefault(key, set()).add(dep_code)
 
         aires_rows = []
+        central_locales_por_sede = {
+            "S01": {"D22", "D23", "D24"},
+        }
+
+        def _is_central_local(sede_cod, dep_cod, obs_txt=""):
+            s = str(sede_cod or "").strip().upper()
+            d = normalize_local_code(dep_cod or "")
+            if d and d in (central_locales_por_sede.get(s) or set()):
+                return True
+            obs = str(obs_txt or "").strip().lower()
+            return "central" in obs
+
         for r in aires_rows_raw:
             item = dict(r)
             dep_direct = normalize_local_code(item.get("codigo_local") or "")
@@ -6010,19 +6024,27 @@ def sede_ficha(codigo):
             )
             if fu not in ("penal", "administracion", "social", "menores", "compartido", "sin_local"):
                 fu = "compartido"
+            if _is_central_local(codigo, a.get("deposito_codigo") or a.get("codigo_local") or "", a.get("observaciones") or ""):
+                continue
             aires_fuero_kpi[f"operativos_{fu}"] += 1
 
-        k = db.execute(f"""
-            SELECT
-                COALESCE(COUNT(*),0) AS total,
-                COALESCE(SUM(CASE WHEN lower(COALESCE(a.estado,'')) = 'operativo' THEN 1 ELSE 0 END),0) AS operativos,
-                COALESCE(SUM(CASE WHEN lower(COALESCE(a.estado,'')) LIKE 'fuera%' THEN 1 ELSE 0 END),0) AS fuera_servicio
-            FROM aires_mpd a
-            WHERE {" AND ".join(where)}
-        """, params).fetchone()
-
-        if k:
-            aires_kpi = dict(k)
+        total_kpi = 0
+        oper_kpi = 0
+        fuera_kpi = 0
+        for a in aires_rows:
+            if _is_central_local(codigo, a.get("deposito_codigo") or a.get("codigo_local") or "", a.get("observaciones") or ""):
+                continue
+            total_kpi += 1
+            est = _estado_norm(a.get("estado"))
+            if est in ("operativo", "ok", "en servicio"):
+                oper_kpi += 1
+            elif est.startswith("fuera"):
+                fuera_kpi += 1
+        aires_kpi = {
+            "total": total_kpi,
+            "operativos": oper_kpi,
+            "fuera_servicio": fuera_kpi,
+        }
 
     # -------------------------
     # KPIs TOTALES (SIN FILTRO piso/local)
@@ -8431,8 +8453,10 @@ def sedes_resumen_mpd():
 
     def aires_valid_where(alias: str) -> str:
         estado_norm = f"LOWER(TRIM(COALESCE({alias}.estado,'')))"
+        obs_norm = f"LOWER(TRIM(COALESCE({alias}.observaciones,'')))"
         return (
             f"({estado_norm} NOT IN ('no va a ir','no va ir','sin aire','n/a','no aplica') "
+            f"AND {obs_norm} NOT LIKE '%central%' "
             f"AND ((NULLIF(TRIM({alias}.marca),'') IS NOT NULL "
             f"AND UPPER(TRIM({alias}.marca)) NOT IN ('-','PENDIENTE')) "
             f"OR (NULLIF(TRIM({alias}.estado),'') IS NOT NULL) "
@@ -9754,19 +9778,35 @@ def sedes_resumen_mpd():
         SELECT
             UPPER(COALESCE(sede_codigo,'')) AS sede_codigo,
             COALESCE(codigo_local,'') AS codigo_local,
-            COALESCE(ambiente,'') AS ambiente
+            COALESCE(ambiente,'') AS ambiente,
+            COALESCE(observaciones,'') AS observaciones
         FROM aires_mpd
         WHERE {aires_valid_where('aires_mpd')}
     """).fetchall()
+    central_locales_por_sede = {
+        "S01": {"D22", "D23", "D24"},
+    }
+
+    def _is_central_local(sede_cod, dep_cod, obs_txt=""):
+        s = str(sede_cod or "").strip().upper()
+        d = normalizar_local_clave(dep_cod or "")
+        if d and d in (central_locales_por_sede.get(s) or set()):
+            return True
+        obs = str(obs_txt or "").strip().lower()
+        return "central" in obs
+
     for ar in aires_rows:
         sede = str(ar["sede_codigo"] or "").strip().upper()
         codigo_local = str(ar["codigo_local"] or "").strip()
         ambiente = str(ar["ambiente"] or "").strip()
+        observaciones = str(ar["observaciones"] or "").strip()
         if not sede:
             continue
         dep_direct = normalizar_local_clave(codigo_local)
         if not dep_direct:
             dep_direct = normalizar_local_clave(ambiente)
+        if _is_central_local(sede, dep_direct, observaciones):
+            continue
         if dep_direct and (sede, dep_direct) in all_keys_resumen:
             aires_local_map[(sede, dep_direct)] += 1
             continue
@@ -9789,8 +9829,12 @@ def sedes_resumen_mpd():
                 best_score = score
                 best_dep = dep
         if best_dep and best_score >= 10:
+            if _is_central_local(sede, best_dep, observaciones):
+                continue
             aires_local_map[(sede, best_dep)] += 1
         else:
+            if _is_central_local(sede, "", observaciones):
+                continue
             aires_sede_unmatched[sede] += 1
 
     local_metrics = {}
