@@ -5966,6 +5966,9 @@ def sede_ficha(codigo):
             dep = normalize_local_code(dep_cod or "")
 
             # Overrides operativos de sedes mixtas
+            if sede_up == "S11":
+                return "social"
+
             if sede_up == "S08":
                 if dep in ("D01", "D02", "D21"):
                     return "penal"
@@ -5987,8 +5990,10 @@ def sede_ficha(codigo):
             if sede_up == "S02":
                 if dep.startswith("D") and dep[1:].isdigit():
                     n = int(dep[1:])
-                    if 1 <= n <= 10:
+                    if 1 <= n <= 9:
                         return "penal"
+                    if n == 10:
+                        return "menores"
                     if 11 <= n <= 28:
                         return "social"
                     if 29 <= n <= 38:
@@ -9665,6 +9670,7 @@ def sedes_resumen_mpd():
 
     # Reglas operativas solicitadas para sedes mixtas
     _set_range("S02", 1, 10, "penal")
+    _set_override("S02", "D10", "menores")
     _set_range("S02", 11, 28, "social")
     _set_range("S02", 29, 38, "menores")
     _set_range("S06", 1, 7, "penal")
