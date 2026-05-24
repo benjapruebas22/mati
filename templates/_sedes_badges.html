@@ -78,6 +78,28 @@
     {% set badge_title = 'Deposito penal (S08)' %}
   {% endif %}
 
+  {# S01 Independencia: D02/D04/D12/D18 administracion; resto penal. #}
+  {% if not badge_cls and sede == 'S01' and dep_num > 0 %}
+    {% if dep_norm in ['D02', 'D04', 'D12', 'D18'] %}
+      {% set badge_cls = 'dep-local-badge-admin' %}
+      {% set badge_title = 'Administracion / Defensoria General (S01)' %}
+    {% else %}
+      {% set badge_cls = 'dep-local-badge-penal' %}
+      {% set badge_title = 'Penal (S01)' %}
+    {% endif %}
+  {% endif %}
+
+  {# S11 Gorriti: D51/D56/D57 administracion; resto juridico social. #}
+  {% if not badge_cls and sede == 'S11' and dep_num > 0 %}
+    {% if dep_norm in ['D51', 'D56', 'D57'] %}
+      {% set badge_cls = 'dep-local-badge-admin' %}
+      {% set badge_title = 'Administracion / Defensoria General (S11)' %}
+    {% else %}
+      {% set badge_cls = 'dep-local-badge-social' %}
+      {% set badge_title = 'Juridico Social (S11)' %}
+    {% endif %}
+  {% endif %}
+
   {# S12 Belgrano: D04/D09/D24/D25 penal; resto admin/interdisciplinario. #}
   {% if not badge_cls and sede == 'S12' and dep_num > 0 %}
     {% if dep_norm in ['D04', 'D09', 'D24', 'D25'] %}

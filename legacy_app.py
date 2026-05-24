@@ -5966,6 +5966,21 @@ def sede_ficha(codigo):
             dep = normalize_local_code(dep_cod or "")
 
             # Overrides operativos de sedes mixtas
+            if sede_up == "S01":
+                if dep in ("D02", "D04", "D12", "D18"):
+                    return "administracion"
+                if dep:
+                    return "penal"
+                ftxt = _fuero_from_text(ambiente_txt)
+                return ftxt or "penal"
+
+            if sede_up == "S11":
+                if dep in ("D51", "D56", "D57"):
+                    return "administracion"
+                if dep:
+                    return "social"
+                return "social"
+
             if sede_up == "S13":
                 if dep in ("D36", "D37", "D38"):
                     return "administracion"
@@ -5973,9 +5988,6 @@ def sede_ficha(codigo):
                     return "menores"
                 ftxt = _fuero_from_text(ambiente_txt)
                 return ftxt or "menores"
-
-            if sede_up == "S11":
-                return "social"
 
             if sede_up == "S08":
                 if dep in ("D01", "D02", "D21"):
@@ -9682,6 +9694,10 @@ def sedes_resumen_mpd():
             _set_override(sede, f"D{n:02d}", fuero)
 
     # Reglas operativas solicitadas para sedes mixtas
+    for d in ("D02", "D04", "D12", "D18"):
+        _set_override("S01", d, "administracion")
+    for d in ("D51", "D56", "D57"):
+        _set_override("S11", d, "administracion")
     _set_range("S02", 1, 10, "penal")
     _set_override("S02", "D10", "menores")
     _set_range("S02", 11, 28, "social")
@@ -9701,6 +9717,8 @@ def sedes_resumen_mpd():
         _set_override("S16", d, "menores")
     for d in ("D04", "D09", "D24", "D25"):
         _set_override("S12", d, "penal")
+    for d in ("D36", "D37", "D38"):
+        _set_override("S13", d, "administracion")
 
     mobiliario_local_det = defaultdict(lambda: {
         "mesa_pc": 0,

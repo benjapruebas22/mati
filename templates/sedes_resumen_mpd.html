@@ -2079,6 +2079,18 @@
     if (!local) return { local: '', cls: '', title: '' };
 
     const n = Number(local.slice(1));
+    if (sede === 'S01' && Number.isFinite(n) && n > 0) {
+      if (['D02', 'D04', 'D12', 'D18'].includes(local)) {
+        return { local, cls: 'dep-local-badge-admin', title: 'Administracion / Defensoria General (S01)' };
+      }
+      return { local, cls: 'dep-local-badge-penal', title: 'Penal (S01)' };
+    }
+    if (sede === 'S11' && Number.isFinite(n) && n > 0) {
+      if (['D51', 'D56', 'D57'].includes(local)) {
+        return { local, cls: 'dep-local-badge-admin', title: 'Administracion / Defensoria General (S11)' };
+      }
+      return { local, cls: 'dep-local-badge-social', title: 'Juridico Social (S11)' };
+    }
     if (sede === 'S08' && ['D01', 'D02', 'D21'].includes(local)) {
       return { local, cls: 'dep-local-badge-penal', title: 'Deposito penal (S08)' };
     }
