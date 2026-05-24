@@ -5977,8 +5977,13 @@ def sede_ficha(codigo):
                 ftxt = _fuero_from_text(ambiente_txt)
                 return ftxt or "administracion"
 
-            if sede_up == "S12" and dep in ("D04", "D09", "D24", "D25"):
-                return "penal"
+            if sede_up == "S12":
+                if dep in ("D04", "D09", "D24", "D25"):
+                    return "penal"
+                if dep:
+                    return "administracion"
+                ftxt = _fuero_from_text(ambiente_txt)
+                return ftxt or "administracion"
             if sede_up == "S17":
                 if dep == "D01":
                     return "compartido"
@@ -9863,6 +9868,12 @@ def sedes_resumen_mpd():
         # Evita que heurísticas de texto/dependencia clasifiquen mal S08.
         if not fuero_local and sede == "S08":
             if dep in ("D01", "D02", "D21"):
+                fuero_local = "penal"
+            else:
+                fuero_local = "administracion"
+        # Regla fija S12: D04/D09/D24/D25 = Penal; resto = Administracion/Interdisciplinario.
+        if not fuero_local and sede == "S12":
+            if dep in ("D04", "D09", "D24", "D25"):
                 fuero_local = "penal"
             else:
                 fuero_local = "administracion"

@@ -78,6 +78,17 @@
     {% set badge_title = 'Deposito penal (S08)' %}
   {% endif %}
 
+  {# S12 Belgrano: D04/D09/D24/D25 penal; resto admin/interdisciplinario. #}
+  {% if not badge_cls and sede == 'S12' and dep_num > 0 %}
+    {% if dep_norm in ['D04', 'D09', 'D24', 'D25'] %}
+      {% set badge_cls = 'dep-local-badge-penal' %}
+      {% set badge_title = 'Penal (S12)' %}
+    {% else %}
+      {% set badge_cls = 'dep-local-badge-admin' %}
+      {% set badge_title = 'Equipo Interdisciplinario / Administracion (S12)' %}
+    {% endif %}
+  {% endif %}
+
   {# S02: D01-D09 penal, D11-D28 social, D10 + D29-D38 menores. #}
   {% if not badge_cls and sede == 'S02' and dep_num > 0 %}
     {% if dep_num <= 9 %}

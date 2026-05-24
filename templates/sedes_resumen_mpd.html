@@ -2082,6 +2082,12 @@
     if (sede === 'S08' && ['D01', 'D02', 'D21'].includes(local)) {
       return { local, cls: 'dep-local-badge-penal', title: 'Deposito penal (S08)' };
     }
+    if (sede === 'S12' && Number.isFinite(n) && n > 0) {
+      if (['D04', 'D09', 'D24', 'D25'].includes(local)) {
+        return { local, cls: 'dep-local-badge-penal', title: 'Penal (S12)' };
+      }
+      return { local, cls: 'dep-local-badge-admin', title: 'Equipo Interdisciplinario / Administracion (S12)' };
+    }
     if (sede === 'S02' && Number.isFinite(n) && n > 0) {
       if (n <= 9) return { local, cls: 'dep-local-badge-penal', title: 'Penal (S02)' };
       if (n === 10) return { local, cls: 'dep-local-badge-menores', title: 'Menores / Incapaces (S02)' };
