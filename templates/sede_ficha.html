@@ -2945,6 +2945,26 @@
     padding-top: 5px;
   }
 
+  .sede-global-search {
+    margin: 10px 0 2px;
+    padding: 12px 14px;
+    display: grid;
+    gap: 8px;
+  }
+
+  .sede-global-search-title {
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: #334155;
+  }
+
+  .sede-global-search-hint {
+    font-size: 11px;
+    color: #64748b;
+  }
+
 
 
 
@@ -4252,6 +4272,16 @@
     height: 6px;
     border-radius: 50%;
     background: #2563eb;
+  }
+  .locals .loc.search-hit {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18);
+  }
+  .locals .loc.search-dim {
+    opacity: .38;
+  }
+  .panel-body tr.sede-search-hit td {
+    background: #f8fbff;
   }
   /* Badge sobre el plano cuando hay local seleccionado */
   .plan-img.selected {
@@ -6396,7 +6426,7 @@
 
 
 
-          <h1 class="h-title">{{ sede.nombre }}</h1>
+          <h1 class="h-title">{{ sede.codigo }} - {{ sede.nombre }}</h1>
 
 
 
@@ -6404,11 +6434,9 @@
 
 
 
-            {{ sede.ciudad }}{% if sede.direccion %} · {{ sede.direccion }}{% endif %}
-
-
-
-            · {{ sede.fuero|replace('_',' ')|capitalize }}
+            {% if sede.direccion %}{{ sede.direccion }}{% else %}S/D{% endif %}
+            {% if sede.ciudad %} · {{ sede.ciudad }}{% endif %}
+            {% if sede.fuero %} · {{ sede.fuero|replace('_',' ')|capitalize }}{% endif %}
 
 
 
@@ -6431,7 +6459,7 @@
 
       <div class="h-actions">
         <button type="button" class="btn btn-checklist-limpieza" id="btnChecklistLimpieza" data-sede="{{ sede.codigo }}">Checklist Control Limpieza</button>
-        <a class="btn btn-volver" href="{{ url_for('sedes_resumen_mpd') }}">Volver a resumen sedes</a>
+        <a class="btn btn-volver" href="{{ url_for('sedes_resumen_mpd') }}">Volver a Sedes</a>
 
         <details class="h-actions-more">
           <summary class="btn btn-calendario" aria-label="Más acciones">Acciones</summary>
@@ -6516,7 +6544,7 @@
 
     <div class="sede-analisis sede-analisis-main">
       <div class="sede-analisis-head">
-        <h4>Resumen operativo de sede</h4>
+        <h4>RESUMEN OPERATIVO DE SEDE</h4>
         <div class="sede-analisis-tools">
           <div class="sede-analisis-actions">
             <a class="btn btn-metricas-sm" href="{{ url_for('sede_metricas_edit', codigo=sede.codigo) }}">Editar metricas</a>
@@ -6532,7 +6560,7 @@
         </article>
 
         <article class="sede-analisis-card">
-          <div class="t">Depositos</div>
+          <div class="t">Dep&oacute;sitos</div>
           <div class="v">{{ ro.depositos if ro.depositos is not none else 'S/D' }}</div>
         </article>
 
@@ -6547,18 +6575,23 @@
         </article>
 
         <article class="sede-analisis-card">
-          <div class="t">Depositos ocupados</div>
+          <div class="t">Dep&oacute;sitos ocupados</div>
           <div class="v">{{ ro.depositos_ocupados if ro.depositos_ocupados is not none else 'S/D' }}</div>
         </article>
 
         <article class="sede-analisis-card">
-          <div class="t">Depositos libres</div>
+          <div class="t">Dep&oacute;sitos libres</div>
           <div class="v">{{ ro.depositos_libres if ro.depositos_libres is not none else 'S/D' }}</div>
         </article>
 
         <article class="sede-analisis-card">
           <div class="t">Sanitarios</div>
           <div class="v">{{ ro.sanitarios if ro.sanitarios is not none else 'S/D' }}</div>
+        </article>
+
+        <article class="sede-analisis-card">
+          <div class="t">Aires</div>
+          <div class="v">{{ ro.aires if ro.aires is not none else 'S/D' }}</div>
         </article>
 
         <article class="sede-analisis-card">
@@ -6571,6 +6604,19 @@
         Datos orientativos para gestion interna. No certifica cumplimiento legal.
       </div>
     </div>
+
+    {% if view != 'resumen' %}
+    <div class="card sede-global-search">
+      <div class="sede-global-search-title">Buscador general de sede</div>
+      <input
+        type="search"
+        id="sedeGlobalSearchInput"
+        placeholder="Buscar persona, depósito, dependencia o ambiente..."
+        autocomplete="off"
+        style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:13px;background:#fff;">
+      <div class="sede-global-search-hint">Filtra visualmente por persona, local/deposito, dependencia, email y ambiente.</div>
+    </div>
+    {% endif %}
 
   </div>
 
@@ -8051,8 +8097,8 @@
 
       <div class="panel-tabs panel-tabs-top">
         <div class="panel-tab-row" aria-label="Navegacion tecnica">
-          <div class="panel-tab-group" aria-label="Uso diario">
-            <span class="panel-tab-group-title">Uso diario</span>
+          <div class="panel-tab-group" aria-label="Operacion">
+            <span class="panel-tab-group-title">OPERACI&Oacute;N</span>
             <a class="ptab tone-personal {% if tab=='personal' %}active{% endif %}"
               href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='personal', view=view) }}">Personal</a>
             <a class="ptab tone-dep {% if tab=='depositos' %}active{% endif %}"
@@ -8061,8 +8107,8 @@
               href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='planos', view=view) }}#planos">Planos</a>
           </div>
 
-          <div class="panel-tab-group" aria-label="Uso frecuente">
-            <span class="panel-tab-group-title">Uso frecuente</span>
+          <div class="panel-tab-group" aria-label="Mantenimiento">
+            <span class="panel-tab-group-title">MANTENIMIENTO</span>
             <a class="ptab tone-aires {% if tab=='aires' %}active{% endif %}"
               href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='aires', view=view) }}">Aires</a>
             <a class="ptab tone-lum {% if tab=='luminarias' %}active{% endif %}"
@@ -8071,17 +8117,22 @@
               href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='mobiliario', view=view) }}">Inventario operativo</a>
           </div>
 
-          <div class="panel-tab-group" aria-label="Uso ocasional">
-            <span class="panel-tab-group-title">Uso ocasional</span>
+          <div class="panel-tab-group" aria-label="Control">
+            <span class="panel-tab-group-title">CONTROL</span>
             <a class="ptab tone-mata {% if tab=='matafuegos' %}active{% endif %}"
               href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='matafuegos', view=view) }}">Matafuegos</a>
             <a class="ptab tone-eva {% if tab=='evacuacion' %}active{% endif %}"
               href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='evacuacion', view=view) }}">Evacuacion</a>
-            {# SG-SST: no hay boton operativo equivalente en esta vista; se deja sin crear. #}
+            {% if has_sst_general %}
+            <a class="ptab tone-personal" href="{{ url_for('sst_general') }}">SG-SST</a>
+            {% endif %}
+            {% if has_relevamientos %}
+            <a class="ptab tone-personal" href="{{ url_for('auditoria_mobiliario') }}">Relevamientos</a>
+            {% endif %}
           </div>
 
-          <div class="panel-tab-group" aria-label="Documental historico">
-            <span class="panel-tab-group-title">Documental</span>
+          <div class="panel-tab-group" aria-label="Documentacion">
+            <span class="panel-tab-group-title">DOCUMENTACI&Oacute;N</span>
             <a class="ptab tone-resumen-sedes" href="{{ url_for('sgi_documentacion_informes', sede=sede.codigo) }}">Informes</a>
             <a class="ptab tone-resumen-sedes {% if view=='resumen' and sub=='info' %}active{% endif %}"
               href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab=tab, view='resumen', home=home_arg, sub='info') }}#info-sede">Documentacion</a>
@@ -8090,32 +8141,8 @@
             {% endif %}
           </div>
 
-          <div class="panel-tab-group" aria-label="Control">
-            <span class="panel-tab-group-title">Control</span>
-            <details class="panel-control">
-              <summary class="ptab tone-personal">Relevamientos / Control</summary>
-              <div class="panel-control-menu">
-                <div class="panel-control-title">Relevamientos</div>
-                <div class="panel-control-links">
-                  <a class="panel-control-link" href="{{ url_for('auditoria_mobiliario') }}">
-                    <span>Inventario operativo</span><span class="muted">Relevar</span>
-                  </a>
-                  <a class="panel-control-link" href="{{ url_for('auditoria_aires') }}">
-                    <span>Aires</span><span class="muted">Relevar</span>
-                  </a>
-                  <a class="panel-control-link" href="{{ url_for('auditoria_luminarias') }}">
-                    <span>Luminarias</span><span class="muted">Relevar</span>
-                  </a>
-                  <a class="panel-control-link" href="{{ url_for('relevamientos_comparativa', tipo='mobiliario') }}">
-                    <span>Comparativa</span><span class="muted">Cruzar datos</span>
-                  </a>
-                </div>
-              </div>
-            </details>
-          </div>
-
           <div class="panel-tab-group" aria-label="Resumen">
-            <span class="panel-tab-group-title">Navegacion</span>
+            <span class="panel-tab-group-title">NAVEGACION</span>
             <a class="ptab tone-resumen-sedes" href="{{ url_for('sedes_resumen_mpd') }}">Resumen sedes</a>
           </div>
         </div>
@@ -8290,6 +8317,7 @@
 
 
         <a class="loc {% if local==d %}active{% endif %}"
+          data-search="{{ d }} {{ (locales_desc.get(d) if locales_desc is defined else '') }}"
           title="{{ (locales_desc.get(d) if locales_desc is defined else '') }}"
           href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=d, tab=tab, view=view) }}">{{ render_local_badge(sede.codigo, d, d)|safe }}</a>
 
@@ -8412,7 +8440,7 @@
           <input
             type="search"
             id="personalFilterInput"
-            placeholder="Buscar persona, depósito o dependencia..."
+            placeholder="Buscar en personal..."
             style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:10px;font-size:12px;background:#fff;"
             autocomplete="off">
         </div>
@@ -10455,6 +10483,56 @@
     }
 
     input.addEventListener("input", applyFilter);
+  })();
+</script>
+<script>
+  (function () {
+    const input = document.getElementById("sedeGlobalSearchInput");
+    if (!input) return;
+
+    const normalize = (value) =>
+      String(value || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim();
+
+    const localChips = Array.from(document.querySelectorAll(".locals .loc:not(.clear)"));
+
+    function applyGlobalFilter() {
+      const qRaw = String(input.value || "");
+      const q = normalize(qRaw);
+
+      const personalInput = document.getElementById("personalFilterInput");
+      if (personalInput) {
+        personalInput.value = qRaw;
+        personalInput.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+
+      const rows = Array.from(document.querySelectorAll(".panel-body table tbody tr"));
+      rows.forEach((row) => {
+        const hay = normalize((row.getAttribute("data-search") || "") + " " + (row.textContent || ""));
+        const ok = !q || hay.indexOf(q) !== -1;
+        row.style.display = ok ? "" : "none";
+        row.classList.toggle("sede-search-hit", !!q && ok);
+      });
+
+      localChips.forEach((chip) => {
+        const hay = normalize(
+          (chip.getAttribute("data-search") || "") +
+          " " +
+          (chip.getAttribute("title") || "") +
+          " " +
+          (chip.textContent || "")
+        );
+        const ok = !q || hay.indexOf(q) !== -1;
+        chip.classList.toggle("search-hit", !!q && ok);
+        chip.classList.toggle("search-dim", !!q && !ok);
+      });
+    }
+
+    input.addEventListener("input", applyGlobalFilter);
+    applyGlobalFilter();
   })();
 </script>
 {% endblock %}

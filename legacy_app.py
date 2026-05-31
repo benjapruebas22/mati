@@ -5426,6 +5426,18 @@ def sede_ficha(codigo):
     except Exception:
         sanitarios_total = None
 
+    aires_total = None
+    try:
+        if has_col("aires_mpd", "sede_codigo"):
+            aires_total = db.execute("""
+                SELECT COALESCE(COUNT(*),0) AS c
+                FROM aires_mpd
+                WHERE sede_codigo = ?
+                  AND {aires_valid}
+            """.format(aires_valid=aires_valid_where("aires_mpd")), (codigo,)).fetchone()["c"]
+    except Exception:
+        aires_total = None
+
     depositos_ocupados = None
     try:
         depositos_ocupados = db.execute("""
@@ -5459,6 +5471,7 @@ def sede_ficha(codigo):
         "depositos": depositos_total,
         "m2_totales": m2_totales_ro,
         "m2_por_persona": m2_por_persona_ro,
+        "aires": aires_total,
         "depositos_ocupados": depositos_ocupados,
         "depositos_libres": depositos_libres,
         "sanitarios": sanitarios_total,
@@ -6551,6 +6564,9 @@ def sede_ficha(codigo):
     except Exception:
         documentos_vinculados_sede = []
 
+    has_sst_general = "sst_general" in app.view_functions
+    has_relevamientos = "auditoria_mobiliario" in app.view_functions
+
     # -------------------------
     # RENDER
     # -------------------------
@@ -6612,6 +6628,8 @@ def sede_ficha(codigo):
         cal_legend=cal_legend if home_mode else [],
         protocolo_limpieza_url=protocolo_limpieza_url,
         documentos_vinculados_sede=documentos_vinculados_sede,
+        has_sst_general=has_sst_general,
+        has_relevamientos=has_relevamientos,
     )
 
 
