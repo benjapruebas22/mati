@@ -6466,35 +6466,6 @@
           </div>
         </details>
       </div>
-
-        <div class="sede-nav">
-        {# Tooltips para chips de sedes (fallback si sedes_nav no trae descripcion) #}
-        {% set sede_tooltips = {
-          'S01': 'Independencia 202 - Penal',
-          'S02': 'San Pedro Civil - Penal Unificado',
-          'S03': 'Perico Penal',
-          'S04': 'Alto Comedero',
-          'S05': 'Humahuaca Penal',
-          'S06': 'Ledesma Penal y Menores Unificado',
-          'S07': 'Palpalá Penal',
-          'S08': 'San Martín 137 - Administración',
-          'S10': 'El Carmen Civil - Penal Unificado',
-          'S11': 'Gorriti 791',
-          'S12': 'Belgrano 284',
-          'S13': 'San Martín 271',
-        } %}
-        {% for s in sedes_nav %}
-        {% set _tip = sede_tooltips.get(s.codigo) %}
-        {% set _fuero_cls = fuero_map.get(s.codigo, 'fuero-neutral') %}
-        {% set _t = (s.nombre if s.nombre is defined and s.nombre else _tip) %}
-        <a class="sede-chip {{ _fuero_cls }} {% if s.codigo == sede.codigo %}active{% endif %}"
-           data-fuero="{{ s.fuero }}"
-           data-code="{{ s.codigo }}"
-           title="{{ _t if _t else 'Sede' }}"
-           href="{{ url_for('sede_ficha', codigo=s.codigo, piso=piso, tab=tab, view=view) }}">{{ render_sede_badge(s.codigo) }}</a>
-        {% endfor %}
-      </div>
-
     </div>
 
     <div class="sede-topbar" style="padding:0 16px 12px 16px;">
@@ -6541,150 +6512,63 @@
       </a>
     </div>
 
-    {% set m2pp_base = metricas.m2_por_persona if metricas.m2_por_persona is not none else none %}
-    {% set amb_oficinas = (metricas.oficinas if metricas.oficinas is not none else infra.oficinas) or 0 %}
-    {% set amb_entrev = infra.salas_entrevistas or 0 %}
-    {% set amb_banios = infra.banios or 0 %}
-    {% set amb_comunes = infra.espacios_comunes or 0 %}
-    {% set amb_depositos = (metricas.depositos if metricas.depositos is not none else infra.depositos) or 0 %}
-    {% set amb_utiles = amb_oficinas + amb_entrev + amb_banios + amb_comunes %}
-    {% set amb_total = amb_utiles + amb_depositos %}
-    {% set factor_deposito = (amb_depositos / amb_total) if amb_total > 0 else 0 %}
-    {# Potencial operativo: si hay mas depositos, se considera mayor capacidad de reorganizacion. #}
-    {% set factor_potencial = (1 + (factor_deposito * 0.7)) %}
-    {% set m2pp = ((m2pp_base|float) * factor_potencial)|round(2) if m2pp_base is not none else none %}
-    {% set ppo = metricas.personas_por_oficina if metricas.personas_por_oficina is not none else none %}
-    {% set venc45 = seg_vencen.vencen_pronto if seg_vencen is defined and seg_vencen.vencen_pronto is not none else none %}
-
-    {% if m2pp is none %}
-      {% set m2_class = 'na' %}{% set m2_state = 'Dato no disponible' %}{% set m2_score = none %}
-    {% elif m2pp|float < 8 %}
-      {% set m2_class = 'bad' %}{% set m2_state = 'Espacio insuficiente' %}{% set m2_score = 35 %}
-    {% elif m2pp|float <= 12 %}
-      {% set m2_class = 'ok' %}{% set m2_state = 'Ocupacion adecuada' %}{% set m2_score = 100 %}
-    {% elif m2pp|float <= 20 %}
-      {% set m2_class = 'warn' %}{% set m2_state = 'Espacio amplio' %}{% set m2_score = 70 %}
-    {% else %}
-      {% set m2_class = 'info' %}{% set m2_state = 'Espacio sobredimensionado' %}{% set m2_score = 60 %}
-    {% endif %}
-
-    {% if m2pp_base is not none and m2pp is not none and m2pp_base|float < 8 and m2pp|float >= 8 and amb_depositos > 0 %}
-      {% set m2_class = 'warn' %}{% set m2_state = 'Espacio ampliable (potencial)' %}{% set m2_score = 75 %}
-    {% endif %}
-
-    {% if ppo is none %}
-      {% set ppo_class = 'na' %}{% set ppo_state = 'Dato no disponible' %}{% set ppo_score = none %}
-    {% elif ppo|float <= 2 %}
-      {% set ppo_class = 'ok' %}{% set ppo_state = 'Distribucion adecuada' %}{% set ppo_score = 100 %}
-    {% elif ppo|float <= 3 %}
-      {% set ppo_class = 'warn' %}{% set ppo_state = 'Uso intensivo' %}{% set ppo_score = 70 %}
-    {% else %}
-      {% set ppo_class = 'bad' %}{% set ppo_state = 'Oficinas saturadas' %}{% set ppo_score = 35 %}
-    {% endif %}
-
-    {% if venc45 is none %}
-      {% set seg_class = 'na' %}{% set seg_state = 'Dato no disponible' %}{% set seg_score = none %}
-    {% elif venc45|int == 0 %}
-      {% set seg_class = 'ok' %}{% set seg_state = 'Sin vencimientos' %}{% set seg_score = 100 %}
-    {% elif venc45|int <= 2 %}
-      {% set seg_class = 'warn' %}{% set seg_state = 'Atencion preventiva' %}{% set seg_score = 70 %}
-    {% else %}
-      {% set seg_class = 'bad' %}{% set seg_state = 'Requiere intervencion' %}{% set seg_score = 35 %}
-    {% endif %}
-
-    {% set idx = namespace(sum=0, n=0) %}
-    {% if m2_score is not none %}{% set idx.sum = idx.sum + m2_score %}{% set idx.n = idx.n + 1 %}{% endif %}
-    {% if ppo_score is not none %}{% set idx.sum = idx.sum + ppo_score %}{% set idx.n = idx.n + 1 %}{% endif %}
-    {% if seg_score is not none %}{% set idx.sum = idx.sum + seg_score %}{% set idx.n = idx.n + 1 %}{% endif %}
-    {% set idx_general = (idx.sum / idx.n)|round(0, 'common')|int if idx.n > 0 else none %}
-
-    {% if idx_general is none %}
-      {% set idx_class = 'na' %}{% set idx_state = 'Dato no disponible' %}
-    {% elif idx_general >= 85 %}
-      {% set idx_class = 'ok' %}{% set idx_state = 'Condicion adecuada' %}
-    {% elif idx_general >= 70 %}
-      {% set idx_class = 'warn' %}{% set idx_state = 'Requiere mejoras' %}
-    {% else %}
-      {% set idx_class = 'bad' %}{% set idx_state = 'Intervencion necesaria' %}
-    {% endif %}
+        {% set ro = resumen_operativo if resumen_operativo is defined else {} %}
 
     <div class="sede-analisis sede-analisis-main">
       <div class="sede-analisis-head">
-        <h4>Analisis de sede</h4>
+        <h4>Resumen operativo de sede</h4>
         <div class="sede-analisis-tools">
           <div class="sede-analisis-actions">
             <a class="btn btn-metricas-sm" href="{{ url_for('sede_metricas_edit', codigo=sede.codigo) }}">Editar metricas</a>
-            <details class="sede-criterios">
-              <summary>Criterios de analisis</summary>
-            <div class="sede-criterios-box">
-              <h5>Parametros V1</h5>
-              <ul>
-                <li>Ocupacion: 8-12 m2/persona = adecuado; &lt;8 = insuficiente; 12-20 = amplio; &gt;20 = sobredimensionado.</li>
-                <li>Ajuste potencial: se pondera disponibilidad de depositos como capacidad de reorganizacion operativa.</li>
-                <li>Densidad: hasta 2 pers/of = adecuada; 2-3 = intensivo; &gt;3 = saturado.</li>
-                <li>Seguridad: vencen pronto (45d): 0 = ok; 1-2 = atencion; 3+ = intervencion.</li>
-                <li>Indice general interno: promedio de ocupacion + densidad + seguridad.</li>
-              </ul>
-              <h5 style="margin-top:7px;">Detalle base de datos</h5>
-              <ul>
-                <li><strong>sedes_metricas</strong>: m2_totales, personas, oficinas, depositos.</li>
-                <li><strong>sedes_infra</strong>: salas_entrevistas, banios, espacios_comunes (y deposito de referencia).</li>
-                <li><strong>seg_vencen</strong>: vencen_pronto (horizonte 45 dias).</li>
-                <li><strong>Calculado</strong>: m2/p ajustado por distribucion de ambientes e indice general interno.</li>
-              </ul>
-            </div>
-            </details>
           </div>
-          <span class="sede-analisis-ref">Lectura interna orientativa (no certifica cumplimiento legal).</span>
+          <span class="sede-analisis-ref">Datos orientativos para gestion interna. No certifica cumplimiento legal.</span>
         </div>
-      </div>
-
-      <div class="sede-analisis-base">
-        <span class="b">Personas: {{ per_kpi.personas }}</span>
-        <span class="b">Oficinas: {{ metricas.oficinas if metricas.oficinas is not none else infra.oficinas }}</span>
-        <span class="b">Depositos: {{ depositos_kpi }}</span>
-        <span class="b">M2 totales: {{ metricas.m2_totales if metricas.m2_totales is not none else '-' }}</span>
-        <span class="b">Potencial por depositos: {{ (factor_deposito * 100)|round(0, 'common')|int }}%</span>
       </div>
 
       <div class="sede-analisis-grid">
         <article class="sede-analisis-card">
-          <div class="t">Ocupacion del espacio</div>
-          <div class="v">{{ m2pp if m2pp is not none else '-' }} m2/p</div>
-          <div class="r">
-            Referencia: 8 a 12 m2 por persona.
-            {% if m2pp_base is not none %}
-              Base {{ m2pp_base }} m2/p, potencial {{ m2pp }} m2/p por disponibilidad de espacios.
-            {% endif %}
-          </div>
-          <span class="sede-estado {{ m2_class }}">{{ m2_state }}</span>
+          <div class="t">Personas</div>
+          <div class="v">{{ ro.personas if ro.personas is not none else 'S/D' }}</div>
         </article>
 
         <article class="sede-analisis-card">
-          <div class="t">Densidad por oficina</div>
-          <div class="v">{{ ppo if ppo is not none else '-' }} pers/of</div>
-          <div class="r">Referencia: hasta 2 adecuado, 2-3 intensivo, mas de 3 saturado.</div>
-          <span class="sede-estado {{ ppo_class }}">{{ ppo_state }}</span>
-        </article>
-
-        {# Seguridad y vencimientos: duplicado con panel/centro operativo. Oculto en ficha para reducir ruido. #}
-        <article class="sede-analisis-card" style="display:none">
-          <div class="t">Seguridad y vencimientos</div>
-          <div class="v">{{ venc45 if venc45 is not none else '-' }} proximos</div>
-          <div class="r">Lectura segun vencimientos de seguridad en 45 dias.</div>
-          <span class="sede-estado {{ seg_class }}">{{ seg_state }}</span>
+          <div class="t">Depositos</div>
+          <div class="v">{{ ro.depositos if ro.depositos is not none else 'S/D' }}</div>
         </article>
 
         <article class="sede-analisis-card">
-          <div class="t">Indice general interno</div>
-          <div class="v">{{ idx_general if idx_general is not none else '-' }}{% if idx_general is not none %}%{% endif %}</div>
-          <div class="r">Promedio interno de ocupacion, densidad y seguridad.</div>
-          <span class="sede-estado {{ idx_class }}">{{ idx_state }}</span>
+          <div class="t">m2 totales</div>
+          <div class="v">{% if ro.m2_totales is not none %}{{ ro.m2_totales }} m2{% else %}S/D{% endif %}</div>
+        </article>
+
+        <article class="sede-analisis-card">
+          <div class="t">m2 por persona</div>
+          <div class="v">{% if ro.m2_por_persona is not none %}{{ ro.m2_por_persona }} m2/p{% else %}S/D{% endif %}</div>
+        </article>
+
+        <article class="sede-analisis-card">
+          <div class="t">Depositos ocupados</div>
+          <div class="v">{{ ro.depositos_ocupados if ro.depositos_ocupados is not none else 'S/D' }}</div>
+        </article>
+
+        <article class="sede-analisis-card">
+          <div class="t">Depositos libres</div>
+          <div class="v">{{ ro.depositos_libres if ro.depositos_libres is not none else 'S/D' }}</div>
+        </article>
+
+        <article class="sede-analisis-card">
+          <div class="t">Sanitarios</div>
+          <div class="v">{{ ro.sanitarios if ro.sanitarios is not none else 'S/D' }}</div>
+        </article>
+
+        <article class="sede-analisis-card">
+          <div class="t">Personas por sanitario</div>
+          <div class="v">{% if ro.personas_por_sanitario is not none %}{{ ro.personas_por_sanitario }} pers/sanit.{% else %}S/D{% endif %}</div>
         </article>
       </div>
 
       <div class="sede-analisis-foot">
-        Criterios orientativos para gestion interna basados en estandares de ocupacion administrativa y condiciones basicas de higiene y seguridad.
+        Datos orientativos para gestion interna. No certifica cumplimiento legal.
       </div>
     </div>
 
@@ -8166,29 +8050,44 @@
     <div class="card panel-topbar">
 
       <div class="panel-tabs panel-tabs-top">
-        <div class="panel-tab-row" aria-label="Navegación técnica">
-          <div class="panel-tab-group" aria-label="Operativo">
-            <span class="panel-tab-group-title">Operativo</span>
+        <div class="panel-tab-row" aria-label="Navegacion tecnica">
+          <div class="panel-tab-group" aria-label="Uso diario">
+            <span class="panel-tab-group-title">Uso diario</span>
+            <a class="ptab tone-personal {% if tab=='personal' %}active{% endif %}"
+              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='personal', view=view) }}">Personal</a>
+            <a class="ptab tone-dep {% if tab=='depositos' %}active{% endif %}"
+              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='depositos', view=view) }}">Depositos</a>
             <a class="ptab tone-planos {% if tab=='planos' %}active{% endif %}"
               href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='planos', view=view) }}#planos">Planos</a>
+          </div>
+
+          <div class="panel-tab-group" aria-label="Uso frecuente">
+            <span class="panel-tab-group-title">Uso frecuente</span>
             <a class="ptab tone-aires {% if tab=='aires' %}active{% endif %}"
               href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='aires', view=view) }}">Aires</a>
             <a class="ptab tone-lum {% if tab=='luminarias' %}active{% endif %}"
               href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='luminarias', view=view) }}">Luminarias</a>
-            <a class="ptab tone-mata {% if tab=='matafuegos' %}active{% endif %}"
-              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='matafuegos', view=view) }}">Matafuegos</a>
-            <a class="ptab tone-eva {% if tab=='evacuacion' %}active{% endif %}"
-              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='evacuacion', view=view) }}">Evacuación</a>
-            <a class="ptab tone-dep {% if tab=='depositos' %}active{% endif %}"
-              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='depositos', view=view) }}">Depósitos</a>
             <a class="ptab tone-mob {% if tab=='mobiliario' %}active{% endif %}"
               href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='mobiliario', view=view) }}">Inventario operativo</a>
           </div>
 
-          <div class="panel-tab-group" aria-label="Información">
-            <span class="panel-tab-group-title">Información</span>
-            <a class="ptab tone-personal {% if tab=='personal' %}active{% endif %}"
-              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='personal', view=view) }}">Personal</a>
+          <div class="panel-tab-group" aria-label="Uso ocasional">
+            <span class="panel-tab-group-title">Uso ocasional</span>
+            <a class="ptab tone-mata {% if tab=='matafuegos' %}active{% endif %}"
+              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='matafuegos', view=view) }}">Matafuegos</a>
+            <a class="ptab tone-eva {% if tab=='evacuacion' %}active{% endif %}"
+              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='evacuacion', view=view) }}">Evacuacion</a>
+            {# SG-SST: no hay boton operativo equivalente en esta vista; se deja sin crear. #}
+          </div>
+
+          <div class="panel-tab-group" aria-label="Documental historico">
+            <span class="panel-tab-group-title">Documental</span>
+            <a class="ptab tone-resumen-sedes" href="{{ url_for('sgi_documentacion_informes', sede=sede.codigo) }}">Informes</a>
+            <a class="ptab tone-resumen-sedes {% if view=='resumen' and sub=='info' %}active{% endif %}"
+              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab=tab, view='resumen', home=home_arg, sub='info') }}#info-sede">Documentacion</a>
+            {% if sede.url_planos_drive %}
+            <a class="ptab tone-planos" target="_blank" rel="noopener" href="{{ sede.url_planos_drive }}">Link Drive</a>
+            {% endif %}
           </div>
 
           <div class="panel-tab-group" aria-label="Control">
@@ -8211,14 +8110,12 @@
                     <span>Comparativa</span><span class="muted">Cruzar datos</span>
                   </a>
                 </div>
-
-
               </div>
             </details>
           </div>
 
           <div class="panel-tab-group" aria-label="Resumen">
-            <span class="panel-tab-group-title">Resumen</span>
+            <span class="panel-tab-group-title">Navegacion</span>
             <a class="ptab tone-resumen-sedes" href="{{ url_for('sedes_resumen_mpd') }}">Resumen sedes</a>
           </div>
         </div>
@@ -8473,7 +8370,7 @@
 
 
 
-        {% if tab == 'personal' %}
+                {% if tab == 'personal' %}
 
         {% if home_mode %}
 
@@ -8504,152 +8401,57 @@
 
         {% else %}
 
-
-
-
-
         <div class="panel-section-head">
           <div class="panel-section-title">Personal</div>
           <a class="btn primary" href="{{ url_for('personal_home', sede=sede.codigo, piso=piso, q='') }}">+ Agregar / Editar</a>
         </div>
 
-
-
-
-
-
-
         {% if personal_rows and personal_rows|length > 0 %}
 
-
-
-        <div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;">
-
-
-
-          <table style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;">
-
-
-
-            <thead style="background:#f3f4f6;">
-
-
-
-              <tr>
-
-
-
-                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);width:70px;">Local</th>
-
-
-
-                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);">Nombre</th>
-
-
-
-                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);">Dependencia</th>
-
-
-
-                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);">Email</th>
-
-
-
-              </tr>
-
-
-
-            </thead>
-
-
-
-            <tbody>
-
-
-
-              {% for p in personal_rows %}
-
-
-
-              <tr>
-
-
-
-                <td style="padding:8px;border-bottom:1px solid var(--border);font-weight:800;">{{ render_local_badge(sede.codigo, p.codigo_local, p.codigo_local)|safe }}</td>
-
-
-
-                <td style="padding:8px;border-bottom:1px solid var(--border);">{{ p.nombre_apellido }}</td>
-
-
-
-                <td style="padding:8px;border-bottom:1px solid var(--border);">{{ p.dependencia }}</td>
-
-
-
-                <td style="padding:8px;border-bottom:1px solid var(--border);">{{ p.email_admin or "" }}</td>
-
-
-
-              </tr>
-
-
-
-              {% endfor %}
-
-
-
-            </tbody>
-
-
-
-          </table>
-
-
-
+        <div style="margin:0 0 8px 0;">
+          <input
+            type="search"
+            id="personalFilterInput"
+            placeholder="Buscar persona, depósito o dependencia..."
+            style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:10px;font-size:12px;background:#fff;"
+            autocomplete="off">
         </div>
 
-
+        <div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+          <table id="personalTable" style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;">
+            <thead style="background:#f3f4f6;">
+              <tr>
+                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);width:70px;">Local</th>
+                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);">Nombre</th>
+                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);">Dependencia</th>
+                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);">Email</th>
+              </tr>
+            </thead>
+            <tbody id="personalTableBody">
+              {% for p in personal_rows %}
+              <tr class="personal-row"
+                  data-search="{{ (p.nombre_apellido or '')|lower }} {{ (p.codigo_local or '')|lower }} {{ (p.dependencia or '')|lower }} {{ (p.email_admin or '')|lower }}">
+                <td style="padding:8px;border-bottom:1px solid var(--border);font-weight:800;">{{ render_local_badge(sede.codigo, p.codigo_local, p.codigo_local)|safe }}</td>
+                <td style="padding:8px;border-bottom:1px solid var(--border);">{{ p.nombre_apellido }}</td>
+                <td style="padding:8px;border-bottom:1px solid var(--border);">{{ p.dependencia }}</td>
+                <td style="padding:8px;border-bottom:1px solid var(--border);">{{ p.email_admin or "" }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
 
         {% else %}
 
-
-
         <div style="color:var(--muted);font-size:12px;">
-
-
-
           No hay personal cargado para este filtro:
-
-
-
-          <strong>{{ sede.codigo }}</strong> · <strong>{{ piso }}</strong>{% if local %} · <strong>{{ local
-
-
-
-            }}</strong>{% endif %}.
-
-
-
-          <br>Probá tocar un local o “Quitar filtro”.
-
-
-
+          <strong>{{ sede.codigo }}</strong> - <strong>{{ piso }}</strong>{% if local %} - <strong>{{ local }}</strong>{% endif %}.
+          <br>Proba tocar un local o "Quitar filtro".
         </div>
 
-
-
         {% endif %}
 
-
-
-
-
-
-
         {% endif %}
-
-
 
         {% elif tab == 'mobiliario' %}
 
@@ -10637,7 +10439,24 @@
     });
   })();
 </script>
+<script>
+  (function () {
+    const input = document.getElementById("personalFilterInput");
+    const body = document.getElementById("personalTableBody");
+    if (!input || !body) return;
 
+    const rows = Array.from(body.querySelectorAll(".personal-row"));
+    function applyFilter() {
+      const q = String(input.value || "").trim().toLowerCase();
+      rows.forEach((row) => {
+        const hay = String(row.getAttribute("data-search") || "");
+        row.style.display = (!q || hay.indexOf(q) !== -1) ? "" : "none";
+      });
+    }
+
+    input.addEventListener("input", applyFilter);
+  })();
+</script>
 {% endblock %}
 
 

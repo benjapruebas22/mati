@@ -5377,6 +5377,94 @@ def sede_ficha(codigo):
           AND COALESCE(activo,1)=1
     """, (codigo,)).fetchone()
 
+    # -------------------------
+    # RESUMEN OPERATIVO (ficha)
+    # -------------------------
+    personas_total = None
+    try:
+        personas_total = per_kpi["personas"] if (per_kpi and per_kpi["personas"] is not None) else None
+    except Exception:
+        personas_total = None
+
+    depositos_total = None
+    if depositos_m is not None:
+        depositos_total = depositos_m
+    else:
+        try:
+            depositos_total = db.execute(
+                "SELECT COUNT(*) AS c FROM sedes_depositos WHERE codigo_sede = ?",
+                (codigo,),
+            ).fetchone()["c"]
+        except Exception:
+            try:
+                depositos_total = infra["depositos"] if (infra and infra["depositos"] is not None) else None
+            except Exception:
+                depositos_total = None
+
+    m2_totales_ro = metricas.get("m2_totales")
+    if m2_totales_ro is None:
+        try:
+            m2_totales_ro = infra["m2_totales"] if (infra and infra["m2_totales"] is not None) else None
+        except Exception:
+            m2_totales_ro = None
+
+    m2_por_persona_ro = metricas.get("m2_por_persona")
+    if m2_por_persona_ro is None:
+        try:
+            m2_por_persona_ro = infra["m2_por_persona"] if (infra and infra["m2_por_persona"] is not None) else None
+        except Exception:
+            m2_por_persona_ro = None
+    if m2_por_persona_ro is None and m2_totales_ro is not None and personas_total not in (None, 0):
+        try:
+            m2_por_persona_ro = round(float(m2_totales_ro) / float(personas_total), 2)
+        except Exception:
+            m2_por_persona_ro = None
+
+    sanitarios_total = None
+    try:
+        sanitarios_total = infra["banios"] if (infra and infra["banios"] is not None) else None
+    except Exception:
+        sanitarios_total = None
+
+    depositos_ocupados = None
+    try:
+        depositos_ocupados = db.execute("""
+            SELECT COALESCE(COUNT(DISTINCT codigo_local), 0) AS c
+            FROM personal_sede
+            WHERE codigo_sede = ?
+              AND COALESCE(activo,1)=1
+              AND NULLIF(TRIM(COALESCE(codigo_local,'')), '') IS NOT NULL
+        """, (codigo,)).fetchone()["c"]
+    except Exception:
+        depositos_ocupados = None
+
+    depositos_libres = None
+    if depositos_total is not None and depositos_ocupados is not None:
+        try:
+            d_total = float(depositos_total)
+            d_ocup = float(depositos_ocupados)
+            depositos_libres = max(int(round(d_total - d_ocup)), 0)
+        except Exception:
+            depositos_libres = None
+
+    personas_por_sanitario = None
+    if personas_total is not None and sanitarios_total not in (None, 0):
+        try:
+            personas_por_sanitario = round(float(personas_total) / float(sanitarios_total), 2)
+        except Exception:
+            personas_por_sanitario = None
+
+    resumen_operativo = {
+        "personas": personas_total,
+        "depositos": depositos_total,
+        "m2_totales": m2_totales_ro,
+        "m2_por_persona": m2_por_persona_ro,
+        "depositos_ocupados": depositos_ocupados,
+        "depositos_libres": depositos_libres,
+        "sanitarios": sanitarios_total,
+        "personas_por_sanitario": personas_por_sanitario,
+    }
+
     seg_vencen = db.execute("""
         SELECT COALESCE(COUNT(*),0) AS vencen_pronto
         FROM matafuegos_sede
@@ -6477,6 +6565,7 @@ def sede_ficha(codigo):
         seg_vencen=seg_vencen,
         desinf_kpi=desinf_kpi,
         metricas=metricas,
+        resumen_operativo=resumen_operativo,
         depositos_kpi=depositos_kpi,
         eventos_sede=eventos_sede,
         evac_responsables=evac_responsables,
