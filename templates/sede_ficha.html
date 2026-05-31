@@ -2947,9 +2947,11 @@
 
   .sede-global-search {
     margin: 10px 0 2px;
-    padding: 12px 14px;
+    padding: 12px 14px 10px;
     display: grid;
     gap: 8px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
   }
 
   .sede-global-search-title {
@@ -2963,6 +2965,37 @@
   .sede-global-search-hint {
     font-size: 11px;
     color: #64748b;
+  }
+  .sede-global-search-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    font-size: 13px;
+    background: #fff;
+    color: #0f172a;
+  }
+  .sede-global-search-input:focus {
+    outline: 3px solid rgba(37, 99, 235, 0.16);
+    outline-offset: 1px;
+    border-color: #93c5fd;
+  }
+  .sede-global-search-status {
+    min-height: 17px;
+    font-size: 11px;
+    color: #475569;
+  }
+  .sede-global-search-status.error {
+    color: #b91c1c;
+    font-weight: 700;
+  }
+  .sede-global-search-status .link {
+    color: #1d4ed8;
+    font-weight: 700;
+    text-decoration: none;
+  }
+  .sede-global-search-status .link:hover {
+    text-decoration: underline;
   }
 
 
@@ -3179,8 +3212,15 @@
   .plan-left {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 5px;
     min-width: 0;
+  }
+
+  .plan-title {
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: .02em;
+    color: #334155;
   }
 
   .plan-subtitle {
@@ -3235,29 +3275,11 @@
 
 
   .plan-actions {
-
-
-
     display: flex;
-
-
-
     align-items: center;
-
-
-
-    gap: 8px;
-
-
-
+    gap: 6px;
     flex-wrap: wrap;
-
-
-
     justify-content: flex-end;
-
-
-
   }
 
 
@@ -3807,18 +3829,17 @@
 
   .panel-tabs.panel-tabs-top {
     padding: 10px 12px;
-    grid-template-columns: 1fr auto;
-    align-items: center;
+    grid-template-columns: 1fr;
+    align-items: start;
   }
   .panel-tabs.panel-tabs-top .panel-secondary-link {
     justify-self: end;
   }
 
   .panel-tab-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 8px;
   }
 
   .panel-tab-row .ptab {
@@ -3907,23 +3928,30 @@
   }
 
   .panel-tab-group {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 7px;
+    padding: 10px 10px 9px;
+    border: 1px solid #dbe5f0;
+    border-radius: 12px;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  }
+
+  .panel-tab-group-links {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 6px;
-    padding: 6px 8px;
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
-    background: #f8fafc;
   }
 
   .panel-tab-group-title {
     font-size: 10px;
     font-weight: 900;
-    color: #475569;
+    color: #334155;
     text-transform: uppercase;
-    letter-spacing: .04em;
-    margin-right: 2px;
+    letter-spacing: .08em;
+    margin-right: 0;
   }
 
 
@@ -3934,37 +3962,15 @@
 
 
   .ptab {
-
-
-
     padding: 6px 10px;
-
-
-
-    border-radius: 999px;
-
-
-
+    border-radius: 9px;
     border: 1px solid var(--border);
-
-
-
     background: #fff;
-
-
-
     font-size: 12px;
-
-
-
     text-decoration: none;
-
-
-
     color: #111827;
-
-
-
+    font-weight: 700;
+    line-height: 1.1;
   }
 
 
@@ -3974,17 +3980,8 @@
 
 
   .ptab.active {
-
-
-
     border-width: 2px;
-
-
-
     box-shadow: 0 6px 12px rgba(15, 23, 42, 0.12);
-
-
-
   }
 
 
@@ -6613,8 +6610,10 @@
         id="sedeGlobalSearchInput"
         placeholder="Buscar persona, depósito, dependencia o ambiente..."
         autocomplete="off"
-        style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-size:13px;background:#fff;">
+        class="sede-global-search-input">
+      <div id="sedeGlobalSearchStatus" class="sede-global-search-status" aria-live="polite"></div>
       <div class="sede-global-search-hint">Filtra visualmente por persona, local/deposito, dependencia, email y ambiente.</div>
+      <script id="sedeSearchIndexData" type="application/json">{{ {'personal': sede_search_personal, 'depositos': sede_search_depositos}|tojson }}</script>
     </div>
     {% endif %}
 
@@ -8099,51 +8098,61 @@
         <div class="panel-tab-row" aria-label="Navegacion tecnica">
           <div class="panel-tab-group" aria-label="Operacion">
             <span class="panel-tab-group-title">OPERACI&Oacute;N</span>
-            <a class="ptab tone-personal {% if tab=='personal' %}active{% endif %}"
-              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='personal', view=view) }}">Personal</a>
-            <a class="ptab tone-dep {% if tab=='depositos' %}active{% endif %}"
-              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='depositos', view=view) }}">Depositos</a>
-            <a class="ptab tone-planos {% if tab=='planos' %}active{% endif %}"
-              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='planos', view=view) }}#planos">Planos</a>
+            <div class="panel-tab-group-links">
+              <a class="ptab tone-personal {% if tab=='personal' %}active{% endif %}" data-module="personal"
+                href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='personal', view=view) }}">Personal</a>
+              <a class="ptab tone-dep {% if tab=='depositos' %}active{% endif %}" data-module="depositos"
+                href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='depositos', view=view) }}">Depositos</a>
+              <a class="ptab tone-planos {% if tab=='planos' %}active{% endif %}" data-module="planos"
+                href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='planos', view=view) }}#planos">Planos</a>
+            </div>
           </div>
 
           <div class="panel-tab-group" aria-label="Mantenimiento">
             <span class="panel-tab-group-title">MANTENIMIENTO</span>
-            <a class="ptab tone-aires {% if tab=='aires' %}active{% endif %}"
-              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='aires', view=view) }}">Aires</a>
-            <a class="ptab tone-lum {% if tab=='luminarias' %}active{% endif %}"
-              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='luminarias', view=view) }}">Luminarias</a>
-            <a class="ptab tone-mob {% if tab=='mobiliario' %}active{% endif %}"
-              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='mobiliario', view=view) }}">Inventario operativo</a>
+            <div class="panel-tab-group-links">
+              <a class="ptab tone-aires {% if tab=='aires' %}active{% endif %}" data-module="aires"
+                href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='aires', view=view) }}">Aires</a>
+              <a class="ptab tone-lum {% if tab=='luminarias' %}active{% endif %}" data-module="luminarias"
+                href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='luminarias', view=view) }}">Luminarias</a>
+              <a class="ptab tone-mob {% if tab=='mobiliario' %}active{% endif %}" data-module="mobiliario"
+                href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='mobiliario', view=view) }}">Inventario operativo</a>
+            </div>
           </div>
 
           <div class="panel-tab-group" aria-label="Control">
             <span class="panel-tab-group-title">CONTROL</span>
-            <a class="ptab tone-mata {% if tab=='matafuegos' %}active{% endif %}"
-              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='matafuegos', view=view) }}">Matafuegos</a>
-            <a class="ptab tone-eva {% if tab=='evacuacion' %}active{% endif %}"
-              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='evacuacion', view=view) }}">Evacuacion</a>
-            {% if has_sst_general %}
-            <a class="ptab tone-personal" href="{{ url_for('sst_general') }}">SG-SST</a>
-            {% endif %}
-            {% if has_relevamientos %}
-            <a class="ptab tone-personal" href="{{ url_for('auditoria_mobiliario') }}">Relevamientos</a>
-            {% endif %}
+            <div class="panel-tab-group-links">
+              <a class="ptab tone-mata {% if tab=='matafuegos' %}active{% endif %}" data-module="matafuegos"
+                href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='matafuegos', view=view) }}">Matafuegos</a>
+              <a class="ptab tone-eva {% if tab=='evacuacion' %}active{% endif %}" data-module="evacuacion"
+                href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='evacuacion', view=view) }}">Evacuacion</a>
+              {% if has_sst_general %}
+              <a class="ptab tone-personal" href="{{ url_for('sst_general') }}">SG-SST</a>
+              {% endif %}
+              {% if has_relevamientos %}
+              <a class="ptab tone-personal" href="{{ url_for('auditoria_mobiliario') }}">Relevamientos</a>
+              {% endif %}
+            </div>
           </div>
 
           <div class="panel-tab-group" aria-label="Documentacion">
             <span class="panel-tab-group-title">DOCUMENTACI&Oacute;N</span>
-            <a class="ptab tone-resumen-sedes" href="{{ url_for('sgi_documentacion_informes', sede=sede.codigo) }}">Informes</a>
-            <a class="ptab tone-resumen-sedes {% if view=='resumen' and sub=='info' %}active{% endif %}"
-              href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab=tab, view='resumen', home=home_arg, sub='info') }}#info-sede">Documentacion</a>
-            {% if sede.url_planos_drive %}
-            <a class="ptab tone-planos" target="_blank" rel="noopener" href="{{ sede.url_planos_drive }}">Link Drive</a>
-            {% endif %}
+            <div class="panel-tab-group-links">
+              <a class="ptab tone-resumen-sedes" href="{{ url_for('sgi_documentacion_informes', sede=sede.codigo) }}">Informes</a>
+              <a class="ptab tone-resumen-sedes {% if view=='resumen' and sub=='info' %}active{% endif %}"
+                href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab=tab, view='resumen', home=home_arg, sub='info') }}#info-sede">Documentacion</a>
+              {% if sede.url_planos_drive %}
+              <a class="ptab tone-planos" target="_blank" rel="noopener" href="{{ sede.url_planos_drive }}">Link Drive</a>
+              {% endif %}
+            </div>
           </div>
 
           <div class="panel-tab-group" aria-label="Resumen">
             <span class="panel-tab-group-title">NAVEGACION</span>
-            <a class="ptab tone-resumen-sedes" href="{{ url_for('sedes_resumen_mpd') }}">Resumen sedes</a>
+            <div class="panel-tab-group-links">
+              <a class="ptab tone-resumen-sedes" href="{{ url_for('sedes_resumen_mpd') }}">Resumen sedes</a>
+            </div>
           </div>
         </div>
       </div>
@@ -8167,6 +8176,7 @@
       <div class="plan-head">
 
         <div class="plan-left">
+        <div class="plan-title">Plano operativo · {{ piso }}</div>
 
         <div class="tabs">
 
@@ -8317,6 +8327,7 @@
 
 
         <a class="loc {% if local==d %}active{% endif %}"
+          data-local-code="{{ d }}"
           data-search="{{ d }} {{ (locales_desc.get(d) if locales_desc is defined else '') }}"
           title="{{ (locales_desc.get(d) if locales_desc is defined else '') }}"
           href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=d, tab=tab, view=view) }}">{{ render_local_badge(sede.codigo, d, d)|safe }}</a>
@@ -8363,6 +8374,18 @@
 
 
 
+    {% set panel_module_map = {
+      'personal':'Personal',
+      'depositos':'Depósitos',
+      'planos':'Planos',
+      'aires':'Aires',
+      'luminarias':'Luminarias',
+      'mobiliario':'Inventario operativo',
+      'matafuegos':'Matafuegos',
+      'evacuacion':'Evacuación',
+      'resumen':'Resumen'
+    } %}
+    {% set panel_module_label = panel_module_map.get(tab, tab|capitalize) %}
     <div class="card panel-card">
 
 
@@ -8371,7 +8394,7 @@
 
 
 
-        <div class="panel-title">Panel operativo</div>
+        <div class="panel-title">Panel operativo · {{ panel_module_label }}</div>
 
 
 
@@ -8458,7 +8481,8 @@
             <tbody id="personalTableBody">
               {% for p in personal_rows %}
               <tr class="personal-row"
-                  data-search="{{ (p.nombre_apellido or '')|lower }} {{ (p.codigo_local or '')|lower }} {{ (p.dependencia or '')|lower }} {{ (p.email_admin or '')|lower }}">
+                  data-search-type="personal"
+                  data-search="{{ sede.codigo }} {{ piso }} {{ (p.nombre_apellido or '')|lower }} {{ (p.codigo_local or '')|lower }} {{ (p.dependencia or '')|lower }} {{ (p.email_admin or '')|lower }} {{ (p.estado or '')|lower }}">
                 <td style="padding:8px;border-bottom:1px solid var(--border);font-weight:800;">{{ render_local_badge(sede.codigo, p.codigo_local, p.codigo_local)|safe }}</td>
                 <td style="padding:8px;border-bottom:1px solid var(--border);">{{ p.nombre_apellido }}</td>
                 <td style="padding:8px;border-bottom:1px solid var(--border);">{{ p.dependencia }}</td>
@@ -8468,6 +8492,7 @@
             </tbody>
           </table>
         </div>
+        <div id="personalFilterEmpty" style="display:none;margin-top:8px;color:#64748b;font-size:12px;">No se encontraron resultados para esta b&uacute;squeda.</div>
 
         {% else %}
 
@@ -8791,7 +8816,8 @@
 
 
 
-              <tr>
+              <tr data-search-type="depositos"
+                  data-search="{{ sede.codigo }} {{ piso }} {{ (d.codigo_local or '')|lower }} {{ (d.descripcion or '')|lower }}">
 
 
 
@@ -10469,20 +10495,78 @@
 </script>
 <script>
   (function () {
+    function normalizeSearchText(value) {
+      let s = String(value || "").toLowerCase();
+      try {
+        s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      } catch (_e) {}
+      s = s.replace(/[º°]/g, "o");
+      s = s.replace(/[\.,;:\/\\\(\)\[\]\{\}\-_]+/g, " ");
+      s = s.replace(/\b(nro|nro\.|numero|num)\b/g, " n ");
+      s = s.replace(/\bn[o]?\b/g, " n ");
+      s = s.replace(/\bdefensoria\b/g, "def");
+      s = s.replace(/\bdefensorias\b/g, "def");
+      s = s.replace(/\bdef gral\b/g, "def general");
+      s = s.replace(/\s+/g, " ").trim();
+      return s;
+    }
+
+    function searchTokens(value) {
+      const q = normalizeSearchText(value);
+      if (!q) return [];
+      return q.split(" ").filter(Boolean);
+    }
+
+    function searchMatch(haystack, query) {
+      const q = normalizeSearchText(query);
+      if (!q) return true;
+      const hay = normalizeSearchText(haystack);
+      const toks = searchTokens(q);
+      return toks.every((t) => hay.indexOf(t) !== -1);
+    }
+
+    function normalizeLocalCode(value) {
+      const n = normalizeSearchText(value).replace(/\s+/g, "");
+      const m = n.match(/d0*([0-9]{1,3})/);
+      if (!m) return "";
+      const num = parseInt(m[1], 10);
+      if (!Number.isFinite(num) || num <= 0) return "";
+      return "D" + String(num).padStart(2, "0");
+    }
+
+    window.normalizeSearchText = normalizeSearchText;
+    window.sgiSearchTokens = searchTokens;
+    window.sgiSearchMatch = searchMatch;
+    window.sgiNormalizeLocalCode = normalizeLocalCode;
+  })();
+</script>
+<script>
+  (function () {
     const input = document.getElementById("personalFilterInput");
     const body = document.getElementById("personalTableBody");
     if (!input || !body) return;
 
+    const match = window.sgiSearchMatch || ((hay, q) => String(hay || "").toLowerCase().indexOf(String(q || "").toLowerCase()) !== -1);
     const rows = Array.from(body.querySelectorAll(".personal-row"));
+    const emptyEl = document.getElementById("personalFilterEmpty");
+
     function applyFilter() {
-      const q = String(input.value || "").trim().toLowerCase();
+      const qRaw = String(input.value || "");
+      let visible = 0;
       rows.forEach((row) => {
-        const hay = String(row.getAttribute("data-search") || "");
-        row.style.display = (!q || hay.indexOf(q) !== -1) ? "" : "none";
+        const hay = (row.getAttribute("data-search") || "") + " " + (row.textContent || "");
+        const ok = match(hay, qRaw);
+        row.style.display = ok ? "" : "none";
+        row.classList.toggle("sede-search-hit", !!qRaw && ok);
+        if (ok) visible += 1;
       });
+      if (emptyEl) {
+        emptyEl.style.display = (qRaw.trim() && visible === 0) ? "" : "none";
+      }
     }
 
     input.addEventListener("input", applyFilter);
+    applyFilter();
   })();
 </script>
 <script>
@@ -10490,18 +10574,92 @@
     const input = document.getElementById("sedeGlobalSearchInput");
     if (!input) return;
 
-    const normalize = (value) =>
-      String(value || "")
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .trim();
+    const statusEl = document.getElementById("sedeGlobalSearchStatus");
+    const match = window.sgiSearchMatch || ((hay, q) => String(hay || "").toLowerCase().indexOf(String(q || "").toLowerCase()) !== -1);
+    const normalize = window.normalizeSearchText || ((v) => String(v || "").toLowerCase().trim());
+    const normalizeLocalCode = window.sgiNormalizeLocalCode || (() => "");
+    const sedeCodigo = "{{ sede.codigo }}";
+    const currentTab = "{{ tab }}";
+    const storageKey = "sgi:sede:global-search:" + sedeCodigo;
+    const switchKey = "sgi:sede:last-switch:" + sedeCodigo;
 
     const localChips = Array.from(document.querySelectorAll(".locals .loc:not(.clear)"));
+    const panelRows = Array.from(document.querySelectorAll(".panel-body table tbody tr"));
+    const linkPersonal = document.querySelector("a[data-module='personal']");
+    const linkDepositos = document.querySelector("a[data-module='depositos']");
+
+    let indexData = { personal: [], depositos: [] };
+    const indexEl = document.getElementById("sedeSearchIndexData");
+    if (indexEl) {
+      try {
+        const parsed = JSON.parse(indexEl.textContent || "{}");
+        indexData.personal = Array.isArray(parsed.personal) ? parsed.personal : [];
+        indexData.depositos = Array.isArray(parsed.depositos) ? parsed.depositos : [];
+      } catch (_e) {
+        indexData = { personal: [], depositos: [] };
+      }
+    }
+
+    const personalIndex = indexData.personal.map((p) => {
+      const localCode = String(p.codigo_local || "");
+      const search = [
+        sedeCodigo,
+        p.piso || "",
+        localCode,
+        p.nombre_apellido || "",
+        p.dependencia || "",
+        p.email_admin || "",
+        p.estado || "",
+      ].join(" ");
+      return { local: localCode, search };
+    });
+    const depositosIndex = indexData.depositos.map((d) => {
+      const localCode = String(d.codigo_local || "");
+      const search = [sedeCodigo, localCode, d.descripcion || ""].join(" ");
+      return { local: localCode, search };
+    });
+
+    function getLocalChipByCode(code) {
+      if (!code) return null;
+      return localChips.find((chip) => String(chip.getAttribute("data-local-code") || "").toUpperCase() === code.toUpperCase()) || null;
+    }
+
+    function formatStatus(parts, isError) {
+      if (!statusEl) return;
+      statusEl.classList.toggle("error", !!isError);
+      statusEl.innerHTML = parts.join(" ");
+    }
+
+    function maybeAutoSwitch(qRaw, personalCount, depositosCount) {
+      if (!qRaw.trim()) return false;
+      if (currentTab === "personal" || currentTab === "depositos") return false;
+      let target = "";
+      let href = "";
+      if (personalCount > 0 && linkPersonal) {
+        target = "personal";
+        href = linkPersonal.href;
+      } else if (depositosCount > 0 && linkDepositos) {
+        target = "depositos";
+        href = linkDepositos.href;
+      }
+      if (!target || !href) return false;
+
+      const switchSig = target + "|" + normalize(qRaw);
+      const last = sessionStorage.getItem(switchKey) || "";
+      if (last === switchSig) return false;
+      sessionStorage.setItem(switchKey, switchSig);
+      sessionStorage.setItem(storageKey, qRaw);
+      window.location.href = href;
+      return true;
+    }
 
     function applyGlobalFilter() {
       const qRaw = String(input.value || "");
       const q = normalize(qRaw);
+      sessionStorage.setItem(storageKey, qRaw);
+      if (!q) {
+        sessionStorage.removeItem(switchKey);
+      }
 
       const personalInput = document.getElementById("personalFilterInput");
       if (personalInput) {
@@ -10509,29 +10667,72 @@
         personalInput.dispatchEvent(new Event("input", { bubbles: true }));
       }
 
-      const rows = Array.from(document.querySelectorAll(".panel-body table tbody tr"));
-      rows.forEach((row) => {
-        const hay = normalize((row.getAttribute("data-search") || "") + " " + (row.textContent || ""));
-        const ok = !q || hay.indexOf(q) !== -1;
+      let visibleRows = 0;
+      panelRows.forEach((row) => {
+        const hay = (row.getAttribute("data-search") || "") + " " + (row.textContent || "");
+        const ok = !q || match(hay, qRaw);
         row.style.display = ok ? "" : "none";
         row.classList.toggle("sede-search-hit", !!q && ok);
+        if (ok) visibleRows += 1;
       });
 
+      const personalMatches = q ? personalIndex.filter((p) => match(p.search, qRaw)) : [];
+      const depositosMatches = q ? depositosIndex.filter((d) => match(d.search, qRaw)) : [];
+      const exactLocal = normalizeLocalCode(qRaw);
+      const exactLocalChip = getLocalChipByCode(exactLocal);
+
+      const localCodes = new Set();
+      if (exactLocal) localCodes.add(exactLocal);
+      personalMatches.forEach((p) => { if (p.local) localCodes.add(String(p.local).toUpperCase()); });
+      depositosMatches.forEach((d) => { if (d.local) localCodes.add(String(d.local).toUpperCase()); });
+
       localChips.forEach((chip) => {
-        const hay = normalize(
-          (chip.getAttribute("data-search") || "") +
-          " " +
-          (chip.getAttribute("title") || "") +
-          " " +
-          (chip.textContent || "")
-        );
-        const ok = !q || hay.indexOf(q) !== -1;
+        const localCode = String(chip.getAttribute("data-local-code") || "").toUpperCase();
+        const hay = [
+          chip.getAttribute("data-search") || "",
+          chip.getAttribute("title") || "",
+          chip.textContent || "",
+          localCode
+        ].join(" ");
+        const byText = !q || match(hay, qRaw);
+        const byCode = !!q && localCode && localCodes.has(localCode);
+        const ok = !q ? true : (byText || byCode);
         chip.classList.toggle("search-hit", !!q && ok);
         chip.classList.toggle("search-dim", !!q && !ok);
       });
+
+      if (maybeAutoSwitch(qRaw, personalMatches.length, depositosMatches.length)) {
+        return;
+      }
+
+      if (!q) {
+        formatStatus(["Filtra visualmente por persona, local/deposito, dependencia, email y ambiente."], false);
+        return;
+      }
+
+      const parts = [
+        "<strong>Resultados:</strong>",
+        "Personal " + personalMatches.length + " ·",
+        "Depositos " + depositosMatches.length
+      ];
+      if (localCodes.size > 0) {
+        parts.push("· Locales " + Array.from(localCodes).slice(0, 6).join(", "));
+      }
+      if (exactLocalChip) {
+        parts.push('· <a class="link" href="' + exactLocalChip.href + '">Abrir ' + exactLocal + "</a>");
+      }
+
+      const hasAny = (personalMatches.length + depositosMatches.length + localCodes.size) > 0 || visibleRows > 0;
+      if (!hasAny) {
+        formatStatus(["No se encontraron resultados para esta busqueda."], true);
+      } else {
+        formatStatus(parts, false);
+      }
     }
 
     input.addEventListener("input", applyGlobalFilter);
+    const saved = sessionStorage.getItem(storageKey);
+    if (saved && !input.value) input.value = saved;
     applyGlobalFilter();
   })();
 </script>

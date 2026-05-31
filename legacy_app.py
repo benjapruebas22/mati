@@ -5689,6 +5689,8 @@ def sede_ficha(codigo):
     personal_rows = []
     mobiliario_rows = []
     depositos_rows = []
+    sede_search_personal = []
+    sede_search_depositos = []
 
     luminarias_rows = []
     luminarias_kpi = {"tubo_fria": 0, "tubo_calido": 0, "foco": 0, "panel": 0, "puestos_trabajo": 0}
@@ -5802,6 +5804,7 @@ def sede_ficha(codigo):
             where.append("p.codigo_local = ?")
             params.append(local)
 
+        estado_expr = "COALESCE(p.estado,'') AS estado" if has_col("personal_sede", "estado") else "'' AS estado"
         personal_rows = db.execute(f"""
             SELECT
                 p.id,
@@ -5809,7 +5812,8 @@ def sede_ficha(codigo):
                 p.codigo_local,
                 p.nombre_apellido,
                 p.dependencia,
-                p.email_admin
+                p.email_admin,
+                {estado_expr}
             FROM personal_sede p
             WHERE {" AND ".join(where)}
             ORDER BY p.codigo_local, p.nombre_apellido
@@ -6564,6 +6568,52 @@ def sede_ficha(codigo):
     except Exception:
         documentos_vinculados_sede = []
 
+    # -------------------------
+    # BUSCADOR GLOBAL (SOLO LECTURA)
+    # -------------------------
+    try:
+        piso_expr = "COALESCE(p.piso,'') AS piso" if has_col("personal_sede", "piso") else "'' AS piso"
+        estado_expr = "COALESCE(p.estado,'') AS estado" if has_col("personal_sede", "estado") else "'' AS estado"
+        rows_personal_sede = db.execute(f"""
+            SELECT
+                COALESCE(p.codigo_local,'') AS codigo_local,
+                {piso_expr},
+                COALESCE(p.nombre_apellido,'') AS nombre_apellido,
+                COALESCE(p.dependencia,'') AS dependencia,
+                COALESCE(p.email_admin,'') AS email_admin,
+                {estado_expr}
+            FROM personal_sede p
+            WHERE p.codigo_sede = ?
+            ORDER BY COALESCE(p.codigo_local,''), COALESCE(p.nombre_apellido,'')
+        """, (codigo,)).fetchall()
+        sede_search_personal = [{
+            "codigo_local": normalize_local_code(r["codigo_local"]),
+            "piso": (r["piso"] or "").strip().upper(),
+            "nombre_apellido": (r["nombre_apellido"] or "").strip(),
+            "dependencia": (r["dependencia"] or "").strip(),
+            "email_admin": (r["email_admin"] or "").strip(),
+            "estado": (r["estado"] or "").strip(),
+        } for r in rows_personal_sede]
+    except Exception:
+        sede_search_personal = []
+
+    try:
+        rows_deps_sede = db.execute("""
+            SELECT
+                COALESCE(codigo_local,'') AS codigo_local,
+                COALESCE(descripcion,'') AS descripcion
+            FROM sedes_depositos
+            WHERE codigo_sede = ?
+            ORDER BY COALESCE(codigo_local,'')
+        """, (codigo,)).fetchall()
+        sede_search_depositos = [{
+            "codigo_local": normalize_local_code(r["codigo_local"]),
+            "descripcion": (r["descripcion"] or "").strip(),
+        } for r in rows_deps_sede]
+        sede_search_depositos.sort(key=lambda d: local_sort_key(d["codigo_local"]))
+    except Exception:
+        sede_search_depositos = []
+
     has_sst_general = "sst_general" in app.view_functions
     has_relevamientos = "auditoria_mobiliario" in app.view_functions
 
@@ -6628,6 +6678,8 @@ def sede_ficha(codigo):
         cal_legend=cal_legend if home_mode else [],
         protocolo_limpieza_url=protocolo_limpieza_url,
         documentos_vinculados_sede=documentos_vinculados_sede,
+        sede_search_personal=sede_search_personal,
+        sede_search_depositos=sede_search_depositos,
         has_sst_general=has_sst_general,
         has_relevamientos=has_relevamientos,
     )
