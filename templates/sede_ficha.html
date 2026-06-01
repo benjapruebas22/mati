@@ -8485,6 +8485,7 @@
           <a class="btn" href="{{ link_maps }}" target="_blank" rel="noopener">Maps</a>
           {% endif %}
           <button type="button" class="btn" id="togglePlanVisibilityBtn" data-sede="{{ sede.codigo }}">Ocultar plano</button>
+          <button type="button" class="btn btn-xs" id="togglePanelVisibilityBtnTop" data-sede="{{ sede.codigo }}">Ver panel</button>
           {% if sede.codigo == 'S08' %}
           <a class="btn" href="{{ url_for('depositos_home') }}">Deposito general</a>
           {% endif %}
@@ -10998,17 +10999,19 @@
   (function () {
     const grid = document.getElementById("sedeOperativoGrid");
     const panel = document.querySelector(".panel-card");
-    const btn = document.getElementById("togglePanelVisibilityBtn");
-    if (!grid || !panel || !btn) return;
+    const btns = Array.from(document.querySelectorAll("#togglePanelVisibilityBtn, #togglePanelVisibilityBtnTop"));
+    if (!grid || !panel || btns.length === 0) return;
 
-    const sedeCode = String(btn.getAttribute("data-sede") || "{{ sede.codigo }}");
+    const sedeCode = String((btns[0] && btns[0].getAttribute("data-sede")) || "{{ sede.codigo }}");
     const key = "sgi:sede:panel-visible:" + sedeCode;
 
     function setVisible(isVisible) {
       panel.classList.toggle("is-collapsed", !isVisible);
       grid.classList.toggle("panel-hidden", !isVisible);
-      btn.textContent = isVisible ? "Ocultar panel" : "Ver panel";
-      btn.setAttribute("aria-expanded", isVisible ? "true" : "false");
+      btns.forEach((btn) => {
+        btn.textContent = isVisible ? "Ocultar panel" : "Ver panel";
+        btn.setAttribute("aria-expanded", isVisible ? "true" : "false");
+      });
       sessionStorage.setItem(key, isVisible ? "1" : "0");
     }
 
@@ -11019,9 +11022,11 @@
       setVisible(true);
     }
 
-    btn.addEventListener("click", function () {
-      const visibleNow = !panel.classList.contains("is-collapsed");
-      setVisible(!visibleNow);
+    btns.forEach((btn) => {
+      btn.addEventListener("click", function () {
+        const visibleNow = !panel.classList.contains("is-collapsed");
+        setVisible(!visibleNow);
+      });
     });
   })();
 </script>
