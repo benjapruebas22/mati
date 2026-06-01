@@ -4215,6 +4215,190 @@
 
 
 
+  /* Modo compacto operativo */
+  .compact-view .sede-active-card {
+    display: flex;
+    flex-direction: column;
+  }
+  .compact-view .head {
+    padding: 10px 12px;
+    gap: 6px;
+  }
+  .compact-view .sede-breadcrumb {
+    display: none;
+  }
+  .compact-view .head-top {
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .compact-view .h-left {
+    align-items: center;
+    gap: 10px;
+  }
+  .compact-view .h-title {
+    font-size: 17px;
+    font-weight: 800;
+  }
+  .compact-view .h-sub {
+    margin-top: 2px;
+    font-size: 11px;
+  }
+  .compact-view .h-actions {
+    margin-left: auto;
+    gap: 6px;
+    overflow: visible;
+    padding-bottom: 0;
+  }
+  .compact-view .h-actions .btn {
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .compact-view .h-actions .btn.btn-checklist-limpieza {
+    padding: 4px 7px;
+    font-size: 10px;
+  }
+  .compact-view .sede-topbar {
+    display: none;
+  }
+
+  .compact-view .sede-global-search {
+    order: 20;
+    margin: 0 12px 8px;
+    padding: 8px 10px;
+    border-radius: 10px;
+  }
+  .compact-view .sede-global-search-title {
+    font-size: 10px;
+    letter-spacing: .09em;
+  }
+  .compact-view .sede-global-search-hint {
+    margin-top: 1px;
+  }
+  .compact-view .sede-global-search-status {
+    min-height: 14px;
+  }
+
+  .compact-view .sede-metricas-toggle {
+    order: 30;
+    margin: 0 12px 10px;
+    border: 1px solid #dbe4ef;
+    border-radius: 10px;
+    box-shadow: none;
+    background: #fff;
+  }
+  .compact-view .sede-metricas-toggle > summary {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 7px 10px;
+    cursor: pointer;
+  }
+  .compact-view .sede-metricas-toggle > summary::-webkit-details-marker { display: none; }
+  .compact-view .sede-metricas-toggle[open] > summary {
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .compact-view .sede-metricas-toggle-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    white-space: nowrap;
+  }
+  .compact-view .sede-metricas-inline {
+    font-size: 11px;
+    color: #475569;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .compact-view .sede-metricas-toggle .sede-analisis {
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    padding: 10px;
+    box-shadow: none;
+  }
+
+  .compact-view .panel-topbar {
+    margin-bottom: 2px;
+  }
+  .compact-view .panel-tabs.panel-tabs-top {
+    padding: 8px 10px;
+  }
+  .compact-view .panel-tab-row {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 2px;
+  }
+  .compact-view .panel-tab-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+    padding: 6px 8px;
+    border-radius: 10px;
+  }
+  .compact-view .panel-tab-group-title {
+    font-size: 9px;
+    letter-spacing: .08em;
+    margin-right: 2px;
+    white-space: nowrap;
+  }
+  .compact-view .panel-tab-group-links {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 5px;
+  }
+  .compact-view .ptab {
+    padding: 5px 8px;
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .compact-view .grid {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, .95fr);
+    gap: 10px;
+  }
+  .compact-view .plan-head,
+  .compact-view .panel-head {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+  .compact-view .plan-body {
+    padding: 10px;
+  }
+  .compact-view .locals {
+    padding: 0 10px 10px;
+    gap: 6px;
+  }
+  .compact-view .plan-actions .btn,
+  .compact-view .btn-xs {
+    padding: 4px 8px;
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .compact-view .panel-head-tools {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .compact-view .panel-body {
+    padding: 10px;
+  }
+  .compact-view .panel-card.is-collapsed {
+    display: none;
+  }
+  .compact-view #sedeOperativoGrid.panel-hidden {
+    grid-template-columns: 1fr;
+  }
+
   @media (max-width:1100px) {
 
     .kpis { grid-template-columns: repeat(2, 1fr); }
@@ -6417,7 +6601,7 @@
   'S08':'fuero-admin','S12':'fuero-admin'
 } %}
 {% set sede_fuero_cls = fuero_map.get(sede.codigo, 'fuero-neutral') %}
-<div class="wrap sgi-sedes {{ sede_fuero_cls }}">
+<div class="wrap sgi-sedes {{ sede_fuero_cls }} compact-view">
 
 
 
@@ -6484,8 +6668,8 @@
       </div>
 
       <div class="h-actions">
-        <button type="button" class="btn btn-checklist-limpieza" id="btnChecklistLimpieza" data-sede="{{ sede.codigo }}">Checklist Control Limpieza</button>
         <a class="btn btn-volver" href="{{ url_for('sedes_resumen_mpd') }}">Volver a Sedes</a>
+        <button type="button" class="btn btn-checklist-limpieza" id="btnChecklistLimpieza" data-sede="{{ sede.codigo }}">Checklist Control Limpieza</button>
 
         <details class="h-actions-more">
           <summary class="btn btn-calendario" aria-label="Más acciones">Acciones</summary>
@@ -6567,7 +6751,16 @@
     </div>
 
         {% set ro = resumen_operativo if resumen_operativo is defined else {} %}
-
+    <details class="sede-metricas-toggle card" id="sedeMetricasToggle">
+      <summary>
+        <span class="sede-metricas-toggle-label">Ver m&eacute;tricas de sede</span>
+        <span class="sede-metricas-inline">
+          Personas {{ ro.personas if ro.personas is not none else 'S/D' }}
+          &middot; Dep&oacute;sitos {{ ro.depositos if ro.depositos is not none else 'S/D' }}
+          &middot; m2 {{ ro.m2_totales if ro.m2_totales is not none else 'S/D' }}
+          &middot; Aires {{ ro.aires if ro.aires is not none else 'S/D' }}
+        </span>
+      </summary>
     <div class="sede-analisis sede-analisis-main">
       <div class="sede-analisis-head">
         <h4>RESUMEN OPERATIVO DE SEDE</h4>
@@ -6630,10 +6823,11 @@
         Datos orientativos para gestion interna. No certifica cumplimiento legal.
       </div>
     </div>
+    </details>
 
     {% if view != 'resumen' %}
     <div class="card sede-global-search">
-      <div class="sede-global-search-title">Buscador general de sede</div>
+      <div class="sede-global-search-title">BUSCADOR GENERAL DE SEDE</div>
       <div class="sede-global-search-field">
         <input
           type="search"
@@ -8120,7 +8314,7 @@
 
 
 
-  <div class="grid{% if tab in ['mobiliario','aires','luminarias','matafuegos'] %} grid-stack{% endif %}">
+  <div class="grid{% if tab in ['mobiliario','aires','luminarias','matafuegos'] %} grid-stack{% endif %}" id="sedeOperativoGrid">
 
     <!-- PANEL BOTONES (ARRIBA DEL PLANO) -->
 
@@ -8425,8 +8619,10 @@
         <div class="panel-title">Panel operativo &middot; {{ panel_module_label }}</div>
 
 
-
-        <div class="badge">{{ sede.codigo }} &middot; {{ piso }}{% if local %} &middot; {{ local }}{% endif %}</div>
+        <div class="panel-head-tools">
+          <div class="badge">{{ sede.codigo }} &middot; {{ piso }}{% if local %} &middot; {{ local }}{% endif %}</div>
+          <button type="button" class="btn btn-xs" id="togglePanelVisibilityBtn" data-sede="{{ sede.codigo }}">Ocultar panel</button>
+        </div>
 
 
 
@@ -10794,6 +10990,37 @@
 
     btn.addEventListener("click", function () {
       const visibleNow = !card.classList.contains("is-collapsed");
+      setVisible(!visibleNow);
+    });
+  })();
+</script>
+<script>
+  (function () {
+    const grid = document.getElementById("sedeOperativoGrid");
+    const panel = document.querySelector(".panel-card");
+    const btn = document.getElementById("togglePanelVisibilityBtn");
+    if (!grid || !panel || !btn) return;
+
+    const sedeCode = String(btn.getAttribute("data-sede") || "{{ sede.codigo }}");
+    const key = "sgi:sede:panel-visible:" + sedeCode;
+
+    function setVisible(isVisible) {
+      panel.classList.toggle("is-collapsed", !isVisible);
+      grid.classList.toggle("panel-hidden", !isVisible);
+      btn.textContent = isVisible ? "Ocultar panel" : "Ver panel";
+      btn.setAttribute("aria-expanded", isVisible ? "true" : "false");
+      sessionStorage.setItem(key, isVisible ? "1" : "0");
+    }
+
+    const saved = sessionStorage.getItem(key);
+    if (saved === "0") {
+      setVisible(false);
+    } else {
+      setVisible(true);
+    }
+
+    btn.addEventListener("click", function () {
+      const visibleNow = !panel.classList.contains("is-collapsed");
       setVisible(!visibleNow);
     });
   })();

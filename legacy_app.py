@@ -1789,9 +1789,13 @@ def ensure_sedes_metricas_table():
             personas INTEGER,
             oficinas INTEGER,
             depositos INTEGER,
+            sanitarios INTEGER,
             actualizado_en TEXT
         )
     """)
+    cols = [r["name"] for r in cur.execute("PRAGMA table_info(sedes_metricas)").fetchall()]
+    if "sanitarios" not in cols:
+        cur.execute("ALTER TABLE sedes_metricas ADD COLUMN sanitarios INTEGER")
     con.commit()
     con.close()
 
@@ -5298,7 +5302,7 @@ def sede_ficha(codigo):
     # METRICAS SEDE (carga manual)
     # -------------------------
     metricas_row = db.execute("""
-        SELECT sede_codigo, m2_totales, personas, oficinas, depositos, actualizado_en
+        SELECT sede_codigo, m2_totales, personas, oficinas, depositos, sanitarios, actualizado_en
         FROM sedes_metricas
         WHERE sede_codigo = ?
     """, (codigo,)).fetchone()
@@ -5310,6 +5314,7 @@ def sede_ficha(codigo):
     personas_m = metricas_row.get("personas")
     oficinas_m = metricas_row.get("oficinas")
     depositos_m = metricas_row.get("depositos")
+    sanitarios_m = metricas_row.get("sanitarios")
 
     m2_por_persona = None
     if m2_totales is not None and personas_m:
@@ -5325,6 +5330,15 @@ def sede_ficha(codigo):
         except Exception:
             personas_por_oficina = None
 
+    personas_por_sanitario_m = None
+    if personas_m and sanitarios_m:
+        try:
+            sanit = float(sanitarios_m)
+            if sanit > 0:
+                personas_por_sanitario_m = round(float(personas_m) / sanit, 2)
+        except Exception:
+            personas_por_sanitario_m = None
+
     ocupacion_pct = None
     if personas_m and oficinas_m:
         base = float(oficinas_m) * 2.5
@@ -5336,8 +5350,10 @@ def sede_ficha(codigo):
         "personas": personas_m,
         "oficinas": oficinas_m,
         "depositos": depositos_m,
+        "sanitarios": sanitarios_m,
         "m2_por_persona": m2_por_persona,
         "personas_por_oficina": personas_por_oficina,
+        "personas_por_sanitario": personas_por_sanitario_m,
         "ocupacion_pct": ocupacion_pct,
         "actualizado_en": metricas_row.get("actualizado_en"),
     }
@@ -5420,11 +5436,12 @@ def sede_ficha(codigo):
         except Exception:
             m2_por_persona_ro = None
 
-    sanitarios_total = None
-    try:
-        sanitarios_total = infra["banios"] if (infra and infra["banios"] is not None) else None
-    except Exception:
-        sanitarios_total = None
+    sanitarios_total = metricas.get("sanitarios")
+    if sanitarios_total is None:
+        try:
+            sanitarios_total = infra["banios"] if (infra and infra["banios"] is not None) else None
+        except Exception:
+            sanitarios_total = None
 
     aires_total = None
     try:
@@ -8487,7 +8504,7 @@ def sede_metricas_edit(codigo):
         return redirect(url_for("dashboard"))
 
     r = cur.execute(
-        "SELECT m2_totales, personas, oficinas, depositos, actualizado_en FROM sedes_metricas WHERE sede_codigo = ?",
+        "SELECT m2_totales, personas, oficinas, depositos, sanitarios, actualizado_en FROM sedes_metricas WHERE sede_codigo = ?",
         (codigo,)
     ).fetchone()
 
@@ -8508,20 +8525,22 @@ def sede_metricas_edit(codigo):
         personas = to_int(request.form.get("personas"))
         oficinas = to_int(request.form.get("oficinas"))
         depositos = to_int(request.form.get("depositos"))
+        sanitarios = to_int(request.form.get("sanitarios"))
         actualizado_en = date.today().isoformat()
 
         cur.execute(
             """
-            INSERT INTO sedes_metricas (sede_codigo, m2_totales, personas, oficinas, depositos, actualizado_en)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO sedes_metricas (sede_codigo, m2_totales, personas, oficinas, depositos, sanitarios, actualizado_en)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(sede_codigo) DO UPDATE SET
                 m2_totales=excluded.m2_totales,
                 personas=excluded.personas,
                 oficinas=excluded.oficinas,
                 depositos=excluded.depositos,
+                sanitarios=excluded.sanitarios,
                 actualizado_en=excluded.actualizado_en
             """,
-            (codigo, m2_totales, personas, oficinas, depositos, actualizado_en),
+            (codigo, m2_totales, personas, oficinas, depositos, sanitarios, actualizado_en),
         )
         con.commit()
         con.close()

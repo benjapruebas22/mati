@@ -101,11 +101,11 @@
     <div class="head">
       <div>
         <h1 class="h-title">Metricas de sede · {{ render_sede_badge(sede.codigo) }}</h1>
-        <p class="h-sub">Carga manual de m2, personas, oficinas y depositos.</p>
+        <p class="h-sub">Carga manual de m2, personas, oficinas, depositos y sanitarios.</p>
       </div>
 
       <div class="actions">
-        <a class="btn" href="{{ url_for('sede_ficha', codigo=sede.codigo) }}">Volver</a>
+        <a class="btn" href="{{ url_for('sede_ficha', codigo=sede.codigo) }}">Volver a sede</a>
       </div>
     </div>
 
@@ -132,9 +132,15 @@
             <input class="input" name="depositos" placeholder="Ej: 6" value="{{ r.depositos if r else '' }}">
           </div>
 
+          <div class="fg">
+            <label>Sanitarios</label>
+            <input class="input" name="sanitarios" placeholder="Ej: 4" value="{{ r.sanitarios if r else '' }}">
+          </div>
+
           <div class="fg span2">
             <div class="hint">
-              Estos datos se usan para calcular M2/persona, personas/oficina y ocupacion.
+              Estos datos se usan para calcular m2/persona y personas/sanitario.
+              Si sanitarios es 0 o no esta cargado, personas por sanitario se muestra como S/D.
             </div>
           </div>
 
@@ -151,12 +157,13 @@
           - Personas: total de personal en la sede.
           - Oficinas: cantidad real de oficinas.
           - Depositos: cantidad real de depositos.
+          - Sanitarios: cantidad de sanitarios operativos.
         </p>
       </div>
     </div>
 
     <div class="footer">
-      <a class="btn" href="{{ url_for('sede_ficha', codigo=sede.codigo) }}">Volver</a>
+      <a class="btn" href="{{ url_for('sede_ficha', codigo=sede.codigo) }}">Volver a sede</a>
     </div>
 
   </div>
