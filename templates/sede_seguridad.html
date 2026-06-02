@@ -279,9 +279,9 @@
             Listado por número de serie, ubicación y fechas de recarga / vencimiento.
           </p>
         </div>
-        <a href="{{ url_for('matafuego_nuevo', codigo=sede.codigo) }}"
+        <a href="{{ url_for('matafuegos_home', sede=sede.codigo) }}"
            class="btn soft-primary">
-          ➕ Agregar matafuego
+          Abrir en SG-SST
         </a>
       </div>
 
@@ -296,15 +296,14 @@
                 <th>Recarga</th>
                 <th>Vencimiento</th>
                 <th>Observaciones</th>
-                <th style="text-align:right;">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {% for m in matafuegos %}
                 <tr>
-                  <td>{{ m.numero_serie or 's/serie' }}</td>
-                  <td>{{ m.ubicacion or '—' }}</td>
-                  <td>{{ m.peso_kg }} kg</td>
+                  <td>{{ m.numero_serie or m.nro_serie or 's/serie' }}</td>
+                  <td>{{ m.ubicacion or m.local or '—' }}</td>
+                  <td>{{ m.capacidad_kg if m.capacidad_kg is not none else m.peso_kg }} kg</td>
                   <td>{{ m.fecha_recarga or '—' }}</td>
                   <td>
                     {{ m.fecha_vencimiento or '—' }}
@@ -314,28 +313,6 @@
                   </td>
                   <td style="white-space:normal;max-width:220px;">
                     {{ m.observaciones or '' }}
-                  </td>
-                  <td style="text-align:right;">
-                    <!-- EDITAR -->
-                    <a href="{{ url_for('matafuego_editar',
-                                        codigo=sede.codigo,
-                                        mid=m.id) }}"
-                       class="btn-table">
-                      ✏ Editar
-                    </a>
-
-                    <!-- BORRAR -->
-                    <form method="post"
-                          action="{{ url_for('matafuego_borrar',
-                                             codigo=sede.codigo,
-                                             mid=m.id) }}"
-                          style="display:inline;"
-                          onsubmit="return confirm('¿Seguro que querés borrar este matafuego?');">
-                      <button type="submit"
-                              class="btn-table btn-table-danger">
-                        🗑 Borrar
-                      </button>
-                    </form>
                   </td>
                 </tr>
               {% endfor %}

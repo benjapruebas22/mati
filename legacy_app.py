@@ -1539,6 +1539,12 @@ def get_db():
     con = sqlite3.connect(DB_PATH, timeout=20)
     con.row_factory = sqlite3.Row
     con.execute("PRAGMA busy_timeout = 10000")
+    if not getattr(app, "_matafuegos_schema_ready", False):
+        try:
+            ensure_matafuegos_schema(con)
+            app._matafuegos_schema_ready = True
+        except Exception:
+            pass
     return con
 
 def get_db_connection():
@@ -2860,10 +2866,11 @@ def sede_seguridad(codigo):
     # Matafuegos de la sede
     matafuegos = con.execute("""
         SELECT *
-        FROM matafuegos_sede
-        WHERE cod_sede = ?
+        FROM matafuegos
+        WHERE UPPER(COALESCE(sede,'')) = ?
+          AND COALESCE(activo,1)=1
         ORDER BY fecha_vencimiento ASC
-    """, (codigo,)).fetchall()
+    """, (codigo.upper(),)).fetchall()
 
     # Desinfecciones
     desinfecciones = con.execute("""
@@ -2900,6 +2907,10 @@ def matafuego_nuevo(codigo):
         con.close()
         flash("Sede no encontrada.", "warning")
         return redirect(url_for("dashboard"))
+
+    con.close()
+    flash("La carga de matafuegos ahora se hace solo en SG-SST.", "info")
+    return redirect(url_for("matafuegos_home", sede=codigo))
 
     if request.method == "POST":
         numero_serie      = (request.form.get("nro_serie") or "").strip()
@@ -2996,6 +3007,10 @@ def matafuego_editar(codigo, mid):
         flash("Matafuego no encontrado.", "warning")
         return redirect(url_for("sede_seguridad", codigo=codigo))
 
+    con.close()
+    flash("La edicion de matafuegos ahora se hace solo en SG-SST.", "info")
+    return redirect(url_for("matafuegos_home", sede=codigo, edit=mid))
+
     if request.method == "POST":
         numero_serie      = (request.form.get("nro_serie") or "").strip()
         ubicacion         = (request.form.get("ubicacion") or "").strip()
@@ -3045,19 +3060,9 @@ def matafuego_editar(codigo, mid):
 )
 def matafuego_borrar(codigo, mid):
     con = get_db()
-    cur = con.cursor()
-
-    cur.execute("""
-        DELETE FROM matafuegos_sede
-        WHERE id = ? AND cod_sede = ?
-    """, (mid, codigo))
-    con.commit()
     con.close()
-
-    rebuild_eventos_seguridad_limpieza()
-
-    flash("Matafuego eliminado.", "success")
-    return redirect(url_for("sede_seguridad", codigo=codigo))
+    flash("La baja de matafuegos ahora se hace solo en SG-SST.", "info")
+    return redirect(url_for("matafuegos_home", sede=codigo, edit=mid))
 
 
 @app.route(
@@ -6293,6 +6298,219 @@ def sede_ficha(codigo):
     except Exception:
         pass
 
+
+def ensure_matafuegos_schema(con):
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS matafuegos(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sede TEXT NOT NULL,
+            piso TEXT,
+            local TEXT,
+            tipo TEXT NOT NULL DEFAULT '',
+            capacidad_kg REAL,
+            numero_serie TEXT,
+            ubicacion TEXT,
+            fecha_recarga TEXT,
+            fecha_vencimiento TEXT,
+            fecha_prueba_hidro TEXT,
+            estado TEXT DEFAULT 'Sin dato',
+            activo INTEGER DEFAULT 1,
+            lote_vencimiento TEXT,
+            observaciones TEXT,
+            created_at TEXT DEFAULT (datetime('now','localtime')),
+            updated_at TEXT
+        )
+    """)
+    ensure_cols(con, "matafuegos", [
+        ("sede", "TEXT"),
+        ("piso", "TEXT"),
+        ("local", "TEXT"),
+        ("tipo", "TEXT DEFAULT ''"),
+        ("capacidad_kg", "REAL"),
+        ("numero_serie", "TEXT"),
+        ("ubicacion", "TEXT"),
+        ("fecha_recarga", "TEXT"),
+        ("fecha_vencimiento", "TEXT"),
+        ("fecha_prueba_hidro", "TEXT"),
+        ("estado", "TEXT DEFAULT 'Sin dato'"),
+        ("activo", "INTEGER DEFAULT 1"),
+        ("lote_vencimiento", "TEXT"),
+        ("observaciones", "TEXT"),
+        ("created_at", "TEXT"),
+        ("updated_at", "TEXT"),
+    ])
+
+    legacy_exists = _cl_table_exists(con, "matafuegos_sede")
+    renamed_exists = _cl_table_exists(con, "matafuegos_sede_legacy")
+
+    if legacy_exists and not renamed_exists:
+        con.execute("ALTER TABLE matafuegos_sede RENAME TO matafuegos_sede_legacy")
+        renamed_exists = True
+
+    if renamed_exists:
+        con.execute("""
+            INSERT OR IGNORE INTO matafuegos(
+                id, sede, piso, local, tipo, capacidad_kg, numero_serie,
+                ubicacion, fecha_recarga, fecha_vencimiento, fecha_prueba_hidro,
+                estado, activo, lote_vencimiento, observaciones, created_at, updated_at
+            )
+            SELECT
+                id,
+                UPPER(COALESCE(cod_sede, codigo_sede, sede, '')),
+                COALESCE(piso, 'PB'),
+                COALESCE(codigo_local, local, ''),
+                COALESCE(tipo, ''),
+                CASE
+                    WHEN capacidad_kg IS NOT NULL THEN capacidad_kg
+                    ELSE peso_kg
+                END,
+                COALESCE(numero_serie, nro_serie, identificador, ''),
+                COALESCE(ubicacion, ''),
+                fecha_recarga,
+                fecha_vencimiento,
+                fecha_prueba_hidro,
+                COALESCE(estado, 'Sin dato'),
+                COALESCE(activo, 1),
+                lote_vencimiento,
+                observaciones,
+                datetime('now','localtime'),
+                datetime('now','localtime')
+            FROM matafuegos_sede_legacy
+        """)
+
+    con.execute("DROP VIEW IF EXISTS matafuegos_sede")
+    con.execute("""
+        CREATE VIEW matafuegos_sede AS
+        SELECT
+            id,
+            sede AS cod_sede,
+            sede AS codigo_sede,
+            piso,
+            local AS codigo_local,
+            local,
+            numero_serie AS nro_serie,
+            numero_serie AS identificador,
+            capacidad_kg,
+            capacidad_kg AS peso_kg,
+            tipo,
+            ubicacion,
+            fecha_recarga,
+            fecha_vencimiento,
+            fecha_prueba_hidro,
+            estado,
+            activo,
+            lote_vencimiento,
+            observaciones,
+            created_at,
+            updated_at
+        FROM matafuegos
+    """)
+    con.execute("DROP TRIGGER IF EXISTS matafuegos_sede_insert")
+    con.execute("""
+        CREATE TRIGGER matafuegos_sede_insert
+        INSTEAD OF INSERT ON matafuegos_sede
+        BEGIN
+            INSERT INTO matafuegos(
+                sede, piso, local, tipo, capacidad_kg, numero_serie,
+                ubicacion, fecha_recarga, fecha_vencimiento, fecha_prueba_hidro,
+                estado, activo, lote_vencimiento, observaciones, created_at, updated_at
+            ) VALUES (
+                UPPER(COALESCE(NEW.cod_sede, NEW.codigo_sede, NEW.sede, '')),
+                COALESCE(NEW.piso, 'PB'),
+                COALESCE(NEW.codigo_local, NEW.local, ''),
+                COALESCE(NEW.tipo, ''),
+                COALESCE(NEW.capacidad_kg, NEW.peso_kg),
+                COALESCE(NEW.numero_serie, NEW.nro_serie, NEW.identificador, ''),
+                COALESCE(NEW.ubicacion, ''),
+                NEW.fecha_recarga,
+                NEW.fecha_vencimiento,
+                NEW.fecha_prueba_hidro,
+                COALESCE(NEW.estado, 'Sin dato'),
+                COALESCE(NEW.activo, 1),
+                NEW.lote_vencimiento,
+                NEW.observaciones,
+                COALESCE(NEW.created_at, datetime('now','localtime')),
+                datetime('now','localtime')
+            );
+        END
+    """)
+    con.execute("DROP TRIGGER IF EXISTS matafuegos_sede_update")
+    con.execute("""
+        CREATE TRIGGER matafuegos_sede_update
+        INSTEAD OF UPDATE ON matafuegos_sede
+        BEGIN
+            UPDATE matafuegos
+            SET sede = UPPER(COALESCE(NEW.cod_sede, NEW.codigo_sede, NEW.sede, OLD.cod_sede, OLD.codigo_sede, OLD.sede, '')),
+                piso = COALESCE(NEW.piso, OLD.piso, 'PB'),
+                local = COALESCE(NEW.codigo_local, NEW.local, OLD.codigo_local, OLD.local, ''),
+                tipo = COALESCE(NEW.tipo, OLD.tipo, ''),
+                capacidad_kg = COALESCE(NEW.capacidad_kg, NEW.peso_kg, OLD.capacidad_kg, OLD.peso_kg),
+                numero_serie = COALESCE(NEW.numero_serie, NEW.nro_serie, NEW.identificador, OLD.numero_serie, OLD.nro_serie, OLD.identificador, ''),
+                ubicacion = COALESCE(NEW.ubicacion, OLD.ubicacion, ''),
+                fecha_recarga = COALESCE(NEW.fecha_recarga, OLD.fecha_recarga),
+                fecha_vencimiento = COALESCE(NEW.fecha_vencimiento, OLD.fecha_vencimiento),
+                fecha_prueba_hidro = COALESCE(NEW.fecha_prueba_hidro, OLD.fecha_prueba_hidro),
+                estado = COALESCE(NEW.estado, OLD.estado, 'Sin dato'),
+                activo = COALESCE(NEW.activo, OLD.activo, 1),
+                lote_vencimiento = COALESCE(NEW.lote_vencimiento, OLD.lote_vencimiento),
+                observaciones = COALESCE(NEW.observaciones, OLD.observaciones),
+                updated_at = datetime('now','localtime')
+            WHERE id = OLD.id;
+        END
+    """)
+    con.execute("DROP TRIGGER IF EXISTS matafuegos_sede_delete")
+    con.execute("""
+        CREATE TRIGGER matafuegos_sede_delete
+        INSTEAD OF DELETE ON matafuegos_sede
+        BEGIN
+            UPDATE matafuegos
+            SET activo = 0,
+                estado = CASE
+                    WHEN COALESCE(estado,'') = '' OR LOWER(COALESCE(estado,'')) = 'sin dato'
+                    THEN 'Fuera de servicio'
+                    ELSE estado
+                END,
+                updated_at = datetime('now','localtime')
+            WHERE id = OLD.id;
+        END
+    """)
+    con.commit()
+
+
+def _matafuego_estado_from_vto(fecha_vencimiento: str | None, activo: int | bool = 1) -> str:
+    if not int(activo or 0):
+        return "Fuera de servicio"
+    f_vto = (fecha_vencimiento or "").strip()
+    if not f_vto:
+        return "Sin dato"
+    try:
+        fdate = datetime.strptime(f_vto, "%Y-%m-%d").date()
+    except Exception:
+        return "Sin dato"
+    dias = (fdate - date.today()).days
+    if dias < 0:
+        return "Vencido"
+    if dias <= 45:
+        return "Vence pronto"
+    return "OK"
+
+
+def _matafuego_lote_from_vto(fecha_vencimiento: str | None) -> str:
+    f_vto = (fecha_vencimiento or "").strip()
+    if not f_vto:
+        return "Otro"
+    try:
+        month = datetime.strptime(f_vto, "%Y-%m-%d").month
+    except Exception:
+        return "Otro"
+    if month == 5:
+        return "Mayo"
+    if month == 9:
+        return "Septiembre"
+    if month == 12:
+        return "Diciembre"
+    return "Otro"
+
     # MOBILIARIO total
     try:
         if has_col("mobiliario_sede", "codigo_sede"):
@@ -8679,13 +8897,13 @@ def sedes_resumen():
             WHERE codigo_sede = ?
         """, (codigo,))
 
-        matafuegos_total = safe_scalar("SELECT COUNT(*) FROM matafuegos WHERE codigo_sede = ?", (codigo,))
+        matafuegos_total = safe_scalar("SELECT COUNT(*) FROM matafuegos WHERE sede = ?", (codigo,))
 
         # vencen 45d (si tenés fechas como texto YYYY-MM-DD)
         vencen_45d = safe_scalar("""
             SELECT COUNT(*)
             FROM matafuegos
-            WHERE codigo_sede = ?
+            WHERE sede = ?
               AND fecha_vencimiento IS NOT NULL
               AND fecha_vencimiento <= DATE('now', '+45 day')
         """, (codigo,))
@@ -11079,9 +11297,339 @@ def aires_sede_editar(id):
 
     con.close()
     return render_template("aires_sede_form.html", modo="editar", sedes=sedes, r=r, id=id)
+def _matafuegos_home_impl():
+    db = get_db()
+
+    sede = (request.args.get("sede") or "").upper().strip()
+    piso = (request.args.get("piso") or "PB").upper().strip()
+    q = (request.args.get("q") or "").strip()
+    edit = request.args.get("edit")
+
+    if piso == "2P":
+        piso = "P2"
+    if piso == "1P":
+        piso = "P1"
+
+    fecha_45d = db.execute("SELECT date('now','+45 day') AS f").fetchone()["f"]
+
+    if request.method == "POST":
+        accion = (request.form.get("accion") or "guardar").lower()
+        rid = (request.form.get("id") or "").strip()
+
+        sede_form = (
+            request.form.get("sede")
+            or request.form.get("codigo_sede")
+            or sede
+            or ""
+        ).upper().strip()
+        piso_form = (request.form.get("piso") or piso or "PB").upper().strip()
+        if piso_form == "2P":
+            piso_form = "P2"
+        if piso_form == "1P":
+            piso_form = "P1"
+
+        local_form = (
+            request.form.get("local")
+            or request.form.get("codigo_local")
+            or ""
+        ).upper().strip() or None
+        tipo = (request.form.get("tipo") or "").strip()
+        capacidad_raw = (request.form.get("capacidad_kg") or "").strip()
+        numero_serie = (
+            request.form.get("numero_serie")
+            or request.form.get("nro_serie")
+            or request.form.get("identificador")
+            or ""
+        ).strip()
+        ubicacion = (request.form.get("ubicacion") or "").strip()
+        fecha_recarga = (request.form.get("fecha_recarga") or "").strip() or None
+        fecha_vencimiento = (request.form.get("fecha_vencimiento") or "").strip() or None
+        fecha_prueba_hidro = (request.form.get("fecha_prueba_hidro") or "").strip() or None
+        lote_vencimiento = (request.form.get("lote_vencimiento") or "").strip() or _matafuego_lote_from_vto(fecha_vencimiento)
+        observaciones = (request.form.get("observaciones") or "").strip()
+        activo = 1 if request.form.get("activo") in {"1", "on", "true", "True"} else 0
+
+        if accion == "eliminar" and rid:
+            db.execute(
+                """
+                UPDATE matafuegos
+                SET activo = 0,
+                    estado = 'Fuera de servicio',
+                    updated_at = datetime('now','localtime')
+                WHERE id = ?
+                """,
+                (rid,),
+            )
+            db.commit()
+            flash("Matafuego dado de baja (baja lógica).", "success")
+            return redirect(url_for("matafuegos_home", sede=sede_form, piso=piso_form, q=q))
+
+        if accion == "reactivar" and rid:
+            row_vto = db.execute(
+                "SELECT fecha_vencimiento FROM matafuegos WHERE id = ?",
+                (rid,),
+            ).fetchone()
+            if not fecha_vencimiento and row_vto:
+                fecha_vencimiento = row_vto["fecha_vencimiento"]
+            estado_calc = _matafuego_estado_from_vto(fecha_vencimiento, 1)
+            db.execute(
+                """
+                UPDATE matafuegos
+                SET activo = 1,
+                    estado = ?,
+                    updated_at = datetime('now','localtime')
+                WHERE id = ?
+                """,
+                (estado_calc, rid),
+            )
+            db.commit()
+            flash("Matafuego reactivado.", "success")
+            return redirect(url_for("matafuegos_home", sede=sede_form, piso=piso_form, q=q))
+
+        if not sede_form or not tipo or not capacidad_raw or not ubicacion or not fecha_vencimiento:
+            flash("Faltan datos obligatorios: sede, tipo, capacidad, ubicacion y fecha de vencimiento.", "warning")
+            return redirect(url_for("matafuegos_home", sede=sede_form or sede, piso=piso_form, q=q, edit=rid or None))
+
+        try:
+            capacidad_kg = float(capacidad_raw.replace(",", "."))
+        except Exception:
+            flash("La capacidad debe ser numerica.", "warning")
+            return redirect(url_for("matafuegos_home", sede=sede_form or sede, piso=piso_form, q=q, edit=rid or None))
+
+        if numero_serie:
+            duplicate_sql = """
+                SELECT id
+                FROM matafuegos
+                WHERE COALESCE(activo,1)=1
+                  AND TRIM(COALESCE(numero_serie,'')) = ?
+            """
+            duplicate_params = [numero_serie]
+            if rid:
+                duplicate_sql += " AND id <> ?"
+                duplicate_params.append(rid)
+            duplicate = db.execute(duplicate_sql, duplicate_params).fetchone()
+            if duplicate:
+                flash("Ya existe un matafuego activo con este numero de serie.", "warning")
+                return redirect(url_for("matafuegos_home", sede=sede_form or sede, piso=piso_form, q=q, edit=rid or None))
+
+        estado = _matafuego_estado_from_vto(fecha_vencimiento, activo)
+
+        if rid:
+            db.execute(
+                """
+                UPDATE matafuegos
+                SET sede = ?,
+                    piso = ?,
+                    local = ?,
+                    tipo = ?,
+                    capacidad_kg = ?,
+                    numero_serie = ?,
+                    ubicacion = ?,
+                    fecha_recarga = ?,
+                    fecha_vencimiento = ?,
+                    fecha_prueba_hidro = ?,
+                    estado = ?,
+                    activo = ?,
+                    lote_vencimiento = ?,
+                    observaciones = ?,
+                    updated_at = datetime('now','localtime')
+                WHERE id = ?
+                """,
+                (
+                    sede_form,
+                    piso_form,
+                    local_form,
+                    tipo,
+                    capacidad_kg,
+                    numero_serie or None,
+                    ubicacion,
+                    fecha_recarga,
+                    fecha_vencimiento,
+                    fecha_prueba_hidro,
+                    estado,
+                    activo,
+                    lote_vencimiento,
+                    observaciones or None,
+                    rid,
+                ),
+            )
+        else:
+            db.execute(
+                """
+                INSERT INTO matafuegos(
+                    sede, piso, local, tipo, capacidad_kg, numero_serie,
+                    ubicacion, fecha_recarga, fecha_vencimiento,
+                    fecha_prueba_hidro, estado, activo, lote_vencimiento,
+                    observaciones, created_at, updated_at
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now','localtime'),datetime('now','localtime'))
+                """,
+                (
+                    sede_form,
+                    piso_form,
+                    local_form,
+                    tipo,
+                    capacidad_kg,
+                    numero_serie or None,
+                    ubicacion,
+                    fecha_recarga,
+                    fecha_vencimiento,
+                    fecha_prueba_hidro,
+                    estado,
+                    activo,
+                    lote_vencimiento,
+                    observaciones or None,
+                ),
+            )
+
+        db.commit()
+        flash("Matafuego guardado en la tabla madre.", "success")
+        return redirect(url_for("matafuegos_home", sede=sede_form, piso=piso_form, q=q))
+
+    edit_row = None
+    if edit:
+        edit_row = db.execute(
+            """
+            SELECT
+                id,
+                sede,
+                piso,
+                local,
+                tipo,
+                capacidad_kg,
+                numero_serie,
+                ubicacion,
+                fecha_recarga,
+                fecha_vencimiento,
+                fecha_prueba_hidro,
+                estado,
+                activo,
+                lote_vencimiento,
+                observaciones
+            FROM matafuegos
+            WHERE id = ?
+            """,
+            (edit,),
+        ).fetchone()
+        if edit_row:
+            sede = (edit_row["sede"] or sede)
+            piso = (edit_row["piso"] or piso)
+
+    where = ["COALESCE(m.activo,1)=1"]
+    params = []
+    if sede:
+        where.append("UPPER(COALESCE(m.sede,'')) = ?")
+        params.append(sede)
+    if piso:
+        where.append("COALESCE(m.piso,'PB') = ?")
+        params.append(piso)
+    if q:
+        where.append("""(
+            COALESCE(m.local,'') LIKE ?
+            OR COALESCE(m.tipo,'') LIKE ?
+            OR COALESCE(m.numero_serie,'') LIKE ?
+            OR COALESCE(m.ubicacion,'') LIKE ?
+            OR COALESCE(m.sede,'') LIKE ?
+        )""")
+        like = f"%{q}%"
+        params.extend([like, like, like, like, like])
+
+    active_rows = db.execute(
+        f"""
+        SELECT
+            m.id,
+            m.sede,
+            m.piso,
+            m.local,
+            m.tipo,
+            m.capacidad_kg,
+            m.numero_serie,
+            m.ubicacion,
+            m.fecha_recarga,
+            m.fecha_vencimiento,
+            m.fecha_prueba_hidro,
+            COALESCE(NULLIF(TRIM(m.estado),''), 'Sin dato') AS estado,
+            COALESCE(m.activo,1) AS activo,
+            m.lote_vencimiento,
+            m.observaciones
+        FROM matafuegos m
+        WHERE {" AND ".join(where)}
+        ORDER BY COALESCE(m.sede,''), COALESCE(m.piso,''), COALESCE(m.local,''), COALESCE(m.ubicacion,''), COALESCE(m.numero_serie,'')
+        """,
+        params,
+    ).fetchall()
+
+    inactive_where = ["COALESCE(m.activo,1)=0"]
+    inactive_params = []
+    if sede:
+        inactive_where.append("UPPER(COALESCE(m.sede,'')) = ?")
+        inactive_params.append(sede)
+    if piso:
+        inactive_where.append("COALESCE(m.piso,'PB') = ?")
+        inactive_params.append(piso)
+    if q:
+        inactive_where.append("""(
+            COALESCE(m.local,'') LIKE ?
+            OR COALESCE(m.tipo,'') LIKE ?
+            OR COALESCE(m.numero_serie,'') LIKE ?
+            OR COALESCE(m.ubicacion,'') LIKE ?
+            OR COALESCE(m.sede,'') LIKE ?
+        )""")
+        like = f"%{q}%"
+        inactive_params.extend([like, like, like, like, like])
+
+    inactive_rows = db.execute(
+        f"""
+        SELECT
+            m.id,
+            m.sede,
+            m.piso,
+            m.local,
+            m.tipo,
+            m.capacidad_kg,
+            m.numero_serie,
+            m.ubicacion,
+            m.fecha_recarga,
+            m.fecha_vencimiento,
+            m.fecha_prueba_hidro,
+            COALESCE(NULLIF(TRIM(m.estado),''), 'Fuera de servicio') AS estado,
+            COALESCE(m.activo,0) AS activo,
+            m.lote_vencimiento,
+            m.observaciones
+        FROM matafuegos m
+        WHERE {" AND ".join(inactive_where)}
+        ORDER BY COALESCE(m.sede,''), COALESCE(m.piso,''), COALESCE(m.local,''), COALESCE(m.ubicacion,''), COALESCE(m.numero_serie,'')
+        """,
+        inactive_params,
+    ).fetchall()
+
+    kpi = db.execute(
+        f"""
+        SELECT
+            COALESCE(COUNT(*),0) AS total,
+            COALESCE(SUM(CASE WHEN fecha_vencimiento IS NOT NULL AND TRIM(fecha_vencimiento) <> '' AND date(fecha_vencimiento) <= date('now','+45 day') THEN 1 ELSE 0 END),0) AS vencen_pronto,
+            COALESCE(SUM(CASE WHEN fecha_vencimiento IS NOT NULL AND TRIM(fecha_vencimiento) <> '' AND date(fecha_vencimiento) < date('now') THEN 1 ELSE 0 END),0) AS vencidos
+        FROM matafuegos m
+        WHERE {" AND ".join(where)}
+        """,
+        params,
+    ).fetchone()
+
+    return render_template(
+        "matafuegos_home.html",
+        sede=sede,
+        piso=piso,
+        q=q,
+        rows=active_rows,
+        inactive_rows=inactive_rows,
+        kpi=kpi,
+        edit_row=edit_row,
+        fecha_45d=fecha_45d,
+    )
+
+@app.route("/sgsst/matafuegos", methods=["GET","POST"], endpoint="matafuegos_home")
 @app.route("/matafuegos", methods=["GET","POST"], endpoint="matafuegos_home")
 def matafuegos_home():
-    db = get_db()
+    return _matafuegos_home_impl()
 
     # filtros
     sede = (request.args.get("sede") or "").upper().strip()
