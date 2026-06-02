@@ -6838,7 +6838,6 @@
         <button type="button" id="sedeGlobalSearchClear" class="sede-global-search-clear" aria-label="Limpiar búsqueda">×</button>
       </div>
       <div id="sedeGlobalSearchStatus" class="sede-global-search-status" aria-live="polite"></div>
-      <div class="sede-global-search-hint">Filtra visualmente por persona, local/deposito, dependencia, email y ambiente.</div>
       <script id="sedeSearchIndexData" type="application/json">{{ {'personal': sede_search_personal, 'depositos': sede_search_depositos}|tojson }}</script>
     </div>
     {% endif %}
@@ -10930,7 +10929,8 @@
       }
 
       if (!q) {
-        formatStatus(["Filtra visualmente por persona, local/deposito, dependencia, email y ambiente."], false);
+        statusEl.innerHTML = "";
+        statusEl.classList.remove("error");
         return;
       }
 
