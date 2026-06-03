@@ -5944,32 +5944,32 @@ def sede_ficha(codigo):
     # MATAFUEGOS
     # -------------------------
     if tab == "matafuegos":
-        where = ["m.cod_sede = ?", "COALESCE(m.activo,1)=1", "COALESCE(m.piso,'PB') = ?"]
+        where = ["UPPER(COALESCE(m.sede,'')) = ?", "COALESCE(m.activo,1)=1", "COALESCE(m.piso,'PB') = ?"]
         params = [codigo, piso]
 
         if local:
-            where.append("m.codigo_local = ?")
+            where.append("m.local = ?")
             params.append(local)
 
         matafuegos_rows = db.execute(f"""
             SELECT
                 m.id,
-                m.cod_sede,
+                m.sede,
                 COALESCE(m.piso,'PB') AS piso,
-                m.codigo_local,
+                m.local,
                 m.ubicacion,
                 m.numero_serie,
-                m.numero_matafuego,
                 m.tipo,
                 m.capacidad_kg,
                 m.estado,
                 m.fecha_recarga,
                 m.fecha_vencimiento,
                 m.fecha_prueba_hidro,
+                m.lote_vencimiento,
                 m.observaciones
-            FROM matafuegos_sede m
+            FROM matafuegos m
             WHERE {" AND ".join(where)}
-            ORDER BY COALESCE(m.codigo_local,''), COALESCE(m.ubicacion,''), COALESCE(m.numero_serie,'')
+            ORDER BY COALESCE(m.local,''), COALESCE(m.ubicacion,''), COALESCE(m.numero_serie,'')
         """, params).fetchall()
 
         k = db.execute(f"""
@@ -5982,7 +5982,7 @@ def sede_ficha(codigo):
                   THEN 1 ELSE 0
                 END
               ),0) AS vencen_pronto
-            FROM matafuegos_sede m
+            FROM matafuegos m
             WHERE {" AND ".join(where)}
         """, params).fetchone()
 
@@ -6299,6 +6299,65 @@ def sede_ficha(codigo):
         pass
 
 
+    return render_template(
+        "sede_ficha.html",
+        sede=sede,
+        sedes_nav=sedes_nav,
+        infra=infra,
+        obras_kpi=obras_kpi if "obras_kpi" in locals() else {},
+        inv_kpi=inv_kpi if "inv_kpi" in locals() else {},
+        per_kpi=per_kpi if "per_kpi" in locals() else {},
+        seg_vencen=seg_vencen if "seg_vencen" in locals() else {},
+        desinf_kpi=desinf_kpi if "desinf_kpi" in locals() else {},
+        metricas=metricas if "metricas" in locals() else {},
+        resumen_operativo=resumen_operativo if "resumen_operativo" in locals() else {},
+        depositos_kpi=depositos_kpi if "depositos_kpi" in locals() else 0,
+        eventos_sede=eventos_sede if "eventos_sede" in locals() else [],
+        evac_responsables=evac_responsables if "evac_responsables" in locals() else {},
+        pisos=pisos_disponibles,
+        piso_sel=piso,
+        plano_url=plano_url,
+        locales=locales,
+        locales_desc=locales_desc,
+        tab=tab,
+        local=local,
+        fecha_45d=fecha_45d,
+        personal_rows=personal_rows,
+        mobiliario_rows=mobiliario_rows,
+        depositos_rows=depositos_rows,
+        luminarias_rows=luminarias_rows,
+        luminarias_kpi=luminarias_kpi,
+        matafuegos_rows=matafuegos_rows,
+        matafuegos_kpi=matafuegos_kpi,
+        aires_rows=aires_rows,
+        aires_kpi=aires_kpi,
+        aires_fuero_kpi=aires_fuero_kpi,
+        resumen_sedes_rows=resumen_sedes_rows,
+        resumen_sedes_totals=resumen_sedes_totals,
+        parti_rows=parti_rows,
+        aires_total_kpi=aires_total_kpi,
+        mobiliario_total_kpi=mobiliario_total_kpi,
+        luminarias_total_kpi=luminarias_total_kpi,
+        mobiliario_total_items=locals().get("mobiliario_total_items", 0),
+        home_mode=home_mode,
+        mes=(locals().get("mes") or date.today().strftime("%Y-%m")),
+        fecha_dia=(locals().get("fecha_dia") or date.today().strftime("%Y-%m-%d")),
+        q_cal=(locals().get("q_cal") or ""),
+        cal_weeks=(locals().get("cal_weeks") or []),
+        eventos_mes=(locals().get("eventos_mes") or []),
+        eventos_por_dia=(locals().get("eventos_por_dia") or {}),
+        eventos_por_dia_resumen=(locals().get("eventos_por_dia_resumen") or {}),
+        eventos_dia=(locals().get("eventos_dia") or []),
+        home_cards=(locals().get("home_cards") or []),
+        cal_legend=(locals().get("cal_legend") or []),
+        protocolo_limpieza_url=(locals().get("protocolo_limpieza_url") or None),
+        documentos_vinculados_sede=(locals().get("documentos_vinculados_sede") or []),
+        sede_search_personal=(locals().get("sede_search_personal") or []),
+        sede_search_depositos=(locals().get("sede_search_depositos") or []),
+        has_sst_general=(locals().get("has_sst_general") or False),
+        has_relevamientos=(locals().get("has_relevamientos") or False),
+    )
+
 def ensure_matafuegos_schema(con):
     con.execute("""
         CREATE TABLE IF NOT EXISTS matafuegos(
@@ -6341,139 +6400,139 @@ def ensure_matafuegos_schema(con):
     ])
 
     legacy_exists = _cl_table_exists(con, "matafuegos_sede")
-    renamed_exists = _cl_table_exists(con, "matafuegos_sede_legacy")
-
-    if legacy_exists and not renamed_exists:
-        con.execute("ALTER TABLE matafuegos_sede RENAME TO matafuegos_sede_legacy")
-        renamed_exists = True
-
-    if renamed_exists:
+    view_exists = bool(
+        con.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='view' AND name='matafuegos_sede'"
+        ).fetchone()
+    )
+    if legacy_exists:
+        existing_count = con.execute("SELECT COUNT(*) AS c FROM matafuegos").fetchone()["c"]
+        if not existing_count:
+            con.execute("""
+                INSERT INTO matafuegos(
+                    sede, piso, local, tipo, capacidad_kg, numero_serie,
+                    ubicacion, fecha_recarga, fecha_vencimiento, fecha_prueba_hidro,
+                    estado, activo, lote_vencimiento, observaciones, created_at, updated_at
+                )
+                SELECT
+                    UPPER(COALESCE(cod_sede, codigo_sede, sede, '')),
+                    COALESCE(piso, 'PB'),
+                    COALESCE(codigo_local, local, ''),
+                    COALESCE(tipo, ''),
+                    CASE
+                        WHEN capacidad_kg IS NOT NULL THEN capacidad_kg
+                        ELSE peso_kg
+                    END,
+                    COALESCE(numero_serie, nro_serie, identificador, ''),
+                    COALESCE(ubicacion, ''),
+                    fecha_recarga,
+                    fecha_vencimiento,
+                    fecha_prueba_hidro,
+                    COALESCE(estado, 'Sin dato'),
+                    COALESCE(activo, 1),
+                    lote_vencimiento,
+                    observaciones,
+                    datetime('now','localtime'),
+                    datetime('now','localtime')
+                FROM matafuegos_sede
+            """)
+    elif not view_exists:
+        con.execute("DROP VIEW IF EXISTS matafuegos_sede")
         con.execute("""
-            INSERT OR IGNORE INTO matafuegos(
-                id, sede, piso, local, tipo, capacidad_kg, numero_serie,
-                ubicacion, fecha_recarga, fecha_vencimiento, fecha_prueba_hidro,
-                estado, activo, lote_vencimiento, observaciones, created_at, updated_at
-            )
+            CREATE VIEW matafuegos_sede AS
             SELECT
                 id,
-                UPPER(COALESCE(cod_sede, codigo_sede, sede, '')),
-                COALESCE(piso, 'PB'),
-                COALESCE(codigo_local, local, ''),
-                COALESCE(tipo, ''),
-                CASE
-                    WHEN capacidad_kg IS NOT NULL THEN capacidad_kg
-                    ELSE peso_kg
-                END,
-                COALESCE(numero_serie, nro_serie, identificador, ''),
-                COALESCE(ubicacion, ''),
+                sede AS cod_sede,
+                sede AS codigo_sede,
+                piso,
+                local AS codigo_local,
+                local,
+                numero_serie AS nro_serie,
+                numero_serie AS identificador,
+                capacidad_kg,
+                capacidad_kg AS peso_kg,
+                tipo,
+                ubicacion,
                 fecha_recarga,
                 fecha_vencimiento,
                 fecha_prueba_hidro,
-                COALESCE(estado, 'Sin dato'),
-                COALESCE(activo, 1),
+                estado,
+                activo,
                 lote_vencimiento,
                 observaciones,
-                datetime('now','localtime'),
-                datetime('now','localtime')
-            FROM matafuegos_sede_legacy
+                created_at,
+                updated_at
+            FROM matafuegos
         """)
-
-    con.execute("DROP VIEW IF EXISTS matafuegos_sede")
-    con.execute("""
-        CREATE VIEW matafuegos_sede AS
-        SELECT
-            id,
-            sede AS cod_sede,
-            sede AS codigo_sede,
-            piso,
-            local AS codigo_local,
-            local,
-            numero_serie AS nro_serie,
-            numero_serie AS identificador,
-            capacidad_kg,
-            capacidad_kg AS peso_kg,
-            tipo,
-            ubicacion,
-            fecha_recarga,
-            fecha_vencimiento,
-            fecha_prueba_hidro,
-            estado,
-            activo,
-            lote_vencimiento,
-            observaciones,
-            created_at,
-            updated_at
-        FROM matafuegos
-    """)
-    con.execute("DROP TRIGGER IF EXISTS matafuegos_sede_insert")
-    con.execute("""
-        CREATE TRIGGER matafuegos_sede_insert
-        INSTEAD OF INSERT ON matafuegos_sede
-        BEGIN
-            INSERT INTO matafuegos(
-                sede, piso, local, tipo, capacidad_kg, numero_serie,
-                ubicacion, fecha_recarga, fecha_vencimiento, fecha_prueba_hidro,
-                estado, activo, lote_vencimiento, observaciones, created_at, updated_at
-            ) VALUES (
-                UPPER(COALESCE(NEW.cod_sede, NEW.codigo_sede, NEW.sede, '')),
-                COALESCE(NEW.piso, 'PB'),
-                COALESCE(NEW.codigo_local, NEW.local, ''),
-                COALESCE(NEW.tipo, ''),
-                COALESCE(NEW.capacidad_kg, NEW.peso_kg),
-                COALESCE(NEW.numero_serie, NEW.nro_serie, NEW.identificador, ''),
-                COALESCE(NEW.ubicacion, ''),
-                NEW.fecha_recarga,
-                NEW.fecha_vencimiento,
-                NEW.fecha_prueba_hidro,
-                COALESCE(NEW.estado, 'Sin dato'),
-                COALESCE(NEW.activo, 1),
-                NEW.lote_vencimiento,
-                NEW.observaciones,
-                COALESCE(NEW.created_at, datetime('now','localtime')),
-                datetime('now','localtime')
-            );
-        END
-    """)
-    con.execute("DROP TRIGGER IF EXISTS matafuegos_sede_update")
-    con.execute("""
-        CREATE TRIGGER matafuegos_sede_update
-        INSTEAD OF UPDATE ON matafuegos_sede
-        BEGIN
-            UPDATE matafuegos
-            SET sede = UPPER(COALESCE(NEW.cod_sede, NEW.codigo_sede, NEW.sede, OLD.cod_sede, OLD.codigo_sede, OLD.sede, '')),
-                piso = COALESCE(NEW.piso, OLD.piso, 'PB'),
-                local = COALESCE(NEW.codigo_local, NEW.local, OLD.codigo_local, OLD.local, ''),
-                tipo = COALESCE(NEW.tipo, OLD.tipo, ''),
-                capacidad_kg = COALESCE(NEW.capacidad_kg, NEW.peso_kg, OLD.capacidad_kg, OLD.peso_kg),
-                numero_serie = COALESCE(NEW.numero_serie, NEW.nro_serie, NEW.identificador, OLD.numero_serie, OLD.nro_serie, OLD.identificador, ''),
-                ubicacion = COALESCE(NEW.ubicacion, OLD.ubicacion, ''),
-                fecha_recarga = COALESCE(NEW.fecha_recarga, OLD.fecha_recarga),
-                fecha_vencimiento = COALESCE(NEW.fecha_vencimiento, OLD.fecha_vencimiento),
-                fecha_prueba_hidro = COALESCE(NEW.fecha_prueba_hidro, OLD.fecha_prueba_hidro),
-                estado = COALESCE(NEW.estado, OLD.estado, 'Sin dato'),
-                activo = COALESCE(NEW.activo, OLD.activo, 1),
-                lote_vencimiento = COALESCE(NEW.lote_vencimiento, OLD.lote_vencimiento),
-                observaciones = COALESCE(NEW.observaciones, OLD.observaciones),
-                updated_at = datetime('now','localtime')
-            WHERE id = OLD.id;
-        END
-    """)
-    con.execute("DROP TRIGGER IF EXISTS matafuegos_sede_delete")
-    con.execute("""
-        CREATE TRIGGER matafuegos_sede_delete
-        INSTEAD OF DELETE ON matafuegos_sede
-        BEGIN
-            UPDATE matafuegos
-            SET activo = 0,
-                estado = CASE
-                    WHEN COALESCE(estado,'') = '' OR LOWER(COALESCE(estado,'')) = 'sin dato'
-                    THEN 'Fuera de servicio'
-                    ELSE estado
-                END,
-                updated_at = datetime('now','localtime')
-            WHERE id = OLD.id;
-        END
-    """)
+        con.execute("DROP TRIGGER IF EXISTS matafuegos_sede_insert")
+        con.execute("""
+            CREATE TRIGGER matafuegos_sede_insert
+            INSTEAD OF INSERT ON matafuegos_sede
+            BEGIN
+                INSERT INTO matafuegos(
+                    sede, piso, local, tipo, capacidad_kg, numero_serie,
+                    ubicacion, fecha_recarga, fecha_vencimiento, fecha_prueba_hidro,
+                    estado, activo, lote_vencimiento, observaciones, created_at, updated_at
+                ) VALUES (
+                    UPPER(COALESCE(NEW.cod_sede, NEW.codigo_sede, NEW.sede, '')),
+                    COALESCE(NEW.piso, 'PB'),
+                    COALESCE(NEW.codigo_local, NEW.local, ''),
+                    COALESCE(NEW.tipo, ''),
+                    COALESCE(NEW.capacidad_kg, NEW.peso_kg),
+                    COALESCE(NEW.numero_serie, NEW.nro_serie, NEW.identificador, ''),
+                    COALESCE(NEW.ubicacion, ''),
+                    NEW.fecha_recarga,
+                    NEW.fecha_vencimiento,
+                    NEW.fecha_prueba_hidro,
+                    COALESCE(NEW.estado, 'Sin dato'),
+                    COALESCE(NEW.activo, 1),
+                    NEW.lote_vencimiento,
+                    NEW.observaciones,
+                    COALESCE(NEW.created_at, datetime('now','localtime')),
+                    datetime('now','localtime')
+                );
+            END
+        """)
+        con.execute("DROP TRIGGER IF EXISTS matafuegos_sede_update")
+        con.execute("""
+            CREATE TRIGGER matafuegos_sede_update
+            INSTEAD OF UPDATE ON matafuegos_sede
+            BEGIN
+                UPDATE matafuegos
+                SET sede = UPPER(COALESCE(NEW.cod_sede, NEW.codigo_sede, NEW.sede, OLD.cod_sede, OLD.codigo_sede, OLD.sede, '')),
+                    piso = COALESCE(NEW.piso, OLD.piso, 'PB'),
+                    local = COALESCE(NEW.codigo_local, NEW.local, OLD.codigo_local, OLD.local, ''),
+                    tipo = COALESCE(NEW.tipo, OLD.tipo, ''),
+                    capacidad_kg = COALESCE(NEW.capacidad_kg, NEW.peso_kg, OLD.capacidad_kg, OLD.peso_kg),
+                    numero_serie = COALESCE(NEW.numero_serie, NEW.nro_serie, NEW.identificador, OLD.numero_serie, OLD.nro_serie, OLD.identificador, ''),
+                    ubicacion = COALESCE(NEW.ubicacion, OLD.ubicacion, ''),
+                    fecha_recarga = COALESCE(NEW.fecha_recarga, OLD.fecha_recarga),
+                    fecha_vencimiento = COALESCE(NEW.fecha_vencimiento, OLD.fecha_vencimiento),
+                    fecha_prueba_hidro = COALESCE(NEW.fecha_prueba_hidro, OLD.fecha_prueba_hidro),
+                    estado = COALESCE(NEW.estado, OLD.estado, 'Sin dato'),
+                    activo = COALESCE(NEW.activo, OLD.activo, 1),
+                    lote_vencimiento = COALESCE(NEW.lote_vencimiento, OLD.lote_vencimiento),
+                    observaciones = COALESCE(NEW.observaciones, OLD.observaciones),
+                    updated_at = datetime('now','localtime')
+                WHERE id = OLD.id;
+            END
+        """)
+        con.execute("DROP TRIGGER IF EXISTS matafuegos_sede_delete")
+        con.execute("""
+            CREATE TRIGGER matafuegos_sede_delete
+            INSTEAD OF DELETE ON matafuegos_sede
+            BEGIN
+                UPDATE matafuegos
+                SET activo = 0,
+                    estado = CASE
+                        WHEN COALESCE(estado,'') = '' OR LOWER(COALESCE(estado,'')) = 'sin dato'
+                        THEN 'Fuera de servicio'
+                        ELSE estado
+                    END,
+                    updated_at = datetime('now','localtime')
+                WHERE id = OLD.id;
+            END
+        """)
     con.commit()
 
 
@@ -10705,23 +10764,23 @@ def sedes_resumen_mpd():
     # Vencimientos globales de matafuegos (todas las sedes).
     matafuegos_vto_raw = db.execute("""
         SELECT
-            UPPER(COALESCE(m.cod_sede,'')) AS sede_codigo,
+            UPPER(COALESCE(m.sede,'')) AS sede_codigo,
             COALESCE(s.nombre,'') AS sede_nombre,
             UPPER(COALESCE(m.piso,'')) AS piso,
-            UPPER(COALESCE(m.codigo_local,'')) AS codigo_local,
+            UPPER(COALESCE(m.local,'')) AS codigo_local,
             COALESCE(m.ubicacion,'') AS ubicacion,
             COALESCE(m.numero_serie,'') AS numero_serie,
             COALESCE(m.tipo,'') AS tipo,
             COALESCE(m.capacidad_kg,'') AS capacidad_kg,
             COALESCE(m.fecha_vencimiento,'') AS fecha_vencimiento
-        FROM matafuegos_sede m
+        FROM matafuegos m
         LEFT JOIN sedes_mpd s
-          ON UPPER(COALESCE(s.codigo,'')) = UPPER(COALESCE(m.cod_sede,''))
+          ON UPPER(COALESCE(s.codigo,'')) = UPPER(COALESCE(m.sede,''))
         WHERE COALESCE(m.activo,1)=1
           AND TRIM(COALESCE(m.fecha_vencimiento,'')) <> ''
         ORDER BY date(m.fecha_vencimiento) ASC,
-                 UPPER(COALESCE(m.cod_sede,'')) ASC,
-                 UPPER(COALESCE(m.codigo_local,'')) ASC,
+                 UPPER(COALESCE(m.sede,'')) ASC,
+                 UPPER(COALESCE(m.local,'')) ASC,
                  COALESCE(m.ubicacion,'') ASC,
                  COALESCE(m.numero_serie,'') ASC
         LIMIT 3000
