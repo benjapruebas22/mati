@@ -3659,7 +3659,7 @@ def bienes_sede():
         mf_raw = con.execute("""
             SELECT
                 UPPER(COALESCE(piso,'')) AS piso,
-                UPPER(COALESCE(codigo_local,'')) AS codigo_local,
+                UPPER(COALESCE(local,'')) AS codigo_local,
                 COALESCE(ubicacion,'') AS ubicacion,
                 COALESCE(numero_serie,'') AS numero_serie,
                 COALESCE(tipo,'') AS tipo,
@@ -3667,11 +3667,11 @@ def bienes_sede():
                 COALESCE(estado,'') AS estado,
                 COALESCE(fecha_recarga,'') AS fecha_recarga,
                 COALESCE(fecha_vencimiento,'') AS fecha_vencimiento
-            FROM matafuegos_sede
-            WHERE UPPER(COALESCE(cod_sede,'')) = ?
+            FROM matafuegos
+            WHERE UPPER(COALESCE(sede,'')) = ?
               AND COALESCE(activo,1)=1
             ORDER BY
-                UPPER(COALESCE(codigo_local,'')) ASC,
+                UPPER(COALESCE(local,'')) ASC,
                 COALESCE(ubicacion,'') ASC,
                 COALESCE(numero_serie,'') ASC
         """, (infra_sede,)).fetchall()
@@ -6362,6 +6362,7 @@ def ensure_matafuegos_schema(con):
     con.execute("""
         CREATE TABLE IF NOT EXISTS matafuegos(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cod_sede TEXT NOT NULL DEFAULT '',
             sede TEXT NOT NULL,
             piso TEXT,
             local TEXT,
@@ -6381,6 +6382,7 @@ def ensure_matafuegos_schema(con):
         )
     """)
     ensure_cols(con, "matafuegos", [
+        ("cod_sede", "TEXT DEFAULT ''"),
         ("sede", "TEXT"),
         ("piso", "TEXT"),
         ("local", "TEXT"),
@@ -11516,13 +11518,14 @@ def _matafuegos_home_impl():
             db.execute(
                 """
                 INSERT INTO matafuegos(
-                    sede, piso, local, tipo, capacidad_kg, numero_serie,
+                    cod_sede, sede, piso, local, tipo, capacidad_kg, numero_serie,
                     ubicacion, fecha_recarga, fecha_vencimiento,
                     fecha_prueba_hidro, estado, activo, lote_vencimiento,
                     observaciones, created_at, updated_at
-                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now','localtime'),datetime('now','localtime'))
+                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now','localtime'),datetime('now','localtime'))
                 """,
                 (
+                    sede_form,
                     sede_form,
                     piso_form,
                     local_form,
