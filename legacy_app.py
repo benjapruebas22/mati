@@ -11393,14 +11393,27 @@ def _matafuegos_home_impl():
     if request.method == "POST":
         accion = (request.form.get("accion") or "guardar").lower()
         rid = (request.form.get("id") or "").strip()
+        edit_current = None
+        if rid:
+            edit_current = db.execute(
+                """
+                SELECT sede, piso, local, tipo, capacidad_kg, numero_serie, nro_extintor,
+                       fecha_recarga, fecha_vencimiento, fecha_prueba_hidro, lote_vencimiento,
+                       observaciones, activo
+                FROM matafuegos
+                WHERE id = ?
+                """,
+                (rid,),
+            ).fetchone()
 
         sede_form = (
             request.form.get("sede")
             or request.form.get("codigo_sede")
+            or (edit_current["sede"] if edit_current else "")
             or sede
             or ""
         ).upper().strip()
-        piso_form = (request.form.get("piso") or piso or "PB").upper().strip()
+        piso_form = (request.form.get("piso") or (edit_current["piso"] if edit_current else "") or piso or "PB").upper().strip()
         if piso_form == "2P":
             piso_form = "P2"
         if piso_form == "1P":
@@ -11409,23 +11422,25 @@ def _matafuegos_home_impl():
         local_form = (
             request.form.get("local")
             or request.form.get("codigo_local")
+            or (edit_current["local"] if edit_current else "")
             or ""
-        ).upper().strip() or None
-        tipo = (request.form.get("tipo") or "").strip()
-        capacidad_raw = (request.form.get("capacidad_kg") or "").strip()
+        ).strip() or None
+        tipo = (request.form.get("tipo") or (edit_current["tipo"] if edit_current else "") or "").strip()
+        capacidad_raw = (request.form.get("capacidad_kg") or (edit_current["capacidad_kg"] if edit_current and edit_current["capacidad_kg"] is not None else "") or "").strip()
         numero_serie = (
             request.form.get("numero_serie")
             or request.form.get("nro_serie")
             or request.form.get("identificador")
+            or (edit_current["numero_serie"] if edit_current else "")
             or ""
         ).strip()
-        nro_extintor = (request.form.get("nro_extintor") or request.form.get("numero_extintor") or "").strip()
-        fecha_recarga = (request.form.get("fecha_recarga") or "").strip() or None
-        fecha_vencimiento = (request.form.get("fecha_vencimiento") or "").strip() or None
-        fecha_prueba_hidro = (request.form.get("fecha_prueba_hidro") or "").strip() or None
-        lote_vencimiento = (request.form.get("lote_vencimiento") or "").strip() or _matafuego_lote_from_vto(fecha_vencimiento)
-        observaciones = (request.form.get("observaciones") or "").strip()
-        activo = 1 if request.form.get("activo") in {"1", "on", "true", "True"} else 0
+        nro_extintor = (request.form.get("nro_extintor") or request.form.get("numero_extintor") or (edit_current["nro_extintor"] if edit_current else "") or "").strip()
+        fecha_recarga = (request.form.get("fecha_recarga") or (edit_current["fecha_recarga"] if edit_current else "") or "").strip() or None
+        fecha_vencimiento = (request.form.get("fecha_vencimiento") or (edit_current["fecha_vencimiento"] if edit_current else "") or "").strip() or None
+        fecha_prueba_hidro = (request.form.get("fecha_prueba_hidro") or (edit_current["fecha_prueba_hidro"] if edit_current else "") or "").strip() or None
+        lote_vencimiento = (request.form.get("lote_vencimiento") or (edit_current["lote_vencimiento"] if edit_current else "") or "").strip() or _matafuego_lote_from_vto(fecha_vencimiento)
+        observaciones = (request.form.get("observaciones") or (edit_current["observaciones"] if edit_current else "") or "").strip()
+        activo = 1 if request.form.get("activo") in {"1", "on", "true", "True"} else int(edit_current["activo"] if edit_current and edit_current["activo"] is not None else 0)
 
         if accion == "eliminar" and rid:
             db.execute(
