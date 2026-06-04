@@ -11437,6 +11437,8 @@ def _matafuegos_home_impl():
         nro_extintor = (request.form.get("nro_extintor") or request.form.get("numero_extintor") or (edit_current["nro_extintor"] if edit_current else "") or "").strip()
         fecha_recarga = (request.form.get("fecha_recarga") or (edit_current["fecha_recarga"] if edit_current else "") or "").strip() or None
         fecha_vencimiento = (request.form.get("fecha_vencimiento") or (edit_current["fecha_vencimiento"] if edit_current else "") or "").strip() or None
+        if not fecha_vencimiento:
+            fecha_vencimiento = fecha_recarga
         fecha_prueba_hidro = (request.form.get("fecha_prueba_hidro") or (edit_current["fecha_prueba_hidro"] if edit_current else "") or "").strip() or None
         lote_vencimiento = (request.form.get("lote_vencimiento") or (edit_current["lote_vencimiento"] if edit_current else "") or "").strip() or _matafuego_lote_from_vto(fecha_vencimiento)
         observaciones = (request.form.get("observaciones") or (edit_current["observaciones"] if edit_current else "") or "").strip()
@@ -11479,8 +11481,8 @@ def _matafuegos_home_impl():
             flash("Matafuego reactivado.", "success")
             return redirect(url_for("matafuegos_home", sede=sede_form, piso=piso_form, q=q))
 
-        if not sede_form or not tipo or not capacidad_raw or not fecha_vencimiento:
-            flash("Faltan datos obligatorios: sede, tipo, capacidad y fecha de vencimiento.", "warning")
+        if not sede_form or not tipo or not capacidad_raw:
+            flash("Faltan datos obligatorios: sede, tipo y capacidad.", "warning")
             return redirect(url_for("matafuegos_home", sede=sede_form or sede, piso=piso_form, q=q, edit=rid or None))
 
         try:
