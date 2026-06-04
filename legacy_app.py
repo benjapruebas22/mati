@@ -6369,6 +6369,7 @@ def ensure_matafuegos_schema(con):
             tipo TEXT NOT NULL DEFAULT '',
             capacidad_kg REAL,
             numero_serie TEXT,
+            nro_extintor TEXT,
             ubicacion TEXT,
             fecha_recarga TEXT,
             fecha_vencimiento TEXT,
@@ -6389,6 +6390,7 @@ def ensure_matafuegos_schema(con):
         ("tipo", "TEXT DEFAULT ''"),
         ("capacidad_kg", "REAL"),
         ("numero_serie", "TEXT"),
+        ("nro_extintor", "TEXT"),
         ("ubicacion", "TEXT"),
         ("fecha_recarga", "TEXT"),
         ("fecha_vencimiento", "TEXT"),
@@ -11417,6 +11419,7 @@ def _matafuegos_home_impl():
             or request.form.get("identificador")
             or ""
         ).strip()
+        nro_extintor = (request.form.get("nro_extintor") or request.form.get("numero_extintor") or "").strip()
         fecha_recarga = (request.form.get("fecha_recarga") or "").strip() or None
         fecha_vencimiento = (request.form.get("fecha_vencimiento") or "").strip() or None
         fecha_prueba_hidro = (request.form.get("fecha_prueba_hidro") or "").strip() or None
@@ -11499,6 +11502,7 @@ def _matafuegos_home_impl():
                     tipo = ?,
                     capacidad_kg = ?,
                     numero_serie = ?,
+                    nro_extintor = ?,
                     ubicacion = ?,
                     fecha_recarga = ?,
                     fecha_vencimiento = ?,
@@ -11517,6 +11521,7 @@ def _matafuegos_home_impl():
                     tipo,
                     capacidad_kg,
                     numero_serie or None,
+                    nro_extintor or None,
                     "",
                     fecha_recarga,
                     fecha_vencimiento,
@@ -11532,7 +11537,7 @@ def _matafuegos_home_impl():
             db.execute(
                 """
                 INSERT INTO matafuegos(
-                    cod_sede, sede, piso, local, tipo, capacidad_kg, numero_serie,
+                    cod_sede, sede, piso, local, tipo, capacidad_kg, numero_serie, nro_extintor,
                     ubicacion, fecha_recarga, fecha_vencimiento,
                     fecha_prueba_hidro, estado, activo, lote_vencimiento,
                     observaciones, created_at, updated_at
@@ -11546,6 +11551,7 @@ def _matafuegos_home_impl():
                     tipo,
                     capacidad_kg,
                     numero_serie or None,
+                    nro_extintor or None,
                     "",
                     fecha_recarga,
                     fecha_vencimiento,
@@ -11573,6 +11579,7 @@ def _matafuegos_home_impl():
                 tipo,
                 capacidad_kg,
                 numero_serie,
+                nro_extintor,
                 ubicacion,
                 fecha_recarga,
                 fecha_vencimiento,
@@ -11603,11 +11610,12 @@ def _matafuegos_home_impl():
             COALESCE(m.local,'') LIKE ?
             OR COALESCE(m.tipo,'') LIKE ?
             OR COALESCE(m.numero_serie,'') LIKE ?
+            OR COALESCE(m.nro_extintor,'') LIKE ?
             OR COALESCE(m.ubicacion,'') LIKE ?
             OR COALESCE(m.sede,'') LIKE ?
         )""")
         like = f"%{q}%"
-        params.extend([like, like, like, like, like])
+        params.extend([like, like, like, like, like, like])
 
     active_rows = db.execute(
         f"""
@@ -11619,6 +11627,7 @@ def _matafuegos_home_impl():
             m.tipo,
             m.capacidad_kg,
             m.numero_serie,
+            m.nro_extintor,
             m.ubicacion,
             m.fecha_recarga,
             m.fecha_vencimiento,
@@ -11647,11 +11656,12 @@ def _matafuegos_home_impl():
             COALESCE(m.local,'') LIKE ?
             OR COALESCE(m.tipo,'') LIKE ?
             OR COALESCE(m.numero_serie,'') LIKE ?
+            OR COALESCE(m.nro_extintor,'') LIKE ?
             OR COALESCE(m.ubicacion,'') LIKE ?
             OR COALESCE(m.sede,'') LIKE ?
         )""")
         like = f"%{q}%"
-        inactive_params.extend([like, like, like, like, like])
+        inactive_params.extend([like, like, like, like, like, like])
 
     inactive_rows = db.execute(
         f"""
@@ -11663,6 +11673,7 @@ def _matafuegos_home_impl():
             m.tipo,
             m.capacidad_kg,
             m.numero_serie,
+            m.nro_extintor,
             m.ubicacion,
             m.fecha_recarga,
             m.fecha_vencimiento,
@@ -11701,7 +11712,6 @@ def _matafuegos_home_impl():
         edit_row=edit_row,
         fecha_45d=fecha_45d,
         sede_opts=sede_opts,
-        local_opts=local_opts,
         tipo_opts=tipo_opts,
         capacidad_opts=capacidad_opts,
     )
@@ -11849,6 +11859,7 @@ def matafuegos_home():
             COALESCE(m.codigo_local,'') LIKE ?
             OR COALESCE(m.tipo,'') LIKE ?
             OR COALESCE(m.numero_serie,'') LIKE ?
+            OR COALESCE(m.nro_extintor,'') LIKE ?
             OR COALESCE(m.ubicacion,'') LIKE ?
         )""")
         like = f"%{q}%"
