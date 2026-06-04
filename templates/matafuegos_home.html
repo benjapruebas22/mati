@@ -97,6 +97,11 @@
           style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
       </div>
       <div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:4px">N° Extintor</div>
+        <input name="nro_extintor" value="{{ edit_row.nro_extintor if edit_row else '' }}"
+          style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
+      </div>
+      <div>
         <div style="font-size:12px;color:#64748b;margin-bottom:4px">Lote venc.</div>
         <select name="lote_vencimiento" style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
           {% set lote_sel = edit_row.lote_vencimiento if edit_row else '' %}
