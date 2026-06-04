@@ -15,7 +15,7 @@
       <option value="{{ p }}" {% if piso==p %}selected{% endif %}>{{ p }}</option>
       {% endfor %}
     </select>
-    <input name="q" value="{{ q }}" placeholder="Buscar (sede, local, tipo, serie, ubicacion)"
+    <input name="q" value="{{ q }}" placeholder="Buscar (sede, local, tipo, serie)"
       style="min-width:280px;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
     <button style="padding:8px 12px;border-radius:10px;border:1px solid #e5e7eb;background:#fff">Filtrar</button>
     <a href="{{ url_for('matafuegos_home') }}"
@@ -48,37 +48,57 @@
       <input type="hidden" name="id" value="{{ edit_row.id if edit_row else '' }}">
       <div>
         <div style="font-size:12px;color:#64748b;margin-bottom:4px">Sede</div>
-        <input name="sede" value="{{ edit_row.sede if edit_row else sede }}" placeholder="S01"
-          style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
+        <select name="sede" style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
+          <option value="">--</option>
+          {% set sede_sel = edit_row.sede if edit_row else sede %}
+          {% for sopt in sede_opts %}
+          <option value="{{ sopt.codigo }}" {% if sede_sel == sopt.codigo %}selected{% endif %}>{{ sopt.codigo }}{% if sopt.nombre %} - {{ sopt.nombre }}{% endif %}</option>
+          {% endfor %}
+        </select>
       </div>
       <div>
         <div style="font-size:12px;color:#64748b;margin-bottom:4px">Piso</div>
-        <input name="piso" value="{{ edit_row.piso if edit_row else piso }}" placeholder="PB/P1/P2"
-          style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
+        <select name="piso" style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
+          {% set piso_sel = edit_row.piso if edit_row else piso %}
+          <option value="PB" {% if piso_sel == 'PB' %}selected{% endif %}>PB</option>
+          <option value="P1" {% if piso_sel == 'P1' %}selected{% endif %}>P1</option>
+          <option value="P2" {% if piso_sel == 'P2' %}selected{% endif %}>P2</option>
+          <option value="P3" {% if piso_sel == 'P3' %}selected{% endif %}>P3</option>
+        </select>
       </div>
       <div>
         <div style="font-size:12px;color:#64748b;margin-bottom:4px">Local</div>
-        <input name="local" value="{{ edit_row.local if edit_row else '' }}" placeholder="D01"
-          style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
+        <select name="local" style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
+          <option value="">--</option>
+          {% set local_sel = edit_row.local if edit_row else '' %}
+          {% for lopt in local_opts %}
+          <option value="{{ lopt.local }}" {% if local_sel == lopt.local %}selected{% endif %}>{{ lopt.local }}</option>
+          {% endfor %}
+        </select>
       </div>
       <div>
         <div style="font-size:12px;color:#64748b;margin-bottom:4px">Tipo</div>
-        <input name="tipo" value="{{ edit_row.tipo if edit_row else '' }}" placeholder="ABC / CO2"
-          style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
+        <select name="tipo" style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
+          {% set tipo_sel = edit_row.tipo if edit_row else '' %}
+          <option value="">--</option>
+          {% for topt in tipo_opts %}
+          <option value="{{ topt }}" {% if tipo_sel == topt %}selected{% endif %}>{{ topt }}</option>
+          {% endfor %}
+        </select>
       </div>
       <div>
         <div style="font-size:12px;color:#64748b;margin-bottom:4px">Capacidad (kg)</div>
-        <input name="capacidad_kg" value="{{ edit_row.capacidad_kg if edit_row else '' }}" placeholder="5"
-          style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
+        <select name="capacidad_kg" style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
+          {% set cap_sel = edit_row.capacidad_kg if edit_row else '' %}
+          <option value="">--</option>
+          {% for cap in capacidad_opts %}
+          <option value="{{ cap }}" {% if cap_sel|float == cap|float %}selected{% endif %}>{{ cap }} kg</option>
+          {% endfor %}
+        </select>
       </div>
       <div>
         <div style="font-size:12px;color:#64748b;margin-bottom:4px">N° Serie</div>
         <input name="numero_serie" value="{{ edit_row.numero_serie if edit_row else '' }}"
-          style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
-      </div>
-      <div>
-        <div style="font-size:12px;color:#64748b;margin-bottom:4px">Ubicacion</div>
-        <input name="ubicacion" value="{{ edit_row.ubicacion if edit_row else '' }}" placeholder="Entrada / Pasillo"
           style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
       </div>
       <div>
@@ -123,12 +143,7 @@
           style="padding:8px 12px;border-radius:10px;border:1px solid #1d4ed8;background:#1d4ed8;color:#fff">
           Guardar
         </button>
-        {% if edit_row and edit_row.activo %}
-        <button name="accion" value="eliminar" onclick="return confirm('Dar de baja este matafuego?')"
-          style="padding:8px 12px;border-radius:10px;border:1px solid #ef4444;background:#fff;color:#ef4444">
-          Dar de baja
-        </button>
-        {% elif edit_row and not edit_row.activo %}
+        {% if edit_row and not edit_row.activo %}
         <button name="accion" value="reactivar"
           style="padding:8px 12px;border-radius:10px;border:1px solid #16a34a;background:#fff;color:#16a34a">
           Reactivar
@@ -151,7 +166,6 @@
           <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Tipo</th>
           <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb">Kg</th>
           <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Serie</th>
-          <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Ubicacion</th>
           <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Lote</th>
           <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Vence</th>
           <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Estado</th>
@@ -167,7 +181,6 @@
           <td style="padding:8px;border-bottom:1px solid #e5e7eb">{{ r.tipo or '' }}</td>
           <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center">{{ r.capacidad_kg or '' }}</td>
           <td style="padding:8px;border-bottom:1px solid #e5e7eb">{{ r.numero_serie or '' }}</td>
-          <td style="padding:8px;border-bottom:1px solid #e5e7eb">{{ r.ubicacion or '' }}</td>
           <td style="padding:8px;border-bottom:1px solid #e5e7eb">{{ r.lote_vencimiento or '' }}</td>
           <td style="padding:8px;border-bottom:1px solid #e5e7eb;font-weight:800">{{ r.fecha_vencimiento or '' }}</td>
           <td style="padding:8px;border-bottom:1px solid #e5e7eb">{{ r.estado or 'Sin dato' }}</td>
@@ -179,7 +192,7 @@
         {% endfor %}
         {% if not rows or rows|length == 0 %}
         <tr>
-          <td colspan="11" style="padding:10px;color:#64748b">Sin registros para el filtro.</td>
+          <td colspan="10" style="padding:10px;color:#64748b">Sin registros para el filtro.</td>
         </tr>
         {% endif %}
       </tbody>

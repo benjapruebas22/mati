@@ -11372,6 +11372,21 @@ def _matafuegos_home_impl():
         piso = "P1"
 
     fecha_45d = db.execute("SELECT date('now','+45 day') AS f").fetchone()["f"]
+    sede_opts = db.execute("""
+        SELECT UPPER(COALESCE(codigo,'')) AS codigo,
+               COALESCE(nombre,'') AS nombre
+        FROM sedes_mpd
+        WHERE TRIM(COALESCE(codigo,'')) <> ''
+        ORDER BY codigo
+    """).fetchall()
+    local_opts = db.execute("""
+        SELECT DISTINCT UPPER(TRIM(COALESCE(local,''))) AS local
+        FROM matafuegos
+        WHERE TRIM(COALESCE(local,'')) <> ''
+        ORDER BY local
+    """).fetchall()
+    tipo_opts = ["ABC", "ABC / CO2", "CO2"]
+    capacidad_opts = [5, 10]
 
     if request.method == "POST":
         accion = (request.form.get("accion") or "guardar").lower()
@@ -11402,7 +11417,6 @@ def _matafuegos_home_impl():
             or request.form.get("identificador")
             or ""
         ).strip()
-        ubicacion = (request.form.get("ubicacion") or "").strip()
         fecha_recarga = (request.form.get("fecha_recarga") or "").strip() or None
         fecha_vencimiento = (request.form.get("fecha_vencimiento") or "").strip() or None
         fecha_prueba_hidro = (request.form.get("fecha_prueba_hidro") or "").strip() or None
@@ -11447,8 +11461,8 @@ def _matafuegos_home_impl():
             flash("Matafuego reactivado.", "success")
             return redirect(url_for("matafuegos_home", sede=sede_form, piso=piso_form, q=q))
 
-        if not sede_form or not tipo or not capacidad_raw or not ubicacion or not fecha_vencimiento:
-            flash("Faltan datos obligatorios: sede, tipo, capacidad, ubicacion y fecha de vencimiento.", "warning")
+        if not sede_form or not tipo or not capacidad_raw or not fecha_vencimiento:
+            flash("Faltan datos obligatorios: sede, tipo, capacidad y fecha de vencimiento.", "warning")
             return redirect(url_for("matafuegos_home", sede=sede_form or sede, piso=piso_form, q=q, edit=rid or None))
 
         try:
@@ -11503,7 +11517,7 @@ def _matafuegos_home_impl():
                     tipo,
                     capacidad_kg,
                     numero_serie or None,
-                    ubicacion,
+                    "",
                     fecha_recarga,
                     fecha_vencimiento,
                     fecha_prueba_hidro,
@@ -11532,7 +11546,7 @@ def _matafuegos_home_impl():
                     tipo,
                     capacidad_kg,
                     numero_serie or None,
-                    ubicacion,
+                    "",
                     fecha_recarga,
                     fecha_vencimiento,
                     fecha_prueba_hidro,
@@ -11686,6 +11700,10 @@ def _matafuegos_home_impl():
         kpi=kpi,
         edit_row=edit_row,
         fecha_45d=fecha_45d,
+        sede_opts=sede_opts,
+        local_opts=local_opts,
+        tipo_opts=tipo_opts,
+        capacidad_opts=capacidad_opts,
     )
 
 @app.route("/sgsst/matafuegos", methods=["GET","POST"], endpoint="matafuegos_home")
@@ -11722,7 +11740,6 @@ def matafuegos_home():
         tipo   = (request.form.get("tipo") or "").strip()
         capacidad_kg = request.form.get("capacidad_kg")
         nro_serie = (request.form.get("nro_serie") or "").strip()
-        ubicacion = (request.form.get("ubicacion") or "").strip()
         fecha_recarga = request.form.get("fecha_recarga") or None
         fecha_vencimiento = request.form.get("fecha_vencimiento") or None
         fecha_prueba_hidro = request.form.get("fecha_prueba_hidro") or None
