@@ -5621,7 +5621,14 @@ def sede_ficha(codigo):
             plano_base = c
 
     plano_rel = _pick_plan_file(codigo, plano_base) or "planos/placeholder.png"
-    plano_url = url_for("static", filename=plano_rel)
+    plano_abs = os.path.join(app.root_path, "static", plano_rel.replace("/", os.sep))
+    plano_ver = None
+    try:
+        if os.path.exists(plano_abs):
+            plano_ver = int(os.path.getmtime(plano_abs))
+    except Exception:
+        plano_ver = None
+    plano_url = url_for("static", filename=plano_rel, v=plano_ver) if plano_ver else url_for("static", filename=plano_rel)
 
     # -------------------------
     # LOCALES (para filtros debajo del plano)
