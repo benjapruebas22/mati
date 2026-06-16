@@ -61,7 +61,7 @@
     ],
     'el_ramal': [
       {'codigo':'S02','nombre':'San Pedro','fueros':'Penal / Juridico Social / Menores','bloques':[{'fuero':'Penal','rangos':'D01 a D10'},{'fuero':'Juridico Social','rangos':'D11 a D28'},{'fuero':'Menores / Incapaces','rangos':'D29 a D38'}]},
-      {'codigo':'S06','nombre':'Ledesma','fueros':'Penal / Menores','bloques':[{'fuero':'Penal','rangos':'D01 a D07 y D09 a D11'},{'fuero':'Menores / Incapaces','rangos':'D08'}]},
+      {'codigo':'S06','nombre':'Ledesma','fueros':'Penal / Menores','bloques':[{'fuero':'Penal','rangos':'D01 a D07'},{'fuero':'Menores / Incapaces','rangos':'D08 a D14'}]},
       {'codigo':'S19','nombre':'Ledesma Civil','fueros':'Juridico Social','bloques':[{'fuero':'Juridico Social','rangos':'Operacion civil'}]}
     ],
     'quebrada_puna': [
@@ -2167,7 +2167,7 @@
     }
     if (sede === 'S06' && Number.isFinite(n) && n > 0) {
       if (n <= 7) return { local, cls: 'dep-local-badge-penal', title: 'Penal (S06)' };
-      if (n <= 11) return { local, cls: 'dep-local-badge-menores', title: 'Menores / Incapaces (S06)' };
+      if (n <= 14) return { local, cls: 'dep-local-badge-menores', title: 'Menores / Incapaces (S06)' };
     }
     if (sede === 'S10' && Number.isFinite(n) && n > 0) {
       if (['D01', 'D02'].includes(local)) return { local, cls: 'dep-local-badge-penal', title: 'Penal (S10)' };

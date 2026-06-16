@@ -136,12 +136,12 @@
     {% endif %}
   {% endif %}
 
-  {# S06 Ledesma: D01-D07 penal, D08-D11 menores. #}
+  {# S06 Ledesma: D01-D07 penal, D08-D14 menores. #}
   {% if not badge_cls and sede == 'S06' and dep_num > 0 %}
     {% if dep_num <= 7 %}
       {% set badge_cls = 'dep-local-badge-penal' %}
       {% set badge_title = 'Penal (S06)' %}
-    {% elif dep_num <= 11 %}
+    {% elif dep_num <= 14 %}
       {% set badge_cls = 'dep-local-badge-menores' %}
       {% set badge_title = 'Menores / Incapaces (S06)' %}
     {% endif %}

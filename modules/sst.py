@@ -1182,6 +1182,59 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 VALUES (?,?,?)
             """, missing_s02)
 
+        s06_layout = [
+            ("D01", "Mesa de Entrada"),
+            ("D02", "Leiva, Carolina del Valle Y Salazar, Cecilia del Valle"),
+            ("D03", "Baño 1"),
+            ("D04", "Dra Rodas"),
+            ("D05", "Dr Ferreyra"),
+            ("D06", "Baño 2"),
+            ("D07", "Pasillo"),
+            ("D08", "Baño"),
+            ("D09", "Dra Castro"),
+            ("D10", "Patio Interno"),
+            ("D11", "Baño"),
+            ("D12", "Cocina"),
+            ("D13", "Entrevistas"),
+            ("D14", "Acceso"),
+        ]
+        existing_s06 = {
+            str(r[0] or "").strip().upper()
+            for r in cur.execute(
+                "SELECT codigo_local FROM sedes_depositos WHERE codigo_sede = 'S06'"
+            ).fetchall()
+        }
+        for codigo_local, descripcion in s06_layout:
+            if codigo_local in existing_s06:
+                cur.execute("""
+                    UPDATE sedes_depositos
+                    SET descripcion = ?
+                    WHERE codigo_sede = 'S06' AND UPPER(TRIM(codigo_local)) = ?
+                """, (descripcion, codigo_local))
+            else:
+                cur.execute("""
+                    INSERT INTO sedes_depositos (codigo_sede, codigo_local, descripcion)
+                    VALUES ('S06', ?, ?)
+                """, (codigo_local, descripcion))
+
+        s06_personal_moves = [
+            ("Leiva, Carolina del Valle", "cleiva@mpdjujuy.gob.ar", "D02"),
+            ("Salazar, Cecilia del Valle", "", "D02"),
+            ("Rodas, Paola Giselle", "prodas@mpdpjujuy.gob.ar", "D04"),
+            ("Ferreyra, Marcelo Adrián", "aferreyra@mpdpjujuy.gob.ar", "D05"),
+            ("Castro Reyna, María Sofía", "mcastro@mpdjujuy.gob.ar", "D09"),
+        ]
+        for nombre_apellido, email_admin, codigo_local in s06_personal_moves:
+            cur.execute("""
+                UPDATE personal_sede
+                SET codigo_local = ?, piso = COALESCE(NULLIF(TRIM(piso), ''), 'PB')
+                WHERE codigo_sede = 'S06'
+                  AND (
+                    nombre_apellido = ?
+                    OR (TRIM(COALESCE(email_admin, '')) <> '' AND LOWER(TRIM(email_admin)) = LOWER(TRIM(?)))
+                  )
+            """, (codigo_local, nombre_apellido, email_admin))
+
 
         # ---------------------------
         # MOVIMIENTOS DE MOBILIARIO
