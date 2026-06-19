@@ -299,6 +299,39 @@ def register_asignaciones_simple(app, get_db):
             (fecha,),
         ).fetchall()
 
+    def _informe_operativo_por_fecha(con, fecha):
+        fecha_txt = _clean_text(fecha)
+        if not fecha_txt:
+            return {"estado": "Informe pendiente", "url": "", "doc_id": 0}
+        try:
+            tiene_docs = con.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='documentos'"
+            ).fetchone()
+            if not tiene_docs:
+                return {"estado": "Informe pendiente", "url": "", "doc_id": 0}
+            row = con.execute(
+                """
+                SELECT id_documento, COALESCE(archivo_url, '') AS archivo_url
+                FROM documentos
+                WHERE tipo_documento = 'informe'
+                  AND COALESCE(fecha, '') = ?
+                ORDER BY id_documento DESC
+                LIMIT 1
+                """,
+                (fecha_txt,),
+            ).fetchone()
+            if not row:
+                return {"estado": "Informe pendiente", "url": "", "doc_id": 0}
+            doc_id = int(row["id_documento"] or 0)
+            archivo_url = _clean_text(row["archivo_url"])
+            return {
+                "estado": "Informe cargado",
+                "url": archivo_url or url_for("sgi_documentacion_informes", edit=doc_id),
+                "doc_id": doc_id,
+            }
+        except Exception:
+            return {"estado": "Informe pendiente", "url": "", "doc_id": 0}
+
     def _next_orden_diario(con, fecha):
         row = con.execute(
             "SELECT COALESCE(MAX(COALESCE(orden,0)),0) AS max_orden FROM asignaciones_simples_diario WHERE fecha=?",
@@ -392,6 +425,7 @@ def register_asignaciones_simple(app, get_db):
                 fecha=fecha,
                 fecha_humana=_iso_to_ddmmyyyy(fecha),
                 diario_rows=diario_rows,
+                informe_operativo=_informe_operativo_por_fecha(con, fecha),
                 rot_ultimo_rows=rot_ultimo_rows,
                 rot_proximo_rows=rot_proximo_rows,
                 referencia_rows=referencia_rows,

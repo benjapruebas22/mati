@@ -1278,13 +1278,18 @@
 
   .gestion-panels .gestion-panel { display: none; }
   .gestion-panels[data-active-tab="mantenimiento"] .gestion-panel[data-panel="mantenimiento"] { display: block; }
-  .gestion-panels[data-active-tab="choferes"] .gestion-panel[data-panel="choferes"] { display: block; }
+  .gestion-panels[data-active-tab="limpieza"] .gestion-panel[data-panel="limpieza"] { display: block; }
   .gestion-panels[data-active-tab="administrativo"] .gestion-panel[data-panel="administrativo"] { display: block; }
   .gestion-panels[data-active-tab="recordatorios"] .gestion-panel[data-panel="recordatorios"] { display: block; }
   .gestion-panels[data-active-tab="programadas"] .gestion-panel[data-panel="programadas"] { display: block; }
 
   .nvd-admin-stack {
     display: grid;
+    gap: 12px;
+  }
+  .gestion-limpieza-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 12px;
   }
   .nvd-admin-subtitle {
@@ -2243,7 +2248,7 @@
       <h1>Centro de control operativo - Intendencia</h1>
       <div class="card-head-actions">
         <button id="btnCargarTop" type="button" class="btn-dark">+ Cargar</button>
-        <a href="{{ url_for('asignaciones_simple_home') }}" class="btn-soft">Asignaciones</a>
+        <a href="{{ url_for('asignaciones_simple_home') }}" class="btn-soft">Asignaciones Operativas</a>
         <button id="btnPlanosDeposito" type="button" class="btn-soft">Planos depósito</button>
       </div>
     </div>
@@ -2297,37 +2302,21 @@
 
     <div class="kpi-grid operativa">
       <div class="kpi pending-old">
-        <div class="k-label">Mantenimiento</div>
+        <div class="k-label">Pendientes respuesta mantenimiento</div>
         <div class="k-val" id="kpiPendPrev">0</div>
-        <div class="k-sub" aria-label="Detalle mantenimiento">
-          <span>TD: <strong id="kpiMantTd">0</strong></span>
-          <span>TP: <strong id="kpiMantTp">0</strong></span>
-        </div>
       </div>
       <div class="kpi today-open">
-        <div class="k-label">Choferes</div>
+        <div class="k-label">Pendientes revisiÃ³n limpieza</div>
         <div class="k-val" id="kpiPendDia">0</div>
-        <div class="k-sub" aria-label="Detalle choferes">
-          <span>TD: <strong id="kpiChofTd">0</strong></span>
-          <span>TP: <strong id="kpiChofTp">0</strong></span>
-        </div>
       </div>
       <div id="kpiCardTotal" class="kpi assign-open">
-        <div class="k-label">Pendientes totales</div>
+        <div class="k-label">Alertas crÃ­ticas</div>
         <div class="k-val" id="kpiAsigOpen">0</div>
-        <div class="k-sub" aria-label="Detalle pendientes totales">
-          <span>TD: <strong id="kpiTotTd">0</strong></span>
-          <span>TP: <strong id="kpiTotTp">0</strong></span>
-        </div>
         <div id="kpiTotOldNote" class="k-note" aria-live="polite" hidden></div>
       </div>
-      <div id="kpiCardRecord" class="kpi matias-open kpi-click" role="button" tabindex="0" title="Ver recordatorios">
-        <div class="k-label" id="kpiPendMatiasLabel">Recordatorios Matias</div>
+      <div id="kpiCardRecord" class="kpi matias-open kpi-click" role="button" tabindex="0" title="Ver seguimiento administrativo">
+        <div class="k-label" id="kpiPendMatiasLabel">Seguimiento administrativo</div>
         <div class="k-val" id="kpiPendMatias">0</div>
-        <div class="k-sub" aria-label="Detalle recordatorios">
-          <span>TD: <strong id="kpiRecTd">0</strong></span>
-          <span>TP: <strong id="kpiRecTp">0</strong></span>
-        </div>
       </div>
     </div>
 
@@ -2342,7 +2331,7 @@
       </div>
     </div>
 
-    <div class="ops-kpi-row" aria-label="KPIs operativos">
+    <div class="ops-kpi-row" aria-label="KPIs operativos" style="display:none;">
       <div id="mataCard" class="ops-kpi-card ops-kpi-mata ops-kpi-link" data-href="{{ url_for('matafuegos_home') }}">
         <div class="ops-kpi-head">
           <div class="ops-kpi-left">
@@ -2592,7 +2581,7 @@
 
   <article class="control-card control-workspace-section card-operativa" data-workspaces="gestion historial">
     <div class="card-head">
-      <h2>Gestion</h2>
+      <h2>GestiÃ³n diaria</h2>
       <div class="card-head-actions">
         <button id="btnToggleGestionCard" type="button" class="btn-soft" aria-expanded="true">Ocultar</button>
         <button id="btnRecargarDia" type="button" class="btn-soft">Recargar dia</button>
@@ -2647,8 +2636,8 @@
             <button type="button" class="gestion-rubro-tab active" data-rubro="mantenimiento" aria-selected="true">
               Mantenimiento <span id="badgeMantenimiento" class="tab-badge">0</span>
             </button>
-            <button type="button" class="gestion-rubro-tab" data-rubro="choferes" aria-selected="false">
-              Choferes <span id="badgeChoferes" class="tab-badge">0</span>
+            <button type="button" class="gestion-rubro-tab" data-rubro="limpieza" aria-selected="false">
+              Limpieza <span id="badgeLimpieza" class="tab-badge">0</span>
             </button>
             <button type="button" class="gestion-rubro-tab" data-rubro="administrativo" aria-selected="false">
               Administrativo <span id="badgeAdministrativo" class="tab-badge">0</span>
@@ -2736,34 +2725,32 @@
         </div>
       </div>
 
-      <div class="nvd-split-block split-dia gestion-panel" data-panel="choferes">
+      <div class="nvd-split-block split-dia gestion-panel" data-panel="limpieza">
         <div class="nvd-split-head dia">
-          <span class="title">Choferes</span>
-          <span class="sub">Traslados, viajes y logistica asignada.</span>
+          <span class="title">Limpieza</span>
+          <span class="sub">Control diario de revisiones, observaciones y cierres.</span>
         </div>
-        <div class="table-wrap table-wrap-full">
-          <table class="tbl">
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Chofer</th>
-                <th>Sede / destino</th>
-                <th>Motivo / tarea</th>
-                <th>Estado</th>
-                <th>Accion</th>
-              </tr>
-            </thead>
-            <tbody id="nvdBodyChofer">
-              <tr><td colspan="6" style="color:#6f86a5;">Sin tareas asignadas.</td></tr>
-            </tbody>
-          </table>
+        <div class="gestion-limpieza-grid">
+          <a id="gestionLimpiezaMain" class="daily-action" href="{{ url_for('sedes_control_limpieza_supervision') }}">
+            <span class="icon" aria-hidden="true">ðŸ§¹</span>
+            <span class="label">Revisar controles</span>
+            <span id="gestionLimpiezaBadge" class="ops-badge na" style="display:none;">0</span>
+          </a>
+          <a class="daily-action" href="{{ url_for('sedes_control_limpieza_historial') }}">
+            <span class="icon" aria-hidden="true">ðŸ“‹</span>
+            <span class="label">Historial y cierres</span>
+          </a>
+          <a class="daily-action" href="{{ url_for('sedes_resumen_mpd') }}">
+            <span class="icon" aria-hidden="true">ðŸ—ºï¸</span>
+            <span class="label">Ver sedes y observaciones</span>
+          </a>
         </div>
       </div>
 
       <div class="nvd-split-block split-solic gestion-panel" data-panel="administrativo">
       <div class="nvd-split-head pend">
           <span class="title">Administrativo</span>
-          <span class="sub">Solicitudes y novedades que requieren gestion o respuesta.</span>
+          <span class="sub">Coffee, compras, insumos y seguimientos que requieren gestiÃ³n o respuesta.</span>
         </div>
         <div class="nvd-admin-stack">
           <div class="nvd-admin-subtitle">Tareas administrativas</div>
@@ -2812,7 +2799,7 @@
       <div class="nvd-split-block split-rec gestion-panel" data-panel="recordatorios">
         <div class="nvd-split-head rec">
           <span class="title">Recordatorios</span>
-          <span class="sub">Pendientes personales / autoasignaciones para seguimiento.</span>
+          <span class="sub">Seguimientos operativos pendientes.</span>
         </div>
         <div class="table-wrap table-wrap-full">
           <table class="tbl">
@@ -3085,13 +3072,15 @@
     var TASK_ALERTS_BASE = [];
     var RESUMEN_BASE = { total: 0, informado: 0, en_proceso: 0, resuelto: 0 };
     var AGENTE_GRUPO_FILTRO_ACTIVO = "";
-    var GESTION_RUBRO_ACTIVO = "mantenimiento"; // mantenimiento | choferes | administrativo | recordatorios | programadas
+    var GESTION_RUBRO_ACTIVO = "mantenimiento"; // mantenimiento | limpieza | administrativo | recordatorios | programadas
     var GESTION_FILTRO_SEDE = "";
     var GESTION_FILTRO_ESTADO = "";
     var GESTION_FILTRO_PRIORIDAD = "";
     var HIDE_PENDIENTES_NO_CERRADOS = true;
     var FORM_DEPOSITO_PREFER = "";
     var DEPPLAN_SEDE_ACTIVA = "";
+    var LIMPIEZA_PENDIENTES = 0;
+    var ALERTAS_CRITICAS = 0;
     var WORKSPACE_DEFAULT = "gestion";
     var WORKSPACE_ACTIVE = WORKSPACE_DEFAULT;
     var WORKSPACE_META = {
@@ -3289,7 +3278,7 @@
       cerrarCarga: document.getElementById("btnCerrarCarga"),
       rubroTabs: document.getElementById("gestionRubroTabs"),
       badgeMantenimiento: document.getElementById("badgeMantenimiento"),
-      badgeChoferes: document.getElementById("badgeChoferes"),
+      badgeLimpieza: document.getElementById("badgeLimpieza"),
       badgeAdministrativo: document.getElementById("badgeAdministrativo"),
       badgeRecordatorios: document.getElementById("badgeRecordatorios"),
       tabRecordatorios: document.getElementById("tabRecordatorios"),
@@ -3380,6 +3369,7 @@
       limpiezaAction: document.getElementById("limpiezaAction"),
       limpiezaLabel: document.getElementById("limpiezaLabel"),
       limpiezaBadge: document.getElementById("limpiezaBadge"),
+      gestionLimpiezaBadge: document.getElementById("gestionLimpiezaBadge"),
       cargarCard: document.getElementById("cargarCard"),
       registroBox: document.getElementById("registroNvdBox"),
       histTop: document.getElementById("btnHistorialTop"),
@@ -3543,7 +3533,7 @@
 
     function setGestionRubro(nextKey) {
       var key = String(nextKey || "").trim();
-      if (["mantenimiento", "choferes", "administrativo", "recordatorios", "programadas"].indexOf(key) < 0) key = "mantenimiento";
+      if (["mantenimiento", "limpieza", "administrativo", "recordatorios", "programadas"].indexOf(key) < 0) key = "mantenimiento";
       GESTION_RUBRO_ACTIVO = key;
       if (el.splitWrap) el.splitWrap.setAttribute("data-active-tab", key);
       if (el.rubroTabs) {
@@ -4462,7 +4452,6 @@
       var gruposOrden = [
         { key: "", label: "Todos", colors: { bg: "#f3f7ff", bd: "#d8e3f6", tx: "#3d5f8f", abg: "#2f5ea4", abd: "#2f5ea4" } },
         { key: "mantenimiento", cfg: AGENTE_GRUPOS.mantenimiento },
-        { key: "choferes", cfg: AGENTE_GRUPOS.choferes },
         { key: "administracion", cfg: AGENTE_GRUPOS.administracion },
       ];
       var html = gruposOrden.map(function (g) {
@@ -4676,6 +4665,7 @@
       var x = d || {};
       var n = parseInt(x.pendientesRevision, 10);
       if (!isFinite(n) || n < 0) n = 0;
+      LIMPIEZA_PENDIENTES = n;
       if (el.limpiezaBadge) {
         if (n > 0) {
           el.limpiezaBadge.style.display = "";
@@ -4688,6 +4678,15 @@
       if (el.limpiezaLabel) {
         el.limpiezaLabel.textContent = n > 0 ? ("Limpieza (" + String(n) + ")") : "Limpieza";
       }
+      if (el.gestionLimpiezaBadge) {
+        if (n > 0) {
+          el.gestionLimpiezaBadge.style.display = "";
+          setBadge(el.gestionLimpiezaBadge, String(n), "warn");
+        } else {
+          el.gestionLimpiezaBadge.style.display = "none";
+        }
+      }
+      renderKpisOperativos();
     }
 
     function loadOperativoExtras() {
@@ -4833,33 +4832,23 @@
 
       var mantRows = openTasks.filter(function (r) { return filaPerteneceGrupo(r, "mantenimiento"); })
         .concat(openSolic.filter(function (r) { return filaPerteneceGrupo(r, "mantenimiento"); }));
-      var chofRows = openTasks.filter(function (r) { return filaPerteneceGrupo(r, "choferes"); })
-        .concat(openSolic.filter(function (r) { return filaPerteneceGrupo(r, "choferes"); }));
+      var adminRows = openTasks.filter(function (r) { return filaPerteneceGrupo(r, "administracion"); })
+        .concat(openSolic.filter(function (r) { return !filaPerteneceGrupo(r, "mantenimiento"); }));
       var totRows = openTasks.concat(openSolic);
       var recRows = totRows.filter(filaEsRecordatorio);
 
       var mant = splitTdTp(mantRows);
-      var chof = splitTdTp(chofRows);
-      var tot = splitTdTp(totRows);
+      var admin = splitTdTp(adminRows);
       var rec = splitTdTp(recRows);
 
       if (el.kPendPrev) el.kPendPrev.textContent = String(mant.total);
-      if (el.kPendDia) el.kPendDia.textContent = String(chof.total);
-      if (el.kAsigOpen) el.kAsigOpen.textContent = String(tot.total);
-      if (el.kPendMatias) el.kPendMatias.textContent = String(rec.total);
-
-      if (el.kMantTd) el.kMantTd.textContent = String(mant.td);
-      if (el.kMantTp) el.kMantTp.textContent = String(mant.tp);
-      if (el.kChofTd) el.kChofTd.textContent = String(chof.td);
-      if (el.kChofTp) el.kChofTp.textContent = String(chof.tp);
-      if (el.kTotTd) el.kTotTd.textContent = String(tot.td);
-      if (el.kTotTp) el.kTotTp.textContent = String(tot.tp);
-      if (el.kRecTd) el.kRecTd.textContent = String(rec.td);
-      if (el.kRecTp) el.kRecTp.textContent = String(rec.tp);
+      if (el.kPendDia) el.kPendDia.textContent = String(LIMPIEZA_PENDIENTES || 0);
+      if (el.kAsigOpen) el.kAsigOpen.textContent = String(ALERTAS_CRITICAS || 0);
+      if (el.kPendMatias) el.kPendMatias.textContent = String(admin.total);
 
       if (el.kTotOldNote && el.kpiCardTotal) {
-        if (tot.tp > 0) {
-          el.kTotOldNote.textContent = String(tot.tp) + " pendientes viejos";
+        if ((ALERTAS_CRITICAS || 0) > 0) {
+          el.kTotOldNote.textContent = String(ALERTAS_CRITICAS || 0) + " activas hoy";
           el.kTotOldNote.hidden = false;
           el.kpiCardTotal.classList.add("has-old");
         } else {
@@ -4870,8 +4859,7 @@
       }
 
       if (el.kPendMatiasLabel) {
-        var meNorm = actorNormName();
-        el.kPendMatiasLabel.textContent = (meNorm === "matias calderari" || IS_MATIAS) ? "Recordatorios Matias" : "Mis recordatorios";
+        el.kPendMatiasLabel.textContent = "Seguimiento administrativo";
       }
     }
 
@@ -4920,7 +4908,9 @@
         return "alert-default";
       }
       var rows = Array.isArray(items) ? items : [];
+      ALERTAS_CRITICAS = rows.length;
       if (!rows.length) {
+        ALERTAS_CRITICAS = 0;
         if (el.alertasCard) {
           el.alertasCard.style.display = "none";
           el.alertasCard.classList.remove("has-alertas");
@@ -4938,6 +4928,7 @@
         var src = r.fuente ? ("<strong>" + r.fuente + ":</strong> ") : "";
         return '<li class="' + alertClass(r) + '">' + src + (r.texto || "-") + "</li>";
       }).join("");
+      renderKpisOperativos();
     }
 
     function renderTaskAlerts(items) {
@@ -6264,11 +6255,9 @@
 
       function rubroLabel(r) {
         if (filaPerteneceGrupo(r, "mantenimiento")) return "Mantenimiento";
-        if (filaPerteneceGrupo(r, "choferes")) return "Choferes";
         if (filaPerteneceGrupo(r, "administracion")) return "Administrativo";
         var cls = tipoClass((r && r.tipo) || "");
         if (cls === "tipo-mantenimiento") return "Mantenimiento";
-        if (cls === "tipo-coffee" || cls === "tipo-vehiculos") return "Choferes";
         return "Administrativo";
       }
 
@@ -6359,14 +6348,11 @@
       });
       RAW_TASK = tasksBase.slice();
       var tareasMantenimientoBase = tasksBase.filter(function (r) { return filaPerteneceGrupo(r, "mantenimiento"); });
-      var tareasChoferesBase = tasksBase.filter(function (r) { return filaPerteneceGrupo(r, "choferes"); });
       var tareasAdministrativoBase = tasksBase.filter(function (r) { return filaPerteneceGrupo(r, "administracion"); });
-      var solicitudesChoferesBase = RAW_SOLIC.filter(function (r) { return filaPerteneceGrupo(r, "choferes"); });
       var solicitudesAdministrativoBase = RAW_SOLIC.filter(function (r) {
-        return !filaPerteneceGrupo(r, "choferes") && !filaPerteneceGrupo(r, "mantenimiento");
+        return !filaPerteneceGrupo(r, "mantenimiento");
       });
       var tasks = ordenarTpTd(aplicarFiltroAgente(tareasMantenimientoBase));
-      var tasksChoferes = ordenarTpTd(aplicarFiltroAgente(tareasChoferesBase.concat(solicitudesChoferesBase)));
       var tasksAdministrativo = ordenarTpTd(aplicarFiltroAgente(tareasAdministrativoBase));
       var solicitudes = ordenarTpTd(aplicarFiltroAgente(solicitudesAdministrativoBase));
       var recordatorios = ordenarTpTd(tasksBase.concat(RAW_SOLIC).filter(filaPasaFiltrosSinAgente).filter(filaEsRecordatorio));
@@ -6376,14 +6362,13 @@
         ITEM_INDEX[String(r.id || "")] = r;
       });
       renderTareasRows(el.bodyDia, tasks);
-      if (el.bodyChofer) renderChoferesRows(el.bodyChofer, tasksChoferes);
       if (el.bodyAdminTasks) renderTareasRows(el.bodyAdminTasks, tasksAdministrativo);
       if (el.bodySolic) renderSolicitudesRows(el.bodySolic, solicitudes);
       if (el.bodyRecord) renderRecordatoriosRows(el.bodyRecord, recordatorios);
       if (el.bodyProgramadas) renderProgramadasRows(el.bodyProgramadas, programadas);
       if (el.bodyPend) el.bodyPend.innerHTML = '<tr><td colspan="10" style="color:#6f86a5;">Sin pendientes acumulados.</td></tr>';
       if (el.badgeMantenimiento) el.badgeMantenimiento.textContent = String(tasks.length);
-      if (el.badgeChoferes) el.badgeChoferes.textContent = String(tasksChoferes.length);
+      if (el.badgeLimpieza) el.badgeLimpieza.textContent = String(LIMPIEZA_PENDIENTES || 0);
       if (el.badgeAdministrativo) el.badgeAdministrativo.textContent = String(tasksAdministrativo.length + solicitudes.length);
       if (el.badgeRecordatorios) el.badgeRecordatorios.textContent = String(recordatorios.length);
       if (el.badgeProgramadas) el.badgeProgramadas.textContent = String(programadas.length);

@@ -150,11 +150,11 @@
 </style>
 
 <section class="as-simple-wrap">
-  <h2 class="as-simple-title">ASIGNACIONES SIMPLES</h2>
-  <p class="as-simple-sub">Planilla interna rápida para ordenar choferes, vehículos y rotación manual.</p>
+  <h2 class="as-simple-title">ASIGNACIONES OPERATIVAS</h2>
+  <p class="as-simple-sub">Planilla operativa diaria para ordenar traslados internos. La ejecucion oficial del viaje sigue en MiDefensa.</p>
 
   <article class="as-simple-card">
-    <div class="as-simple-head">DIARIO</div>
+    <div class="as-simple-head">PLANILLA OPERATIVA DIARIA</div>
     <div class="as-simple-pad">
       <form class="as-simple-toolbar" method="get" action="{{ url_for('asignaciones_simple_home') }}">
         <label for="fecha">Fecha</label>
@@ -163,21 +163,32 @@
         <a class="as-btn primary" href="{{ url_for('asignaciones_simple_nuevo_diario', fecha=fecha) }}">+ Agregar traslado</a>
       </form>
 
+      <div class="as-simple-toolbar" style="margin-top:8px; align-items:center;">
+        <span><strong>Estado informe operativo:</strong> {{ informe_operativo.estado }}</span>
+        {% if informe_operativo.url %}
+          <a class="as-btn" href="{{ informe_operativo.url }}" target="_blank" rel="noopener">Abrir informe</a>
+        {% endif %}
+        <a class="as-btn" href="{{ url_for('sgi_documentacion_informes') }}">Ir a informes</a>
+      </div>
+
       <table id="tabla-diario" class="as-table">
         <thead>
           <tr>
+            <th>Fecha</th>
             <th>Chofer</th>
-            <th>Vehículo</th>
+            <th>Vehiculo</th>
             <th>Destino</th>
             <th>Solicitante</th>
             <th>Hora llegada aprox</th>
             <th>Estado</th>
-            <th>Acción</th>
+            <th>Observacion</th>
+            <th>Accion</th>
           </tr>
         </thead>
         <tbody>
           {% for r in diario_rows %}
             <tr>
+              <td>{{ r.fecha or fecha }}</td>
               <td>{{ r.chofer or '-' }}</td>
               <td>
                 {% set vh = r.vehiculo or '-' %}
@@ -192,10 +203,11 @@
               <td>{{ r.solicitante or '-' }}</td>
               <td>{{ r.hora_llegada_aprox or '-' }}</td>
               <td>{{ r.estado or '-' }}</td>
+              <td>{{ r.observacion or '-' }}</td>
               <td>
                 <span class="as-actions-cell">
                   <a class="as-btn" href="{{ url_for('asignaciones_simple_editar', tipo='diario', row_id=r.id, fecha=fecha) }}">Editar</a>
-                  <form class="as-inline-form" method="post" action="{{ url_for('asignaciones_simple_eliminar', tipo='diario', row_id=r.id, fecha=fecha) }}" onsubmit="return confirm('¿Eliminar este traslado del día?');">
+                  <form class="as-inline-form" method="post" action="{{ url_for('asignaciones_simple_eliminar', tipo='diario', row_id=r.id, fecha=fecha) }}" onsubmit="return confirm('Eliminar este traslado del dia?');">
                     <button class="as-btn danger" type="submit">Eliminar</button>
                   </form>
                 </span>
@@ -320,20 +332,22 @@
 
     function buildText() {
       const lines = [];
-      lines.push("ASIGNACIONES DEL DÍA");
+      lines.push("ASIGNACIONES OPERATIVAS");
       lines.push("Fecha: {{ fecha_humana }}");
       lines.push("");
-      lines.push("Hora llegada aprox | Chofer | Vehículo | Destino | Solicitante | Estado");
+      lines.push("Fecha | Hora llegada aprox | Chofer | Vehiculo | Destino | Solicitante | Estado | Observacion");
       const rows = tabla.querySelectorAll("tbody tr");
       rows.forEach((tr) => {
         const cells = tr.querySelectorAll("td");
-        const hora = (cells[4] ? cells[4].innerText : "").trim();
-        const chofer = (cells[0] ? cells[0].innerText : "").trim();
-        const vehiculo = (cells[1] ? cells[1].innerText : "").trim();
-        const destino = (cells[2] ? cells[2].innerText : "").trim();
-        const solicitante = (cells[3] ? cells[3].innerText : "").trim();
-        const estado = (cells[5] ? cells[5].innerText : "").trim();
-        lines.push([hora, chofer, vehiculo, destino, solicitante, estado].join(" | "));
+        const fecha = (cells[0] ? cells[0].innerText : "").trim();
+        const chofer = (cells[1] ? cells[1].innerText : "").trim();
+        const vehiculo = (cells[2] ? cells[2].innerText : "").trim();
+        const destino = (cells[3] ? cells[3].innerText : "").trim();
+        const solicitante = (cells[4] ? cells[4].innerText : "").trim();
+        const hora = (cells[5] ? cells[5].innerText : "").trim();
+        const estado = (cells[6] ? cells[6].innerText : "").trim();
+        const observacion = (cells[7] ? cells[7].innerText : "").trim();
+        lines.push([fecha, hora, chofer, vehiculo, destino, solicitante, estado, observacion].join(" | "));
       });
       return lines.join("\n");
     }
