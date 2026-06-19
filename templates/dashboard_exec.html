@@ -1280,6 +1280,7 @@
   .gestion-panels[data-active-tab="mantenimiento"] .gestion-panel[data-panel="mantenimiento"] { display: block; }
   .gestion-panels[data-active-tab="limpieza"] .gestion-panel[data-panel="limpieza"] { display: block; }
   .gestion-panels[data-active-tab="administrativo"] .gestion-panel[data-panel="administrativo"] { display: block; }
+  .gestion-panels[data-active-tab="agenda"] .gestion-panel[data-panel="agenda"] { display: block; }
   .gestion-panels[data-active-tab="recordatorios"] .gestion-panel[data-panel="recordatorios"] { display: block; }
   .gestion-panels[data-active-tab="programadas"] .gestion-panel[data-panel="programadas"] { display: block; }
 
@@ -2301,21 +2302,21 @@
     </div>
 
     <div class="kpi-grid operativa">
-      <div class="kpi pending-old">
-        <div class="k-label">Pendientes respuesta mantenimiento</div>
+      <div id="kpiCardMant" class="kpi pending-old kpi-click" role="button" tabindex="0" title="Ver mantenimiento">
+        <div class="k-label">Pendientes revision mantenimiento</div>
         <div class="k-val" id="kpiPendPrev">0</div>
       </div>
-      <div class="kpi today-open">
+      <div id="kpiCardLimpieza" class="kpi today-open kpi-click" role="button" tabindex="0" title="Ver limpieza">
         <div class="k-label">Pendientes revisiÃ³n limpieza</div>
         <div class="k-val" id="kpiPendDia">0</div>
       </div>
-      <div id="kpiCardTotal" class="kpi assign-open">
+      <div id="kpiCardTotal" class="kpi assign-open kpi-click" role="button" tabindex="0" title="Ver SG-SST">
         <div class="k-label">Alertas crÃ­ticas</div>
         <div class="k-val" id="kpiAsigOpen">0</div>
         <div id="kpiTotOldNote" class="k-note" aria-live="polite" hidden></div>
       </div>
-      <div id="kpiCardRecord" class="kpi matias-open kpi-click" role="button" tabindex="0" title="Ver seguimiento administrativo">
-        <div class="k-label" id="kpiPendMatiasLabel">Seguimiento administrativo</div>
+      <div id="kpiCardRecord" class="kpi matias-open kpi-click" role="button" tabindex="0" title="Ver recordatorios">
+        <div class="k-label" id="kpiPendMatiasLabel">Recordatorios calendario</div>
         <div class="k-val" id="kpiPendMatias">0</div>
       </div>
     </div>
@@ -2433,7 +2434,7 @@
       </div>
     </div>
 
-    <div class="daily-actions-row" aria-label="Accesos rápidos">
+    <div class="daily-actions-row" aria-label="Accesos rapidos" style="display:none;">
       <div class="daily-group">
         <div class="daily-group-title">Limpieza</div>
         <div class="daily-group-items">
@@ -2648,6 +2649,9 @@
         <div class="gestion-rubro-group group-agenda">
           <div class="gestion-rubro-group-label">AGENDA</div>
           <div class="gestion-rubro-group-tabs">
+            <button id="tabAgenda" type="button" class="gestion-rubro-tab" data-rubro="agenda" aria-selected="false">
+              Agenda <span id="badgeAgenda" class="tab-badge">0</span>
+            </button>
             <button id="tabRecordatorios" type="button" class="gestion-rubro-tab" data-rubro="recordatorios" aria-selected="false">
               Recordatorios <span id="badgeRecordatorios" class="tab-badge">0</span>
             </button>
@@ -2744,6 +2748,25 @@
             <span class="icon" aria-hidden="true">ðŸ—ºï¸</span>
             <span class="label">Ver sedes y observaciones</span>
           </a>
+        </div>
+      </div>
+
+      <div class="nvd-split-block split-prog gestion-panel" data-panel="agenda">
+        <div class="nvd-split-head prog">
+          <span class="title">Agenda</span>
+          <span class="sub">Vista rapida de recordatorios y programadas del dia y futuras.</span>
+        </div>
+        <div class="gestion-limpieza-grid">
+          <button id="agendaOpenRecordatorios" type="button" class="daily-action">
+            <span class="icon" aria-hidden="true">AG</span>
+            <span class="label">Abrir recordatorios</span>
+            <span id="agendaBadgeRecordatorios" class="ops-badge na">0</span>
+          </button>
+          <button id="agendaOpenProgramadas" type="button" class="daily-action">
+            <span class="icon" aria-hidden="true">PR</span>
+            <span class="label">Abrir programadas</span>
+            <span id="agendaBadgeProgramadas" class="ops-badge na">0</span>
+          </button>
         </div>
       </div>
 
@@ -3072,7 +3095,7 @@
     var TASK_ALERTS_BASE = [];
     var RESUMEN_BASE = { total: 0, informado: 0, en_proceso: 0, resuelto: 0 };
     var AGENTE_GRUPO_FILTRO_ACTIVO = "";
-    var GESTION_RUBRO_ACTIVO = "mantenimiento"; // mantenimiento | limpieza | administrativo | recordatorios | programadas
+    var GESTION_RUBRO_ACTIVO = "mantenimiento"; // mantenimiento | limpieza | administrativo | agenda | recordatorios | programadas
     var GESTION_FILTRO_SEDE = "";
     var GESTION_FILTRO_ESTADO = "";
     var GESTION_FILTRO_PRIORIDAD = "";
@@ -3280,7 +3303,9 @@
       badgeMantenimiento: document.getElementById("badgeMantenimiento"),
       badgeLimpieza: document.getElementById("badgeLimpieza"),
       badgeAdministrativo: document.getElementById("badgeAdministrativo"),
+      badgeAgenda: document.getElementById("badgeAgenda"),
       badgeRecordatorios: document.getElementById("badgeRecordatorios"),
+      tabAgenda: document.getElementById("tabAgenda"),
       tabRecordatorios: document.getElementById("tabRecordatorios"),
       badgeProgramadas: document.getElementById("badgeProgramadas"),
       tabProgramadas: document.getElementById("tabProgramadas"),
@@ -3295,6 +3320,7 @@
       bodyChofer: document.getElementById("nvdBodyChofer"),
       bodySolic: document.getElementById("nvdBodySolic"),
       bodyAdminTasks: document.getElementById("nvdBodyAdminTasks"),
+      bodyAgenda: document.getElementById("nvdBodyAgenda"),
       bodyRecord: document.getElementById("nvdBodyRecord"),
       bodyProgramadas: document.getElementById("nvdBodyProgramadas"),
       bodyPend: document.getElementById("nvdBodyPend"),
@@ -3309,6 +3335,8 @@
       kTotOldNote: document.getElementById("kpiTotOldNote"),
       kPendMatiasLabel: document.getElementById("kpiPendMatiasLabel"),
       kPendMatias: document.getElementById("kpiPendMatias"),
+      kpiCardMant: document.getElementById("kpiCardMant"),
+      kpiCardLimpieza: document.getElementById("kpiCardLimpieza"),
       kMantTd: document.getElementById("kpiMantTd"),
       kMantTp: document.getElementById("kpiMantTp"),
       kChofTd: document.getElementById("kpiChofTd"),
@@ -3370,6 +3398,10 @@
       limpiezaLabel: document.getElementById("limpiezaLabel"),
       limpiezaBadge: document.getElementById("limpiezaBadge"),
       gestionLimpiezaBadge: document.getElementById("gestionLimpiezaBadge"),
+      agendaBadgeRecordatorios: document.getElementById("agendaBadgeRecordatorios"),
+      agendaBadgeProgramadas: document.getElementById("agendaBadgeProgramadas"),
+      agendaOpenRecordatorios: document.getElementById("agendaOpenRecordatorios"),
+      agendaOpenProgramadas: document.getElementById("agendaOpenProgramadas"),
       cargarCard: document.getElementById("cargarCard"),
       registroBox: document.getElementById("registroNvdBox"),
       histTop: document.getElementById("btnHistorialTop"),
@@ -3533,7 +3565,7 @@
 
     function setGestionRubro(nextKey) {
       var key = String(nextKey || "").trim();
-      if (["mantenimiento", "limpieza", "administrativo", "recordatorios", "programadas"].indexOf(key) < 0) key = "mantenimiento";
+      if (["mantenimiento", "limpieza", "administrativo", "agenda", "recordatorios", "programadas"].indexOf(key) < 0) key = "mantenimiento";
       GESTION_RUBRO_ACTIVO = key;
       if (el.splitWrap) el.splitWrap.setAttribute("data-active-tab", key);
       if (el.rubroTabs) {
@@ -4844,7 +4876,7 @@
       if (el.kPendPrev) el.kPendPrev.textContent = String(mant.total);
       if (el.kPendDia) el.kPendDia.textContent = String(LIMPIEZA_PENDIENTES || 0);
       if (el.kAsigOpen) el.kAsigOpen.textContent = String(ALERTAS_CRITICAS || 0);
-      if (el.kPendMatias) el.kPendMatias.textContent = String(admin.total);
+      if (el.kPendMatias) el.kPendMatias.textContent = String(rec.total);
 
       if (el.kTotOldNote && el.kpiCardTotal) {
         if ((ALERTAS_CRITICAS || 0) > 0) {
@@ -4852,14 +4884,14 @@
           el.kTotOldNote.hidden = false;
           el.kpiCardTotal.classList.add("has-old");
         } else {
-          el.kTotOldNote.textContent = "";
-          el.kTotOldNote.hidden = true;
+          el.kTotOldNote.textContent = "Sin alertas";
+          el.kTotOldNote.hidden = false;
           el.kpiCardTotal.classList.remove("has-old");
         }
       }
 
       if (el.kPendMatiasLabel) {
-        el.kPendMatiasLabel.textContent = "Seguimiento administrativo";
+        el.kPendMatiasLabel.textContent = "Recordatorios calendario";
       }
     }
 
@@ -6370,8 +6402,12 @@
       if (el.badgeMantenimiento) el.badgeMantenimiento.textContent = String(tasks.length);
       if (el.badgeLimpieza) el.badgeLimpieza.textContent = String(LIMPIEZA_PENDIENTES || 0);
       if (el.badgeAdministrativo) el.badgeAdministrativo.textContent = String(tasksAdministrativo.length + solicitudes.length);
+      if (el.badgeAgenda) el.badgeAgenda.textContent = String(recordatorios.length + programadas.length);
       if (el.badgeRecordatorios) el.badgeRecordatorios.textContent = String(recordatorios.length);
       if (el.badgeProgramadas) el.badgeProgramadas.textContent = String(programadas.length);
+      if (el.agendaBadgeRecordatorios) setBadge(el.agendaBadgeRecordatorios, String(recordatorios.length), recordatorios.length > 0 ? "warn" : "na");
+      if (el.agendaBadgeProgramadas) setBadge(el.agendaBadgeProgramadas, String(programadas.length), programadas.length > 0 ? "ok" : "na");
+      if (el.tabAgenda) el.tabAgenda.classList.toggle("has-old", contarTp(recordatorios) > 0 || programadas.length > 0);
       if (el.tabRecordatorios) el.tabRecordatorios.classList.toggle("has-old", contarTp(recordatorios) > 0);
       renderResumenSegunFiltro();
       updateTaskAlertsMerged();
@@ -7036,14 +7072,33 @@
       if (el.gestionModal && el.gestionModal.classList.contains("open")) closeGestionModal();
     });
 
-    function openRecordatoriosTab() {
-      setGestionRubro("recordatorios");
+    function scrollGestionIntoView() {
       try {
         var card = document.querySelector(".card-operativa");
         if (card) card.scrollIntoView({ behavior: "smooth", block: "start" });
       } catch (_e) {
         // noop
       }
+    }
+
+    function openMantenimientoTab() {
+      setGestionRubro("mantenimiento");
+      scrollGestionIntoView();
+    }
+
+    function openAgendaTab() {
+      setGestionRubro("agenda");
+      scrollGestionIntoView();
+    }
+
+    function openRecordatoriosTab() {
+      setGestionRubro("recordatorios");
+      scrollGestionIntoView();
+    }
+
+    function openProgramadasTab() {
+      setGestionRubro("programadas");
+      scrollGestionIntoView();
     }
 
     function openOpsCardHref(card) {
@@ -7119,14 +7174,55 @@
       });
     }
 
+    if (el.kpiCardMant) {
+      el.kpiCardMant.addEventListener("click", openMantenimientoTab);
+      el.kpiCardMant.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter" || ev.key === " ") {
+          ev.preventDefault();
+          openMantenimientoTab();
+        }
+      });
+    }
+
+    if (el.kpiCardLimpieza) {
+      el.kpiCardLimpieza.addEventListener("click", function () {
+        window.location.href = "{{ url_for('sedes_control_limpieza_supervision') }}";
+      });
+      el.kpiCardLimpieza.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter" || ev.key === " ") {
+          ev.preventDefault();
+          window.location.href = "{{ url_for('sedes_control_limpieza_supervision') }}";
+        }
+      });
+    }
+
+    if (el.kpiCardTotal) {
+      el.kpiCardTotal.addEventListener("click", function () {
+        window.location.href = "{{ url_for('sst_general') }}";
+      });
+      el.kpiCardTotal.addEventListener("keydown", function (ev) {
+        if (ev.key === "Enter" || ev.key === " ") {
+          ev.preventDefault();
+          window.location.href = "{{ url_for('sst_general') }}";
+        }
+      });
+    }
+
     if (el.kpiCardRecord) {
-      el.kpiCardRecord.addEventListener("click", openRecordatoriosTab);
+      el.kpiCardRecord.addEventListener("click", openAgendaTab);
       el.kpiCardRecord.addEventListener("keydown", function (ev) {
         if (ev.key === "Enter" || ev.key === " ") {
           ev.preventDefault();
-          openRecordatoriosTab();
+          openAgendaTab();
         }
       });
+    }
+
+    if (el.agendaOpenRecordatorios) {
+      el.agendaOpenRecordatorios.addEventListener("click", openRecordatoriosTab);
+    }
+    if (el.agendaOpenProgramadas) {
+      el.agendaOpenProgramadas.addEventListener("click", openProgramadasTab);
     }
 
     // Colapsables (solo UI/UX)
