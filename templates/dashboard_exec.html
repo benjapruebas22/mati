@@ -339,7 +339,7 @@
     cursor: default;
   }
 
-  /* Accesos rápidos (agrupados) */
+  /* Accesos rpidos (agrupados) */
   .daily-actions-row{
     margin-top: 12px;
     display: flex;
@@ -433,7 +433,7 @@
   .ops-kpi-foot { display: none; }
   .ops-kpi-foot.muted { color: var(--ctl-soft); }
 
-  /* sin fondos por módulo: el estado se comunica con el badge */
+  /* sin fondos por mdulo: el estado se comunica con el badge */
   .ops-kpi-mata,
   .ops-kpi-desinf,
   .ops-kpi-veh,
@@ -842,7 +842,7 @@
     color: var(--run-tx);
   }
 
-  /* Leyenda: chips suaves con color para interpretar el semáforo */
+  /* Leyenda: chips suaves con color para interpretar el semforo */
   span.btn-inline.row-gestion.turn-tu-respuesta {
     border-color: #e2e8f0;
     background: #ffffff;
@@ -1142,7 +1142,7 @@
     gap: 8px;
     flex-wrap: wrap;
   }
-  /* sin color por grupo: solo semáforo (rojo/amarillo/verde) y azul institucional */
+  /* sin color por grupo: solo semforo (rojo/amarillo/verde) y azul institucional */
   .gestion-rubro-tab {
     border: 1px solid #e2e8f0;
     background: #ffffff;
@@ -1213,7 +1213,7 @@
     background: #ffffff;
   }
 
-  /* Gestión (Centro Operativo): limpieza final */
+  /* Gestin (Centro Operativo): limpieza final */
   .card-operativa {
     gap: 12px;
   }
@@ -1278,7 +1278,6 @@
 
   .gestion-panels .gestion-panel { display: none; }
   .gestion-panels[data-active-tab="resumen"] .gestion-panel[data-panel="resumen"] { display: block; }
-  .gestion-panels[data-active-tab="resumen"] .gestion-panel[data-panel="mantenimiento"] { display: block; }
   .gestion-panels[data-active-tab="limpieza"] .gestion-panel[data-panel="limpieza"] { display: block; }
   .gestion-panels[data-active-tab="administrativo"] .gestion-panel[data-panel="administrativo"] { display: block; }
   .gestion-panels[data-active-tab="agenda"] .gestion-panel[data-panel="agenda"] { display: block; }
@@ -2263,7 +2262,7 @@
         <div class="next-coffee-kicker">Próximo Coffee</div>
         <div class="next-coffee-line">
           <span id="nextCoffeeDays" class="next-coffee-days">-</span>
-          <span class="sep">·</span>
+          <span class="sep"></span>
           <span id="nextCoffeeMeta" class="next-coffee-meta">-</span>
         </div>
       </div>
@@ -2308,7 +2307,7 @@
         <div class="k-val" id="kpiPendPrev">0</div>
       </div>
       <div id="kpiCardLimpieza" class="kpi today-open kpi-click" role="button" tabindex="0" title="Ver limpieza">
-        <div class="k-label">Pendientes revisiÃ³n limpieza</div>
+        <div class="k-label">Pendientes revisión limpieza</div>
         <div class="k-val" id="kpiPendDia">0</div>
       </div>
       <div id="kpiCardAdmin" class="kpi info kpi-click" role="button" tabindex="0" title="Ver administrativo">
@@ -2316,7 +2315,7 @@
         <div class="k-val" id="kpiAdminOpen">0</div>
       </div>
       <div id="kpiCardTotal" class="kpi assign-open kpi-click" role="button" tabindex="0" title="Ver SG-SST">
-        <div class="k-label">Alertas crÃ­ticas</div>
+        <div class="k-label">Alertas críticas</div>
         <div class="k-val" id="kpiAsigOpen">0</div>
         <div id="kpiTotOldNote" class="k-note" aria-live="polite" hidden></div>
       </div>
@@ -2341,7 +2340,7 @@
       <div id="mataCard" class="ops-kpi-card ops-kpi-mata ops-kpi-link" data-href="{{ url_for('matafuegos_home') }}">
         <div class="ops-kpi-head">
           <div class="ops-kpi-left">
-            <div class="ops-kpi-icon" aria-hidden="true">🧯</div>
+            <div class="ops-kpi-icon" aria-hidden="true">•</div>
             <div class="ops-kpi-title">Matafuegos</div>
           </div>
           <div class="ops-kpi-head-actions">
@@ -2356,8 +2355,8 @@
           </div>
           <div class="ops-kpi-line">
             <span>Estado: <strong id="mataStatus">-</strong></span>
-            <span id="mataLoteWrap" style="display:none;">· Lote: <strong id="mataLote">-</strong></span>
-            <span id="mataSoonWrap" style="display:none;">· 45d: <strong id="mataSoon">0</strong></span>
+            <span id="mataLoteWrap" style="display:none;"> Lote: <strong id="mataLote">-</strong></span>
+            <span id="mataSoonWrap" style="display:none;"> 45d: <strong id="mataSoon">0</strong></span>
           </div>
           <div id="mataSedes" class="ops-kpi-foot">0 sedes: -</div>
         </div>
@@ -2366,7 +2365,7 @@
       <div id="desinfCard" class="ops-kpi-card ops-kpi-desinf ops-kpi-link" data-href="{{ url_for('obras_home', panel='panel-desinf') }}">
         <div class="ops-kpi-head">
           <div class="ops-kpi-left">
-            <div class="ops-kpi-icon" aria-hidden="true">🧴</div>
+            <div class="ops-kpi-icon" aria-hidden="true">•</div>
             <div class="ops-kpi-title">Desinfección</div>
           </div>
           <div class="ops-kpi-head-actions">
@@ -2381,8 +2380,8 @@
           </div>
           <div class="ops-kpi-line">
             <span>Estado: <strong id="desinfStatus">-</strong></span>
-            <span id="desinfNextLabelWrap" style="display:none;">· <strong id="desinfNextLabel">-</strong></span>
-            <span id="desinfGrupoWrap" style="display:none;">· <strong id="desinfGrupo">-</strong></span>
+            <span id="desinfNextLabelWrap" style="display:none;"> <strong id="desinfNextLabel">-</strong></span>
+            <span id="desinfGrupoWrap" style="display:none;"> <strong id="desinfGrupo">-</strong></span>
           </div>
           <div id="desinfSedes" class="ops-kpi-foot">0 sedes: -</div>
           <div id="desinfUltima" class="ops-kpi-foot muted">Última: -</div>
@@ -2392,7 +2391,7 @@
       <div id="vehOpsCard" class="ops-kpi-card ops-kpi-veh ops-kpi-link" data-href="{{ url_for('vehiculos_documentacion') }}">
         <div class="ops-kpi-head">
           <div class="ops-kpi-left">
-            <div class="ops-kpi-icon" aria-hidden="true">🚗</div>
+            <div class="ops-kpi-icon" aria-hidden="true">•</div>
             <div class="ops-kpi-title">Vehículos</div>
           </div>
           <div class="ops-kpi-head-actions">
@@ -2407,8 +2406,8 @@
           </div>
           <div class="ops-kpi-line">
             <span>En uso: <strong id="vehOpsInUse">-</strong></span>
-            <span id="vehOpsPendWrap">· Pend. cierre: <strong id="vehOpsPend">-</strong></span>
-            <span id="vehOpsNoDispWrap" style="display:none;">· No disp.: <strong id="vehOpsNoDisp">-</strong></span>
+            <span id="vehOpsPendWrap"> Pend. cierre: <strong id="vehOpsPend">-</strong></span>
+            <span id="vehOpsNoDispWrap" style="display:none;"> No disp.: <strong id="vehOpsNoDisp">-</strong></span>
           </div>
           <div id="vehOpsFoot" class="ops-kpi-foot muted">-</div>
         </div>
@@ -2417,7 +2416,7 @@
       <div id="obrasOpsCard" class="ops-kpi-card ops-kpi-obras ops-kpi-link" data-href="{{ url_for('obras_home') }}">
         <div class="ops-kpi-head">
           <div class="ops-kpi-left">
-            <div class="ops-kpi-icon" aria-hidden="true">🏗️</div>
+            <div class="ops-kpi-icon" aria-hidden="true">•</div>
             <div class="ops-kpi-title">Obras</div>
           </div>
           <div class="ops-kpi-head-actions">
@@ -2432,24 +2431,24 @@
           </div>
           <div class="ops-kpi-line">
             <span>Cerradas: <strong id="obrasOpsDone">-</strong></span>
-            <span id="obrasOpsUrgWrap">· Urgencias: <strong id="obrasOpsUrg">-</strong></span>
+            <span id="obrasOpsUrgWrap"> Urgencias: <strong id="obrasOpsUrg">-</strong></span>
           </div>
           <div id="obrasOpsFoot" class="ops-kpi-foot muted">-</div>
         </div>
       </div>
     </div>
 
-    <div class="daily-actions-row" aria-label="Accesos rapidos" style="display:none;">
+    <div class="daily-actions-row" aria-label="Accesos rápidos" style="display:none;">
       <div class="daily-group">
         <div class="daily-group-title">Limpieza</div>
         <div class="daily-group-items">
           <a id="limpiezaAction" class="daily-action" href="{{ url_for('sedes_control_limpieza_supervision') }}">
-            <span class="icon" aria-hidden="true">🧹</span>
+            <span class="icon" aria-hidden="true"></span>
             <span id="limpiezaLabel" class="label">Limpieza</span>
             <span id="limpiezaBadge" class="ops-badge na" style="display:none;">0</span>
           </a>
           <a class="daily-action" href="{{ url_for('sedes_control_limpieza_historial') }}">
-            <span class="icon" aria-hidden="true">📋</span>
+            <span class="icon" aria-hidden="true"></span>
             <span class="label">Historial limpieza</span>
           </a>
         </div>
@@ -2459,7 +2458,7 @@
         <div class="daily-group-title">SST</div>
         <div class="daily-group-items">
           <a class="daily-action" href="{{ url_for('sst_general') }}">
-            <span class="icon" aria-hidden="true">🦺</span>
+            <span class="icon" aria-hidden="true"></span>
             <span class="label">SG-SST</span>
           </a>
         </div>
@@ -2475,11 +2474,11 @@
     </ul>
   </article>
 
-  {# Estado de vehículos: oculto por default (acceso vía botón Vehículos) #}
+  {# Estado de vehculos: oculto por default (acceso va botn Vehículos) #}
   <article class="control-card control-workspace-section card-vehiculos" data-workspaces="gestion recursos" style="display:none;">
     <div class="card-head">
-      <h2>Estado de vehículos</h2>
-      <a class="btn-soft" href="{{ url_for('vehiculos_documentacion') }}">Ir a módulo vehículos</a>
+      <h2>Estado de vehculos</h2>
+      <a class="btn-soft" href="{{ url_for('vehiculos_documentacion') }}">Ir a mdulo vehculos</a>
     </div>
     <div id="vehiculosWrap" class="veh-grid">
       <div class="veh-card"><div class="veh-code">-</div><div class="veh-pat">-</div><div class="veh-est">Sin datos</div></div>
@@ -2498,7 +2497,7 @@
 
       <div class="registro-body">
         <div class="aux-row aux-row-tight">
-          <div class="registro-title">Carga rapida</div>
+          <div class="registro-title">Carga rápida</div>
           <button id="btnCerrarCarga" type="button" class="btn-soft">Ocultar</button>
         </div>
         <input id="nvdId" type="hidden" value="0">
@@ -2587,10 +2586,10 @@
 
   <article class="control-card control-workspace-section card-operativa" data-workspaces="gestion historial">
     <div class="card-head">
-      <h2>GestiÃ³n diaria</h2>
+      <h2>Gestión diaria</h2>
       <div class="card-head-actions">
         <button id="btnToggleGestionCard" type="button" class="btn-soft" aria-expanded="true">Ocultar</button>
-        <button id="btnRecargarDia" type="button" class="btn-soft">Recargar dia</button>
+        <button id="btnRecargarDia" type="button" class="btn-soft">Recargar día</button>
         <button id="btnHistorialQuick" type="button" class="btn-soft">Historial</button>
       </div>
     </div>
@@ -2778,16 +2777,16 @@
         </div>
         <div class="gestion-limpieza-grid">
           <a id="gestionLimpiezaMain" class="daily-action" href="{{ url_for('sedes_control_limpieza_supervision') }}">
-            <span class="icon" aria-hidden="true">ðŸ§¹</span>
+            <span class="icon" aria-hidden="true"></span>
             <span class="label">Revisar controles</span>
             <span id="gestionLimpiezaBadge" class="ops-badge na" style="display:none;">0</span>
           </a>
           <a class="daily-action" href="{{ url_for('sedes_control_limpieza_historial') }}">
-            <span class="icon" aria-hidden="true">ðŸ“‹</span>
+            <span class="icon" aria-hidden="true"></span>
             <span class="label">Historial y cierres</span>
           </a>
           <a class="daily-action" href="{{ url_for('sedes_resumen_mpd') }}">
-            <span class="icon" aria-hidden="true">ðŸ—ºï¸</span>
+            <span class="icon" aria-hidden="true">️</span>
             <span class="label">Ver sedes y observaciones</span>
           </a>
         </div>
@@ -2796,7 +2795,7 @@
       <div class="nvd-split-block split-prog gestion-panel" data-panel="agenda">
         <div class="nvd-split-head prog">
           <span class="title">Agenda</span>
-          <span class="sub">Vista rapida de recordatorios y programadas del dia y futuras.</span>
+          <span class="sub">Vista rápida de recordatorios y programadas del día y futuras.</span>
         </div>
         <div class="gestion-limpieza-grid">
           <button id="agendaOpenRecordatorios" type="button" class="daily-action">
@@ -2815,7 +2814,7 @@
       <div class="nvd-split-block split-solic gestion-panel" data-panel="administrativo">
       <div class="nvd-split-head pend">
           <span class="title">Administrativo</span>
-          <span class="sub">Coffee, compras, insumos y seguimientos que requieren gestiÃ³n o respuesta.</span>
+          <span class="sub">Coffee, compras, insumos y seguimientos que requieren gestión o respuesta.</span>
         </div>
         <div class="nvd-admin-stack">
           <div class="nvd-admin-subtitle">Tareas administrativas</div>
@@ -2919,7 +2918,7 @@
   <div class="gestion-dialog" role="dialog" aria-modal="true" aria-labelledby="gestionTitle">
     <div class="gestion-head">
       <div class="gestion-head-left">
-        <h3 id="gestionTitle" class="gestion-title">Gestion interna</h3>
+        <h3 id="gestionTitle" class="gestion-title">Gestión interna</h3>
         <div class="gestion-subtitle">Asignacion operativa</div>
       </div>
       <button id="gestionClose" type="button" class="btn-soft">Cerrar</button>
@@ -2982,7 +2981,7 @@
       <div class="gestion-coffee-foot">Luciana define compra. Francisco confirma recepcion.</div>
     </div>
     <input id="coffeeRemitoFile" type="file" accept="image/*" style="display:none;">
-    <div id="gestionCoffeeLogTitle" class="gestion-section-title" style="display:none;">Logistica</div>
+    <div id="gestionCoffeeLogTitle" class="gestion-section-title" style="display:none;">Logística</div>
     <div id="gestionCoffeeLogRow" class="gestion-coffee-row" style="display:none;">
       <div class="gestion-coffee-log-grid">
         <div>
@@ -3039,7 +3038,7 @@
             </div>
           </div>
           <div id="gestionCoffeeLayoutOptions" class="coffee-layout-options"></div>
-          <div class="coffee-layout-note">Guardá logística para confirmar el plano elegido.</div>
+          <div class="coffee-layout-note">Guard logstica para confirmar el plano elegido.</div>
         </div>
       </details>
     </div>
@@ -3151,28 +3150,28 @@
     var WORKSPACE_META = {
       resumen: {
         label: "Resumen",
-        title: "Resumen operativo del dia",
-        subtitle: "Panorama rapido de pendientes, alertas y estado de recursos para definir prioridades.",
+        title: "Resumen operativo del día",
+        subtitle: "Panorama rápido de pendientes, alertas y estado de recursos para definir prioridades.",
       },
       registro: {
         label: "Registro",
         title: "Registro de novedad o tarea",
-        subtitle: "Carga novedades con datos claros para que la gestion posterior sea mas agil y trazable.",
+        subtitle: "Carga novedades con datos claros para que la gestión posterior sea más ágil y trazable.",
       },
       gestion: {
-        label: "Gestion",
+        label: "Gestión",
         title: "Pendientes activos",
         subtitle: "Seguimiento operativo de tareas y solicitudes abiertas con foco en respuesta y cierre.",
       },
       historial: {
         label: "Historial",
         title: "Historial operativo",
-        subtitle: "Consulta de novedades finalizadas por rango de fechas para auditoria y control.",
+        subtitle: "Consulta de novedades finalizadas por rango de fechas para auditoría y control.",
       },
       recursos: {
         label: "Recursos",
         title: "Estado de recursos",
-        subtitle: "Visual de vehiculos y alertas para sostener continuidad operativa diaria.",
+        subtitle: "Visual de vehículos y alertas para sostener continuidad operativa diaria.",
       },
     };
     var TAREA_ESTADOS = ["Pendiente", "En curso", "Finalizado"];
@@ -3268,7 +3267,7 @@
         colors: { bg: "#eaf7f6", bd: "#cdeae7", tx: "#1e7d79", abg: "#1e7d79", abd: "#1e7d79" },
       },
       administracion: {
-        label: "Administracion",
+        label: "Administrativo",
         miembros: ["Maximiliano Abatedaga", "Marcos Sorbello"],
         colors: { bg: "#f6f0ff", bd: "#dfd3f8", tx: "#6b4fa8", abg: "#6b4fa8", abd: "#6b4fa8" },
       },
@@ -3698,7 +3697,7 @@
       if (t === "asignacion de tareas") return "Tarea";
       if (t === "aviso general") return "Aviso";
       if (t === "uso de salon") return "Salon";
-      if (t === "gestion operativa") return "Gestion";
+      if (t === "gestion operativa") return "Gestión";
       if (t === "vehiculo" || t === "vehiculos") return "Vehiculos";
       return String(v || "-");
     }
@@ -3746,7 +3745,7 @@
       var groups = [
         { label: (AGENTE_GRUPOS.mantenimiento && AGENTE_GRUPOS.mantenimiento.label) || "Mantenimiento", items: (AGENTE_GRUPOS.mantenimiento && AGENTE_GRUPOS.mantenimiento.miembros) || [] },
         { label: (AGENTE_GRUPOS.choferes && AGENTE_GRUPOS.choferes.label) || "Choferes", items: (AGENTE_GRUPOS.choferes && AGENTE_GRUPOS.choferes.miembros) || [] },
-        { label: (AGENTE_GRUPOS.administracion && AGENTE_GRUPOS.administracion.label) || "Administracion", items: (AGENTE_GRUPOS.administracion && AGENTE_GRUPOS.administracion.miembros) || [] },
+        { label: (AGENTE_GRUPOS.administracion && AGENTE_GRUPOS.administracion.label) || "Administrativo", items: (AGENTE_GRUPOS.administracion && AGENTE_GRUPOS.administracion.miembros) || [] },
       ];
 
       function isGeneralName(v) {
@@ -4173,7 +4172,7 @@
           if (!x.ok || !x.b.ok) throw new Error(x.b.error || "No se pudo guardar logistica");
           GESTION_COFFEE_LOGISTICA = x.b.logistica || {};
           renderGestionCoffeeLogistica(GESTION_DATA && GESTION_DATA.novedad);
-          setGestionMsg(aprobar ? "Logistica Coffee aprobada." : "Logistica Coffee actualizada.", false);
+          setGestionMsg(aprobar ? "Logística Coffee aprobada." : "Logística Coffee actualizada.", false);
           loadGestion(novId);
         })
         .catch(function (e) {
@@ -4615,7 +4614,7 @@
       var shown = a.slice(0, max);
       var more = Math.max(a.length - shown.length, 0);
       var text = shown.join(", ");
-      if (more > 0) text = (text ? (text + "… +" + String(more)) : ("+" + String(more)));
+      if (more > 0) text = (text ? (text + " +" + String(more)) : ("+" + String(more)));
       return { count: a.length, text: text || "-" };
     }
 
@@ -4679,7 +4678,7 @@
       var ultimaTxt = "Última: " + (lastDate ? fmtIsoShort(lastDate) : "-");
       if (lastSedes.length) {
         var briefLast = briefCodes(lastSedes, 6);
-        ultimaTxt += " · " + String(briefLast.count) + " sedes: " + (briefLast.text || "-");
+        ultimaTxt += "  " + String(briefLast.count) + " sedes: " + (briefLast.text || "-");
       }
       el.desinfUltima.textContent = ultimaTxt;
 
@@ -5089,7 +5088,7 @@
         var evMs = _isoToUtcMs(f);
         if (!evMs) continue;
         var diff = Math.round((evMs - baseMs) / 86400000);
-        if (diff < 1 || diff > 2) continue; // 1 o 2 días antes
+        if (diff < 1 || diff > 2) continue; // 1 o 2 das antes
         var hora = String((r.coffee_horario_evento || r.hora || "")).trim();
         var sede = String((r.coffee_sede_destino || r.sede_codigo || "")).trim().toUpperCase() || "-";
         var subtipo = String(r.subtipo || "Coffee").trim() || "Coffee";
@@ -5155,9 +5154,9 @@
       var subtipo = String((best.row && best.row.subtipo) || "Coffee").trim() || "Coffee";
       var meta = _fmtIso(best.fecha);
       if (best.hora) meta += " " + best.hora;
-      if (sede) meta += " · " + sede;
-      meta += " · " + subtipo;
-      if (cant > 0) meta += " · " + String(cant) + " pers";
+      if (sede) meta += "  " + sede;
+      meta += "  " + subtipo;
+      if (cant > 0) meta += "  " + String(cant) + " pers";
       el.nextCoffeeDays.textContent = diasTxt;
       el.nextCoffeeMeta.textContent = meta;
       el.nextCoffeeBtn.setAttribute("data-id", String((best.row && best.row.id) || ""));
@@ -5301,7 +5300,7 @@
         return (
           '<tr data-text="' + escapeHtml(text) + '">' +
             '<td class="depplan-code">' + escapeHtml(c) + "</td>" +
-            "<td>" + (desc ? escapeHtml(desc) : "<span style=\"color:#6f86a5;\">—</span>") + "</td>" +
+            "<td>" + (desc ? escapeHtml(desc) : "<span style=\"color:#6f86a5;\"></span>") + "</td>" +
             actionsCell +
           "</tr>"
         );
@@ -5667,7 +5666,7 @@
       if (fechaEv || horaEv) baseBits.push("Evento: " + (fechaEv || "-") + (horaEv ? (" " + horaEv) : ""));
       if (cant) baseBits.push("Personas: " + String(cant));
       if (destino) baseBits.push("Destino: " + destino);
-      if (baseBits.length) lines.push(baseBits.join(" · "));
+      if (baseBits.length) lines.push(baseBits.join("  "));
 
       var logBits = [];
       var armado = String(log.armado_salon || "").trim();
@@ -5679,7 +5678,7 @@
       if (chofer) logBits.push("Chofer: " + chofer);
       if (turno) logBits.push("Turno: " + (turno === "manana" ? "Mañana" : "Tarde"));
       if (limpieza) logBits.push("Limpieza: " + limpieza);
-      if (logBits.length) lines.push("Logística: " + logBits.join(" · "));
+      if (logBits.length) lines.push("Logística: " + logBits.join("  "));
 
       if (act === "compras") {
         lines.push("Revisar faltantes en Control de insumos.");
@@ -5769,7 +5768,7 @@
       var isCoffee = !!nov.es_coffee;
       GESTION_DATA = p;
       if (el.gestionTitle) {
-        el.gestionTitle.textContent = "Gestion interna #"+ String(nov.id || "-") + " - " + String(nov.tipo || "Novedad");
+        el.gestionTitle.textContent = "Gestión interna #"+ String(nov.id || "-") + " - " + String(nov.tipo || "Novedad");
       }
       if (el.gestionMeta) {
         el.gestionMeta.innerHTML = renderGestionMetaCard(nov, p.coffee_logistica || {}, p.coffee_insumos || []);
@@ -6275,7 +6274,7 @@
           if (fechaEv || horaEv) bits.push("Evento: " + (fechaEv || "-") + (horaEv ? (" " + horaEv) : ""));
           if (cant) bits.push(String(cant) + " pers.");
           if (destino) bits.push("Destino: " + destino);
-          if (bits.length) extra = '<div class="tipo-sub">' + escapeHtml(bits.join(" · ")) + "</div>";
+          if (bits.length) extra = '<div class="tipo-sub">' + escapeHtml(bits.join("  ")) + "</div>";
         }
         var subtipoTxt = String((r && r.subtipo) || "-");
         var obsTxt = String((r && r.observacion) || "-");
@@ -6304,15 +6303,15 @@
       var turno = String((r && r.gestion_turno) || "").trim();
       var estTxt = String(estadoRaw || "").trim();
       if (turno === "tu_respuesta") {
-        return '<span class="turn-chip turn-tu-respuesta" title="' + escapeHtml("Pendiente · " + (estTxt || "Pendiente")) + '">Pendiente</span>';
+        return '<span class="turn-chip turn-tu-respuesta" title="' + escapeHtml("Pendiente  " + (estTxt || "Pendiente")) + '">Pendiente</span>';
       }
       if (turno === "esperando") {
-        return '<span class="turn-chip turn-esperando" title="' + escapeHtml("Esperando · " + (estTxt || "Pendiente")) + '">Esperando</span>';
+        return '<span class="turn-chip turn-esperando" title="' + escapeHtml("Esperando  " + (estTxt || "Pendiente")) + '">Esperando</span>';
       }
       if (filaEnSeguimiento(r)) {
-        return '<span class="turn-chip turn-seguimiento" title="' + escapeHtml("En seguimiento · " + (estTxt || "En curso")) + '">Seguimiento</span>';
+        return '<span class="turn-chip turn-seguimiento" title="' + escapeHtml("En seguimiento  " + (estTxt || "En curso")) + '">Seguimiento</span>';
       }
-      return '<span class="turn-chip turn-tu-respuesta" title="' + escapeHtml("Pendiente · " + (estTxt || "Pendiente")) + '">Pendiente</span>';
+      return '<span class="turn-chip turn-tu-respuesta" title="' + escapeHtml("Pendiente  " + (estTxt || "Pendiente")) + '">Pendiente</span>';
     }
 
     function renderRecordatoriosRows(target, items) {
@@ -6675,7 +6674,7 @@
           var tipoOrden = [
             "Coffee institucional",
             "Pedido de materiales",
-            "Gestion operativa",
+            "Gestión operativa",
             "Vehiculos",
             "Vehiculo",
             "Reclamo / mantenimiento",

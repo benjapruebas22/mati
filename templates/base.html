@@ -51,10 +51,10 @@
       padding: 14px 16px;
     }
 
-    /* Solo para páginas que pidan más ancho (ej: dashboard) */
+    /* Solo para pginas que pidan ms ancho (ej: dashboard) */
     .container-wide {
       max-width: 1600px;
-      /* más ancho, menos márgenes laterales */
+      /* ms ancho, menos mrgenes laterales */
       width: calc(100vw - 24px);
       /* aprovecha casi toda la pantalla */
     }
@@ -197,7 +197,7 @@
     }
 
     /* =====================================================
-       VEHICULOS: NAV PASTEL (botones de módulo)
+       VEHICULOS: NAV PASTEL (botones de mdulo)
        ===================================================== */
     .btn.btn-mpd.veh-nav-btn {
       --veh-accent: #94a3b8;
@@ -517,14 +517,14 @@
 
   <header class="topbar">
     <div class="brand">
-      <span class="brand-title">Sistema integrado de gestion de intendencia</span>
+      <span class="brand-title">Sistema integrado de gestión de intendencia</span>
     </div>
 
     <div class="top-sep" aria-hidden="true"></div>
 
     <nav class="main-nav">
       {% if user_role == 'ejecutivo' %}
-      <a class="btn btn-mpd btn-area-ejecutivo" href="{{ url_for('dashboard_ejecutivo') }}">Alta Direccion</a>
+      <a class="btn btn-mpd btn-area-ejecutivo" href="{{ url_for('dashboard_ejecutivo') }}">Alta Dirección</a>
       {% else %}
       <a class="btn btn-mpd btn-area-inicio" href="{{ url_for('dashboard') }}">Centro Operativo</a>
       <a class="btn btn-mpd btn-area-inicio" href="{{ url_for('sedes_resumen_mpd') }}">Sedes</a>
@@ -535,7 +535,7 @@
 
       <div class="nav-dropdown nav-menu">
         <a class="btn btn-mpd nav-dd-link" href="{{ url_for('sgi_documentacion') }}">Info MPD</a>
-        <span class="nav-dd-caret" aria-hidden="true">▼</span>
+        <span class="nav-dd-caret" aria-hidden="true">▾</span>
         <div class="dropdown-menu">
           <div class="dropdown-title">General</div>
           <a href="{{ url_for('sgi_documentacion') }}">Documentación del sistema</a>
@@ -576,7 +576,7 @@
 
           <div class="dropdown-sep"></div>
           <div class="dropdown-title">Dirección</div>
-          <a href="{{ url_for('dashboard_ejecutivo') }}">Alta Direccion</a>
+          <a href="{{ url_for('dashboard_ejecutivo') }}">Alta Dirección</a>
         </div>
       </div>
       <span class="nav-spacer" aria-hidden="true"></span>

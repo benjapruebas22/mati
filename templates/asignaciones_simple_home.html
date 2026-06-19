@@ -151,7 +151,7 @@
 
 <section class="as-simple-wrap">
   <h2 class="as-simple-title">ASIGNACIONES OPERATIVAS</h2>
-  <p class="as-simple-sub">Planilla operativa diaria para ordenar traslados internos. La ejecucion oficial del viaje sigue en MiDefensa.</p>
+  <p class="as-simple-sub">Planilla operativa diaria para ordenar traslados internos. La ejecución oficial del viaje sigue en MiDefensa.</p>
 
   <article class="as-simple-card">
     <div class="as-simple-head">PLANILLA OPERATIVA DIARIA</div>
@@ -176,13 +176,13 @@
           <tr>
             <th>Fecha</th>
             <th>Chofer</th>
-            <th>Vehiculo</th>
+            <th>Vehículo</th>
             <th>Destino</th>
             <th>Solicitante</th>
             <th>Hora llegada aprox</th>
             <th>Estado</th>
-            <th>Observacion</th>
-            <th>Accion</th>
+            <th>Observación</th>
+            <th>Acción</th>
           </tr>
         </thead>
         <tbody>
@@ -207,7 +207,7 @@
               <td>
                 <span class="as-actions-cell">
                   <a class="as-btn" href="{{ url_for('asignaciones_simple_editar', tipo='diario', row_id=r.id, fecha=fecha) }}">Editar</a>
-                  <form class="as-inline-form" method="post" action="{{ url_for('asignaciones_simple_eliminar', tipo='diario', row_id=r.id, fecha=fecha) }}" onsubmit="return confirm('Eliminar este traslado del dia?');">
+                  <form class="as-inline-form" method="post" action="{{ url_for('asignaciones_simple_eliminar', tipo='diario', row_id=r.id, fecha=fecha) }}" onsubmit="return confirm('¿Eliminar este traslado del día?');">
                     <button class="as-btn danger" type="submit">Eliminar</button>
                   </form>
                 </span>
@@ -335,7 +335,7 @@
       lines.push("ASIGNACIONES OPERATIVAS");
       lines.push("Fecha: {{ fecha_humana }}");
       lines.push("");
-      lines.push("Fecha | Hora llegada aprox | Chofer | Vehiculo | Destino | Solicitante | Estado | Observacion");
+      lines.push("Fecha | Hora llegada aprox | Chofer | Vehículo | Destino | Solicitante | Estado | Observación");
       const rows = tabla.querySelectorAll("tbody tr");
       rows.forEach((tr) => {
         const cells = tr.querySelectorAll("td");
