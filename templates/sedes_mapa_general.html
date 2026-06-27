@@ -83,7 +83,6 @@
             <g class="route-labels" aria-hidden="true">
               <text x="227" y="151">RN 9</text>
               <text x="273" y="302">RN 9</text>
-              <text x="365" y="355">RN 34</text>
             </g>
             <g class="north-mark" aria-hidden="true"><text x="26" y="34">N</text><path d="M26 42 L18 64 L26 58 L34 64 Z"/></g>
 
@@ -97,9 +96,9 @@
 
             {% set cluster_adjustments = {
               'San Salvador': [-30, -24],
-              'Palpala': [16, 4],
+              'Palpala': [30, -18],
               'Perico': [-32, 18],
-              'Libertador': [12, -8],
+              'Libertador': [-46, -10],
               'Humahuaca': [10, 0]
             } %}
             {% set label_adjustments = {
@@ -173,8 +172,8 @@
                aria-label="Seleccionar {{ sede.codigo }}, {{ sede.nombre }}">
               <circle class="site-halo" r="17"></circle>
               <circle class="site-point" r="7"></circle>
-              <path class="label-leader" d="M -5 2 Q -10 10 -20 18"></path>
-              <g class="location-label" transform="translate(-20 18)">
+              <path class="label-leader" d="M -5 -2 Q -14 -14 -28 -28"></path>
+              <g class="location-label" transform="translate(-28 -28)">
                 <text class="location-name" x="-11" y="-4">Alto Comedero</text>
                 <text class="location-count" x="-11" y="9">S04</text>
                 <circle class="fuero-mini fuero-mini-{{ sede.fuero_key }}" cx="-11" cy="17" r="2.5"></circle>
