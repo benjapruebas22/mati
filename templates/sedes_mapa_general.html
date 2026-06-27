@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block main_class %}container-wide sedes-map-main{% endblock %}
 {% block head_extra %}
-<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sedes_mapa_general.css', v='2026-06-27-01') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sedes_mapa_general.css', v='2026-06-27-02') }}">
 {% endblock %}
 {% block content %}
 <div class="mpd-map-app" data-selected-code="{{ selected_code }}">
@@ -96,19 +96,28 @@
             </g>
 
             {% set cluster_adjustments = {
-              'San Salvador': [-18, -8],
-              'Palpala': [12, 0],
-              'Perico': [8, 12],
-              'San Pedro': [5, 0]
+              'San Salvador': [-20, -20],
+              'Palpala': [18, -16],
+              'Perico': [-32, 18],
+              'Libertador': [12, -8],
+              'Humahuaca': [10, 0]
+            } %}
+            {% set label_adjustments = {
+              'El Carmen': [20, 20],
+              'San Pedro': [18, 9]
             } %}
             {% for location in map_locations %}
             {% if location.codes|length > 1 %}
             {% set cluster_adjust = cluster_adjustments.get(location.name, [0, 0]) %}
-            <g class="map-cluster" transform="translate({{ location.x + cluster_adjust[0] }} {{ location.y + cluster_adjust[1] }})">
+            <g class="map-cluster" transform="translate({{ location.x }} {{ location.y }})">
               <circle class="cluster-point" r="7.5"></circle>
-              <text class="cluster-name" x="11" y="-3">{{ location.name }}</text>
-              <text class="cluster-count" x="11" y="9">{{ location.codes|length }} sedes</text>
-              <g class="cluster-chips">
+              {% if cluster_adjust[0] or cluster_adjust[1] %}
+              <path class="label-leader" d="M 5 1 Q {{ cluster_adjust[0] / 2 }} {{ cluster_adjust[1] / 2 }} {{ cluster_adjust[0] }} {{ cluster_adjust[1] }}"></path>
+              {% endif %}
+              <g class="cluster-label" transform="translate({{ cluster_adjust[0] }} {{ cluster_adjust[1] }})">
+                <text class="cluster-name" x="11" y="-3">{{ location.name }}</text>
+                <text class="cluster-count" x="11" y="9">{{ location.codes|length }} sedes</text>
+                <g class="cluster-chips">
               {% for sede in location.sedes %}
               {% if location.codes|length > 3 %}
                 {% set chip_x = ((loop.index0 % 3) - 1) * 24 %}
@@ -126,21 +135,28 @@
                 <text class="chip-code" x="0" y="2">{{ sede.codigo }}</text>
               </g>
               {% endfor %}
+                </g>
               </g>
             </g>
             {% else %}
+            {% set label_adjust = label_adjustments.get(location.name, [0, 0]) %}
             <g class="map-location label-{{ location.label_side }} {{ 'is-selected' if selected_code in location.codes else '' }}"
                data-location-name="{{ location.name }}" data-site-codes="{{ location.codes|join(',') }}"
                transform="translate({{ location.x }} {{ location.y }})" role="button" tabindex="0"
                aria-label="Seleccionar localidad {{ location.name }}, {{ location.codes|length }} sedes">
               <circle class="site-halo" r="17"></circle>
               <circle class="site-point" r="7"></circle>
-              <text class="location-name" x="{{ -11 if location.label_side == 'left' else 11 }}" y="-4">{{ location.name }}</text>
-              <text class="location-count" x="{{ -11 if location.label_side == 'left' else 11 }}" y="9">{{ location.codes[0] }}</text>
-              <g class="location-fueros" transform="translate({{ (-11 - ((location.codes|length - 1) * 8)) if location.label_side == 'left' else 11 }} 17)">
-                {% for sede in location.sedes %}
-                <circle class="fuero-mini fuero-mini-{{ sede.fuero_key }}" cx="{{ loop.index0 * 8 }}" cy="0" r="2.5"></circle>
-                {% endfor %}
+              {% if label_adjust[0] or label_adjust[1] %}
+              <path class="label-leader" d="M 5 1 Q {{ label_adjust[0] / 2 }} {{ label_adjust[1] / 2 }} {{ label_adjust[0] }} {{ label_adjust[1] }}"></path>
+              {% endif %}
+              <g class="location-label" transform="translate({{ label_adjust[0] }} {{ label_adjust[1] }})">
+                <text class="location-name" x="{{ -11 if location.label_side == 'left' else 11 }}" y="-4">{{ location.name }}</text>
+                <text class="location-count" x="{{ -11 if location.label_side == 'left' else 11 }}" y="9">{{ location.codes[0] }}</text>
+                <g class="location-fueros" transform="translate({{ (-11 - ((location.codes|length - 1) * 8)) if location.label_side == 'left' else 11 }} 17)">
+                  {% for sede in location.sedes %}
+                  <circle class="fuero-mini fuero-mini-{{ sede.fuero_key }}" cx="{{ loop.index0 * 8 }}" cy="0" r="2.5"></circle>
+                  {% endfor %}
+                </g>
               </g>
             </g>
             {% endif %}
@@ -153,9 +169,12 @@
                aria-label="Seleccionar {{ sede.codigo }}, {{ sede.nombre }}">
               <circle class="site-halo" r="17"></circle>
               <circle class="site-point" r="7"></circle>
-              <text class="location-name" x="-11" y="-4">Alto Comedero</text>
-              <text class="location-count" x="-11" y="9">S04</text>
-              <circle class="fuero-mini fuero-mini-{{ sede.fuero_key }}" cx="-11" cy="17" r="2.5"></circle>
+              <path class="label-leader" d="M -5 2 Q -10 10 -20 18"></path>
+              <g class="location-label" transform="translate(-20 18)">
+                <text class="location-name" x="-11" y="-4">Alto Comedero</text>
+                <text class="location-count" x="-11" y="9">S04</text>
+                <circle class="fuero-mini fuero-mini-{{ sede.fuero_key }}" cx="-11" cy="17" r="2.5"></circle>
+              </g>
             </g>
             {% endfor %}
           </svg>
@@ -173,14 +192,14 @@
           </div>
         </div>
 
-        <div class="quick-access" aria-label="Accesos rapidos a sedes">
-          <strong>Accesos rapidos a sedes</strong>
-          <div>
+        <details class="quick-access" aria-label="Accesos rapidos a sedes">
+          <summary><strong>Accesos rapidos a sedes</strong><span><b class="quick-show">Mostrar sedes</b><b class="quick-hide">Ocultar sedes</b></span></summary>
+          <div class="quick-access-list">
             {% for sede in sedes %}
               <button type="button" class="quick-site" data-site-code="{{ sede.codigo }}" title="{{ sede.nombre }}">{{ sede.codigo }} · {{ sede.ciudad }}</button>
             {% endfor %}
           </div>
-        </div>
+        </details>
       </section>
 
       <aside class="mpd-site-panel" aria-live="polite">
@@ -256,5 +275,5 @@
 <script id="sedesMapData" type="application/json">{{ sedes|tojson }}</script>
 {% endblock %}
 {% block scripts %}
-<script src="{{ url_for('static', filename='sgi/sedes_mapa_general.js', v='2026-06-27-01') }}"></script>
+<script src="{{ url_for('static', filename='sgi/sedes_mapa_general.js', v='2026-06-27-02') }}"></script>
 {% endblock %}
