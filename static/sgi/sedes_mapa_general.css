@@ -108,27 +108,41 @@
 .dot.menores { background: var(--map-blue); }
 .dot.administracion { background: #a7adb7; }
 
-.jujuy-map-wrap { position: relative; min-height: 670px; background: #fcfbf6; overflow: hidden; }
-.jujuy-map { display: block; width: 100%; height: 670px; }
-.province-shape { fill: #fffef9; stroke: #656a72; stroke-width: 2.2; stroke-linejoin: round; }
+.jujuy-map-wrap { position: relative; min-height: 670px; background: #fbfaf2; overflow: hidden; }
+.jujuy-map { display: block; width: 100%; height: 670px; padding: 18px 34px 10px; }
+.province-shape { fill: #fffef8; stroke: #666b72; stroke-width: 1.65; stroke-linejoin: round; }
 .route { fill: none; stroke: #b8bbc1; stroke-width: 2; stroke-linecap: round; stroke-dasharray: 5 5; }
 .route-main { stroke: #7b164c; stroke-width: 2.8; stroke-dasharray: none; }
 .route-labels text { fill: #626875; font-size: 11px; font-weight: 750; paint-order: stroke; stroke: #fffef9; stroke-width: 4px; }
 .north-mark text { fill: #656a72; font-size: 13px; font-weight: 800; text-anchor: middle; }
 .north-mark path { fill: #70757e; }
 
-.map-site { cursor: pointer; touch-action: manipulation; }
+.map-location { cursor: pointer; touch-action: manipulation; }
 .site-halo { fill: transparent; stroke: transparent; stroke-width: 4; transition: fill .18s ease, stroke .18s ease; }
-.site-point { fill: #17191f; stroke: #fff; stroke-width: 2; transition: transform .18s ease; }
-.site-code { fill: var(--map-purple); font-size: 11px; font-weight: 850; paint-order: stroke; stroke: #fffef9; stroke-width: 4px; }
-.site-city { fill: #20242c; font-size: 10px; font-weight: 700; paint-order: stroke; stroke: #fffef9; stroke-width: 4px; }
-.map-site-dense .site-city { display: none; }
-.map-site:hover .site-point { transform: scale(1.25); }
-.map-site.is-selected .site-halo { fill: rgba(111, 69, 198, .12); stroke: rgba(111, 69, 198, .28); }
-.map-site.is-selected .site-point { fill: var(--map-purple); }
-.map-site-social .site-code { fill: #c9317e; }
-.map-site-menores .site-code { fill: #2584b2; }
-.map-site-administracion .site-code { fill: #596273; }
+.site-point { fill: #17191f; stroke: #fffef8; stroke-width: 1.5; transition: transform .18s ease; }
+.location-name { fill: #20242c; font-size: 8.5px; font-weight: 800; paint-order: stroke; stroke: #fffef8; stroke-width: 3px; }
+.location-count { fill: #697181; font-size: 6.5px; font-weight: 650; paint-order: stroke; stroke: #fffef8; stroke-width: 3px; }
+.map-location.label-left .location-name,
+.map-location.label-left .location-count { text-anchor: end; }
+.map-location:hover .site-point { transform: scale(1.25); }
+.map-location.is-selected .site-halo { fill: rgba(111, 69, 198, .12); stroke: rgba(111, 69, 198, .28); }
+.map-location.is-selected .site-point { fill: var(--map-purple); }
+.fuero-mini-penal { fill: var(--map-purple); }
+.fuero-mini-social { fill: var(--map-pink); }
+.fuero-mini-menores { fill: var(--map-blue); }
+.fuero-mini-administracion { fill: #a7adb7; }
+.reference-locality circle { fill: #8e9298; }
+.reference-locality text { fill: #747984; font-size: 8px; font-weight: 750; text-anchor: middle; paint-order: stroke; stroke: #fffef8; stroke-width: 3px; }
+.reference-locality text.muted { fill: #969ba3; font-size: 6px; font-weight: 600; }
+
+.map-location-picker { position: absolute; top: 16px; right: 16px; z-index: 5; width: min(260px, calc(100% - 32px)); padding: 11px; border: 1px solid #d8dce4; border-radius: 9px; background: rgba(255,255,255,.97); box-shadow: 0 10px 24px rgba(23,32,51,.12); }
+.map-location-picker[hidden] { display: none; }
+.map-location-picker > div:first-child { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.map-location-picker strong { font-size: 12px; }
+.map-location-picker span { color: var(--map-muted); font-size: 9px; }
+.map-location-picker > div:last-child { display: grid; gap: 5px; }
+.map-location-picker button { display: flex; min-height: 40px; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 9px; border: 1px solid var(--map-line); border-radius: 7px; background: #fff; color: var(--map-ink); font: inherit; font-size: 10px; text-align: left; cursor: pointer; }
+.map-location-picker button:hover, .map-location-picker button.is-selected { border-color: #baa8e1; background: var(--map-purple-soft); color: #51309a; }
 
 .route-reference { position: absolute; left: 14px; bottom: 14px; display: grid; gap: 7px; width: 170px; padding: 11px; border: 1px solid var(--map-line); border-radius: 8px; background: rgba(255, 255, 255, .94); }
 .route-reference strong { margin-bottom: 2px; font-size: 11px; }
@@ -200,7 +214,7 @@
   .mpd-map-brand img { height: 72px; }
   .mpd-map-content-grid { grid-template-columns: minmax(500px, 1.15fr) minmax(350px, .85fr); }
   .jujuy-map-wrap, .jujuy-map { min-height: 610px; height: 610px; }
-  .site-city { display: none; }
+  .jujuy-map { padding-inline: 20px; }
   .plan-preview-grid { grid-template-columns: 1fr; }
   .deposit-list { grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: 130px; }
 }
@@ -236,7 +250,7 @@
   .mpd-map-legend { justify-content: flex-start; }
   .jujuy-map-wrap, .jujuy-map { min-height: 560px; height: 560px; }
   .route-reference { display: none; }
-  .site-city { display: none; }
+  .jujuy-map { padding: 10px 2px; }
   .mpd-site-panel { grid-template-columns: 1fr; }
   .site-plan, .primary-detail-link { grid-column: auto; }
   .plan-preview-grid { grid-template-columns: 1fr; }

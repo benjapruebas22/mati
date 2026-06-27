@@ -7,6 +7,9 @@
   const sedesByCode = new Map(sedes.map((sede) => [sede.codigo, sede]));
   const searchInput = document.getElementById('mapSearch');
   const searchResults = document.getElementById('mapSearchResults');
+  const locationPicker = document.getElementById('mapLocationPicker');
+  const locationPickerTitle = document.getElementById('mapLocationPickerTitle');
+  const locationPickerOptions = document.getElementById('mapLocationPickerOptions');
 
   const elements = {
     code: document.getElementById('panelCode'),
@@ -45,8 +48,8 @@
     if (!sede) return;
     const opts = options || {};
 
-    document.querySelectorAll('.map-site').forEach((node) => {
-      const selected = node.dataset.siteCode === code;
+    document.querySelectorAll('.map-location').forEach((node) => {
+      const selected = (node.dataset.siteCodes || '').split(',').includes(code);
       node.classList.toggle('is-selected', selected);
       node.setAttribute('aria-pressed', selected ? 'true' : 'false');
     });
@@ -111,13 +114,56 @@
     }
 
     root.dataset.selectedCode = code;
+    if (locationPickerOptions) {
+      locationPickerOptions.querySelectorAll('button').forEach((button) => {
+        button.classList.toggle('is-selected', button.dataset.siteCode === code);
+      });
+    }
     updateUrl(code);
     if (opts.focusPanel && window.matchMedia('(max-width: 1050px)').matches) {
       document.querySelector('.mpd-site-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }
 
-  document.querySelectorAll('.map-site, .quick-site').forEach((node) => {
+  function openLocation(node) {
+    const codes = (node.dataset.siteCodes || '').split(',').filter(Boolean);
+    if (!codes.length) return;
+    if (codes.length === 1) {
+      if (locationPicker) locationPicker.hidden = true;
+      selectSite(codes[0], { focusPanel: true });
+      return;
+    }
+    locationPickerTitle.textContent = node.dataset.locationName || 'Localidad';
+    locationPickerOptions.replaceChildren();
+    codes.forEach((code) => {
+      const sede = sedesByCode.get(code);
+      if (!sede) return;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.siteCode = code;
+      button.classList.toggle('is-selected', root.dataset.selectedCode === code);
+      const name = document.createElement('strong');
+      name.textContent = `${sede.codigo} · ${sede.nombre}`;
+      const fuero = document.createElement('span');
+      fuero.textContent = sede.fuero_label;
+      button.append(name, fuero);
+      button.addEventListener('click', () => selectSite(code, { focusPanel: true }));
+      locationPickerOptions.appendChild(button);
+    });
+    locationPicker.hidden = false;
+  }
+
+  document.querySelectorAll('.map-location').forEach((node) => {
+    node.addEventListener('click', () => openLocation(node));
+    node.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openLocation(node);
+      }
+    });
+  });
+
+  document.querySelectorAll('.quick-site').forEach((node) => {
     node.addEventListener('click', () => selectSite(node.dataset.siteCode, { focusPanel: true }));
     node.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' || event.key === ' ') {

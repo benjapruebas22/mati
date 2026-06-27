@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block main_class %}container-wide sedes-map-main{% endblock %}
 {% block head_extra %}
-<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sedes_mapa_general.css', v='2026-06-26-01') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sedes_mapa_general.css', v='2026-06-26-02') }}">
 {% endblock %}
 {% block content %}
 <div class="mpd-map-app" data-selected-code="{{ selected_code }}">
@@ -71,31 +71,51 @@
         </div>
 
         <div class="jujuy-map-wrap">
-          <svg class="jujuy-map" viewBox="0 0 620 760" role="img" aria-labelledby="map-title map-desc">
+          <svg class="jujuy-map" viewBox="0 0 500 500" role="img" aria-labelledby="map-title map-desc">
             <title id="map-title">Mapa operativo de sedes del MPD en Jujuy</title>
             <desc id="map-desc">Esquema territorial con las sedes disponibles como puntos seleccionables.</desc>
-            <path class="province-shape" d="M294 20 L350 58 L452 78 L430 151 L485 215 L474 302 L507 337 L550 349 L578 429 L565 514 L593 580 L571 670 L522 656 L497 698 L445 675 L432 721 L348 699 L302 650 L277 583 L232 530 L211 432 L150 480 L98 450 L55 386 L84 302 L67 254 L89 217 L61 180 L99 153 L84 112 L169 95 L195 31 Z"/>
-            <path class="route route-main" d="M336 64 C304 135 319 215 334 285 C347 350 345 423 365 492 C380 548 376 605 352 684"/>
-            <path class="route" d="M352 684 C410 647 450 608 486 550 C513 505 522 457 520 401"/>
-            <path class="route" d="M365 492 C414 517 469 539 520 552"/>
+            <path class="province-shape" d="M186 15 L236 47 L331 64 L303 145 L355 205 L350 273 L376 315 L417 275 L468 295 L467 452 L426 447 L404 476 L361 452 L360 465 L285 447 L246 414 L228 369 L199 347 L207 287 L151 258 L157 361 L120 397 L20 315 L42 258 L55 200 L36 169 L55 147 L45 136 L101 114 L93 83 L164 70 Z"/>
+            <path class="route route-main" d="M228 72 C221 98 213 110 207 124 C218 145 239 164 253 186 C252 207 255 225 259 241 C268 278 282 318 298 353 C305 377 310 397 309 416"/>
+            <path class="route" d="M298 353 C310 354 323 356 334 359 C355 363 374 369 390 374"/>
+            <path class="route" d="M390 374 C401 354 411 331 419 311"/>
+            <path class="route" d="M298 353 C255 327 205 293 151 258"/>
             <g class="route-labels" aria-hidden="true">
-              <text x="302" y="163">RN 9</text>
-              <text x="365" y="405">RN 9</text>
-              <text x="465" y="535">RN 34</text>
+              <text x="227" y="151">RN 9</text>
+              <text x="273" y="302">RN 9</text>
+              <text x="365" y="355">RN 34</text>
             </g>
-            <g class="north-mark" aria-hidden="true"><text x="34" y="55">N</text><path d="M34 66 L23 94 L34 87 L45 94 Z"/></g>
+            <g class="north-mark" aria-hidden="true"><text x="26" y="34">N</text><path d="M26 42 L18 64 L26 58 L34 64 Z"/></g>
 
-            {% for sede in sedes %}
-            <g class="map-site map-site-{{ sede.fuero_key }} {{ 'map-site-dense' if sede.codigo in ['S01','S08','S11','S12','S13'] else '' }} {{ 'is-selected' if sede.codigo == selected_code else '' }}"
-               data-site-code="{{ sede.codigo }}" transform="translate({{ (sede.map_x * 6.2)|round(1) }} {{ (sede.map_y * 7.6)|round(1) }})"
-               role="button" tabindex="0" aria-label="Seleccionar {{ sede.codigo }}, {{ sede.nombre }}">
-              <circle class="site-halo" r="15"></circle>
-              <circle class="site-point" r="7"></circle>
-              <text class="site-code" x="12" y="-4">{{ sede.codigo }}</text>
-              <text class="site-city" x="12" y="12">{{ sede.ciudad|replace('San Salvador de Jujuy','San Salvador')|replace('Libertador Gral. San Martin','Libertador') }}</text>
+            <g class="reference-locality" aria-hidden="true">
+              <circle cx="112" cy="258" r="4"></circle>
+              <text x="92" y="244">Susques</text>
+              <text class="muted" x="91" y="256">Itinerancias</text>
+              <circle cx="252" cy="286" r="4"></circle>
+              <text x="220" y="302">Purmamarca</text>
+            </g>
+
+            {% for location in map_locations %}
+            <g class="map-location label-{{ location.label_side }} {{ 'is-selected' if selected_code in location.codes else '' }}"
+               data-location-name="{{ location.name }}" data-site-codes="{{ location.codes|join(',') }}"
+               transform="translate({{ location.x }} {{ location.y }})" role="button" tabindex="0"
+               aria-label="Seleccionar localidad {{ location.name }}, {{ location.codes|length }} sedes">
+              <circle class="site-halo" r="16"></circle>
+              <circle class="site-point" r="6"></circle>
+              <text class="location-name" x="{{ -11 if location.label_side == 'left' else 11 }}" y="-4">{{ location.name }}</text>
+              <text class="location-count" x="{{ -11 if location.label_side == 'left' else 11 }}" y="9">{{ location.codes|length }} {{ 'sede' if location.codes|length == 1 else 'sedes' }}</text>
+              <g class="location-fueros" transform="translate({{ (-11 - ((location.codes|length - 1) * 8)) if location.label_side == 'left' else 11 }} 17)">
+                {% for sede in location.sedes %}
+                <circle class="fuero-mini fuero-mini-{{ sede.fuero_key }}" cx="{{ loop.index0 * 8 }}" cy="0" r="2.5"></circle>
+                {% endfor %}
+              </g>
             </g>
             {% endfor %}
           </svg>
+
+          <div class="map-location-picker" id="mapLocationPicker" hidden>
+            <div><strong id="mapLocationPickerTitle"></strong><span>Elegir sede</span></div>
+            <div id="mapLocationPickerOptions"></div>
+          </div>
 
           <div class="route-reference">
             <strong>Referencias de rutas</strong>
@@ -108,12 +128,8 @@
         <div class="quick-access" aria-label="Accesos rapidos por localidad">
           <strong>Accesos rapidos por localidad</strong>
           <div>
-            {% set locations = [] %}
             {% for sede in sedes %}
-              {% if sede.ciudad not in locations %}
-                {% set _ = locations.append(sede.ciudad) %}
-                <button type="button" class="quick-site" data-site-code="{{ sede.codigo }}">{{ sede.ciudad }}</button>
-              {% endif %}
+              <button type="button" class="quick-site" data-site-code="{{ sede.codigo }}">{{ sede.codigo }} · {{ sede.nombre }}</button>
             {% endfor %}
           </div>
         </div>
@@ -192,5 +208,5 @@
 <script id="sedesMapData" type="application/json">{{ sedes|tojson }}</script>
 {% endblock %}
 {% block scripts %}
-<script src="{{ url_for('static', filename='sgi/sedes_mapa_general.js', v='2026-06-26-01') }}"></script>
+<script src="{{ url_for('static', filename='sgi/sedes_mapa_general.js', v='2026-06-26-02') }}"></script>
 {% endblock %}

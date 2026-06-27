@@ -4110,6 +4110,32 @@ def sedes_mapa_general():
         "inventario": sum(item["inventario"] for item in sedes),
         "vehiculos": count_value("SELECT COUNT(*) FROM vehiculos WHERE COALESCE(activo, 1) = 1"),
     }
+
+    sedes_by_code = {item["codigo"]: item for item in sedes}
+    location_defs = [
+        ("La Quiaca", 228, 72, "right", ["S16"]),
+        ("Abra Pampa", 207, 124, "left", ["S15"]),
+        ("Humahuaca", 253, 186, "right", ["S05", "S18"]),
+        ("Tilcara", 259, 241, "right", ["S14"]),
+        ("San Salvador", 298, 353, "left", ["S01", "S08", "S11", "S12", "S13"]),
+        ("Palpala", 334, 359, "right", ["S07", "S20"]),
+        ("Perico", 319, 389, "left", ["S03", "S17"]),
+        ("El Carmen", 309, 416, "right", ["S10"]),
+        ("San Pedro", 390, 374, "right", ["S02"]),
+        ("Libertador", 419, 311, "right", ["S06", "S19"]),
+    ]
+    map_locations = []
+    for name, x_pos, y_pos, label_side, codes in location_defs:
+        location_sedes = [sedes_by_code[code] for code in codes if code in sedes_by_code]
+        if location_sedes:
+            map_locations.append({
+                "name": name,
+                "x": x_pos,
+                "y": y_pos,
+                "label_side": label_side,
+                "codes": [item["codigo"] for item in location_sedes],
+                "sedes": location_sedes,
+            })
     db.close()
 
     selected_code = str(request.args.get("sede") or "S05").strip().upper()
@@ -4121,6 +4147,7 @@ def sedes_mapa_general():
         title="Mapa General de Sedes",
         sedes=sedes,
         totals=totals,
+        map_locations=map_locations,
         selected_code=selected_code,
     )
 
