@@ -263,9 +263,9 @@ def default_redirect_for_role(role: str):
     if role == ROLE_OPERATIVO_CLAVE:
         return _first_url("dashboard_exec", "novedades.dashboard_exec", "dashboard_ejecutivo", "dashboard")
     if role == ROLE_CONTROL_SEDES:
-        return _first_url("sedes_resumen_mpd", "dashboard_ejecutivo", "dashboard")
+        return _first_url("sedes_mapa_general", "sedes_resumen_mpd", "dashboard_ejecutivo", "dashboard")
     if role == ROLE_SEDE_VEHICULOS:
-        s = _first_url("sedes_resumen_mpd", "sedes_home")
+        s = _first_url("sedes_mapa_general", "sedes_home", "sedes_resumen_mpd")
         if s != "/":
             return s
         return _first_url("dashboard", "dashboard_exec", "dashboard_ejecutivo")
@@ -1745,9 +1745,9 @@ def enforce_auth():
         if role == ROLE_OPERATIVO_CLAVE:
             return redirect(url_for("dashboard_exec"))
         if role == ROLE_CONTROL_SEDES:
-            return redirect(url_for("sedes_resumen_mpd"))
+            return redirect(url_for("sedes_mapa_general"))
         if role == ROLE_SEDE_VEHICULOS:
-            return redirect(url_for("sedes_resumen_mpd"))
+            return redirect(url_for("sedes_mapa_general"))
         if role == ROLE_SST_VEHICULOS:
             return redirect(url_for("sst_general"))
         if role == ROLE_OBRAS_VEHICULOS:
@@ -3970,6 +3970,159 @@ def api_sedes_mpd():
     """).fetchall()
     conn.close()
     return jsonify([dict(r) for r in rows])
+
+
+@app.get("/sedes", endpoint="sedes_home")
+@app.get("/sedes/mapa-general", endpoint="sedes_mapa_general")
+def sedes_mapa_general():
+    """Vista territorial de acceso al modulo Sedes, sin reemplazar sus vistas tecnicas."""
+    db = get_db()
+
+    fuero_por_codigo = {
+        "S01": "penal", "S02": "penal", "S03": "penal", "S04": "penal",
+        "S05": "penal", "S06": "penal", "S07": "penal", "S10": "penal",
+        "S11": "social", "S14": "social", "S15": "social", "S16": "social",
+        "S17": "social", "S18": "social", "S19": "social", "S20": "social",
+        "S13": "menores", "S08": "administracion", "S12": "administracion",
+    }
+    fuero_labels = {
+        "penal": "Penal",
+        "social": "Juridico Social",
+        "menores": "Menores e Incapaces",
+        "administracion": "Administracion",
+    }
+    map_positions = {
+        "S16": (54.0, 7.5),
+        "S15": (41.0, 21.0),
+        "S05": (50.5, 36.5), "S18": (55.0, 38.5),
+        "S14": (52.0, 50.5),
+        "S06": (76.5, 67.0), "S19": (81.0, 69.0),
+        "S01": (55.0, 73.5), "S08": (59.0, 72.0), "S11": (51.0, 76.0),
+        "S12": (59.5, 77.0), "S13": (54.5, 79.5),
+        "S07": (65.0, 78.0), "S20": (69.0, 80.0),
+        "S03": (58.0, 84.5), "S17": (62.0, 86.5),
+        "S10": (57.0, 91.0), "S02": (76.0, 84.0),
+    }
+
+    sede_rows = db.execute("""
+        SELECT codigo, nombre, ciudad, direccion, fuero, telefono_sede,
+               responsable_ejesa, url_maps
+        FROM sedes_mpd
+        WHERE codigo <> 'S09' AND COALESCE(activa, 1) = 1
+        ORDER BY codigo
+    """).fetchall()
+
+    def count_value(sql, params=()):
+        try:
+            value = db.execute(sql, params).fetchone()
+            return int((value[0] if value else 0) or 0)
+        except Exception:
+            return 0
+
+    use_legacy_matafuegos = count_value("SELECT COUNT(*) FROM matafuegos") == 0
+    sedes = []
+    for row in sede_rows:
+        codigo = str(row["codigo"] or "").strip().upper()
+        depositos = [dict(item) for item in db.execute("""
+            SELECT codigo_local, COALESCE(NULLIF(descripcion, ''), NULLIF(nombre, ''), 'Sin descripcion') AS descripcion
+            FROM sedes_depositos
+            WHERE UPPER(codigo_sede) = ?
+            ORDER BY CAST(REPLACE(UPPER(codigo_local), 'D', '') AS INTEGER), UPPER(codigo_local)
+        """, (codigo,)).fetchall()]
+
+        personal = count_value("""
+            SELECT COUNT(*) FROM personal_sede
+            WHERE UPPER(codigo_sede) = ? AND COALESCE(activo, 1) = 1
+        """, (codigo,))
+        aires = count_value("SELECT COUNT(*) FROM aires_mpd WHERE UPPER(sede_codigo) = ?", (codigo,))
+        if use_legacy_matafuegos:
+            matafuegos = count_value("""
+                SELECT COUNT(*) FROM matafuegos_sede_legacy
+                WHERE UPPER(cod_sede) = ? AND COALESCE(activo, 1) = 1
+            """, (codigo,))
+        else:
+            matafuegos = count_value("""
+                SELECT COUNT(*) FROM matafuegos
+                WHERE UPPER(COALESCE(NULLIF(sede, ''), cod_sede)) = ? AND COALESCE(activo, 1) = 1
+            """, (codigo,))
+        luminarias = count_value("""
+            SELECT COALESCE(SUM(COALESCE(tubo_led_fria,0) + COALESCE(tubo_led_calido,0) +
+                       COALESCE(foco_comun,0) + COALESCE(panel_led,0)), 0)
+            FROM luminarias_sede
+            WHERE UPPER(codigo_sede) = ? AND COALESCE(activo, 1) = 1
+        """, (codigo,))
+        inventario = count_value("""
+            SELECT COALESCE(SUM(COALESCE(escritorio_prof,0) + COALESCE(mesa_pc,0) +
+                       COALESCE(silla_giratoria,0) + COALESCE(silla_fija,0) +
+                       COALESCE(armario_alto,0) + COALESCE(biblioteca_baja,0)), 0)
+            FROM mobiliario_sede
+            WHERE UPPER(codigo_sede) = ? AND COALESCE(activo, 1) = 1
+        """, (codigo,))
+
+        novedades = [dict(item) for item in db.execute("""
+            SELECT fecha, COALESCE(NULLIF(observacion, ''), NULLIF(tarea_asignada, ''),
+                   NULLIF(subtipo, ''), NULLIF(tipo, ''), 'Novedad registrada') AS texto,
+                   COALESCE(NULLIF(estado, ''), NULLIF(tarea_estado, ''), '') AS estado
+            FROM novedades_diarias
+            WHERE UPPER(COALESCE(NULLIF(sede_codigo, ''), tarea_sede_codigo)) = ?
+            ORDER BY COALESCE(actualizado_en, creado_en, fecha) DESC, id DESC
+            LIMIT 3
+        """, (codigo,)).fetchall()]
+
+        plan_rel = f"planos/{codigo}/PB.png"
+        plan_abs = os.path.join(app.root_path, "static", plan_rel.replace("/", os.sep))
+        if not os.path.exists(plan_abs):
+            plan_rel = "planos/placeholder.png"
+
+        fuero_key = fuero_por_codigo.get(codigo, "administracion")
+        map_x, map_y = map_positions.get(codigo, (55.0, 75.0))
+        sedes.append({
+            "codigo": codigo,
+            "nombre": row["nombre"] or "Sede",
+            "ciudad": row["ciudad"] or "Sin localidad",
+            "direccion": row["direccion"] or "Sin direccion registrada",
+            "fuero_key": fuero_key,
+            "fuero_label": fuero_labels[fuero_key],
+            "telefono": row["telefono_sede"] or "",
+            "responsable": row["responsable_ejesa"] or "",
+            "url_maps": row["url_maps"] or "",
+            "map_x": map_x,
+            "map_y": map_y,
+            "plano_url": url_for("static", filename=plan_rel),
+            "depositos": depositos,
+            "depositos_total": len(depositos),
+            "personal": personal,
+            "aires": aires,
+            "matafuegos": matafuegos,
+            "luminarias": luminarias,
+            "inventario": inventario,
+            "novedades": novedades,
+            "detalle_url": url_for("sede_ficha", codigo=codigo),
+        })
+
+    totals = {
+        "sedes": len(sedes),
+        "depositos": sum(item["depositos_total"] for item in sedes),
+        "personal": sum(item["personal"] for item in sedes),
+        "aires": sum(item["aires"] for item in sedes),
+        "matafuegos": sum(item["matafuegos"] for item in sedes),
+        "luminarias": sum(item["luminarias"] for item in sedes),
+        "inventario": sum(item["inventario"] for item in sedes),
+        "vehiculos": count_value("SELECT COUNT(*) FROM vehiculos WHERE COALESCE(activo, 1) = 1"),
+    }
+    db.close()
+
+    selected_code = str(request.args.get("sede") or "S05").strip().upper()
+    if selected_code not in {item["codigo"] for item in sedes} and sedes:
+        selected_code = sedes[0]["codigo"]
+
+    return render_template(
+        "sedes_mapa_general.html",
+        title="Mapa General de Sedes",
+        sedes=sedes,
+        totals=totals,
+        selected_code=selected_code,
+    )
 
 import sqlite3
 

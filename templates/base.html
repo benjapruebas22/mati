@@ -527,7 +527,7 @@
       <a class="btn btn-mpd btn-area-ejecutivo" href="{{ url_for('dashboard_ejecutivo') }}">Alta Dirección</a>
       {% else %}
       <a class="btn btn-mpd btn-area-inicio" href="{{ url_for('dashboard') }}">Centro Operativo</a>
-      <a class="btn btn-mpd btn-area-inicio" href="{{ url_for('sedes_resumen_mpd') }}">Sedes</a>
+      <a class="btn btn-mpd btn-area-inicio" href="{{ url_for('sedes_mapa_general') }}">Sedes</a>
       
       {% if user_role == 'full' %}
       {# Usuarios queda en Info MPD para reducir ruido visual #}

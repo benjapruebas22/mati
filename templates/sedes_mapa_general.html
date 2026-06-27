@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block main_class %}container-wide sedes-map-main{% endblock %}
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sedes_mapa_general.css', v='2026-06-26-01') }}">
+{% endblock %}
+{% block content %}
+<div class="mpd-map-app" data-selected-code="{{ selected_code }}">
+  <aside class="mpd-map-sidebar" aria-label="Navegacion del modulo Sedes">
+    <div class="mpd-map-brand">
+      <img src="{{ url_for('static', filename='Logo/logo_mpd.png') }}" alt="Ministerio Publico de la Defensa de Jujuy">
+    </div>
+
+    <nav class="mpd-map-nav" aria-label="Vistas y modulos relacionados">
+      <a class="is-active" href="{{ url_for('sedes_mapa_general') }}" aria-current="page"><span class="nav-icon">⌾</span>Vista global</a>
+      <a href="{{ url_for('sedes_resumen_mpd') }}"><span class="nav-icon">▤</span>Resumen operativo</a>
+      <a href="{{ url_for('sedes_resumen_mpd') }}#mapa-operativo-territorial"><span class="nav-icon">⌖</span>Sedes</a>
+      <a href="{{ url_for('depositos_home') }}"><span class="nav-icon">▣</span>Depositos</a>
+      <a href="{{ url_for('personal_sede_home') }}"><span class="nav-icon">♙</span>Personal</a>
+      <a href="{{ url_for('matafuegos_home') }}"><span class="nav-icon">◇</span>SG-SST</a>
+      <a href="{{ url_for('sgi_documentacion') }}"><span class="nav-icon">□</span>Documentacion</a>
+      <a href="{{ url_for('sgi_documentacion_informes') }}"><span class="nav-icon">≡</span>Informes</a>
+    </nav>
+
+    <section class="mpd-map-general-summary" aria-labelledby="summary-title">
+      <h2 id="summary-title">Resumen general</h2>
+      <dl>
+        <div><dt>Total de sedes</dt><dd>{{ totals.sedes }}</dd></div>
+        <div><dt>Total de depositos</dt><dd>{{ totals.depositos }}</dd></div>
+        <div><dt>Personal</dt><dd>{{ totals.personal }}</dd></div>
+        <div><dt>Inventario</dt><dd>{{ totals.inventario }}</dd></div>
+        <div><dt>Matafuegos</dt><dd>{{ totals.matafuegos }}</dd></div>
+        <div><dt>Aires acond.</dt><dd>{{ totals.aires }}</dd></div>
+        <div><dt>Luminarias</dt><dd>{{ totals.luminarias }}</dd></div>
+        <div><dt>Vehiculos</dt><dd>{{ totals.vehiculos }}</dd></div>
+      </dl>
+    </section>
+  </aside>
+
+  <main class="mpd-map-workspace" id="main-content">
+    <header class="mpd-map-page-header">
+      <div>
+        <p class="eyebrow">Modulo Sedes</p>
+        <h1>Mapa general de sedes</h1>
+        <p>Vista fisica y operativa de la Provincia de Jujuy</p>
+      </div>
+      <div class="mpd-map-header-tools">
+        <label class="mpd-map-search">
+          <span class="sr-only">Buscar sede o deposito</span>
+          <input id="mapSearch" type="search" placeholder="Buscar S05, Humahuaca o D07..." autocomplete="off">
+          <span aria-hidden="true">⌕</span>
+        </label>
+        <a class="secondary-link" href="{{ url_for('sedes_resumen_mpd') }}">Ver resumen tecnico</a>
+      </div>
+    </header>
+
+    <div class="mpd-map-search-results" id="mapSearchResults" hidden></div>
+
+    <div class="mpd-map-content-grid">
+      <section class="mpd-map-stage card-surface" aria-labelledby="territory-title">
+        <div class="section-heading">
+          <div>
+            <h2 id="territory-title">Provincia de Jujuy</h2>
+            <p>Selecciona una sede para consultar su informacion</p>
+          </div>
+          <div class="mpd-map-legend" aria-label="Referencias de fueros">
+            <span><i class="dot penal"></i>Penal</span>
+            <span><i class="dot social"></i>Juridico Social</span>
+            <span><i class="dot menores"></i>Menores e Incap.</span>
+            <span><i class="dot administracion"></i>Administracion</span>
+          </div>
+        </div>
+
+        <div class="jujuy-map-wrap">
+          <svg class="jujuy-map" viewBox="0 0 620 760" role="img" aria-labelledby="map-title map-desc">
+            <title id="map-title">Mapa operativo de sedes del MPD en Jujuy</title>
+            <desc id="map-desc">Esquema territorial con las sedes disponibles como puntos seleccionables.</desc>
+            <path class="province-shape" d="M294 20 L350 58 L452 78 L430 151 L485 215 L474 302 L507 337 L550 349 L578 429 L565 514 L593 580 L571 670 L522 656 L497 698 L445 675 L432 721 L348 699 L302 650 L277 583 L232 530 L211 432 L150 480 L98 450 L55 386 L84 302 L67 254 L89 217 L61 180 L99 153 L84 112 L169 95 L195 31 Z"/>
+            <path class="route route-main" d="M336 64 C304 135 319 215 334 285 C347 350 345 423 365 492 C380 548 376 605 352 684"/>
+            <path class="route" d="M352 684 C410 647 450 608 486 550 C513 505 522 457 520 401"/>
+            <path class="route" d="M365 492 C414 517 469 539 520 552"/>
+            <g class="route-labels" aria-hidden="true">
+              <text x="302" y="163">RN 9</text>
+              <text x="365" y="405">RN 9</text>
+              <text x="465" y="535">RN 34</text>
+            </g>
+            <g class="north-mark" aria-hidden="true"><text x="34" y="55">N</text><path d="M34 66 L23 94 L34 87 L45 94 Z"/></g>
+
+            {% for sede in sedes %}
+            <g class="map-site map-site-{{ sede.fuero_key }} {{ 'map-site-dense' if sede.codigo in ['S01','S08','S11','S12','S13'] else '' }} {{ 'is-selected' if sede.codigo == selected_code else '' }}"
+               data-site-code="{{ sede.codigo }}" transform="translate({{ (sede.map_x * 6.2)|round(1) }} {{ (sede.map_y * 7.6)|round(1) }})"
+               role="button" tabindex="0" aria-label="Seleccionar {{ sede.codigo }}, {{ sede.nombre }}">
+              <circle class="site-halo" r="15"></circle>
+              <circle class="site-point" r="7"></circle>
+              <text class="site-code" x="12" y="-4">{{ sede.codigo }}</text>
+              <text class="site-city" x="12" y="12">{{ sede.ciudad|replace('San Salvador de Jujuy','San Salvador')|replace('Libertador Gral. San Martin','Libertador') }}</text>
+            </g>
+            {% endfor %}
+          </svg>
+
+          <div class="route-reference">
+            <strong>Referencias de rutas</strong>
+            <span><i class="route-swatch main"></i>Ruta nacional</span>
+            <span><i class="route-swatch"></i>Tramo operativo</span>
+            <span><i class="point-swatch"></i>Sede MPD</span>
+          </div>
+        </div>
+
+        <div class="quick-access" aria-label="Accesos rapidos por localidad">
+          <strong>Accesos rapidos por localidad</strong>
+          <div>
+            {% set locations = [] %}
+            {% for sede in sedes %}
+              {% if sede.ciudad not in locations %}
+                {% set _ = locations.append(sede.ciudad) %}
+                <button type="button" class="quick-site" data-site-code="{{ sede.codigo }}">{{ sede.ciudad }}</button>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+      </section>
+
+      <aside class="mpd-site-panel" aria-live="polite">
+        <section class="site-identity card-surface">
+          <div>
+            <span class="site-code-pill" id="panelCode"></span>
+            <h2 id="panelName"></h2>
+            <p id="panelAddress"></p>
+            <span class="site-fuero" id="panelFuero"></span>
+          </div>
+          <a class="maps-link" id="panelMapsLink" href="#" target="_blank" rel="noopener" hidden>Ver ubicacion</a>
+        </section>
+
+        <section class="site-plan card-surface">
+          <div class="panel-section-title">
+            <div><h3>Plano de la sede</h3><p>Planta baja · vista de referencia</p></div>
+            <span id="panelDepositCount"></span>
+          </div>
+          <div class="plan-preview-grid">
+            <a class="plan-image-link" id="panelPlanLink" href="#">
+              <img id="panelPlan" src="" alt="">
+              <span>Ampliar en ficha operativa</span>
+            </a>
+            <div class="deposit-list" id="panelDeposits"></div>
+          </div>
+        </section>
+
+        <section class="site-metrics card-surface">
+          <h3>Resumen de la sede</h3>
+          <div class="metric-grid">
+            <div><span>Depositos</span><strong id="metricDeposits">0</strong></div>
+            <div><span>Personal</span><strong id="metricPersonal">0</strong></div>
+            <div><span>Inventario</span><strong id="metricInventory">0</strong></div>
+            <div><span>Aires</span><strong id="metricAires">0</strong></div>
+            <div><span>Luminarias</span><strong id="metricLights">0</strong></div>
+            <div><span>Matafuegos</span><strong id="metricExtinguishers">0</strong></div>
+          </div>
+        </section>
+
+        <section class="site-news card-surface">
+          <h3>Ultimas novedades</h3>
+          <ul id="panelNews"></ul>
+        </section>
+
+        <a class="primary-detail-link" id="panelDetailLink" href="#">Ver detalle de la sede <span aria-hidden="true">→</span></a>
+      </aside>
+    </div>
+
+    <footer class="mpd-map-footer-grid">
+      <section class="system-reading card-surface">
+        <h2>Como se lee este sistema</h2>
+        <ol>
+          <li><strong>1. Provincia</strong><span>Vista global de las sedes</span></li>
+          <li><strong>2. Localidad</strong><span>Seleccion territorial</span></li>
+          <li><strong>3. Sede</strong><span>Informacion general</span></li>
+          <li><strong>4. Plano</strong><span>Distribucion fisica</span></li>
+          <li><strong>5. Deposito</strong><span>Detalle del espacio</span></li>
+        </ol>
+      </section>
+      <section class="reference-code card-surface">
+        <h2>Codigo unico de referencia</h2>
+        <strong>Sede - Deposito</strong>
+        <span>Ejemplo: S05-D07</span>
+      </section>
+      <section class="integrated-info card-surface">
+        <h2>Informacion integrada</h2>
+        <p>Personal · Intendencia · SG-SST · Sistemas · Administracion · Comunicaciones</p>
+      </section>
+    </footer>
+  </main>
+</div>
+
+<script id="sedesMapData" type="application/json">{{ sedes|tojson }}</script>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='sgi/sedes_mapa_general.js', v='2026-06-26-01') }}"></script>
+{% endblock %}
