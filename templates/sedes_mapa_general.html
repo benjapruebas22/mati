@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block main_class %}container-wide sedes-map-main{% endblock %}
 {% block head_extra %}
-<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sedes_mapa_general.css', v='2026-06-26-04') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sedes_mapa_general.css', v='2026-06-27-01') }}">
 {% endblock %}
 {% block content %}
 <div class="mpd-map-app" data-selected-code="{{ selected_code }}">
@@ -72,14 +72,14 @@
         </div>
 
         <div class="jujuy-map-wrap">
-          <svg class="jujuy-map" viewBox="0 0 500 500" role="img" aria-labelledby="map-title map-desc">
+          <svg class="jujuy-map" viewBox="4 6 480 480" role="img" aria-labelledby="map-title map-desc">
             <title id="map-title">Mapa operativo de sedes del MPD en Jujuy</title>
             <desc id="map-desc">Esquema territorial con las sedes disponibles como puntos seleccionables.</desc>
-            <path class="province-shape" d="M186 15 C200 26 220 41 236 47 C265 52 303 57 331 64 C323 90 312 120 303 145 C319 165 339 187 355 205 C355 226 352 253 350 273 C359 289 368 303 376 315 C389 304 403 287 417 275 C433 281 451 289 468 295 C468 343 469 407 467 452 C453 451 438 449 426 447 C418 458 410 468 404 476 C390 468 375 459 361 452 L360 465 C333 459 308 453 285 447 C271 437 256 423 246 414 C237 396 231 381 228 369 C218 360 208 351 199 347 C200 328 204 306 207 287 C189 279 169 267 151 258 C153 291 155 327 157 361 C146 374 132 388 120 397 C88 372 52 343 20 315 C27 295 35 275 42 258 C46 238 52 217 55 200 C48 190 41 178 36 169 L55 147 L45 136 C62 128 84 119 101 114 C98 102 95 92 93 83 C115 79 141 74 164 70 C172 52 180 31 186 15 Z"/>
-            <path class="route route-main" d="M228 72 C222 91 213 111 207 124 C218 145 239 164 253 186 C251 205 254 225 259 241 C266 275 281 319 298 353 C304 376 310 397 309 416"/>
-            <path class="route" d="M298 353 C309 353 322 356 334 359 C355 361 374 369 390 374"/>
-            <path class="route" d="M390 374 C400 354 411 331 419 311"/>
-            <path class="route" d="M298 353 C275 340 248 320 224 305 C198 288 174 271 151 258"/>
+            <path class="province-shape" d="M186 15 C195 21 207 32 218 39 C224 43 230 46 236 47 C264 52 303 57 331 64 C328 77 323 91 318 104 C313 120 308 135 303 145 C315 160 329 175 340 189 C346 196 351 201 355 205 C356 225 353 253 350 273 C356 286 367 303 376 315 C387 306 398 294 406 285 C411 280 414 277 417 275 C433 281 451 289 468 295 C470 319 467 344 468 369 C470 396 469 425 467 452 C453 451 438 449 426 447 C418 458 410 468 404 476 C390 468 375 459 361 452 C360 456 360 461 360 465 C333 459 308 453 285 447 C271 437 256 423 246 414 C237 396 231 381 228 369 C218 360 208 351 199 347 C200 328 204 306 207 287 C189 279 169 267 151 258 C153 291 155 327 157 361 C146 374 132 388 120 397 C88 372 52 343 20 315 C27 295 35 275 42 258 C46 238 52 217 55 200 C48 190 41 178 36 169 C42 161 49 153 55 147 C52 143 48 139 45 136 C62 128 84 119 101 114 C98 102 95 92 93 83 C115 79 141 74 164 70 C172 52 180 31 186 15 Z"/>
+            <path class="route route-main" d="M228 72 C223 90 214 110 207 124 C216 143 238 164 253 186 C251 204 254 224 259 241 C265 273 280 318 298 353 C304 375 310 397 309 416"/>
+            <path class="route" d="M298 353 C310 352 322 356 334 359 C354 361 374 368 390 374"/>
+            <path class="route" d="M390 374 C399 356 411 331 419 311"/>
+            <path class="route" d="M298 353 C276 340 249 321 224 305 C199 288 174 271 151 258"/>
             <g class="route-labels" aria-hidden="true">
               <text x="227" y="151">RN 9</text>
               <text x="273" y="302">RN 9</text>
@@ -256,5 +256,5 @@
 <script id="sedesMapData" type="application/json">{{ sedes|tojson }}</script>
 {% endblock %}
 {% block scripts %}
-<script src="{{ url_for('static', filename='sgi/sedes_mapa_general.js', v='2026-06-26-04') }}"></script>
+<script src="{{ url_for('static', filename='sgi/sedes_mapa_general.js', v='2026-06-27-01') }}"></script>
 {% endblock %}
