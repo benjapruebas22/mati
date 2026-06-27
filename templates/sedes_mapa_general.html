@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block main_class %}container-wide sedes-map-main{% endblock %}
 {% block head_extra %}
-<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sedes_mapa_general.css', v='2026-06-27-03') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sedes_mapa_general.css', v='2026-06-27-04') }}">
 {% endblock %}
 {% block content %}
 <div class="mpd-map-app" data-selected-code="{{ selected_code }}">
@@ -253,19 +253,19 @@
 
     <footer class="mpd-map-footer-grid">
       <section class="system-reading card-surface">
-        <h2>Como se lee este sistema</h2>
+        <h2>Como se lee</h2>
         <ol>
-          <li><strong>1. Provincia</strong><span>Vista global de las sedes</span></li>
-          <li><strong>2. Localidad</strong><span>Seleccion territorial</span></li>
-          <li><strong>3. Sede</strong><span>Informacion general</span></li>
-          <li><strong>4. Plano</strong><span>Distribucion fisica</span></li>
-          <li><strong>5. Deposito</strong><span>Detalle del espacio</span></li>
+          <li><strong>1</strong><span>Provincia</span></li>
+          <li><strong>2</strong><span>Localidad</span></li>
+          <li><strong>3</strong><span>Sede</span></li>
+          <li><strong>4</strong><span>Plano</span></li>
+          <li><strong>5</strong><span>Deposito</span></li>
         </ol>
       </section>
       <section class="reference-code card-surface">
-        <h2>Codigo unico de referencia</h2>
-        <strong>Sede - Deposito</strong>
-        <span>Ejemplo: S05-D07</span>
+        <h2>Codigo unico</h2>
+        <span>Sede + Deposito</span>
+        <strong>S05-D07</strong>
       </section>
       <section class="integrated-info card-surface">
         <h2>Informacion integrada</h2>
