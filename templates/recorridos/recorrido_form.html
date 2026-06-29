@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {% block main_class %}container-wide{% endblock %}
-{% block head_extra %}<link rel="stylesheet" href="{{ url_for('static', filename='recorridos/recorridos.css', v='2026-06-28-02') }}">{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{{ url_for('static', filename='recorridos/recorridos.css', v='2026-06-28-03') }}">{% endblock %}
 {% block content %}
 <main class="ro-page ro-page-narrow" id="main-content">
   <header class="ro-header">
     <div>
       <p class="ro-eyebrow">SGI · Recorridos Operativos</p>
       <h1>{{ 'Editar recorrido' if trip else 'Nuevo recorrido' }}</h1>
-      <p>Definí los datos mínimos. La ruta genera automáticamente las sedes previstas.</p>
+      <p>Definí los datos mínimos. La ruta propone sedes de referencia para comenzar a planificar.</p>
     </div>
     <a class="ro-button ro-button-secondary" href="{{ url_for('recorridos_operativos_detalle', trip_id=trip.id) if trip else url_for('recorridos_operativos_lista') }}">Cancelar</a>
   </header>
@@ -25,9 +25,9 @@
       </div>
       <input type="hidden" name="paradas" id="stopsInput" value="{{ stop_text }}">
       <div class="ro-route-preview" aria-live="polite">
-        <strong>Itinerario generado</strong>
+        <strong>Sedes de referencia</strong>
         <div id="routePreview"></div>
-        <small>Luego podrás administrar actividades y materiales dentro de cada sede.</small>
+        <small>No es un orden obligatorio. Solo aparecerán en ejecución las sedes que tengan actividades.</small>
       </div>
     </div>
     <div class="ro-form-actions">
