@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block main_class %}container-wide sedes-map-main{% endblock %}
 {% block head_extra %}
-<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sedes_mapa_general.css', v='2026-06-27-04') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sedes_mapa_general.css', v='2026-06-29-01') }}">
 {% endblock %}
 {% block content %}
 <div class="mpd-map-app" data-selected-code="{{ selected_code }}">
@@ -200,7 +200,7 @@
           <summary><strong>Accesos rapidos a sedes</strong><span><b class="quick-show">Mostrar sedes</b><b class="quick-hide">Ocultar sedes</b></span></summary>
           <div class="quick-access-list">
             {% for sede in sedes %}
-              <button type="button" class="quick-site" data-site-code="{{ sede.codigo }}" title="{{ sede.nombre }}">{{ sede.codigo }} · {{ sede.ciudad }}</button>
+              <button type="button" class="quick-site quick-site-{{ sede.fuero_key }}" data-site-code="{{ sede.codigo }}" title="{{ sede.nombre }}">{{ sede.codigo }} · {{ sede.ciudad }}</button>
             {% endfor %}
           </div>
         </details>

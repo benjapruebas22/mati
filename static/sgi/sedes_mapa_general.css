@@ -180,7 +180,12 @@
 .quick-access-list { display: flex; gap: 5px; flex-wrap: wrap; padding: 0 12px 10px; border-top: 1px solid #f0f1f3; }
 .quick-access:not([open]) .quick-access-list { display: none; }
 .quick-site { min-height: 30px; padding: 5px 8px; border: 1px solid var(--map-line); border-radius: 6px; background: #fff; color: #4c5666; font: inherit; font-size: 9px; cursor: pointer; }
-.quick-site:hover, .quick-site.is-selected { border-color: #bfaee4; background: var(--map-purple-soft); color: #5f36b7; }
+.quick-site.is-selected { border-color: #bfaee4; background: var(--map-purple-soft); color: #5f36b7; }
+.quick-site-penal { --quick-hover-color: #6666CC; }
+.quick-site-social { --quick-hover-color: #F14B94; }
+.quick-site-menores { --quick-hover-color: #65BFF4; }
+.quick-site-administracion { --quick-hover-color: #F58A5E; }
+.quick-site:hover { background: var(--quick-hover-color, #6666CC); color: #fff; }
 
 .mpd-site-panel { display: grid; gap: 8px; min-width: 0; }
 .site-identity { display: flex; min-height: 100px; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 12px 14px; }
@@ -208,13 +213,18 @@
 .site-metrics, .site-news { padding: 10px 12px; }
 .metric-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
 .metric-grid .metric-card { min-height: 52px; padding: 7px 8px; border: 1px solid var(--map-line); border-radius: 7px; }
-.metric-label { display: flex !important; align-items: center; gap: 5px; color: var(--map-muted); font-size: 9px; white-space: nowrap; }
-.metric-label svg { width: 14px; height: 14px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.metric-label { display: flex !important; align-items: center; gap: 8px; color: var(--map-muted); font-size: 9px; white-space: nowrap; }
+.metric-label svg { width: 16.5px; height: 16.5px; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 .metric-depositos .metric-label { color: #438b78; }
 .metric-personal .metric-label { color: #5f7fb8; }
 .metric-inventario .metric-label, .metric-aires .metric-label { color: #4f9bb5; }
 .metric-luminarias .metric-label { color: #aa8735; }
 .metric-matafuegos .metric-label { color: #c26b58; }
+.metric-depositos .metric-label svg { color: #2f9177; }
+.metric-personal .metric-label svg { color: #4f79c3; }
+.metric-inventario .metric-label svg, .metric-aires .metric-label svg { color: #3298b8; }
+.metric-luminarias .metric-label svg { color: #b48618; }
+.metric-matafuegos .metric-label svg { color: #d05f48; }
 .metric-grid strong { display: block; margin-top: 2px; color: var(--map-ink); font-size: 16px; font-variant-numeric: tabular-nums; }
 .site-news ul { display: grid; gap: 6px; margin: 0; padding-left: 17px; }
 .site-news li { color: #4f5969; font-size: 10px; line-height: 1.35; }
