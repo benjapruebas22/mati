@@ -70,7 +70,9 @@
     elements.name.textContent = sede.nombre;
     elements.address.textContent = [sede.ciudad, sede.direccion].filter(Boolean).join(' · ');
     elements.fuero.textContent = sede.fuero_label;
-    elements.fuero.style.color = FUERO_COLORS[normalize(sede.fuero_label)] || '#6666CC';
+    const fueroColor = FUERO_COLORS[normalize(sede.fuero_label)] || '#6666CC';
+    elements.code.style.color = fueroColor;
+    elements.fuero.style.color = fueroColor;
     elements.plan.src = sede.plano_url;
     elements.plan.alt = `Plano de ${sede.codigo}, ${sede.nombre}`;
     elements.planLink.href = `${sede.detalle_url}?tab=depositos`;
