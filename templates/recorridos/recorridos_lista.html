@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block main_class %}container-wide{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{{ url_for('static', filename='recorridos/recorridos.css', v='2026-06-28-01') }}">{% endblock %}
+{% block content %}
+<main class="ro-page" id="main-content">
+  <header class="ro-header">
+    <div>
+      <p class="ro-eyebrow">SGI · Sedes</p>
+      <h1>Recorridos Operativos</h1>
+      <p>Planificación de recorridos a sedes, checklist previa y marcación de actividades.</p>
+    </div>
+    <div class="ro-header-actions">
+      <a class="ro-button ro-button-secondary" href="{{ url_for('sedes_mapa_general') }}">Volver a Sedes</a>
+      <a class="ro-button ro-button-primary" href="{{ url_for('recorridos_operativos_nuevo') }}">Nuevo recorrido</a>
+    </div>
+  </header>
+
+  <section class="ro-summary" aria-label="Resumen de recorridos">
+    {% for status in statuses %}
+    <a href="{{ url_for('recorridos_operativos_lista', estado=status) }}" class="ro-summary-item {{ 'is-active' if status_filter == status else '' }}">
+      <span>{{ status }}</span>
+      <strong>{{ trips|selectattr('estado', 'equalto', status)|list|length if not status_filter else (trips|length if status_filter == status else 0) }}</strong>
+    </a>
+    {% endfor %}
+  </section>
+
+  <section class="ro-card">
+    <div class="ro-card-heading">
+      <div>
+        <h2>Planificación y seguimiento</h2>
+        <p>{{ trips|length }} recorrido{{ '' if trips|length == 1 else 's' }} {{ 'en ' ~ status_filter if status_filter else 'registrados' }}</p>
+      </div>
+      {% if status_filter %}<a class="ro-text-link" href="{{ url_for('recorridos_operativos_lista') }}">Quitar filtro</a>{% endif %}
+    </div>
+    <div class="ro-table-wrap">
+      <table class="ro-table">
+        <thead>
+          <tr>
+            <th>Fecha prevista</th><th>Ruta</th><th>Destino principal</th><th>Vehículo</th>
+            <th>Equipo operativo</th><th>Estado</th><th>Checklist</th><th>Actividades</th>
+            <th>Informe / resumen</th><th>Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for trip in trips %}
+          <tr>
+            <td><strong>{{ trip.fecha_prevista }}</strong></td>
+            <td>{{ trip.ruta }}</td>
+            <td>{{ trip.destino_nombre or 'Sin definir' }}</td>
+            <td>{{ trip.vehiculo_label or 'Sin asignar' }}</td>
+            <td>{{ trip.equipo_operativo }}</td>
+            <td><span class="ro-status ro-status-{{ trip.estado|lower|replace(' ', '-') }}">{{ trip.estado }}</span></td>
+            <td>{{ trip.kit_verificado or 0 }}/{{ trip.kit_total or 0 }}</td>
+            <td>{{ trip.actividades_finalizadas or 0 }}/{{ trip.actividades or 0 }}</td>
+            <td><span class="ro-muted">{{ trip.final_note or (trip.paradas ~ ' paradas · ' ~ trip.materiales ~ ' materiales') }}</span></td>
+            <td>
+              <div class="ro-row-actions">
+                <a href="{{ url_for('recorridos_operativos_detalle', trip_id=trip.id) }}">Ver</a>
+                {% if trip.estado in ['Borrador', 'Preparado'] %}
+                <a href="{{ url_for('recorridos_operativos_editar', trip_id=trip.id) }}">Editar</a>
+                {% endif %}
+                {% if trip.estado in ['Borrador', 'Preparado'] %}
+                <form method="post" action="{{ url_for('recorridos_operativos_iniciar', trip_id=trip.id) }}"><button>Iniciar recorrido</button></form>
+                {% elif trip.estado == 'Finalizado' %}
+                <form method="post" action="{{ url_for('recorridos_operativos_cerrar', trip_id=trip.id) }}"><button>Cerrar recorrido</button></form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="10"><div class="ro-empty"><strong>No hay recorridos para mostrar.</strong><span>Creá el primero para iniciar la planificación.</span></div></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+{% endblock %}

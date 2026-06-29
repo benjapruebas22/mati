@@ -1,9 +1,11 @@
 from importlib import import_module
 from modules.ordenes_mantenimiento import register_ordenes_mantenimiento
+from modules.recorridos_operativos import register_recorridos_operativos
 
 def create_app():
     legacy = import_module("legacy_app")
     register_ordenes_mantenimiento(legacy.app)
+    register_recorridos_operativos(legacy.app)
 
     # Sin tocar legacy_app.py: habilita rutas extra bajo permisos de dashboard.
     if hasattr(legacy, "module_from_path") and not getattr(legacy, "_ordenes_module_patch", False):
