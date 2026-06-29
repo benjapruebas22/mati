@@ -1,111 +1,76 @@
 {% extends "base.html" %}
 
-{% block head_extra %}
-  {{ super() }}
+{% block extra_head %}
   <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-06-29') }}">
 {% endblock %}
 
 {% block content %}
-<section class="sst-ui sst-page-visitas sst-shell">
-  <header class="sst-head">
+{% set sst_section = 'sedes' if q_vista == 'sedes' else 'visitas' %}
+<section class="sst-operativo sst-ui sst-page-visitas sst-shell">
+  {% include '_sst_operational_nav.html' %}
+  <header class="sst-op-header">
     <div>
-      <p class="sst-topline">SG-SST</p>
-      <h1>Visitas a sedes</h1>
-      <p class="sst-sub">Tarjetas por sede + semaforo operativo (ultima visita, docs ART, estado).</p>
+      <p class="sst-op-eyebrow">SG-SST · Operación</p>
+      <h1>{% if q_vista == 'sedes' %}Estado por sede{% else %}Visitas a sedes{% endif %}</h1>
+      <p>{% if q_vista == 'sedes' %}Lectura rápida del último relevamiento y sus pendientes.{% else %}Registro operativo de visitas, documentación y hallazgos relacionados.{% endif %}</p>
     </div>
-
-    <div class="sst-actions">
-      <form class="sst-search" method="get" action="{{ url_for('sst_visitas') }}">
-        <input name="q" value="{{ q or '' }}" placeholder="Buscar (S08, San Martin...)" />
-        <select name="estado">
-          <option value="" {% if not q_estado %}selected{% endif %}>Todos</option>
-          <option value="danger" {% if q_estado == 'danger' %}selected{% endif %}>Sin visita / critico</option>
-          <option value="pending" {% if q_estado == 'pending' %}selected{% endif %}>Pendiente / seguimiento</option>
-          <option value="complete" {% if q_estado == 'complete' %}selected{% endif %}>Al dia</option>
-        </select>
-        <button class="btn btn-soft" type="submit">Filtrar</button>
-      </form>
-
-      <a class="btn btn-soft" href="{{ url_for('sst_visita_cargar') }}">+ Cargar visita</a>
-      <a class="btn btn-soft" href="{{ url_for('sst_doc_subir') }}">+ Subir formulario</a>
-      <a class="btn btn-soft" href="{{ url_for('sst_general') }}">Volver</a>
+    <div class="sst-op-actions">
+      <a class="sst-op-btn primary" href="{{ url_for('sst_visita_cargar') }}">Registrar visita</a>
+      <a class="sst-op-btn" href="{{ url_for('sst_doc_subir') }}">Cargar documento ART</a>
     </div>
   </header>
 
-  <div class="sst-kpis">
-    <div class="sst-kpi total">
-      <div>
-        <div class="k-label">Total sedes</div>
-      </div>
-      <div class="k-val">{{ stats_total or 0 }}</div>
-    </div>
-    <div class="sst-kpi danger">
-      <div>
-        <div class="k-label">Sin visita</div>
-      </div>
-      <div class="k-val">{{ stats_sin_visita or 0 }}</div>
-    </div>
-    <div class="sst-kpi pending">
-      <div>
-        <div class="k-label">Docs pendientes</div>
-      </div>
-      <div class="k-val">{{ stats_docs_pend or 0 }}</div>
-    </div>
-    <div class="sst-kpi info">
-      <div>
-        <div class="k-label">En seguimiento</div>
-      </div>
-      <div class="k-val">{{ stats_en_seguimiento or 0 }}</div>
-    </div>
+  <div class="sst-op-nav" aria-label="Vistas de visitas">
+    <a class="{% if q_vista == 'proximas' %}is-active{% endif %}" href="{{ url_for('sst_visitas', vista='proximas') }}">Próximas</a>
+    <a class="{% if q_vista == 'pendientes' %}is-active{% endif %}" href="{{ url_for('sst_visitas', vista='pendientes') }}">Pendientes</a>
+    <a class="{% if q_vista == 'realizadas' %}is-active{% endif %}" href="{{ url_for('sst_visitas', vista='realizadas') }}">Realizadas</a>
+    <a class="{% if q_vista == 'todas' %}is-active{% endif %}" href="{{ url_for('sst_visitas', vista='todas') }}">Todas</a>
+    <a class="{% if q_vista == 'sedes' %}is-active{% endif %}" href="{{ url_for('sst_visitas', vista='sedes') }}">Estado por sede</a>
+    <form class="sst-search" method="get" action="{{ url_for('sst_visitas') }}" style="margin-left:auto;">
+      <input type="hidden" name="vista" value="{{ q_vista }}">
+      <input name="q" value="{{ q or '' }}" placeholder="Buscar sede o responsable">
+      <button class="sst-op-btn" type="submit">Buscar</button>
+    </form>
   </div>
 
-  <div class="sst-grid" aria-label="Sedes SST">
-    {% for s in sedes %}
-    <article class="sede-card {{ s.semaforo_cls }} sst-fuero-{{ s.fuero_class }}" style="--fuero-accent: {{ s.fuero_color }};">
-      <div class="sede-top">
-        <div class="sede-id">
-          <div class="sede-code">{{ s.codigo }}</div>
-          <div style="min-width:0;">
-            <p class="sede-name" title="{{ s.nombre }}">{{ s.nombre }}</p>
-            <div class="meta-row" style="justify-content:flex-start;gap:8px;margin-top:4px;">
-              <span class="meta-k">Ultima visita:</span>
-              <span>{{ s.ultima_visita }}</span>
-              <span class="sst-chip {{ s.semaforo_cls }}">{{ s.semaforo_label }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
+  {% if q_vista != 'sedes' %}
+  <article class="sst-op-card">
+    <div class="sst-op-card-head"><h2>{{ q_vista|capitalize }}</h2><span class="sst-op-count">{{ visitas|length }} registros</span></div>
+    <div style="overflow-x:auto;">
+      <table class="table">
+        <thead><tr><th>Fecha</th><th>Sede</th><th>Estado</th><th>Tipo</th><th>Responsable</th><th>ART</th><th>Hallazgos</th><th></th></tr></thead>
+        <tbody>
+          {% for visita in visitas %}
+          <tr>
+            <td style="white-space:nowrap;">{{ visita.fecha }}</td>
+            <td><strong>{{ visita.sede_codigo }}</strong><br><small>{{ visita.sede_nombre }}</small></td>
+            <td>{{ fmt_estado_visita(visita.estado) if fmt_estado_visita is defined else (visita.estado or 'Pendiente') }}</td>
+            <td>{{ visita.tipo_visita or '-' }}</td>
+            <td>{{ visita.responsable or '-' }}</td>
+            <td>{{ visita.documentos or 0 }} doc.</td>
+            <td>{{ visita.hallazgos or 0 }} abiertos</td>
+            <td><a class="sst-op-btn" href="{{ url_for('sst_sede_ficha', codigo=visita.sede_codigo) }}">Abrir</a></td>
+          </tr>
+          {% else %}<tr><td colspan="8" class="sst-op-empty">No hay visitas en esta vista.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+  {% else %}
+  <div class="sst-grid" aria-label="Estado de sedes SG-SST">
+    {% for sede in sedes %}
+    <article class="sede-card {{ sede.semaforo_cls }} sst-fuero-{{ sede.fuero_class }}" style="--fuero-accent:{{ sede.fuero_color }};">
+      <div class="sede-top"><div class="sede-id"><div class="sede-code">{{ sede.codigo }}</div><div><p class="sede-name">{{ sede.nombre }}</p><span class="sst-chip {{ sede.semaforo_cls }}">{{ sede.semaforo_label }}</span></div></div></div>
       <div class="sede-meta">
-      <div class="meta-row">
-        <span class="meta-k">Docs ART</span>
-        <span class="doc-dots">
-            {% set d351_ok = (s.doc_351 and (s.doc_351.drive_url or s.doc_351.archivo)) %}
-            {% set rgrl_ok = (s.doc_rgrl and (s.doc_rgrl.drive_url or s.doc_rgrl.archivo)) %}
-            {% set d351_pend = (s.doc_351 and (s.doc_351.estado_revision or '')|upper == 'PENDIENTE') %}
-            {% set rgrl_pend = (s.doc_rgrl and (s.doc_rgrl.estado_revision or '')|upper == 'PENDIENTE') %}
-            <span title="Decreto 351/79" class="dot {% if d351_ok %}{% if d351_pend %}wait{% else %}ok{% endif %}{% else %}no{% endif %}"></span>
-            <span class="meta-k">351/79</span>
-            <span title="RGRL" class="dot {% if rgrl_ok %}{% if rgrl_pend %}wait{% else %}ok{% endif %}{% else %}no{% endif %}"></span>
-            <span class="meta-k">RGRL</span>
-          </span>
-        </div>
-        <div class="meta-row">
-          <span class="meta-k">Hallazgos</span>
-          <span>{{ s.pend_hallazgos or 0 }} pend.</span>
-        </div>
+        <div class="meta-row"><span class="meta-k">Última visita</span><span>{{ sede.ultima_visita }}</span></div>
+        <div class="meta-row"><span class="meta-k">Documentación ART</span><span>{% if sede.docs_ok and not sede.docs_pend %}Completa{% else %}Requiere atención{% endif %}</span></div>
+        <div class="meta-row"><span class="meta-k">Hallazgos</span><span>{{ sede.pend_hallazgos or 0 }} pendientes</span></div>
       </div>
-
-      <div class="sede-actions">
-        <a class="btn btn-soft" href="{{ url_for('sst_sede_ficha', codigo=s.codigo) }}">Ver</a>
-        <a class="btn btn-soft" href="{{ url_for('sst_visita_cargar', sede=s.codigo) }}">Cargar</a>
-        <a class="btn btn-soft" href="{{ url_for('sst_doc_subir', sede=s.codigo) }}">Docs</a>
-      </div>
+      <div class="sede-actions"><a class="sst-op-btn" href="{{ url_for('sst_sede_ficha', codigo=sede.codigo) }}">Ver estado</a><a class="sst-op-btn" href="{{ url_for('sst_visita_cargar', sede=sede.codigo) }}">Registrar visita</a></div>
     </article>
-    {% else %}
-    <div class="sst-card">No hay sedes para mostrar.</div>
-    {% endfor %}
+    {% else %}<div class="sst-op-card sst-op-empty">No hay sedes para mostrar.</div>{% endfor %}
   </div>
+  {% endif %}
 </section>
-
 {% endblock %}

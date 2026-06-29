@@ -1,13 +1,27 @@
 {% extends "base.html" %}
+{% block extra_head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-06-29') }}">
+{% endblock %}
 {% block content %}
 
-<section class="sedes-section" style="max-width:1180px;margin:auto">
-  <h2 style="margin:0 0 6px 0">SG-SST / Matafuegos</h2>
+{% set sst_section = 'matafuegos' %}
+<section class="sedes-section sst-operativo" style="max-width:1180px;margin:auto">
+  {% include '_sst_operational_nav.html' %}
+  <h2 style="margin:0 0 6px 0">Matafuegos</h2>
   <p style="margin:0 0 12px 0;font-size:13px;color:#64748b">
     Tabla madre unica para carga, edicion, baja logica y reactivacion.
   </p>
 
+  <div class="sst-op-nav" aria-label="Vistas de vencimientos">
+    <a class="{% if vencimiento == 'todos' %}is-active{% endif %}" href="{{ url_for('matafuegos_home', sede=sede, piso=piso, q=q) }}">Inventario completo</a>
+    <a class="{% if vencimiento == 'proximos' %}is-active{% endif %}" href="{{ url_for('matafuegos_home', sede=sede, piso=piso, q=q, vencimiento='proximos') }}">Próximos vencimientos</a>
+    <a class="{% if vencimiento == 'vencidos' %}is-active{% endif %}" href="{{ url_for('matafuegos_home', sede=sede, piso=piso, q=q, vencimiento='vencidos') }}">Vencidos</a>
+    <a href="{{ url_for('sst_visitas', vista='sedes') }}">Estado por sede</a>
+    <a href="{{ url_for('calendario', fuente='sst') }}">Calendario</a>
+  </div>
+
   <form method="get" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+    <input type="hidden" name="vencimiento" value="{{ vencimiento }}">
     <input name="sede" value="{{ sede }}" placeholder="Sede (S01)"
       style="padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
     <select name="piso" style="padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
@@ -43,7 +57,7 @@
     </div>
   </div>
 
-  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:14px;margin-bottom:14px">
+  <div id="alta" style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:14px;margin-bottom:14px">
     <form method="post" style="display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:10px;align-items:end">
       <input type="hidden" name="id" value="{{ edit_row.id if edit_row else '' }}">
       <div>

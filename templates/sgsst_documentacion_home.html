@@ -1,23 +1,26 @@
 {% extends "base.html" %}
 
-{% block head_extra %}
+{% block extra_head %}
   <link rel="stylesheet" href="{{ url_for('static', filename='sgsst/sgsst_documentacion.css', v='2026-05-09') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-06-29') }}">
 {% endblock %}
 
 {% block content %}
 
-<section class="sgsst-shell">
+{% set sst_section = 'documentacion' %}
+<section class="sgsst-shell sst-operativo">
+  {% include '_sst_operational_nav.html' %}
   <header class="sgsst-hero">
     <div class="sgsst-head">
       <div>
-        <h1>Bloque documental SG-SST</h1>
+        <h1>Biblioteca documental SG-SST</h1>
         <p class="sgsst-sub">
           Gestión interna de documentos base del SG-SST, editable y trazable dentro del sistema, sin depender de Google Drive ni PDFs externos.
         </p>
       </div>
 
       <div class="sgsst-actions">
-        <a class="sgsst-action-link" href="{{ url_for('sst_general') }}">
+        <a class="sgsst-action-link" href="{{ url_for('sst_inicio_operativo') }}">
           <span class="t">Volver a SG-SST</span>
           <span class="s">Panel principal</span>
         </a>

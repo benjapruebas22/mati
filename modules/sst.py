@@ -6242,8 +6242,125 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         # Placeholder para mantener compatibilidad si se llama desde SST.
         return None
 
+    def _sst_operational_home_context():
+        con = get_db()
+        ensure_sst_visitas_docs_tables(con)
+        ensure_sst_general_table(con)
+        ensure_sst_plan_tables(con)
+
+        hoy = date.today().isoformat()
+        limite_visitas = (date.today() + timedelta(days=30)).isoformat()
+        limite_vencimientos = (date.today() + timedelta(days=45)).isoformat()
+
+        visitas = con.execute("""
+            SELECT v.id, v.sede_codigo, v.fecha, v.tipo_visita, v.estado,
+                   COALESCE(s.nombre, '') AS sede_nombre
+            FROM sst_visitas v
+            LEFT JOIN sedes_mpd s ON s.codigo = v.sede_codigo
+            WHERE (date(v.fecha) BETWEEN date(?) AND date(?))
+               OR UPPER(COALESCE(v.estado, '')) IN ('PEND_ANALISIS', 'REQUIERE_CORRECCION')
+            ORDER BY CASE WHEN date(v.fecha) < date(?) THEN 0 ELSE 1 END,
+                     date(v.fecha), v.id DESC
+            LIMIT 8
+        """, (hoy, limite_visitas, hoy)).fetchall()
+
+        matafuegos = con.execute("""
+            SELECT m.id, UPPER(COALESCE(m.sede, '')) AS sede_codigo,
+                   COALESCE(s.nombre, '') AS sede_nombre,
+                   m.fecha_vencimiento, m.tipo, m.numero_serie
+            FROM matafuegos m
+            LEFT JOIN sedes_mpd s ON UPPER(s.codigo) = UPPER(m.sede)
+            WHERE COALESCE(m.activo, 1) = 1
+              AND m.fecha_vencimiento IS NOT NULL
+              AND date(m.fecha_vencimiento) <= date(?)
+            ORDER BY date(m.fecha_vencimiento), m.id
+            LIMIT 8
+        """, (limite_vencimientos,)).fetchall()
+
+        seguimientos = con.execute("""
+            SELECT g.id, g.sede_codigo, COALESCE(s.nombre, '') AS sede_nombre,
+                   g.titulo, g.accion_correctiva, g.responsable, g.prioridad,
+                   g.fecha_objetivo, g.estado
+            FROM sst_general g
+            LEFT JOIN sedes_mpd s ON s.codigo = g.sede_codigo
+            WHERE UPPER(COALESCE(g.estado, 'ABIERTO')) <> 'CERRADO'
+              AND (
+                UPPER(COALESCE(g.prioridad, '')) IN ('ALTA', 'CRITICA', 'CRÍTICA')
+                OR (g.fecha_objetivo IS NOT NULL AND date(g.fecha_objetivo) < date(?))
+              )
+            ORDER BY CASE WHEN g.fecha_objetivo IS NOT NULL AND date(g.fecha_objetivo) < date(?) THEN 0 ELSE 1 END,
+                     date(g.fecha_objetivo), g.id DESC
+            LIMIT 8
+        """, (hoy, hoy)).fetchall()
+
+        sedes_rows = con.execute("""
+            SELECT s.codigo, s.nombre,
+                   (SELECT MAX(v.fecha) FROM sst_visitas v WHERE v.sede_codigo = s.codigo) AS ultima_visita,
+                   (SELECT COUNT(*) FROM sst_general g
+                    WHERE g.sede_codigo = s.codigo
+                      AND g.tipo = 'no_conformidad'
+                      AND UPPER(COALESCE(g.estado, 'ABIERTO')) <> 'CERRADO') AS hallazgos,
+                   (SELECT COUNT(DISTINCT d.tipo) FROM sst_documentos d
+                    WHERE d.sede_codigo = s.codigo
+                      AND UPPER(d.tipo) IN ('DEC_351_79', 'RGRL')
+                      AND (TRIM(COALESCE(d.archivo, '')) <> '' OR TRIM(COALESCE(d.drive_url, '')) <> '')) AS docs_art
+            FROM sedes_mpd s
+            ORDER BY s.codigo
+        """).fetchall()
+        sedes_atencion = []
+        for sede in sedes_rows:
+            motivos = []
+            if not sede["ultima_visita"]:
+                motivos.append("Sin visita")
+            if int(sede["docs_art"] or 0) < 2:
+                motivos.append("Documentación ART incompleta")
+            if int(sede["hallazgos"] or 0) > 0:
+                motivos.append(f"{int(sede['hallazgos'])} hallazgo(s) abierto(s)")
+            if motivos:
+                sedes_atencion.append({
+                    "codigo": sede["codigo"],
+                    "nombre": sede["nombre"],
+                    "motivos": motivos,
+                })
+            if len(sedes_atencion) >= 8:
+                break
+
+        recordatorios = []
+        try:
+            recordatorios = con.execute("""
+                SELECT id, fecha, titulo, detalle, fuente, ref_id
+                FROM eventos
+                WHERE date(fecha) BETWEEN date(?) AND date(?, '+30 day')
+                  AND (
+                    LOWER(COALESCE(fuente, '')) LIKE '%sst%'
+                    OR LOWER(COALESCE(fuente, '')) LIKE '%matafuego%'
+                    OR LOWER(COALESCE(titulo, '')) LIKE '%visita%'
+                    OR LOWER(COALESCE(titulo, '')) LIKE '%venc%'
+                  )
+                ORDER BY date(fecha), id
+                LIMIT 8
+            """, (hoy, hoy)).fetchall()
+        except sqlite3.OperationalError:
+            recordatorios = []
+
+        con.close()
+        return {
+            "hoy": hoy,
+            "visitas_atencion": visitas,
+            "matafuegos_atencion": matafuegos,
+            "seguimientos_atencion": seguimientos,
+            "sedes_atencion": sedes_atencion,
+            "recordatorios": recordatorios,
+        }
+
+    @app.route("/sst/inicio", methods=["GET"], endpoint="sst_inicio_operativo")
+    def sst_inicio_operativo():
+        return render_template("sst_operativo.html", **_sst_operational_home_context())
+
     @app.route("/sst", methods=["GET", "POST"], endpoint="sst_general")
     def sst_general():
+        if request.method == "GET" and (request.args.get("modo") or "").strip().lower() != "gestion":
+            return redirect(url_for("sst_inicio_operativo"))
         con = get_db()
         ensure_sst_general_table(con)
         q_agente_id = (request.args.get("agente_id") or "").strip()
@@ -7621,6 +7738,49 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             "edit_acc": edit_acc,
         }
 
+    def _sst_seguimiento_context():
+        con = get_db()
+        ensure_sst_general_table(con)
+        estado = (request.args.get("estado") or "pendientes").strip().lower()
+        sede = (request.args.get("sede") or "").strip().upper()
+        q = (request.args.get("q") or "").strip()
+        hoy = date.today().isoformat()
+
+        where = ["g.tipo = 'no_conformidad'"]
+        params = []
+        if estado == "pendientes":
+            where.append("UPPER(COALESCE(g.estado, 'ABIERTO')) <> 'CERRADO'")
+        elif estado == "alta":
+            where.append("UPPER(COALESCE(g.estado, 'ABIERTO')) <> 'CERRADO'")
+            where.append("UPPER(COALESCE(g.prioridad, '')) IN ('ALTA', 'CRITICA', 'CRÍTICA')")
+        elif estado == "vencidos":
+            where.append("UPPER(COALESCE(g.estado, 'ABIERTO')) <> 'CERRADO'")
+            where.append("g.fecha_objetivo IS NOT NULL AND date(g.fecha_objetivo) < date(?)")
+            params.append(hoy)
+        elif estado == "cerrados":
+            where.append("UPPER(COALESCE(g.estado, '')) = 'CERRADO'")
+        if sede:
+            where.append("UPPER(COALESCE(g.sede_codigo, '')) = ?")
+            params.append(sede)
+        if q:
+            where.append("(COALESCE(g.titulo, '') LIKE ? OR COALESCE(g.detalle, '') LIKE ? OR COALESCE(g.accion_correctiva, '') LIKE ? OR COALESCE(g.responsable, '') LIKE ?)")
+            like = f"%{q}%"
+            params.extend([like, like, like, like])
+
+        rows = con.execute(f"""
+            SELECT g.*, COALESCE(s.nombre, '') AS sede_nombre
+            FROM sst_general g
+            LEFT JOIN sedes_mpd s ON s.codigo = g.sede_codigo
+            WHERE {' AND '.join(where)}
+            ORDER BY CASE UPPER(COALESCE(g.prioridad, ''))
+                       WHEN 'CRITICA' THEN 0 WHEN 'CRÍTICA' THEN 0 WHEN 'ALTA' THEN 1 WHEN 'MEDIA' THEN 2 ELSE 3 END,
+                     CASE WHEN g.fecha_objetivo IS NULL THEN 1 ELSE 0 END,
+                     date(g.fecha_objetivo), g.id DESC
+        """, params).fetchall()
+        sedes = con.execute("SELECT codigo, nombre FROM sedes_mpd ORDER BY codigo").fetchall()
+        con.close()
+        return {"seguimientos": rows, "sedes": sedes, "f_estado": estado, "f_sede": sede, "f_q": q, "hoy": hoy}
+
     @app.route("/sst/plan", methods=["GET", "POST"], endpoint="sst_plan")
     def sst_plan():
         con = get_db()
@@ -7672,7 +7832,10 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             flash("Objetivo creado.", "success")
             return redirect(url_for("sst_plan_cargar"))
 
-        context = build_sst_plan_context(show_carga=False, sst_view=(request.args.get("vista") or "all"))
+        vista = (request.args.get("vista") or "operativa").strip().lower()
+        if vista not in {"gestion", "all", "gantt", "ergonomia"}:
+            return render_template("sst_seguimiento.html", **_sst_seguimiento_context())
+        context = build_sst_plan_context(show_carga=False, sst_view=("all" if vista == "gestion" else vista))
         return render_template("sst_plan.html", **context)
 
     @app.route("/sst/plan/cargar", methods=["GET"], endpoint="sst_plan_cargar")
@@ -7918,6 +8081,39 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
 
         q = (request.args.get("q") or "").strip().lower()
         q_estado = (request.args.get("estado") or "").strip().lower()
+        q_vista = (request.args.get("vista") or "pendientes").strip().lower()
+        if q_vista not in {"proximas", "pendientes", "realizadas", "todas", "sedes"}:
+            q_vista = "pendientes"
+
+        visitas_rows = con.execute("""
+            SELECT v.id, v.sede_codigo, v.fecha, v.tipo_visita, v.responsable,
+                   v.estado, v.observaciones, COALESCE(s.nombre, '') AS sede_nombre,
+                   (SELECT COUNT(*) FROM sst_documentos d WHERE d.visita_id = v.id) AS documentos,
+                   (SELECT COUNT(*) FROM sst_general g
+                    WHERE g.sede_codigo = v.sede_codigo
+                      AND g.tipo = 'no_conformidad'
+                      AND UPPER(COALESCE(g.estado, 'ABIERTO')) <> 'CERRADO') AS hallazgos
+            FROM sst_visitas v
+            LEFT JOIN sedes_mpd s ON s.codigo = v.sede_codigo
+            ORDER BY date(v.fecha) DESC, v.id DESC
+        """).fetchall()
+
+        hoy = date.today().isoformat()
+        visitas_filtradas = []
+        estados_pendientes = {"PEND_ANALISIS", "REQUIERE_CORRECCION"}
+        for visita in visitas_rows:
+            estado_visita = str(visita["estado"] or "").strip().upper()
+            fecha_visita = str(visita["fecha"] or "")
+            texto_visita = f"{visita['sede_codigo']} {visita['sede_nombre']} {visita['tipo_visita'] or ''} {visita['responsable'] or ''}".lower()
+            if q and q not in texto_visita:
+                continue
+            if q_vista == "proximas" and fecha_visita < hoy:
+                continue
+            if q_vista == "pendientes" and estado_visita not in estados_pendientes:
+                continue
+            if q_vista == "realizadas" and (fecha_visita > hoy or estado_visita in estados_pendientes):
+                continue
+            visitas_filtradas.append(visita)
 
         sedes_rows = con.execute("""
             SELECT codigo, nombre, fuero
@@ -8027,6 +8223,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         return render_template(
             "sst_visitas.html",
             sedes=sedes,
+            visitas=visitas_filtradas,
+            q_vista=q_vista,
             q=q,
             q_estado=q_estado,
             stats_total=stats_total,
@@ -8174,6 +8372,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         con = get_db()
         ensure_sst_visitas_docs_tables(con)
         ensure_sst_general_table(con)
+        ensure_sst_control_tables(con)
+        _seed_sst_control_objetivos(con)
 
         sede = con.execute("""
             SELECT codigo, nombre, fuero
@@ -8227,6 +8427,66 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
 
         sem_cls, sem_label = _sst_calc_semaforo(bool(last_v), docs_ok, docs_pend, pend_hallazgos)
         fuero_class, fuero_color = _sst_fuero_style((sede["fuero"] if sede else None) or "")
+
+        matafuegos = con.execute("""
+            SELECT COUNT(*) AS total,
+                   SUM(CASE WHEN fecha_vencimiento IS NOT NULL
+                                  AND date(fecha_vencimiento) <= date('now', '+45 day')
+                            THEN 1 ELSE 0 END) AS proximos
+            FROM matafuegos
+            WHERE UPPER(COALESCE(sede, '')) = ?
+              AND COALESCE(activo, 1) = 1
+        """, (codigo,)).fetchone()
+        mata_total = int((matafuegos["total"] if matafuegos else 0) or 0)
+        mata_proximos = int((matafuegos["proximos"] if matafuegos else 0) or 0)
+
+        controles = {}
+        for control in con.execute("""
+            SELECT LOWER(o.nombre) AS nombre, r.ok
+            FROM sst_control_objetivos o
+            LEFT JOIN sst_control_relevamientos r
+              ON r.objetivo_id = o.id AND UPPER(r.sede_codigo) = ?
+        """, (codigo,)).fetchall():
+            controles[str(control["nombre"] or "")] = control["ok"]
+
+        def _control_estado(fragmentos):
+            valor = None
+            for nombre, ok in controles.items():
+                if any(fragmento in nombre for fragmento in fragmentos):
+                    valor = ok
+                    break
+            if valor is None:
+                return ("Sin relevamiento", "sin-dato")
+            if int(valor or 0) == 1:
+                return ("Correcto", "correcto")
+            return ("Requiere atención", "atencion")
+
+        cart_estado, cart_clase = _control_estado(("cartel", "señal", "senal"))
+        luces_estado, luces_clase = _control_estado(("luz", "luces", "emergencia"))
+        plano_estado, plano_clase = _control_estado(("plano", "evacu"))
+        estado_sede = [
+            {
+                "label": "Matafuegos",
+                "detail": (f"{mata_total} activos · {mata_proximos} próximos a vencer" if mata_total else "Sin inventario cargado"),
+                "state": ("Sin relevamiento" if not mata_total else ("Requiere atención" if mata_proximos else "Correcto")),
+                "class": ("sin-dato" if not mata_total else ("atencion" if mata_proximos else "correcto")),
+            },
+            {"label": "Cartelería", "detail": cart_estado, "state": cart_estado, "class": cart_clase},
+            {"label": "Luces de emergencia", "detail": luces_estado, "state": luces_estado, "class": luces_clase},
+            {"label": "Planos de evacuación", "detail": plano_estado, "state": plano_estado, "class": plano_clase},
+            {
+                "label": "Hallazgos",
+                "detail": (f"{pend_hallazgos} pendiente(s)" if pend_hallazgos else ("Sin hallazgos abiertos" if last_v else "Sin relevamiento")),
+                "state": ("Requiere atención" if pend_hallazgos else ("Correcto" if last_v else "Sin relevamiento")),
+                "class": ("atencion" if pend_hallazgos else ("correcto" if last_v else "sin-dato")),
+            },
+            {
+                "label": "Última visita",
+                "detail": (_sst_fmt_fecha(last_v["fecha"]) if last_v else "Sin relevamiento"),
+                "state": ("Correcto" if last_v else "Sin relevamiento"),
+                "class": ("correcto" if last_v else "sin-dato"),
+            },
+        ]
         con.close()
 
         return render_template(
@@ -8243,6 +8503,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             docs_pend=docs_pend,
             semaforo_cls=sem_cls,
             semaforo_label=sem_label,
+            estado_sede=estado_sede,
             fmt_fecha=_sst_fmt_fecha,
             fmt_estado_visita=_sst_sede_estado_label,
         )

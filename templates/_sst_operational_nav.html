@@ -1,0 +1,16 @@
+<nav class="sst-op-nav" aria-label="Navegación SG-SST">
+  <a class="{% if sst_section == 'inicio' %}is-active{% endif %}" href="{{ url_for('sst_inicio_operativo') }}">Inicio operativo</a>
+  <a class="{% if sst_section == 'visitas' %}is-active{% endif %}" href="{{ url_for('sst_visitas') }}">Visitas</a>
+  <a class="{% if sst_section == 'matafuegos' %}is-active{% endif %}" href="{{ url_for('matafuegos_home') }}">Matafuegos</a>
+  <a class="{% if sst_section == 'sedes' %}is-active{% endif %}" href="{{ url_for('sst_visitas', vista='sedes') }}">Estado por sede</a>
+  <a class="{% if sst_section == 'seguimiento' %}is-active{% endif %}" href="{{ url_for('sst_plan') }}">Seguimiento</a>
+  <a href="{{ url_for('calendario', fuente='sst') }}">Calendario</a>
+  <details class="sst-op-more">
+    <summary>Más</summary>
+    <div>
+      <a href="{{ url_for('sst_general', modo='gestion') }}">EPP e incidentes</a>
+      <a href="{{ url_for('sst_ergonomia_panel') }}">Gestión de riesgos</a>
+      <a href="{{ url_for('sgsst_documentacion_home') }}">Documentación</a>
+    </div>
+  </details>
+</nav>

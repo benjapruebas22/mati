@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-06-29') }}">
+{% endblock %}
+
+{% block content %}
+{% set sst_section = 'inicio' %}
+<section class="sst-operativo">
+  {% include '_sst_operational_nav.html' %}
+
+  <header class="sst-op-header">
+    <div>
+      <p class="sst-op-eyebrow">SG-SST · Inicio operativo</p>
+      <h1>Qué requiere atención hoy</h1>
+      <p>Visitas, vencimientos y acciones abiertas que requieren intervención.</p>
+    </div>
+    <div class="sst-op-actions">
+      <a class="sst-op-btn primary" href="{{ url_for('sst_visita_cargar') }}">Registrar visita</a>
+      <a class="sst-op-btn" href="{{ url_for('matafuegos_home') }}#alta">Cargar matafuego</a>
+      <a class="sst-op-btn" href="{{ url_for('sst_general', modo='gestion', view='operativa', tipo='no_conformidad') }}">Agregar seguimiento</a>
+      <a class="sst-op-btn" href="{{ url_for('calendario', fuente='sst') }}">Abrir calendario</a>
+    </div>
+  </header>
+
+  <div class="sst-op-grid">
+    <article class="sst-op-card">
+      <div class="sst-op-card-head"><h2>Visitas previstas o pendientes</h2><span class="sst-op-count">{{ visitas_atencion|length }}</span></div>
+      <ul class="sst-op-list">
+        {% for item in visitas_atencion %}
+        <li class="sst-op-item">
+          <div><strong>{{ item.sede_codigo }} · {{ item.sede_nombre }}</strong><div class="sst-op-meta">{{ item.tipo_visita or 'Visita' }} · {{ item.estado or 'Pendiente' }}</div></div>
+          <a class="sst-op-date" href="{{ url_for('sst_sede_ficha', codigo=item.sede_codigo) }}">{{ item.fecha }}</a>
+        </li>
+        {% else %}<li class="sst-op-empty">No hay visitas próximas o pendientes.</li>{% endfor %}
+      </ul>
+    </article>
+
+    <article class="sst-op-card">
+      <div class="sst-op-card-head"><h2>Matafuegos próximos a vencer</h2><span class="sst-op-count">{{ matafuegos_atencion|length }}</span></div>
+      <ul class="sst-op-list">
+        {% for item in matafuegos_atencion %}
+        <li class="sst-op-item">
+          <div><strong>{{ item.sede_codigo }} · {{ item.sede_nombre }}</strong><div class="sst-op-meta">{{ item.tipo or 'Matafuego' }}{% if item.numero_serie %} · Serie {{ item.numero_serie }}{% endif %}</div></div>
+          <a class="sst-op-date" href="{{ url_for('matafuegos_home', sede=item.sede_codigo) }}">{{ item.fecha_vencimiento }}</a>
+        </li>
+        {% else %}<li class="sst-op-empty">No hay vencimientos dentro de los próximos 45 días.</li>{% endfor %}
+      </ul>
+    </article>
+
+    <article class="sst-op-card">
+      <div class="sst-op-card-head"><h2>Sedes que requieren atención</h2><span class="sst-op-count">{{ sedes_atencion|length }}</span></div>
+      <ul class="sst-op-list">
+        {% for item in sedes_atencion %}
+        <li class="sst-op-item">
+          <div><strong>{{ item.codigo }} · {{ item.nombre }}</strong><div class="sst-op-meta">{{ item.motivos|join(' · ') }}</div></div>
+          <a class="sst-op-date" href="{{ url_for('sst_sede_ficha', codigo=item.codigo) }}">Ver estado</a>
+        </li>
+        {% else %}<li class="sst-op-empty">No hay sedes con alertas operativas.</li>{% endfor %}
+      </ul>
+    </article>
+
+    <article class="sst-op-card">
+      <div class="sst-op-card-head"><h2>Seguimientos prioritarios</h2><span class="sst-op-count">{{ seguimientos_atencion|length }}</span></div>
+      <ul class="sst-op-list">
+        {% for item in seguimientos_atencion %}
+        <li class="sst-op-item">
+          <div><strong>{{ item.titulo or item.accion_correctiva or 'Acción pendiente' }}</strong><div class="sst-op-meta">{{ item.sede_codigo or 'General' }}{% if item.responsable %} · {{ item.responsable }}{% endif %}</div></div>
+          <a class="sst-op-date" href="{{ url_for('sst_plan') }}">{{ item.fecha_objetivo or item.prioridad or 'Abierto' }}</a>
+        </li>
+        {% else %}<li class="sst-op-empty">No hay seguimientos prioritarios abiertos.</li>{% endfor %}
+      </ul>
+    </article>
+
+    <article class="sst-op-card wide">
+      <div class="sst-op-card-head"><h2>Recordatorios del calendario</h2><a class="sst-op-count" href="{{ url_for('calendario', fuente='sst') }}">Ver calendario</a></div>
+      <ul class="sst-op-list">
+        {% for item in recordatorios %}
+        <li class="sst-op-item"><div><strong>{{ item.titulo }}</strong><div class="sst-op-meta">{{ item.detalle or item.fuente }}</div></div><span class="sst-op-date">{{ item.fecha }}</span></li>
+        {% else %}<li class="sst-op-empty">No hay recordatorios SG-SST próximos.</li>{% endfor %}
+      </ul>
+    </article>
+  </div>
+</section>
+{% endblock %}

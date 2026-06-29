@@ -1,165 +1,71 @@
 {% extends "base.html" %}
 
-{% block head_extra %}
-  {{ super() }}
+{% block extra_head %}
   <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-06-29') }}">
 {% endblock %}
 
 {% block content %}
-<section class="sst-ui sst-page-sede sst-shell">
-  <header class="sst-head">
+{% set sst_section = 'sedes' %}
+<section class="sst-operativo sst-ui sst-shell">
+  {% include '_sst_operational_nav.html' %}
+  <header class="sst-op-header">
     <div>
-      <h1>Sede SST: {{ sede.codigo }} - {{ sede.nombre }}</h1>
-      <p class="sst-sub">
-        <a href="{{ url_for('sst_visitas') }}">Sedes SST</a>
-        &nbsp;·&nbsp;
-        <a href="{{ url_for('sst_general') }}">SG-SST</a>
-      </p>
+      <p class="sst-op-eyebrow">SG-SST · Estado por sede</p>
+      <h1>{{ sede.codigo }} — {{ sede.nombre }}</h1>
+      <p>{{ sede.fuero or 'Sede MPD' }} · Estado operativo basado únicamente en datos cargados.</p>
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
-      <a class="btn-soft" href="{{ url_for('sst_visita_cargar', sede=sede.codigo) }}">+ Cargar visita</a>
-      <a class="btn-soft" href="{{ url_for('sst_doc_subir', sede=sede.codigo) }}">+ Subir documento</a>
-      <a class="btn-soft" href="{{ url_for('sst_general', view='operativa', sede=sede.codigo, tipo='no_conformidad') }}#sst-operativa-head">
-        Ver hallazgos ({{ pend_hallazgos or 0 }})
-      </a>
+    <div class="sst-op-actions">
+      <a class="sst-op-btn primary" href="{{ url_for('sst_visita_cargar', sede=sede.codigo) }}">Registrar visita</a>
+      <a class="sst-op-btn" href="{{ url_for('sst_doc_subir', sede=sede.codigo) }}">Cargar documento ART</a>
+      <a class="sst-op-btn" href="{{ url_for('sst_plan', sede=sede.codigo) }}">Ver seguimientos</a>
     </div>
   </header>
 
-  <div class="sst-grid2">
-    <div class="sst-card sede-summary {{ semaforo_cls }} sst-fuero-{{ fuero_class }}" style="--fuero-accent: {{ fuero_color }};">
-      <div class="sede-top">
-        <div class="sede-id">
-          <div class="sede-code">{{ sede.codigo }}</div>
-          <div style="min-width:0;">
-            <p class="sede-name" title="{{ sede.nombre }}">{{ sede.nombre }}</p>
-            <div style="margin-top:6px;">
-              <span class="sst-chip {{ semaforo_cls }}">{{ semaforo_label }}</span>
-            </div>
-          </div>
-        </div>
+  <article class="sst-op-card" style="margin-bottom:12px;">
+    <div class="sst-op-card-head"><h2>Estado operativo</h2><span class="sst-op-count">Sin porcentajes: dato cargado o sin relevamiento</span></div>
+    <div class="sst-status-list">
+      {% for item in estado_sede %}
+      <div class="sst-status-row">
+        <div class="sst-status-label">{{ item.label }}</div>
+        <div class="sst-status-detail">{{ item.detail }}</div>
+        <span class="sst-status-badge {{ item.class }}">{{ item.state }}</span>
       </div>
+      {% endfor %}
+    </div>
+  </article>
 
-      {% set last_v = (visitas[0] if visitas and visitas|length > 0 else None) %}
-      <div class="meta">
-        <div class="meta-row">
-          <span class="meta-k">Ultima visita</span>
-          <span>{% if last_v %}{{ fmt_fecha(last_v.fecha) }} · {{ fmt_estado_visita(last_v.estado) }}{% else %}—{% endif %}</span>
-        </div>
-        <div class="meta-row">
-          <span class="meta-k">Docs ART</span>
-          <span>
-            351/79: {% if d351 %}{{ fmt_fecha(d351.fecha_documento or d351.fecha_carga) }}{% else %}—{% endif %}
-            &nbsp;·&nbsp;
-            RGRL: {% if drgrl %}{{ fmt_fecha(drgrl.fecha_documento or drgrl.fecha_carga) }}{% else %}—{% endif %}
-          </span>
-        </div>
-        <div class="meta-row">
-          <span class="meta-k">Hallazgos abiertos</span>
-          <span>{{ pend_hallazgos or 0 }}</span>
-        </div>
+  <div class="sst-op-grid">
+    <article class="sst-op-card">
+      <div class="sst-op-card-head"><h2>Visitas</h2><a class="sst-op-count" href="{{ url_for('sst_visita_cargar', sede=sede.codigo) }}">Nueva visita</a></div>
+      <div style="overflow-x:auto;">
+        <table class="table">
+          <thead><tr><th>Fecha</th><th>Tipo</th><th>Estado</th><th>Responsable</th></tr></thead>
+          <tbody>
+            {% for visita in visitas %}
+            <tr><td>{{ fmt_fecha(visita.fecha) }}</td><td>{{ visita.tipo_visita or '-' }}</td><td>{{ fmt_estado_visita(visita.estado) }}</td><td>{{ visita.responsable or '-' }}</td></tr>
+            {% else %}<tr><td colspan="4" class="sst-op-empty">Sin visitas cargadas.</td></tr>{% endfor %}
+          </tbody>
+        </table>
       </div>
-    </div>
+    </article>
 
-    <div class="sst-card">
-      <p class="sec-title" style="margin:0 0 8px;">Accesos rápidos</p>
-      <div class="sst-actions" style="justify-content:flex-start;">
-        <a class="btn-soft" href="{{ url_for('sst_visitas') }}">Volver a tarjetas</a>
-        <a class="btn-soft" href="{{ url_for('sst_general', panel='art') }}#sst-art-collapse">Panel ART</a>
-        <a class="btn-soft" href="{{ url_for('sst_plan_gantt') }}">Cronograma</a>
-        <a class="btn-soft" href="{{ url_for('sst_ergonomia_gestion_riesgo') }}">Riesgos</a>
+    <article class="sst-op-card">
+      <div class="sst-op-card-head"><h2>Documentación ART</h2><a class="sst-op-count" href="{{ url_for('sst_doc_subir', sede=sede.codigo) }}">Cargar documento</a></div>
+      <div style="overflow-x:auto;">
+        <table class="table">
+          <thead><tr><th>Tipo</th><th>Fecha</th><th>Revisión</th><th>Acceso</th></tr></thead>
+          <tbody>
+            {% for doc in docs %}
+            <tr>
+              <td><strong>{{ doc.tipo }}</strong></td><td>{{ fmt_fecha(doc.fecha_documento or doc.fecha_carga) }}</td><td>{{ doc.estado_revision or 'Pendiente' }}</td>
+              <td>{% if doc.drive_url %}<a href="{{ doc.drive_url }}" target="_blank">Drive</a>{% endif %}{% if doc.archivo %} <a href="{{ url_for('sst_doc_archivo', filename=doc.archivo) }}" target="_blank">Archivo</a>{% endif %}</td>
+            </tr>
+            {% else %}<tr><td colspan="4" class="sst-op-empty">Sin documentación cargada.</td></tr>{% endfor %}
+          </tbody>
+        </table>
       </div>
-
-      <div style="margin-top:10px;">
-        <p class="sec-title" style="margin:0 0 6px;">Documentos clave</p>
-        <div class="meta" style="margin-top:0;">
-          <div class="meta-row">
-            <span class="meta-k">DEC_351_79</span>
-            <span>
-              {% if d351 %}
-                {% if d351.drive_url %}<a class="btn-soft" target="_blank" href="{{ d351.drive_url }}">Abrir</a>{% endif %}
-                {% if d351.archivo %}<a class="btn-soft" target="_blank" href="{{ url_for('sst_doc_archivo', filename=d351.archivo) }}">Ver archivo</a>{% endif %}
-              {% else %}—{% endif %}
-            </span>
-          </div>
-          <div class="meta-row">
-            <span class="meta-k">RGRL</span>
-            <span>
-              {% if drgrl %}
-                {% if drgrl.drive_url %}<a class="btn-soft" target="_blank" href="{{ drgrl.drive_url }}">Abrir</a>{% endif %}
-                {% if drgrl.archivo %}<a class="btn-soft" target="_blank" href="{{ url_for('sst_doc_archivo', filename=drgrl.archivo) }}">Ver archivo</a>{% endif %}
-              {% else %}—{% endif %}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="sst-card">
-    <div class="sec-head">
-      <p class="sec-title">Visitas</p>
-      <a class="btn-soft" href="{{ url_for('sst_visita_cargar', sede=sede.codigo) }}">+ Nueva visita</a>
-    </div>
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>Tipo</th>
-          <th>Estado</th>
-          <th>Responsable</th>
-          <th>Obs.</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for v in visitas %}
-        <tr>
-          <td style="white-space:nowrap;">{{ fmt_fecha(v.fecha) }}</td>
-          <td>{{ v.tipo_visita or '-' }}</td>
-          <td>{{ fmt_estado_visita(v.estado) }}</td>
-          <td>{{ v.responsable or '-' }}</td>
-          <td>{{ v.observaciones or '-' }}</td>
-        </tr>
-        {% else %}
-        <tr><td colspan="5"><small>Sin visitas cargadas.</small></td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-
-  <div class="sst-card">
-    <div class="sec-head">
-      <p class="sec-title">Documentos</p>
-      <a class="btn-soft" href="{{ url_for('sst_doc_subir', sede=sede.codigo) }}">+ Subir documento</a>
-    </div>
-    <table class="table">
-      <thead>
-        <tr>
-          <th>Tipo</th>
-          <th>Fecha</th>
-          <th>Archivo / enlace</th>
-          <th>Revision</th>
-          <th>Notas</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for d in docs %}
-        <tr>
-          <td style="white-space:nowrap;"><strong>{{ d.tipo }}</strong></td>
-          <td style="white-space:nowrap;">{{ fmt_fecha(d.fecha_documento or d.fecha_carga) }}</td>
-          <td>
-            {% if d.drive_url %}<a class="btn-soft" target="_blank" href="{{ d.drive_url }}">Abrir Drive</a>{% endif %}
-            {% if d.archivo %}<a class="btn-soft" target="_blank" href="{{ url_for('sst_doc_archivo', filename=d.archivo) }}">Ver archivo</a>{% endif %}
-            {% if not d.drive_url and not d.archivo %}-{% endif %}
-          </td>
-          <td>{{ d.estado_revision or '-' }}</td>
-          <td>{{ d.notas or '-' }}</td>
-        </tr>
-        {% else %}
-        <tr><td colspan="5"><small>Sin documentos cargados.</small></td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    </article>
   </div>
 </section>
-
 {% endblock %}

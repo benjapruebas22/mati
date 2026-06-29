@@ -11552,6 +11552,7 @@ def _matafuegos_home_impl():
     sede = (request.args.get("sede") or "").upper().strip()
     piso = (request.args.get("piso") or "PB").upper().strip()
     q = (request.args.get("q") or "").strip()
+    vencimiento = (request.args.get("vencimiento") or "todos").strip().lower()
     edit = request.args.get("edit")
 
     if piso == "2P":
@@ -11819,6 +11820,10 @@ def _matafuegos_home_impl():
         )""")
         like = f"%{q}%"
         params.extend([like, like, like, like, like, like])
+    if vencimiento == "proximos":
+        where.append("m.fecha_vencimiento IS NOT NULL AND date(m.fecha_vencimiento) BETWEEN date('now') AND date('now','+45 day')")
+    elif vencimiento == "vencidos":
+        where.append("m.fecha_vencimiento IS NOT NULL AND date(m.fecha_vencimiento) < date('now')")
 
     active_rows = db.execute(
         f"""
@@ -11917,6 +11922,7 @@ def _matafuegos_home_impl():
         sede_opts=sede_opts,
         tipo_opts=tipo_opts,
         capacidad_opts=capacidad_opts,
+        vencimiento=vencimiento,
     )
 
 @app.route("/sgsst/matafuegos", methods=["GET","POST"], endpoint="matafuegos_home")
