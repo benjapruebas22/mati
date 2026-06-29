@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block main_class %}container-wide{% endblock %}
-{% block head_extra %}<link rel="stylesheet" href="{{ url_for('static', filename='recorridos/recorridos.css', v='2026-06-28-01') }}">{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{{ url_for('static', filename='recorridos/recorridos.css', v='2026-06-28-02') }}">{% endblock %}
 {% block content %}
 <main class="ro-page" id="main-content">
   <header class="ro-header ro-detail-header">
@@ -11,96 +11,153 @@
     </div>
     <div class="ro-header-actions">
       <span class="ro-status ro-status-{{ trip.estado|lower|replace(' ', '-') }}">{{ trip.estado }}</span>
-      {% if trip.estado in ['Borrador', 'Preparado'] %}<a class="ro-button ro-button-secondary" href="{{ url_for('recorridos_operativos_editar', trip_id=trip.id) }}">Editar</a>{% endif %}
+      {% if trip.estado == 'En recorrido' %}<a class="ro-button ro-button-primary" href="#ejecucion">Ir a ejecución</a>{% endif %}
+      {% if trip.estado in ['Borrador', 'Preparado'] %}<a class="ro-button ro-button-secondary" href="{{ url_for('recorridos_operativos_editar', trip_id=trip.id) }}">Editar datos</a>{% endif %}
       <a class="ro-button ro-button-secondary" href="{{ url_for('recorridos_operativos_lista') }}">Volver</a>
     </div>
   </header>
 
+  <nav class="ro-steps" aria-label="Etapas del recorrido">
+    <a href="#datos"><span>1</span>Datos generales</a>
+    <a href="#preparacion"><span>2</span>Checklist previa</a>
+    <a href="#planificacion"><span>3</span>Planificación por sedes</a>
+    <a href="#ejecucion" class="{{ 'is-current' if trip.estado == 'En recorrido' else '' }}"><span>4</span>Ejecución</a>
+  </nav>
+
   <section class="ro-detail-grid">
     <div class="ro-main-column">
-      <section class="ro-card" id="paradas">
-        <div class="ro-card-heading"><div><h2>Recorrido y paradas</h2><p>Marcación simple de inicio y fin por sede.</p></div>
-          {% if trip.estado in ['Borrador', 'Preparado'] %}<form method="post" action="{{ url_for('recorridos_operativos_iniciar', trip_id=trip.id) }}"><button class="ro-button ro-button-primary">Iniciar recorrido</button></form>{% endif %}
+      <section class="ro-card" id="preparacion">
+        <div class="ro-card-heading">
+          <div><p class="ro-step-label">Paso 2</p><h2>Checklist previa</h2><p>Marcá lo preparado. La biblioteca base evita comenzar desde cero.</p></div>
+          <span class="ro-count">{{ kit|selectattr('verificado', 'equalto', 1)|list|length }}/{{ kit|length }}</span>
         </div>
-        <ol class="ro-stops">
+        <form method="post" action="{{ url_for('recorridos_operativos_kit', trip_id=trip.id) }}">
+          <div class="ro-kit-groups">
+            {% for category, items in kit|groupby('categoria') %}
+            <fieldset class="ro-kit-group">
+              <legend>{{ category }}</legend>
+              {% for item in items %}
+              <label class="ro-kit-option">
+                <input type="checkbox" name="check_{{ item.id }}" {{ 'checked' if item.verificado else '' }} {% if trip.estado in ['Finalizado', 'Cerrado'] %}disabled{% endif %}>
+                <span><strong>{{ item.elemento }}</strong><small>{{ item.cantidad_minima|int if item.cantidad_minima == item.cantidad_minima|int else item.cantidad_minima }} {{ item.unidad }}</small></span>
+              </label>
+              {% endfor %}
+            </fieldset>
+            {% endfor %}
+          </div>
+          {% if trip.estado in ['Borrador', 'Preparado'] %}<div class="ro-form-actions"><button class="ro-button ro-button-primary">Guardar checklist</button></div>{% endif %}
+        </form>
+        {% if trip.estado in ['Borrador', 'Preparado'] %}
+        <details class="ro-add-extra">
+          <summary>Agregar elemento extraordinario</summary>
+          <form class="ro-kit-new" method="post" action="{{ url_for('recorridos_operativos_kit_nuevo', trip_id=trip.id) }}">
+            <label><span>Categoría</span><select name="categoria"><option>Documentacion</option><option>Herramientas</option><option>Electricidad</option><option>Plomeria</option><option>Limpieza</option><option>Mobiliario</option><option>Otros</option></select></label>
+            <label><span>Elemento *</span><input name="elemento" required></label>
+            <label><span>Cantidad</span><input type="number" min="0" step="0.5" name="cantidad_minima" value="1"></label>
+            <label><span>Unidad</span><input name="unidad" value="unidades"></label>
+            <button class="ro-button ro-button-secondary">Agregar</button>
+          </form>
+        </details>
+        {% endif %}
+      </section>
+
+      <section class="ro-card" id="planificacion">
+        <div class="ro-card-heading">
+          <div><p class="ro-step-label">Paso 3</p><h2>Planificación por sedes</h2><p>Administrá actividades y materiales en el orden definido por la ruta.</p></div>
+          <span class="ro-count">{{ stops|length }} sedes</span>
+        </div>
+        <div class="ro-site-planning">
           {% for stop in stops %}
-          <li class="ro-stop ro-stop-{{ stop.estado|lower|replace(' ', '-') }}">
-            <span class="ro-stop-number">{{ stop.orden }}</span>
-            <div class="ro-stop-content"><strong>{{ stop.nombre }}</strong><span>{{ stop.sede_codigo or 'Parada operativa' }}</span>{% if stop.started_at %}<small>Inicio {{ stop.started_at }}{% if stop.finished_at %} · Fin {{ stop.finished_at }}{% endif %}</small>{% endif %}</div>
-            <span class="ro-status ro-status-compact">{{ stop.estado }}</span>
+          {% set stop_activities = activities|selectattr('parada_id', 'equalto', stop.id)|list %}
+          {% set stop_materials = materials|selectattr('parada_id', 'equalto', stop.id)|list %}
+          <details class="ro-site-card" {% if loop.first and trip.estado in ['Borrador', 'Preparado'] %}open{% endif %}>
+            <summary>
+              <span class="ro-stop-number">{{ stop.orden }}</span>
+              <span class="ro-site-title"><strong>{{ stop.nombre }}</strong><small>{{ stop.sede_codigo or 'Parada operativa' }}</small></span>
+              <span class="ro-site-counters">{{ stop_activities|length }} actividades · {{ stop_materials|length }} materiales</span>
+              <span class="ro-manage-label">Administrar</span>
+            </summary>
+            <div class="ro-site-body">
+              <section>
+                <h3>Actividades</h3>
+                <div class="ro-record-list ro-record-list-compact">
+                  {% for item in stop_activities %}
+                  <article>
+                    <div><strong>{{ item.detalle }}</strong><span>{{ item.tipo }} · Prioridad {{ item.prioridad }}{% if item.tiempo_estimado_min %} · {{ item.tiempo_estimado_min }} min{% endif %}{% if item.material_asociado %} · {{ item.material_asociado }}{% endif %}</span></div>
+                    {% if trip.estado != 'Cerrado' %}<form class="ro-state-form" method="post" action="{{ url_for('recorridos_operativos_actividad_estado', trip_id=trip.id, item_id=item.id) }}"><label><span class="sr-only">Estado de {{ item.detalle }}</span><select name="estado" onchange="this.form.submit()">{% for value in activity_statuses %}<option {{ 'selected' if item.estado == value else '' }}>{{ value }}</option>{% endfor %}</select></label></form>{% else %}<span class="ro-status ro-status-compact">{{ item.estado }}</span>{% endif %}
+                  </article>
+                  {% else %}<p class="ro-empty-line">Sin actividades programadas.</p>{% endfor %}
+                </div>
+                {% if trip.estado in ['Borrador', 'Preparado'] %}
+                <form class="ro-site-form" method="post" action="{{ url_for('recorridos_operativos_actividad', trip_id=trip.id) }}">
+                  <input type="hidden" name="parada_id" value="{{ stop.id }}">
+                  <label class="ro-span-2"><span>Descripción *</span><input name="detalle" placeholder="Ej. Cambiar tubos LED" required></label>
+                  <label><span>Tipo</span><select name="tipo">{% for value in activity_types %}<option>{{ value }}</option>{% endfor %}</select></label>
+                  <label><span>Prioridad</span><select name="prioridad">{% for value in activity_priorities %}<option {{ 'selected' if value == 'Media' else '' }}>{{ value }}</option>{% endfor %}</select></label>
+                  <label><span>Tiempo estimado</span><div class="ro-input-suffix"><input type="number" min="0" step="5" name="tiempo_estimado_min"><span>min</span></div></label>
+                  <label><span>Material asociado</span><input name="material_asociado"></label>
+                  <label class="ro-span-2"><span>Observaciones</span><input name="observacion"></label>
+                  <button class="ro-button ro-button-primary">Agregar actividad</button>
+                </form>
+                {% endif %}
+              </section>
+              <section>
+                <h3>Materiales</h3>
+                <div class="ro-record-list ro-record-list-compact">
+                  {% for item in stop_materials %}
+                  <article>
+                    <div><strong>{{ item.cantidad }} · {{ item.elemento }}</strong><span>{{ item.tipo }}{% if item.observacion %} · {{ item.observacion }}{% endif %}</span></div>
+                    {% if trip.estado != 'Cerrado' %}<form class="ro-state-form" method="post" action="{{ url_for('recorridos_operativos_material_estado', trip_id=trip.id, item_id=item.id) }}"><label><span class="sr-only">Estado de {{ item.elemento }}</span><select name="estado" onchange="this.form.submit()">{% for value in material_statuses %}<option {{ 'selected' if item.estado == value else '' }}>{{ value }}</option>{% endfor %}</select></label></form>{% else %}<span class="ro-status ro-status-compact">{{ item.estado }}</span>{% endif %}
+                  </article>
+                  {% else %}<p class="ro-empty-line">Sin materiales asignados.</p>{% endfor %}
+                </div>
+                {% if trip.estado in ['Borrador', 'Preparado'] %}
+                <form class="ro-site-form" method="post" action="{{ url_for('recorridos_operativos_material', trip_id=trip.id) }}">
+                  <input type="hidden" name="parada_id" value="{{ stop.id }}">
+                  <label class="ro-span-2"><span>Elemento *</span><input name="elemento" placeholder="Ej. Tubos LED" required></label>
+                  <label><span>Cantidad</span><input type="number" name="cantidad" min="0.1" step="0.1" value="1"></label>
+                  <label><span>Tipo</span><select name="tipo">{% for value in material_types %}<option>{{ value }}</option>{% endfor %}</select></label>
+                  <input type="hidden" name="estado" value="Pendiente">
+                  <label class="ro-span-2"><span>Observaciones</span><input name="observacion"></label>
+                  <button class="ro-button ro-button-primary">Agregar material</button>
+                </form>
+                {% endif %}
+              </section>
+            </div>
+          </details>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="ro-card ro-execution-card {{ 'is-live' if trip.estado == 'En recorrido' else '' }}" id="ejecucion">
+        <div class="ro-card-heading">
+          <div><p class="ro-step-label">Paso 4</p><h2>Ejecución del recorrido</h2><p>Sin GPS ni formularios: solamente llegada y salida de sedes con actividades.</p></div>
+          {% if trip.estado in ['Borrador', 'Preparado'] %}<form method="post" action="{{ url_for('recorridos_operativos_iniciar', trip_id=trip.id) }}"><button class="ro-button ro-button-primary">Salir a recorrido</button></form>{% endif %}
+        </div>
+        {% if execution_stops %}
+        <ol class="ro-execution-list">
+          {% for stop in execution_stops %}
+          <li class="ro-execution-stop {{ 'is-complete' if stop.finished_at else ('is-active' if stop.started_at else '') }}">
+            <span class="ro-stop-number">{{ loop.index }}</span>
+            <div><strong>{{ stop.nombre }}</strong><span>{{ stop.activity_count }} actividad{{ '' if stop.activity_count == 1 else 'es' }} · {{ stop.material_count }} materiales</span>{% if stop.started_at %}<small>Llegada {{ stop.started_at }}{% if stop.finished_at %} · Salida {{ stop.finished_at }} · Permanencia {{ stop.site_duration }}{% endif %}</small>{% endif %}</div>
+            {% if stop.route_before != '--' %}<span class="ro-route-time">Ruta previa<br><strong>{{ stop.route_before }}</strong></span>{% endif %}
             {% if trip.estado == 'En recorrido' %}
-              {% if not stop.started_at %}<form method="post" action="{{ url_for('recorridos_operativos_parada', trip_id=trip.id, stop_id=stop.id, action='iniciar') }}"><button class="ro-button ro-button-small">Iniciar actividad</button></form>
-              {% elif not stop.finished_at %}<form method="post" action="{{ url_for('recorridos_operativos_parada', trip_id=trip.id, stop_id=stop.id, action='finalizar') }}"><button class="ro-button ro-button-small ro-button-primary">Finalizar actividad</button></form>{% endif %}
-            {% endif %}
+              {% if not stop.started_at %}{% if stop.id == next_execution_stop_id %}<form method="post" action="{{ url_for('recorridos_operativos_parada', trip_id=trip.id, stop_id=stop.id, action='iniciar') }}"><button class="ro-button ro-button-primary">Llegué a {{ stop.nombre }}</button></form>{% else %}<span class="ro-status ro-status-compact">Pendiente</span>{% endif %}
+              {% elif not stop.finished_at %}<form method="post" action="{{ url_for('recorridos_operativos_parada', trip_id=trip.id, stop_id=stop.id, action='finalizar') }}"><button class="ro-button ro-button-primary">Salir de {{ stop.nombre }}</button></form>
+              {% else %}<span class="ro-complete-label">Completada</span>{% endif %}
+            {% elif stop.finished_at %}<span class="ro-complete-label">Completada</span>{% endif %}
           </li>
           {% endfor %}
         </ol>
-        {% if trip.estado == 'En recorrido' %}<form class="ro-inline-close" method="post" action="{{ url_for('recorridos_operativos_finalizar', trip_id=trip.id) }}"><label><span>Nota final opcional</span><input name="nota" placeholder="Resultado general del recorrido"></label><button class="ro-button ro-button-primary">Finalizar recorrido</button></form>{% endif %}
-        {% if trip.estado == 'Finalizado' %}<form class="ro-inline-close" method="post" action="{{ url_for('recorridos_operativos_cerrar', trip_id=trip.id) }}"><label><span>Informe / resumen final</span><input name="nota" value="{{ trip.final_note or '' }}" placeholder="Conclusión administrativa"></label><button class="ro-button ro-button-primary">Cerrar recorrido</button></form>{% endif %}
-      </section>
-
-      <section class="ro-card" id="preparacion">
-        <div class="ro-card-heading"><div><h2>Checklist previa</h2><p>Kit permanente editable por cantidad y verificación.</p></div></div>
-        <form method="post" action="{{ url_for('recorridos_operativos_kit', trip_id=trip.id) }}">
-          <div class="ro-checklist">
-            {% for item in kit %}
-            <div class="ro-check-row">
-              <input class="ro-check" type="checkbox" name="check_{{ item.id }}" aria-label="Verificar {{ item.elemento }}" {{ 'checked' if item.verificado else '' }}>
-              <div><strong>{{ item.elemento }}</strong><small>Mínimo {{ item.cantidad_minima|int if item.cantidad_minima == item.cantidad_minima|int else item.cantidad_minima }} {{ item.unidad }}</small></div>
-              <label><span>Preparado</span><input type="number" min="0" step="0.5" name="cantidad_{{ item.id }}" value="{{ item.cantidad_preparada }}"></label>
-              <label><span>Mínimo</span><input type="number" min="0" step="0.5" name="minimo_{{ item.id }}" value="{{ item.cantidad_minima }}"></label>
-              <label><span>Unidad</span><input name="unidad_{{ item.id }}" value="{{ item.unidad }}"></label>
-              <label><span>Observación</span><input name="nota_{{ item.id }}" value="{{ item.observacion or '' }}"></label>
-            </div>
-            {% endfor %}
-          </div>
-          {% if trip.estado not in ['Finalizado', 'Cerrado'] %}<div class="ro-form-actions"><button class="ro-button ro-button-primary">Guardar checklist</button></div>{% endif %}
-        </form>
-        {% if trip.estado not in ['Finalizado', 'Cerrado'] %}
-        <form class="ro-kit-new" method="post" action="{{ url_for('recorridos_operativos_kit_nuevo', trip_id=trip.id) }}">
-          <label><span>Nuevo elemento permanente</span><input name="elemento" required></label>
-          <label><span>Cantidad mínima</span><input type="number" min="0" step="0.5" name="cantidad_minima" value="1"></label>
-          <label><span>Unidad</span><input name="unidad" value="unidades"></label>
-          <button class="ro-button ro-button-secondary">Agregar al kit</button>
-        </form>
-        {% endif %}
-      </section>
-
-      <section class="ro-card" id="materiales">
-        <div class="ro-card-heading"><div><h2>Materiales específicos</h2><p>Recursos preparados o entregados para cada sede.</p></div><span class="ro-count">{{ materials|length }}</span></div>
-        {% if trip.estado != 'Cerrado' %}
-        <form class="ro-compact-form" method="post" action="{{ url_for('recorridos_operativos_material', trip_id=trip.id) }}">
-          <label><span>Sede</span><select name="parada_id"><option value="">General</option>{% for stop in stops %}<option value="{{ stop.id }}">{{ stop.nombre }}</option>{% endfor %}</select></label>
-          <label><span>Elemento *</span><input name="elemento" required></label>
-          <label><span>Cantidad</span><input type="number" name="cantidad" min="0.1" step="0.1" value="1"></label>
-          <label><span>Tipo</span><select name="tipo">{% for value in material_types %}<option>{{ value }}</option>{% endfor %}</select></label>
-          <label><span>Estado</span><select name="estado">{% for value in material_statuses %}<option>{{ value }}</option>{% endfor %}</select></label>
-          <label class="ro-span-2"><span>Observación</span><input name="observacion"></label>
-          <button class="ro-button ro-button-primary">Agregar</button>
-        </form>
-        {% endif %}
-        <div class="ro-record-list">{% for item in materials %}<article><div><strong>{{ item.elemento }}</strong><span>{{ item.sede_nombre or 'General' }} · {{ item.tipo }} · Cant. {{ item.cantidad }}</span></div>{% if trip.estado != 'Cerrado' %}<form class="ro-state-form" method="post" action="{{ url_for('recorridos_operativos_material_estado', trip_id=trip.id, item_id=item.id) }}"><select name="estado" onchange="this.form.submit()">{% for value in material_statuses %}<option {{ 'selected' if item.estado == value else '' }}>{{ value }}</option>{% endfor %}</select></form>{% else %}<span class="ro-status ro-status-compact">{{ item.estado }}</span>{% endif %}</article>{% else %}<p class="ro-empty-line">Sin materiales específicos cargados.</p>{% endfor %}</div>
-      </section>
-
-      <section class="ro-card" id="actividades">
-        <div class="ro-card-heading"><div><h2>Actividades por sede</h2><p>Tareas previstas y resultado operativo.</p></div><span class="ro-count">{{ activities|length }}</span></div>
-        {% if trip.estado != 'Cerrado' %}
-        <form class="ro-compact-form" method="post" action="{{ url_for('recorridos_operativos_actividad', trip_id=trip.id) }}">
-          <label><span>Sede</span><select name="parada_id"><option value="">General</option>{% for stop in stops %}<option value="{{ stop.id }}">{{ stop.nombre }}</option>{% endfor %}</select></label>
-          <label><span>Tipo</span><select name="tipo">{% for value in activity_types %}<option>{{ value }}</option>{% endfor %}</select></label>
-          <label class="ro-span-2"><span>Detalle *</span><input name="detalle" required></label>
-          <label><span>Estado</span><select name="estado">{% for value in activity_statuses %}<option>{{ value }}</option>{% endfor %}</select></label>
-          <label class="ro-span-2"><span>Observación</span><input name="observacion"></label>
-          <button class="ro-button ro-button-primary">Agregar</button>
-        </form>
-        {% endif %}
-        <div class="ro-record-list">{% for item in activities %}<article><div><strong>{{ item.detalle }}</strong><span>{{ item.sede_nombre or 'General' }} · {{ item.tipo }}</span></div>{% if trip.estado != 'Cerrado' %}<form class="ro-state-form" method="post" action="{{ url_for('recorridos_operativos_actividad_estado', trip_id=trip.id, item_id=item.id) }}"><select name="estado" onchange="this.form.submit()">{% for value in activity_statuses %}<option {{ 'selected' if item.estado == value else '' }}>{{ value }}</option>{% endfor %}</select></form>{% else %}<span class="ro-status ro-status-compact">{{ item.estado }}</span>{% endif %}</article>{% else %}<p class="ro-empty-line">Sin actividades cargadas.</p>{% endfor %}</div>
+        {% else %}<div class="ro-empty"><strong>No hay sedes habilitadas para ejecución.</strong><span>Agregá actividades dentro de una sede para que aparezca en este paso.</span></div>{% endif %}
+        {% if trip.estado == 'En recorrido' %}<form class="ro-inline-close" method="post" action="{{ url_for('recorridos_operativos_finalizar', trip_id=trip.id) }}"><label><span>Observación final opcional</span><input name="nota" placeholder="Resultado general del recorrido"></label><button class="ro-button ro-button-primary">Finalizar recorrido</button></form>{% endif %}
+        {% if trip.estado == 'Finalizado' %}<form class="ro-inline-close" method="post" action="{{ url_for('recorridos_operativos_cerrar', trip_id=trip.id) }}"><label><span>Informe / resumen final</span><input name="nota" value="{{ trip.final_note or '' }}" placeholder="Conclusión operativa"></label><button class="ro-button ro-button-primary">Cerrar recorrido</button></form>{% endif %}
       </section>
     </div>
 
     <aside class="ro-side-column">
-      <section class="ro-card ro-facts"><h2>Datos operativos</h2><dl><div><dt>Vehículo</dt><dd>{{ trip.vehiculo_label or 'Sin asignar' }}</dd></div><div><dt>Equipo</dt><dd>{{ trip.equipo_operativo }}</dd></div><div><dt>Creado por</dt><dd>{{ trip.created_by }}</dd></div><div><dt>Observación</dt><dd>{{ trip.observacion or 'Sin observaciones' }}</dd></div></dl></section>
-      <section class="ro-card"><h2>Indicadores</h2><div class="ro-metrics"><div><span>Tiempo total</span><strong>{{ metrics.total }}</strong></div><div><span>Tiempo en sedes</span><strong>{{ metrics.sede }}</strong></div><div><span>Tiempo de ruta</span><strong>{{ metrics.ruta }}</strong></div><div><span>Actividades</span><strong>{{ metrics.actividades_finalizadas }}/{{ metrics.actividades }}</strong></div><div><span>Materiales entregados</span><strong>{{ metrics.materiales_entregados }}/{{ metrics.materiales }}</strong></div></div></section>
+      <section class="ro-card ro-facts" id="datos"><p class="ro-step-label">Paso 1</p><h2>Datos generales</h2><dl><div><dt>Fecha</dt><dd>{{ trip.fecha_prevista }}</dd></div><div><dt>Destino principal</dt><dd>{{ trip.destino_nombre or 'Sin definir' }}</dd></div><div><dt>Vehículo</dt><dd>{{ trip.vehiculo_label or 'Sin asignar' }}</dd></div><div><dt>Equipo</dt><dd>{{ trip.equipo_operativo }}</dd></div><div><dt>Observaciones</dt><dd>{{ trip.observacion or 'Sin observaciones' }}</dd></div></dl></section>
+      <section class="ro-card"><h2>Resumen automático</h2><div class="ro-metrics"><div><span>Tiempo total</span><strong>{{ metrics.total }}</strong></div><div><span>Tiempo en ruta</span><strong>{{ metrics.ruta }}</strong></div><div><span>Tiempo operativo</span><strong>{{ metrics.operativo }}</strong></div><div><span>Sedes visitadas</span><strong>{{ metrics.sedes_visitadas }}</strong></div><div><span>Actividades realizadas</span><strong>{{ metrics.actividades_finalizadas }}/{{ metrics.actividades }}</strong></div><div><span>Materiales entregados</span><strong>{{ metrics.materiales_entregados }}/{{ metrics.materiales }}</strong></div></div></section>
       <section class="ro-card"><h2>Línea de tiempo</h2><div class="ro-timeline">{% for event in events %}<article><i></i><div><strong>{{ event.tipo }}</strong><span>{{ event.parada_nombre or event.nota or 'Recorrido general' }}</span><small>{{ event.fecha_hora }} · {{ event.usuario }}</small></div></article>{% else %}<p class="ro-empty-line">Todavía no hay hitos operativos.</p>{% endfor %}</div></section>
     </aside>
   </section>

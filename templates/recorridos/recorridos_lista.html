@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block main_class %}container-wide{% endblock %}
-{% block head_extra %}<link rel="stylesheet" href="{{ url_for('static', filename='recorridos/recorridos.css', v='2026-06-28-01') }}">{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{{ url_for('static', filename='recorridos/recorridos.css', v='2026-06-28-02') }}">{% endblock %}
 {% block content %}
 <main class="ro-page" id="main-content">
   <header class="ro-header">
@@ -19,10 +19,20 @@
     {% for status in statuses %}
     <a href="{{ url_for('recorridos_operativos_lista', estado=status) }}" class="ro-summary-item {{ 'is-active' if status_filter == status else '' }}">
       <span>{{ status }}</span>
-      <strong>{{ trips|selectattr('estado', 'equalto', status)|list|length if not status_filter else (trips|length if status_filter == status else 0) }}</strong>
+      <strong>{{ status_counts.get(status, 0) }}</strong>
     </a>
     {% endfor %}
   </section>
+
+  <form class="ro-history-filters" method="get" aria-label="Filtros del historial">
+    <label><span>Buscar</span><input type="search" name="q" value="{{ query }}" placeholder="Equipo, vehículo o sede"></label>
+    <label><span>Ruta</span><select name="ruta"><option value="">Todas</option>{% for route in routes %}<option {{ 'selected' if route_filter == route else '' }}>{{ route }}</option>{% endfor %}</select></label>
+    <label><span>Desde</span><input type="date" name="desde" value="{{ date_from }}"></label>
+    <label><span>Hasta</span><input type="date" name="hasta" value="{{ date_to }}"></label>
+    {% if status_filter %}<input type="hidden" name="estado" value="{{ status_filter }}">{% endif %}
+    <button class="ro-button ro-button-primary">Consultar</button>
+    <a class="ro-button ro-button-secondary" href="{{ url_for('recorridos_operativos_lista') }}">Limpiar</a>
+  </form>
 
   <section class="ro-card">
     <div class="ro-card-heading">

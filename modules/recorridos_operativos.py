@@ -35,16 +35,32 @@ ACTIVITY_TYPES = (
     "Otro",
 )
 ACTIVITY_STATUSES = ("Pendiente", "En curso", "Finalizada", "Cancelada")
+ACTIVITY_PRIORITIES = ("Baja", "Media", "Alta")
 DEFAULT_KIT = (
-    ("Tubos LED", 6, "unidades"),
-    ("Tornillos y tarugos", 1, "juego"),
-    ("Herramientas basicas", 1, "juego"),
-    ("Gomas para canillas", 4, "unidades"),
-    ("Lamparas", 4, "unidades"),
-    ("Escalera", 1, "unidad"),
-    ("Elementos de proteccion personal", 1, "juego"),
-    ("Documentacion del recorrido", 1, "juego"),
-    ("Combustible verificado", 1, "control"),
+    ("Documentacion", "Documentacion del recorrido", 1, "juego"),
+    ("Documentacion", "Llaves de acceso", 1, "juego"),
+    ("Documentacion", "Combustible", 1, "control"),
+    ("Documentacion", "Matafuegos", 1, "unidad"),
+    ("Documentacion", "Balizas", 1, "juego"),
+    ("Documentacion", "Botiquin", 1, "unidad"),
+    ("Herramientas", "Escalera", 1, "unidad"),
+    ("Herramientas", "Taladro", 1, "unidad"),
+    ("Herramientas", "Amoladora", 1, "unidad"),
+    ("Herramientas", "Atornillador", 1, "unidad"),
+    ("Herramientas", "Tester", 1, "unidad"),
+    ("Electricidad", "Tubos LED", 6, "unidades"),
+    ("Electricidad", "Lamparas", 4, "unidades"),
+    ("Electricidad", "Cable", 1, "rollo"),
+    ("Electricidad", "Termicas", 1, "juego"),
+    ("Plomeria", "Flexibles", 2, "unidades"),
+    ("Plomeria", "Pegamento", 1, "unidad"),
+    ("Plomeria", "Llaves para plomeria", 1, "juego"),
+    ("Limpieza", "Insumos", 1, "juego"),
+    ("Limpieza", "Bolsas", 1, "paquete"),
+    ("Limpieza", "Escobillon", 1, "unidad"),
+    ("Mobiliario", "Escritorios", 1, "unidad"),
+    ("Mobiliario", "Sillas", 1, "unidad"),
+    ("Mobiliario", "Estanterias", 1, "unidad"),
 )
 
 
@@ -108,6 +124,7 @@ def register_recorridos_operativos(app: Flask) -> None:
                 );
                 CREATE TABLE IF NOT EXISTS recorridos_kit_base (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    categoria TEXT NOT NULL DEFAULT 'Otros',
                     elemento TEXT NOT NULL UNIQUE,
                     cantidad_minima REAL NOT NULL DEFAULT 1,
                     unidad TEXT NOT NULL DEFAULT 'unidades',
@@ -144,6 +161,9 @@ def register_recorridos_operativos(app: Flask) -> None:
                     sede_codigo TEXT,
                     tipo TEXT NOT NULL,
                     detalle TEXT NOT NULL,
+                    prioridad TEXT NOT NULL DEFAULT 'Media',
+                    tiempo_estimado_min INTEGER,
+                    material_asociado TEXT,
                     estado TEXT NOT NULL DEFAULT 'Pendiente',
                     started_at TEXT,
                     finished_at TEXT,
@@ -169,11 +189,34 @@ def register_recorridos_operativos(app: Flask) -> None:
                 CREATE INDEX IF NOT EXISTS idx_recorrido_hitos ON recorrido_hitos(recorrido_id, fecha_hora);
                 """
             )
-            for element, minimum, unit in DEFAULT_KIT:
+            kit_columns = {row["name"] for row in con.execute("PRAGMA table_info(recorridos_kit_base)").fetchall()}
+            if "categoria" not in kit_columns:
+                con.execute("ALTER TABLE recorridos_kit_base ADD COLUMN categoria TEXT NOT NULL DEFAULT 'Otros'")
+            activity_columns = {row["name"] for row in con.execute("PRAGMA table_info(recorrido_actividades)").fetchall()}
+            if "prioridad" not in activity_columns:
+                con.execute("ALTER TABLE recorrido_actividades ADD COLUMN prioridad TEXT NOT NULL DEFAULT 'Media'")
+            if "tiempo_estimado_min" not in activity_columns:
+                con.execute("ALTER TABLE recorrido_actividades ADD COLUMN tiempo_estimado_min INTEGER")
+            if "material_asociado" not in activity_columns:
+                con.execute("ALTER TABLE recorrido_actividades ADD COLUMN material_asociado TEXT")
+            for category, element, minimum, unit in DEFAULT_KIT:
                 con.execute(
-                    "INSERT OR IGNORE INTO recorridos_kit_base(elemento, cantidad_minima, unidad) VALUES(?, ?, ?)",
-                    (element, minimum, unit),
+                    "INSERT OR IGNORE INTO recorridos_kit_base(categoria, elemento, cantidad_minima, unidad) VALUES(?, ?, ?, ?)",
+                    (category, element, minimum, unit),
                 )
+                con.execute(
+                    "UPDATE recorridos_kit_base SET categoria=? WHERE elemento=? AND categoria='Otros'",
+                    (category, element),
+                )
+            con.execute(
+                """
+                INSERT OR IGNORE INTO recorrido_kit_check(recorrido_id, kit_id, cantidad_preparada)
+                SELECT r.id, kb.id, kb.cantidad_minima
+                FROM recorridos_operativos r
+                CROSS JOIN recorridos_kit_base kb
+                WHERE kb.activo = 1
+                """
+            )
             con.commit()
         finally:
             con.close()
@@ -282,10 +325,38 @@ def register_recorridos_operativos(app: Flask) -> None:
         if auth:
             return auth
         status_filter = (request.args.get("estado") or "").strip()
+        route_filter = (request.args.get("ruta") or "").strip()
+        date_from = (request.args.get("desde") or "").strip()
+        date_to = (request.args.get("hasta") or "").strip()
+        query = (request.args.get("q") or "").strip()
         con = connect()
         try:
-            where = "WHERE r.estado = ?" if status_filter in STATUSES else ""
-            params = (status_filter,) if where else ()
+            clauses = []
+            params = []
+            if status_filter in STATUSES:
+                clauses.append("r.estado = ?")
+                params.append(status_filter)
+            if route_filter in ROUTE_STOPS:
+                clauses.append("r.ruta = ?")
+                params.append(route_filter)
+            if date_from:
+                clauses.append("r.fecha_prevista >= ?")
+                params.append(date_from)
+            if date_to:
+                clauses.append("r.fecha_prevista <= ?")
+                params.append(date_to)
+            if query:
+                like = f"%{query}%"
+                clauses.append(
+                    """(
+                    r.equipo_operativo LIKE ? OR r.vehiculo_patente LIKE ? OR r.ruta LIKE ?
+                    OR s.nombre LIKE ? OR EXISTS (
+                        SELECT 1 FROM recorrido_paradas rp
+                        WHERE rp.recorrido_id=r.id AND (rp.nombre LIKE ? OR rp.sede_codigo LIKE ?)
+                    ))"""
+                )
+                params.extend([like, like, like, like, like, like])
+            where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
             trips = con.execute(
                 f"""
                 SELECT r.*, COALESCE(s.nombre, r.destino_sede, '') AS destino_nombre,
@@ -302,13 +373,22 @@ def register_recorridos_operativos(app: Flask) -> None:
                 {where}
                 ORDER BY r.fecha_prevista DESC, r.id DESC
                 """,
-                params,
+                tuple(params),
             ).fetchall()
+            status_counts = {status: 0 for status in STATUSES}
+            for row in con.execute("SELECT estado, COUNT(*) AS total FROM recorridos_operativos GROUP BY estado"):
+                status_counts[row["estado"]] = row["total"]
             return render_template(
                 "recorridos/recorridos_lista.html",
                 trips=trips,
                 statuses=STATUSES,
+                routes=ROUTE_STOPS,
                 status_filter=status_filter,
+                route_filter=route_filter,
+                date_from=date_from,
+                date_to=date_to,
+                query=query,
+                status_counts=status_counts,
             )
         finally:
             con.close()
@@ -345,6 +425,12 @@ def register_recorridos_operativos(app: Flask) -> None:
                 team = (request.form.get("equipo_operativo") or "").strip()
                 observation = (request.form.get("observacion") or "").strip()
                 stops = parse_stops(request.form.get("paradas"))
+                if not stops and route_name in ROUTE_STOPS:
+                    stops = list(ROUTE_STOPS[route_name])
+                if not stops and destination:
+                    selected_sede = next((item for item in sedes if item["codigo"] == destination), None)
+                    if selected_sede:
+                        stops = [selected_sede["ciudad"] or selected_sede["nombre"]]
                 if not date or not team or route_name not in ROUTE_STOPS or not stops:
                     flash("Complete fecha, ruta, equipo operativo y al menos una parada.", "warning")
                 else:
@@ -423,9 +509,9 @@ def register_recorridos_operativos(app: Flask) -> None:
             ).fetchall()
             kit = con.execute(
                 """
-                SELECT kc.*, kb.elemento, kb.cantidad_minima, kb.unidad
+                SELECT kc.*, kb.categoria, kb.elemento, kb.cantidad_minima, kb.unidad
                 FROM recorrido_kit_check kc JOIN recorridos_kit_base kb ON kb.id=kc.kit_id
-                WHERE kc.recorrido_id=? ORDER BY kb.id
+                WHERE kc.recorrido_id=? ORDER BY kb.categoria, kb.id
                 """,
                 (trip_id,),
             ).fetchall()
@@ -447,30 +533,63 @@ def register_recorridos_operativos(app: Flask) -> None:
                    WHERE h.recorrido_id=? ORDER BY h.fecha_hora DESC, h.id DESC""",
                 (trip_id,),
             ).fetchall()
+            activity_counts = {}
+            material_counts = {}
+            for item in activities:
+                activity_counts[item["parada_id"]] = activity_counts.get(item["parada_id"], 0) + 1
+            for item in materials:
+                material_counts[item["parada_id"]] = material_counts.get(item["parada_id"], 0) + 1
+
             site_minutes = 0
-            route_minutes = 0
-            previous_finish = None
-            for stop in stops:
-                if stop["started_at"] and stop["finished_at"]:
+            execution_stops = []
+            previous_mark = datetime.strptime(trip["started_at"], "%Y-%m-%d %H:%M:%S") if trip["started_at"] else None
+            calculation_end = datetime.strptime(trip["finished_at"], "%Y-%m-%d %H:%M:%S") if trip["finished_at"] else datetime.now()
+            stop_views = []
+            for row in stops:
+                stop = dict(row)
+                stop["activity_count"] = activity_counts.get(stop["id"], 0)
+                stop["material_count"] = material_counts.get(stop["id"], 0)
+                stop["site_duration"] = "--"
+                stop["route_before"] = "--"
+                if stop["started_at"]:
                     start_dt = datetime.strptime(stop["started_at"], "%Y-%m-%d %H:%M:%S")
-                    finish_dt = datetime.strptime(stop["finished_at"], "%Y-%m-%d %H:%M:%S")
-                    site_minutes += max(0, int((finish_dt - start_dt).total_seconds() // 60))
-                    if previous_finish:
-                        route_minutes += max(0, int((start_dt - previous_finish).total_seconds() // 60))
-                    previous_finish = finish_dt
+                    if previous_mark:
+                        stop["route_before"] = format_minutes(int(max(0, (start_dt - previous_mark).total_seconds()) // 60))
+                    finish_dt = datetime.strptime(stop["finished_at"], "%Y-%m-%d %H:%M:%S") if stop["finished_at"] else calculation_end
+                    stop_minutes = int(max(0, (finish_dt - start_dt).total_seconds()) // 60)
+                    site_minutes += stop_minutes
+                    stop["site_duration"] = format_minutes(stop_minutes)
+                    previous_mark = finish_dt
+                if stop["activity_count"]:
+                    execution_stops.append(stop)
+                stop_views.append(stop)
+            stops = stop_views
+            total_minutes = 0
+            if trip["started_at"]:
+                start_trip_dt = datetime.strptime(trip["started_at"], "%Y-%m-%d %H:%M:%S")
+                total_minutes = int(max(0, (calculation_end - start_trip_dt).total_seconds()) // 60)
+            route_minutes = max(0, total_minutes - site_minutes)
             metrics = {
                 "total": duration(trip["started_at"], trip["finished_at"]),
                 "sede": format_minutes(site_minutes),
                 "ruta": format_minutes(route_minutes),
+                "operativo": format_minutes(site_minutes),
+                "sedes_visitadas": sum(1 for stop in execution_stops if stop["started_at"]),
                 "actividades": len(activities),
                 "actividades_finalizadas": sum(1 for item in activities if item["estado"] == "Finalizada"),
                 "materiales": len(materials),
-                "materiales_entregados": sum(1 for item in materials if item["estado"] == "Entregado"),
+                "materiales_entregados": sum(float(item["cantidad"] or 0) for item in materials if item["estado"] == "Entregado"),
             }
+            next_execution_stop_id = next(
+                (stop["id"] for stop in execution_stops if not stop["finished_at"]),
+                None,
+            )
             return render_template(
                 "recorridos/recorrido_detalle.html",
                 trip=trip,
                 stops=stops,
+                execution_stops=execution_stops,
+                next_execution_stop_id=next_execution_stop_id,
                 kit=kit,
                 materials=materials,
                 activities=activities,
@@ -480,6 +599,7 @@ def register_recorridos_operativos(app: Flask) -> None:
                 material_statuses=MATERIAL_STATUSES,
                 activity_types=ACTIVITY_TYPES,
                 activity_statuses=ACTIVITY_STATUSES,
+                activity_priorities=ACTIVITY_PRIORITIES,
             )
         finally:
             con.close()
@@ -491,28 +611,19 @@ def register_recorridos_operativos(app: Flask) -> None:
             return auth
         con = connect()
         try:
-            for row in con.execute("SELECT id FROM recorrido_kit_check WHERE recorrido_id=?", (trip_id,)).fetchall():
+            for row in con.execute("SELECT * FROM recorrido_kit_check WHERE recorrido_id=?", (trip_id,)).fetchall():
                 check_id = row["id"]
+                prepared = request.form.get(f"cantidad_{check_id}")
                 con.execute(
                     "UPDATE recorrido_kit_check SET cantidad_preparada=?, verificado=?, observacion=? WHERE id=?",
-                    (request.form.get(f"cantidad_{check_id}", 0), 1 if request.form.get(f"check_{check_id}") else 0,
+                    (prepared if prepared is not None else row["cantidad_preparada"],
+                     1 if request.form.get(f"check_{check_id}") else 0,
                      (request.form.get(f"nota_{check_id}") or "").strip() or None, check_id),
                 )
-                kit_row = con.execute("SELECT kit_id FROM recorrido_kit_check WHERE id=?", (check_id,)).fetchone()
-                if kit_row:
-                    con.execute(
-                        "UPDATE recorridos_kit_base SET cantidad_minima=?, unidad=? WHERE id=?",
-                        (request.form.get(f"minimo_{check_id}") or 1,
-                         (request.form.get(f"unidad_{check_id}") or "unidades").strip(), kit_row["kit_id"]),
-                    )
-            total, checked = con.execute(
-                "SELECT COUNT(*), SUM(verificado) FROM recorrido_kit_check WHERE recorrido_id=?", (trip_id,)
-            ).fetchone()
-            if total and total == checked:
-                con.execute(
-                    "UPDATE recorridos_operativos SET estado='Preparado', updated_at=? WHERE id=? AND estado='Borrador'",
-                    (now(), trip_id),
-                )
+            con.execute(
+                "UPDATE recorridos_operativos SET estado='Preparado', updated_at=? WHERE id=? AND estado='Borrador'",
+                (now(), trip_id),
+            )
             con.commit()
             flash("Checklist actualizado.", "success")
         finally:
@@ -531,8 +642,8 @@ def register_recorridos_operativos(app: Flask) -> None:
         con = connect()
         try:
             con.execute(
-                "INSERT OR IGNORE INTO recorridos_kit_base(elemento, cantidad_minima, unidad) VALUES(?, ?, ?)",
-                (element, request.form.get("cantidad_minima") or 1,
+                "INSERT OR IGNORE INTO recorridos_kit_base(categoria, elemento, cantidad_minima, unidad) VALUES(?, ?, ?, ?)",
+                ((request.form.get("categoria") or "Otros").strip(), element, request.form.get("cantidad_minima") or 1,
                  (request.form.get("unidad") or "unidades").strip()),
             )
             seed_trip_kit(con, trip_id)
@@ -603,12 +714,16 @@ def register_recorridos_operativos(app: Flask) -> None:
             if stop_id:
                 row = con.execute("SELECT sede_codigo FROM recorrido_paradas WHERE id=? AND recorrido_id=?", (stop_id, trip_id)).fetchone()
                 sede = row["sede_codigo"] if row else None
+            priority = request.form.get("prioridad") if request.form.get("prioridad") in ACTIVITY_PRIORITIES else "Media"
+            estimated = request.form.get("tiempo_estimado_min") or None
             con.execute(
-                """INSERT INTO recorrido_actividades(recorrido_id, parada_id, sede_codigo, tipo, detalle, estado, observacion)
-                   VALUES(?, ?, ?, ?, ?, ?, ?)""",
+                """INSERT INTO recorrido_actividades(recorrido_id, parada_id, sede_codigo, tipo, detalle,
+                   prioridad, tiempo_estimado_min, material_asociado, estado, observacion)
+                   VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (trip_id, stop_id, sede,
                  request.form.get("tipo") if request.form.get("tipo") in ACTIVITY_TYPES else "Otro",
-                 detail, request.form.get("estado") if request.form.get("estado") in ACTIVITY_STATUSES else "Pendiente",
+                 detail, priority, estimated, (request.form.get("material_asociado") or "").strip() or None,
+                 request.form.get("estado") if request.form.get("estado") in ACTIVITY_STATUSES else "Pendiente",
                  (request.form.get("observacion") or "").strip() or None),
             )
             con.commit()
@@ -650,9 +765,16 @@ def register_recorridos_operativos(app: Flask) -> None:
         try:
             trip = get_trip(con, trip_id)
             if trip and trip["estado"] in {"Borrador", "Preparado"}:
+                planned = con.execute(
+                    "SELECT COUNT(DISTINCT parada_id) AS total FROM recorrido_actividades WHERE recorrido_id=? AND parada_id IS NOT NULL AND estado <> 'Cancelada'",
+                    (trip_id,),
+                ).fetchone()["total"]
+                if not planned:
+                    flash("Agregue al menos una actividad en una sede antes de iniciar.", "warning")
+                    return redirect(url_for("recorridos_operativos_detalle", trip_id=trip_id) + "#planificacion")
                 timestamp = now()
                 con.execute("UPDATE recorridos_operativos SET estado='En recorrido', started_at=?, updated_at=? WHERE id=?", (timestamp, timestamp, trip_id))
-                record_event(con, trip_id, "Inicio del recorrido", note=request.form.get("nota", ""))
+                record_event(con, trip_id, "Salida a recorrido", note=request.form.get("nota", ""))
                 con.commit()
                 flash("Recorrido iniciado.", "success")
         finally:
@@ -669,16 +791,38 @@ def register_recorridos_operativos(app: Flask) -> None:
             stop = con.execute("SELECT * FROM recorrido_paradas WHERE id=? AND recorrido_id=?", (stop_id, trip_id)).fetchone()
             trip = get_trip(con, trip_id)
             if stop and trip and trip["estado"] == "En recorrido":
+                activity_total = con.execute(
+                    "SELECT COUNT(*) AS total FROM recorrido_actividades WHERE parada_id=? AND estado <> 'Cancelada'",
+                    (stop_id,),
+                ).fetchone()["total"]
+                if not activity_total:
+                    flash("Esta sede no tiene actividades programadas.", "warning")
+                    return redirect(url_for("recorridos_operativos_detalle", trip_id=trip_id) + "#ejecucion")
+                next_stop = con.execute(
+                    """
+                    SELECT p.id FROM recorrido_paradas p
+                    WHERE p.recorrido_id=? AND p.finished_at IS NULL
+                      AND EXISTS (
+                        SELECT 1 FROM recorrido_actividades a
+                        WHERE a.parada_id=p.id AND a.estado <> 'Cancelada'
+                      )
+                    ORDER BY p.orden LIMIT 1
+                    """,
+                    (trip_id,),
+                ).fetchone()
+                if not next_stop or next_stop["id"] != stop_id:
+                    flash("Complete la sede anterior antes de continuar.", "warning")
+                    return redirect(url_for("recorridos_operativos_detalle", trip_id=trip_id) + "#ejecucion")
                 timestamp = now()
                 note = (request.form.get("nota") or "").strip()
                 if action == "iniciar" and not stop["started_at"]:
                     con.execute("UPDATE recorrido_paradas SET estado='En curso', started_at=?, notas=? WHERE id=?", (timestamp, note or None, stop_id))
                     con.execute("UPDATE recorrido_actividades SET estado='En curso', started_at=? WHERE parada_id=? AND estado='Pendiente'", (timestamp, stop_id))
-                    record_event(con, trip_id, "Inicio de actividad en sede", stop_id, note)
+                    record_event(con, trip_id, "Llegada a sede", stop_id, note)
                 elif action == "finalizar" and stop["started_at"] and not stop["finished_at"]:
                     con.execute("UPDATE recorrido_paradas SET estado='Finalizada', finished_at=?, notas=COALESCE(?, notas) WHERE id=?", (timestamp, note or None, stop_id))
                     con.execute("UPDATE recorrido_actividades SET estado='Finalizada', finished_at=? WHERE parada_id=? AND estado='En curso'", (timestamp, stop_id))
-                    record_event(con, trip_id, "Fin de actividad en sede", stop_id, note)
+                    record_event(con, trip_id, "Salida de sede", stop_id, note)
                 con.commit()
         finally:
             con.close()
@@ -693,6 +837,20 @@ def register_recorridos_operativos(app: Flask) -> None:
         try:
             trip = get_trip(con, trip_id)
             if trip and trip["estado"] == "En recorrido":
+                pending = con.execute(
+                    """
+                    SELECT COUNT(*) AS total FROM recorrido_paradas p
+                    WHERE p.recorrido_id=? AND p.finished_at IS NULL
+                      AND EXISTS (
+                        SELECT 1 FROM recorrido_actividades a
+                        WHERE a.parada_id=p.id AND a.estado <> 'Cancelada'
+                      )
+                    """,
+                    (trip_id,),
+                ).fetchone()["total"]
+                if pending:
+                    flash("Complete las sedes programadas antes de finalizar el recorrido.", "warning")
+                    return redirect(url_for("recorridos_operativos_detalle", trip_id=trip_id) + "#ejecucion")
                 timestamp = now()
                 note = (request.form.get("nota") or "").strip()
                 con.execute("UPDATE recorridos_operativos SET estado='Finalizado', finished_at=?, final_note=?, updated_at=? WHERE id=?", (timestamp, note or None, timestamp, trip_id))

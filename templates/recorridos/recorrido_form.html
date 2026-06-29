@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {% block main_class %}container-wide{% endblock %}
-{% block head_extra %}<link rel="stylesheet" href="{{ url_for('static', filename='recorridos/recorridos.css', v='2026-06-28-01') }}">{% endblock %}
+{% block head_extra %}<link rel="stylesheet" href="{{ url_for('static', filename='recorridos/recorridos.css', v='2026-06-28-02') }}">{% endblock %}
 {% block content %}
 <main class="ro-page ro-page-narrow" id="main-content">
   <header class="ro-header">
     <div>
       <p class="ro-eyebrow">SGI · Recorridos Operativos</p>
       <h1>{{ 'Editar recorrido' if trip else 'Nuevo recorrido' }}</h1>
-      <p>Definí la ruta, los recursos y las paradas previstas.</p>
+      <p>Definí los datos mínimos. La ruta genera automáticamente las sedes previstas.</p>
     </div>
     <a class="ro-button ro-button-secondary" href="{{ url_for('recorridos_operativos_detalle', trip_id=trip.id) if trip else url_for('recorridos_operativos_lista') }}">Cancelar</a>
   </header>
@@ -21,17 +21,18 @@
         <label><span>Destino principal</span><select name="destino_sede"><option value="">Sin definir</option>{% for sede in sedes %}<option value="{{ sede.codigo }}" {{ 'selected' if form.get('destino_sede') == sede.codigo else '' }}>{{ sede.codigo }} · {{ sede.nombre }} ({{ sede.ciudad }})</option>{% endfor %}</select></label>
         <label><span>Vehículo</span><select name="vehiculo_patente"><option value="">Sin asignar</option>{% for vehicle in vehicles %}<option value="{{ vehicle.patente }}" {{ 'selected' if form.get('vehiculo_patente') == vehicle.patente else '' }}>{{ vehicle.codigo_interno }} · {{ vehicle.patente }} · {{ vehicle.modelo }}</option>{% endfor %}</select></label>
         <label class="ro-span-2"><span>Equipo operativo *</span><input name="equipo_operativo" value="{{ form.get('equipo_operativo', '') }}" placeholder="Nombres o identificación del equipo" required></label>
-        <label class="ro-span-2"><span>Observación</span><textarea name="observacion" rows="3" placeholder="Objetivo general o consideraciones previas">{{ form.get('observacion', '') }}</textarea></label>
+        <label class="ro-span-2"><span>Observaciones generales</span><textarea name="observacion" rows="3" placeholder="Objetivo general o consideraciones previas">{{ form.get('observacion', '') }}</textarea></label>
       </div>
-    </div>
-    <div class="ro-form-section">
-      <div class="ro-section-intro"><span>2</span><div><h2>Paradas previstas</h2><p>Una parada por línea. El orden puede editarse libremente.</p></div></div>
-      <label><span>Itinerario *</span><textarea name="paradas" id="stopsInput" rows="8" required>{{ stop_text }}</textarea></label>
-      <p class="ro-help">Las posiciones geográficas no se modifican: esta lista define únicamente el orden operativo.</p>
+      <input type="hidden" name="paradas" id="stopsInput" value="{{ stop_text }}">
+      <div class="ro-route-preview" aria-live="polite">
+        <strong>Itinerario generado</strong>
+        <div id="routePreview"></div>
+        <small>Luego podrás administrar actividades y materiales dentro de cada sede.</small>
+      </div>
     </div>
     <div class="ro-form-actions">
       <a class="ro-button ro-button-secondary" href="{{ url_for('recorridos_operativos_lista') }}">Cancelar</a>
-      <button class="ro-button ro-button-primary" type="submit">Guardar recorrido</button>
+      <button class="ro-button ro-button-primary" type="submit">Guardar y planificar</button>
     </div>
   </form>
 </main>
@@ -42,12 +43,18 @@
   const routes = {{ route_stops|tojson }};
   const route = document.getElementById('routeSelect');
   const stops = document.getElementById('stopsInput');
-  if (!route || !stops) return;
-  route.addEventListener('change', () => {
-    const current = stops.value.trim();
-    const known = Object.values(routes).some(items => items.join('\n') === current);
-    if (!current || known) stops.value = (routes[route.value] || []).join('\n');
-  });
+  const preview = document.getElementById('routePreview');
+  if (!route || !stops || !preview) return;
+  const render = (replace) => {
+    const generated = routes[route.value] || [];
+    if (replace) stops.value = generated.join('\n');
+    const items = (stops.value || '').split(/\n/).map(value => value.trim()).filter(Boolean);
+    preview.innerHTML = items.length
+      ? items.map((item, index) => `<span>${index + 1}. ${item}</span>`).join('')
+      : '<span>Se utilizará el destino principal como parada.</span>';
+  };
+  route.addEventListener('change', () => render(true));
+  render(false);
 })();
 </script>
 {% endblock %}
