@@ -51,6 +51,11 @@
   color: var(--sedes-ink);
 }
 
+.sgi-sedes.fuero-penal .h-fuero { color: #6666CC; }
+.sgi-sedes.fuero-social .h-fuero { color: #F14B94; }
+.sgi-sedes.fuero-menores .h-fuero { color: #65BFF4; }
+.sgi-sedes.fuero-admin .h-fuero { color: #F58A5E; }
+
 .sgi-sedes .muted,
 .sgi-sedes :where(.seg-sub, .aires-sub, .planos-header-sub) {
   color: var(--sedes-muted) !important;

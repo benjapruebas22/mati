@@ -316,21 +316,20 @@ def ensure_combustible_columns(conn):
 # COLORES OFICIALES FUEROS
 # =========================
 FUERO_COLORS = {
-    # Fuero viejo (como está guardado en la tabla) → color
-    "Penal": "#5B5BEA",
-    "Menores": "#65BFF4",
-    "Civil": "#EC4899",
-    "Familia": "#65BFF4",
-    "Administración": "#64748b",          # lo dejamos gris
-    "Equipo interdisciplinario": "#64748b",
-
-    # Códigos nuevos que usamos en los seeds nuevos (por las dudas)
-    "penal": "#5B5BEA",                    # violeta
-    "juridico_social": "#F64B94",          # rosa (Gorriti 791)
-    "menores_incapaces": "#65BFF4",        # celeste (San Martín 271)
-    "civil": "#EC4899",
-    "familia": "#65BFF4",
-    "unificado": "#EC4899",
+    "Penal": "#6666CC",
+    "Jurídico Social": "#F14B94",
+    "Juridico Social": "#F14B94",
+    "Menores e Incapaces": "#65BFF4",
+    "Central Menores e Incapaces": "#65BFF4",
+    "Administración": "#F58A5E",
+    "Administracion": "#F58A5E",
+    "Equipo Interdisciplinario": "#F58A5E",
+    "Equipo interdisciplinario": "#F58A5E",
+    "penal": "#6666CC",
+    "juridico_social": "#F14B94",
+    "menores_incapaces": "#65BFF4",
+    "administracion": "#F58A5E",
+    "equipo_interdisciplinario": "#F58A5E",
 }
 
 # =====================================================

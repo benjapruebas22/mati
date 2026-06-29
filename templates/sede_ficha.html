@@ -5601,7 +5601,7 @@
 
 </style>
 
-<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-05-24-04') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sgi_sedes.css', v='2026-06-29-01') }}">
 
 
 
@@ -6646,7 +6646,7 @@
 
             {% if sede.direccion %}{{ sede.direccion }}{% else %}S/D{% endif %}
             {% if sede.ciudad %} · {{ sede.ciudad }}{% endif %}
-            {% if sede.fuero %} · {{ sede.fuero|replace('_',' ')|capitalize }}{% endif %}
+            {% if sede.fuero %} · <span class="h-fuero">{{ sede.fuero|replace('_',' ')|capitalize }}</span>{% endif %}
 
 
 

@@ -37,6 +37,15 @@
     .toLowerCase()
     .trim();
 
+  const FUERO_COLORS = {
+    'penal': '#6666CC',
+    'juridico social': '#F14B94',
+    'menores e incapaces': '#65BFF4',
+    'central menores e incapaces': '#65BFF4',
+    'administracion': '#F58A5E',
+    'equipo interdisciplinario': '#F58A5E'
+  };
+
   function updateUrl(code) {
     const url = new URL(window.location.href);
     url.searchParams.set('sede', code);
@@ -61,6 +70,7 @@
     elements.name.textContent = sede.nombre;
     elements.address.textContent = [sede.ciudad, sede.direccion].filter(Boolean).join(' · ');
     elements.fuero.textContent = sede.fuero_label;
+    elements.fuero.style.color = FUERO_COLORS[normalize(sede.fuero_label)] || '#6666CC';
     elements.plan.src = sede.plano_url;
     elements.plan.alt = `Plano de ${sede.codigo}, ${sede.nombre}`;
     elements.planLink.href = `${sede.detalle_url}?tab=depositos`;
