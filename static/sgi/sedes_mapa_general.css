@@ -115,6 +115,8 @@
 .province-shape { fill: #fffefa; stroke: #8f969f; stroke-width: 1.05; stroke-linecap: round; stroke-linejoin: round; }
 .route { fill: none; stroke: #adb4bd; stroke-width: 1.45; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 3.5 5.25; }
 .route-main { stroke: #874765; stroke-width: 1.9; stroke-dasharray: none; opacity: .88; }
+.route-hover-zone { fill: none; stroke: transparent; stroke-width: 14; pointer-events: stroke; cursor: help; }
+.route-hover-zone:focus-visible { stroke: rgba(111, 69, 198, .14); outline: none; }
 .route-labels text { fill: #747b85; font-size: 9px; font-weight: 700; paint-order: stroke; stroke: #fffefa; stroke-width: 3px; }
 .north-mark text { fill: #858a91; font-size: 11px; font-weight: 750; text-anchor: middle; }
 .north-mark path { fill: #777e87; }
