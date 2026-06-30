@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block main_class %}container-wide sedes-map-main{% endblock %}
 {% block head_extra %}
-<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sedes_mapa_general.css', v='2026-06-29-01') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sedes_mapa_general.css', v='2026-06-30-01') }}">
 {% endblock %}
 {% block content %}
 <div class="mpd-map-app" data-selected-code="{{ selected_code }}">
@@ -76,7 +76,7 @@
           <svg class="jujuy-map" viewBox="4 6 480 480" role="img" aria-labelledby="map-title map-desc">
             <title id="map-title">Mapa operativo de sedes del MPD en Jujuy</title>
             <desc id="map-desc">Esquema territorial con las sedes disponibles como puntos seleccionables.</desc>
-            <path class="province-shape" d="M186 15 C195 21 207 32 218 39 C224 43 230 46 236 47 C264 52 303 57 331 64 C329 77 320 92 318 104 S307 134 303 145 C315 160 329 175 340 189 C346 196 351 201 355 205 C358 225 351 253 350 273 C356 286 367 303 376 315 C387 306 398 294 406 285 C411 280 414 277 417 275 C433 281 451 289 468 295 C474 315 464 343 468 369 S464 424 467 452 C452 454 439 446 426 447 Q415 461 404 476 C390 470 374 456 361 452 Q358 459 360 465 C333 459 308 453 285 447 C271 437 256 423 246 414 C237 396 231 381 228 369 C218 360 208 351 199 347 C198 328 205 306 207 287 C189 279 169 267 151 258 C153 291 158 327 157 361 C146 374 132 388 120 397 C88 372 52 343 20 315 C27 295 35 275 42 258 C46 238 52 217 55 200 C48 190 41 178 36 169 Q45 157 55 147 Q50 141 45 136 C62 128 84 119 101 114 C98 102 95 92 93 83 C115 79 141 74 164 70 C172 52 180 31 186 15 Z"/>
+            <path class="province-shape" d="M186 15 C198 23 208 34 219 40 C225 44 232 47 239 48 C269 52 303 58 331 64 C329 78 322 91 318 104 C315 117 308 133 303 145 C316 162 329 176 340 189 C347 197 352 202 355 205 C359 225 352 253 350 273 C356 287 367 303 376 315 C388 306 398 294 407 285 C412 280 415 277 418 275 C435 282 452 289 468 295 C474 315 465 343 468 369 C471 393 465 426 467 452 C453 455 439 447 426 447 C418 457 411 468 404 476 C390 470 375 457 361 452 C358 457 358 462 360 465 C333 460 308 454 285 447 C271 438 257 424 246 414 C238 397 232 381 228 369 C218 360 208 351 199 347 C198 328 204 306 207 287 C188 279 169 268 151 258 C153 290 158 328 157 361 C146 374 133 388 120 397 C88 373 52 344 20 315 C27 295 35 276 42 258 C46 239 52 217 55 200 C49 190 42 179 36 169 C42 161 49 153 55 147 C52 143 48 139 45 136 C62 128 84 120 101 114 C99 103 96 92 93 83 C116 79 141 75 164 70 C172 52 180 31 186 15 Z"/>
             <path class="route route-main" d="M228 72 C224 90 212 108 207 124 C218 142 240 162 253 186 C248 204 257 224 259 241 C263 272 276 317 298 353 C302 376 313 396 309 416"/>
             <path class="route" d="M298 353 C310 352 322 356 334 359 C354 361 374 368 390 374"/>
             <path class="route" d="M390 374 C399 356 411 331 419 311"/>
@@ -110,7 +110,7 @@
             {% if location.codes|length > 1 %}
             {% set cluster_adjust = cluster_adjustments.get(location.name, [0, 0]) %}
             <g class="map-cluster" transform="translate({{ location.x }} {{ location.y }})">
-              <circle class="cluster-point" r="7.5"></circle>
+              <circle class="cluster-point" r="8"></circle>
               {% if cluster_adjust[0] or cluster_adjust[1] %}
               <path class="label-leader" d="M 5 1 Q {{ cluster_adjust[0] / 2 }} {{ cluster_adjust[1] / 2 }} {{ cluster_adjust[0] }} {{ cluster_adjust[1] }}"></path>
               {% endif %}
@@ -149,7 +149,7 @@
                transform="translate({{ location.x }} {{ location.y }})" role="button" tabindex="0"
                aria-label="Seleccionar localidad {{ location.name }}, {{ location.codes|length }} sedes">
               <circle class="site-halo" r="17"></circle>
-              <circle class="site-point" r="7"></circle>
+              <circle class="site-point" r="7.6"></circle>
               {% if label_adjust[0] or label_adjust[1] %}
               <path class="label-leader" d="M 5 1 Q {{ label_adjust[0] / 2 }} {{ label_adjust[1] / 2 }} {{ label_adjust[0] }} {{ label_adjust[1] }}"></path>
               {% endif %}
@@ -172,7 +172,7 @@
                transform="translate(244 398)" role="button" tabindex="0"
                aria-label="Seleccionar {{ sede.codigo }}, {{ sede.nombre }}">
               <circle class="site-halo" r="17"></circle>
-              <circle class="site-point" r="7"></circle>
+              <circle class="site-point" r="7.6"></circle>
               <path class="label-leader" d="M -5 -2 Q -14 -14 -28 -28"></path>
               <g class="location-label" transform="translate(-28 -28)">
                 <text class="location-name" x="-11" y="-4">Alto Comedero</text>
@@ -279,5 +279,5 @@
 <script id="sedesMapData" type="application/json">{{ sedes|tojson }}</script>
 {% endblock %}
 {% block scripts %}
-<script src="{{ url_for('static', filename='sgi/sedes_mapa_general.js', v='2026-06-29-02') }}"></script>
+<script src="{{ url_for('static', filename='sgi/sedes_mapa_general.js', v='2026-06-30-01') }}"></script>
 {% endblock %}

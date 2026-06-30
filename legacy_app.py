@@ -4067,6 +4067,10 @@ def sedes_mapa_general():
             ORDER BY COALESCE(actualizado_en, creado_en, fecha) DESC, id DESC
             LIMIT 3
         """, (codigo,)).fetchall()]
+        novedades_total = count_value("""
+            SELECT COUNT(*) FROM novedades_diarias
+            WHERE UPPER(COALESCE(NULLIF(sede_codigo, ''), tarea_sede_codigo)) = ?
+        """, (codigo,))
 
         plan_rel = f"planos/{codigo}/PB.png"
         plan_abs = os.path.join(app.root_path, "static", plan_rel.replace("/", os.sep))
@@ -4096,6 +4100,7 @@ def sedes_mapa_general():
             "luminarias": luminarias,
             "inventario": inventario,
             "novedades": novedades,
+            "novedades_total": novedades_total,
             "detalle_url": url_for("sede_ficha", codigo=codigo),
         })
 

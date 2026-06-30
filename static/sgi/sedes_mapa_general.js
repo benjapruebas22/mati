@@ -118,6 +118,15 @@
         item.textContent = [novedad.fecha, novedad.texto].filter(Boolean).join(' · ');
         elements.news.appendChild(item);
       });
+      if (Number(sede.novedades_total || 0) > 3) {
+        const historyItem = document.createElement('li');
+        historyItem.className = 'news-history';
+        const historyLink = document.createElement('a');
+        historyLink.href = sede.detalle_url;
+        historyLink.textContent = 'Ver historial →';
+        historyItem.appendChild(historyLink);
+        elements.news.appendChild(historyItem);
+      }
     } else {
       const item = document.createElement('li');
       item.className = 'empty';
