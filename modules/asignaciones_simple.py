@@ -1,6 +1,6 @@
 from datetime import date
 
-from flask import abort, flash, redirect, render_template, request, session, url_for
+from flask import abort, flash, jsonify, redirect, render_template, request, session, url_for
 
 
 def register_asignaciones_simple(app, get_db):
@@ -405,6 +405,102 @@ def register_asignaciones_simple(app, get_db):
                 (row_id,),
             ).fetchone()
         return None
+
+    def _susques_resumen(con):
+        _ensure_schema(con)
+        _seed_rotacion(con)
+        ultimo = con.execute(
+            """
+            SELECT id, fecha, ultimo_asignado AS chofer
+            FROM asignaciones_simples_rotacion_ultimo
+            WHERE LOWER(TRIM(viaje_destino)) = 'itinerancia / susques'
+            LIMIT 1
+            """
+        ).fetchone()
+        proximo = con.execute(
+            """
+            SELECT id, fecha, proximo_asignado AS chofer
+            FROM asignaciones_simples_rotacion_proximo
+            WHERE LOWER(TRIM(viaje_destino)) = 'itinerancia / susques'
+            LIMIT 1
+            """
+        ).fetchone()
+        choferes = [
+            row["chofer"]
+            for row in con.execute(
+                """
+                SELECT chofer
+                FROM asignaciones_simples_referencia
+                WHERE COALESCE(activo, 1) = 1 AND TRIM(COALESCE(chofer, '')) <> ''
+                ORDER BY COALESCE(orden, 999), id
+                """
+            ).fetchall()
+        ]
+        return {
+            "ultimo": {
+                "fecha": (ultimo["fecha"] if ultimo else "") or "",
+                "chofer": (ultimo["chofer"] if ultimo else "") or "",
+            },
+            "proximo": {
+                "fecha": (proximo["fecha"] if proximo else "") or "",
+                "chofer": (proximo["chofer"] if proximo else "") or "",
+            },
+            "choferes": choferes,
+        }
+
+    @app.route("/asignaciones-simple/susques/resumen", endpoint="asignaciones_simple_susques_resumen")
+    def asignaciones_simple_susques_resumen():
+        if not _can_access():
+            return jsonify({"ok": False, "error": "Acceso restringido a Intendencia."}), 403
+        con = get_db()
+        try:
+            return jsonify({"ok": True, **_susques_resumen(con)})
+        finally:
+            con.close()
+
+    @app.route(
+        "/asignaciones-simple/susques/guardar",
+        methods=["POST"],
+        endpoint="asignaciones_simple_susques_guardar",
+    )
+    def asignaciones_simple_susques_guardar():
+        if not _can_access():
+            return jsonify({"ok": False, "error": "Acceso restringido a Intendencia."}), 403
+        ultimo_fecha = _clean_text(request.form.get("ultimo_fecha"))
+        ultimo_chofer = _clean_text(request.form.get("ultimo_chofer"))
+        proximo_fecha = _clean_text(request.form.get("proximo_fecha"))
+        proximo_chofer = _clean_text(request.form.get("proximo_chofer"))
+        for value in (ultimo_fecha, proximo_fecha):
+            if value:
+                try:
+                    date.fromisoformat(value)
+                except ValueError:
+                    return jsonify({"ok": False, "error": "La fecha ingresada no es válida."}), 400
+
+        con = get_db()
+        try:
+            _ensure_schema(con)
+            _seed_rotacion(con)
+            con.execute(
+                """
+                UPDATE asignaciones_simples_rotacion_ultimo
+                SET fecha=?, ultimo_asignado=?, estado='Realizado'
+                WHERE LOWER(TRIM(viaje_destino)) = 'itinerancia / susques'
+                """,
+                (ultimo_fecha, ultimo_chofer),
+            )
+            con.execute(
+                """
+                UPDATE asignaciones_simples_rotacion_proximo
+                SET fecha=?, proximo_asignado=?, estado='Programado'
+                WHERE LOWER(TRIM(viaje_destino)) = 'itinerancia / susques'
+                """,
+                (proximo_fecha, proximo_chofer),
+            )
+            con.commit()
+            return jsonify({"ok": True, **_susques_resumen(con)})
+        finally:
+            con.close()
 
     @app.route("/asignaciones-simple", endpoint="asignaciones_simple_home")
     def asignaciones_simple_home():

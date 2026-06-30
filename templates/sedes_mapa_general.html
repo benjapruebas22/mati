@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block main_class %}container-wide sedes-map-main{% endblock %}
 {% block head_extra %}
-<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sedes_mapa_general.css', v='2026-06-30-02') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sedes_mapa_general.css', v='2026-06-30-03') }}">
 {% endblock %}
 {% block content %}
 <div class="mpd-map-app" data-selected-code="{{ selected_code }}">
@@ -103,10 +103,16 @@
             </g>
             <g class="north-mark" aria-hidden="true"><text x="26" y="34">N</text><path d="M26 42 L18 64 L26 58 L34 64 Z"/></g>
 
-            <g class="reference-locality" aria-hidden="true">
+            <g class="reference-locality susques-itinerancia" id="susquesItinerancia"
+               role="button" tabindex="0" aria-label="Consultar itinerancia de Susques"
+               data-summary-url="{{ url_for('asignaciones_simple_susques_resumen') }}"
+               data-save-url="{{ url_for('asignaciones_simple_susques_guardar') }}">
+              <title id="susquesHoverTitle">Susques · Sin itinerancias registradas</title>
               <circle cx="112" cy="258" r="4"></circle>
               <text x="92" y="244">Susques</text>
               <text class="muted" x="91" y="256">Itinerancias</text>
+            </g>
+            <g class="reference-locality" aria-hidden="true">
               <circle cx="252" cy="286" r="4"></circle>
               <text x="220" y="302">Purmamarca</text>
             </g>
@@ -290,10 +296,35 @@
       </section>
     </footer>
   </main>
+
+  <dialog class="susques-dialog" id="susquesDialog" aria-labelledby="susquesDialogTitle">
+    <div class="susques-dialog-head">
+      <div><span>Itinerancia</span><h2 id="susquesDialogTitle">Susques</h2></div>
+      <button type="button" id="susquesDialogClose" aria-label="Cerrar">×</button>
+    </div>
+    <p class="susques-dialog-help">Actualizá la última salida y programá la próxima rotación.</p>
+    <form id="susquesForm">
+      <fieldset>
+        <legend>Última itinerancia</legend>
+        <label><span>Fecha</span><input type="date" name="ultimo_fecha" id="susquesUltimoFecha"></label>
+        <label><span>Chofer</span><select name="ultimo_chofer" id="susquesUltimoChofer"><option value="">Sin asignar</option></select></label>
+      </fieldset>
+      <fieldset>
+        <legend>Próxima itinerancia</legend>
+        <label><span>Fecha prevista</span><input type="date" name="proximo_fecha" id="susquesProximoFecha"></label>
+        <label><span>Chofer</span><select name="proximo_chofer" id="susquesProximoChofer"><option value="">Sin asignar</option></select></label>
+      </fieldset>
+      <p class="susques-form-status" id="susquesFormStatus" role="status"></p>
+      <div class="susques-dialog-actions">
+        <a href="{{ url_for('asignaciones_simple_home') }}">Ver rotación completa</a>
+        <button type="submit">Guardar</button>
+      </div>
+    </form>
+  </dialog>
 </div>
 
 <script id="sedesMapData" type="application/json">{{ sedes|tojson }}</script>
 {% endblock %}
 {% block scripts %}
-<script src="{{ url_for('static', filename='sgi/sedes_mapa_general.js', v='2026-06-30-01') }}"></script>
+<script src="{{ url_for('static', filename='sgi/sedes_mapa_general.js', v='2026-06-30-02') }}"></script>
 {% endblock %}

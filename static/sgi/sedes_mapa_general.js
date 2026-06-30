@@ -10,6 +10,17 @@
   const locationPicker = document.getElementById('mapLocationPicker');
   const locationPickerTitle = document.getElementById('mapLocationPickerTitle');
   const locationPickerOptions = document.getElementById('mapLocationPickerOptions');
+  const susquesNode = document.getElementById('susquesItinerancia');
+  const susquesTitle = document.getElementById('susquesHoverTitle');
+  const susquesDialog = document.getElementById('susquesDialog');
+  const susquesDialogClose = document.getElementById('susquesDialogClose');
+  const susquesForm = document.getElementById('susquesForm');
+  const susquesStatus = document.getElementById('susquesFormStatus');
+  const susquesUltimoFecha = document.getElementById('susquesUltimoFecha');
+  const susquesUltimoChofer = document.getElementById('susquesUltimoChofer');
+  const susquesProximoFecha = document.getElementById('susquesProximoFecha');
+  const susquesProximoChofer = document.getElementById('susquesProximoChofer');
+  let susquesLoaded = false;
 
   const elements = {
     code: document.getElementById('panelCode'),
@@ -172,6 +183,109 @@
       locationPickerOptions.appendChild(button);
     });
     locationPicker.hidden = false;
+  }
+
+  function formatDate(value) {
+    const parts = String(value || '').split('-');
+    return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : '-';
+  }
+
+  function fillDriverSelect(select, drivers, selectedValue) {
+    if (!select) return;
+    select.replaceChildren();
+    const empty = document.createElement('option');
+    empty.value = '';
+    empty.textContent = 'Sin asignar';
+    select.appendChild(empty);
+    const values = [...drivers];
+    if (selectedValue && !values.includes(selectedValue)) values.push(selectedValue);
+    values.forEach((driver) => {
+      const option = document.createElement('option');
+      option.value = driver;
+      option.textContent = driver;
+      option.selected = driver === selectedValue;
+      select.appendChild(option);
+    });
+  }
+
+  function renderSusques(data) {
+    const last = data.ultimo || {};
+    const next = data.proximo || {};
+    const drivers = data.choferes || [];
+    if (susquesTitle) {
+      susquesTitle.textContent = last.fecha || last.chofer
+        ? `Susques · Última itinerancia: ${formatDate(last.fecha)} · Chofer: ${last.chofer || 'Sin asignar'}`
+        : 'Susques · Sin itinerancias registradas';
+    }
+    if (susquesUltimoFecha) susquesUltimoFecha.value = last.fecha || '';
+    if (susquesProximoFecha) susquesProximoFecha.value = next.fecha || '';
+    fillDriverSelect(susquesUltimoChofer, drivers, last.chofer || '');
+    fillDriverSelect(susquesProximoChofer, drivers, next.chofer || '');
+    susquesLoaded = true;
+  }
+
+  async function loadSusques(openDialog) {
+    if (!susquesNode) return;
+    if (openDialog && susquesDialog && !susquesDialog.open) susquesDialog.showModal();
+    if (susquesLoaded) return;
+    if (susquesStatus) susquesStatus.textContent = 'Cargando información...';
+    try {
+      const response = await fetch(susquesNode.dataset.summaryUrl, { credentials: 'same-origin' });
+      const data = await response.json();
+      if (!response.ok || !data.ok) throw new Error(data.error || 'No se pudo consultar la itinerancia.');
+      renderSusques(data);
+      if (susquesStatus) susquesStatus.textContent = '';
+    } catch (error) {
+      if (susquesStatus) {
+        susquesStatus.textContent = error.message;
+        susquesStatus.className = 'susques-form-status is-error';
+      }
+    }
+  }
+
+  if (susquesNode) {
+    susquesNode.addEventListener('mouseenter', () => loadSusques(false));
+    susquesNode.addEventListener('click', () => loadSusques(true));
+    susquesNode.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        loadSusques(true);
+      }
+    });
+    loadSusques(false);
+  }
+
+  if (susquesDialogClose) susquesDialogClose.addEventListener('click', () => susquesDialog.close());
+  if (susquesDialog) {
+    susquesDialog.addEventListener('click', (event) => {
+      if (event.target === susquesDialog) susquesDialog.close();
+    });
+  }
+  if (susquesForm) {
+    susquesForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const submit = susquesForm.querySelector('button[type="submit"]');
+      if (submit) submit.disabled = true;
+      susquesStatus.className = 'susques-form-status';
+      susquesStatus.textContent = 'Guardando...';
+      try {
+        const response = await fetch(susquesNode.dataset.saveUrl, {
+          method: 'POST',
+          body: new FormData(susquesForm),
+          credentials: 'same-origin'
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) throw new Error(data.error || 'No se pudo guardar.');
+        renderSusques(data);
+        susquesStatus.className = 'susques-form-status is-success';
+        susquesStatus.textContent = 'Itinerancia actualizada.';
+      } catch (error) {
+        susquesStatus.className = 'susques-form-status is-error';
+        susquesStatus.textContent = error.message;
+      } finally {
+        if (submit) submit.disabled = false;
+      }
+    });
   }
 
   document.querySelectorAll('.map-location').forEach((node) => {
