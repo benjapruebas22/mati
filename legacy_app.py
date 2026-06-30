@@ -4018,6 +4018,19 @@ def sedes_mapa_general():
         except Exception:
             return 0
 
+    aires_estado = "LOWER(TRIM(COALESCE(aires_mpd.estado,'')))"
+    aires_observaciones = "LOWER(TRIM(COALESCE(aires_mpd.observaciones,'')))"
+    aires_validos = (
+        f"({aires_estado} NOT IN ('no va a ir','no va ir','sin aire','n/a','no aplica') "
+        f"AND {aires_observaciones} NOT LIKE '%central%' "
+        "AND ((NULLIF(TRIM(aires_mpd.marca),'') IS NOT NULL "
+        "AND UPPER(TRIM(aires_mpd.marca)) NOT IN ('-','PENDIENTE')) "
+        "OR NULLIF(TRIM(aires_mpd.estado),'') IS NOT NULL "
+        "OR aires_mpd.fecha_ultima_limpieza IS NOT NULL "
+        "OR aires_mpd.fecha_ultimo_service IS NOT NULL "
+        "OR aires_mpd.observaciones IS NOT NULL))"
+    )
+
     use_legacy_matafuegos = count_value("SELECT COUNT(*) FROM matafuegos") == 0
     sedes = []
     for row in sede_rows:
@@ -4033,7 +4046,10 @@ def sedes_mapa_general():
             SELECT COUNT(*) FROM personal_sede
             WHERE UPPER(codigo_sede) = ? AND COALESCE(activo, 1) = 1
         """, (codigo,))
-        aires = count_value("SELECT COUNT(*) FROM aires_mpd WHERE UPPER(sede_codigo) = ?", (codigo,))
+        aires = count_value(
+            f"SELECT COUNT(*) FROM aires_mpd WHERE UPPER(sede_codigo) = ? AND {aires_validos}",
+            (codigo,),
+        )
         if use_legacy_matafuegos:
             matafuegos = count_value("""
                 SELECT COUNT(*) FROM matafuegos_sede_legacy
