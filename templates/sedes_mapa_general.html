@@ -110,7 +110,7 @@
             {% if location.codes|length > 1 %}
             {% set cluster_adjust = cluster_adjustments.get(location.name, [0, 0]) %}
             <g class="map-cluster" transform="translate({{ location.x }} {{ location.y }})">
-              <circle class="cluster-point" r="8"></circle>
+              <circle class="cluster-point" r="6.7"></circle>
               {% if cluster_adjust[0] or cluster_adjust[1] %}
               <path class="label-leader" d="M 5 1 Q {{ cluster_adjust[0] / 2 }} {{ cluster_adjust[1] / 2 }} {{ cluster_adjust[0] }} {{ cluster_adjust[1] }}"></path>
               {% endif %}
@@ -149,7 +149,7 @@
                transform="translate({{ location.x }} {{ location.y }})" role="button" tabindex="0"
                aria-label="Seleccionar localidad {{ location.name }}, {{ location.codes|length }} sedes">
               <circle class="site-halo" r="17"></circle>
-              <circle class="site-point" r="7.6"></circle>
+              <circle class="site-point" r="6.4"></circle>
               {% if label_adjust[0] or label_adjust[1] %}
               <path class="label-leader" d="M 5 1 Q {{ label_adjust[0] / 2 }} {{ label_adjust[1] / 2 }} {{ label_adjust[0] }} {{ label_adjust[1] }}"></path>
               {% endif %}
@@ -172,7 +172,7 @@
                transform="translate(244 398)" role="button" tabindex="0"
                aria-label="Seleccionar {{ sede.codigo }}, {{ sede.nombre }}">
               <circle class="site-halo" r="17"></circle>
-              <circle class="site-point" r="7.6"></circle>
+              <circle class="site-point" r="6.4"></circle>
               <path class="label-leader" d="M -5 -2 Q -14 -14 -28 -28"></path>
               <g class="location-label" transform="translate(-28 -28)">
                 <text class="location-name" x="-11" y="-4">Alto Comedero</text>
