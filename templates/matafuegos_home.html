@@ -25,6 +25,7 @@
     <input name="sede" value="{{ sede }}" placeholder="Sede (S01)"
       style="padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
     <select name="piso" style="padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
+      <option value="" {% if not piso %}selected{% endif %}>Todos los pisos</option>
       {% for p in ['PB','P1','P2','P3','P4'] %}
       <option value="{{ p }}" {% if piso==p %}selected{% endif %}>{{ p }}</option>
       {% endfor %}
@@ -73,7 +74,7 @@
       <div>
         <div style="font-size:12px;color:#64748b;margin-bottom:4px">Piso</div>
         <select name="piso" style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
-          {% set piso_sel = edit_row.piso if edit_row else piso %}
+          {% set piso_sel = edit_row.piso if edit_row else 'PB' %}
           <option value="PB" {% if piso_sel == 'PB' %}selected{% endif %}>PB</option>
           <option value="P1" {% if piso_sel == 'P1' %}selected{% endif %}>P1</option>
           <option value="P2" {% if piso_sel == 'P2' %}selected{% endif %}>P2</option>
@@ -176,6 +177,7 @@
       <thead style="background:#f3f4f6">
         <tr>
           <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Sede</th>
+          <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Piso</th>
           <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Local</th>
           <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Tipo</th>
           <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb">Kg</th>
@@ -192,6 +194,7 @@
         {% for r in rows %}
         <tr {% if r.fecha_vencimiento and (r.fecha_vencimiento|string) <= (fecha_45d|string) %}style="background:#fff1f2"{% endif %}>
           <td style="padding:8px;border-bottom:1px solid #e5e7eb;font-weight:700">{{ r.sede }}</td>
+          <td style="padding:8px;border-bottom:1px solid #e5e7eb">{{ r.piso or 'PB' }}</td>
           <td style="padding:8px;border-bottom:1px solid #e5e7eb">{{ r.local or '' }}</td>
           <td style="padding:8px;border-bottom:1px solid #e5e7eb">{{ r.tipo or '' }}</td>
           <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center">{{ r.capacidad_kg or '' }}</td>
@@ -208,7 +211,7 @@
         {% endfor %}
         {% if not rows or rows|length == 0 %}
         <tr>
-          <td colspan="11" style="padding:10px;color:#64748b">Sin registros para el filtro.</td>
+          <td colspan="12" style="padding:10px;color:#64748b">Sin registros para el filtro.</td>
         </tr>
         {% endif %}
       </tbody>
@@ -222,6 +225,7 @@
       <thead style="background:#f9fafb">
         <tr>
           <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Sede</th>
+          <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Piso</th>
           <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Local</th>
           <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Serie</th>
           <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Extintor</th>
@@ -234,6 +238,7 @@
         {% for r in inactive_rows %}
         <tr>
           <td style="padding:8px;border-bottom:1px solid #e5e7eb">{{ r.sede }}</td>
+          <td style="padding:8px;border-bottom:1px solid #e5e7eb">{{ r.piso or 'PB' }}</td>
           <td style="padding:8px;border-bottom:1px solid #e5e7eb">{{ r.local or '' }}</td>
           <td style="padding:8px;border-bottom:1px solid #e5e7eb">{{ r.numero_serie or '' }}</td>
           <td style="padding:8px;border-bottom:1px solid #e5e7eb">{{ r.nro_extintor or '' }}</td>

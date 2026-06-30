@@ -11550,7 +11550,7 @@ def _matafuegos_home_impl():
     db = get_db()
 
     sede = (request.args.get("sede") or "").upper().strip()
-    piso = (request.args.get("piso") or "PB").upper().strip()
+    piso = (request.args.get("piso") or "").upper().strip()
     q = (request.args.get("q") or "").strip()
     vencimiento = (request.args.get("vencimiento") or "todos").strip().lower()
     edit = request.args.get("edit")
