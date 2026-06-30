@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block main_class %}container-wide sedes-map-main{% endblock %}
 {% block head_extra %}
-<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sedes_mapa_general.css', v='2026-06-30-01') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='sgi/sedes_mapa_general.css', v='2026-06-30-02') }}">
 {% endblock %}
 {% block content %}
 <div class="mpd-map-app" data-selected-code="{{ selected_code }}">
@@ -78,9 +78,21 @@
             <desc id="map-desc">Esquema territorial con las sedes disponibles como puntos seleccionables.</desc>
             <path class="province-shape" d="M186 15 C198 23 208 34 219 40 C225 44 232 47 239 48 C269 52 303 58 331 64 C329 78 322 91 318 104 C315 117 308 133 303 145 C316 162 329 176 340 189 C347 197 352 202 355 205 C359 225 352 253 350 273 C356 287 367 303 376 315 C388 306 398 294 407 285 C412 280 415 277 418 275 C435 282 452 289 468 295 C474 315 465 343 468 369 C471 393 465 426 467 452 C453 455 439 447 426 447 C418 457 411 468 404 476 C390 470 375 457 361 452 C358 457 358 462 360 465 C333 460 308 454 285 447 C271 438 257 424 246 414 C238 397 232 381 228 369 C218 360 208 351 199 347 C198 328 204 306 207 287 C188 279 169 268 151 258 C153 290 158 328 157 361 C146 374 133 388 120 397 C88 373 52 344 20 315 C27 295 35 276 42 258 C46 239 52 217 55 200 C49 190 42 179 36 169 C42 161 49 153 55 147 C52 143 48 139 45 136 C62 128 84 120 101 114 C99 103 96 92 93 83 C116 79 141 75 164 70 C172 52 180 31 186 15 Z"/>
             <path class="route route-main" d="M228 72 C224 90 212 108 207 124 C218 142 240 162 253 186 C248 204 257 224 259 241 C263 272 276 317 298 353 C302 376 313 396 309 416"/>
+            <path class="route-hover-zone" d="M228 72 C224 90 212 108 207 124"
+                  fill="none" stroke="transparent" stroke-width="14" pointer-events="stroke" style="cursor:help">
+              <title>La Quiaca ↔ Abra Pampa · 72 km aprox.</title>
+            </path>
+            <path class="route-hover-zone" d="M207 124 C218 142 240 162 253 186"
+                  fill="none" stroke="transparent" stroke-width="14" pointer-events="stroke" style="cursor:help">
+              <title>Abra Pampa ↔ Humahuaca · 85 km aprox.</title>
+            </path>
+            <path class="route-hover-zone" d="M253 186 C248 204 257 224 259 241"
+                  fill="none" stroke="transparent" stroke-width="14" pointer-events="stroke" style="cursor:help">
+              <title>Humahuaca ↔ Tilcara · 45 km aprox.</title>
+            </path>
             <path class="route-hover-zone" d="M259 241 C263 272 276 317 298 353"
-                  tabindex="0" aria-label="Tramo Tilcara a San Salvador, 94,6 kilometros aproximados">
-              <title>Tilcara ↔ San Salvador · 94,6 km aprox.</title>
+                  fill="none" stroke="transparent" stroke-width="14" pointer-events="stroke" style="cursor:help">
+              <title>Tilcara ↔ San Salvador · 95 km aprox.</title>
             </path>
             <path class="route" d="M298 353 C310 352 322 356 334 359 C354 361 374 368 390 374"/>
             <path class="route" d="M390 374 C399 356 411 331 419 311"/>
