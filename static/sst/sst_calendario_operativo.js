@@ -31,10 +31,12 @@
         grouped[key] = {
           typeLabel: event.type_label || 'Otro control SG-SST',
           typeShort: event.type_short || 'OT',
-          items: []
+          items: [],
+          totalUnits: 0
         };
       }
       grouped[key].items.push(event);
+      grouped[key].totalUnits += Number(event.units || 1);
     });
     return Object.values(grouped).sort((a, b) => a.typeLabel.localeCompare(b.typeLabel, 'es'));
   }
@@ -68,7 +70,7 @@
     } else {
       dialogBody.innerHTML = grouped.map((group) => [
         '<section class="sst-calendar-event-group">',
-        `<div class="sst-calendar-event-group-head"><span class="sst-cal-indicator">${escapeHtml(group.typeShort || 'OT')}</span><h3>${escapeHtml(group.typeLabel || '')}</h3><small>${group.items.length} evento${group.items.length === 1 ? '' : 's'}</small></div>`,
+        `<div class="sst-calendar-event-group-head"><span class="sst-cal-indicator">${escapeHtml(group.typeShort || 'OT')}</span><h3>${escapeHtml(group.typeLabel || '')}</h3><small>${group.totalUnits} registro${group.totalUnits === 1 ? '' : 's'}</small></div>`,
         '<div class="sst-calendar-event-group-list">',
         group.items.map(renderEventItem).join(''),
         '</div>',

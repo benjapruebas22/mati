@@ -6448,7 +6448,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         ]
         source_counts = []
         for type_item in type_options:
-            count_value = sum(1 for event in filtered_events if event["type_key"] == type_item["value"])
+            count_value = sum(int(event.get("units", 1) or 1) for event in filtered_events if event["type_key"] == type_item["value"])
             if count_value <= 0:
                 continue
             source_counts.append({
@@ -8263,6 +8263,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         url_detail="",
         action_label="",
         active=True,
+        units=1,
     ):
         state_meta = _sst_calendar_state_meta(state_key)
         type_meta = _sst_calendar_type_meta(type_key)
@@ -8289,6 +8290,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             "url_detail": url_detail,
             "action_label": action_label or type_meta["action"],
             "active": bool(active),
+            "units": max(1, int(units or 1)),
         }
 
     def _sst_calendar_collect_events(con, selected_year):
@@ -8351,8 +8353,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             serie_expr = "COALESCE(numero_serie, '')" if "numero_serie" in mata_cols else "''"
             ubic_expr = "COALESCE(ubicacion, '')" if "ubicacion" in mata_cols else "''"
             venc_expr = "COALESCE(fecha_vencimiento, '')" if "fecha_vencimiento" in mata_cols else "''"
-            hydro_expr = "COALESCE(fecha_prueba_hidro, '')" if "fecha_prueba_hidro" in mata_cols else "''"
             nro_ext_expr = "COALESCE(nro_extintor, '')" if "nro_extintor" in mata_cols else "''"
+            lote_expr = "COALESCE(lote_vencimiento, '')" if "lote_vencimiento" in mata_cols else "''"
             raw_rows = con.execute(f"""
                 SELECT
                     id,
@@ -8361,8 +8363,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     {serie_expr} AS numero_serie,
                     {ubic_expr} AS ubicacion,
                     {venc_expr} AS fecha_vencimiento,
-                    {hydro_expr} AS fecha_prueba_hidro,
                     {nro_ext_expr} AS nro_extintor,
+                    {lote_expr} AS lote_vencimiento,
                     {activo_expr} AS activo
                 FROM matafuegos
                 WHERE {activo_expr} = 1
@@ -8372,41 +8374,50 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
                 if not sede_codigo:
                     continue
-                for field_name, group_kind in (("fecha_vencimiento", "vto"), ("fecha_prueba_hidro", "hydro")):
-                    event_date = _sst_calendar_parse_date(_row_value(row, field_name, ""))
-                    if not event_date or event_date.year != selected_year:
-                        continue
-                    event_years.add(event_date.year)
-                    group_key = (sede_codigo, event_date.isoformat(), group_kind)
-                    if group_key not in grouped_mata:
-                        grouped_mata[group_key] = []
-                    grouped_mata[group_key].append(row)
-            for (sede_codigo, event_iso, group_kind), rows_group in grouped_mata.items():
-                event_date = _sst_calendar_parse_date(event_iso)
+                event_date = _sst_calendar_parse_date(_row_value(row, "fecha_vencimiento", ""))
+                if not event_date or event_date.year != selected_year:
+                    continue
+                event_years.add(event_date.year)
+                group_key = (sede_codigo, event_date.year, event_date.month)
+                if group_key not in grouped_mata:
+                    grouped_mata[group_key] = []
+                grouped_mata[group_key].append(row)
+            for (sede_codigo, event_year, event_month), rows_group in grouped_mata.items():
+                fechas_grupo = []
+                for item in rows_group:
+                    event_date = _sst_calendar_parse_date(_row_value(item, "fecha_vencimiento", ""))
+                    if event_date:
+                        fechas_grupo.append(event_date)
+                if not fechas_grupo:
+                    continue
+                event_date = min(fechas_grupo)
                 sede_info = sedes_map.get(sede_codigo, {})
-                estado = _sst_calendar_due_state(event_date, today_ref, 45)
-                count_items = len(rows_group)
-                if group_kind == "hydro":
-                    title = "Prueba hidraulica pendiente"
-                    if count_items > 1:
-                        title = f"Prueba hidraulica de {count_items} matafuegos"
-                    else:
-                        title = "Prueba hidraulica de 1 matafuego"
+                if any(f < today_ref for f in fechas_grupo):
+                    estado = "vencido"
+                elif any(f <= (today_ref + timedelta(days=45)) for f in fechas_grupo):
+                    estado = "proximo"
                 else:
-                    title = "Vence 1 matafuego" if count_items == 1 else f"Vencen {count_items} matafuegos"
-                refs = []
-                for item in rows_group[:3]:
-                    serial = (_row_value(item, "numero_serie", "") or "").strip()
-                    ext = (_row_value(item, "nro_extintor", "") or "").strip()
-                    ubic = (_row_value(item, "ubicacion", "") or "").strip()
-                    ref = serial or ext or ubic or f"ID {_row_value(item, 'id', '')}"
-                    if ref:
-                        refs.append(ref)
-                detail = ", ".join(refs)
-                if count_items > 3:
-                    detail = (detail + f" y {count_items - 3} mas").strip()
-                if not detail:
-                    detail = "Inventario activo por sede."
+                    estado = "programado"
+                count_items = len(rows_group)
+                title = "Vence 1 matafuego" if count_items == 1 else f"Vencen {count_items} matafuegos"
+                fechas_count = defaultdict(int)
+                lotes = []
+                for item in rows_group:
+                    fecha_item = _sst_calendar_parse_date(_row_value(item, "fecha_vencimiento", ""))
+                    if fecha_item:
+                        fechas_count[fecha_item] += 1
+                    lote = (_row_value(item, "lote_vencimiento", "") or "").strip()
+                    if lote and lote.lower() != "otro" and lote not in lotes:
+                        lotes.append(lote)
+                fechas_txt = []
+                for fecha_item in sorted(fechas_count.keys()):
+                    fechas_txt.append(f"{fecha_item.strftime('%d/%m')} ({fechas_count[fecha_item]})")
+                detail_parts = []
+                if lotes:
+                    detail_parts.append("Lote: " + ", ".join(lotes[:3]))
+                if fechas_txt:
+                    detail_parts.append("Fechas: " + " · ".join(fechas_txt[:4]))
+                detail = " | ".join(detail_parts) if detail_parts else "Vencimiento agrupado por sede y mes."
                 events.append(_sst_calendar_build_event(
                     source_id=",".join(str(_row_value(item, "id", "")) for item in rows_group),
                     source_type="matafuegos",
@@ -8426,6 +8437,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     ),
                     action_label="Ver matafuegos",
                     active=(estado != "cumplido"),
+                    units=count_items,
                 ))
 
         if _table_exists(con, "sst_visitas"):
@@ -8793,8 +8805,10 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                         "state_key": event["state_key"],
                         "state_class": event["state_class"],
                         "count": 0,
+                        "events_count": 0,
                     })
-                    group["count"] += 1
+                    group["count"] += int(event.get("units", 1) or 1)
+                    group["events_count"] += 1
                     if int(event["state_rank"]) > int(group["state_rank"]):
                         group["state_rank"] = int(event["state_rank"])
                         group["state_key"] = event["state_key"]
