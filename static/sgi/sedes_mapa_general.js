@@ -20,7 +20,15 @@
   const susquesUltimoChofer = document.getElementById('susquesUltimoChofer');
   const susquesProximoFecha = document.getElementById('susquesProximoFecha');
   const susquesProximoChofer = document.getElementById('susquesProximoChofer');
+  const guardiaNode = document.getElementById('guardiaMensualReference');
+  const guardiaTitle = document.getElementById('guardiaMensualTitle');
+  const guardiaDialog = document.getElementById('guardiaDialog');
+  const guardiaDialogClose = document.getElementById('guardiaDialogClose');
   let susquesLoaded = false;
+  const guardiaActual = {
+    periodo: 'Julio 2026',
+    responsable: 'Mat\u00edas Calderari'
+  };
 
   const elements = {
     code: document.getElementById('panelCode'),
@@ -255,10 +263,39 @@
     loadSusques(false);
   }
 
+  function openGuardiaDialog() {
+    if (guardiaDialog && !guardiaDialog.open) guardiaDialog.showModal();
+  }
+
+  if (guardiaTitle) {
+    guardiaTitle.textContent = [
+      'Guardia mensual',
+      guardiaActual.periodo,
+      guardiaActual.responsable,
+      'Click para ver turnero'
+    ].join('\n');
+  }
+
+  if (guardiaNode) {
+    guardiaNode.addEventListener('click', openGuardiaDialog);
+    guardiaNode.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        openGuardiaDialog();
+      }
+    });
+  }
+
   if (susquesDialogClose) susquesDialogClose.addEventListener('click', () => susquesDialog.close());
   if (susquesDialog) {
     susquesDialog.addEventListener('click', (event) => {
       if (event.target === susquesDialog) susquesDialog.close();
+    });
+  }
+  if (guardiaDialogClose) guardiaDialogClose.addEventListener('click', () => guardiaDialog.close());
+  if (guardiaDialog) {
+    guardiaDialog.addEventListener('click', (event) => {
+      if (event.target === guardiaDialog) guardiaDialog.close();
     });
   }
   if (susquesForm) {
