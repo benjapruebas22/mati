@@ -177,7 +177,7 @@
 
 .sst-calendar-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.9fr) minmax(280px, .8fr);
+  grid-template-columns: 1fr;
   gap: 12px;
   align-items: start;
 }
@@ -206,43 +206,47 @@
 .sst-calendar-legend-item.is-en_seguimiento { background: #f5efff; color: #6a40c2; }
 .sst-calendar-legend-item.is-sin_datos { background: #eef1f5; color: #667085; }
 
-.sst-calendar-table-wrap { overflow: auto; }
+.sst-calendar-table-wrap { overflow: visible; }
 .sst-calendar-matrix {
   width: 100%;
-  min-width: 980px;
+  table-layout: fixed;
   border-collapse: separate;
   border-spacing: 0;
+}
+.sst-calendar-matrix thead th:first-child,
+.sst-calendar-matrix tbody th {
+  width: 128px;
 }
 .sst-calendar-matrix thead th {
   position: sticky;
   top: 0;
   z-index: 1;
-  padding: 10px 8px;
+  padding: 9px 6px;
   border-bottom: 1px solid #edf0f4;
   background: #fbfcfe;
   color: #465166;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
   text-transform: uppercase;
 }
 .sst-calendar-matrix tbody th,
 .sst-calendar-matrix tbody td {
-  padding: 8px;
+  padding: 7px 4px;
   border-bottom: 1px solid #edf0f4;
   vertical-align: middle;
 }
-.sst-calendar-matrix tbody td { min-width: 72px; text-align: center; }
-.sst-calendar-sede-code { color: #111827; font-size: 12px; font-weight: 900; }
-.sst-calendar-sede-name { margin-top: 2px; color: var(--sst-muted); font-size: 11px; font-weight: 600; }
+.sst-calendar-matrix tbody td { text-align: center; }
+.sst-calendar-sede-code { color: #111827; font-size: 11px; font-weight: 900; }
+.sst-calendar-sede-name { margin-top: 2px; color: var(--sst-muted); font-size: 10px; font-weight: 600; line-height: 1.25; }
 .sst-cal-cell-btn {
   display: inline-flex;
-  min-width: 58px;
-  min-height: 42px;
+  width: 100%;
+  min-height: 38px;
   align-items: center;
   justify-content: center;
-  padding: 4px 6px;
+  padding: 3px 4px;
   border: 1px solid #edf0f4;
-  border-radius: 10px;
+  border-radius: 9px;
   background: #fff;
   cursor: pointer;
 }
@@ -251,7 +255,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 3px;
   flex-wrap: wrap;
 }
 .sst-cal-indicator {
@@ -259,22 +263,22 @@
   align-items: center;
   justify-content: center;
   gap: 3px;
-  min-height: 20px;
-  padding: 0 6px;
+  min-height: 18px;
+  padding: 0 5px;
   border-radius: 999px;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 800;
   line-height: 1;
   white-space: nowrap;
 }
-.sst-cal-indicator b { font-size: 10px; line-height: 1; }
+.sst-cal-indicator b { font-size: 9px; line-height: 1; }
 .sst-cal-indicator.is-ok { background: #eaf8f0; color: #157347; }
 .sst-cal-indicator.is-info { background: #eef4ff; color: #2556a8; }
 .sst-cal-indicator.is-warn { background: #fff6df; color: #9a6400; }
 .sst-cal-indicator.is-danger { background: #fff0f0; color: #b42318; }
 .sst-cal-indicator.is-follow { background: #f5efff; color: #6a40c2; }
 .sst-cal-indicator.is-muted { background: #eef1f5; color: #667085; }
-.sst-cal-extra { color: var(--sst-muted); font-size: 10px; font-weight: 800; }
+.sst-cal-extra { color: var(--sst-muted); font-size: 9px; font-weight: 800; }
 .sst-cal-empty {
   display: inline-block;
   width: 8px;
@@ -452,4 +456,41 @@
   .sst-calendar-mobile-card { display: block; }
   .sst-calendar-dialog-head,
   .sst-calendar-event-foot { align-items: flex-start; flex-direction: column; }
+}
+
+@media (min-width: 1450px) {
+  .sst-calendar-layout {
+    grid-template-columns: minmax(0, 1.8fr) minmax(280px, .75fr);
+  }
+
+  .sst-calendar-matrix thead th:first-child,
+  .sst-calendar-matrix tbody th {
+    width: 136px;
+  }
+
+  .sst-calendar-matrix thead th {
+    font-size: 11px;
+    padding: 10px 8px;
+  }
+
+  .sst-calendar-matrix tbody th,
+  .sst-calendar-matrix tbody td {
+    padding: 8px 6px;
+  }
+
+  .sst-cal-cell-btn {
+    min-height: 40px;
+    padding: 4px 5px;
+  }
+
+  .sst-cal-indicator {
+    min-height: 20px;
+    padding: 0 6px;
+    font-size: 10px;
+  }
+
+  .sst-cal-indicator b,
+  .sst-cal-extra {
+    font-size: 10px;
+  }
 }
