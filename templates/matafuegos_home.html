@@ -17,7 +17,7 @@
     <a class="{% if vencimiento == 'proximos' %}is-active{% endif %}" href="{{ url_for('matafuegos_home', sede=sede, piso=piso, q=q, vencimiento='proximos') }}">Próximos vencimientos</a>
     <a class="{% if vencimiento == 'vencidos' %}is-active{% endif %}" href="{{ url_for('matafuegos_home', sede=sede, piso=piso, q=q, vencimiento='vencidos') }}">Vencidos</a>
     <a href="{{ url_for('sst_visitas', vista='sedes') }}">Estado por sede</a>
-    <a href="{{ url_for('calendario', fuente='sst') }}">Calendario</a>
+    <a href="{{ url_for('sst_calendario_operativo') }}">Calendario operativo</a>
   </div>
 
   <form method="get" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">

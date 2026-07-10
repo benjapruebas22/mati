@@ -18,6 +18,7 @@
     <div class="sst-op-actions">
       <a class="sst-op-btn primary" href="{{ url_for('sst_visita_cargar') }}">Registrar visita</a>
       <a class="sst-op-btn" href="{{ url_for('sst_doc_subir') }}">Cargar documento ART</a>
+      <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo') }}">Calendario operativo</a>
     </div>
   </header>
 
@@ -67,7 +68,7 @@
         <div class="meta-row"><span class="meta-k">Documentación ART</span><span>{% if sede.docs_ok and not sede.docs_pend %}Completa{% else %}Requiere atención{% endif %}</span></div>
         <div class="meta-row"><span class="meta-k">Hallazgos</span><span>{{ sede.pend_hallazgos or 0 }} pendientes</span></div>
       </div>
-      <div class="sede-actions"><a class="sst-op-btn" href="{{ url_for('sst_sede_ficha', codigo=sede.codigo) }}">Ver estado</a><a class="sst-op-btn" href="{{ url_for('sst_visita_cargar', sede=sede.codigo) }}">Registrar visita</a></div>
+      <div class="sede-actions"><a class="sst-op-btn" href="{{ url_for('sst_sede_ficha', codigo=sede.codigo) }}">Ver estado</a><a class="sst-op-btn" href="{{ url_for('sst_visita_cargar', sede=sede.codigo) }}">Registrar visita</a><a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo', sede=sede.codigo) }}">Calendario</a></div>
     </article>
     {% else %}<div class="sst-op-card sst-op-empty">No hay sedes para mostrar.</div>{% endfor %}
   </div>

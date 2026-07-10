@@ -128,6 +128,41 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         "PENDIENTE",
         "REVISADO",
     ]
+    SST_CALENDAR_MONTHS = [
+        (1, "Enero"),
+        (2, "Febrero"),
+        (3, "Marzo"),
+        (4, "Abril"),
+        (5, "Mayo"),
+        (6, "Junio"),
+        (7, "Julio"),
+        (8, "Agosto"),
+        (9, "Septiembre"),
+        (10, "Octubre"),
+        (11, "Noviembre"),
+        (12, "Diciembre"),
+    ]
+    SST_CALENDAR_TYPE_META = {
+        "matafuegos": {"label": "Matafuegos", "short": "MF", "action": "Ver matafuegos"},
+        "visita": {"label": "Visita", "short": "VS", "action": "Registrar visita"},
+        "documentacion": {"label": "Documentacion ART", "short": "DOC", "action": "Cargar documento"},
+        "carteleria": {"label": "Carteleria", "short": "CAR", "action": "Abrir sede"},
+        "luces": {"label": "Luces de emergencia", "short": "LUC", "action": "Abrir sede"},
+        "planos": {"label": "Plan de evacuacion", "short": "PE", "action": "Abrir sede"},
+        "seguimiento": {"label": "Seguimiento", "short": "SEG", "action": "Ver seguimiento"},
+        "hallazgo": {"label": "Hallazgo", "short": "HAL", "action": "Ver registro"},
+        "otro": {"label": "Otro control SG-SST", "short": "OT", "action": "Abrir"},
+    }
+    SST_CALENDAR_STATE_META = {
+        "cumplido": {"label": "Cumplido", "class": "ok", "rank": 10},
+        "programado": {"label": "Programado", "class": "info", "rank": 20},
+        "proximo": {"label": "Proximo", "class": "warn", "rank": 40},
+        "pendiente": {"label": "Pendiente", "class": "warn", "rank": 45},
+        "en_seguimiento": {"label": "En seguimiento", "class": "follow", "rank": 50},
+        "vencido": {"label": "Vencido", "class": "danger", "rank": 60},
+        "sin_datos": {"label": "Sin datos", "class": "muted", "rank": 15},
+    }
+    SST_CALENDAR_REQUIRED_DOCS = ("DEC_351_79", "RGRL")
 
     def ensure_sst_visitas_docs_tables(con):
         con.execute("""
@@ -6357,6 +6392,103 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
     def sst_inicio_operativo():
         return render_template("sst_operativo.html", **_sst_operational_home_context())
 
+    @app.route("/sst/calendario-operativo", methods=["GET"], endpoint="sst_calendario_operativo")
+    def sst_calendario_operativo():
+        con = get_db()
+        selected_year_raw = (request.args.get("year") or "").strip()
+        selected_month_raw = (request.args.get("month") or "").strip()
+        selected_year = date.today().year
+        if selected_year_raw.isdigit():
+            try:
+                selected_year = max(2024, min(2035, int(selected_year_raw)))
+            except Exception:
+                selected_year = date.today().year
+        selected_month = 0
+        if selected_month_raw.isdigit():
+            try:
+                selected_month = max(0, min(12, int(selected_month_raw)))
+            except Exception:
+                selected_month = 0
+        filters = {
+            "month": selected_month,
+            "region": (request.args.get("region") or "").strip(),
+            "sede": (request.args.get("sede") or "").strip().upper(),
+            "tipo": (request.args.get("tipo") or "").strip().lower(),
+            "estado": (request.args.get("estado") or "").strip().lower(),
+            "responsable": (request.args.get("responsable") or "").strip(),
+        }
+        context_raw = _sst_calendar_collect_events(con, selected_year)
+        con.close()
+
+        all_events = context_raw["events"]
+        filtered_events = _sst_calendar_filter_events(all_events, filters)
+        focus_month = selected_month or (context_raw["today"].month if selected_year == context_raw["today"].year else 1)
+        matrix_rows, matrix_payload = _sst_calendar_build_matrix(context_raw["sedes"], filtered_events)
+        summary = _sst_calendar_summary(filtered_events, focus_month)
+        mobile_rows = _sst_calendar_mobile_rows(context_raw["sedes"], matrix_payload, focus_month)
+
+        region_options = sorted({
+            (sede.get("region") or "").strip()
+            for sede in context_raw["sedes"]
+            if (sede.get("region") or "").strip()
+        })
+        responsable_options = sorted({
+            (event.get("responsible") or "").strip()
+            for event in all_events
+            if (event.get("responsible") or "").strip()
+        })
+        type_options = [
+            {"value": key, "label": meta["label"]}
+            for key, meta in SST_CALENDAR_TYPE_META.items()
+            if key != "otro" and any(event["type_key"] == key for event in all_events)
+        ]
+        state_options = [
+            {"value": key, "label": meta["label"]}
+            for key, meta in SST_CALENDAR_STATE_META.items()
+        ]
+        source_counts = []
+        for type_item in type_options:
+            count_value = sum(1 for event in filtered_events if event["type_key"] == type_item["value"])
+            if count_value <= 0:
+                continue
+            source_counts.append({
+                "label": type_item["label"],
+                "short": _sst_calendar_type_meta(type_item["value"])["short"],
+                "count": count_value,
+            })
+
+        selected_sede = next(
+            (sede for sede in context_raw["sedes"] if sede["codigo"] == filters["sede"]),
+            None,
+        )
+
+        return render_template(
+            "sst_calendario_operativo.html",
+            sst_section="calendario",
+            selected_year=selected_year,
+            selected_month=selected_month,
+            focus_month=focus_month,
+            focus_month_label=_sst_calendar_month_name(focus_month),
+            filters=filters,
+            summary=summary,
+            matrix_rows=matrix_rows,
+            matrix_payload=matrix_payload,
+            mobile_rows=mobile_rows,
+            source_counts=source_counts,
+            sedes=context_raw["sedes"],
+            selected_sede=selected_sede,
+            region_options=region_options,
+            responsable_options=responsable_options,
+            type_options=type_options,
+            state_options=state_options,
+            year_options=context_raw["event_years"],
+            month_options=[{"value": number, "label": label} for number, label in SST_CALENDAR_MONTHS],
+            total_filtered_events=len(filtered_events),
+            today_iso=context_raw["today"].isoformat(),
+            today_year=context_raw["today"].year,
+            today_month=context_raw["today"].month,
+        )
+
     @app.route("/sst", methods=["GET", "POST"], endpoint="sst_general")
     def sst_general():
         if request.method == "GET" and (request.args.get("modo") or "").strip().lower() != "gestion":
@@ -8072,6 +8204,664 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         if "equipo" in fu or "interdiscip" in fu:
             return ("equipo_interdisciplinario", "#4D4D4D")
         return ("otro", "#64748b")
+
+    def _sst_calendar_parse_date(value):
+        raw = str(value or "").strip()
+        if not raw:
+            return None
+        raw = raw[:10]
+        try:
+            return datetime.strptime(raw, "%Y-%m-%d").date()
+        except Exception:
+            return None
+
+    def _sst_calendar_month_name(month_number):
+        for number, label in SST_CALENDAR_MONTHS:
+            if number == month_number:
+                return label
+        return "-"
+
+    def _sst_calendar_state_meta(state_key):
+        return SST_CALENDAR_STATE_META.get(state_key, SST_CALENDAR_STATE_META["pendiente"])
+
+    def _sst_calendar_type_meta(type_key):
+        return SST_CALENDAR_TYPE_META.get(type_key, SST_CALENDAR_TYPE_META["otro"])
+
+    def _sst_calendar_due_state(target_date, today_ref, alert_days=45):
+        if not target_date:
+            return "sin_datos"
+        if target_date < today_ref:
+            return "vencido"
+        if target_date <= (today_ref + timedelta(days=alert_days)):
+            return "proximo"
+        return "programado"
+
+    def _sst_calendar_control_type(nombre_objetivo):
+        txt = str(nombre_objetivo or "").strip().lower()
+        if not txt:
+            return ""
+        if "cartel" in txt or "senal" in txt or "señal" in txt:
+            return "carteleria"
+        if "luz" in txt or "emerg" in txt:
+            return "luces"
+        if "plano" in txt or "evacu" in txt:
+            return "planos"
+        return ""
+
+    def _sst_calendar_build_event(
+        source_id,
+        source_type,
+        sede_codigo,
+        sede_nombre,
+        region_label,
+        event_date,
+        type_key,
+        title,
+        detail,
+        state_key,
+        responsible="",
+        url_detail="",
+        action_label="",
+        active=True,
+    ):
+        state_meta = _sst_calendar_state_meta(state_key)
+        type_meta = _sst_calendar_type_meta(type_key)
+        return {
+            "source_id": source_id,
+            "source_type": source_type,
+            "sede_codigo": (sede_codigo or "").strip().upper(),
+            "sede_nombre": (sede_nombre or "").strip(),
+            "region": (region_label or "").strip(),
+            "fecha_evento": event_date.isoformat(),
+            "year": event_date.year,
+            "month": event_date.month,
+            "day": event_date.day,
+            "type_key": type_key,
+            "type_label": type_meta["label"],
+            "type_short": type_meta["short"],
+            "title": (title or "").strip() or type_meta["label"],
+            "detail": (detail or "").strip(),
+            "state_key": state_key,
+            "state_label": state_meta["label"],
+            "state_class": state_meta["class"],
+            "state_rank": int(state_meta["rank"]),
+            "responsible": (responsible or "").strip(),
+            "url_detail": url_detail,
+            "action_label": action_label or type_meta["action"],
+            "active": bool(active),
+        }
+
+    def _sst_calendar_collect_events(con, selected_year):
+        ensure_sst_visitas_docs_tables(con)
+        ensure_sst_general_table(con)
+        ensure_sst_plan_tables(con)
+        ensure_sst_control_tables(con)
+
+        today_ref = date.today()
+        year_start = date(selected_year, 1, 1)
+        year_end = date(selected_year, 12, 31)
+        event_years = {today_ref.year - 1, today_ref.year, today_ref.year + 1, selected_year}
+
+        sedes_cols = _table_cols(con, "sedes_mpd")
+        region_expr = "''"
+        if "region" in sedes_cols:
+            region_expr = "COALESCE(region, '')"
+        elif "ciudad" in sedes_cols:
+            region_expr = "COALESCE(ciudad, '')"
+        elif "fuero" in sedes_cols:
+            region_expr = "COALESCE(fuero, '')"
+        fuero_expr = "COALESCE(fuero, '')" if "fuero" in sedes_cols else "''"
+        nombre_expr = "COALESCE(nombre, '')" if "nombre" in sedes_cols else "COALESCE(codigo, '')"
+
+        sedes_rows = con.execute(f"""
+            SELECT
+                UPPER(COALESCE(codigo, '')) AS codigo,
+                {nombre_expr} AS nombre,
+                {region_expr} AS region,
+                {fuero_expr} AS fuero
+            FROM sedes_mpd
+            WHERE TRIM(COALESCE(codigo, '')) <> ''
+            ORDER BY codigo
+        """).fetchall()
+        sedes = []
+        sedes_map = {}
+        for row in sedes_rows:
+            sede_item = {
+                "codigo": (_row_value(row, "codigo", "") or "").strip().upper(),
+                "nombre": (_row_value(row, "nombre", "") or "").strip(),
+                "region": (_row_value(row, "region", "") or "").strip(),
+                "fuero": (_row_value(row, "fuero", "") or "").strip(),
+            }
+            if not sede_item["codigo"]:
+                continue
+            sedes.append(sede_item)
+            sedes_map[sede_item["codigo"]] = sede_item
+
+        events = []
+
+        if _table_exists(con, "matafuegos"):
+            mata_cols = _table_cols(con, "matafuegos")
+            sede_expr = "UPPER(COALESCE(sede, ''))"
+            if "cod_sede" in mata_cols and "sede" in mata_cols:
+                sede_expr = "UPPER(COALESCE(sede, cod_sede, ''))"
+            elif "cod_sede" in mata_cols:
+                sede_expr = "UPPER(COALESCE(cod_sede, ''))"
+            activo_expr = "COALESCE(activo, 1)" if "activo" in mata_cols else "1"
+            tipo_expr = "COALESCE(tipo, '')" if "tipo" in mata_cols else "''"
+            serie_expr = "COALESCE(numero_serie, '')" if "numero_serie" in mata_cols else "''"
+            ubic_expr = "COALESCE(ubicacion, '')" if "ubicacion" in mata_cols else "''"
+            venc_expr = "COALESCE(fecha_vencimiento, '')" if "fecha_vencimiento" in mata_cols else "''"
+            hydro_expr = "COALESCE(fecha_prueba_hidro, '')" if "fecha_prueba_hidro" in mata_cols else "''"
+            nro_ext_expr = "COALESCE(nro_extintor, '')" if "nro_extintor" in mata_cols else "''"
+            raw_rows = con.execute(f"""
+                SELECT
+                    id,
+                    {sede_expr} AS sede_codigo,
+                    {tipo_expr} AS tipo,
+                    {serie_expr} AS numero_serie,
+                    {ubic_expr} AS ubicacion,
+                    {venc_expr} AS fecha_vencimiento,
+                    {hydro_expr} AS fecha_prueba_hidro,
+                    {nro_ext_expr} AS nro_extintor,
+                    {activo_expr} AS activo
+                FROM matafuegos
+                WHERE {activo_expr} = 1
+            """).fetchall()
+            grouped_mata = {}
+            for row in raw_rows:
+                sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
+                if not sede_codigo:
+                    continue
+                for field_name, group_kind in (("fecha_vencimiento", "vto"), ("fecha_prueba_hidro", "hydro")):
+                    event_date = _sst_calendar_parse_date(_row_value(row, field_name, ""))
+                    if not event_date or event_date.year != selected_year:
+                        continue
+                    event_years.add(event_date.year)
+                    group_key = (sede_codigo, event_date.isoformat(), group_kind)
+                    if group_key not in grouped_mata:
+                        grouped_mata[group_key] = []
+                    grouped_mata[group_key].append(row)
+            for (sede_codigo, event_iso, group_kind), rows_group in grouped_mata.items():
+                event_date = _sst_calendar_parse_date(event_iso)
+                sede_info = sedes_map.get(sede_codigo, {})
+                estado = _sst_calendar_due_state(event_date, today_ref, 45)
+                count_items = len(rows_group)
+                if group_kind == "hydro":
+                    title = "Prueba hidraulica pendiente"
+                    if count_items > 1:
+                        title = f"Prueba hidraulica de {count_items} matafuegos"
+                    else:
+                        title = "Prueba hidraulica de 1 matafuego"
+                else:
+                    title = "Vence 1 matafuego" if count_items == 1 else f"Vencen {count_items} matafuegos"
+                refs = []
+                for item in rows_group[:3]:
+                    serial = (_row_value(item, "numero_serie", "") or "").strip()
+                    ext = (_row_value(item, "nro_extintor", "") or "").strip()
+                    ubic = (_row_value(item, "ubicacion", "") or "").strip()
+                    ref = serial or ext or ubic or f"ID {_row_value(item, 'id', '')}"
+                    if ref:
+                        refs.append(ref)
+                detail = ", ".join(refs)
+                if count_items > 3:
+                    detail = (detail + f" y {count_items - 3} mas").strip()
+                if not detail:
+                    detail = "Inventario activo por sede."
+                events.append(_sst_calendar_build_event(
+                    source_id=",".join(str(_row_value(item, "id", "")) for item in rows_group),
+                    source_type="matafuegos",
+                    sede_codigo=sede_codigo,
+                    sede_nombre=sede_info.get("nombre", ""),
+                    region_label=sede_info.get("region", ""),
+                    event_date=event_date,
+                    type_key="matafuegos",
+                    title=title,
+                    detail=detail,
+                    state_key=estado,
+                    responsible="",
+                    url_detail=url_for(
+                        "matafuegos_home",
+                        sede=sede_codigo,
+                        vencimiento=("vencidos" if estado == "vencido" else ("proximos" if estado == "proximo" else "todos")),
+                    ),
+                    action_label="Ver matafuegos",
+                    active=(estado != "cumplido"),
+                ))
+
+        if _table_exists(con, "sst_visitas"):
+            visitas_rows = con.execute("""
+                SELECT
+                    v.id,
+                    UPPER(COALESCE(v.sede_codigo, '')) AS sede_codigo,
+                    COALESCE(v.fecha, '') AS fecha,
+                    COALESCE(v.tipo_visita, '') AS tipo_visita,
+                    COALESCE(v.responsable, '') AS responsable,
+                    COALESCE(v.estado, '') AS estado,
+                    COALESCE(v.observaciones, '') AS observaciones
+                FROM sst_visitas v
+                ORDER BY date(v.fecha), v.id
+            """).fetchall()
+            pending_states = {"PEND_ANALISIS", "REQUIERE_CORRECCION"}
+            for row in visitas_rows:
+                event_date = _sst_calendar_parse_date(_row_value(row, "fecha", ""))
+                if not event_date or event_date.year != selected_year:
+                    continue
+                event_years.add(event_date.year)
+                sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
+                if not sede_codigo:
+                    continue
+                sede_info = sedes_map.get(sede_codigo, {})
+                estado_raw = (_row_value(row, "estado", "") or "").strip().upper()
+                if estado_raw in pending_states and event_date < today_ref:
+                    estado = "vencido"
+                elif estado_raw in pending_states:
+                    estado = "pendiente"
+                elif event_date > today_ref:
+                    estado = "programado"
+                else:
+                    estado = "cumplido"
+                if estado == "vencido":
+                    title = "Visita vencida"
+                elif estado == "pendiente":
+                    title = "Visita pendiente"
+                elif estado == "programado":
+                    title = "Visita programada"
+                else:
+                    title = "Visita realizada"
+                detail_parts = []
+                if (_row_value(row, "tipo_visita", "") or "").strip():
+                    detail_parts.append((_row_value(row, "tipo_visita", "") or "").strip())
+                if (_row_value(row, "responsable", "") or "").strip():
+                    detail_parts.append((_row_value(row, "responsable", "") or "").strip())
+                if (_row_value(row, "observaciones", "") or "").strip():
+                    detail_parts.append((_row_value(row, "observaciones", "") or "").strip())
+                events.append(_sst_calendar_build_event(
+                    source_id=str(_row_value(row, "id", "")),
+                    source_type="sst_visitas",
+                    sede_codigo=sede_codigo,
+                    sede_nombre=sede_info.get("nombre", ""),
+                    region_label=sede_info.get("region", ""),
+                    event_date=event_date,
+                    type_key="visita",
+                    title=title,
+                    detail=" · ".join(detail_parts) if detail_parts else "Visita operativa de sede.",
+                    state_key=estado,
+                    responsible=(_row_value(row, "responsable", "") or "").strip(),
+                    url_detail=(
+                        url_for("sst_visita_cargar", sede=sede_codigo)
+                        if estado in {"pendiente", "vencido", "programado"}
+                        else url_for("sst_sede_ficha", codigo=sede_codigo)
+                    ),
+                    action_label=("Registrar visita" if estado in {"pendiente", "vencido", "programado"} else "Abrir sede"),
+                    active=(estado != "cumplido"),
+                ))
+
+        if _table_exists(con, "sst_general"):
+            general_rows = con.execute("""
+                SELECT
+                    g.id,
+                    UPPER(COALESCE(g.sede_codigo, '')) AS sede_codigo,
+                    COALESCE(g.fecha, '') AS fecha,
+                    COALESCE(g.tipo, '') AS tipo,
+                    COALESCE(g.titulo, '') AS titulo,
+                    COALESCE(g.detalle, '') AS detalle,
+                    COALESCE(g.estado, '') AS estado,
+                    COALESCE(g.prioridad, '') AS prioridad,
+                    COALESCE(g.responsable, '') AS responsable,
+                    COALESCE(g.accion_correctiva, '') AS accion_correctiva,
+                    COALESCE(g.fecha_objetivo, '') AS fecha_objetivo,
+                    COALESCE(g.fecha_cierre, '') AS fecha_cierre
+                FROM sst_general g
+                ORDER BY g.id DESC
+            """).fetchall()
+            for row in general_rows:
+                sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
+                if not sede_codigo:
+                    continue
+                sede_info = sedes_map.get(sede_codigo, {})
+                estado_raw = (_row_value(row, "estado", "") or "").strip().upper()
+                fecha_base = _sst_calendar_parse_date(_row_value(row, "fecha", ""))
+                fecha_obj = _sst_calendar_parse_date(_row_value(row, "fecha_objetivo", ""))
+                fecha_cierre = _sst_calendar_parse_date(_row_value(row, "fecha_cierre", ""))
+                if estado_raw == "CERRADO":
+                    event_date = fecha_cierre or fecha_obj or fecha_base
+                    if not event_date or event_date.year != selected_year:
+                        continue
+                    estado = "cumplido"
+                else:
+                    if fecha_obj:
+                        if fecha_obj.year == selected_year:
+                            event_date = fecha_obj
+                        elif selected_year == today_ref.year and fecha_obj < year_start:
+                            event_date = today_ref
+                        else:
+                            continue
+                        if fecha_obj < today_ref:
+                            estado = "vencido"
+                        elif fecha_obj <= (today_ref + timedelta(days=30)):
+                            estado = "proximo"
+                        else:
+                            estado = "en_seguimiento"
+                    else:
+                        if selected_year == today_ref.year:
+                            event_date = today_ref
+                            estado = "en_seguimiento"
+                        elif fecha_base and fecha_base.year == selected_year:
+                            event_date = fecha_base
+                            estado = "en_seguimiento"
+                        else:
+                            continue
+                event_years.add(event_date.year)
+                tipo_raw = (_row_value(row, "tipo", "") or "").strip().lower()
+                type_key = "hallazgo" if tipo_raw == "no_conformidad" else "seguimiento"
+                title = (_row_value(row, "titulo", "") or "").strip()
+                if not title:
+                    title = "Hallazgo abierto" if type_key == "hallazgo" else "Seguimiento operativo"
+                detail_parts = []
+                if (_row_value(row, "detalle", "") or "").strip():
+                    detail_parts.append((_row_value(row, "detalle", "") or "").strip())
+                if (_row_value(row, "accion_correctiva", "") or "").strip():
+                    detail_parts.append(f"Accion: {(_row_value(row, 'accion_correctiva', '') or '').strip()}")
+                if (_row_value(row, "prioridad", "") or "").strip():
+                    detail_parts.append(f"Prioridad: {(_row_value(row, 'prioridad', '') or '').strip()}")
+                events.append(_sst_calendar_build_event(
+                    source_id=str(_row_value(row, "id", "")),
+                    source_type="sst_general",
+                    sede_codigo=sede_codigo,
+                    sede_nombre=sede_info.get("nombre", ""),
+                    region_label=sede_info.get("region", ""),
+                    event_date=event_date,
+                    type_key=type_key,
+                    title=title,
+                    detail=" · ".join(detail_parts) if detail_parts else "Accion operativa SG-SST.",
+                    state_key=estado,
+                    responsible=(_row_value(row, "responsable", "") or "").strip(),
+                    url_detail=url_for("sst_general_editar", sst_id=int(_row_value(row, "id", 0) or 0)),
+                    action_label=("Ver registro" if type_key == "hallazgo" else "Ver seguimiento"),
+                    active=(estado != "cumplido"),
+                ))
+
+        if _table_exists(con, "sst_documentos"):
+            docs_rows = con.execute("""
+                SELECT
+                    id,
+                    UPPER(COALESCE(sede_codigo, '')) AS sede_codigo,
+                    UPPER(COALESCE(tipo, '')) AS tipo,
+                    COALESCE(fecha_documento, '') AS fecha_documento,
+                    COALESCE(fecha_carga, '') AS fecha_carga,
+                    COALESCE(archivo, '') AS archivo,
+                    COALESCE(drive_url, '') AS drive_url,
+                    COALESCE(estado_revision, '') AS estado_revision
+                FROM sst_documentos
+                ORDER BY COALESCE(fecha_documento, fecha_carga) DESC, id DESC
+            """).fetchall()
+            latest_docs = defaultdict(dict)
+            for row in docs_rows:
+                sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
+                doc_type = (_row_value(row, "tipo", "") or "").strip().upper()
+                if not sede_codigo or not doc_type or doc_type in latest_docs[sede_codigo]:
+                    continue
+                latest_docs[sede_codigo][doc_type] = row
+                for date_field in ("fecha_documento", "fecha_carga"):
+                    event_date = _sst_calendar_parse_date(_row_value(row, date_field, ""))
+                    if event_date:
+                        event_years.add(event_date.year)
+            if selected_year == today_ref.year:
+                for sede_item in sedes:
+                    sede_codigo = sede_item["codigo"]
+                    sede_docs = latest_docs.get(sede_codigo, {})
+                    missing_docs = []
+                    pending_docs = []
+                    for doc_type in SST_CALENDAR_REQUIRED_DOCS:
+                        doc_row = sede_docs.get(doc_type)
+                        has_support = bool(doc_row and ((_row_value(doc_row, "archivo", "") or "").strip() or (_row_value(doc_row, "drive_url", "") or "").strip()))
+                        if not has_support:
+                            missing_docs.append(doc_type)
+                            continue
+                        if ((_row_value(doc_row, "estado_revision", "") or "").strip().upper() == "PENDIENTE"):
+                            pending_docs.append(doc_row)
+                    if missing_docs:
+                        detail = "Falta: " + ", ".join(missing_docs)
+                        events.append(_sst_calendar_build_event(
+                            source_id=f"docs-missing-{sede_codigo}",
+                            source_type="sst_documentos",
+                            sede_codigo=sede_codigo,
+                            sede_nombre=sede_item["nombre"],
+                            region_label=sede_item["region"],
+                            event_date=today_ref,
+                            type_key="documentacion",
+                            title="Falta documentacion ART",
+                            detail=detail,
+                            state_key="sin_datos",
+                            responsible="",
+                            url_detail=url_for("sst_doc_subir", sede=sede_codigo),
+                            action_label="Cargar documento",
+                            active=True,
+                        ))
+                    elif pending_docs:
+                        anchor = _sst_calendar_parse_date(_row_value(pending_docs[0], "fecha_documento", "")) or today_ref
+                        detail = "Revision pendiente de " + ", ".join((_row_value(item, "tipo", "") or "").strip() for item in pending_docs)
+                        events.append(_sst_calendar_build_event(
+                            source_id=f"docs-pending-{sede_codigo}",
+                            source_type="sst_documentos",
+                            sede_codigo=sede_codigo,
+                            sede_nombre=sede_item["nombre"],
+                            region_label=sede_item["region"],
+                            event_date=anchor,
+                            type_key="documentacion",
+                            title="Documentacion ART en revision",
+                            detail=detail,
+                            state_key="pendiente",
+                            responsible="",
+                            url_detail=url_for("sst_doc_subir", sede=sede_codigo),
+                            action_label="Cargar documento",
+                            active=True,
+                        ))
+
+        if _table_exists(con, "sst_control_objetivos") and _table_exists(con, "sst_control_relevamientos") and selected_year == today_ref.year:
+            control_rows = con.execute("""
+                SELECT
+                    o.id AS objetivo_id,
+                    LOWER(COALESCE(o.nombre, '')) AS nombre,
+                    UPPER(COALESCE(r.sede_codigo, '')) AS sede_codigo,
+                    r.ok,
+                    COALESCE(r.actualizado_en, '') AS actualizado_en
+                FROM sst_control_objetivos o
+                LEFT JOIN sst_control_relevamientos r ON r.objetivo_id = o.id
+                ORDER BY o.id, r.sede_codigo
+            """).fetchall()
+            control_map = defaultdict(dict)
+            control_available = set()
+            for row in control_rows:
+                control_type = _sst_calendar_control_type(_row_value(row, "nombre", ""))
+                if not control_type:
+                    continue
+                control_available.add(control_type)
+                sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
+                if not sede_codigo:
+                    continue
+                control_map[control_type][sede_codigo] = {
+                    "ok": int(_row_value(row, "ok", 0) or 0),
+                    "actualizado_en": (_row_value(row, "actualizado_en", "") or "").strip(),
+                }
+            for sede_item in sedes:
+                sede_codigo = sede_item["codigo"]
+                for control_type in ("carteleria", "luces", "planos"):
+                    if control_type not in control_available and control_type != "planos":
+                        continue
+                    control_row = control_map.get(control_type, {}).get(sede_codigo)
+                    if not control_row:
+                        events.append(_sst_calendar_build_event(
+                            source_id=f"{control_type}-missing-{sede_codigo}",
+                            source_type="sst_control",
+                            sede_codigo=sede_codigo,
+                            sede_nombre=sede_item["nombre"],
+                            region_label=sede_item["region"],
+                            event_date=today_ref,
+                            type_key=control_type,
+                            title=f"{_sst_calendar_type_meta(control_type)['label']} sin relevamiento",
+                            detail="No hay control cargado para la sede.",
+                            state_key="sin_datos",
+                            responsible="",
+                            url_detail=url_for("sst_sede_ficha", codigo=sede_codigo),
+                            action_label="Abrir sede",
+                            active=True,
+                        ))
+                        continue
+                    if int(control_row.get("ok", 0) or 0) == 1:
+                        continue
+                    anchor = _sst_calendar_parse_date(control_row.get("actualizado_en", "")) or today_ref
+                    events.append(_sst_calendar_build_event(
+                        source_id=f"{control_type}-{sede_codigo}",
+                        source_type="sst_control",
+                        sede_codigo=sede_codigo,
+                        sede_nombre=sede_item["nombre"],
+                        region_label=sede_item["region"],
+                        event_date=anchor,
+                        type_key=control_type,
+                        title=f"{_sst_calendar_type_meta(control_type)['label']} requiere atencion",
+                        detail="Control con observacion pendiente o sin cierre.",
+                        state_key="pendiente",
+                        responsible="",
+                        url_detail=url_for("sst_sede_ficha", codigo=sede_codigo),
+                        action_label="Abrir sede",
+                        active=True,
+                    ))
+
+        return {
+            "events": sorted(
+                events,
+                key=lambda item: (
+                    item["sede_codigo"],
+                    item["month"],
+                    item["day"],
+                    -int(item["state_rank"]),
+                    item["type_label"],
+                    item["title"],
+                ),
+            ),
+            "sedes": sedes,
+            "event_years": sorted(event_years),
+            "today": today_ref,
+        }
+
+    def _sst_calendar_filter_events(events, filters):
+        filtered = []
+        region_filter = str(filters.get("region") or "").strip().lower()
+        sede_filter = str(filters.get("sede") or "").strip().upper()
+        type_filter = str(filters.get("tipo") or "").strip().lower()
+        state_filter = str(filters.get("estado") or "").strip().lower()
+        responsable_filter = str(filters.get("responsable") or "").strip().lower()
+        month_filter = int(filters.get("month") or 0)
+        for event in events:
+            if month_filter and int(event["month"]) != month_filter:
+                continue
+            if region_filter and region_filter != str(event.get("region", "") or "").strip().lower():
+                continue
+            if sede_filter and sede_filter != str(event.get("sede_codigo", "") or "").strip().upper():
+                continue
+            if type_filter and type_filter != str(event.get("type_key", "") or "").strip().lower():
+                continue
+            if state_filter and state_filter != str(event.get("state_key", "") or "").strip().lower():
+                continue
+            if responsable_filter and responsable_filter != str(event.get("responsible", "") or "").strip().lower():
+                continue
+            filtered.append(event)
+        return filtered
+
+    def _sst_calendar_build_matrix(sedes, events):
+        cells = defaultdict(list)
+        for event in events:
+            cells[(event["sede_codigo"], int(event["month"]))].append(event)
+
+        payload = {}
+        rows = []
+        for sede in sedes:
+            month_cells = []
+            for month_number, month_label in SST_CALENDAR_MONTHS:
+                cell_events = sorted(
+                    cells.get((sede["codigo"], month_number), []),
+                    key=lambda item: (-int(item["state_rank"]), item["day"], item["type_label"], item["title"]),
+                )
+                type_groups = {}
+                for event in cell_events:
+                    group = type_groups.setdefault(event["type_key"], {
+                        "type_key": event["type_key"],
+                        "type_label": event["type_label"],
+                        "type_short": event["type_short"],
+                        "state_rank": -1,
+                        "state_key": event["state_key"],
+                        "state_class": event["state_class"],
+                        "count": 0,
+                    })
+                    group["count"] += 1
+                    if int(event["state_rank"]) > int(group["state_rank"]):
+                        group["state_rank"] = int(event["state_rank"])
+                        group["state_key"] = event["state_key"]
+                        group["state_class"] = event["state_class"]
+                indicators = sorted(
+                    type_groups.values(),
+                    key=lambda item: (-int(item["state_rank"]), -int(item["count"]), item["type_label"]),
+                )
+                cell_key = f"{sede['codigo']}|{month_number:02d}"
+                payload[cell_key] = {
+                    "title": f"{month_label} - {sede['codigo']} - {sede['nombre']}",
+                    "month_label": month_label,
+                    "sede_codigo": sede["codigo"],
+                    "sede_nombre": sede["nombre"],
+                    "events": cell_events,
+                    "groups": indicators,
+                }
+                tooltip = ""
+                if cell_events:
+                    tooltip = " | ".join(
+                        f"{item['type_label']}: {item['count']}" for item in indicators[:4]
+                    )
+                month_cells.append({
+                    "key": cell_key,
+                    "month": month_number,
+                    "label": month_label,
+                    "count": len(cell_events),
+                    "has_events": bool(cell_events),
+                    "indicators": indicators[:3],
+                    "extra_count": max(0, len(indicators) - 3),
+                    "tooltip": tooltip,
+                })
+            rows.append({
+                "sede": sede,
+                "cells": month_cells,
+            })
+        return rows, payload
+
+    def _sst_calendar_mobile_rows(sedes, payload, focus_month):
+        mobile_rows = []
+        for sede in sedes:
+            cell_key = f"{sede['codigo']}|{focus_month:02d}"
+            info = payload.get(cell_key) or {}
+            if not info.get("events"):
+                continue
+            mobile_rows.append({
+                "cell_key": cell_key,
+                "sede_codigo": sede["codigo"],
+                "sede_nombre": sede["nombre"],
+                "groups": info.get("groups", [])[:3],
+                "count": len(info.get("events", [])),
+            })
+        return mobile_rows
+
+    def _sst_calendar_summary(events, focus_month):
+        month_events = [event for event in events if int(event["month"]) == int(focus_month)]
+        open_states = {"pendiente", "proximo", "vencido", "en_seguimiento", "sin_datos"}
+        return {
+            "acciones_mes": len(month_events),
+            "vencimientos_proximos": sum(1 for event in events if event["state_key"] == "proximo"),
+            "acciones_vencidas": sum(1 for event in events if event["state_key"] == "vencido"),
+            "sedes_pendientes": len({event["sede_codigo"] for event in events if event["state_key"] in open_states}),
+            "seguimientos_abiertos": sum(
+                1 for event in events
+                if event["type_key"] in {"seguimiento", "hallazgo"} and event["state_key"] != "cumplido"
+            ),
+        }
 
     @app.route("/sst/visitas", methods=["GET"], endpoint="sst_visitas")
     def sst_visitas():
