@@ -143,24 +143,24 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         (12, "Diciembre"),
     ]
     SST_CALENDAR_TYPE_META = {
-        "matafuegos": {"label": "Matafuegos", "short": "MF", "action": "Ver matafuegos"},
-        "visita": {"label": "Visita", "short": "VS", "action": "Registrar visita"},
-        "documentacion": {"label": "Documentacion ART", "short": "DOC", "action": "Cargar documento"},
-        "carteleria": {"label": "Carteleria", "short": "CAR", "action": "Abrir sede"},
-        "luces": {"label": "Luces de emergencia", "short": "LUC", "action": "Abrir sede"},
-        "planos": {"label": "Plan de evacuacion", "short": "PE", "action": "Abrir sede"},
-        "seguimiento": {"label": "Seguimiento", "short": "SEG", "action": "Ver seguimiento"},
-        "hallazgo": {"label": "Hallazgo", "short": "HAL", "action": "Ver registro"},
-        "otro": {"label": "Otro control SG-SST", "short": "OT", "action": "Abrir"},
+        "matafuegos": {"label": "Matafuegos", "short": "MF", "icon": "🧯", "action": "Ver matafuegos"},
+        "visita": {"label": "Visita", "short": "VS", "icon": "👷", "action": "Abrir visitas"},
+        "documentacion": {"label": "Documentacion ART", "short": "DOC", "icon": "📄", "action": "Abrir documentacion"},
+        "carteleria": {"label": "Carteleria", "short": "CAR", "icon": "🚪", "action": "Abrir sede"},
+        "luces": {"label": "Luces de emergencia", "short": "LUC", "icon": "💡", "action": "Abrir sede"},
+        "planos": {"label": "Plan de evacuacion", "short": "PE", "icon": "🚨", "action": "Abrir sede"},
+        "seguimiento": {"label": "Seguimiento", "short": "SEG", "icon": "📌", "action": "Abrir seguimiento"},
+        "hallazgo": {"label": "Hallazgo", "short": "HAL", "icon": "⚠", "action": "Abrir hallazgo"},
+        "otro": {"label": "Otro control SG-SST", "short": "OT", "icon": "•", "action": "Abrir"},
     }
     SST_CALENDAR_STATE_META = {
-        "cumplido": {"label": "Cumplido", "class": "ok", "rank": 10},
-        "programado": {"label": "Programado", "class": "info", "rank": 20},
-        "proximo": {"label": "Proximo", "class": "warn", "rank": 40},
-        "pendiente": {"label": "Pendiente", "class": "warn", "rank": 45},
-        "en_seguimiento": {"label": "En seguimiento", "class": "follow", "rank": 50},
-        "vencido": {"label": "Vencido", "class": "danger", "rank": 60},
-        "sin_datos": {"label": "Sin datos", "class": "muted", "rank": 15},
+        "cumplido": {"label": "Cumplido", "class": "ok", "rank": 10, "icon": "🟢"},
+        "programado": {"label": "Programado", "class": "info", "rank": 20, "icon": "🔵"},
+        "proximo": {"label": "Proximo", "class": "warn", "rank": 40, "icon": "🟡"},
+        "pendiente": {"label": "Pendiente", "class": "warn", "rank": 45, "icon": "🟠"},
+        "en_seguimiento": {"label": "En seguimiento", "class": "follow", "rank": 50, "icon": "🟣"},
+        "vencido": {"label": "Vencido", "class": "danger", "rank": 60, "icon": "🔴"},
+        "sin_datos": {"label": "Sin datos", "class": "muted", "rank": 15, "icon": "⚪"},
     }
     SST_CALENDAR_REQUIRED_DOCS = ("DEC_351_79", "RGRL")
 
@@ -6438,7 +6438,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             if (event.get("responsible") or "").strip()
         })
         type_options = [
-            {"value": key, "label": meta["label"]}
+            {"value": key, "label": meta["label"], "short": meta["short"], "icon": meta.get("icon", "")}
             for key, meta in SST_CALENDAR_TYPE_META.items()
             if key != "otro" and (
                 any(event["type_key"] == key for event in all_events)
@@ -6446,17 +6446,20 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             )
         ]
         state_options = [
-            {"value": key, "label": meta["label"]}
+            {"value": key, "label": meta["label"], "class": meta["class"], "icon": meta.get("icon", "")}
             for key, meta in SST_CALENDAR_STATE_META.items()
         ]
         source_counts = []
+        type_counts_map = {}
         for type_item in type_options:
             count_value = sum(int(event.get("units", 1) or 1) for event in filtered_events if event["type_key"] == type_item["value"])
+            type_counts_map[type_item["value"]] = count_value
             if count_value <= 0:
                 continue
             source_counts.append({
                 "label": type_item["label"],
                 "short": _sst_calendar_type_meta(type_item["value"])["short"],
+                "icon": _sst_calendar_type_meta(type_item["value"]).get("icon", ""),
                 "count": count_value,
             })
         matafuegos_overview = list(context_raw.get("matafuegos_overview") or [])
@@ -6469,6 +6472,14 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             ),
             matafuegos_overview[0] if matafuegos_overview else None,
         )
+        matrix_payload["__meta__"] = {
+            "today_month": int(context_raw["today"].month),
+            "today_year": int(context_raw["today"].year),
+            "selected_year": int(selected_year),
+            "focus_month": int(focus_month),
+            "focus_month_label": _sst_calendar_month_name(focus_month),
+            "type_counts": type_counts_map,
+        }
 
         selected_sede = next(
             (sede for sede in context_raw["sedes"] if sede["codigo"] == filters["sede"]),
@@ -8297,11 +8308,14 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             "type_key": type_key,
             "type_label": type_meta["label"],
             "type_short": type_meta["short"],
+            "type_icon": type_meta.get("icon", ""),
+            "type_badge": f"{type_meta.get('icon', '')} {type_meta['short']}".strip(),
             "title": (title or "").strip() or type_meta["label"],
             "detail": (detail or "").strip(),
             "state_key": state_key,
             "state_label": state_meta["label"],
             "state_class": state_meta["class"],
+            "state_icon": state_meta.get("icon", ""),
             "state_rank": int(state_meta["rank"]),
             "responsible": (responsible or "").strip(),
             "url_detail": url_detail,
@@ -8583,12 +8597,12 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     detail=" · ".join(detail_parts) if detail_parts else "Visita operativa de sede.",
                     state_key=estado,
                     responsible=(_row_value(row, "responsable", "") or "").strip(),
-                    url_detail=(
-                        url_for("sst_visita_cargar", sede=sede_codigo)
-                        if estado in {"pendiente", "vencido", "programado"}
-                        else url_for("sst_sede_ficha", codigo=sede_codigo)
+                    url_detail=url_for(
+                        "sst_visitas",
+                        q=sede_codigo,
+                        vista=("pendientes" if estado in {"pendiente", "vencido"} else ("proximas" if estado == "programado" else "realizadas")),
                     ),
-                    action_label=("Registrar visita" if estado in {"pendiente", "vencido", "programado"} else "Abrir sede"),
+                    action_label="Abrir visitas",
                     active=(estado != "cumplido"),
                 ))
 
@@ -8672,8 +8686,13 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     detail=" · ".join(detail_parts) if detail_parts else "Accion operativa SG-SST.",
                     state_key=estado,
                     responsible=(_row_value(row, "responsable", "") or "").strip(),
-                    url_detail=url_for("sst_general_editar", sst_id=int(_row_value(row, "id", 0) or 0)),
-                    action_label=("Ver registro" if type_key == "hallazgo" else "Ver seguimiento"),
+                    url_detail=url_for(
+                        "sst_general",
+                        modo="gestion",
+                        sede=sede_codigo,
+                        tipo=(tipo_raw if tipo_raw else None),
+                    ),
+                    action_label=("Abrir hallazgos" if type_key == "hallazgo" else "Abrir seguimiento"),
                     active=(estado != "cumplido"),
                 ))
 
@@ -8892,18 +8911,40 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                         "type_key": event["type_key"],
                         "type_label": event["type_label"],
                         "type_short": event["type_short"],
+                        "type_icon": event.get("type_icon", ""),
+                        "type_badge": event.get("type_badge", event["type_short"]),
                         "state_rank": -1,
                         "state_key": event["state_key"],
                         "state_class": event["state_class"],
+                        "state_label": event["state_label"],
+                        "state_icon": event.get("state_icon", ""),
                         "count": 0,
                         "events_count": 0,
+                        "url_detail": event.get("url_detail", ""),
+                        "action_label": event.get("action_label", "Abrir"),
+                        "title": event.get("title", ""),
+                        "detail": event.get("detail", ""),
+                        "fecha_evento": event.get("fecha_evento", ""),
+                        "sede_codigo": sede["codigo"],
+                        "sede_nombre": sede["nombre"],
+                        "month": month_number,
+                        "month_label": month_label,
+                        "events": [],
                     })
                     group["count"] += int(event.get("units", 1) or 1)
                     group["events_count"] += 1
+                    group["events"].append(event)
                     if int(event["state_rank"]) > int(group["state_rank"]):
                         group["state_rank"] = int(event["state_rank"])
                         group["state_key"] = event["state_key"]
                         group["state_class"] = event["state_class"]
+                        group["state_label"] = event["state_label"]
+                        group["state_icon"] = event.get("state_icon", "")
+                        group["url_detail"] = event.get("url_detail", "")
+                        group["action_label"] = event.get("action_label", "Abrir")
+                        group["title"] = event.get("title", "")
+                        group["detail"] = event.get("detail", "")
+                        group["fecha_evento"] = event.get("fecha_evento", "")
                 indicators = sorted(
                     type_groups.values(),
                     key=lambda item: (
@@ -8913,6 +8954,16 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                         item["type_label"],
                     ),
                 )
+                for indicator in indicators:
+                    indicator["tooltip_title"] = f"{indicator.get('type_icon', '')} {indicator['type_label']}".strip()
+                    indicator["tooltip_sede"] = indicator["sede_codigo"]
+                    indicator["tooltip_detail"] = indicator["title"] or indicator["detail"] or indicator["type_label"]
+                    indicator["tooltip_date"] = indicator["fecha_evento"]
+                    indicator["tooltip_state"] = f"{indicator.get('state_icon', '')} {indicator['state_label']}".strip()
+                    indicator["aria_label"] = (
+                        f"{indicator['type_label']} en {indicator['sede_codigo']}, "
+                        f"{indicator['month_label']} {indicator['count']} registros, estado {indicator['state_label']}"
+                    )
                 cell_key = f"{sede['codigo']}|{month_number:02d}"
                 payload[cell_key] = {
                     "title": f"{month_label} - {sede['codigo']} - {sede['nombre']}",
@@ -8922,20 +8973,13 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     "events": cell_events,
                     "groups": indicators,
                 }
-                tooltip = ""
-                if cell_events:
-                    tooltip = " | ".join(
-                        f"{item['type_label']}: {item['count']}" for item in indicators[:4]
-                    )
                 month_cells.append({
                     "key": cell_key,
                     "month": month_number,
                     "label": month_label,
                     "count": len(cell_events),
                     "has_events": bool(cell_events),
-                    "indicators": indicators[:3],
-                    "extra_count": max(0, len(indicators) - 3),
-                    "tooltip": tooltip,
+                    "groups": indicators,
                 })
             rows.append({
                 "sede": sede,
@@ -8954,7 +8998,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 "cell_key": cell_key,
                 "sede_codigo": sede["codigo"],
                 "sede_nombre": sede["nombre"],
-                "groups": info.get("groups", [])[:3],
+                "groups": info.get("groups", []),
                 "count": len(info.get("events", [])),
             })
         return mobile_rows

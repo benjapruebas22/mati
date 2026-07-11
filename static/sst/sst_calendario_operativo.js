@@ -1,11 +1,8 @@
 (function () {
   const payloadNode = document.getElementById('sstCalendarPayload');
-  const dialog = document.getElementById('sstCalendarDetailDialog');
-  const dialogTitle = document.getElementById('sstCalendarDialogTitle');
-  const dialogBody = document.getElementById('sstCalendarDialogBody');
-  const closeTop = document.getElementById('sstCalendarDialogCloseTop');
-  const closeBottom = document.getElementById('sstCalendarDialogClose');
-  if (!payloadNode || !dialog || !dialogTitle || !dialogBody) return;
+  const sidePanel = document.getElementById('sstCalendarSidePanel');
+  const tooltip = document.getElementById('sstCalendarTooltip');
+  if (!payloadNode || !sidePanel) return;
 
   let payload = {};
   try {
@@ -13,6 +10,10 @@
   } catch (error) {
     payload = {};
   }
+
+  const meta = payload.__meta__ || {};
+  const links = Array.from(document.querySelectorAll('.js-sst-calendar-group'));
+  let activeLink = null;
 
   function escapeHtml(value) {
     return String(value || '')
@@ -23,36 +24,38 @@
       .replace(/'/g, '&#39;');
   }
 
-  function groupEvents(events) {
-    const grouped = {};
-    (events || []).forEach((event) => {
-      const key = String(event.type_key || 'otro');
-      if (!grouped[key]) {
-        grouped[key] = {
-          typeLabel: event.type_label || 'Otro control SG-SST',
-          typeShort: event.type_short || 'OT',
-          items: [],
-          totalUnits: 0
-        };
-      }
-      grouped[key].items.push(event);
-      grouped[key].totalUnits += Number(event.units || 1);
-    });
-    return Object.values(grouped).sort((a, b) => {
-      const aPriority = a.typeShort === 'MF' ? 0 : 1;
-      const bPriority = b.typeShort === 'MF' ? 0 : 1;
-      if (aPriority !== bPriority) return aPriority - bPriority;
-      return a.typeLabel.localeCompare(b.typeLabel, 'es');
-    });
+  function formatDate(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    const parts = raw.split('-');
+    if (parts.length !== 3) return raw;
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
   }
 
-  function renderRecords(event) {
-    const records = Array.isArray(event.records) ? event.records : [];
-    if (!records.length) return '';
+  function getCell(cellKey) {
+    const cell = payload[cellKey];
+    if (!cell || typeof cell !== 'object') return null;
+    return cell;
+  }
+
+  function getGroup(cellKey, groupKey) {
+    const cell = getCell(cellKey);
+    if (!cell) return null;
+    return (cell.groups || []).find((group) => String(group.type_key || '') === String(groupKey || '')) || null;
+  }
+
+  function setActive(link) {
+    if (activeLink) activeLink.classList.remove('is-active');
+    activeLink = link || null;
+    if (activeLink) activeLink.classList.add('is-active');
+  }
+
+  function renderRecords(records) {
+    if (!Array.isArray(records) || !records.length) return '';
     return [
-      '<ul class="sst-calendar-record-list">',
+      '<ul class="sst-calendar-side-records">',
       records.map((record) => {
-        const label = escapeHtml(record.label || 'Matafuego');
+        const label = escapeHtml(record.label || 'Registro');
         const detail = escapeHtml(record.detail || '');
         return `<li><strong>${label}</strong>${detail ? `<span>${detail}</span>` : ''}</li>`;
       }).join(''),
@@ -61,61 +64,130 @@
   }
 
   function renderEventItem(event) {
+    const title = escapeHtml(event.title || event.type_label || 'Evento');
     const detail = escapeHtml(event.detail || '');
+    const dateValue = formatDate(event.fecha_evento || '');
     const responsible = escapeHtml(event.responsible || '');
-    const stateLabel = escapeHtml(event.state_label || '');
-    const actionLabel = escapeHtml(event.action_label || 'Abrir');
-    const actionUrl = String(event.url_detail || '').trim();
-    const dateValue = escapeHtml(event.fecha_evento || '');
+    const records = renderRecords(event.records || []);
     return [
-      '<article class="sst-calendar-event-item">',
-      `<div class="sst-calendar-event-meta"><span class="sst-cal-indicator is-${escapeHtml(event.state_class || 'muted')}">${escapeHtml(event.type_short || 'OT')}</span><strong>${escapeHtml(event.title || '')}</strong><span class="sst-calendar-event-state">${stateLabel}</span></div>`,
+      '<article class="sst-calendar-side-event">',
+      `<div class="sst-calendar-side-event-head"><strong>${title}</strong><span>${dateValue || '-'}</span></div>`,
       detail ? `<p>${detail}</p>` : '',
-      renderRecords(event),
-      '<div class="sst-calendar-event-foot">',
-      `<span>${dateValue}${responsible ? ` - ${responsible}` : ''}</span>`,
-      actionUrl ? `<a class="sst-op-btn" href="${escapeHtml(actionUrl)}">${actionLabel}</a>` : '',
-      '</div>',
+      responsible ? `<small>${responsible}</small>` : '',
+      records,
       '</article>'
     ].join('');
   }
 
-  function renderCell(cellKey) {
-    const cell = payload[cellKey];
-    if (!cell) return;
-    dialogTitle.textContent = cell.title || 'Detalle';
-    const grouped = groupEvents(cell.events || []);
-    if (!grouped.length) {
-      dialogBody.innerHTML = '<p class="sst-op-empty">No hay eventos para esta celda.</p>';
-    } else {
-      dialogBody.innerHTML = grouped.map((group) => [
-        '<section class="sst-calendar-event-group">',
-        `<div class="sst-calendar-event-group-head"><span class="sst-cal-indicator">${escapeHtml(group.typeShort || 'OT')}</span><h3>${escapeHtml(group.typeLabel || '')}</h3><small>${group.totalUnits} registro${group.totalUnits === 1 ? '' : 's'}</small></div>`,
-        '<div class="sst-calendar-event-group-list">',
-        group.items.map(renderEventItem).join(''),
-        '</div>',
-        '</section>'
-      ].join('')).join('');
+  function renderPanel(group) {
+    if (!group) {
+      sidePanel.innerHTML = '<p class="sst-op-empty">No hay evento seleccionado.</p>';
+      return;
     }
-    if (!dialog.open) dialog.showModal();
+    const typeVisibleCount = Number((meta.type_counts || {})[group.type_key] || 0);
+    const dateValue = formatDate(group.fecha_evento || '');
+    const groupTitle = escapeHtml(group.title || group.type_label || 'Evento');
+    const groupDetail = escapeHtml(group.detail || '');
+    const eventItems = Array.isArray(group.events) ? group.events : [];
+    const actionUrl = escapeHtml(group.url_detail || '#');
+    const actionLabel = escapeHtml(group.action_label || 'Abrir');
+    sidePanel.innerHTML = [
+      '<section class="sst-calendar-side-detail">',
+      '<div class="sst-calendar-side-top">',
+      `<span class="sst-cal-group-link is-${escapeHtml(group.state_class || 'muted')} is-static"><span class="sst-cal-group-icon">${escapeHtml(group.type_icon || '')}</span><span class="sst-cal-group-code">${escapeHtml(group.type_short || '')}</span>${Number(group.count || 0) > 1 ? `<b>${Number(group.count || 0)}</b>` : ''}</span>`,
+      `<span class="sst-calendar-side-state">${escapeHtml(group.state_icon || '')} ${escapeHtml(group.state_label || '')}</span>`,
+      '</div>',
+      `<h3>${escapeHtml(group.type_label || 'Evento')}</h3>`,
+      `<p class="sst-calendar-side-place">${escapeHtml(group.sede_codigo || '')} - ${escapeHtml(group.sede_nombre || '')}</p>`,
+      `<p class="sst-calendar-side-month">${escapeHtml(group.month_label || '')} ${escapeHtml(String((eventItems[0] && eventItems[0].year) || meta.selected_year || ''))}</p>`,
+      '<div class="sst-calendar-side-metrics">',
+      `<span>${Number(group.count || 0)} visibles en esta celda</span>`,
+      `<span>${typeVisibleCount} visibles con filtros</span>`,
+      '</div>',
+      `<p class="sst-calendar-side-title">${groupTitle}</p>`,
+      groupDetail ? `<p class="sst-calendar-side-text">${groupDetail}</p>` : '',
+      dateValue ? `<p class="sst-calendar-side-date">Fecha: ${dateValue}</p>` : '',
+      eventItems.length ? `<div class="sst-calendar-side-list">${eventItems.map(renderEventItem).join('')}</div>` : '',
+      `<div class="sst-calendar-side-actions"><a class="sst-op-btn" href="${actionUrl}">${actionLabel}</a></div>`,
+      '</section>'
+    ].join('');
   }
 
-  document.querySelectorAll('.js-sst-calendar-cell').forEach((button) => {
-    button.addEventListener('click', () => renderCell(button.dataset.cellKey));
-    button.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        renderCell(button.dataset.cellKey);
-      }
+  function renderTooltip(group) {
+    if (!tooltip || !group) return;
+    const dateValue = formatDate(group.fecha_evento || '');
+    tooltip.innerHTML = [
+      `<strong>${escapeHtml(group.type_icon || '')} ${escapeHtml(group.type_label || 'Evento')}</strong>`,
+      `<span>${escapeHtml(group.sede_codigo || '')}</span>`,
+      `<span>${escapeHtml(group.title || group.detail || '')}</span>`,
+      dateValue ? `<span>${dateValue}</span>` : '',
+      `<span>Estado: ${escapeHtml(group.state_label || '')}</span>`,
+      '<span>Click para abrir.</span>'
+    ].join('');
+  }
+
+  function placeTooltip(link, event) {
+    if (!tooltip || tooltip.hidden) return;
+    const rect = link.getBoundingClientRect();
+    const offsetX = event && Number.isFinite(event.clientX) ? event.clientX : rect.left + (rect.width / 2);
+    const offsetY = event && Number.isFinite(event.clientY) ? event.clientY : rect.top;
+    const left = Math.max(12, Math.min(window.innerWidth - tooltip.offsetWidth - 12, offsetX + 12));
+    const top = Math.max(12, offsetY - tooltip.offsetHeight - 14);
+    tooltip.style.left = `${left}px`;
+    tooltip.style.top = `${top}px`;
+  }
+
+  function showTooltip(link, group, event) {
+    if (!tooltip || !group) return;
+    renderTooltip(group);
+    tooltip.hidden = false;
+    placeTooltip(link, event);
+  }
+
+  function hideTooltip() {
+    if (!tooltip) return;
+    tooltip.hidden = true;
+  }
+
+  function selectLink(link, options) {
+    if (!link) return;
+    const cellKey = link.dataset.cellKey;
+    const groupKey = link.dataset.groupKey;
+    const group = getGroup(cellKey, groupKey);
+    if (!group) return;
+    setActive(link);
+    renderPanel(group);
+    if (options && options.showTooltip) showTooltip(link, group, options.event || null);
+  }
+
+  links.forEach((link) => {
+    link.addEventListener('mouseenter', (event) => {
+      selectLink(link, { showTooltip: true, event });
+    });
+    link.addEventListener('mousemove', (event) => {
+      const group = getGroup(link.dataset.cellKey, link.dataset.groupKey);
+      if (group) showTooltip(link, group, event);
+    });
+    link.addEventListener('mouseleave', hideTooltip);
+    link.addEventListener('focus', () => {
+      selectLink(link, { showTooltip: true });
+    });
+    link.addEventListener('blur', hideTooltip);
+    link.addEventListener('click', () => {
+      selectLink(link, { showTooltip: false });
     });
   });
 
-  [closeTop, closeBottom].forEach((button) => {
-    if (!button) return;
-    button.addEventListener('click', () => dialog.close());
-  });
+  const preferredLink = document.querySelector('.sst-calendar-matrix td.is-current-month .js-sst-calendar-group')
+    || document.querySelector('.sst-calendar-matrix .js-sst-calendar-group')
+    || links[0];
 
-  dialog.addEventListener('click', (event) => {
-    if (event.target === dialog) dialog.close();
-  });
+  if (preferredLink) {
+    selectLink(preferredLink, { showTooltip: false });
+  } else {
+    renderPanel(null);
+  }
+
+  window.addEventListener('scroll', hideTooltip, { passive: true });
+  window.addEventListener('resize', hideTooltip);
 })();
