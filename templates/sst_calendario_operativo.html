@@ -2,7 +2,7 @@
 
 {% block extra_head %}
   <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-11-01') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-11-02') }}">
 {% endblock %}
 
 {% block content %}
@@ -10,19 +10,16 @@
 <section class="sst-operativo sst-ui sst-calendar-page">
   {% include '_sst_operational_nav.html' %}
 
-  <header class="sst-op-header">
+  <header class="sst-op-header sst-calendar-header-compact">
     <div>
-      <p class="sst-op-eyebrow">SG-SST - Calendario operativo</p>
+      <p class="sst-op-eyebrow">SG-SST - Tablero operativo</p>
       <h1>Calendario operativo SG-SST</h1>
-      <p>Planificación anual por sede, mes y evento.</p>
     </div>
     <div class="sst-op-actions">
       <a class="sst-op-btn primary" href="{{ url_for('sst_general', modo='gestion', tipo='no_conformidad', sede=filters.sede or None) }}">Agregar seguimiento</a>
       <a class="sst-op-btn" href="{{ url_for('sst_visita_cargar', sede=filters.sede or None) }}">Registrar visita</a>
-      {% if selected_sede %}
-      <a class="sst-op-btn" href="{{ url_for('sst_sede_ficha', codigo=selected_sede.codigo) }}">Abrir sede</a>
-      {% else %}
-      <span class="sst-op-btn is-disabled" aria-disabled="true">Abrir sede</span>
+      {% if not matafuegos_visible and matafuegos_next %}
+      <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo', year=matafuegos_next.year, month=matafuegos_next.month, tipo='matafuegos', region=filters.region or None, sede=filters.sede or None) }}">🧯 {{ matafuegos_next.month_label[:3] }} {{ matafuegos_next.year }}</a>
       {% endif %}
     </div>
   </header>
@@ -65,7 +62,7 @@
         </select>
       </label>
       <label>
-        <span>Tipo de evento</span>
+        <span>Tipo</span>
         <select name="tipo">
           <option value="">Todos</option>
           {% for type_item in type_options %}
@@ -82,15 +79,6 @@
           {% endfor %}
         </select>
       </label>
-      <label>
-        <span>Responsable</span>
-        <select name="responsable">
-          <option value="">Todos</option>
-          {% for responsable in responsable_options %}
-          <option value="{{ responsable }}" {% if filters.responsable == responsable %}selected{% endif %}>{{ responsable }}</option>
-          {% endfor %}
-        </select>
-      </label>
     </div>
     <div class="sst-calendar-toolbar-actions">
       <button class="sst-op-btn" type="submit">Aplicar</button>
@@ -99,35 +87,30 @@
     </div>
   </form>
 
-  <div class="sst-calendar-kpis">
+  <div class="sst-calendar-kpis sst-calendar-kpis-4">
     <article class="sst-op-card sst-calendar-kpi">
       <span>Acciones del mes</span>
       <strong>{{ summary.acciones_mes }}</strong>
       <small>{{ focus_month_label }} {{ selected_year }}</small>
     </article>
     <article class="sst-op-card sst-calendar-kpi">
-      <span>Vencimientos proximos</span>
+      <span>Próximos vencimientos</span>
       <strong>{{ summary.vencimientos_proximos }}</strong>
       <small>Filtros activos</small>
     </article>
     <article class="sst-op-card sst-calendar-kpi">
-      <span>Acciones vencidas</span>
+      <span>Vencidos</span>
       <strong>{{ summary.acciones_vencidas }}</strong>
-      <small>Requieren intervencion</small>
+      <small>Requieren intervención</small>
     </article>
     <article class="sst-op-card sst-calendar-kpi">
-      <span>Sedes con atencion</span>
+      <span>Sedes con atención</span>
       <strong>{{ summary.sedes_pendientes }}</strong>
-      <small>Con pendientes o alertas</small>
-    </article>
-    <article class="sst-op-card sst-calendar-kpi">
-      <span>Seguimientos abiertos</span>
-      <strong>{{ summary.seguimientos_abiertos }}</strong>
-      <small>Hallazgos y acciones</small>
+      <small>Con tareas o alertas</small>
     </article>
   </div>
 
-  <div class="sst-calendar-layout">
+  <div class="sst-calendar-layout sst-calendar-layout-single">
     <article class="sst-op-card sst-calendar-matrix-card">
       <div class="sst-op-card-head sst-calendar-matrix-head">
         <div>
@@ -136,14 +119,13 @@
         </div>
       </div>
 
-      <div class="sst-calendar-legend-board">
+      <div class="sst-calendar-legend-board sst-calendar-legend-compact">
         <div class="sst-calendar-legend-block">
-          <span class="sst-calendar-legend-title">Tipos de evento</span>
+          <span class="sst-calendar-legend-title">Tipos</span>
           <div class="sst-calendar-type-legend">
             {% for type_item in type_options %}
             <span class="sst-calendar-type-pill">
               <b>{{ type_item.icon }}</b>
-              <span>{{ type_item.short }}</span>
               <small>{{ type_item.label }}</small>
             </span>
             {% endfor %}
@@ -159,18 +141,7 @@
         </div>
       </div>
 
-      {% if not matafuegos_visible and matafuegos_next %}
-      <div class="sst-calendar-inline-alert">
-        <span class="sst-cal-indicator is-info">🧯 MF</span>
-        <div>
-          <strong>Matafuegos fuera del año visible</strong>
-          <p>En {{ selected_year }} no hay vencimientos cargados. Proximo bloque: {{ matafuegos_next.month_label }} {{ matafuegos_next.year }} - {{ matafuegos_next.count }} registros - {{ matafuegos_next.sedes_count }} sedes.</p>
-        </div>
-        <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo', year=matafuegos_next.year, month=matafuegos_next.month, tipo='matafuegos', region=filters.region or None, sede=filters.sede or None) }}">Ver MF</a>
-      </div>
-      {% endif %}
-
-      <div class="sst-calendar-table-wrap">
+      <div class="sst-calendar-table-wrap sst-calendar-table-wrap-wide">
         <table class="sst-calendar-matrix" aria-label="Calendario operativo anual SG-SST">
           <thead>
             <tr>
@@ -190,23 +161,16 @@
               {% for cell in row.cells %}
               <td class="{% if cell.has_events %}has-events{% endif %} {% if cell.month == today_month %}is-current-month{% endif %}">
                 {% if cell.has_events %}
-                <div class="sst-cal-cell-stack">
+                <div class="sst-cal-cell-stack sst-cal-cell-stack-compact">
                   {% for group in cell.groups %}
                   <a
                     href="{{ group.url_detail or '#' }}"
-                    class="sst-cal-group-link is-{{ group.state_class }} js-sst-calendar-group"
+                    class="sst-cal-group-link sst-cal-group-link-compact is-{{ group.state_class }} js-sst-calendar-group"
                     data-cell-key="{{ cell.key }}"
                     data-group-key="{{ group.type_key }}"
-                    data-tooltip-title="{{ group.tooltip_title }}"
-                    data-tooltip-sede="{{ group.tooltip_sede }}"
-                    data-tooltip-detail="{{ group.tooltip_detail }}"
-                    data-tooltip-date="{{ group.fecha_evento }}"
-                    data-tooltip-state="{{ group.tooltip_state }}"
-                    data-tooltip-action="{{ group.action_label }}"
                     aria-label="{{ group.aria_label }}"
                   >
                     <span class="sst-cal-group-icon">{{ group.type_icon }}</span>
-                    <span class="sst-cal-group-code">{{ group.type_short }}</span>
                     {% if group.count > 1 %}<b>{{ group.count }}</b>{% endif %}
                   </a>
                   {% endfor %}
@@ -222,18 +186,6 @@
         </table>
       </div>
     </article>
-
-    <aside class="sst-op-card sst-calendar-side-card">
-      <div class="sst-op-card-head">
-        <div>
-          <h2>Detalle seleccionado</h2>
-          <div class="sst-op-count">Evento operativo y acceso directo</div>
-        </div>
-      </div>
-      <div class="sst-calendar-side-body" id="sstCalendarSidePanel">
-        <p class="sst-op-empty">Pasá el mouse por un evento o enfocá un chip para ver el detalle.</p>
-      </div>
-    </aside>
   </div>
 
   <article class="sst-op-card sst-calendar-mobile-card">
@@ -248,23 +200,16 @@
       <div class="sst-calendar-mobile-item">
         <div>
           <strong>{{ row.sede_codigo }} - {{ row.sede_nombre }}</strong>
-          <div class="sst-cal-cell-stack">
+          <div class="sst-cal-cell-stack sst-cal-cell-stack-compact">
             {% for group in row.groups %}
             <a
               href="{{ group.url_detail or '#' }}"
-              class="sst-cal-group-link is-{{ group.state_class }} js-sst-calendar-group"
+              class="sst-cal-group-link sst-cal-group-link-compact is-{{ group.state_class }} js-sst-calendar-group"
               data-cell-key="{{ row.cell_key }}"
               data-group-key="{{ group.type_key }}"
-              data-tooltip-title="{{ group.tooltip_title }}"
-              data-tooltip-sede="{{ group.tooltip_sede }}"
-              data-tooltip-detail="{{ group.tooltip_detail }}"
-              data-tooltip-date="{{ group.fecha_evento }}"
-              data-tooltip-state="{{ group.tooltip_state }}"
-              data-tooltip-action="{{ group.action_label }}"
               aria-label="{{ group.aria_label }}"
             >
               <span class="sst-cal-group-icon">{{ group.type_icon }}</span>
-              <span class="sst-cal-group-code">{{ group.type_short }}</span>
               {% if group.count > 1 %}<b>{{ group.count }}</b>{% endif %}
             </a>
             {% endfor %}
@@ -281,5 +226,5 @@
 
 <div class="sst-calendar-tooltip" id="sstCalendarTooltip" hidden></div>
 <script id="sstCalendarPayload" type="application/json">{{ matrix_payload|tojson }}</script>
-<script src="{{ url_for('static', filename='sst/sst_calendario_operativo.js', v='2026-07-11-01') }}"></script>
+<script src="{{ url_for('static', filename='sst/sst_calendario_operativo.js', v='2026-07-11-02') }}"></script>
 {% endblock %}

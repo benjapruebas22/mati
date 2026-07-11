@@ -8300,10 +8300,11 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         active=True,
         units=1,
         records=None,
+        extra=None,
     ):
         state_meta = _sst_calendar_state_meta(state_key)
         type_meta = _sst_calendar_type_meta(type_key)
-        return {
+        event = {
             "source_id": source_id,
             "source_type": source_type,
             "sede_codigo": (sede_codigo or "").strip().upper(),
@@ -8332,6 +8333,9 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             "units": max(1, int(units or 1)),
             "records": list(records or []),
         }
+        if isinstance(extra, dict):
+            event.update(extra)
+        return event
 
     def _sst_calendar_collect_events(con, selected_year):
         ensure_sst_visitas_docs_tables(con)
@@ -8394,6 +8398,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             serie_expr = "COALESCE(numero_serie, '')" if "numero_serie" in mata_cols else "''"
             ubic_expr = "COALESCE(ubicacion, '')" if "ubicacion" in mata_cols else "''"
             venc_expr = "COALESCE(fecha_vencimiento, '')" if "fecha_vencimiento" in mata_cols else "''"
+            recarga_expr = "COALESCE(fecha_recarga, '')" if "fecha_recarga" in mata_cols else "''"
             nro_ext_expr = "COALESCE(nro_extintor, '')" if "nro_extintor" in mata_cols else "''"
             lote_expr = "COALESCE(lote_vencimiento, '')" if "lote_vencimiento" in mata_cols else "''"
             raw_rows = con.execute(f"""
@@ -8404,6 +8409,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     {serie_expr} AS numero_serie,
                     {ubic_expr} AS ubicacion,
                     {venc_expr} AS fecha_vencimiento,
+                    {recarga_expr} AS fecha_recarga,
                     {nro_ext_expr} AS nro_extintor,
                     {lote_expr} AS lote_vencimiento,
                     {activo_expr} AS activo
@@ -8459,10 +8465,14 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 title = "Vence 1 matafuego" if count_items == 1 else f"Vencen {count_items} matafuegos"
                 fechas_count = defaultdict(int)
                 lotes = []
+                recargas = []
                 for item in rows_group:
                     fecha_item = _sst_calendar_parse_date(_row_value(item, "fecha_vencimiento", ""))
                     if fecha_item:
                         fechas_count[fecha_item] += 1
+                    fecha_recarga = _sst_calendar_parse_date(_row_value(item, "fecha_recarga", ""))
+                    if fecha_recarga:
+                        recargas.append(fecha_recarga)
                     lote = (_row_value(item, "lote_vencimiento", "") or "").strip()
                     if lote and lote.lower() != "otro" and lote not in lotes:
                         lotes.append(lote)
@@ -8475,6 +8485,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 if fechas_txt:
                     detail_parts.append("Fechas: " + " · ".join(fechas_txt[:4]))
                 detail = " | ".join(detail_parts) if detail_parts else "Vencimiento agrupado por sede y mes."
+                ultima_recarga = max(recargas).isoformat() if recargas else ""
                 records = []
                 rows_sorted = sorted(
                     rows_group,
@@ -8531,6 +8542,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     active=(estado != "cumplido"),
                     units=count_items,
                     records=records,
+                    extra={"last_service_date": ultima_recarga},
                 ))
 
         matafuegos_overview = []
@@ -8612,6 +8624,10 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     ),
                     action_label="Abrir visitas",
                     active=(estado != "cumplido"),
+                    extra={
+                        "visit_type": (_row_value(row, "tipo_visita", "") or "").strip(),
+                        "observaciones": (_row_value(row, "observaciones", "") or "").strip(),
+                    },
                 ))
 
         if _table_exists(con, "sst_general"):
