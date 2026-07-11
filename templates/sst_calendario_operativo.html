@@ -2,7 +2,7 @@
 
 {% block extra_head %}
   <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-10-04') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-10-05') }}">
 {% endblock %}
 
 {% block content %}
@@ -140,6 +140,16 @@
           {% endfor %}
         </div>
       </div>
+      {% if not matafuegos_visible and matafuegos_next %}
+      <div class="sst-calendar-inline-alert">
+        <span class="sst-cal-indicator is-info">MF</span>
+        <div>
+          <strong>Matafuegos fuera del año visible</strong>
+          <p>En {{ selected_year }} no hay vencimientos cargados. Proximo bloque: {{ matafuegos_next.month_label }} {{ matafuegos_next.year }} · {{ matafuegos_next.count }} registros · {{ matafuegos_next.sedes_count }} sedes.</p>
+        </div>
+        <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo', year=matafuegos_next.year, month=matafuegos_next.month, tipo='matafuegos', region=filters.region or None, sede=filters.sede or None) }}">Ver MF</a>
+      </div>
+      {% endif %}
       <div class="sst-calendar-table-wrap">
         <table class="sst-calendar-matrix" aria-label="Calendario operativo anual SG-SST">
           <thead>

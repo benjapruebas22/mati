@@ -205,6 +205,28 @@
 .sst-calendar-legend-item.is-vencido { background: #fff0f0; color: #b42318; }
 .sst-calendar-legend-item.is-en_seguimiento { background: #f5efff; color: #6a40c2; }
 .sst-calendar-legend-item.is-sin_datos { background: #eef1f5; color: #667085; }
+.sst-calendar-inline-alert {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  margin: 0 14px 12px;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fafbff;
+}
+.sst-calendar-inline-alert strong {
+  display: block;
+  color: #162134;
+  font-size: 12px;
+}
+.sst-calendar-inline-alert p {
+  margin: 2px 0 0;
+  color: var(--sst-muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
 
 .sst-calendar-table-wrap { overflow: visible; }
 .sst-calendar-matrix {
@@ -512,6 +534,10 @@
   .sst-calendar-toolbar-actions { justify-content: flex-start; }
   .sst-calendar-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .sst-calendar-layout { grid-template-columns: 1fr; }
+  .sst-calendar-inline-alert {
+    grid-template-columns: 1fr;
+    align-items: flex-start;
+  }
 }
 
 @media (max-width: 560px) {
