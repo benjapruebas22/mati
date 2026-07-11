@@ -143,6 +143,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         (12, "Diciembre"),
     ]
     SST_CALENDAR_TYPE_META = {
+        "desinfeccion": {"label": "Desinfeccion", "short": "DES", "icon": "\U0001F9F9", "action": "Abrir desinfecciones"},
         "matafuegos": {"label": "Matafuegos", "short": "MF", "icon": "🧯", "action": "Ver matafuegos"},
         "visita": {"label": "Visita", "short": "VS", "icon": "👷", "action": "Abrir visitas"},
         "documentacion": {"label": "Documentacion ART", "short": "DOC", "icon": "📄", "action": "Abrir documentacion"},
@@ -163,6 +164,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         "sin_datos": {"label": "Sin datos", "class": "muted", "rank": 15, "icon": "⚪"},
     }
     SST_CALENDAR_REQUIRED_DOCS = ("DEC_351_79", "RGRL")
+    SST_CALENDAR_VISIBLE_TYPES = ("matafuegos", "desinfeccion", "luces", "carteleria", "visita")
 
     def ensure_sst_visitas_docs_tables(con):
         con.execute("""
@@ -6422,9 +6424,10 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
 
         all_events = context_raw["events"]
         filtered_events = _sst_calendar_filter_events(all_events, filters)
+        visible_events = _sst_calendar_visible_events(filtered_events)
         focus_month = selected_month or (context_raw["today"].month if selected_year == context_raw["today"].year else 1)
-        matrix_rows, matrix_payload = _sst_calendar_build_matrix(context_raw["sedes"], filtered_events)
-        summary = _sst_calendar_summary(filtered_events, focus_month)
+        matrix_rows, matrix_payload = _sst_calendar_build_matrix(context_raw["sedes"], visible_events)
+        summary = _sst_calendar_summary(visible_events, focus_month)
         mobile_rows = _sst_calendar_mobile_rows(context_raw["sedes"], matrix_payload, focus_month)
 
         region_options = sorted({
@@ -6438,12 +6441,11 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             if (event.get("responsible") or "").strip()
         })
         type_options = [
-            {"value": key, "label": meta["label"], "short": meta["short"], "icon": meta.get("icon", "")}
-            for key, meta in SST_CALENDAR_TYPE_META.items()
-            if key != "otro" and (
-                any(event["type_key"] == key for event in all_events)
-                or (key == "matafuegos" and bool(context_raw.get("matafuegos_overview")))
-            )
+            {"value": "matafuegos", "label": "Matafuegos", "short": "MF", "icon": "\U0001F9EF"},
+            {"value": "desinfeccion", "label": "Desinfeccion", "short": "DES", "icon": "\U0001F9F9"},
+            {"value": "luces", "label": "Luces de emergencia", "short": "LUC", "icon": "\U0001F6A8"},
+            {"value": "carteleria", "label": "Carteleria", "short": "CAR", "icon": "\U0001F6AA"},
+            {"value": "visita", "label": "Visitas", "short": "VIS", "icon": "\U0001F477"},
         ]
         state_options = [
             {"value": key, "label": meta["label"], "class": meta["class"], "icon": meta.get("icon", "")}
@@ -6459,7 +6461,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 if event["type_key"] == type_item["value"]
             )
         for type_item in type_options:
-            count_value = sum(int(event.get("units", 1) or 1) for event in filtered_events if event["type_key"] == type_item["value"])
+            count_value = sum(int(event.get("units", 1) or 1) for event in visible_events if event["type_key"] == type_item["value"])
             type_counts_map[type_item["value"]] = count_value
             if count_value <= 0:
                 continue
@@ -6470,7 +6472,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 "count": count_value,
             })
         matafuegos_overview = list(context_raw.get("matafuegos_overview") or [])
-        matafuegos_visible = any(event["type_key"] == "matafuegos" for event in filtered_events)
+        matafuegos_visible = any(event["type_key"] == "matafuegos" for event in visible_events)
         selected_month_for_next = selected_month or 1
         matafuegos_next = next(
             (
@@ -6518,7 +6520,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             state_options=state_options,
             year_options=context_raw["event_years"],
             month_options=[{"value": number, "label": label} for number, label in SST_CALENDAR_MONTHS],
-            total_filtered_events=len(filtered_events),
+            total_filtered_events=len(visible_events),
             today_iso=context_raw["today"].isoformat(),
             today_year=context_raw["today"].year,
             today_month=context_raw["today"].month,
@@ -8283,6 +8285,9 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             return "planos"
         return ""
 
+    def _sst_calendar_visible_events(events):
+        return [event for event in events if event.get("type_key") in SST_CALENDAR_VISIBLE_TYPES]
+
     def _sst_calendar_build_event(
         source_id,
         source_type,
@@ -8559,6 +8564,21 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             })
 
         if _table_exists(con, "sst_visitas"):
+            docs_by_visit = defaultdict(list)
+            if _table_exists(con, "sst_documentos"):
+                docs_by_visit_rows = con.execute("""
+                    SELECT
+                        visita_id,
+                        COALESCE(archivo, '') AS archivo,
+                        COALESCE(drive_url, '') AS drive_url
+                    FROM sst_documentos
+                    WHERE visita_id IS NOT NULL
+                """).fetchall()
+                for doc_row in docs_by_visit_rows:
+                    visit_id = _row_value(doc_row, "visita_id", None)
+                    if visit_id is None:
+                        continue
+                    docs_by_visit[int(visit_id)].append(doc_row)
             visitas_rows = con.execute("""
                 SELECT
                     v.id,
@@ -8605,6 +8625,12 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     detail_parts.append((_row_value(row, "responsable", "") or "").strip())
                 if (_row_value(row, "observaciones", "") or "").strip():
                     detail_parts.append((_row_value(row, "observaciones", "") or "").strip())
+                visit_id = int(_row_value(row, "id", 0) or 0)
+                visit_docs = docs_by_visit.get(visit_id, [])
+                art_loaded = any(
+                    (_row_value(item, "archivo", "") or "").strip() or (_row_value(item, "drive_url", "") or "").strip()
+                    for item in visit_docs
+                )
                 events.append(_sst_calendar_build_event(
                     source_id=str(_row_value(row, "id", "")),
                     source_type="sst_visitas",
@@ -8617,16 +8643,94 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     detail=" · ".join(detail_parts) if detail_parts else "Visita operativa de sede.",
                     state_key=estado,
                     responsible=(_row_value(row, "responsable", "") or "").strip(),
-                    url_detail=url_for(
-                        "sst_visitas",
-                        q=sede_codigo,
-                        vista=("pendientes" if estado in {"pendiente", "vencido"} else ("proximas" if estado == "programado" else "realizadas")),
-                    ),
-                    action_label="Abrir visitas",
+                    url_detail=url_for("sst_sede_ficha", codigo=sede_codigo),
+                    action_label="Abrir ficha de visita",
                     active=(estado != "cumplido"),
                     extra={
                         "visit_type": (_row_value(row, "tipo_visita", "") or "").strip(),
                         "observaciones": (_row_value(row, "observaciones", "") or "").strip(),
+                        "art_loaded": art_loaded,
+                        "visit_documents_count": len(visit_docs),
+                        "type_icon": "\U0001F477",
+                        "type_label": "Visitas",
+                        "type_short": "VIS",
+                    },
+                ))
+
+        if _table_exists(con, "obras_sede"):
+            desinf_rows = con.execute("""
+                SELECT
+                    o.id,
+                    UPPER(COALESCE(o.codigo_sede, '')) AS sede_codigo,
+                    COALESCE(o.estado, '') AS estado,
+                    COALESCE(o.tipo, '') AS tipo,
+                    COALESCE(o.titulo, '') AS titulo,
+                    COALESCE(o.descripcion, '') AS descripcion,
+                    COALESCE(o.fecha_solicitud, '') AS fecha_solicitud,
+                    COALESCE(o.fecha_inicio, '') AS fecha_inicio,
+                    COALESCE(o.fecha_fin_real, '') AS fecha_fin_real
+                FROM obras_sede o
+                WHERE
+                    LOWER(COALESCE(o.tipo, '')) LIKE '%desinfecc%'
+                    OR LOWER(COALESCE(o.titulo, '')) LIKE '%desinfecc%'
+                    OR LOWER(COALESCE(o.descripcion, '')) LIKE '%desinfecc%'
+                ORDER BY COALESCE(o.fecha_fin_real, o.fecha_inicio, o.fecha_solicitud), o.id
+            """).fetchall()
+            for row in desinf_rows:
+                fecha_fin = _sst_calendar_parse_date(_row_value(row, "fecha_fin_real", ""))
+                fecha_inicio = _sst_calendar_parse_date(_row_value(row, "fecha_inicio", ""))
+                fecha_solicitud = _sst_calendar_parse_date(_row_value(row, "fecha_solicitud", ""))
+                event_date = fecha_fin or fecha_inicio or fecha_solicitud
+                if not event_date or event_date.year != selected_year:
+                    continue
+                event_years.add(event_date.year)
+                sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
+                if not sede_codigo:
+                    continue
+                sede_info = sedes_map.get(sede_codigo, {})
+                estado_raw = (_row_value(row, "estado", "") or "").strip().upper()
+                if estado_raw == "FINALIZADA":
+                    estado = "cumplido"
+                    title = "Desinfeccion realizada"
+                elif fecha_inicio and fecha_inicio > today_ref:
+                    estado = "programado"
+                    title = "Desinfeccion programada"
+                elif estado_raw == "EN_CURSO":
+                    estado = "pendiente"
+                    title = "Desinfeccion en curso"
+                elif event_date < today_ref:
+                    estado = "pendiente"
+                    title = "Desinfeccion pendiente"
+                else:
+                    estado = "programado"
+                    title = "Desinfeccion programada"
+                detail_parts = []
+                if (_row_value(row, "titulo", "") or "").strip():
+                    detail_parts.append((_row_value(row, "titulo", "") or "").strip())
+                if (_row_value(row, "descripcion", "") or "").strip():
+                    detail_parts.append((_row_value(row, "descripcion", "") or "").strip())
+                events.append(_sst_calendar_build_event(
+                    source_id=str(_row_value(row, "id", "")),
+                    source_type="obras_sede",
+                    sede_codigo=sede_codigo,
+                    sede_nombre=sede_info.get("nombre", ""),
+                    region_label=sede_info.get("region", ""),
+                    event_date=event_date,
+                    type_key="desinfeccion",
+                    title=title,
+                    detail=" | ".join(detail_parts) if detail_parts else "Desinfeccion operativa por sede.",
+                    state_key=estado,
+                    responsible="",
+                    url_detail=url_for("obras_home", sede=sede_codigo, panel="panel-desinf"),
+                    action_label="Abrir historial de desinfecciones",
+                    active=(estado != "cumplido"),
+                    extra={
+                        "start_date": fecha_inicio.isoformat() if fecha_inicio else "",
+                        "end_date": fecha_fin.isoformat() if fecha_fin else "",
+                        "source_status": estado_raw,
+                        "type_icon": "\U0001F9F9",
+                        "type_label": "Desinfeccion",
+                        "type_short": "DES",
                     },
                 ))
 
@@ -8815,21 +8919,25 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 control_type = _sst_calendar_control_type(_row_value(row, "nombre", ""))
                 if not control_type:
                     continue
+                if control_type == "planos":
+                    control_type = "carteleria"
                 control_available.add(control_type)
                 sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
                 if not sede_codigo:
                     continue
-                control_map[control_type][sede_codigo] = {
-                    "ok": int(_row_value(row, "ok", 0) or 0),
-                    "actualizado_en": (_row_value(row, "actualizado_en", "") or "").strip(),
-                }
+                control_item = control_map[control_type].setdefault(sede_codigo, {"oks": [], "actualizados": []})
+                ok_value = _row_value(row, "ok", None)
+                control_item["oks"].append(None if ok_value is None else int(ok_value or 0))
+                actualizado = (_row_value(row, "actualizado_en", "") or "").strip()
+                if actualizado:
+                    control_item["actualizados"].append(actualizado)
             for sede_item in sedes:
                 sede_codigo = sede_item["codigo"]
-                for control_type in ("carteleria", "luces", "planos"):
-                    if control_type not in control_available and control_type != "planos":
+                for control_type in ("carteleria", "luces"):
+                    if control_type not in control_available:
                         continue
                     control_row = control_map.get(control_type, {}).get(sede_codigo)
-                    if not control_row:
+                    if not control_row or not control_row.get("oks") or all(ok is None for ok in control_row["oks"]):
                         events.append(_sst_calendar_build_event(
                             source_id=f"{control_type}-missing-{sede_codigo}",
                             source_type="sst_control",
@@ -8839,17 +8947,36 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                             event_date=today_ref,
                             type_key=control_type,
                             title=f"{_sst_calendar_type_meta(control_type)['label']} sin relevamiento",
-                            detail="No hay control cargado para la sede.",
+                            detail=(
+                                "No hay plano ni carteleria relevados para la sede."
+                                if control_type == "carteleria"
+                                else "No hay control cargado para la sede."
+                            ),
                             state_key="sin_datos",
                             responsible="",
-                            url_detail=url_for("sst_sede_ficha", codigo=sede_codigo),
-                            action_label="Abrir sede",
+                            url_detail=(
+                                url_for("sede_ficha", codigo=sede_codigo, tab="planos", view="operativo") + "#planos"
+                                if control_type == "carteleria"
+                                else url_for("sede_ficha", codigo=sede_codigo, tab="luminarias", view="operativo")
+                            ),
+                            action_label=(
+                                "Abrir plano de carteleria"
+                                if control_type == "carteleria"
+                                else "Abrir luces de emergencia"
+                            ),
                             active=True,
+                            extra={
+                                "type_icon": ("\U0001F6AA" if control_type == "carteleria" else "\U0001F6A8"),
+                                "type_label": ("Carteleria" if control_type == "carteleria" else "Luces de emergencia"),
+                            },
                         ))
                         continue
-                    if int(control_row.get("ok", 0) or 0) == 1:
+                    oks = [ok for ok in control_row.get("oks", []) if ok is not None]
+                    if oks and all(int(ok or 0) == 1 for ok in oks):
                         continue
-                    anchor = _sst_calendar_parse_date(control_row.get("actualizado_en", "")) or today_ref
+                    actualizados = sorted(control_row.get("actualizados", []))
+                    anchor = _sst_calendar_parse_date(actualizados[-1]) if actualizados else today_ref
+                    anchor = anchor or today_ref
                     events.append(_sst_calendar_build_event(
                         source_id=f"{control_type}-{sede_codigo}",
                         source_type="sst_control",
@@ -8859,12 +8986,28 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                         event_date=anchor,
                         type_key=control_type,
                         title=f"{_sst_calendar_type_meta(control_type)['label']} requiere atencion",
-                        detail="Control con observacion pendiente o sin cierre.",
+                        detail=(
+                            "Plano o carteleria con observacion pendiente o sin cierre."
+                            if control_type == "carteleria"
+                            else "Control con observacion pendiente o sin cierre."
+                        ),
                         state_key="pendiente",
                         responsible="",
-                        url_detail=url_for("sst_sede_ficha", codigo=sede_codigo),
-                        action_label="Abrir sede",
+                        url_detail=(
+                            url_for("sede_ficha", codigo=sede_codigo, tab="planos", view="operativo") + "#planos"
+                            if control_type == "carteleria"
+                            else url_for("sede_ficha", codigo=sede_codigo, tab="luminarias", view="operativo")
+                        ),
+                        action_label=(
+                            "Abrir plano de carteleria"
+                            if control_type == "carteleria"
+                            else "Abrir luces de emergencia"
+                        ),
                         active=True,
+                        extra={
+                            "type_icon": ("\U0001F6AA" if control_type == "carteleria" else "\U0001F6A8"),
+                            "type_label": ("Carteleria" if control_type == "carteleria" else "Luces de emergencia"),
+                        },
                     ))
 
         return {
