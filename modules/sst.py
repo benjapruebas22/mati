@@ -6440,7 +6440,10 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         type_options = [
             {"value": key, "label": meta["label"]}
             for key, meta in SST_CALENDAR_TYPE_META.items()
-            if key != "otro" and any(event["type_key"] == key for event in all_events)
+            if key != "otro" and (
+                any(event["type_key"] == key for event in all_events)
+                or (key == "matafuegos" and bool(context_raw.get("matafuegos_overview")))
+            )
         ]
         state_options = [
             {"value": key, "label": meta["label"]}
@@ -6456,6 +6459,16 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 "short": _sst_calendar_type_meta(type_item["value"])["short"],
                 "count": count_value,
             })
+        matafuegos_overview = list(context_raw.get("matafuegos_overview") or [])
+        matafuegos_visible = any(event["type_key"] == "matafuegos" for event in filtered_events)
+        selected_month_for_next = selected_month or 1
+        matafuegos_next = next(
+            (
+                item for item in matafuegos_overview
+                if (int(item["year"]), int(item["month"])) >= (int(selected_year), int(selected_month_for_next))
+            ),
+            matafuegos_overview[0] if matafuegos_overview else None,
+        )
 
         selected_sede = next(
             (sede for sede in context_raw["sedes"] if sede["codigo"] == filters["sede"]),
@@ -6475,6 +6488,9 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             matrix_payload=matrix_payload,
             mobile_rows=mobile_rows,
             source_counts=source_counts,
+            matafuegos_overview=matafuegos_overview,
+            matafuegos_visible=matafuegos_visible,
+            matafuegos_next=matafuegos_next,
             sedes=context_raw["sedes"],
             selected_sede=selected_sede,
             region_options=region_options,
@@ -8264,6 +8280,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         action_label="",
         active=True,
         units=1,
+        records=None,
     ):
         state_meta = _sst_calendar_state_meta(state_key)
         type_meta = _sst_calendar_type_meta(type_key)
@@ -8291,6 +8308,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             "action_label": action_label or type_meta["action"],
             "active": bool(active),
             "units": max(1, int(units or 1)),
+            "records": list(records or []),
         }
 
     def _sst_calendar_collect_events(con, selected_year):
@@ -8340,6 +8358,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             sedes_map[sede_item["codigo"]] = sede_item
 
         events = []
+        matafuegos_overview_map = {}
 
         if _table_exists(con, "matafuegos"):
             mata_cols = _table_cols(con, "matafuegos")
@@ -8372,12 +8391,28 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             grouped_mata = {}
             for row in raw_rows:
                 sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
-                if not sede_codigo:
-                    continue
                 event_date = _sst_calendar_parse_date(_row_value(row, "fecha_vencimiento", ""))
-                if not event_date or event_date.year != selected_year:
+                if not event_date:
                     continue
                 event_years.add(event_date.year)
+                overview_key = (event_date.year, event_date.month)
+                overview_item = matafuegos_overview_map.setdefault(overview_key, {
+                    "year": event_date.year,
+                    "month": event_date.month,
+                    "count": 0,
+                    "sedes": set(),
+                    "first_date": event_date,
+                    "last_date": event_date,
+                })
+                overview_item["count"] += 1
+                if sede_codigo:
+                    overview_item["sedes"].add(sede_codigo)
+                if event_date < overview_item["first_date"]:
+                    overview_item["first_date"] = event_date
+                if event_date > overview_item["last_date"]:
+                    overview_item["last_date"] = event_date
+                if not sede_codigo or event_date.year != selected_year:
+                    continue
                 group_key = (sede_codigo, event_date.year, event_date.month)
                 if group_key not in grouped_mata:
                     grouped_mata[group_key] = []
@@ -8418,6 +8453,41 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 if fechas_txt:
                     detail_parts.append("Fechas: " + " · ".join(fechas_txt[:4]))
                 detail = " | ".join(detail_parts) if detail_parts else "Vencimiento agrupado por sede y mes."
+                records = []
+                rows_sorted = sorted(
+                    rows_group,
+                    key=lambda item: (
+                        _row_value(item, "fecha_vencimiento", "") or "",
+                        _row_value(item, "ubicacion", "") or "",
+                        _row_value(item, "nro_extintor", "") or "",
+                        _row_value(item, "numero_serie", "") or "",
+                    ),
+                )
+                for item in rows_sorted:
+                    fecha_item = _sst_calendar_parse_date(_row_value(item, "fecha_vencimiento", ""))
+                    ubicacion = (_row_value(item, "ubicacion", "") or "").strip()
+                    numero_serie = (_row_value(item, "numero_serie", "") or "").strip()
+                    nro_extintor = (_row_value(item, "nro_extintor", "") or "").strip()
+                    tipo = (_row_value(item, "tipo", "") or "").strip()
+                    lote = (_row_value(item, "lote_vencimiento", "") or "").strip()
+                    record_label_parts = []
+                    if nro_extintor:
+                        record_label_parts.append(f"Ext. {nro_extintor}")
+                    if numero_serie:
+                        record_label_parts.append(f"Serie {numero_serie}")
+                    if ubicacion:
+                        record_label_parts.append(ubicacion)
+                    record_detail_parts = []
+                    if tipo:
+                        record_detail_parts.append(tipo)
+                    if lote and lote.lower() != "otro":
+                        record_detail_parts.append(f"Lote {lote}")
+                    if fecha_item:
+                        record_detail_parts.append(fecha_item.strftime("%d/%m/%Y"))
+                    records.append({
+                        "label": " - ".join(record_label_parts) if record_label_parts else "Matafuego",
+                        "detail": " - ".join(record_detail_parts),
+                    })
                 events.append(_sst_calendar_build_event(
                     source_id=",".join(str(_row_value(item, "id", "")) for item in rows_group),
                     source_type="matafuegos",
@@ -8438,7 +8508,21 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     action_label="Ver matafuegos",
                     active=(estado != "cumplido"),
                     units=count_items,
+                    records=records,
                 ))
+
+        matafuegos_overview = []
+        for overview_key in sorted(matafuegos_overview_map.keys()):
+            overview_item = matafuegos_overview_map[overview_key]
+            matafuegos_overview.append({
+                "year": int(overview_item["year"]),
+                "month": int(overview_item["month"]),
+                "month_label": _sst_calendar_month_name(int(overview_item["month"])),
+                "count": int(overview_item["count"]),
+                "sedes_count": len(overview_item["sedes"]),
+                "first_date": overview_item["first_date"].isoformat(),
+                "last_date": overview_item["last_date"].isoformat(),
+            })
 
         if _table_exists(con, "sst_visitas"):
             visitas_rows = con.execute("""
@@ -8754,6 +8838,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             ),
             "sedes": sedes,
             "event_years": sorted(event_years),
+            "matafuegos_overview": matafuegos_overview,
             "today": today_ref,
         }
 
@@ -8793,7 +8878,13 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             for month_number, month_label in SST_CALENDAR_MONTHS:
                 cell_events = sorted(
                     cells.get((sede["codigo"], month_number), []),
-                    key=lambda item: (-int(item["state_rank"]), item["day"], item["type_label"], item["title"]),
+                    key=lambda item: (
+                        0 if item["type_key"] == "matafuegos" else 1,
+                        -int(item["state_rank"]),
+                        item["day"],
+                        item["type_label"],
+                        item["title"],
+                    ),
                 )
                 type_groups = {}
                 for event in cell_events:
@@ -8815,7 +8906,12 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                         group["state_class"] = event["state_class"]
                 indicators = sorted(
                     type_groups.values(),
-                    key=lambda item: (-int(item["state_rank"]), -int(item["count"]), item["type_label"]),
+                    key=lambda item: (
+                        0 if item["type_key"] == "matafuegos" else 1,
+                        -int(item["state_rank"]),
+                        -int(item["count"]),
+                        item["type_label"],
+                    ),
                 )
                 cell_key = f"{sede['codigo']}|{month_number:02d}"
                 payload[cell_key] = {

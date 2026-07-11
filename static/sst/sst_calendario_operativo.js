@@ -38,7 +38,26 @@
       grouped[key].items.push(event);
       grouped[key].totalUnits += Number(event.units || 1);
     });
-    return Object.values(grouped).sort((a, b) => a.typeLabel.localeCompare(b.typeLabel, 'es'));
+    return Object.values(grouped).sort((a, b) => {
+      const aPriority = a.typeShort === 'MF' ? 0 : 1;
+      const bPriority = b.typeShort === 'MF' ? 0 : 1;
+      if (aPriority !== bPriority) return aPriority - bPriority;
+      return a.typeLabel.localeCompare(b.typeLabel, 'es');
+    });
+  }
+
+  function renderRecords(event) {
+    const records = Array.isArray(event.records) ? event.records : [];
+    if (!records.length) return '';
+    return [
+      '<ul class="sst-calendar-record-list">',
+      records.map((record) => {
+        const label = escapeHtml(record.label || 'Matafuego');
+        const detail = escapeHtml(record.detail || '');
+        return `<li><strong>${label}</strong>${detail ? `<span>${detail}</span>` : ''}</li>`;
+      }).join(''),
+      '</ul>'
+    ].join('');
   }
 
   function renderEventItem(event) {
@@ -52,8 +71,9 @@
       '<article class="sst-calendar-event-item">',
       `<div class="sst-calendar-event-meta"><span class="sst-cal-indicator is-${escapeHtml(event.state_class || 'muted')}">${escapeHtml(event.type_short || 'OT')}</span><strong>${escapeHtml(event.title || '')}</strong><span class="sst-calendar-event-state">${stateLabel}</span></div>`,
       detail ? `<p>${detail}</p>` : '',
+      renderRecords(event),
       '<div class="sst-calendar-event-foot">',
-      `<span>${dateValue}${responsible ? ` · ${responsible}` : ''}</span>`,
+      `<span>${dateValue}${responsible ? ` - ${responsible}` : ''}</span>`,
       actionUrl ? `<a class="sst-op-btn" href="${escapeHtml(actionUrl)}">${actionLabel}</a>` : '',
       '</div>',
       '</article>'

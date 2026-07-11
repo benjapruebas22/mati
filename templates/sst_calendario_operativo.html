@@ -2,7 +2,7 @@
 
 {% block extra_head %}
   <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-10-03') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-10-04') }}">
 {% endblock %}
 
 {% block content %}
@@ -202,6 +202,30 @@
         <p class="sst-op-empty">No hay eventos con los filtros actuales.</p>
         {% endfor %}
       </div>
+      {% if matafuegos_overview %}
+      <div class="sst-calendar-help sst-calendar-focus-block">
+        <strong>Matafuegos</strong>
+        <p>Acceso rapido por vencimiento usando solo la fecha cargada.</p>
+        <div class="sst-calendar-focus-links">
+          {% for item in matafuegos_overview %}
+          <a
+            class="sst-calendar-focus-pill {% if filters.tipo == 'matafuegos' and selected_year == item.year and selected_month == item.month %}is-active{% endif %}"
+            href="{{ url_for('sst_calendario_operativo', year=item.year, month=item.month, tipo='matafuegos', region=filters.region or None, sede=filters.sede or None) }}"
+          >
+            <span>{{ item.month_label[:3] }} {{ item.year }}</span>
+            <b>{{ item.count }}</b>
+            <small>{{ item.sedes_count }} sede{% if item.sedes_count != 1 %}s{% endif %}</small>
+          </a>
+          {% endfor %}
+        </div>
+        {% if not matafuegos_visible and matafuegos_next %}
+        <p class="sst-calendar-focus-note">
+          En {{ selected_year }} no hay matafuegos visibles. Ir a
+          <a href="{{ url_for('sst_calendario_operativo', year=matafuegos_next.year, month=matafuegos_next.month, tipo='matafuegos', region=filters.region or None, sede=filters.sede or None) }}">{{ matafuegos_next.month_label }} {{ matafuegos_next.year }}</a>.
+        </p>
+        {% endif %}
+      </div>
+      {% endif %}
       <div class="sst-calendar-help">
         <strong>Uso</strong>
         <p>Indicador pequeno, lectura rapida y detalle por clic sin salir del modulo.</p>
@@ -259,5 +283,5 @@
 </section>
 
 <script id="sstCalendarPayload" type="application/json">{{ matrix_payload|tojson }}</script>
-<script src="{{ url_for('static', filename='sst/sst_calendario_operativo.js', v='2026-07-10-03') }}"></script>
+<script src="{{ url_for('static', filename='sst/sst_calendario_operativo.js', v='2026-07-10-04') }}"></script>
 {% endblock %}
