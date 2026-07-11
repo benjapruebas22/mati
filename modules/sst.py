@@ -165,6 +165,24 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
     }
     SST_CALENDAR_REQUIRED_DOCS = ("DEC_351_79", "RGRL")
     SST_CALENDAR_VISIBLE_TYPES = ("matafuegos", "desinfeccion", "luces", "carteleria", "visita")
+    SST_CALENDAR_MATAFUEGOS_SCHEDULE = {
+        "S01": {"due_date": "2026-09-01", "lot_label": "Lote 1", "lot_month": "Septiembre"},
+        "S03": {"due_date": "2026-09-01", "lot_label": "Lote 1", "lot_month": "Septiembre"},
+        "S08": {"due_date": "2026-09-01", "lot_label": "Lote 1", "lot_month": "Septiembre"},
+        "S10": {"due_date": "2026-09-01", "lot_label": "Lote 1", "lot_month": "Septiembre"},
+        "S12": {"due_date": "2026-09-01", "lot_label": "Lote 1", "lot_month": "Septiembre"},
+        "S04": {"due_date": "2027-05-01", "lot_label": "Lote 2", "lot_month": "Mayo"},
+        "S05": {"due_date": "2027-05-01", "lot_label": "Lote 2", "lot_month": "Mayo"},
+        "S06": {"due_date": "2027-05-01", "lot_label": "Lote 2", "lot_month": "Mayo"},
+        "S07": {"due_date": "2027-05-01", "lot_label": "Lote 2", "lot_month": "Mayo"},
+        "S11": {"due_date": "2027-05-01", "lot_label": "Lote 2", "lot_month": "Mayo"},
+        "S14": {"due_date": "2027-05-01", "lot_label": "Lote 2", "lot_month": "Mayo"},
+        "S15": {"due_date": "2027-05-01", "lot_label": "Lote 2", "lot_month": "Mayo"},
+        "S16": {"due_date": "2027-05-01", "lot_label": "Lote 2", "lot_month": "Mayo"},
+        "S18": {"due_date": "2027-05-01", "lot_label": "Lote 2", "lot_month": "Mayo"},
+        "S20": {"due_date": "2027-05-01", "lot_label": "Lote 2", "lot_month": "Mayo"},
+        "S13": {"due_date": "2026-12-01", "lot_label": "Lote 3", "lot_month": "Diciembre"},
+    }
 
     def ensure_sst_visitas_docs_tables(con):
         con.execute("""
@@ -8288,6 +8306,21 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
     def _sst_calendar_visible_events(events):
         return [event for event in events if event.get("type_key") in SST_CALENDAR_VISIBLE_TYPES]
 
+    def _sst_calendar_matafuegos_schedule(sede_codigo, raw_due_date=""):
+        sede_key = str(sede_codigo or "").strip().upper()
+        config = SST_CALENDAR_MATAFUEGOS_SCHEDULE.get(sede_key)
+        if not config:
+            return {
+                "event_date": _sst_calendar_parse_date(raw_due_date),
+                "lot_label": "",
+                "lot_month": "",
+            }
+        return {
+            "event_date": _sst_calendar_parse_date(config.get("due_date", "")),
+            "lot_label": str(config.get("lot_label", "") or "").strip(),
+            "lot_month": str(config.get("lot_month", "") or "").strip(),
+        }
+
     def _sst_calendar_build_event(
         source_id,
         source_type,
@@ -8424,7 +8457,11 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             grouped_mata = {}
             for row in raw_rows:
                 sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
-                event_date = _sst_calendar_parse_date(_row_value(row, "fecha_vencimiento", ""))
+                schedule_info = _sst_calendar_matafuegos_schedule(
+                    sede_codigo,
+                    _row_value(row, "fecha_vencimiento", ""),
+                )
+                event_date = schedule_info["event_date"]
                 if not event_date:
                     continue
                 event_years.add(event_date.year)
@@ -8449,11 +8486,11 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 group_key = (sede_codigo, event_date.year, event_date.month)
                 if group_key not in grouped_mata:
                     grouped_mata[group_key] = []
-                grouped_mata[group_key].append(row)
+                grouped_mata[group_key].append((row, schedule_info))
             for (sede_codigo, event_year, event_month), rows_group in grouped_mata.items():
                 fechas_grupo = []
-                for item in rows_group:
-                    event_date = _sst_calendar_parse_date(_row_value(item, "fecha_vencimiento", ""))
+                for item, schedule_info in rows_group:
+                    event_date = schedule_info["event_date"] or _sst_calendar_parse_date(_row_value(item, "fecha_vencimiento", ""))
                     if event_date:
                         fechas_grupo.append(event_date)
                 if not fechas_grupo:
@@ -8471,14 +8508,18 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 fechas_count = defaultdict(int)
                 lotes = []
                 recargas = []
-                for item in rows_group:
-                    fecha_item = _sst_calendar_parse_date(_row_value(item, "fecha_vencimiento", ""))
+                for item, schedule_info in rows_group:
+                    fecha_item = schedule_info["event_date"] or _sst_calendar_parse_date(_row_value(item, "fecha_vencimiento", ""))
                     if fecha_item:
                         fechas_count[fecha_item] += 1
                     fecha_recarga = _sst_calendar_parse_date(_row_value(item, "fecha_recarga", ""))
                     if fecha_recarga:
                         recargas.append(fecha_recarga)
-                    lote = (_row_value(item, "lote_vencimiento", "") or "").strip()
+                    lote_label = schedule_info.get("lot_label", "") or (_row_value(item, "lote_vencimiento", "") or "").strip()
+                    lote_month = schedule_info.get("lot_month", "")
+                    lote = lote_label
+                    if lote_label and lote_month:
+                        lote = f"{lote_label} ({lote_month})"
                     if lote and lote.lower() != "otro" and lote not in lotes:
                         lotes.append(lote)
                 fechas_txt = []
@@ -8495,19 +8536,20 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 rows_sorted = sorted(
                     rows_group,
                     key=lambda item: (
-                        _row_value(item, "fecha_vencimiento", "") or "",
-                        _row_value(item, "ubicacion", "") or "",
-                        _row_value(item, "nro_extintor", "") or "",
-                        _row_value(item, "numero_serie", "") or "",
+                        ((item[1].get("event_date").isoformat() if item[1].get("event_date") else "") or (_row_value(item[0], "fecha_vencimiento", "") or "")),
+                        _row_value(item[0], "ubicacion", "") or "",
+                        _row_value(item[0], "nro_extintor", "") or "",
+                        _row_value(item[0], "numero_serie", "") or "",
                     ),
                 )
-                for item in rows_sorted:
-                    fecha_item = _sst_calendar_parse_date(_row_value(item, "fecha_vencimiento", ""))
+                for item, schedule_info in rows_sorted:
+                    fecha_item = schedule_info["event_date"] or _sst_calendar_parse_date(_row_value(item, "fecha_vencimiento", ""))
                     ubicacion = (_row_value(item, "ubicacion", "") or "").strip()
                     numero_serie = (_row_value(item, "numero_serie", "") or "").strip()
                     nro_extintor = (_row_value(item, "nro_extintor", "") or "").strip()
                     tipo = (_row_value(item, "tipo", "") or "").strip()
-                    lote = (_row_value(item, "lote_vencimiento", "") or "").strip()
+                    lote = schedule_info.get("lot_label", "") or (_row_value(item, "lote_vencimiento", "") or "").strip()
+                    lote_month = schedule_info.get("lot_month", "")
                     record_label_parts = []
                     if nro_extintor:
                         record_label_parts.append(f"Ext. {nro_extintor}")
@@ -8519,7 +8561,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     if tipo:
                         record_detail_parts.append(tipo)
                     if lote and lote.lower() != "otro":
-                        record_detail_parts.append(f"Lote {lote}")
+                        record_detail_parts.append(f"{lote}{(' - ' + lote_month) if lote_month else ''}")
                     if fecha_item:
                         record_detail_parts.append(fecha_item.strftime("%d/%m/%Y"))
                     records.append({
@@ -8527,7 +8569,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                         "detail": " - ".join(record_detail_parts),
                     })
                 events.append(_sst_calendar_build_event(
-                    source_id=",".join(str(_row_value(item, "id", "")) for item in rows_group),
+                    source_id=",".join(str(_row_value(item[0], "id", "")) for item in rows_group),
                     source_type="matafuegos",
                     sede_codigo=sede_codigo,
                     sede_nombre=sede_info.get("nombre", ""),
