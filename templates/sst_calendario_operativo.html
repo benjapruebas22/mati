@@ -16,13 +16,7 @@
     <div class="sst-calendar-heading">
       <p class="sst-op-eyebrow">SG-SST - Tablero operativo</p>
       <h1>Calendario operativo SG-SST</h1>
-    </div>
-    <div class="sst-op-actions sst-calendar-top-actions">
-      <a class="sst-op-btn" href="{{ url_for('sst_general', modo='gestion', tipo='no_conformidad', sede=filters.sede or None) }}">Seguimiento</a>
-      <a class="sst-op-btn" href="{{ url_for('sst_visita_cargar', sede=filters.sede or None) }}">Registrar visita</a>
-      {% if not matafuegos_visible and matafuegos_next %}
-      <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo', year=matafuegos_next.year, month=matafuegos_next.month, tipo='matafuegos', region=filters.region or None, sede=filters.sede or None) }}">{{ type_options[0].icon }} {{ matafuegos_next.month_label[:3] }} {{ matafuegos_next.year }}</a>
-      {% endif %}
+      <p class="sst-calendar-heading-copy">Vista resumen anual por sede. Cada icono abre el modulo operativo correspondiente.</p>
     </div>
   </header>
 
@@ -82,26 +76,24 @@
           {% endfor %}
         </select>
       </label>
+      <label>
+        <span>Responsable</span>
+        <select name="responsable">
+          <option value="">Todos</option>
+          {% for responsible in responsable_options %}
+          <option value="{{ responsible }}" {% if filters.responsable == responsible %}selected{% endif %}>{{ responsible }}</option>
+          {% endfor %}
+        </select>
+      </label>
     </div>
     <div class="sst-calendar-toolbar-actions">
       <button class="sst-op-btn" type="submit">Aplicar</button>
       <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo', year=today_year, month=today_month) }}">Hoy</a>
-      <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo') }}">Limpiar</a>
+      <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo') }}">Limpiar filtros</a>
     </div>
   </form>
 
   <div class="sst-calendar-legend-board sst-calendar-legend-strip">
-    <div class="sst-calendar-legend-row">
-      <span class="sst-calendar-legend-title">Tipos</span>
-      <div class="sst-calendar-type-legend">
-        {% for type_item in type_options %}
-        <span class="sst-calendar-type-token">
-          <b>{{ type_item.icon }}</b>
-          <small>{{ type_item.label }}</small>
-        </span>
-        {% endfor %}
-      </div>
-    </div>
     <div class="sst-calendar-legend-row">
       <span class="sst-calendar-legend-title">Estados</span>
       <div class="sst-calendar-legend sst-calendar-legend-chips">

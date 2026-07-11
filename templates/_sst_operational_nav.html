@@ -1,9 +1,11 @@
 <nav class="sst-op-nav" aria-label="Navegación SG-SST">
-  <a class="{% if sst_section == 'inicio' %}is-active{% endif %}" href="{{ url_for('sst_inicio_operativo') }}">Inicio operativo</a>
+  <a class="{% if sst_section == 'inicio' %}is-active{% endif %}" href="{{ url_for('sst_inicio_operativo') }}">Inicio</a>
   <a class="{% if sst_section == 'visitas' %}is-active{% endif %}" href="{{ url_for('sst_visitas') }}">Visitas</a>
   <a class="{% if sst_section == 'matafuegos' %}is-active{% endif %}" href="{{ url_for('matafuegos_home') }}">Matafuegos</a>
+  <a href="{{ url_for('obras_home', panel='panel-desinf') }}">Desinfecciones</a>
+  <a href="{{ url_for('auditoria_luminarias') }}">Luces</a>
   <a class="{% if sst_section == 'sedes' %}is-active{% endif %}" href="{{ url_for('sst_visitas', vista='sedes') }}">Estado por sede</a>
-  <a class="{% if sst_section == 'seguimiento' %}is-active{% endif %}" href="{{ url_for('sst_plan') }}">Seguimiento</a>
+  <a class="{% if sst_section == 'seguimiento' %}is-active{% endif %}" href="{{ url_for('sst_plan') }}">Seguimientos</a>
   <a class="{% if sst_section == 'calendario' %}is-active{% endif %}" href="{{ url_for('sst_calendario_operativo') }}">Calendario operativo</a>
   <details class="sst-op-more">
     <summary>Más</summary>
