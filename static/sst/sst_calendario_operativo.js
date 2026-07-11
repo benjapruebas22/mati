@@ -85,6 +85,7 @@
       return;
     }
     const typeVisibleCount = Number((meta.type_counts || {})[group.type_key] || 0);
+    const typeTotalCount = Number((meta.type_total_counts || {})[group.type_key] || 0);
     const dateValue = formatDate(group.fecha_evento || '');
     const groupTitle = escapeHtml(group.title || group.type_label || 'Evento');
     const groupDetail = escapeHtml(group.detail || '');
@@ -101,8 +102,9 @@
       `<p class="sst-calendar-side-place">${escapeHtml(group.sede_codigo || '')} - ${escapeHtml(group.sede_nombre || '')}</p>`,
       `<p class="sst-calendar-side-month">${escapeHtml(group.month_label || '')} ${escapeHtml(String((eventItems[0] && eventItems[0].year) || meta.selected_year || ''))}</p>`,
       '<div class="sst-calendar-side-metrics">',
-      `<span>${Number(group.count || 0)} visibles en esta celda</span>`,
+      `<span>${typeTotalCount} registrados</span>`,
       `<span>${typeVisibleCount} visibles con filtros</span>`,
+      `<span>${Number(group.count || 0)} en esta sede y mes</span>`,
       '</div>',
       `<p class="sst-calendar-side-title">${groupTitle}</p>`,
       groupDetail ? `<p class="sst-calendar-side-text">${groupDetail}</p>` : '',

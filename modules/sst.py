@@ -6451,6 +6451,13 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         ]
         source_counts = []
         type_counts_map = {}
+        type_total_counts_map = {}
+        for type_item in type_options:
+            type_total_counts_map[type_item["value"]] = sum(
+                int(event.get("units", 1) or 1)
+                for event in all_events
+                if event["type_key"] == type_item["value"]
+            )
         for type_item in type_options:
             count_value = sum(int(event.get("units", 1) or 1) for event in filtered_events if event["type_key"] == type_item["value"])
             type_counts_map[type_item["value"]] = count_value
@@ -6479,6 +6486,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             "focus_month": int(focus_month),
             "focus_month_label": _sst_calendar_month_name(focus_month),
             "type_counts": type_counts_map,
+            "type_total_counts": type_total_counts_map,
         }
 
         selected_sede = next(
