@@ -12,10 +12,10 @@
 <section
   class="sst-operativo sst-ui sst-calendar-page sst-calendar-page-ops"
   id="sstCalendarApp"
-  data-launch-visita="{{ url_for('sst_visita_cargar') }}?sede=__SEDE__&fecha=__DATE__&tipo_visita=Programada&estado=PEND_ANALISIS&observaciones=Programada%20desde%20calendario"
-  data-launch-desinfeccion="{{ url_for('obras_home') }}?panel=panel-carga&sede=__SEDE__&prefill_tipo=Desinfeccion&prefill_titulo=Desinfeccion%20programada&prefill_fecha_solicitud=__DATE__&prefill_fecha_inicio=__DATE__&prefill_descripcion=Programacion%20generada%20desde%20calendario"
-  data-launch-matafuegos="{{ url_for('matafuegos_home') }}?sede=__SEDE__&fecha_vencimiento=__DATE__&lote_vencimiento=__LOT__#alta"
-  data-launch-luces="{{ url_for('luminarias_nuevo') }}?codigo_sede=__SEDE__"
+  data-launch-visita="{{ url_for('sst_sede_ficha', codigo='__SEDE__') }}"
+  data-launch-desinfeccion="{{ url_for('obras_home') }}?panel=panel-desinf&sede=__SEDE__"
+  data-launch-matafuegos="{{ url_for('matafuegos_home') }}?sede=__SEDE__"
+  data-launch-luces="{{ url_for('sst_luces_home') }}?sede=__SEDE__"
   data-launch-carteleria="{{ url_for('sst_carteleria_home') }}?sede=__SEDE__"
 >
   {% include '_sst_operational_nav.html' %}
@@ -214,8 +214,8 @@
   <div class="sst-calendar-launcher" role="dialog" aria-modal="true" aria-labelledby="sstCalendarLauncherTitle">
     <div class="sst-calendar-launcher-head">
       <div>
-        <p class="sst-calendar-launcher-kicker">Programar desde la matriz</p>
-        <h3 id="sstCalendarLauncherTitle">Nueva accion</h3>
+        <p class="sst-calendar-launcher-kicker">Abrir desde la matriz</p>
+        <h3 id="sstCalendarLauncherTitle">Acceso rapido</h3>
         <p class="sst-calendar-launcher-copy" id="sstCalendarLauncherContext">Selecciona el modulo que corresponde.</p>
       </div>
       <button type="button" class="sst-calendar-launcher-close js-sst-calendar-launcher-close" aria-label="Cerrar">×</button>
@@ -229,10 +229,10 @@
     </div>
     <div class="sst-calendar-launcher-actions">
       <button type="button" class="sst-op-btn js-sst-calendar-launcher-close">Cancelar</button>
-      <button type="button" class="sst-op-btn primary" id="sstCalendarLaunchOpen">Abrir modulo</button>
+      <a class="sst-op-btn primary" id="sstCalendarLaunchOpen" href="#">Abrir modulo</a>
     </div>
   </div>
 </div>
 <script id="sstCalendarPayload" type="application/json">{{ matrix_payload|tojson }}</script>
-<script src="{{ url_for('static', filename='sst/sst_calendario_operativo.js', v='2026-07-12-02') }}"></script>
+<script src="{{ url_for('static', filename='sst/sst_calendario_operativo.js', v='2026-07-12-03') }}"></script>
 {% endblock %}

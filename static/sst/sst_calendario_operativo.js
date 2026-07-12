@@ -177,7 +177,10 @@
   function updateLauncher() {
     if (!launcherContext || !launcherOpen || !launchContext) return;
     launcherContext.textContent = `${launchContext.sede} - ${launchContext.sedeName} · ${launchContext.monthLabel} ${launchContext.year}`;
-    launcherOpen.dataset.href = buildLaunchUrl(currentLaunchType(), launchContext);
+    const href = buildLaunchUrl(currentLaunchType(), launchContext);
+    launcherOpen.dataset.href = href;
+    launcherOpen.setAttribute('href', href || '#');
+    launcherOpen.setAttribute('aria-disabled', href ? 'false' : 'true');
   }
 
   function openLauncher(button) {
@@ -228,9 +231,14 @@
   }
 
   if (launcherOpen) {
-    launcherOpen.addEventListener('click', () => {
-      const href = launcherOpen.dataset.href || '';
-      if (href) window.location.href = href;
+    launcherOpen.addEventListener('click', (event) => {
+      const href = launcherOpen.getAttribute('href') || launcherOpen.dataset.href || '';
+      if (!href || href === '#') {
+        event.preventDefault();
+        return;
+      }
+      closeLauncher();
+      window.location.assign(href);
     });
   }
 
