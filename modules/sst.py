@@ -101,6 +101,9 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             ("evidencia_url", "TEXT"),
             ("fecha_objetivo", "TEXT"),
             ("fecha_cierre", "TEXT"),
+            ("origen_tipo", "TEXT"),
+            ("origen_id", "INTEGER"),
+            ("origen_deposito_codigo", "TEXT"),
         ])
         con.commit()
 
@@ -183,6 +186,332 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         "S20": {"due_date": "2027-05-01", "lot_label": "Lote 2", "lot_month": "Mayo"},
         "S13": {"due_date": "2026-12-01", "lot_label": "Lote 3", "lot_month": "Diciembre"},
     }
+    SST_CARTELERIA_GROUP_LABELS = {
+        "IDENTIFICACION": "Identificacion",
+        "SEGURIDAD": "Seguridad",
+        "PROTOCOLOS": "Protocolos",
+    }
+    SST_CARTELERIA_TIPOS_SEED = [
+        ("IDENTIFICACION", "CARTEL_SALIENTE_OFICINA", "Cartel saliente de oficina", 10),
+        ("IDENTIFICACION", "IDENTIFICACION_PUERTA", "Identificacion en puerta", 20),
+        ("IDENTIFICACION", "PLANO_DIRECTORIO", "Plano o directorio", 30),
+        ("IDENTIFICACION", "IDENTIFICACION_EXTERIOR", "Identificacion exterior de sede", 40),
+        ("IDENTIFICACION", "IDENTIFICACION_SECTOR", "Identificacion de sector", 50),
+        ("IDENTIFICACION", "IDENTIFICACION_BANO", "Identificacion de bano", 60),
+        ("SEGURIDAD", "MATAFUEGOS", "Matafuegos", 110),
+        ("SEGURIDAD", "RIESGO_ELECTRICO", "Riesgo electrico", 120),
+        ("SEGURIDAD", "SALIDA_DERECHA", "Salida derecha", 130),
+        ("SEGURIDAD", "SALIDA_IZQUIERDA", "Salida izquierda", 140),
+        ("SEGURIDAD", "LUZ_EMERGENCIA", "Luz de emergencia", 150),
+        ("SEGURIDAD", "ESCALERA_SUBIDA", "Escalera de subida", 160),
+        ("SEGURIDAD", "ESCALERA_BAJADA", "Escalera de bajada", 170),
+        ("SEGURIDAD", "PUNTO_REUNION", "Punto de reunion", 180),
+        ("SEGURIDAD", "SALIDA_EMERGENCIA", "Salida de emergencia", 190),
+        ("SEGURIDAD", "BOTIQUIN", "Botiquin", 200),
+        ("SEGURIDAD", "OTROS_SEGURIDAD", "Otros de seguridad", 210),
+        ("PROTOCOLOS", "PROHIBIDO_FUMAR", "Prohibido fumar", 310),
+        ("PROTOCOLOS", "RESIDUOS_SECOS", "Residuos secos", 320),
+        ("PROTOCOLOS", "RESIDUOS_HUMEDOS", "Residuos humedos", 330),
+        ("PROTOCOLOS", "USO_RESPONSABLE_BANO", "Uso responsable del bano", 340),
+        ("PROTOCOLOS", "USO_RESPONSABLE_COCINA", "Uso responsable de cocina", 350),
+        ("PROTOCOLOS", "AHORRO_ENERGIA", "Ahorro de energia", 360),
+        ("PROTOCOLOS", "OTROS_PROTOCOLOS", "Otros protocolos institucionales", 370),
+    ]
+    SST_CARTELERIA_STATE_LABELS = {
+        "NO_RELEVADO": "No relevado",
+        "RELEVADO_SIN_FALTANTES": "Relevado sin faltantes",
+        "RELEVADO_CON_FALTANTES": "Relevado con faltantes",
+        "SOLICITAR_A_COMPRAS": "Solicitar a Compras",
+        "PEDIDO_REALIZADO": "Pedido realizado",
+        "EN_PROCESO_DE_COMPRA": "En proceso de compra",
+        "DISPONIBLE": "Disponible",
+        "PROGRAMADO": "Programado",
+        "EJECUTADO": "Ejecutado",
+        "VERIFICADO": "Verificado",
+        "OBSERVADO": "Observado",
+    }
+    SST_LUCES_STATE_LABELS = {
+        "NO_RELEVADO": "No relevado",
+        "OPERATIVA": "Operativa",
+        "PARCIALMENTE_OPERATIVA": "Parcialmente operativa",
+        "FUERA_DE_SERVICIO": "Fuera de servicio",
+        "FALTA_EQUIPO": "Falta equipo",
+        "REQUIERE_BATERIA": "Requiere bateria",
+        "REQUIERE_REPARACION": "Requiere reparacion",
+        "REQUIERE_REEMPLAZO": "Requiere reemplazo",
+        "SOLICITAR_A_COMPRAS": "Solicitar a Compras",
+        "PEDIDO_REALIZADO": "Pedido realizado",
+        "EN_PROCESO_DE_COMPRA": "En proceso de compra",
+        "DISPONIBLE": "Disponible",
+        "INTERVENCION_PROGRAMADA": "Intervencion programada",
+        "INTERVENCION_REALIZADA": "Intervencion realizada",
+        "VERIFICADA": "Verificada",
+        "OBSERVADA": "Observada",
+    }
+    SST_PURCHASE_STATES = {"SOLICITAR_A_COMPRAS", "PEDIDO_REALIZADO", "EN_PROCESO_DE_COMPRA"}
+    SST_CARTELERIA_PENDING_STATES = SST_PURCHASE_STATES | {"RELEVADO_CON_FALTANTES", "DISPONIBLE", "PROGRAMADO", "OBSERVADO"}
+    SST_LUCES_PENDING_STATES = SST_PURCHASE_STATES | {
+        "PARCIALMENTE_OPERATIVA",
+        "FUERA_DE_SERVICIO",
+        "FALTA_EQUIPO",
+        "REQUIERE_BATERIA",
+        "REQUIERE_REPARACION",
+        "REQUIERE_REEMPLAZO",
+        "DISPONIBLE",
+        "INTERVENCION_PROGRAMADA",
+        "OBSERVADA",
+    }
+    SST_MANUAL_CARTELERIA_STATES = SST_PURCHASE_STATES | {"DISPONIBLE", "PROGRAMADO", "EJECUTADO", "VERIFICADO", "OBSERVADO"}
+    SST_MANUAL_LUCES_STATES = SST_PURCHASE_STATES | {
+        "DISPONIBLE",
+        "INTERVENCION_PROGRAMADA",
+        "INTERVENCION_REALIZADA",
+        "VERIFICADA",
+        "OBSERVADA",
+        "REQUIERE_BATERIA",
+        "REQUIERE_REPARACION",
+        "REQUIERE_REEMPLAZO",
+    }
+
+    def _sst_current_user():
+        return (
+            (session.get("full_name") or "").strip()
+            or (session.get("username") or "").strip()
+            or "sistema"
+        )
+
+    def _sst_now_ts():
+        return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    def _sst_clean_upper(value, fallback=""):
+        return (str(value or fallback).strip().upper() or fallback).strip().upper()
+
+    def _sst_int_nonneg(value):
+        try:
+            return max(int(value or 0), 0)
+        except Exception:
+            return 0
+
+    def _sst_bool_flag(value):
+        return 1 if str(value or "").strip().lower() in {"1", "true", "on", "si", "yes"} else 0
+
+    def _sst_state_badge(state_code, state_labels):
+        code = _sst_clean_upper(state_code)
+        label = state_labels.get(code, code.replace("_", " ").title() if code else "-")
+        if code in {"VERIFICADO", "VERIFICADA", "OPERATIVA", "RELEVADO_SIN_FALTANTES"}:
+            badge = "correcto"
+        elif code in {"OBSERVADO", "OBSERVADA", "FUERA_DE_SERVICIO", "FALTA_EQUIPO", "REQUIERE_REPARACION", "REQUIERE_REEMPLAZO"}:
+            badge = "atencion"
+        elif code in {"NO_RELEVADO"}:
+            badge = "sin-dato"
+        else:
+            badge = "pendiente"
+        return {"code": code, "label": label, "class": badge}
+
+    def ensure_sst_operativo_historial_tables(con):
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS sst_operativo_historial(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                componente TEXT NOT NULL,
+                origen_id INTEGER,
+                sede_codigo TEXT,
+                deposito_codigo TEXT,
+                accion TEXT NOT NULL,
+                detalle TEXT,
+                usuario TEXT,
+                fecha_evento TEXT DEFAULT (datetime('now'))
+            )
+        """)
+        con.execute("CREATE INDEX IF NOT EXISTS idx_sst_historial_componente_fecha ON sst_operativo_historial(componente, fecha_evento DESC)")
+        con.execute("CREATE INDEX IF NOT EXISTS idx_sst_historial_sede ON sst_operativo_historial(sede_codigo, deposito_codigo)")
+        con.commit()
+
+    def ensure_sst_carteleria_tables(con):
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS sst_carteleria_tipos(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                grupo TEXT NOT NULL,
+                codigo TEXT NOT NULL UNIQUE,
+                nombre TEXT NOT NULL,
+                orden INTEGER DEFAULT 0,
+                activo INTEGER DEFAULT 1,
+                creado_en TEXT DEFAULT (datetime('now'))
+            )
+        """)
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS sst_carteleria_registros(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                sede_codigo TEXT NOT NULL,
+                piso TEXT DEFAULT 'PB',
+                deposito_codigo TEXT NOT NULL,
+                tipo_id INTEGER NOT NULL,
+                cantidad_requerida INTEGER DEFAULT 0,
+                cantidad_instalada INTEGER DEFAULT 0,
+                estado TEXT,
+                fecha_relevamiento TEXT,
+                responsable_relevamiento TEXT,
+                fecha_pedido TEXT,
+                numero_pedido TEXT,
+                fecha_disponibilidad TEXT,
+                fecha_programada_colocacion TEXT,
+                fecha_colocacion TEXT,
+                fecha_verificacion TEXT,
+                observaciones TEXT,
+                seguimiento_id INTEGER,
+                activo INTEGER DEFAULT 1,
+                creado_por TEXT,
+                actualizado_por TEXT,
+                fecha_creacion TEXT DEFAULT (datetime('now')),
+                fecha_actualizacion TEXT DEFAULT (datetime('now')),
+                FOREIGN KEY(tipo_id) REFERENCES sst_carteleria_tipos(id),
+                FOREIGN KEY(seguimiento_id) REFERENCES sst_general(id)
+            )
+        """)
+        ensure_cols(con, "sst_carteleria_registros", [
+            ("piso", "TEXT"),
+            ("estado", "TEXT"),
+            ("fecha_relevamiento", "TEXT"),
+            ("responsable_relevamiento", "TEXT"),
+            ("fecha_pedido", "TEXT"),
+            ("numero_pedido", "TEXT"),
+            ("fecha_disponibilidad", "TEXT"),
+            ("fecha_programada_colocacion", "TEXT"),
+            ("fecha_colocacion", "TEXT"),
+            ("fecha_verificacion", "TEXT"),
+            ("observaciones", "TEXT"),
+            ("seguimiento_id", "INTEGER"),
+            ("activo", "INTEGER DEFAULT 1"),
+            ("creado_por", "TEXT"),
+            ("actualizado_por", "TEXT"),
+            ("fecha_creacion", "TEXT DEFAULT (datetime('now'))"),
+            ("fecha_actualizacion", "TEXT DEFAULT (datetime('now'))"),
+        ])
+        con.execute("CREATE INDEX IF NOT EXISTS idx_sst_carteleria_sede_dep ON sst_carteleria_registros(sede_codigo, deposito_codigo, piso)")
+        con.execute("CREATE INDEX IF NOT EXISTS idx_sst_carteleria_estado ON sst_carteleria_registros(estado, activo)")
+        con.execute("""
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_sst_carteleria_unique_active
+            ON sst_carteleria_registros(sede_codigo, piso, deposito_codigo, tipo_id)
+            WHERE activo = 1
+        """)
+        for grupo, codigo, nombre, orden in SST_CARTELERIA_TIPOS_SEED:
+            con.execute("""
+                INSERT INTO sst_carteleria_tipos(grupo, codigo, nombre, orden, activo)
+                VALUES (?, ?, ?, ?, 1)
+                ON CONFLICT(codigo) DO UPDATE SET
+                    grupo = excluded.grupo,
+                    nombre = excluded.nombre,
+                    orden = excluded.orden
+            """, (grupo, codigo, nombre, orden))
+        con.commit()
+
+    def ensure_sst_luces_tables(con):
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS sst_luces_registros(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                sede_codigo TEXT NOT NULL,
+                piso TEXT DEFAULT 'PB',
+                deposito_codigo TEXT NOT NULL,
+                cantidad_requerida INTEGER DEFAULT 0,
+                cantidad_instalada INTEGER DEFAULT 0,
+                cantidad_operativa INTEGER DEFAULT 0,
+                cantidad_fuera_servicio INTEGER DEFAULT 0,
+                marca TEXT,
+                modelo TEXT,
+                tipo_equipo TEXT,
+                bateria TEXT,
+                estado TEXT,
+                fecha_relevamiento TEXT,
+                fecha_ultima_prueba TEXT,
+                resultado_ultima_prueba TEXT,
+                fecha_proxima_prueba TEXT,
+                requiere_bateria INTEGER DEFAULT 0,
+                requiere_reemplazo INTEGER DEFAULT 0,
+                fecha_pedido TEXT,
+                numero_pedido TEXT,
+                fecha_disponibilidad TEXT,
+                fecha_programada_intervencion TEXT,
+                fecha_intervencion TEXT,
+                fecha_verificacion TEXT,
+                observaciones TEXT,
+                seguimiento_id INTEGER,
+                activo INTEGER DEFAULT 1,
+                creado_por TEXT,
+                actualizado_por TEXT,
+                fecha_creacion TEXT DEFAULT (datetime('now')),
+                fecha_actualizacion TEXT DEFAULT (datetime('now')),
+                FOREIGN KEY(seguimiento_id) REFERENCES sst_general(id)
+            )
+        """)
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS sst_luces_pruebas(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                registro_id INTEGER NOT NULL,
+                fecha_prueba TEXT NOT NULL,
+                resultado TEXT,
+                fecha_proxima_prueba TEXT,
+                observaciones TEXT,
+                creado_por TEXT,
+                creado_en TEXT DEFAULT (datetime('now')),
+                FOREIGN KEY(registro_id) REFERENCES sst_luces_registros(id)
+            )
+        """)
+        ensure_cols(con, "sst_luces_registros", [
+            ("piso", "TEXT"),
+            ("cantidad_operativa", "INTEGER DEFAULT 0"),
+            ("cantidad_fuera_servicio", "INTEGER DEFAULT 0"),
+            ("marca", "TEXT"),
+            ("modelo", "TEXT"),
+            ("tipo_equipo", "TEXT"),
+            ("bateria", "TEXT"),
+            ("estado", "TEXT"),
+            ("fecha_relevamiento", "TEXT"),
+            ("fecha_ultima_prueba", "TEXT"),
+            ("resultado_ultima_prueba", "TEXT"),
+            ("fecha_proxima_prueba", "TEXT"),
+            ("requiere_bateria", "INTEGER DEFAULT 0"),
+            ("requiere_reemplazo", "INTEGER DEFAULT 0"),
+            ("fecha_pedido", "TEXT"),
+            ("numero_pedido", "TEXT"),
+            ("fecha_disponibilidad", "TEXT"),
+            ("fecha_programada_intervencion", "TEXT"),
+            ("fecha_intervencion", "TEXT"),
+            ("fecha_verificacion", "TEXT"),
+            ("observaciones", "TEXT"),
+            ("seguimiento_id", "INTEGER"),
+            ("activo", "INTEGER DEFAULT 1"),
+            ("creado_por", "TEXT"),
+            ("actualizado_por", "TEXT"),
+            ("fecha_creacion", "TEXT DEFAULT (datetime('now'))"),
+            ("fecha_actualizacion", "TEXT DEFAULT (datetime('now'))"),
+        ])
+        con.execute("CREATE INDEX IF NOT EXISTS idx_sst_luces_sede_dep ON sst_luces_registros(sede_codigo, deposito_codigo, piso)")
+        con.execute("CREATE INDEX IF NOT EXISTS idx_sst_luces_estado ON sst_luces_registros(estado, activo)")
+        con.execute("CREATE INDEX IF NOT EXISTS idx_sst_luces_pruebas_registro ON sst_luces_pruebas(registro_id, fecha_prueba DESC)")
+        con.execute("""
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_sst_luces_unique_active
+            ON sst_luces_registros(sede_codigo, piso, deposito_codigo)
+            WHERE activo = 1
+        """)
+        con.commit()
+
+    def _sst_historial_log(con, componente, accion, origen_id=None, sede_codigo="", deposito_codigo="", detalle=""):
+        ensure_sst_operativo_historial_tables(con)
+        con.execute("""
+            INSERT INTO sst_operativo_historial(
+                componente, origen_id, sede_codigo, deposito_codigo,
+                accion, detalle, usuario, fecha_evento
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            (componente or "").strip().lower(),
+            origen_id,
+            (_sst_clean_upper(sede_codigo) or None),
+            (_sst_clean_upper(deposito_codigo) or None),
+            (accion or "").strip(),
+            (detalle or "").strip(),
+            _sst_current_user(),
+            _sst_now_ts(),
+        ))
 
     def ensure_sst_visitas_docs_tables(con):
         con.execute("""
@@ -6544,289 +6873,843 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             today_month=context_raw["today"].month,
         )
 
-    @app.route("/sst/luces", methods=["GET"], endpoint="sst_luces_home")
-    def sst_luces_home():
-        con = get_db()
-        f_sede = (request.args.get("sede") or "").strip().upper()
-        f_piso = (request.args.get("piso") or "").strip().upper()
-        f_q = (request.args.get("q") or "").strip()
-
-        if f_piso == "1P":
-            f_piso = "P1"
-        if f_piso == "2P":
-            f_piso = "P2"
-
-        sedes = con.execute("""
-            SELECT codigo, nombre, COALESCE(ciudad, '') AS ciudad
+    def _sst_fetch_sedes_base(con):
+        return con.execute("""
+            SELECT
+                UPPER(COALESCE(codigo, '')) AS codigo,
+                COALESCE(nombre, '') AS nombre,
+                COALESCE(ciudad, '') AS ciudad,
+                COALESCE(direccion, '') AS direccion
             FROM sedes_mpd
+            WHERE TRIM(COALESCE(codigo, '')) <> ''
             ORDER BY codigo
         """).fetchall()
 
-        latest_change_by_sede = {}
-        changes_this_month = 0
-        if _table_exists(con, "checklist_luminarias"):
-            latest_change_rows = con.execute("""
-                SELECT
-                    UPPER(COALESCE(sede_codigo, '')) AS sede_codigo,
-                    MAX(COALESCE(fecha, '')) AS ultima_fecha,
-                    COUNT(*) AS total
-                FROM checklist_luminarias
-                WHERE TRIM(COALESCE(sede_codigo, '')) <> ''
-                GROUP BY UPPER(COALESCE(sede_codigo, ''))
-            """).fetchall()
-            for row in latest_change_rows:
-                sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
-                if not sede_codigo:
+    def _sst_fetch_depositos_map(con):
+        rows = con.execute("""
+            SELECT
+                UPPER(COALESCE(codigo_sede, '')) AS sede_codigo,
+                UPPER(COALESCE(codigo_local, '')) AS deposito_codigo,
+                COALESCE(descripcion, '') AS descripcion
+            FROM sedes_depositos
+            ORDER BY codigo_sede, codigo_local
+        """).fetchall()
+        depositos_map = {}
+        depositos_by_sede = defaultdict(list)
+        for row in rows:
+            sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
+            deposito_codigo = (_row_value(row, "deposito_codigo", "") or "").strip().upper()
+            descripcion = (_row_value(row, "descripcion", "") or "").strip()
+            if not sede_codigo or not deposito_codigo:
+                continue
+            depositos_map[(sede_codigo, deposito_codigo)] = descripcion
+            depositos_by_sede[sede_codigo].append({
+                "codigo": deposito_codigo,
+                "descripcion": descripcion,
+                "label": f"{deposito_codigo} - {descripcion}" if descripcion else deposito_codigo,
+            })
+        for sede_codigo in list(depositos_by_sede.keys()):
+            depositos_by_sede[sede_codigo].sort(key=lambda item: item["codigo"])
+        return depositos_map, depositos_by_sede
+
+    def _sst_deposito_label(sede_codigo, deposito_codigo, depositos_map):
+        dep = (_sst_clean_upper(deposito_codigo) or "").strip()
+        if not dep:
+            return "-"
+        descripcion = (depositos_map.get((_sst_clean_upper(sede_codigo), dep)) or "").strip()
+        return f"{dep} - {descripcion}" if descripcion else dep
+
+    def _sst_dates_for_month(record, fields):
+        values = []
+        for field in fields:
+            parsed = _sst_calendar_parse_date(record.get(field, ""))
+            if parsed:
+                values.append(parsed)
+        return values
+
+    def _sst_carteleria_state_code(record):
+        raw_state = _sst_clean_upper(record.get("estado"))
+        if raw_state in SST_MANUAL_CARTELERIA_STATES:
+            return raw_state
+        if record.get("fecha_verificacion"):
+            return "VERIFICADO"
+        if record.get("fecha_colocacion"):
+            return "EJECUTADO"
+        faltante = max(_sst_int_nonneg(record.get("cantidad_requerida")) - _sst_int_nonneg(record.get("cantidad_instalada")), 0)
+        if record.get("fecha_programada_colocacion") and faltante > 0:
+            return "PROGRAMADO"
+        if record.get("fecha_disponibilidad") and faltante > 0:
+            return "DISPONIBLE"
+        if record.get("fecha_pedido") and faltante > 0:
+            return "PEDIDO_REALIZADO"
+        if not any([
+            record.get("fecha_relevamiento"),
+            _sst_int_nonneg(record.get("cantidad_requerida")),
+            _sst_int_nonneg(record.get("cantidad_instalada")),
+        ]):
+            return "NO_RELEVADO"
+        if faltante > 0:
+            return "RELEVADO_CON_FALTANTES"
+        return "RELEVADO_SIN_FALTANTES"
+
+    def _sst_luces_state_code(record):
+        raw_state = _sst_clean_upper(record.get("estado"))
+        if raw_state in SST_MANUAL_LUCES_STATES:
+            return raw_state
+        if record.get("fecha_verificacion"):
+            return "VERIFICADA"
+        if record.get("fecha_intervencion"):
+            return "INTERVENCION_REALIZADA"
+        if record.get("fecha_programada_intervencion"):
+            return "INTERVENCION_PROGRAMADA"
+        requerida = _sst_int_nonneg(record.get("cantidad_requerida"))
+        instalada = _sst_int_nonneg(record.get("cantidad_instalada"))
+        operativa = _sst_int_nonneg(record.get("cantidad_operativa"))
+        fuera = _sst_int_nonneg(record.get("cantidad_fuera_servicio"))
+        if _sst_bool_flag(record.get("requiere_reemplazo")):
+            return "REQUIERE_REEMPLAZO"
+        if _sst_bool_flag(record.get("requiere_bateria")):
+            return "REQUIERE_BATERIA"
+        if not any([record.get("fecha_relevamiento"), requerida, instalada, operativa, fuera]):
+            return "NO_RELEVADO"
+        if requerida > 0 and instalada == 0:
+            return "FALTA_EQUIPO"
+        if instalada > 0 and operativa == 0 and fuera >= instalada:
+            return "FUERA_DE_SERVICIO"
+        if fuera > 0 and operativa > 0:
+            return "PARCIALMENTE_OPERATIVA"
+        if fuera > 0:
+            return "FUERA_DE_SERVICIO"
+        if operativa >= max(requerida, instalada) and operativa > 0:
+            return "OPERATIVA"
+        if instalada > 0 and operativa < instalada:
+            return "PARCIALMENTE_OPERATIVA"
+        return "OPERATIVA" if instalada > 0 else "NO_RELEVADO"
+
+    def _sst_fetch_carteleria_records(con):
+        ensure_sst_carteleria_tables(con)
+        depositos_map, _ = _sst_fetch_depositos_map(con)
+        rows = con.execute("""
+            SELECT
+                r.*,
+                t.grupo AS grupo,
+                t.codigo AS tipo_codigo,
+                t.nombre AS tipo_nombre,
+                COALESCE(s.nombre, '') AS sede_nombre,
+                COALESCE(s.ciudad, '') AS sede_ciudad,
+                COALESCE(s.direccion, '') AS sede_direccion
+            FROM sst_carteleria_registros r
+            JOIN sst_carteleria_tipos t ON t.id = r.tipo_id
+            LEFT JOIN sedes_mpd s ON s.codigo = r.sede_codigo
+            WHERE COALESCE(r.activo, 1) = 1
+            ORDER BY UPPER(COALESCE(r.sede_codigo, '')), COALESCE(r.piso, 'PB'), UPPER(COALESCE(r.deposito_codigo, '')), t.orden, r.id
+        """).fetchall()
+        out = []
+        for row in rows:
+            item = {key: row[key] for key in row.keys()}
+            item["id"] = int(_row_value(row, "id", 0) or 0)
+            item["sede_codigo"] = (_row_value(row, "sede_codigo", "") or "").strip().upper()
+            item["piso"] = (_row_value(row, "piso", "PB") or "PB").strip().upper()
+            item["deposito_codigo"] = (_row_value(row, "deposito_codigo", "") or "").strip().upper()
+            item["cantidad_requerida"] = _sst_int_nonneg(_row_value(row, "cantidad_requerida", 0))
+            item["cantidad_instalada"] = _sst_int_nonneg(_row_value(row, "cantidad_instalada", 0))
+            item["cantidad_faltante"] = max(item["cantidad_requerida"] - item["cantidad_instalada"], 0)
+            item["grupo_label"] = SST_CARTELERIA_GROUP_LABELS.get((_row_value(row, "grupo", "") or "").strip().upper(), (_row_value(row, "grupo", "") or "").strip().title())
+            item["deposito_label"] = _sst_deposito_label(item["sede_codigo"], item["deposito_codigo"], depositos_map)
+            item["state_code"] = _sst_carteleria_state_code(item)
+            item["state_meta"] = _sst_state_badge(item["state_code"], SST_CARTELERIA_STATE_LABELS)
+            item["ultima_actualizacion"] = max([
+                str(item.get("fecha_actualizacion") or "").strip(),
+                str(item.get("fecha_verificacion") or "").strip(),
+                str(item.get("fecha_colocacion") or "").strip(),
+                str(item.get("fecha_programada_colocacion") or "").strip(),
+                str(item.get("fecha_disponibilidad") or "").strip(),
+                str(item.get("fecha_pedido") or "").strip(),
+                str(item.get("fecha_relevamiento") or "").strip(),
+            ])
+            out.append(item)
+        return out
+
+    def _sst_fetch_luces_records(con):
+        ensure_sst_luces_tables(con)
+        depositos_map, _ = _sst_fetch_depositos_map(con)
+        latest_tests = {}
+        test_counts = defaultdict(int)
+        if _table_exists(con, "sst_luces_pruebas"):
+            for row in con.execute("""
+                SELECT p.*
+                FROM sst_luces_pruebas p
+                ORDER BY COALESCE(p.fecha_prueba, '') DESC, p.id DESC
+            """).fetchall():
+                registro_id = int(_row_value(row, "registro_id", 0) or 0)
+                if registro_id <= 0:
                     continue
-                latest_change_by_sede[sede_codigo] = {
-                    "ultima_fecha": (_row_value(row, "ultima_fecha", "") or "").strip(),
-                    "total": int(_row_value(row, "total", 0) or 0),
-                }
-            month_prefix = date.today().strftime("%Y-%m")
-            changes_where = ["substr(COALESCE(fecha, ''), 1, 7) = ?"]
-            changes_params = [month_prefix]
-            if f_sede:
-                changes_where.append("UPPER(COALESCE(sede_codigo, '')) = ?")
-                changes_params.append(f_sede)
-            changes_row = con.execute(
-                f"SELECT COUNT(*) AS total FROM checklist_luminarias WHERE {' AND '.join(changes_where)}",
-                changes_params,
-            ).fetchone()
-            changes_this_month = int(_row_value(changes_row, "total", 0) or 0)
+                test_counts[registro_id] += 1
+                if registro_id not in latest_tests:
+                    latest_tests[registro_id] = row
+        rows = con.execute("""
+            SELECT
+                r.*,
+                COALESCE(s.nombre, '') AS sede_nombre,
+                COALESCE(s.ciudad, '') AS sede_ciudad,
+                COALESCE(s.direccion, '') AS sede_direccion
+            FROM sst_luces_registros r
+            LEFT JOIN sedes_mpd s ON s.codigo = r.sede_codigo
+            WHERE COALESCE(r.activo, 1) = 1
+            ORDER BY UPPER(COALESCE(r.sede_codigo, '')), COALESCE(r.piso, 'PB'), UPPER(COALESCE(r.deposito_codigo, '')), r.id
+        """).fetchall()
+        out = []
+        for row in rows:
+            item = {key: row[key] for key in row.keys()}
+            item["id"] = int(_row_value(row, "id", 0) or 0)
+            item["sede_codigo"] = (_row_value(row, "sede_codigo", "") or "").strip().upper()
+            item["piso"] = (_row_value(row, "piso", "PB") or "PB").strip().upper()
+            item["deposito_codigo"] = (_row_value(row, "deposito_codigo", "") or "").strip().upper()
+            for field in ("cantidad_requerida", "cantidad_instalada", "cantidad_operativa", "cantidad_fuera_servicio"):
+                item[field] = _sst_int_nonneg(_row_value(row, field, 0))
+            item["faltantes"] = max(item["cantidad_requerida"] - item["cantidad_instalada"], 0)
+            item["deposito_label"] = _sst_deposito_label(item["sede_codigo"], item["deposito_codigo"], depositos_map)
+            latest_test = latest_tests.get(item["id"])
+            if latest_test:
+                item["fecha_ultima_prueba"] = (_row_value(latest_test, "fecha_prueba", item.get("fecha_ultima_prueba")) or "").strip()
+                item["resultado_ultima_prueba"] = (_row_value(latest_test, "resultado", item.get("resultado_ultima_prueba")) or "").strip()
+                if not (item.get("fecha_proxima_prueba") or "").strip():
+                    item["fecha_proxima_prueba"] = (_row_value(latest_test, "fecha_proxima_prueba", "") or "").strip()
+            item["pruebas_total"] = int(test_counts.get(item["id"], 0) or 0)
+            item["state_code"] = _sst_luces_state_code(item)
+            item["state_meta"] = _sst_state_badge(item["state_code"], SST_LUCES_STATE_LABELS)
+            item["ultima_actualizacion"] = max([
+                str(item.get("fecha_actualizacion") or "").strip(),
+                str(item.get("fecha_verificacion") or "").strip(),
+                str(item.get("fecha_intervencion") or "").strip(),
+                str(item.get("fecha_programada_intervencion") or "").strip(),
+                str(item.get("fecha_disponibilidad") or "").strip(),
+                str(item.get("fecha_pedido") or "").strip(),
+                str(item.get("fecha_ultima_prueba") or "").strip(),
+                str(item.get("fecha_relevamiento") or "").strip(),
+            ])
+            out.append(item)
+        return out
 
-        rows = []
-        total_unidades = 0
-        sedes_con_datos = set()
-        if _table_exists(con, "luminarias_sede"):
-            where = ["COALESCE(l.activo, 1) = 1"]
-            params = []
-            if f_sede:
-                where.append("UPPER(COALESCE(l.codigo_sede, '')) = ?")
-                params.append(f_sede)
-            if f_piso:
-                where.append("UPPER(COALESCE(l.piso, 'PB')) = ?")
-                params.append(f_piso)
+    def _sst_fetch_historial_rows(con, componente, sede_codigo=""):
+        ensure_sst_operativo_historial_tables(con)
+        where = ["LOWER(COALESCE(componente, '')) = ?"]
+        params = [(componente or "").strip().lower()]
+        if sede_codigo:
+            where.append("UPPER(COALESCE(sede_codigo, '')) = ?")
+            params.append((_sst_clean_upper(sede_codigo) or "").strip().upper())
+        rows = con.execute(f"""
+            SELECT *
+            FROM sst_operativo_historial
+            WHERE {' AND '.join(where)}
+            ORDER BY COALESCE(fecha_evento, '') DESC, id DESC
+            LIMIT 24
+        """, params).fetchall()
+        return [{
+            "id": int(_row_value(row, "id", 0) or 0),
+            "sede_codigo": (_row_value(row, "sede_codigo", "") or "").strip().upper(),
+            "deposito_codigo": (_row_value(row, "deposito_codigo", "") or "").strip().upper(),
+            "accion": (_row_value(row, "accion", "") or "").strip(),
+            "detalle": (_row_value(row, "detalle", "") or "").strip(),
+            "usuario": (_row_value(row, "usuario", "") or "").strip(),
+            "fecha_evento": (_row_value(row, "fecha_evento", "") or "").strip(),
+        } for row in rows]
+
+    def _sst_carteleria_context(con):
+        ensure_sst_general_table(con)
+        ensure_sst_carteleria_tables(con)
+        sedes = _sst_fetch_sedes_base(con)
+        _, depositos_by_sede = _sst_fetch_depositos_map(con)
+        all_records = _sst_fetch_carteleria_records(con)
+        tipos_catalogo = con.execute("""
+            SELECT id, grupo, codigo, nombre, orden
+            FROM sst_carteleria_tipos
+            WHERE COALESCE(activo, 1) = 1
+            ORDER BY grupo, orden, nombre
+        """).fetchall()
+        f_sede = (_sst_clean_upper(request.args.get("sede")) or "").strip().upper()
+        f_piso = (_sst_clean_upper(request.args.get("piso")) or "").strip().upper()
+        f_deposito = (_sst_clean_upper(request.args.get("deposito")) or "").strip().upper()
+        f_estado = (_sst_clean_upper(request.args.get("estado")) or "").strip().upper()
+        f_q = (request.args.get("q") or "").strip().lower()
+        f_month = _sst_int_nonneg(request.args.get("month"))
+        f_registro = _sst_int_nonneg(request.args.get("registro") or request.args.get("edit"))
+        filtered = []
+        for item in all_records:
+            if f_sede and item["sede_codigo"] != f_sede:
+                continue
+            if f_piso and item["piso"] != f_piso:
+                continue
+            if f_deposito and item["deposito_codigo"] != f_deposito:
+                continue
+            if f_estado and item["state_code"] != f_estado:
+                continue
+            if f_month:
+                month_dates = _sst_dates_for_month(item, ["fecha_relevamiento", "fecha_pedido", "fecha_disponibilidad", "fecha_programada_colocacion", "fecha_colocacion", "fecha_verificacion", "fecha_actualizacion"])
+                if not any(d.month == f_month for d in month_dates):
+                    continue
             if f_q:
-                like = f"%{f_q}%"
-                where.append("""
-                    (
-                        COALESCE(l.codigo_local, '') LIKE ?
-                        OR COALESCE(l.observaciones, '') LIKE ?
-                        OR COALESCE(s.nombre, '') LIKE ?
-                    )
-                """)
-                params.extend([like, like, like])
-            lum_rows = con.execute(f"""
-                SELECT
-                    l.id,
-                    UPPER(COALESCE(l.codigo_sede, '')) AS sede_codigo,
-                    COALESCE(s.nombre, '') AS sede_nombre,
-                    COALESCE(s.ciudad, '') AS sede_ciudad,
-                    COALESCE(l.piso, 'PB') AS piso,
-                    COALESCE(l.codigo_local, '') AS codigo_local,
-                    COALESCE(l.tubo_led_fria, 0) AS tubo_led_fria,
-                    COALESCE(l.tubo_led_calido, 0) AS tubo_led_calido,
-                    COALESCE(l.foco_comun, 0) AS foco_comun,
-                    COALESCE(l.panel_led, 0) AS panel_led,
-                    COALESCE(l.puestos_trabajo, 0) AS puestos_trabajo,
-                    COALESCE(l.otros_detalle, '') AS otros_detalle,
-                    COALESCE(l.observaciones, '') AS observaciones
-                FROM luminarias_sede l
-                LEFT JOIN sedes_mpd s ON s.codigo = l.codigo_sede
-                WHERE {' AND '.join(where)}
-                ORDER BY UPPER(COALESCE(l.codigo_sede, '')), COALESCE(l.piso, 'PB'), COALESCE(l.codigo_local, '')
-            """, params).fetchall()
-            for row in lum_rows:
-                sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
-                total_row = (
-                    int(_row_value(row, "tubo_led_fria", 0) or 0)
-                    + int(_row_value(row, "tubo_led_calido", 0) or 0)
-                    + int(_row_value(row, "foco_comun", 0) or 0)
-                    + int(_row_value(row, "panel_led", 0) or 0)
-                )
-                total_unidades += total_row
-                if sede_codigo:
-                    sedes_con_datos.add(sede_codigo)
-                latest = latest_change_by_sede.get(sede_codigo, {})
-                rows.append({
-                    "id": int(_row_value(row, "id", 0) or 0),
-                    "sede_codigo": sede_codigo,
-                    "sede_nombre": (_row_value(row, "sede_nombre", "") or "").strip(),
-                    "sede_ciudad": (_row_value(row, "sede_ciudad", "") or "").strip(),
-                    "piso": (_row_value(row, "piso", "PB") or "PB").strip().upper(),
-                    "codigo_local": (_row_value(row, "codigo_local", "") or "").strip().upper(),
-                    "tubo_led_fria": int(_row_value(row, "tubo_led_fria", 0) or 0),
-                    "tubo_led_calido": int(_row_value(row, "tubo_led_calido", 0) or 0),
-                    "foco_comun": int(_row_value(row, "foco_comun", 0) or 0),
-                    "panel_led": int(_row_value(row, "panel_led", 0) or 0),
-                    "puestos_trabajo": int(_row_value(row, "puestos_trabajo", 0) or 0),
-                    "otros_detalle": (_row_value(row, "otros_detalle", "") or "").strip(),
-                    "observaciones": (_row_value(row, "observaciones", "") or "").strip(),
-                    "total_unidades": total_row,
-                    "ultima_fecha": latest.get("ultima_fecha", ""),
-                    "cambios_total": int(latest.get("total", 0) or 0),
-                })
-
+                haystack = " ".join([item["sede_codigo"], str(item.get("sede_nombre") or ""), item["piso"], item["deposito_codigo"], str(item.get("deposito_label") or ""), str(item.get("grupo_label") or ""), str(item.get("tipo_nombre") or ""), str(item.get("observaciones") or "")]).lower()
+                if f_q not in haystack:
+                    continue
+            filtered.append(item)
         selected_sede = next((item for item in sedes if item["codigo"] == f_sede), None)
-        con.close()
-        return render_template(
-            "sst_luces_home.html",
-            sst_section="luces",
-            sedes=sedes,
-            rows=rows,
-            f_sede=f_sede,
-            f_piso=f_piso,
-            f_q=f_q,
-            selected_sede=selected_sede,
-            kpi_registros=len(rows),
-            kpi_unidades=total_unidades,
-            kpi_sedes=len(sedes_con_datos),
-            kpi_cambios_mes=changes_this_month,
-            fmt_fecha=_sst_fmt_fecha,
-        )
+        visible_sedes = [selected_sede] if selected_sede else list(sedes)
+        filtered_by_sede = defaultdict(list)
+        for item in filtered:
+            filtered_by_sede[item["sede_codigo"]].append(item)
+        state_by_sede = []
+        for sede in visible_sedes:
+            if not sede:
+                continue
+            sede_codigo = (_row_value(sede, "codigo", "") or "").strip().upper()
+            sede_records = filtered_by_sede.get(sede_codigo, [])
+            depositos_totales = len(depositos_by_sede.get(sede_codigo, []))
+            depositos_relevados = len({item["deposito_codigo"] for item in sede_records if item["deposito_codigo"]})
+            requeridos = sum(item["cantidad_requerida"] for item in sede_records)
+            instalados = sum(item["cantidad_instalada"] for item in sede_records)
+            faltantes = sum(item["cantidad_faltante"] for item in sede_records)
+            ultima_actualizacion = max((item["ultima_actualizacion"] for item in sede_records if item["ultima_actualizacion"]), default="")
+            if not sede_records:
+                badge = {"label": "No relevado", "class": "sin-dato"}
+            elif any(item["state_code"] == "OBSERVADO" for item in sede_records):
+                badge = {"label": "Observado", "class": "atencion"}
+            elif faltantes > 0:
+                badge = {"label": "Relevado con faltantes", "class": "pendiente"}
+            elif all(item["state_code"] == "VERIFICADO" for item in sede_records):
+                badge = {"label": "Verificado", "class": "correcto"}
+            else:
+                badge = {"label": "Relevado sin faltantes", "class": "correcto"}
+            state_by_sede.append({
+                "sede_codigo": sede_codigo,
+                "sede_nombre": (_row_value(sede, "nombre", "") or "").strip(),
+                "depositos_totales": depositos_totales,
+                "depositos_relevados": depositos_relevados,
+                "requeridos": requeridos,
+                "instalados": instalados,
+                "faltantes": faltantes,
+                "estado_label": badge["label"],
+                "estado_class": badge["class"],
+                "ultima_actualizacion": ultima_actualizacion,
+                "url": url_for("sst_carteleria_home", sede=sede_codigo),
+            })
+        total_sedes_base = len(visible_sedes)
+        sedes_relevadas = len({item["sede_codigo"] for item in filtered if item.get("fecha_relevamiento") or item["cantidad_requerida"] or item["cantidad_instalada"]})
+        pending_rows = [item for item in filtered if item["state_code"] in SST_CARTELERIA_PENDING_STATES]
+        detail_rows = sorted([item for item in filtered if (not selected_sede or item["sede_codigo"] == selected_sede["codigo"])], key=lambda item: (item["piso"], item["deposito_codigo"], item["grupo_label"], item["tipo_nombre"], item["id"]))
+        history_rows = _sst_fetch_historial_rows(con, "carteleria", f_sede)
+        selected_record = next((item for item in all_records if int(item["id"]) == f_registro), None)
+        prefill_sede = (_sst_clean_upper(request.args.get("prefill_sede") or f_sede) or "").strip().upper()
+        prefill_piso = (_sst_clean_upper(request.args.get("prefill_piso") or (selected_record.get("piso") if selected_record else "") or "PB") or "PB").strip().upper()
+        prefill_deposito = (_sst_clean_upper(request.args.get("prefill_deposito") or (selected_record.get("deposito_codigo") if selected_record else "") or f_deposito) or "").strip().upper()
+        prefill_tipo_id = _sst_int_nonneg(request.args.get("prefill_tipo_id") or (selected_record.get("tipo_id") if selected_record else 0))
+        prefill_fecha_programada = (request.args.get("prefill_fecha_programada") or (selected_record.get("fecha_programada_colocacion") if selected_record else "") or "").strip()
+        prefill_estado = (_sst_clean_upper(request.args.get("prefill_estado") or (selected_record.get("state_code") if selected_record else "")) or "").strip().upper()
+        show_form = bool(selected_record or prefill_sede or request.args.get("mostrar_form"))
+        form_defaults = {
+            "edit_id": int(selected_record["id"]) if selected_record else 0,
+            "sede_codigo": (selected_record["sede_codigo"] if selected_record else prefill_sede),
+            "piso": (selected_record["piso"] if selected_record else prefill_piso or "PB"),
+            "deposito_codigo": (selected_record["deposito_codigo"] if selected_record else prefill_deposito),
+            "tipo_id": int(selected_record["tipo_id"]) if selected_record else prefill_tipo_id,
+            "cantidad_requerida": int(selected_record["cantidad_requerida"]) if selected_record else 0,
+            "cantidad_instalada": int(selected_record["cantidad_instalada"]) if selected_record else 0,
+            "estado": (selected_record["state_code"] if selected_record else prefill_estado),
+            "fecha_relevamiento": (selected_record.get("fecha_relevamiento") if selected_record else ""),
+            "responsable_relevamiento": (selected_record.get("responsable_relevamiento") if selected_record else _sst_current_user()),
+            "fecha_pedido": (selected_record.get("fecha_pedido") if selected_record else ""),
+            "numero_pedido": (selected_record.get("numero_pedido") if selected_record else ""),
+            "fecha_disponibilidad": (selected_record.get("fecha_disponibilidad") if selected_record else ""),
+            "fecha_programada_colocacion": (selected_record.get("fecha_programada_colocacion") if selected_record else prefill_fecha_programada),
+            "fecha_colocacion": (selected_record.get("fecha_colocacion") if selected_record else ""),
+            "fecha_verificacion": (selected_record.get("fecha_verificacion") if selected_record else ""),
+            "observaciones": (selected_record.get("observaciones") if selected_record else ""),
+        }
+        return {
+            "sst_section": "carteleria",
+            "sedes": sedes,
+            "selected_sede": selected_sede,
+            "depositos_options": depositos_by_sede.get(f_sede, []) if f_sede else [],
+            "records": filtered,
+            "state_by_sede": state_by_sede,
+            "pending_rows": sorted(pending_rows, key=lambda item: (item["sede_codigo"], item["deposito_codigo"], item["tipo_nombre"])),
+            "detail_rows": detail_rows,
+            "history_rows": history_rows,
+            "tipos_catalogo": tipos_catalogo,
+            "estado_options": [{"code": key, "label": value} for key, value in SST_CARTELERIA_STATE_LABELS.items()],
+            "month_options": [{"value": number, "label": label} for number, label in SST_CALENDAR_MONTHS],
+            "f_sede": f_sede,
+            "f_piso": f_piso,
+            "f_deposito": f_deposito,
+            "f_estado": f_estado,
+            "f_q": f_q,
+            "f_month": f_month,
+            "f_registro": f_registro,
+            "show_form": show_form,
+            "form_defaults": form_defaults,
+            "selected_record": selected_record,
+            "kpi_sedes_relevadas": sedes_relevadas,
+            "kpi_sedes_sin_relevar": max(total_sedes_base - sedes_relevadas, 0),
+            "kpi_requeridos": sum(item["cantidad_requerida"] for item in filtered),
+            "kpi_instalados": sum(item["cantidad_instalada"] for item in filtered),
+            "kpi_faltantes": sum(item["cantidad_faltante"] for item in filtered),
+            "kpi_pendiente_compra": sum(1 for item in filtered if item["state_code"] in SST_PURCHASE_STATES),
+            "kpi_pendiente_colocacion": sum(1 for item in filtered if item["state_code"] in {"DISPONIBLE", "PROGRAMADO"}),
+            "kpi_observados": sum(1 for item in filtered if item["state_code"] == "OBSERVADO"),
+            "fmt_fecha": _sst_fmt_fecha,
+        }
 
-    @app.route("/sst/carteleria", methods=["GET"], endpoint="sst_carteleria_home")
+    def _sst_luces_context(con):
+        ensure_sst_general_table(con)
+        ensure_sst_luces_tables(con)
+        sedes = _sst_fetch_sedes_base(con)
+        _, depositos_by_sede = _sst_fetch_depositos_map(con)
+        all_records = _sst_fetch_luces_records(con)
+        f_sede = (_sst_clean_upper(request.args.get("sede")) or "").strip().upper()
+        f_piso = (_sst_clean_upper(request.args.get("piso")) or "").strip().upper()
+        f_deposito = (_sst_clean_upper(request.args.get("deposito")) or "").strip().upper()
+        f_estado = (_sst_clean_upper(request.args.get("estado")) or "").strip().upper()
+        f_q = (request.args.get("q") or "").strip().lower()
+        f_month = _sst_int_nonneg(request.args.get("month"))
+        f_registro = _sst_int_nonneg(request.args.get("registro") or request.args.get("edit"))
+        filtered = []
+        for item in all_records:
+            if f_sede and item["sede_codigo"] != f_sede:
+                continue
+            if f_piso and item["piso"] != f_piso:
+                continue
+            if f_deposito and item["deposito_codigo"] != f_deposito:
+                continue
+            if f_estado and item["state_code"] != f_estado:
+                continue
+            if f_month:
+                month_dates = _sst_dates_for_month(item, ["fecha_relevamiento", "fecha_ultima_prueba", "fecha_proxima_prueba", "fecha_pedido", "fecha_disponibilidad", "fecha_programada_intervencion", "fecha_intervencion", "fecha_verificacion", "fecha_actualizacion"])
+                if not any(d.month == f_month for d in month_dates):
+                    continue
+            if f_q:
+                haystack = " ".join([item["sede_codigo"], str(item.get("sede_nombre") or ""), item["piso"], item["deposito_codigo"], str(item.get("deposito_label") or ""), str(item.get("observaciones") or ""), str(item.get("marca") or ""), str(item.get("modelo") or ""), str(item.get("tipo_equipo") or "")]).lower()
+                if f_q not in haystack:
+                    continue
+            filtered.append(item)
+        selected_sede = next((item for item in sedes if item["codigo"] == f_sede), None)
+        visible_sedes = [selected_sede] if selected_sede else list(sedes)
+        filtered_by_sede = defaultdict(list)
+        for item in filtered:
+            filtered_by_sede[item["sede_codigo"]].append(item)
+        state_by_sede = []
+        for sede in visible_sedes:
+            if not sede:
+                continue
+            sede_codigo = (_row_value(sede, "codigo", "") or "").strip().upper()
+            sede_records = filtered_by_sede.get(sede_codigo, [])
+            depositos_totales = len(depositos_by_sede.get(sede_codigo, []))
+            requerida = sum(item["cantidad_requerida"] for item in sede_records)
+            instalada = sum(item["cantidad_instalada"] for item in sede_records)
+            operativa = sum(item["cantidad_operativa"] for item in sede_records)
+            fuera = sum(item["cantidad_fuera_servicio"] for item in sede_records)
+            faltantes = sum(item["faltantes"] for item in sede_records)
+            ultima_prueba = max((item["fecha_ultima_prueba"] for item in sede_records if item.get("fecha_ultima_prueba")), default="")
+            if not sede_records:
+                badge = {"label": "No relevado", "class": "sin-dato"}
+            elif any(item["state_code"] in {"FUERA_DE_SERVICIO", "FALTA_EQUIPO", "REQUIERE_REPARACION", "REQUIERE_REEMPLAZO", "OBSERVADA"} for item in sede_records):
+                badge = {"label": "Requiere atencion", "class": "atencion"}
+            elif any(item["state_code"] in {"PARCIALMENTE_OPERATIVA", "REQUIERE_BATERIA", "INTERVENCION_PROGRAMADA"} for item in sede_records):
+                badge = {"label": "Pendiente", "class": "pendiente"}
+            else:
+                badge = {"label": "Operativa", "class": "correcto"}
+            state_by_sede.append({
+                "sede_codigo": sede_codigo,
+                "sede_nombre": (_row_value(sede, "nombre", "") or "").strip(),
+                "depositos": depositos_totales,
+                "requerida": requerida,
+                "instalada": instalada,
+                "operativa": operativa,
+                "fuera_servicio": fuera,
+                "faltantes": faltantes,
+                "estado_label": badge["label"],
+                "estado_class": badge["class"],
+                "ultima_prueba": ultima_prueba,
+                "url": url_for("sst_luces_home", sede=sede_codigo),
+            })
+        total_sedes_base = len(visible_sedes)
+        sedes_relevadas = len({item["sede_codigo"] for item in filtered if item.get("fecha_relevamiento") or item["cantidad_requerida"] or item["cantidad_instalada"]})
+        pending_rows = [item for item in filtered if item["state_code"] in SST_LUCES_PENDING_STATES]
+        upcoming_tests = sorted([item for item in filtered if (item.get("fecha_proxima_prueba") or "").strip()], key=lambda item: ((item.get("fecha_proxima_prueba") or "9999-12-31"), item["sede_codigo"], item["deposito_codigo"]))[:30]
+        detail_rows = sorted([item for item in filtered if (not selected_sede or item["sede_codigo"] == selected_sede["codigo"])], key=lambda item: (item["piso"], item["deposito_codigo"], item["id"]))
+        history_rows = _sst_fetch_historial_rows(con, "luces", f_sede)
+        selected_record = next((item for item in all_records if int(item["id"]) == f_registro), None)
+        prefill_sede = (_sst_clean_upper(request.args.get("prefill_sede") or f_sede) or "").strip().upper()
+        prefill_piso = (_sst_clean_upper(request.args.get("prefill_piso") or (selected_record.get("piso") if selected_record else "") or "PB") or "PB").strip().upper()
+        prefill_deposito = (_sst_clean_upper(request.args.get("prefill_deposito") or (selected_record.get("deposito_codigo") if selected_record else "") or f_deposito) or "").strip().upper()
+        prefill_fecha_programada = (request.args.get("prefill_fecha_programada") or (selected_record.get("fecha_programada_intervencion") if selected_record else "") or "").strip()
+        prefill_estado = (_sst_clean_upper(request.args.get("prefill_estado") or (selected_record.get("state_code") if selected_record else "")) or "").strip().upper()
+        show_form = bool(selected_record or prefill_sede or request.args.get("mostrar_form"))
+        form_defaults = {
+            "edit_id": int(selected_record["id"]) if selected_record else 0,
+            "sede_codigo": (selected_record["sede_codigo"] if selected_record else prefill_sede),
+            "piso": (selected_record["piso"] if selected_record else prefill_piso or "PB"),
+            "deposito_codigo": (selected_record["deposito_codigo"] if selected_record else prefill_deposito),
+            "cantidad_requerida": int(selected_record["cantidad_requerida"]) if selected_record else 0,
+            "cantidad_instalada": int(selected_record["cantidad_instalada"]) if selected_record else 0,
+            "cantidad_operativa": int(selected_record["cantidad_operativa"]) if selected_record else 0,
+            "cantidad_fuera_servicio": int(selected_record["cantidad_fuera_servicio"]) if selected_record else 0,
+            "marca": (selected_record.get("marca") if selected_record else ""),
+            "modelo": (selected_record.get("modelo") if selected_record else ""),
+            "tipo_equipo": (selected_record.get("tipo_equipo") if selected_record else ""),
+            "bateria": (selected_record.get("bateria") if selected_record else ""),
+            "estado": (selected_record["state_code"] if selected_record else prefill_estado),
+            "fecha_relevamiento": (selected_record.get("fecha_relevamiento") if selected_record else ""),
+            "fecha_ultima_prueba": (selected_record.get("fecha_ultima_prueba") if selected_record else ""),
+            "resultado_ultima_prueba": (selected_record.get("resultado_ultima_prueba") if selected_record else ""),
+            "fecha_proxima_prueba": (selected_record.get("fecha_proxima_prueba") if selected_record else prefill_fecha_programada),
+            "requiere_bateria": 1 if (selected_record and _sst_bool_flag(selected_record.get("requiere_bateria"))) else 0,
+            "requiere_reemplazo": 1 if (selected_record and _sst_bool_flag(selected_record.get("requiere_reemplazo"))) else 0,
+            "fecha_pedido": (selected_record.get("fecha_pedido") if selected_record else ""),
+            "numero_pedido": (selected_record.get("numero_pedido") if selected_record else ""),
+            "fecha_disponibilidad": (selected_record.get("fecha_disponibilidad") if selected_record else ""),
+            "fecha_programada_intervencion": (selected_record.get("fecha_programada_intervencion") if selected_record else prefill_fecha_programada),
+            "fecha_intervencion": (selected_record.get("fecha_intervencion") if selected_record else ""),
+            "fecha_verificacion": (selected_record.get("fecha_verificacion") if selected_record else ""),
+            "observaciones": (selected_record.get("observaciones") if selected_record else ""),
+        }
+        return {
+            "sst_section": "luces",
+            "sedes": sedes,
+            "selected_sede": selected_sede,
+            "depositos_options": depositos_by_sede.get(f_sede, []) if f_sede else [],
+            "records": filtered,
+            "state_by_sede": state_by_sede,
+            "pending_rows": sorted(pending_rows, key=lambda item: (item["sede_codigo"], item["deposito_codigo"], item["id"])),
+            "upcoming_tests": upcoming_tests,
+            "detail_rows": detail_rows,
+            "history_rows": history_rows,
+            "estado_options": [{"code": key, "label": value} for key, value in SST_LUCES_STATE_LABELS.items()],
+            "month_options": [{"value": number, "label": label} for number, label in SST_CALENDAR_MONTHS],
+            "f_sede": f_sede,
+            "f_piso": f_piso,
+            "f_deposito": f_deposito,
+            "f_estado": f_estado,
+            "f_q": f_q,
+            "f_month": f_month,
+            "f_registro": f_registro,
+            "show_form": show_form,
+            "form_defaults": form_defaults,
+            "selected_record": selected_record,
+            "kpi_requeridas": sum(item["cantidad_requerida"] for item in filtered),
+            "kpi_instaladas": sum(item["cantidad_instalada"] for item in filtered),
+            "kpi_operativas": sum(item["cantidad_operativa"] for item in filtered),
+            "kpi_fuera_servicio": sum(item["cantidad_fuera_servicio"] for item in filtered),
+            "kpi_faltantes": sum(item["faltantes"] for item in filtered),
+            "kpi_sin_relevar": max(total_sedes_base - sedes_relevadas, 0),
+            "kpi_intervenciones_programadas": sum(1 for item in filtered if item["state_code"] == "INTERVENCION_PROGRAMADA"),
+            "kpi_compras_pendientes": sum(1 for item in filtered if item["state_code"] in SST_PURCHASE_STATES),
+            "fmt_fecha": _sst_fmt_fecha,
+        }
+
+    @app.route("/sst/luces", methods=["GET", "POST"], endpoint="sst_luces_home")
+    def sst_luces_home():
+        con = get_db()
+        ensure_sst_general_table(con)
+        ensure_sst_luces_tables(con)
+        ensure_sst_operativo_historial_tables(con)
+        if request.method == "POST":
+            action = (request.form.get("action") or "save").strip().lower()
+            user_name = _sst_current_user()
+            if action == "save":
+                edit_id = _sst_int_nonneg(request.form.get("edit_id"))
+                sede_codigo = (_sst_clean_upper(request.form.get("sede_codigo")) or "").strip().upper()
+                piso = (_sst_clean_upper(request.form.get("piso") or "PB") or "PB").strip().upper()
+                deposito_codigo = (_sst_clean_upper(request.form.get("deposito_codigo")) or "").strip().upper()
+                cantidad_requerida = _sst_int_nonneg(request.form.get("cantidad_requerida"))
+                cantidad_instalada = _sst_int_nonneg(request.form.get("cantidad_instalada"))
+                cantidad_operativa = min(_sst_int_nonneg(request.form.get("cantidad_operativa")), cantidad_instalada)
+                cantidad_fuera_servicio = min(_sst_int_nonneg(request.form.get("cantidad_fuera_servicio")), cantidad_instalada)
+                estado = (_sst_clean_upper(request.form.get("estado")) or "").strip().upper()
+                if estado and estado not in SST_LUCES_STATE_LABELS:
+                    estado = ""
+                if not sede_codigo or not deposito_codigo:
+                    flash("Completa sede y deposito para guardar luces.", "warning")
+                else:
+                    duplicate = con.execute("""
+                        SELECT id
+                        FROM sst_luces_registros
+                        WHERE COALESCE(activo, 1) = 1
+                          AND UPPER(COALESCE(sede_codigo, '')) = ?
+                          AND UPPER(COALESCE(piso, 'PB')) = ?
+                          AND UPPER(COALESCE(deposito_codigo, '')) = ?
+                          AND (? = 0 OR id <> ?)
+                        LIMIT 1
+                    """, (sede_codigo, piso, deposito_codigo, edit_id, edit_id)).fetchone()
+                    if duplicate:
+                        flash("Ya existe un relevamiento activo de luces para esa sede y deposito.", "warning")
+                    else:
+                        payload = (
+                            sede_codigo,
+                            piso,
+                            deposito_codigo,
+                            cantidad_requerida,
+                            cantidad_instalada,
+                            cantidad_operativa,
+                            cantidad_fuera_servicio,
+                            (request.form.get("marca") or "").strip() or None,
+                            (request.form.get("modelo") or "").strip() or None,
+                            (request.form.get("tipo_equipo") or "").strip() or None,
+                            (request.form.get("bateria") or "").strip() or None,
+                            estado or None,
+                            (request.form.get("fecha_relevamiento") or "").strip() or None,
+                            (request.form.get("fecha_ultima_prueba") or "").strip() or None,
+                            (request.form.get("resultado_ultima_prueba") or "").strip() or None,
+                            (request.form.get("fecha_proxima_prueba") or "").strip() or None,
+                            _sst_bool_flag(request.form.get("requiere_bateria")),
+                            _sst_bool_flag(request.form.get("requiere_reemplazo")),
+                            (request.form.get("fecha_pedido") or "").strip() or None,
+                            (request.form.get("numero_pedido") or "").strip() or None,
+                            (request.form.get("fecha_disponibilidad") or "").strip() or None,
+                            (request.form.get("fecha_programada_intervencion") or "").strip() or None,
+                            (request.form.get("fecha_intervencion") or "").strip() or None,
+                            (request.form.get("fecha_verificacion") or "").strip() or None,
+                            (request.form.get("observaciones") or "").strip() or None,
+                        )
+                        if edit_id:
+                            con.execute("""
+                                UPDATE sst_luces_registros
+                                SET sede_codigo = ?, piso = ?, deposito_codigo = ?,
+                                    cantidad_requerida = ?, cantidad_instalada = ?,
+                                    cantidad_operativa = ?, cantidad_fuera_servicio = ?,
+                                    marca = ?, modelo = ?, tipo_equipo = ?, bateria = ?, estado = ?,
+                                    fecha_relevamiento = ?, fecha_ultima_prueba = ?, resultado_ultima_prueba = ?,
+                                    fecha_proxima_prueba = ?, requiere_bateria = ?, requiere_reemplazo = ?,
+                                    fecha_pedido = ?, numero_pedido = ?, fecha_disponibilidad = ?,
+                                    fecha_programada_intervencion = ?, fecha_intervencion = ?, fecha_verificacion = ?,
+                                    observaciones = ?, actualizado_por = ?, fecha_actualizacion = ?
+                                WHERE id = ?
+                            """, payload + (user_name, _sst_now_ts(), edit_id))
+                            _sst_historial_log(con, "luces", "actualizacion", edit_id, sede_codigo, deposito_codigo, "Actualizacion de relevamiento de luces.")
+                            flash("Registro de luces actualizado.", "success")
+                            registro_id = edit_id
+                        else:
+                            con.execute("""
+                                INSERT INTO sst_luces_registros(
+                                    sede_codigo, piso, deposito_codigo, cantidad_requerida, cantidad_instalada,
+                                    cantidad_operativa, cantidad_fuera_servicio, marca, modelo, tipo_equipo, bateria,
+                                    estado, fecha_relevamiento, fecha_ultima_prueba, resultado_ultima_prueba, fecha_proxima_prueba,
+                                    requiere_bateria, requiere_reemplazo, fecha_pedido, numero_pedido, fecha_disponibilidad,
+                                    fecha_programada_intervencion, fecha_intervencion, fecha_verificacion, observaciones,
+                                    creado_por, actualizado_por, fecha_creacion, fecha_actualizacion
+                                )
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            """, payload + (user_name, user_name, _sst_now_ts(), _sst_now_ts()))
+                            registro_id = int(con.execute("SELECT last_insert_rowid()").fetchone()[0])
+                            _sst_historial_log(con, "luces", "alta", registro_id, sede_codigo, deposito_codigo, "Alta de relevamiento de luces.")
+                            flash("Registro de luces creado.", "success")
+                        con.commit()
+                        con.close()
+                        return redirect(url_for("sst_luces_home", sede=sede_codigo, piso=piso, deposito=deposito_codigo, registro=registro_id, mostrar_form=1))
+            elif action == "delete":
+                record_id = _sst_int_nonneg(request.form.get("record_id"))
+                row = con.execute("SELECT sede_codigo, piso, deposito_codigo FROM sst_luces_registros WHERE id = ?", (record_id,)).fetchone()
+                if row:
+                    sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
+                    piso = (_row_value(row, "piso", "PB") or "PB").strip().upper()
+                    deposito_codigo = (_row_value(row, "deposito_codigo", "") or "").strip().upper()
+                    con.execute("UPDATE sst_luces_registros SET activo = 0, actualizado_por = ?, fecha_actualizacion = ? WHERE id = ?", (user_name, _sst_now_ts(), record_id))
+                    _sst_historial_log(con, "luces", "baja_logica", record_id, sede_codigo, deposito_codigo, "Baja logica del relevamiento de luces.")
+                    con.commit()
+                    con.close()
+                    flash("Registro de luces dado de baja.", "success")
+                    return redirect(url_for("sst_luces_home", sede=sede_codigo, piso=piso, deposito=deposito_codigo))
+            elif action == "test":
+                record_id = _sst_int_nonneg(request.form.get("record_id"))
+                row = con.execute("SELECT sede_codigo, deposito_codigo FROM sst_luces_registros WHERE id = ?", (record_id,)).fetchone()
+                fecha_prueba = (request.form.get("fecha_prueba") or "").strip()
+                if row and fecha_prueba:
+                    sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
+                    deposito_codigo = (_row_value(row, "deposito_codigo", "") or "").strip().upper()
+                    resultado = (request.form.get("resultado_prueba") or "").strip()
+                    proxima = (request.form.get("fecha_proxima_prueba_test") or "").strip()
+                    observaciones = (request.form.get("observaciones_prueba") or "").strip()
+                    con.execute("INSERT INTO sst_luces_pruebas(registro_id, fecha_prueba, resultado, fecha_proxima_prueba, observaciones, creado_por) VALUES (?, ?, ?, ?, ?, ?)", (record_id, fecha_prueba, resultado or None, proxima or None, observaciones or None, user_name))
+                    con.execute("UPDATE sst_luces_registros SET fecha_ultima_prueba = ?, resultado_ultima_prueba = ?, fecha_proxima_prueba = COALESCE(?, fecha_proxima_prueba), actualizado_por = ?, fecha_actualizacion = ? WHERE id = ?", (fecha_prueba, resultado or None, proxima or None, user_name, _sst_now_ts(), record_id))
+                    _sst_historial_log(con, "luces", "prueba", record_id, sede_codigo, deposito_codigo, f"Prueba registrada: {resultado or 'sin resultado'}.")
+                    con.commit()
+                    con.close()
+                    flash("Prueba de luces registrada.", "success")
+                    return redirect(url_for("sst_luces_home", sede=sede_codigo, registro=record_id, mostrar_form=1))
+            elif action == "followup":
+                record_id = _sst_int_nonneg(request.form.get("record_id"))
+                record = next((item for item in _sst_fetch_luces_records(con) if int(item["id"]) == record_id), None)
+                if record:
+                    detalle = (
+                        f"{record['deposito_label']} - Estado: {record['state_meta']['label']} - "
+                        f"Faltantes: {record['faltantes']} - Fuera de servicio: {record['cantidad_fuera_servicio']}"
+                    )
+                    con.execute("""
+                        INSERT INTO sst_general(
+                            fecha, sede_codigo, tipo, categoria, area, titulo, detalle,
+                            estado, prioridad, responsable, accion_correctiva, fecha_objetivo,
+                            origen_tipo, origen_id, origen_deposito_codigo
+                        )
+                        VALUES (?, ?, 'no_conformidad', 'Luces de emergencia', 'SG-SST', ?, ?, 'ABIERTO', 'Media', ?, ?, ?, 'luces', ?, ?)
+                    """, (
+                        date.today().isoformat(),
+                        record["sede_codigo"],
+                        f"Luces {record['sede_codigo']} {record['deposito_codigo']}",
+                        detalle,
+                        user_name,
+                        "Programar intervencion o compra segun corresponda.",
+                        record.get("fecha_programada_intervencion") or record.get("fecha_proxima_prueba") or date.today().isoformat(),
+                        record_id,
+                        record["deposito_codigo"],
+                    ))
+                    seguimiento_id = int(con.execute("SELECT last_insert_rowid()").fetchone()[0])
+                    con.execute("UPDATE sst_luces_registros SET seguimiento_id = ?, actualizado_por = ?, fecha_actualizacion = ? WHERE id = ?", (seguimiento_id, user_name, _sst_now_ts(), record_id))
+                    _sst_historial_log(con, "luces", "seguimiento", record_id, record["sede_codigo"], record["deposito_codigo"], f"Seguimiento #{seguimiento_id} creado.")
+                    con.commit()
+                    con.close()
+                    flash("Seguimiento creado desde luces.", "success")
+                    return redirect(url_for("sst_luces_home", sede=record["sede_codigo"], registro=record_id))
+            con.commit()
+        context = _sst_luces_context(con)
+        con.close()
+        return render_template("sst_luces_home.html", **context)
+
+    @app.route("/sst/carteleria", methods=["GET", "POST"], endpoint="sst_carteleria_home")
     def sst_carteleria_home():
         asegurar_tablas_planos()
         con = get_db()
-        ensure_sst_control_tables(con)
-        _seed_sst_control_objetivos(con)
-
-        f_sede = (request.args.get("sede") or "").strip().upper()
-        f_q = (request.args.get("q") or "").strip().lower()
-
-        sedes = con.execute("""
-            SELECT codigo, nombre, COALESCE(ciudad, '') AS ciudad
-            FROM sedes_mpd
-            ORDER BY codigo
-        """).fetchall()
-
-        planos_map = defaultdict(dict)
-        if _table_exists(con, "sedes_planos"):
-            plan_rows = con.execute("""
-                SELECT
-                    UPPER(COALESCE(cod_sede, '')) AS sede_codigo,
-                    LOWER(COALESCE(tipo, '')) AS tipo,
-                    COALESCE(archivo, '') AS archivo,
-                    COALESCE(fecha_carga, '') AS fecha_carga
-                FROM sedes_planos
-                ORDER BY id DESC
-            """).fetchall()
-            for row in plan_rows:
-                sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
-                tipo = (_row_value(row, "tipo", "") or "").strip().lower()
-                if not sede_codigo or not tipo or tipo in planos_map[sede_codigo]:
-                    continue
-                planos_map[sede_codigo][tipo] = {
-                    "archivo": (_row_value(row, "archivo", "") or "").strip(),
-                    "fecha_carga": (_row_value(row, "fecha_carga", "") or "").strip(),
-                }
-
-        control_map = defaultdict(dict)
-        control_rows = con.execute("""
-            SELECT
-                LOWER(COALESCE(o.nombre, '')) AS nombre,
-                UPPER(COALESCE(r.sede_codigo, '')) AS sede_codigo,
-                r.ok,
-                COALESCE(r.actualizado_en, '') AS actualizado_en
-            FROM sst_control_objetivos o
-            LEFT JOIN sst_control_relevamientos r ON r.objetivo_id = o.id
-            ORDER BY o.id, r.sede_codigo
-        """).fetchall()
-        for row in control_rows:
-            sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
-            if not sede_codigo:
-                continue
-            nombre = (_row_value(row, "nombre", "") or "").strip().lower()
-            if any(token in nombre for token in ("cartel", "senal", "señal")) and "carteleria" not in control_map[sede_codigo]:
-                control_map[sede_codigo]["carteleria"] = {
-                    "ok": _row_value(row, "ok", None),
-                    "actualizado_en": (_row_value(row, "actualizado_en", "") or "").strip(),
-                }
-            if any(token in nombre for token in ("plano", "evacu")) and "plano" not in control_map[sede_codigo]:
-                control_map[sede_codigo]["plano"] = {
-                    "ok": _row_value(row, "ok", None),
-                    "actualizado_en": (_row_value(row, "actualizado_en", "") or "").strip(),
-                }
-
-        def _control_badge(control_row):
-            if not control_row:
-                return ("Sin relevamiento", "sin-dato")
-            if int(control_row.get("ok", 0) or 0) == 1:
-                return ("Correcto", "correcto")
-            return ("Pendiente", "pendiente")
-
-        rows = []
-        kpi_con_archivos = 0
-        kpi_con_depositos = 0
-        kpi_con_evacuacion = 0
-        kpi_pendientes = 0
-        for sede in sedes:
-            sede_codigo = (_row_value(sede, "codigo", "") or "").strip().upper()
-            sede_nombre = (_row_value(sede, "nombre", "") or "").strip()
-            sede_ciudad = (_row_value(sede, "ciudad", "") or "").strip()
-            if f_sede and sede_codigo != f_sede:
-                continue
-            if f_q and f_q not in f"{sede_codigo} {sede_nombre} {sede_ciudad}".lower():
-                continue
-
-            archivos = planos_map.get(sede_codigo, {})
-            tiene_analisis = bool(archivos.get("analisis"))
-            tiene_depositos = bool(archivos.get("depositos"))
-            tiene_evacuacion = bool(archivos.get("evacuacion"))
-            if tiene_analisis or tiene_depositos or tiene_evacuacion:
-                kpi_con_archivos += 1
-            if tiene_depositos:
-                kpi_con_depositos += 1
-            if tiene_evacuacion:
-                kpi_con_evacuacion += 1
-
-            cart_label, cart_class = _control_badge(control_map.get(sede_codigo, {}).get("carteleria"))
-            plano_label, plano_class = _control_badge(control_map.get(sede_codigo, {}).get("plano"))
-            if not (tiene_analisis and tiene_depositos and tiene_evacuacion) or cart_class != "correcto" or plano_class != "correcto":
-                kpi_pendientes += 1
-
-            fechas = [
-                (archivos.get("analisis", {}) or {}).get("fecha_carga", ""),
-                (archivos.get("depositos", {}) or {}).get("fecha_carga", ""),
-                (archivos.get("evacuacion", {}) or {}).get("fecha_carga", ""),
-                (control_map.get(sede_codigo, {}).get("carteleria", {}) or {}).get("actualizado_en", ""),
-                (control_map.get(sede_codigo, {}).get("plano", {}) or {}).get("actualizado_en", ""),
-            ]
-            ultima_actualizacion = max((item for item in fechas if item), default="")
-
-            rows.append({
-                "sede_codigo": sede_codigo,
-                "sede_nombre": sede_nombre,
-                "sede_ciudad": sede_ciudad,
-                "tiene_analisis": tiene_analisis,
-                "tiene_depositos": tiene_depositos,
-                "tiene_evacuacion": tiene_evacuacion,
-                "carteleria_label": cart_label,
-                "carteleria_class": cart_class,
-                "plano_label": plano_label,
-                "plano_class": plano_class,
-                "ultima_actualizacion": ultima_actualizacion,
-                "url_planos": url_for("sede_planos", codigo=sede_codigo),
-                "url_operativo": url_for("sede_ficha", codigo=sede_codigo, tab="planos", view="operativo") + "#planos",
-            })
-
-        selected_sede = next((item for item in sedes if item["codigo"] == f_sede), None)
+        ensure_sst_general_table(con)
+        ensure_sst_carteleria_tables(con)
+        ensure_sst_operativo_historial_tables(con)
+        if request.method == "POST":
+            action = (request.form.get("action") or "save").strip().lower()
+            user_name = _sst_current_user()
+            if action == "save":
+                edit_id = _sst_int_nonneg(request.form.get("edit_id"))
+                sede_codigo = (_sst_clean_upper(request.form.get("sede_codigo")) or "").strip().upper()
+                piso = (_sst_clean_upper(request.form.get("piso") or "PB") or "PB").strip().upper()
+                deposito_codigo = (_sst_clean_upper(request.form.get("deposito_codigo")) or "").strip().upper()
+                tipo_id = _sst_int_nonneg(request.form.get("tipo_id"))
+                cantidad_requerida = _sst_int_nonneg(request.form.get("cantidad_requerida"))
+                cantidad_instalada = _sst_int_nonneg(request.form.get("cantidad_instalada"))
+                estado = (_sst_clean_upper(request.form.get("estado")) or "").strip().upper()
+                if estado and estado not in SST_CARTELERIA_STATE_LABELS:
+                    estado = ""
+                if not sede_codigo or not deposito_codigo or tipo_id <= 0:
+                    flash("Completa sede, deposito y tipo de cartel.", "warning")
+                else:
+                    duplicate = con.execute("""
+                        SELECT id
+                        FROM sst_carteleria_registros
+                        WHERE COALESCE(activo, 1) = 1
+                          AND UPPER(COALESCE(sede_codigo, '')) = ?
+                          AND UPPER(COALESCE(piso, 'PB')) = ?
+                          AND UPPER(COALESCE(deposito_codigo, '')) = ?
+                          AND tipo_id = ?
+                          AND (? = 0 OR id <> ?)
+                        LIMIT 1
+                    """, (sede_codigo, piso, deposito_codigo, tipo_id, edit_id, edit_id)).fetchone()
+                    if duplicate:
+                        flash("Ya existe un relevamiento activo para esa sede, deposito y tipo.", "warning")
+                    else:
+                        payload = (
+                            sede_codigo,
+                            piso,
+                            deposito_codigo,
+                            tipo_id,
+                            cantidad_requerida,
+                            cantidad_instalada,
+                            estado or None,
+                            (request.form.get("fecha_relevamiento") or "").strip() or None,
+                            (request.form.get("responsable_relevamiento") or "").strip() or None,
+                            (request.form.get("fecha_pedido") or "").strip() or None,
+                            (request.form.get("numero_pedido") or "").strip() or None,
+                            (request.form.get("fecha_disponibilidad") or "").strip() or None,
+                            (request.form.get("fecha_programada_colocacion") or "").strip() or None,
+                            (request.form.get("fecha_colocacion") or "").strip() or None,
+                            (request.form.get("fecha_verificacion") or "").strip() or None,
+                            (request.form.get("observaciones") or "").strip() or None,
+                        )
+                        if edit_id:
+                            con.execute("""
+                                UPDATE sst_carteleria_registros
+                                SET sede_codigo = ?, piso = ?, deposito_codigo = ?, tipo_id = ?,
+                                    cantidad_requerida = ?, cantidad_instalada = ?, estado = ?,
+                                    fecha_relevamiento = ?, responsable_relevamiento = ?,
+                                    fecha_pedido = ?, numero_pedido = ?, fecha_disponibilidad = ?,
+                                    fecha_programada_colocacion = ?, fecha_colocacion = ?,
+                                    fecha_verificacion = ?, observaciones = ?,
+                                    actualizado_por = ?, fecha_actualizacion = ?
+                                WHERE id = ?
+                            """, payload + (user_name, _sst_now_ts(), edit_id))
+                            _sst_historial_log(con, "carteleria", "actualizacion", edit_id, sede_codigo, deposito_codigo, "Actualizacion de relevamiento de carteleria.")
+                            flash("Registro de carteleria actualizado.", "success")
+                            registro_id = edit_id
+                        else:
+                            con.execute("""
+                                INSERT INTO sst_carteleria_registros(
+                                    sede_codigo, piso, deposito_codigo, tipo_id, cantidad_requerida, cantidad_instalada, estado,
+                                    fecha_relevamiento, responsable_relevamiento, fecha_pedido, numero_pedido, fecha_disponibilidad,
+                                    fecha_programada_colocacion, fecha_colocacion, fecha_verificacion, observaciones,
+                                    creado_por, actualizado_por, fecha_creacion, fecha_actualizacion
+                                )
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            """, payload + (user_name, user_name, _sst_now_ts(), _sst_now_ts()))
+                            registro_id = int(con.execute("SELECT last_insert_rowid()").fetchone()[0])
+                            _sst_historial_log(con, "carteleria", "alta", registro_id, sede_codigo, deposito_codigo, "Alta de relevamiento de carteleria.")
+                            flash("Registro de carteleria creado.", "success")
+                        con.commit()
+                        con.close()
+                        return redirect(url_for("sst_carteleria_home", sede=sede_codigo, piso=piso, deposito=deposito_codigo, registro=registro_id, mostrar_form=1))
+            elif action == "delete":
+                record_id = _sst_int_nonneg(request.form.get("record_id"))
+                row = con.execute("SELECT sede_codigo, piso, deposito_codigo FROM sst_carteleria_registros WHERE id = ?", (record_id,)).fetchone()
+                if row:
+                    sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
+                    piso = (_row_value(row, "piso", "PB") or "PB").strip().upper()
+                    deposito_codigo = (_row_value(row, "deposito_codigo", "") or "").strip().upper()
+                    con.execute("UPDATE sst_carteleria_registros SET activo = 0, actualizado_por = ?, fecha_actualizacion = ? WHERE id = ?", (user_name, _sst_now_ts(), record_id))
+                    _sst_historial_log(con, "carteleria", "baja_logica", record_id, sede_codigo, deposito_codigo, "Baja logica del relevamiento de carteleria.")
+                    con.commit()
+                    con.close()
+                    flash("Registro de carteleria dado de baja.", "success")
+                    return redirect(url_for("sst_carteleria_home", sede=sede_codigo, piso=piso, deposito=deposito_codigo))
+            elif action == "followup":
+                record_id = _sst_int_nonneg(request.form.get("record_id"))
+                record = next((item for item in _sst_fetch_carteleria_records(con) if int(item["id"]) == record_id), None)
+                if record:
+                    detalle = (
+                        f"{record['deposito_label']} - {record['tipo_nombre']} - "
+                        f"Faltantes: {record['cantidad_faltante']} - Estado: {record['state_meta']['label']}"
+                    )
+                    con.execute("""
+                        INSERT INTO sst_general(
+                            fecha, sede_codigo, tipo, categoria, area, titulo, detalle,
+                            estado, prioridad, responsable, accion_correctiva, fecha_objetivo,
+                            origen_tipo, origen_id, origen_deposito_codigo
+                        )
+                        VALUES (?, ?, 'no_conformidad', 'Carteleria', 'SG-SST', ?, ?, 'ABIERTO', 'Media', ?, ?, ?, 'carteleria', ?, ?)
+                    """, (
+                        date.today().isoformat(),
+                        record["sede_codigo"],
+                        f"Carteleria {record['sede_codigo']} {record['deposito_codigo']}",
+                        detalle,
+                        user_name,
+                        "Solicitar compra o programar colocacion segun corresponda.",
+                        record.get("fecha_programada_colocacion") or record.get("fecha_pedido") or date.today().isoformat(),
+                        record_id,
+                        record["deposito_codigo"],
+                    ))
+                    seguimiento_id = int(con.execute("SELECT last_insert_rowid()").fetchone()[0])
+                    con.execute("UPDATE sst_carteleria_registros SET seguimiento_id = ?, actualizado_por = ?, fecha_actualizacion = ? WHERE id = ?", (seguimiento_id, user_name, _sst_now_ts(), record_id))
+                    _sst_historial_log(con, "carteleria", "seguimiento", record_id, record["sede_codigo"], record["deposito_codigo"], f"Seguimiento #{seguimiento_id} creado.")
+                    con.commit()
+                    con.close()
+                    flash("Seguimiento creado desde carteleria.", "success")
+                    return redirect(url_for("sst_carteleria_home", sede=record["sede_codigo"], registro=record_id))
+            con.commit()
+        context = _sst_carteleria_context(con)
         con.close()
-        return render_template(
-            "sst_carteleria_home.html",
-            sst_section="carteleria",
-            sedes=sedes,
-            rows=rows,
-            f_sede=f_sede,
-            f_q=f_q,
-            selected_sede=selected_sede,
-            kpi_con_archivos=kpi_con_archivos,
-            kpi_con_depositos=kpi_con_depositos,
-            kpi_con_evacuacion=kpi_con_evacuacion,
-            kpi_pendientes=kpi_pendientes,
-            fmt_fecha=_sst_fmt_fecha,
-        )
+        return render_template("sst_carteleria_home.html", **context)
 
     @app.route("/sst", methods=["GET", "POST"], endpoint="sst_general")
     def sst_general():
@@ -8659,6 +9542,91 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             event.update(extra)
         return event
 
+    def _sst_calendar_open_state(anchor_date, today_ref, alert_days=30):
+        if not anchor_date:
+            return "pendiente"
+        if anchor_date < today_ref:
+            return "vencido"
+        if anchor_date <= (today_ref + timedelta(days=alert_days)):
+            return "proximo"
+        return "programado"
+
+    def _sst_carteleria_calendar_entry(record, today_ref):
+        state_code = _sst_clean_upper(record.get("state_code"))
+        if state_code in {"NO_RELEVADO", "RELEVADO_SIN_FALTANTES"}:
+            return None
+        anchor = (
+            _sst_calendar_parse_date(record.get("fecha_programada_colocacion"))
+            or _sst_calendar_parse_date(record.get("fecha_pedido"))
+            or _sst_calendar_parse_date(record.get("fecha_disponibilidad"))
+            or _sst_calendar_parse_date(record.get("fecha_verificacion"))
+            or _sst_calendar_parse_date(record.get("fecha_colocacion"))
+            or _sst_calendar_parse_date(record.get("fecha_relevamiento"))
+            or _sst_calendar_parse_date(record.get("fecha_actualizacion"))
+        )
+        if not anchor:
+            return None
+        if state_code in {"VERIFICADO", "EJECUTADO"}:
+            calendar_state = "cumplido"
+        elif state_code == "OBSERVADO":
+            calendar_state = "pendiente"
+        else:
+            calendar_state = _sst_calendar_open_state(anchor, today_ref)
+        detail = (
+            f"{record.get('deposito_label') or '-'} | {record.get('tipo_nombre') or 'Cartel'} | "
+            f"{int(record.get('cantidad_faltante') or 0)} faltantes | Estado: {record.get('state_meta', {}).get('label', '-')}"
+        )
+        title = "Carteleria operativa"
+        return {
+            "event_date": anchor,
+            "state_key": calendar_state,
+            "title": title,
+            "detail": detail,
+        }
+
+    def _sst_luces_calendar_entries(record, today_ref):
+        state_code = _sst_clean_upper(record.get("state_code"))
+        entries = []
+        next_test = _sst_calendar_parse_date(record.get("fecha_proxima_prueba"))
+        if next_test:
+            entries.append({
+                "event_date": next_test,
+                "state_key": _sst_calendar_open_state(next_test, today_ref),
+                "title": "Proxima prueba de luces",
+                "detail": (
+                    f"{record.get('deposito_label') or '-'} | Estado: {record.get('state_meta', {}).get('label', '-')} | "
+                    f"Operativas: {int(record.get('cantidad_operativa') or 0)}"
+                ),
+            })
+        if state_code not in {"OPERATIVA", "VERIFICADA", "NO_RELEVADO"}:
+            anchor = (
+                _sst_calendar_parse_date(record.get("fecha_programada_intervencion"))
+                or _sst_calendar_parse_date(record.get("fecha_pedido"))
+                or _sst_calendar_parse_date(record.get("fecha_disponibilidad"))
+                or _sst_calendar_parse_date(record.get("fecha_intervencion"))
+                or _sst_calendar_parse_date(record.get("fecha_verificacion"))
+                or _sst_calendar_parse_date(record.get("fecha_relevamiento"))
+                or _sst_calendar_parse_date(record.get("fecha_actualizacion"))
+            )
+            if anchor:
+                if state_code in {"INTERVENCION_REALIZADA", "VERIFICADA"}:
+                    calendar_state = "cumplido"
+                elif state_code in {"FUERA_DE_SERVICIO", "FALTA_EQUIPO", "REQUIERE_REPARACION", "REQUIERE_REEMPLAZO", "OBSERVADA"}:
+                    calendar_state = "pendiente"
+                else:
+                    calendar_state = _sst_calendar_open_state(anchor, today_ref)
+                entries.append({
+                    "event_date": anchor,
+                    "state_key": calendar_state,
+                    "title": "Luces de emergencia",
+                    "detail": (
+                        f"{record.get('deposito_label') or '-'} | {int(record.get('faltantes') or 0)} faltantes | "
+                        f"{int(record.get('cantidad_fuera_servicio') or 0)} fuera de servicio | "
+                        f"Estado: {record.get('state_meta', {}).get('label', '-')}"
+                    ),
+                })
+        return entries
+
     def _sst_calendar_collect_events(con, selected_year):
         ensure_sst_visitas_docs_tables(con)
         ensure_sst_general_table(con)
@@ -8707,6 +9675,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
 
         events = []
         matafuegos_overview_map = {}
+        has_carteleria_operativa = _table_exists(con, "sst_carteleria_registros") and bool(con.execute("SELECT COUNT(*) FROM sst_carteleria_registros WHERE COALESCE(activo, 1) = 1").fetchone()[0])
+        has_luces_operativa = _table_exists(con, "sst_luces_registros") and bool(con.execute("SELECT COUNT(*) FROM sst_luces_registros WHERE COALESCE(activo, 1) = 1").fetchone()[0])
 
         if _table_exists(con, "matafuegos"):
             mata_cols = _table_cols(con, "matafuegos")
@@ -9060,6 +10030,68 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     },
                 ))
 
+        if has_carteleria_operativa:
+            for record in _sst_fetch_carteleria_records(con):
+                event_meta = _sst_carteleria_calendar_entry(record, today_ref)
+                if not event_meta or event_meta["event_date"].year != selected_year:
+                    continue
+                sede_info = sedes_map.get(record["sede_codigo"], {})
+                event_years.add(event_meta["event_date"].year)
+                events.append(_sst_calendar_build_event(
+                    source_id=str(record["id"]),
+                    source_type="sst_carteleria_registros",
+                    sede_codigo=record["sede_codigo"],
+                    sede_nombre=sede_info.get("nombre", ""),
+                    region_label=sede_info.get("region", ""),
+                    event_date=event_meta["event_date"],
+                    type_key="carteleria",
+                    title=event_meta["title"],
+                    detail=event_meta["detail"],
+                    state_key=event_meta["state_key"],
+                    responsible=(record.get("responsable_relevamiento") or "").strip(),
+                    url_detail=url_for(
+                        "sst_carteleria_home",
+                        sede=record["sede_codigo"],
+                        month=event_meta["event_date"].month,
+                        estado=record["state_code"],
+                        registro=record["id"],
+                    ),
+                    action_label="Abrir carteleria",
+                    active=(event_meta["state_key"] != "cumplido"),
+                    units=max(1, int(record.get("cantidad_faltante") or 1)),
+                ))
+
+        if has_luces_operativa:
+            for record in _sst_fetch_luces_records(con):
+                sede_info = sedes_map.get(record["sede_codigo"], {})
+                for event_meta in _sst_luces_calendar_entries(record, today_ref):
+                    if event_meta["event_date"].year != selected_year:
+                        continue
+                    event_years.add(event_meta["event_date"].year)
+                    events.append(_sst_calendar_build_event(
+                        source_id=str(record["id"]),
+                        source_type="sst_luces_registros",
+                        sede_codigo=record["sede_codigo"],
+                        sede_nombre=sede_info.get("nombre", ""),
+                        region_label=sede_info.get("region", ""),
+                        event_date=event_meta["event_date"],
+                        type_key="luces",
+                        title=event_meta["title"],
+                        detail=event_meta["detail"],
+                        state_key=event_meta["state_key"],
+                        responsible="",
+                        url_detail=url_for(
+                            "sst_luces_home",
+                            sede=record["sede_codigo"],
+                            month=event_meta["event_date"].month,
+                            estado=record["state_code"],
+                            registro=record["id"],
+                        ),
+                        action_label="Abrir luces",
+                        active=(event_meta["state_key"] != "cumplido"),
+                        units=max(1, int(record.get("faltantes") or 0) + int(record.get("cantidad_fuera_servicio") or 0) or 1),
+                    ))
+
         if _table_exists(con, "sst_general"):
             general_rows = con.execute("""
                 SELECT
@@ -9260,6 +10292,10 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             for sede_item in sedes:
                 sede_codigo = sede_item["codigo"]
                 for control_type in ("carteleria", "luces"):
+                    if control_type == "carteleria" and has_carteleria_operativa:
+                        continue
+                    if control_type == "luces" and has_luces_operativa:
+                        continue
                     if control_type not in control_available:
                         continue
                     control_row = control_map.get(control_type, {}).get(sede_codigo)
@@ -9828,6 +10864,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         ensure_sst_visitas_docs_tables(con)
         ensure_sst_general_table(con)
         ensure_sst_control_tables(con)
+        ensure_sst_carteleria_tables(con)
+        ensure_sst_luces_tables(con)
         _seed_sst_control_objetivos(con)
 
         sede = con.execute("""
@@ -9894,6 +10932,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         """, (codigo,)).fetchone()
         mata_total = int((matafuegos["total"] if matafuegos else 0) or 0)
         mata_proximos = int((matafuegos["proximos"] if matafuegos else 0) or 0)
+        carteleria_records = [item for item in _sst_fetch_carteleria_records(con) if item["sede_codigo"] == codigo]
+        luces_records = [item for item in _sst_fetch_luces_records(con) if item["sede_codigo"] == codigo]
 
         controles = {}
         for control in con.execute("""
@@ -9916,8 +10956,59 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 return ("Correcto", "correcto")
             return ("Requiere atención", "atencion")
 
-        cart_estado, cart_clase = _control_estado(("cartel", "señal", "senal"))
-        luces_estado, luces_clase = _control_estado(("luz", "luces", "emergencia"))
+        if carteleria_records:
+            cart_depositos = len({(item["piso"], item["deposito_codigo"]) for item in carteleria_records})
+            cart_requeridos = sum(int(item.get("cantidad_requerida") or 0) for item in carteleria_records)
+            cart_instalados = sum(int(item.get("cantidad_instalada") or 0) for item in carteleria_records)
+            cart_faltantes = sum(int(item.get("cantidad_faltante") or 0) for item in carteleria_records)
+            cart_pendiente = any(item["state_code"] in SST_CARTELERIA_PENDING_STATES for item in carteleria_records)
+            cart_observado = any(item["state_code"] == "OBSERVADO" for item in carteleria_records)
+            if cart_observado:
+                cart_estado, cart_clase = ("Observado", "atencion")
+            elif cart_faltantes or cart_pendiente:
+                cart_estado, cart_clase = ("Requiere atención", "atencion")
+            elif any(item["state_code"] == "VERIFICADO" for item in carteleria_records):
+                cart_estado, cart_clase = ("Verificado", "correcto")
+            else:
+                cart_estado, cart_clase = ("Correcto", "correcto")
+            cart_detail = f"{cart_depositos} depósitos relevados · {cart_requeridos} requeridos · {cart_instalados} instalados"
+            if cart_faltantes:
+                cart_detail += f" · {cart_faltantes} faltantes"
+        else:
+            cart_estado, cart_clase = _control_estado(("cartel", "señal", "senal"))
+            cart_detail = cart_estado
+
+        if luces_records:
+            luces_depositos = len({(item["piso"], item["deposito_codigo"]) for item in luces_records})
+            luces_requeridas = sum(int(item.get("cantidad_requerida") or 0) for item in luces_records)
+            luces_instaladas = sum(int(item.get("cantidad_instalada") or 0) for item in luces_records)
+            luces_operativas = sum(int(item.get("cantidad_operativa") or 0) for item in luces_records)
+            luces_fuera = sum(int(item.get("cantidad_fuera_servicio") or 0) for item in luces_records)
+            luces_faltantes = sum(int(item.get("faltantes") or 0) for item in luces_records)
+            luces_pendientes = any(item["state_code"] in SST_LUCES_PENDING_STATES for item in luces_records)
+            if luces_fuera and luces_operativas:
+                luces_estado, luces_clase = ("Parcialmente operativa", "atencion")
+            elif luces_fuera and luces_instaladas and luces_fuera >= luces_instaladas:
+                luces_estado, luces_clase = ("Fuera de servicio", "atencion")
+            elif luces_faltantes or any(item["state_code"] == "FALTA_EQUIPO" for item in luces_records):
+                luces_estado, luces_clase = ("Falta equipo", "atencion")
+            elif luces_pendientes:
+                luces_estado, luces_clase = ("Requiere atención", "atencion")
+            elif luces_requeridas and luces_operativas >= luces_requeridas:
+                luces_estado, luces_clase = ("Operativa", "correcto")
+            elif any(item["state_code"] == "VERIFICADA" for item in luces_records):
+                luces_estado, luces_clase = ("Verificada", "correcto")
+            else:
+                luces_estado, luces_clase = ("Correcto", "correcto")
+            luces_detail = f"{luces_depositos} depósitos relevados · {luces_operativas}/{luces_instaladas} operativas"
+            if luces_fuera:
+                luces_detail += f" · {luces_fuera} fuera de servicio"
+            elif luces_faltantes:
+                luces_detail += f" · {luces_faltantes} faltantes"
+        else:
+            luces_estado, luces_clase = _control_estado(("luz", "luces", "emergencia"))
+            luces_detail = luces_estado
+
         plano_estado, plano_clase = _control_estado(("plano", "evacu"))
         estado_sede = [
             {
@@ -9926,8 +11017,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 "state": ("Sin relevamiento" if not mata_total else ("Requiere atención" if mata_proximos else "Correcto")),
                 "class": ("sin-dato" if not mata_total else ("atencion" if mata_proximos else "correcto")),
             },
-            {"label": "Cartelería", "detail": cart_estado, "state": cart_estado, "class": cart_clase},
-            {"label": "Luces de emergencia", "detail": luces_estado, "state": luces_estado, "class": luces_clase},
+            {"label": "Cartelería", "detail": cart_detail, "state": cart_estado, "class": cart_clase},
+            {"label": "Luces de emergencia", "detail": luces_detail, "state": luces_estado, "class": luces_clase},
             {"label": "Planos de evacuación", "detail": plano_estado, "state": plano_estado, "class": plano_clase},
             {
                 "label": "Hallazgos",

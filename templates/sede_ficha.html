@@ -8352,6 +8352,8 @@
                 href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='matafuegos', view=view) }}">Matafuegos</a>
               <a class="ptab tone-eva {% if tab=='evacuacion' %}active{% endif %}" data-module="evacuacion"
                 href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='evacuacion', view=view) }}">Evacuacion</a>
+              <a class="ptab tone-planos" href="{{ url_for('sst_carteleria_home', sede=sede.codigo, piso=piso if piso else None, deposito=local if local else None) }}">SG-SST Carteleria</a>
+              <a class="ptab tone-lum" href="{{ url_for('sst_luces_home', sede=sede.codigo, piso=piso if piso else None, deposito=local if local else None) }}">SG-SST Luces</a>
               {% if has_sst_general %}
               <a class="ptab tone-personal" href="{{ url_for('sst_general') }}">SG-SST</a>
               {% endif %}

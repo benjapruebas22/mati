@@ -4,7 +4,7 @@
 
 {% block extra_head %}
   <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-12-05') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-12-06') }}">
 {% endblock %}
 
 {% block content %}
@@ -12,11 +12,11 @@
 <section
   class="sst-operativo sst-ui sst-calendar-page sst-calendar-page-ops"
   id="sstCalendarApp"
-  data-launch-visita="{{ url_for('sst_sede_ficha', codigo='__SEDE__') }}"
+  data-launch-visita="{{ url_for('sst_visita_cargar') }}?sede=__SEDE__&fecha=__DATE__"
   data-launch-desinfeccion="{{ url_for('obras_home') }}?panel=panel-desinf&sede=__SEDE__"
   data-launch-matafuegos="{{ url_for('matafuegos_home') }}?sede=__SEDE__"
-  data-launch-luces="{{ url_for('sst_luces_home') }}?sede=__SEDE__"
-  data-launch-carteleria="{{ url_for('sst_carteleria_home') }}?sede=__SEDE__"
+  data-launch-luces="{{ url_for('sst_luces_home') }}?sede=__SEDE__&prefill_sede=__SEDE__&prefill_fecha_programada=__DATE__&prefill_estado=INTERVENCION_PROGRAMADA&mostrar_form=1"
+  data-launch-carteleria="{{ url_for('sst_carteleria_home') }}?sede=__SEDE__&prefill_sede=__SEDE__&prefill_fecha_programada=__DATE__&prefill_estado=PROGRAMADO&mostrar_form=1"
 >
   {% include '_sst_operational_nav.html' %}
 

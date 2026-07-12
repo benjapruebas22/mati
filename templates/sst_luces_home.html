@@ -2,70 +2,204 @@
 
 {% block extra_head %}
   <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-12-03') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-12-06') }}">
 {% endblock %}
 
 {% block content %}
+{% set sst_section = 'luces' %}
 <section class="sst-operativo sst-ui sst-shell">
   {% include '_sst_operational_nav.html' %}
   <header class="sst-op-header">
     <div>
       <p class="sst-op-eyebrow">SG-SST · Luces de emergencia</p>
       <h1>Luces de emergencia</h1>
-      <p>Inventario operativo por sede y acceso rapido al historial de cambios.</p>
+      <p>Modulo operativo por sede y deposito. El calendario resume; la gestion queda aca.</p>
     </div>
     <div class="sst-op-actions">
-      {% if selected_sede %}
-      <a class="sst-op-btn primary" href="{{ url_for('luminarias_nuevo', codigo_sede=selected_sede.codigo) }}">Nuevo registro</a>
-      <a class="sst-op-btn" href="{{ url_for('checklist_luminarias', sede_filtro=selected_sede.codigo) }}">Historial de cambios</a>
-      <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo', sede=selected_sede.codigo, tipo='luces') }}">Calendario operativo</a>
-      {% else %}
-      <a class="sst-op-btn primary" href="{{ url_for('luminarias_nuevo') }}">Nuevo registro</a>
-      <a class="sst-op-btn" href="{{ url_for('checklist_luminarias') }}">Historial de cambios</a>
-      <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo', tipo='luces') }}">Calendario operativo</a>
-      {% endif %}
+      <a class="sst-op-btn primary" href="{{ url_for('sst_luces_home', sede=f_sede or None, mostrar_form=1) }}#sst-luces-form">Nuevo relevamiento</a>
+      <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo', sede=f_sede or None, tipo='luces') }}">Calendario operativo</a>
+      {% if selected_sede %}<a class="sst-op-btn" href="{{ url_for('sst_sede_ficha', codigo=selected_sede.codigo) }}">Estado de sede</a>{% endif %}
     </div>
   </header>
 
-  <form class="sst-op-card" method="get" action="{{ url_for('sst_luces_home') }}" style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;padding:12px;margin-bottom:12px;">
-    <label style="min-width:220px;"><small>Sede</small><select name="sede" style="width:100%;"><option value="">Todas</option>{% for sede in sedes %}<option value="{{ sede.codigo }}" {% if f_sede == sede.codigo %}selected{% endif %}>{{ sede.codigo }} - {{ sede.nombre }}</option>{% endfor %}</select></label>
-    <label style="min-width:130px;"><small>Piso</small><select name="piso" style="width:100%;"><option value="">Todos</option>{% for p in ['PB','P1','P2','P3'] %}<option value="{{ p }}" {% if f_piso == p %}selected{% endif %}>{{ p }}</option>{% endfor %}</select></label>
-    <label style="flex:1;min-width:220px;"><small>Buscar</small><input name="q" value="{{ f_q }}" placeholder="Local u observacion" style="width:100%;"></label>
-    <button class="sst-op-btn" type="submit">Aplicar</button>
-    <a class="sst-op-btn" href="{{ url_for('sst_luces_home') }}">Limpiar</a>
+  <form class="sst-op-card" method="get" action="{{ url_for('sst_luces_home') }}" style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;padding:12px;margin-bottom:12px;">
+    <label><small>Sede</small><select name="sede"><option value="">Todas</option>{% for sede in sedes %}<option value="{{ sede.codigo }}" {% if f_sede == sede.codigo %}selected{% endif %}>{{ sede.codigo }} - {{ sede.nombre }}</option>{% endfor %}</select></label>
+    <label><small>Piso</small><select name="piso"><option value="">Todos</option>{% for p in ['PB','P1','P2','P3'] %}<option value="{{ p }}" {% if f_piso == p %}selected{% endif %}>{{ p }}</option>{% endfor %}</select></label>
+    <label><small>Deposito</small><select name="deposito"><option value="">Todos</option>{% for dep in depositos_options %}<option value="{{ dep.codigo }}" {% if f_deposito == dep.codigo %}selected{% endif %}>{{ dep.label }}</option>{% endfor %}</select></label>
+    <label><small>Estado</small><select name="estado"><option value="">Todos</option>{% for item in estado_options %}<option value="{{ item.code }}" {% if f_estado == item.code %}selected{% endif %}>{{ item.label }}</option>{% endfor %}</select></label>
+    <label><small>Mes</small><select name="month"><option value="">Todos</option>{% for item in month_options %}<option value="{{ item.value }}" {% if f_month == item.value %}selected{% endif %}>{{ item.label }}</option>{% endfor %}</select></label>
+    <label><small>Buscar</small><input name="q" value="{{ f_q }}" placeholder="Deposito, marca, observacion"></label>
+    <div style="grid-column:1 / -1;display:flex;gap:8px;justify-content:flex-end;">
+      <button class="sst-op-btn" type="submit">Aplicar</button>
+      <a class="sst-op-btn" href="{{ url_for('sst_luces_home') }}">Limpiar</a>
+    </div>
   </form>
 
   <div class="sst-calendar-kpis sst-calendar-kpis-4" style="margin-bottom:12px;">
-    <article class="sst-op-card sst-calendar-kpi"><span>Registros</span><strong>{{ kpi_registros }}</strong><small>Locales con inventario activo</small></article>
-    <article class="sst-op-card sst-calendar-kpi"><span>Unidades</span><strong>{{ kpi_unidades }}</strong><small>Total de luces relevadas</small></article>
-    <article class="sst-op-card sst-calendar-kpi"><span>Sedes</span><strong>{{ kpi_sedes }}</strong><small>Sedes con datos visibles</small></article>
-    <article class="sst-op-card sst-calendar-kpi"><span>Cambios del mes</span><strong>{{ kpi_cambios_mes }}</strong><small>Desde checklist de luminarias</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Requeridas</span><strong>{{ kpi_requeridas }}</strong><small>Total visible</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Instaladas</span><strong>{{ kpi_instaladas }}</strong><small>Equipos cargados</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Operativas</span><strong>{{ kpi_operativas }}</strong><small>Listas para uso</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Fuera de servicio</span><strong>{{ kpi_fuera_servicio }}</strong><small>Requieren atencion</small></article>
+  </div>
+  <div class="sst-calendar-kpis sst-calendar-kpis-4" style="margin-bottom:12px;">
+    <article class="sst-op-card sst-calendar-kpi"><span>Faltantes</span><strong>{{ kpi_faltantes }}</strong><small>Requeridas menos instaladas</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Sin relevar</span><strong>{{ kpi_sin_relevar }}</strong><small>Sedes sin datos visibles</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Intervenciones programadas</span><strong>{{ kpi_intervenciones_programadas }}</strong><small>Con fecha prevista</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Compras pendientes</span><strong>{{ kpi_compras_pendientes }}</strong><small>Solicitar, pedido o compra</small></article>
   </div>
 
-  <article class="sst-op-card">
-    <div class="sst-op-card-head"><h2>Inventario</h2><span class="sst-op-count">{{ rows|length }} registros</span></div>
+  <div class="sst-op-grid" style="grid-template-columns:minmax(0,1.5fr) minmax(320px,.9fr);margin-bottom:12px;">
+    <article class="sst-op-card">
+      <div class="sst-op-card-head"><h2>Estado por sede</h2><span class="sst-op-count">{{ state_by_sede|length }} sedes</span></div>
+      <div style="overflow-x:auto;">
+        <table class="table">
+          <thead><tr><th>Sede</th><th>Depositos</th><th>Req.</th><th>Inst.</th><th>Oper.</th><th>Fuera</th><th>Falt.</th><th>Estado</th><th>Ultima prueba</th><th></th></tr></thead>
+          <tbody>
+            {% for row in state_by_sede %}
+            <tr>
+              <td><strong>{{ row.sede_codigo }}</strong><br><small>{{ row.sede_nombre }}</small></td>
+              <td>{{ row.depositos }}</td>
+              <td>{{ row.requerida }}</td>
+              <td>{{ row.instalada }}</td>
+              <td>{{ row.operativa }}</td>
+              <td>{{ row.fuera_servicio }}</td>
+              <td>{{ row.faltantes }}</td>
+              <td><span class="sst-status-badge {{ row.estado_class }}">{{ row.estado_label }}</span></td>
+              <td>{% if row.ultima_prueba %}{{ fmt_fecha(row.ultima_prueba) }}{% else %}-{% endif %}</td>
+              <td><a class="sst-op-btn" href="{{ row.url }}">Abrir</a></td>
+            </tr>
+            {% else %}<tr><td colspan="10" class="sst-op-empty">No hay sedes para este filtro.</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <article class="sst-op-card">
+      <div class="sst-op-card-head"><h2>Proximas pruebas</h2><span class="sst-op-count">{{ upcoming_tests|length }} registros</span></div>
+      <ul class="sst-op-list">
+        {% for item in upcoming_tests %}
+        <li class="sst-op-item">
+          <div>
+            <strong>{{ item.sede_codigo }} · {{ item.deposito_label }}</strong>
+            <div class="sst-op-meta">{{ item.state_meta.label }} · Operativas {{ item.cantidad_operativa }} / {{ item.cantidad_instalada }}</div>
+          </div>
+          <a class="sst-op-date" href="{{ item.registro_url }}">{{ fmt_fecha(item.fecha_proxima_prueba) }}</a>
+        </li>
+        {% else %}<li class="sst-op-empty">Sin pruebas programadas visibles.</li>{% endfor %}
+      </ul>
+    </article>
+  </div>
+
+  <article class="sst-op-card" style="margin-bottom:12px;">
+    <div class="sst-op-card-head"><h2>Detalle por deposito</h2><span class="sst-op-count">{{ detail_rows|length }} registros</span></div>
     <div style="overflow-x:auto;">
       <table class="table">
-        <thead><tr><th>Sede</th><th>Piso</th><th>Local</th><th>Total</th><th>Fria</th><th>Calida</th><th>Foco</th><th>Panel</th><th>Puestos</th><th>Ultimo cambio</th><th></th></tr></thead>
+        <thead><tr><th>Sede</th><th>Piso</th><th>Deposito</th><th>Req.</th><th>Inst.</th><th>Oper.</th><th>Fuera</th><th>Estado</th><th>Proxima prueba</th><th>Observacion</th><th></th></tr></thead>
         <tbody>
-          {% for row in rows %}
-          <tr>
-            <td><strong>{{ row.sede_codigo }}</strong><br><small>{{ row.sede_nombre }}</small></td>
-            <td>{{ row.piso or 'PB' }}</td>
-            <td>{{ row.codigo_local or '-' }}</td>
-            <td>{{ row.total_unidades }}</td>
-            <td>{{ row.tubo_led_fria }}</td>
-            <td>{{ row.tubo_led_calido }}</td>
-            <td>{{ row.foco_comun }}</td>
-            <td>{{ row.panel_led }}</td>
-            <td>{{ row.puestos_trabajo }}</td>
-            <td>{% if row.ultima_fecha %}{{ fmt_fecha(row.ultima_fecha) }} · {{ row.cambios_total }} cambio{% if row.cambios_total != 1 %}s{% endif %}{% else %}-{% endif %}</td>
-            <td><a class="sst-op-btn" href="{{ url_for('sede_ficha', codigo=row.sede_codigo, piso=row.piso, local=row.codigo_local, tab='luminarias', view='operativo') }}">Abrir</a></td>
+          {% for item in detail_rows %}
+          <tr {% if f_registro and f_registro == item.id %}style="background:#fff9db;"{% endif %}>
+            <td><strong>{{ item.sede_codigo }}</strong></td>
+            <td>{{ item.piso }}</td>
+            <td>{{ item.deposito_label }}</td>
+            <td>{{ item.cantidad_requerida }}</td>
+            <td>{{ item.cantidad_instalada }}</td>
+            <td>{{ item.cantidad_operativa }}</td>
+            <td>{{ item.cantidad_fuera_servicio }}</td>
+            <td><span class="sst-status-badge {{ item.state_meta.class }}">{{ item.state_meta.label }}</span></td>
+            <td>{% if item.fecha_proxima_prueba %}{{ fmt_fecha(item.fecha_proxima_prueba) }}{% else %}-{% endif %}</td>
+            <td>{{ item.observaciones or '-' }}</td>
+            <td style="white-space:nowrap;">
+              <a class="sst-op-btn" href="{{ item.registro_url }}#sst-luces-form">Editar</a>
+              {% if item.seguimiento_id %}<a class="sst-op-btn" href="{{ url_for('sst_general_editar', sst_id=item.seguimiento_id) }}">Seguimiento</a>{% else %}
+              <form method="post" action="{{ url_for('sst_luces_home') }}" style="display:inline;">
+                <input type="hidden" name="action" value="followup">
+                <input type="hidden" name="record_id" value="{{ item.id }}">
+                <button class="sst-op-btn" type="submit">Crear seguimiento</button>
+              </form>
+              {% endif %}
+            </td>
           </tr>
-          {% else %}<tr><td colspan="11" class="sst-op-empty">No hay luminarias para este filtro.</td></tr>{% endfor %}
+          {% else %}<tr><td colspan="11" class="sst-op-empty">No hay registros visibles.</td></tr>{% endfor %}
         </tbody>
       </table>
     </div>
   </article>
+
+  <div class="sst-op-grid" style="grid-template-columns:minmax(0,1.2fr) minmax(320px,.8fr);">
+    <article class="sst-op-card">
+      <div class="sst-op-card-head"><h2 id="sst-luces-form">{% if selected_record %}Editar relevamiento{% else %}Carga y relevamiento{% endif %}</h2><span class="sst-op-count">Inventario + pruebas</span></div>
+      <details {% if show_form %}open{% endif %} style="padding:12px 14px 14px;">
+        <summary style="cursor:pointer;font-weight:700;">{% if selected_record %}Modificar {{ selected_record.deposito_label }}{% else %}Abrir formulario{% endif %}</summary>
+        <form method="post" action="{{ url_for('sst_luces_home') }}" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px;">
+          <input type="hidden" name="action" value="save">
+          <input type="hidden" name="edit_id" value="{{ form_defaults.edit_id }}">
+          <label><small>Sede</small><select name="sede_codigo" required><option value="">Seleccionar</option>{% for sede in sedes %}<option value="{{ sede.codigo }}" {% if form_defaults.sede_codigo == sede.codigo %}selected{% endif %}>{{ sede.codigo }} - {{ sede.nombre }}</option>{% endfor %}</select></label>
+          <label><small>Piso</small><select name="piso"><option value="PB" {% if form_defaults.piso == 'PB' %}selected{% endif %}>PB</option><option value="P1" {% if form_defaults.piso == 'P1' %}selected{% endif %}>P1</option><option value="P2" {% if form_defaults.piso == 'P2' %}selected{% endif %}>P2</option><option value="P3" {% if form_defaults.piso == 'P3' %}selected{% endif %}>P3</option></select></label>
+          <label><small>Deposito</small><input name="deposito_codigo" value="{{ form_defaults.deposito_codigo }}" required placeholder="D03"></label>
+          <label><small>Estado</small><select name="estado"><option value="">Automatico</option>{% for item in estado_options %}<option value="{{ item.code }}" {% if form_defaults.estado == item.code %}selected{% endif %}>{{ item.label }}</option>{% endfor %}</select></label>
+          <label><small>Cantidad requerida</small><input type="number" min="0" name="cantidad_requerida" value="{{ form_defaults.cantidad_requerida }}"></label>
+          <label><small>Cantidad instalada</small><input type="number" min="0" name="cantidad_instalada" value="{{ form_defaults.cantidad_instalada }}"></label>
+          <label><small>Cantidad operativa</small><input type="number" min="0" name="cantidad_operativa" value="{{ form_defaults.cantidad_operativa }}"></label>
+          <label><small>Fuera de servicio</small><input type="number" min="0" name="cantidad_fuera_servicio" value="{{ form_defaults.cantidad_fuera_servicio }}"></label>
+          <label><small>Marca</small><input name="marca" value="{{ form_defaults.marca }}"></label>
+          <label><small>Modelo</small><input name="modelo" value="{{ form_defaults.modelo }}"></label>
+          <label><small>Tipo equipo</small><input name="tipo_equipo" value="{{ form_defaults.tipo_equipo }}"></label>
+          <label><small>Bateria</small><input name="bateria" value="{{ form_defaults.bateria }}"></label>
+          <label><small>Fecha relevamiento</small><input type="date" name="fecha_relevamiento" value="{{ form_defaults.fecha_relevamiento }}"></label>
+          <label><small>Ultima prueba</small><input type="date" name="fecha_ultima_prueba" value="{{ form_defaults.fecha_ultima_prueba }}"></label>
+          <label><small>Resultado prueba</small><input name="resultado_ultima_prueba" value="{{ form_defaults.resultado_ultima_prueba }}"></label>
+          <label><small>Proxima prueba</small><input type="date" name="fecha_proxima_prueba" value="{{ form_defaults.fecha_proxima_prueba }}"></label>
+          <label style="display:flex;align-items:center;gap:6px;margin-top:20px;"><input type="checkbox" name="requiere_bateria" value="1" {% if form_defaults.requiere_bateria %}checked{% endif %}> Requiere bateria</label>
+          <label style="display:flex;align-items:center;gap:6px;margin-top:20px;"><input type="checkbox" name="requiere_reemplazo" value="1" {% if form_defaults.requiere_reemplazo %}checked{% endif %}> Requiere reemplazo</label>
+          <label><small>Fecha pedido</small><input type="date" name="fecha_pedido" value="{{ form_defaults.fecha_pedido }}"></label>
+          <label><small>Nro pedido</small><input name="numero_pedido" value="{{ form_defaults.numero_pedido }}"></label>
+          <label><small>Disponible</small><input type="date" name="fecha_disponibilidad" value="{{ form_defaults.fecha_disponibilidad }}"></label>
+          <label><small>Intervencion programada</small><input type="date" name="fecha_programada_intervencion" value="{{ form_defaults.fecha_programada_intervencion }}"></label>
+          <label><small>Intervencion realizada</small><input type="date" name="fecha_intervencion" value="{{ form_defaults.fecha_intervencion }}"></label>
+          <label><small>Verificacion</small><input type="date" name="fecha_verificacion" value="{{ form_defaults.fecha_verificacion }}"></label>
+          <label style="grid-column:1 / -1;"><small>Observaciones</small><textarea name="observaciones" rows="3">{{ form_defaults.observaciones }}</textarea></label>
+          <div style="grid-column:1 / -1;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
+            <button class="sst-op-btn primary" type="submit">Guardar registro</button>
+          </div>
+        </form>
+
+        {% if selected_record %}
+        <div style="display:grid;grid-template-columns:1fr auto;gap:12px;margin-top:16px;padding-top:12px;border-top:1px solid #edf0f4;">
+          <form method="post" action="{{ url_for('sst_luces_home') }}" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;">
+            <input type="hidden" name="action" value="test">
+            <input type="hidden" name="record_id" value="{{ selected_record.id }}">
+            <label><small>Fecha prueba</small><input type="date" name="fecha_prueba" value="{{ selected_record.fecha_ultima_prueba }}"></label>
+            <label><small>Resultado</small><input name="resultado_prueba" placeholder="Operativa / Observada"></label>
+            <label><small>Proxima prueba</small><input type="date" name="fecha_proxima_prueba_test" value="{{ selected_record.fecha_proxima_prueba }}"></label>
+            <label><small>Observacion</small><input name="observaciones_prueba" placeholder="Detalle de la prueba"></label>
+            <div style="grid-column:1 / -1;display:flex;gap:8px;justify-content:flex-end;">
+              <button class="sst-op-btn" type="submit">Registrar prueba</button>
+            </div>
+          </form>
+          <form method="post" action="{{ url_for('sst_luces_home') }}" style="display:flex;align-items:flex-start;">
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="record_id" value="{{ selected_record.id }}">
+            <button class="sst-op-btn" type="submit" onclick="return confirm('Dar de baja logica este registro?');">Baja logica</button>
+          </form>
+        </div>
+        {% endif %}
+      </details>
+    </article>
+
+    <article class="sst-op-card">
+      <div class="sst-op-card-head"><h2>Historial</h2><span class="sst-op-count">{{ history_rows|length }} movimientos</span></div>
+      <ul class="sst-op-list">
+        {% for item in history_rows %}
+        <li class="sst-op-item">
+          <div>
+            <strong>{{ item.accion|replace('_', ' ')|title }}</strong>
+            <div class="sst-op-meta">{{ item.sede_codigo or '-' }} {% if item.deposito_codigo %}· {{ item.deposito_codigo }}{% endif %} · {{ item.detalle or 'Sin detalle' }}</div>
+          </div>
+          <span class="sst-op-date">{{ fmt_fecha(item.fecha_evento[:10]) }}</span>
+        </li>
+        {% else %}<li class="sst-op-empty">Sin historial todavia.</li>{% endfor %}
+      </ul>
+    </article>
+  </div>
 </section>
 {% endblock %}

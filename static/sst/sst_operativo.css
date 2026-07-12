@@ -452,7 +452,7 @@
   justify-content: center;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 12px;
+  padding: 24px 12px;
   background: rgba(15, 23, 42, .26);
 }
 
@@ -464,6 +464,7 @@
   width: min(440px, calc(100vw - 24px));
   max-height: calc(100vh - 24px);
   max-height: calc(100dvh - 24px);
+  margin: 0 auto;
   padding: 14px;
   border: 1px solid #dbe3ed;
   border-radius: 16px;
@@ -542,6 +543,7 @@
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+  flex-wrap: wrap;
   position: sticky;
   bottom: 0;
   margin-top: 12px;
@@ -568,6 +570,14 @@
 @media (max-height: 620px) {
   .sst-calendar-launcher-backdrop {
     align-items: flex-start;
+    padding-block: 12px;
+  }
+}
+
+@media (max-width: 640px) {
+  .sst-calendar-launcher-actions {
+    position: static;
+    background: #fff;
   }
 }
 
