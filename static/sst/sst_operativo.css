@@ -447,23 +447,31 @@
   position: fixed;
   inset: 0;
   z-index: 60;
-  display: grid;
-  place-items: center;
-  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 12px;
   background: rgba(15, 23, 42, .26);
 }
 
 .sst-calendar-launcher {
   width: min(440px, calc(100vw - 24px));
-  padding: 16px;
+  max-height: calc(100vh - 24px);
+  max-height: calc(100dvh - 24px);
+  padding: 14px;
   border: 1px solid #dbe3ed;
   border-radius: 16px;
   background: #fff;
   box-shadow: 0 22px 50px rgba(15, 23, 42, .18);
+  overflow-y: auto;
+  box-sizing: border-box;
 }
 
 .sst-calendar-launcher-head {
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
 }
@@ -504,21 +512,21 @@
 
 .sst-calendar-launcher-options {
   display: grid;
-  gap: 8px;
-  margin-top: 14px;
+  gap: 6px;
+  margin-top: 12px;
 }
 
 .sst-calendar-launcher-option {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-height: 42px;
-  padding: 0 12px;
+  min-height: 38px;
+  padding: 0 10px;
   border: 1px solid #dbe3ed;
   border-radius: 12px;
   background: #fbfcfe;
   color: #172033;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
 }
 
@@ -530,11 +538,15 @@
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  margin-top: 16px;
+  position: sticky;
+  bottom: 0;
+  margin-top: 12px;
+  padding-top: 12px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0), #fff 24px);
 }
 
 .sst-calendar-launcher-actions .sst-op-btn {
-  min-width: 120px;
+  min-width: 112px;
 }
 
 .sst-calendar-launcher-actions .sst-op-btn.primary {
@@ -547,6 +559,12 @@
   border-color: #5a59bc;
   background: #5a59bc;
   color: #fff;
+}
+
+@media (max-height: 620px) {
+  .sst-calendar-launcher-backdrop {
+    align-items: flex-start;
+  }
 }
 
 .sst-lot-grid {
