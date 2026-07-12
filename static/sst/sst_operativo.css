@@ -443,6 +443,7 @@
 .sst-calendar-mobile-item strong { display: block; margin-bottom: 6px; font-size: 13px; }
 
 .sst-calendar-launcher-backdrop {
+  --sst-accent: #6666cc;
   position: fixed;
   inset: 0;
   z-index: 60;
@@ -530,6 +531,22 @@
   justify-content: flex-end;
   gap: 8px;
   margin-top: 16px;
+}
+
+.sst-calendar-launcher-actions .sst-op-btn {
+  min-width: 120px;
+}
+
+.sst-calendar-launcher-actions .sst-op-btn.primary {
+  background: var(--sst-accent, #6666cc);
+  border-color: var(--sst-accent, #6666cc);
+  color: #fff;
+}
+
+.sst-calendar-launcher-actions .sst-op-btn.primary:hover {
+  border-color: #5a59bc;
+  background: #5a59bc;
+  color: #fff;
 }
 
 .sst-lot-grid {
