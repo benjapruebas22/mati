@@ -456,6 +456,10 @@
   background: rgba(15, 23, 42, .26);
 }
 
+.sst-calendar-launcher-backdrop[hidden] {
+  display: none !important;
+}
+
 .sst-calendar-launcher {
   width: min(440px, calc(100vw - 24px));
   max-height: calc(100vh - 24px);
