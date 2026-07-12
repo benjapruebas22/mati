@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-12-01') }}">
+{% endblock %}
+
+{% block content %}
+<section class="sst-operativo sst-ui sst-shell">
+  {% include '_sst_operational_nav.html' %}
+  <header class="sst-op-header">
+    <div>
+      <p class="sst-op-eyebrow">SG-SST · Luces de emergencia</p>
+      <h1>Luces de emergencia</h1>
+      <p>Inventario operativo por sede y acceso rapido al historial de cambios.</p>
+    </div>
+    <div class="sst-op-actions">
+      {% if selected_sede %}
+      <a class="sst-op-btn primary" href="{{ url_for('luminarias_nuevo', codigo_sede=selected_sede.codigo) }}">Nuevo registro</a>
+      <a class="sst-op-btn" href="{{ url_for('checklist_luminarias', sede_filtro=selected_sede.codigo) }}">Historial de cambios</a>
+      <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo', sede=selected_sede.codigo, tipo='luces') }}">Calendario operativo</a>
+      {% else %}
+      <a class="sst-op-btn primary" href="{{ url_for('luminarias_nuevo') }}">Nuevo registro</a>
+      <a class="sst-op-btn" href="{{ url_for('checklist_luminarias') }}">Historial de cambios</a>
+      <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo', tipo='luces') }}">Calendario operativo</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <form class="sst-op-card" method="get" action="{{ url_for('sst_luces_home') }}" style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;padding:12px;margin-bottom:12px;">
+    <label style="min-width:220px;"><small>Sede</small><select name="sede" style="width:100%;"><option value="">Todas</option>{% for sede in sedes %}<option value="{{ sede.codigo }}" {% if f_sede == sede.codigo %}selected{% endif %}>{{ sede.codigo }} - {{ sede.nombre }}</option>{% endfor %}</select></label>
+    <label style="min-width:130px;"><small>Piso</small><select name="piso" style="width:100%;"><option value="">Todos</option>{% for p in ['PB','P1','P2','P3'] %}<option value="{{ p }}" {% if f_piso == p %}selected{% endif %}>{{ p }}</option>{% endfor %}</select></label>
+    <label style="flex:1;min-width:220px;"><small>Buscar</small><input name="q" value="{{ f_q }}" placeholder="Local u observacion" style="width:100%;"></label>
+    <button class="sst-op-btn" type="submit">Aplicar</button>
+    <a class="sst-op-btn" href="{{ url_for('sst_luces_home') }}">Limpiar</a>
+  </form>
+
+  <div class="sst-calendar-kpis sst-calendar-kpis-4" style="margin-bottom:12px;">
+    <article class="sst-op-card sst-calendar-kpi"><span>Registros</span><strong>{{ kpi_registros }}</strong><small>Locales con inventario activo</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Unidades</span><strong>{{ kpi_unidades }}</strong><small>Total de luces relevadas</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Sedes</span><strong>{{ kpi_sedes }}</strong><small>Sedes con datos visibles</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Cambios del mes</span><strong>{{ kpi_cambios_mes }}</strong><small>Desde checklist de luminarias</small></article>
+  </div>
+
+  <article class="sst-op-card">
+    <div class="sst-op-card-head"><h2>Inventario</h2><span class="sst-op-count">{{ rows|length }} registros</span></div>
+    <div style="overflow-x:auto;">
+      <table class="table">
+        <thead><tr><th>Sede</th><th>Piso</th><th>Local</th><th>Total</th><th>Fria</th><th>Calida</th><th>Foco</th><th>Panel</th><th>Puestos</th><th>Ultimo cambio</th><th></th></tr></thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            <td><strong>{{ row.sede_codigo }}</strong><br><small>{{ row.sede_nombre }}</small></td>
+            <td>{{ row.piso or 'PB' }}</td>
+            <td>{{ row.codigo_local or '-' }}</td>
+            <td>{{ row.total_unidades }}</td>
+            <td>{{ row.tubo_led_fria }}</td>
+            <td>{{ row.tubo_led_calido }}</td>
+            <td>{{ row.foco_comun }}</td>
+            <td>{{ row.panel_led }}</td>
+            <td>{{ row.puestos_trabajo }}</td>
+            <td>{% if row.ultima_fecha %}{{ fmt_fecha(row.ultima_fecha) }} · {{ row.cambios_total }} cambio{% if row.cambios_total != 1 %}s{% endif %}{% else %}-{% endif %}</td>
+            <td><a class="sst-op-btn" href="{{ url_for('sede_ficha', codigo=row.sede_codigo, piso=row.piso, local=row.codigo_local, tab='luminarias', view='operativo') }}">Abrir</a></td>
+          </tr>
+          {% else %}<tr><td colspan="11" class="sst-op-empty">No hay luminarias para este filtro.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+</section>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-12-01') }}">
+{% endblock %}
+
+{% block content %}
+<section class="sst-operativo sst-ui sst-shell">
+  {% include '_sst_operational_nav.html' %}
+  <header class="sst-op-header">
+    <div>
+      <p class="sst-op-eyebrow">SG-SST · Carteleria</p>
+      <h1>Carteleria y planos</h1>
+      <p>Vista operativa por sede para abrir rapido el plano, revisar cobertura y detectar faltantes.</p>
+    </div>
+    <div class="sst-op-actions">
+      {% if selected_sede %}
+      <a class="sst-op-btn primary" href="{{ url_for('sede_planos', codigo=selected_sede.codigo) }}">Abrir sede</a>
+      <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo', sede=selected_sede.codigo, tipo='carteleria') }}">Calendario operativo</a>
+      {% else %}
+      <a class="sst-op-btn primary" href="{{ url_for('sst_calendario_operativo', tipo='carteleria') }}">Calendario operativo</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <form class="sst-op-card" method="get" action="{{ url_for('sst_carteleria_home') }}" style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;padding:12px;margin-bottom:12px;">
+    <label style="min-width:220px;"><small>Sede</small><select name="sede" style="width:100%;"><option value="">Todas</option>{% for sede in sedes %}<option value="{{ sede.codigo }}" {% if f_sede == sede.codigo %}selected{% endif %}>{{ sede.codigo }} - {{ sede.nombre }}</option>{% endfor %}</select></label>
+    <label style="flex:1;min-width:220px;"><small>Buscar</small><input name="q" value="{{ f_q }}" placeholder="Codigo o nombre de sede" style="width:100%;"></label>
+    <button class="sst-op-btn" type="submit">Aplicar</button>
+    <a class="sst-op-btn" href="{{ url_for('sst_carteleria_home') }}">Limpiar</a>
+  </form>
+
+  <div class="sst-calendar-kpis sst-calendar-kpis-4" style="margin-bottom:12px;">
+    <article class="sst-op-card sst-calendar-kpi"><span>Sedes con archivos</span><strong>{{ kpi_con_archivos }}</strong><small>Al menos un plano cargado</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Depositos</span><strong>{{ kpi_con_depositos }}</strong><small>Plano de depositos disponible</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Evacuacion</span><strong>{{ kpi_con_evacuacion }}</strong><small>Plano de evacuacion disponible</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Pendientes</span><strong>{{ kpi_pendientes }}</strong><small>Sedes con faltantes o controles abiertos</small></article>
+  </div>
+
+  <article class="sst-op-card">
+    <div class="sst-op-card-head"><h2>Estado por sede</h2><span class="sst-op-count">{{ rows|length }} sedes</span></div>
+    <div style="overflow-x:auto;">
+      <table class="table">
+        <thead><tr><th>Sede</th><th>General</th><th>Depositos</th><th>Evacuacion</th><th>Carteleria</th><th>Plano</th><th>Actualizacion</th><th></th></tr></thead>
+        <tbody>
+          {% for row in rows %}
+          <tr>
+            <td><strong>{{ row.sede_codigo }}</strong><br><small>{{ row.sede_nombre }}</small></td>
+            <td>{{ 'Si' if row.tiene_analisis else 'No' }}</td>
+            <td>{{ 'Si' if row.tiene_depositos else 'No' }}</td>
+            <td>{{ 'Si' if row.tiene_evacuacion else 'No' }}</td>
+            <td><span class="sst-status-badge {{ row.carteleria_class }}">{{ row.carteleria_label }}</span></td>
+            <td><span class="sst-status-badge {{ row.plano_class }}">{{ row.plano_label }}</span></td>
+            <td>{% if row.ultima_actualizacion %}{{ fmt_fecha(row.ultima_actualizacion) }}{% else %}-{% endif %}</td>
+            <td style="white-space:nowrap;"><a class="sst-op-btn" href="{{ row.url_planos }}">Planos</a> <a class="sst-op-btn" href="{{ row.url_operativo }}">Operativo</a></td>
+          </tr>
+          {% else %}<tr><td colspan="8" class="sst-op-empty">No hay sedes para este filtro.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+</section>
+{% endblock %}

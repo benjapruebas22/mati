@@ -1,9 +1,12 @@
 (function () {
+  const root = document.getElementById('sstCalendarApp');
   const payloadNode = document.getElementById('sstCalendarPayload');
   const tooltip = document.getElementById('sstCalendarTooltip');
-  if (!payloadNode || !tooltip) return;
+  const launcher = document.getElementById('sstCalendarLauncher');
+  if (!root || !payloadNode || !tooltip) return;
 
   let payload = {};
+  let launchContext = null;
   try {
     payload = JSON.parse(payloadNode.textContent || '{}');
   } catch (error) {
@@ -11,6 +14,11 @@
   }
 
   const links = Array.from(document.querySelectorAll('.js-sst-calendar-group'));
+  const emptyButtons = Array.from(document.querySelectorAll('.js-sst-calendar-empty'));
+  const launcherContext = document.getElementById('sstCalendarLauncherContext');
+  const launcherOpen = document.getElementById('sstCalendarLaunchOpen');
+  const launcherInputs = Array.from(document.querySelectorAll('input[name="sstCalendarLaunchType"]'));
+  const launcherCloseButtons = Array.from(document.querySelectorAll('.js-sst-calendar-launcher-close'));
 
   function escapeHtml(value) {
     return String(value || '')
@@ -126,6 +134,73 @@
     tooltip.hidden = true;
   }
 
+  function isoDateFromContext(context) {
+    return `${String(context.year || '').padStart(4, '0')}-${String(context.month || '').padStart(2, '0')}-01`;
+  }
+
+  function lotFromMonth(month) {
+    const monthNumber = Number(month || 0);
+    if (monthNumber === 5) return 'Mayo';
+    if (monthNumber === 9) return 'Septiembre';
+    if (monthNumber === 12) return 'Diciembre';
+    return 'Otro';
+  }
+
+  function buildLaunchUrl(type, context) {
+    const templates = {
+      visita: root.dataset.launchVisita || '',
+      matafuegos: root.dataset.launchMatafuegos || '',
+      desinfeccion: root.dataset.launchDesinfeccion || '',
+      luces: root.dataset.launchLuces || '',
+      carteleria: root.dataset.launchCarteleria || ''
+    };
+    const template = templates[type] || '';
+    if (!template || !context) return '';
+    const replacements = {
+      '__SEDE__': encodeURIComponent(context.sede || ''),
+      '__DATE__': encodeURIComponent(isoDateFromContext(context)),
+      '__LOT__': encodeURIComponent(lotFromMonth(context.month)),
+      '__YEAR__': encodeURIComponent(String(context.year || '')),
+      '__MONTH__': encodeURIComponent(String(context.month || ''))
+    };
+    return Object.keys(replacements).reduce(
+      (output, key) => output.replaceAll(key, replacements[key]),
+      template
+    );
+  }
+
+  function currentLaunchType() {
+    const selected = launcherInputs.find((input) => input.checked);
+    return selected ? selected.value : 'visita';
+  }
+
+  function updateLauncher() {
+    if (!launcherContext || !launcherOpen || !launchContext) return;
+    launcherContext.textContent = `${launchContext.sede} - ${launchContext.sedeName} · ${launchContext.monthLabel} ${launchContext.year}`;
+    launcherOpen.dataset.href = buildLaunchUrl(currentLaunchType(), launchContext);
+  }
+
+  function openLauncher(button) {
+    if (!launcher) return;
+    hideTooltip();
+    launchContext = {
+      sede: button.dataset.sede || '',
+      sedeName: button.dataset.sedeName || '',
+      month: Number(button.dataset.month || 0),
+      monthLabel: button.dataset.monthLabel || '',
+      year: Number(button.dataset.year || 0)
+    };
+    updateLauncher();
+    launcher.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeLauncher() {
+    if (!launcher) return;
+    launcher.hidden = true;
+    document.body.style.overflow = '';
+  }
+
   links.forEach((link) => {
     link.addEventListener('mouseenter', (event) => showTooltip(link, event));
     link.addEventListener('mousemove', (event) => showTooltip(link, event));
@@ -134,6 +209,34 @@
     link.addEventListener('blur', hideTooltip);
   });
 
+  emptyButtons.forEach((button) => {
+    button.addEventListener('click', () => openLauncher(button));
+  });
+
+  launcherInputs.forEach((input) => {
+    input.addEventListener('change', updateLauncher);
+  });
+
+  launcherCloseButtons.forEach((button) => {
+    button.addEventListener('click', closeLauncher);
+  });
+
+  if (launcher) {
+    launcher.addEventListener('click', (event) => {
+      if (event.target === launcher) closeLauncher();
+    });
+  }
+
+  if (launcherOpen) {
+    launcherOpen.addEventListener('click', () => {
+      const href = launcherOpen.dataset.href || '';
+      if (href) window.location.href = href;
+    });
+  }
+
   window.addEventListener('scroll', hideTooltip, { passive: true });
   window.addEventListener('resize', hideTooltip);
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') closeLauncher();
+  });
 })();

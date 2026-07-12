@@ -385,6 +385,23 @@
   background: #e6ebf2;
 }
 
+.sst-cal-empty-button {
+  display: grid;
+  width: 100%;
+  min-height: 20px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  place-items: center;
+  cursor: pointer;
+}
+
+.sst-cal-empty-button:hover,
+.sst-cal-empty-button:focus-visible {
+  background: #f3f6fb;
+  outline: 0;
+}
+
 .sst-calendar-tooltip {
   position: fixed;
   z-index: 50;
@@ -424,6 +441,130 @@
 }
 .sst-calendar-mobile-item:last-child { border-bottom: 0; }
 .sst-calendar-mobile-item strong { display: block; margin-bottom: 6px; font-size: 13px; }
+
+.sst-calendar-launcher-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, .26);
+}
+
+.sst-calendar-launcher {
+  width: min(440px, calc(100vw - 24px));
+  padding: 16px;
+  border: 1px solid #dbe3ed;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 22px 50px rgba(15, 23, 42, .18);
+}
+
+.sst-calendar-launcher-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sst-calendar-launcher-kicker {
+  margin: 0 0 4px;
+  color: #516074;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.sst-calendar-launcher h3 {
+  margin: 0;
+  color: #172033;
+  font-size: 18px;
+}
+
+.sst-calendar-launcher-copy {
+  margin: 6px 0 0;
+  color: #667085;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.sst-calendar-launcher-close {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #d6dbe4;
+  border-radius: 999px;
+  background: #fff;
+  color: #354255;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.sst-calendar-launcher-options {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.sst-calendar-launcher-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid #dbe3ed;
+  border-radius: 12px;
+  background: #fbfcfe;
+  color: #172033;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.sst-calendar-launcher-option input {
+  margin: 0;
+}
+
+.sst-calendar-launcher-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.sst-lot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.sst-lot-card {
+  display: grid;
+  gap: 5px;
+  padding: 12px 14px;
+  border: 1px solid #dfe4ec;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.sst-lot-kicker {
+  color: #516074;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.sst-lot-card strong {
+  color: #172033;
+  font-size: 18px;
+}
+
+.sst-lot-meta {
+  color: #667085;
+  font-size: 12px;
+  line-height: 1.35;
+}
 
 .sst-calendar-page-ops {
   width: min(1680px, calc(100vw - 36px));

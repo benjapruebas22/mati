@@ -34,7 +34,7 @@
 
       <div class="license-field">
         <label>Fecha</label>
-        <input type="date" name="fecha" required />
+        <input type="date" name="fecha" value="{{ pre_fecha or '' }}" required />
       </div>
 
       <div class="license-field">
@@ -42,7 +42,7 @@
         <select name="tipo_visita">
           <option value="">(Opcional)</option>
           {% for t in tipos %}
-          <option value="{{ t }}">{{ t }}</option>
+          <option value="{{ t }}" {% if pre_tipo_visita == t %}selected{% endif %}>{{ t }}</option>
           {% endfor %}
         </select>
       </div>
@@ -52,19 +52,19 @@
         <select name="estado">
           <option value="">(Opcional)</option>
           {% for e in estados %}
-          <option value="{{ e }}">{{ e|replace('_',' ') }}</option>
+          <option value="{{ e }}" {% if pre_estado == e %}selected{% endif %}>{{ e|replace('_',' ') }}</option>
           {% endfor %}
         </select>
       </div>
 
       <div class="license-field full">
         <label>Responsable</label>
-        <input name="responsable" placeholder="Ej: Lic. Matias Calderari / ART / Intendencia" />
+        <input name="responsable" value="{{ pre_responsable or '' }}" placeholder="Ej: Lic. Matias Calderari / ART / Intendencia" />
       </div>
 
       <div class="license-field full">
         <label>Observacion breve</label>
-        <textarea name="observaciones" rows="3" placeholder="Pendientes, notas, lo mas importante..."></textarea>
+        <textarea name="observaciones" rows="3" placeholder="Pendientes, notas, lo mas importante...">{{ pre_observaciones or '' }}</textarea>
       </div>
     </div>
 

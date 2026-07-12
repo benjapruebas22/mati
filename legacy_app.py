@@ -6781,6 +6781,39 @@ def _matafuego_lote_from_vto(fecha_vencimiento: str | None) -> str:
         return "Diciembre"
     return "Otro"
 
+
+MATAFUEGOS_OPERATIVO_SCHEDULE = {
+    "S01": {"due_date": "2026-09-01", "lot_label": "Lote Septiembre", "lot_month": "Septiembre"},
+    "S03": {"due_date": "2026-09-01", "lot_label": "Lote Septiembre", "lot_month": "Septiembre"},
+    "S08": {"due_date": "2026-09-01", "lot_label": "Lote Septiembre", "lot_month": "Septiembre"},
+    "S10": {"due_date": "2026-09-01", "lot_label": "Lote Septiembre", "lot_month": "Septiembre"},
+    "S12": {"due_date": "2026-09-01", "lot_label": "Lote Septiembre", "lot_month": "Septiembre"},
+    "S04": {"due_date": "2027-05-01", "lot_label": "Lote Mayo", "lot_month": "Mayo"},
+    "S05": {"due_date": "2027-05-01", "lot_label": "Lote Mayo", "lot_month": "Mayo"},
+    "S06": {"due_date": "2027-05-01", "lot_label": "Lote Mayo", "lot_month": "Mayo"},
+    "S07": {"due_date": "2027-05-01", "lot_label": "Lote Mayo", "lot_month": "Mayo"},
+    "S11": {"due_date": "2027-05-01", "lot_label": "Lote Mayo", "lot_month": "Mayo"},
+    "S14": {"due_date": "2027-05-01", "lot_label": "Lote Mayo", "lot_month": "Mayo"},
+    "S15": {"due_date": "2027-05-01", "lot_label": "Lote Mayo", "lot_month": "Mayo"},
+    "S16": {"due_date": "2027-05-01", "lot_label": "Lote Mayo", "lot_month": "Mayo"},
+    "S18": {"due_date": "2027-05-01", "lot_label": "Lote Mayo", "lot_month": "Mayo"},
+    "S20": {"due_date": "2027-05-01", "lot_label": "Lote Mayo", "lot_month": "Mayo"},
+    "S13": {"due_date": "2026-12-01", "lot_label": "Lote Diciembre", "lot_month": "Diciembre"},
+}
+
+
+def _matafuego_operativo_schedule(sede_codigo: str | None, fecha_vencimiento: str | None) -> dict:
+    sede = (sede_codigo or "").strip().upper()
+    base = dict(MATAFUEGOS_OPERATIVO_SCHEDULE.get(sede, {}))
+    due_date = (base.get("due_date") or (fecha_vencimiento or "")).strip()
+    lot_month = (base.get("lot_month") or _matafuego_lote_from_vto(due_date)).strip() or "Otro"
+    lot_label = (base.get("lot_label") or f"Lote {lot_month}").strip()
+    return {
+        "due_date": due_date,
+        "lot_label": lot_label,
+        "lot_month": lot_month,
+    }
+
     # MOBILIARIO total
     try:
         if has_col("mobiliario_sede", "codigo_sede"):
@@ -11575,11 +11608,16 @@ def _matafuegos_home_impl():
     q = (request.args.get("q") or "").strip()
     vencimiento = (request.args.get("vencimiento") or "todos").strip().lower()
     edit = request.args.get("edit")
+    prefill_fecha_vencimiento = (request.args.get("fecha_vencimiento") or "").strip()
+    prefill_fecha_recarga = (request.args.get("fecha_recarga") or "").strip()
+    prefill_lote = (request.args.get("lote_vencimiento") or "").strip()
 
     if piso == "2P":
         piso = "P2"
     if piso == "1P":
         piso = "P1"
+    if not prefill_lote and prefill_fecha_vencimiento:
+        prefill_lote = _matafuego_lote_from_vto(prefill_fecha_vencimiento)
 
     fecha_45d = db.execute("SELECT date('now','+45 day') AS f").fetchone()["f"]
     sede_opts = db.execute("""
@@ -11937,6 +11975,43 @@ def _matafuegos_home_impl():
         params,
     ).fetchone()
 
+    lotes_resumen_map = {}
+    for row in active_rows:
+        sede_codigo = str(row["sede"] or "").strip().upper()
+        schedule = _matafuego_operativo_schedule(sede_codigo, row["fecha_vencimiento"])
+        due_date = (schedule.get("due_date") or "").strip()
+        lot_month = (schedule.get("lot_month") or "").strip()
+        lot_label = (schedule.get("lot_label") or "").strip()
+        if not due_date or not lot_month or lot_month == "Otro":
+            continue
+        lot_item = lotes_resumen_map.setdefault(due_date, {
+            "label": lot_label,
+            "month_label": lot_month,
+            "due_date": due_date,
+            "year": int(due_date[:4]),
+            "month": int(due_date[5:7]),
+            "sedes": set(),
+            "equipos": 0,
+        })
+        if sede_codigo:
+            lot_item["sedes"].add(sede_codigo)
+        lot_item["equipos"] += 1
+
+    lotes_resumen = []
+    for due_date in sorted(lotes_resumen_map.keys()):
+        lot_item = lotes_resumen_map[due_date]
+        sedes_lote = sorted(lot_item["sedes"])
+        lotes_resumen.append({
+            "label": lot_item["label"],
+            "month_label": lot_item["month_label"],
+            "due_date": lot_item["due_date"],
+            "year": lot_item["year"],
+            "month": lot_item["month"],
+            "sedes_count": len(sedes_lote),
+            "equipos": int(lot_item["equipos"]),
+            "sedes_text": ", ".join(sedes_lote[:6]),
+        })
+
     return render_template(
         "matafuegos_home.html",
         sede=sede,
@@ -11951,6 +12026,10 @@ def _matafuegos_home_impl():
         tipo_opts=tipo_opts,
         capacidad_opts=capacidad_opts,
         vencimiento=vencimiento,
+        lotes_resumen=lotes_resumen,
+        prefill_fecha_vencimiento=prefill_fecha_vencimiento,
+        prefill_fecha_recarga=prefill_fecha_recarga,
+        prefill_lote=prefill_lote,
     )
 
 @app.route("/sgsst/matafuegos", methods=["GET","POST"], endpoint="matafuegos_home")

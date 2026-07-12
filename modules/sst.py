@@ -6544,6 +6544,290 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             today_month=context_raw["today"].month,
         )
 
+    @app.route("/sst/luces", methods=["GET"], endpoint="sst_luces_home")
+    def sst_luces_home():
+        con = get_db()
+        f_sede = (request.args.get("sede") or "").strip().upper()
+        f_piso = (request.args.get("piso") or "").strip().upper()
+        f_q = (request.args.get("q") or "").strip()
+
+        if f_piso == "1P":
+            f_piso = "P1"
+        if f_piso == "2P":
+            f_piso = "P2"
+
+        sedes = con.execute("""
+            SELECT codigo, nombre, COALESCE(ciudad, '') AS ciudad
+            FROM sedes_mpd
+            ORDER BY codigo
+        """).fetchall()
+
+        latest_change_by_sede = {}
+        changes_this_month = 0
+        if _table_exists(con, "checklist_luminarias"):
+            latest_change_rows = con.execute("""
+                SELECT
+                    UPPER(COALESCE(sede_codigo, '')) AS sede_codigo,
+                    MAX(COALESCE(fecha, '')) AS ultima_fecha,
+                    COUNT(*) AS total
+                FROM checklist_luminarias
+                WHERE TRIM(COALESCE(sede_codigo, '')) <> ''
+                GROUP BY UPPER(COALESCE(sede_codigo, ''))
+            """).fetchall()
+            for row in latest_change_rows:
+                sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
+                if not sede_codigo:
+                    continue
+                latest_change_by_sede[sede_codigo] = {
+                    "ultima_fecha": (_row_value(row, "ultima_fecha", "") or "").strip(),
+                    "total": int(_row_value(row, "total", 0) or 0),
+                }
+            month_prefix = date.today().strftime("%Y-%m")
+            changes_where = ["substr(COALESCE(fecha, ''), 1, 7) = ?"]
+            changes_params = [month_prefix]
+            if f_sede:
+                changes_where.append("UPPER(COALESCE(sede_codigo, '')) = ?")
+                changes_params.append(f_sede)
+            changes_row = con.execute(
+                f"SELECT COUNT(*) AS total FROM checklist_luminarias WHERE {' AND '.join(changes_where)}",
+                changes_params,
+            ).fetchone()
+            changes_this_month = int(_row_value(changes_row, "total", 0) or 0)
+
+        rows = []
+        total_unidades = 0
+        sedes_con_datos = set()
+        if _table_exists(con, "luminarias_sede"):
+            where = ["COALESCE(l.activo, 1) = 1"]
+            params = []
+            if f_sede:
+                where.append("UPPER(COALESCE(l.codigo_sede, '')) = ?")
+                params.append(f_sede)
+            if f_piso:
+                where.append("UPPER(COALESCE(l.piso, 'PB')) = ?")
+                params.append(f_piso)
+            if f_q:
+                like = f"%{f_q}%"
+                where.append("""
+                    (
+                        COALESCE(l.codigo_local, '') LIKE ?
+                        OR COALESCE(l.observaciones, '') LIKE ?
+                        OR COALESCE(s.nombre, '') LIKE ?
+                    )
+                """)
+                params.extend([like, like, like])
+            lum_rows = con.execute(f"""
+                SELECT
+                    l.id,
+                    UPPER(COALESCE(l.codigo_sede, '')) AS sede_codigo,
+                    COALESCE(s.nombre, '') AS sede_nombre,
+                    COALESCE(s.ciudad, '') AS sede_ciudad,
+                    COALESCE(l.piso, 'PB') AS piso,
+                    COALESCE(l.codigo_local, '') AS codigo_local,
+                    COALESCE(l.tubo_led_fria, 0) AS tubo_led_fria,
+                    COALESCE(l.tubo_led_calido, 0) AS tubo_led_calido,
+                    COALESCE(l.foco_comun, 0) AS foco_comun,
+                    COALESCE(l.panel_led, 0) AS panel_led,
+                    COALESCE(l.puestos_trabajo, 0) AS puestos_trabajo,
+                    COALESCE(l.otros_detalle, '') AS otros_detalle,
+                    COALESCE(l.observaciones, '') AS observaciones
+                FROM luminarias_sede l
+                LEFT JOIN sedes_mpd s ON s.codigo = l.codigo_sede
+                WHERE {' AND '.join(where)}
+                ORDER BY UPPER(COALESCE(l.codigo_sede, '')), COALESCE(l.piso, 'PB'), COALESCE(l.codigo_local, '')
+            """, params).fetchall()
+            for row in lum_rows:
+                sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
+                total_row = (
+                    int(_row_value(row, "tubo_led_fria", 0) or 0)
+                    + int(_row_value(row, "tubo_led_calido", 0) or 0)
+                    + int(_row_value(row, "foco_comun", 0) or 0)
+                    + int(_row_value(row, "panel_led", 0) or 0)
+                )
+                total_unidades += total_row
+                if sede_codigo:
+                    sedes_con_datos.add(sede_codigo)
+                latest = latest_change_by_sede.get(sede_codigo, {})
+                rows.append({
+                    "id": int(_row_value(row, "id", 0) or 0),
+                    "sede_codigo": sede_codigo,
+                    "sede_nombre": (_row_value(row, "sede_nombre", "") or "").strip(),
+                    "sede_ciudad": (_row_value(row, "sede_ciudad", "") or "").strip(),
+                    "piso": (_row_value(row, "piso", "PB") or "PB").strip().upper(),
+                    "codigo_local": (_row_value(row, "codigo_local", "") or "").strip().upper(),
+                    "tubo_led_fria": int(_row_value(row, "tubo_led_fria", 0) or 0),
+                    "tubo_led_calido": int(_row_value(row, "tubo_led_calido", 0) or 0),
+                    "foco_comun": int(_row_value(row, "foco_comun", 0) or 0),
+                    "panel_led": int(_row_value(row, "panel_led", 0) or 0),
+                    "puestos_trabajo": int(_row_value(row, "puestos_trabajo", 0) or 0),
+                    "otros_detalle": (_row_value(row, "otros_detalle", "") or "").strip(),
+                    "observaciones": (_row_value(row, "observaciones", "") or "").strip(),
+                    "total_unidades": total_row,
+                    "ultima_fecha": latest.get("ultima_fecha", ""),
+                    "cambios_total": int(latest.get("total", 0) or 0),
+                })
+
+        selected_sede = next((item for item in sedes if item["codigo"] == f_sede), None)
+        con.close()
+        return render_template(
+            "sst_luces_home.html",
+            sst_section="luces",
+            sedes=sedes,
+            rows=rows,
+            f_sede=f_sede,
+            f_piso=f_piso,
+            f_q=f_q,
+            selected_sede=selected_sede,
+            kpi_registros=len(rows),
+            kpi_unidades=total_unidades,
+            kpi_sedes=len(sedes_con_datos),
+            kpi_cambios_mes=changes_this_month,
+            fmt_fecha=_sst_fmt_fecha,
+        )
+
+    @app.route("/sst/carteleria", methods=["GET"], endpoint="sst_carteleria_home")
+    def sst_carteleria_home():
+        asegurar_tablas_planos()
+        con = get_db()
+        ensure_sst_control_tables(con)
+        _seed_sst_control_objetivos(con)
+
+        f_sede = (request.args.get("sede") or "").strip().upper()
+        f_q = (request.args.get("q") or "").strip().lower()
+
+        sedes = con.execute("""
+            SELECT codigo, nombre, COALESCE(ciudad, '') AS ciudad
+            FROM sedes_mpd
+            ORDER BY codigo
+        """).fetchall()
+
+        planos_map = defaultdict(dict)
+        if _table_exists(con, "sedes_planos"):
+            plan_rows = con.execute("""
+                SELECT
+                    UPPER(COALESCE(cod_sede, '')) AS sede_codigo,
+                    LOWER(COALESCE(tipo, '')) AS tipo,
+                    COALESCE(archivo, '') AS archivo,
+                    COALESCE(fecha_carga, '') AS fecha_carga
+                FROM sedes_planos
+                ORDER BY id DESC
+            """).fetchall()
+            for row in plan_rows:
+                sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
+                tipo = (_row_value(row, "tipo", "") or "").strip().lower()
+                if not sede_codigo or not tipo or tipo in planos_map[sede_codigo]:
+                    continue
+                planos_map[sede_codigo][tipo] = {
+                    "archivo": (_row_value(row, "archivo", "") or "").strip(),
+                    "fecha_carga": (_row_value(row, "fecha_carga", "") or "").strip(),
+                }
+
+        control_map = defaultdict(dict)
+        control_rows = con.execute("""
+            SELECT
+                LOWER(COALESCE(o.nombre, '')) AS nombre,
+                UPPER(COALESCE(r.sede_codigo, '')) AS sede_codigo,
+                r.ok,
+                COALESCE(r.actualizado_en, '') AS actualizado_en
+            FROM sst_control_objetivos o
+            LEFT JOIN sst_control_relevamientos r ON r.objetivo_id = o.id
+            ORDER BY o.id, r.sede_codigo
+        """).fetchall()
+        for row in control_rows:
+            sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
+            if not sede_codigo:
+                continue
+            nombre = (_row_value(row, "nombre", "") or "").strip().lower()
+            if any(token in nombre for token in ("cartel", "senal", "señal")) and "carteleria" not in control_map[sede_codigo]:
+                control_map[sede_codigo]["carteleria"] = {
+                    "ok": _row_value(row, "ok", None),
+                    "actualizado_en": (_row_value(row, "actualizado_en", "") or "").strip(),
+                }
+            if any(token in nombre for token in ("plano", "evacu")) and "plano" not in control_map[sede_codigo]:
+                control_map[sede_codigo]["plano"] = {
+                    "ok": _row_value(row, "ok", None),
+                    "actualizado_en": (_row_value(row, "actualizado_en", "") or "").strip(),
+                }
+
+        def _control_badge(control_row):
+            if not control_row:
+                return ("Sin relevamiento", "sin-dato")
+            if int(control_row.get("ok", 0) or 0) == 1:
+                return ("Correcto", "correcto")
+            return ("Pendiente", "pendiente")
+
+        rows = []
+        kpi_con_archivos = 0
+        kpi_con_depositos = 0
+        kpi_con_evacuacion = 0
+        kpi_pendientes = 0
+        for sede in sedes:
+            sede_codigo = (_row_value(sede, "codigo", "") or "").strip().upper()
+            sede_nombre = (_row_value(sede, "nombre", "") or "").strip()
+            sede_ciudad = (_row_value(sede, "ciudad", "") or "").strip()
+            if f_sede and sede_codigo != f_sede:
+                continue
+            if f_q and f_q not in f"{sede_codigo} {sede_nombre} {sede_ciudad}".lower():
+                continue
+
+            archivos = planos_map.get(sede_codigo, {})
+            tiene_analisis = bool(archivos.get("analisis"))
+            tiene_depositos = bool(archivos.get("depositos"))
+            tiene_evacuacion = bool(archivos.get("evacuacion"))
+            if tiene_analisis or tiene_depositos or tiene_evacuacion:
+                kpi_con_archivos += 1
+            if tiene_depositos:
+                kpi_con_depositos += 1
+            if tiene_evacuacion:
+                kpi_con_evacuacion += 1
+
+            cart_label, cart_class = _control_badge(control_map.get(sede_codigo, {}).get("carteleria"))
+            plano_label, plano_class = _control_badge(control_map.get(sede_codigo, {}).get("plano"))
+            if not (tiene_analisis and tiene_depositos and tiene_evacuacion) or cart_class != "correcto" or plano_class != "correcto":
+                kpi_pendientes += 1
+
+            fechas = [
+                (archivos.get("analisis", {}) or {}).get("fecha_carga", ""),
+                (archivos.get("depositos", {}) or {}).get("fecha_carga", ""),
+                (archivos.get("evacuacion", {}) or {}).get("fecha_carga", ""),
+                (control_map.get(sede_codigo, {}).get("carteleria", {}) or {}).get("actualizado_en", ""),
+                (control_map.get(sede_codigo, {}).get("plano", {}) or {}).get("actualizado_en", ""),
+            ]
+            ultima_actualizacion = max((item for item in fechas if item), default="")
+
+            rows.append({
+                "sede_codigo": sede_codigo,
+                "sede_nombre": sede_nombre,
+                "sede_ciudad": sede_ciudad,
+                "tiene_analisis": tiene_analisis,
+                "tiene_depositos": tiene_depositos,
+                "tiene_evacuacion": tiene_evacuacion,
+                "carteleria_label": cart_label,
+                "carteleria_class": cart_class,
+                "plano_label": plano_label,
+                "plano_class": plano_class,
+                "ultima_actualizacion": ultima_actualizacion,
+                "url_planos": url_for("sede_planos", codigo=sede_codigo),
+                "url_operativo": url_for("sede_ficha", codigo=sede_codigo, tab="planos", view="operativo") + "#planos",
+            })
+
+        selected_sede = next((item for item in sedes if item["codigo"] == f_sede), None)
+        con.close()
+        return render_template(
+            "sst_carteleria_home.html",
+            sst_section="carteleria",
+            sedes=sedes,
+            rows=rows,
+            f_sede=f_sede,
+            f_q=f_q,
+            selected_sede=selected_sede,
+            kpi_con_archivos=kpi_con_archivos,
+            kpi_con_depositos=kpi_con_depositos,
+            kpi_con_evacuacion=kpi_con_evacuacion,
+            kpi_pendientes=kpi_pendientes,
+            fmt_fecha=_sst_fmt_fecha,
+        )
+
     @app.route("/sst", methods=["GET", "POST"], endpoint="sst_general")
     def sst_general():
         if request.method == "GET" and (request.args.get("modo") or "").strip().lower() != "gestion":
@@ -8997,14 +9281,14 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                             state_key="sin_datos",
                             responsible="",
                             url_detail=(
-                                url_for("sede_ficha", codigo=sede_codigo, tab="planos", view="operativo") + "#planos"
+                                url_for("sst_carteleria_home", sede=sede_codigo)
                                 if control_type == "carteleria"
-                                else url_for("sede_ficha", codigo=sede_codigo, tab="luminarias", view="operativo")
+                                else url_for("sst_luces_home", sede=sede_codigo)
                             ),
                             action_label=(
-                                "Abrir plano de carteleria"
+                                "Abrir carteleria"
                                 if control_type == "carteleria"
-                                else "Abrir luces de emergencia"
+                                else "Abrir luces"
                             ),
                             active=True,
                             extra={
@@ -9036,14 +9320,14 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                         state_key="pendiente",
                         responsible="",
                         url_detail=(
-                            url_for("sede_ficha", codigo=sede_codigo, tab="planos", view="operativo") + "#planos"
+                            url_for("sst_carteleria_home", sede=sede_codigo)
                             if control_type == "carteleria"
-                            else url_for("sede_ficha", codigo=sede_codigo, tab="luminarias", view="operativo")
+                            else url_for("sst_luces_home", sede=sede_codigo)
                         ),
                         action_label=(
-                            "Abrir plano de carteleria"
+                            "Abrir carteleria"
                             if control_type == "carteleria"
-                            else "Abrir luces de emergencia"
+                            else "Abrir luces"
                         ),
                         active=True,
                         extra={
@@ -9398,6 +9682,11 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         """).fetchall()
 
         pre_sede = (request.args.get("sede") or "").strip().upper()
+        pre_fecha = (request.args.get("fecha") or "").strip()
+        pre_tipo_visita = (request.args.get("tipo_visita") or "").strip()
+        pre_estado = (request.args.get("estado") or "").strip()
+        pre_responsable = (request.args.get("responsable") or "").strip()
+        pre_observaciones = (request.args.get("observaciones") or "").strip()
         if request.method == "POST":
             sede_codigo = (request.form.get("sede_codigo") or "").strip().upper()
             fecha = (request.form.get("fecha") or "").strip()
@@ -9409,7 +9698,15 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             if not sede_codigo or not fecha:
                 flash("Sede y fecha son obligatorios.", "error")
                 con.close()
-                return redirect(url_for("sst_visita_cargar", sede=pre_sede or None))
+                return redirect(url_for(
+                    "sst_visita_cargar",
+                    sede=pre_sede or None,
+                    fecha=pre_fecha or None,
+                    tipo_visita=pre_tipo_visita or None,
+                    estado=pre_estado or None,
+                    responsable=pre_responsable or None,
+                    observaciones=pre_observaciones or None,
+                ))
 
             con.execute("""
                 INSERT INTO sst_visitas (sede_codigo, fecha, tipo_visita, responsable, estado, observaciones)
@@ -9432,6 +9729,11 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             "sst_visita_form.html",
             sedes=sedes,
             pre_sede=pre_sede,
+            pre_fecha=pre_fecha,
+            pre_tipo_visita=pre_tipo_visita,
+            pre_estado=pre_estado,
+            pre_responsable=pre_responsable,
+            pre_observaciones=pre_observaciones,
             tipos=SST_VISITA_TIPOS,
             estados=SST_VISITA_ESTADOS,
         )

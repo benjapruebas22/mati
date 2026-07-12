@@ -175,6 +175,15 @@ def register_obras(app, get_db, rebuild_eventos_obras):
         iv_tipo_filtro = _sanitize_interv_tipo(request.args.get("iv_tipo"))
         iv_fecha_filtro = _sanitize_interv_fecha(request.args.get("iv_fecha"))
         active_panel = (request.args.get("panel") or "").strip()
+        prefill_sede = (request.args.get("prefill_sede") or cod_filtro or "").strip().upper()
+        prefill_tipo = (request.args.get("prefill_tipo") or "").strip()
+        prefill_titulo = (request.args.get("prefill_titulo") or "").strip()
+        prefill_fecha_solicitud = (request.args.get("prefill_fecha_solicitud") or date.today().isoformat()).strip()
+        prefill_fecha_inicio = (request.args.get("prefill_fecha_inicio") or "").strip()
+        prefill_fecha_fin_prevista = (request.args.get("prefill_fecha_fin_prevista") or "").strip()
+        prefill_descripcion = (request.args.get("prefill_descripcion") or "").strip()
+        if not active_panel and (prefill_tipo or prefill_titulo or prefill_descripcion):
+            active_panel = "panel-carga"
 
         # ---------- ALTA RÁPIDA DE OBRA DESDE LA MISMA PANTALLA ----------
         if request.method == "POST":
@@ -206,7 +215,8 @@ def register_obras(app, get_db, rebuild_eventos_obras):
                 rebuild_eventos_obras()
                 flash("Obra / trabajo cargado correctamente.", "success")
 
-            return redirect(url_for("obras_home", sede=codigo_sede))
+            next_panel = "panel-desinf" if "desinfecc" in f"{tipo} {titulo} {descripcion_tx}".lower() else None
+            return redirect(url_for("obras_home", sede=codigo_sede, panel=next_panel))
 
         # ---------- LISTADO DE OBRAS ----------
         sql = """
@@ -498,6 +508,13 @@ def register_obras(app, get_db, rebuild_eventos_obras):
             estado_filtro=estado_filtro,
             prioridad_filtro=prioridad_filtro,
             active_panel=active_panel,
+            prefill_sede=prefill_sede,
+            prefill_tipo=prefill_tipo,
+            prefill_titulo=prefill_titulo,
+            prefill_fecha_solicitud=prefill_fecha_solicitud,
+            prefill_fecha_inicio=prefill_fecha_inicio,
+            prefill_fecha_fin_prevista=prefill_fecha_fin_prevista,
+            prefill_descripcion=prefill_descripcion,
             obras_totals=obras_totals,
             pendientes_alta_total=pendientes_alta_total,
             obras_stats=obras_stats,

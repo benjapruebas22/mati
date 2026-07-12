@@ -1630,6 +1630,31 @@
         });
       });
     }
+
+    const cargaForm = document.querySelector("#panel-carga form");
+    const prefill = {
+      sede: {{ (prefill_sede or '')|tojson }},
+      tipo: {{ (prefill_tipo or '')|tojson }},
+      titulo: {{ (prefill_titulo or '')|tojson }},
+      fechaSolicitud: {{ (prefill_fecha_solicitud or '')|tojson }},
+      fechaInicio: {{ (prefill_fecha_inicio or '')|tojson }},
+      fechaPrevista: {{ (prefill_fecha_fin_prevista or '')|tojson }},
+      descripcion: {{ (prefill_descripcion or '')|tojson }}
+    };
+
+    if (cargaForm) {
+      const assignValue = (selector, value) => {
+        const field = cargaForm.querySelector(selector);
+        if (field && value) field.value = value;
+      };
+      assignValue('select[name="codigo_sede"]', prefill.sede);
+      assignValue('select[name="tipo"]', prefill.tipo);
+      assignValue('input[name="titulo"]', prefill.titulo);
+      assignValue('input[name="fecha_solicitud"]', prefill.fechaSolicitud);
+      assignValue('input[name="fecha_inicio"]', prefill.fechaInicio);
+      assignValue('input[name="fecha_fin_prevista"]', prefill.fechaPrevista);
+      assignValue('textarea[name="descripcion"]', prefill.descripcion);
+    }
   })();
 </script>
 

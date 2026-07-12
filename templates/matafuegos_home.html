@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block extra_head %}
-  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-06-29') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-12-02') }}">
 {% endblock %}
 {% block content %}
 
@@ -16,8 +16,26 @@
     <a class="{% if vencimiento == 'todos' %}is-active{% endif %}" href="{{ url_for('matafuegos_home', sede=sede, piso=piso, q=q) }}">Inventario completo</a>
     <a class="{% if vencimiento == 'proximos' %}is-active{% endif %}" href="{{ url_for('matafuegos_home', sede=sede, piso=piso, q=q, vencimiento='proximos') }}">Próximos vencimientos</a>
     <a class="{% if vencimiento == 'vencidos' %}is-active{% endif %}" href="{{ url_for('matafuegos_home', sede=sede, piso=piso, q=q, vencimiento='vencidos') }}">Vencidos</a>
-    <a href="{{ url_for('sst_visitas', vista='sedes') }}">Estado por sede</a>
+    <a href="#lotes">Vista por lotes</a>
     <a href="{{ url_for('sst_calendario_operativo') }}">Calendario operativo</a>
+  </div>
+
+  <div id="lotes" class="sst-lot-grid" style="margin-bottom:12px">
+    {% for lote in lotes_resumen %}
+    <article class="sst-lot-card">
+      <span class="sst-lot-kicker">{{ lote.label }}</span>
+      <strong>{{ lote.sedes_count }} sede{% if lote.sedes_count != 1 %}s{% endif %}</strong>
+      <div class="sst-lot-meta">Vence: {{ lote.due_date[8:10] }}/{{ lote.due_date[5:7] }}/{{ lote.due_date[:4] }}</div>
+      <div class="sst-lot-meta">{{ lote.equipos }} equipo{% if lote.equipos != 1 %}s{% endif %}{% if lote.sedes_text %} · {{ lote.sedes_text }}{% endif %}</div>
+      <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo', tipo='matafuegos', year=lote.year, month=lote.month) }}">Abrir lote</a>
+    </article>
+    {% else %}
+    <article class="sst-lot-card">
+      <span class="sst-lot-kicker">Vencimientos</span>
+      <strong>Sin lotes visibles</strong>
+      <div class="sst-lot-meta">Ajusta filtros o carga inventario activo para ver la vista operativa.</div>
+    </article>
+    {% endfor %}
   </div>
 
   <form method="get" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
@@ -119,7 +137,7 @@
       <div>
         <div style="font-size:12px;color:#64748b;margin-bottom:4px">Lote venc.</div>
         <select name="lote_vencimiento" style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
-          {% set lote_sel = edit_row.lote_vencimiento if edit_row else '' %}
+          {% set lote_sel = edit_row.lote_vencimiento if edit_row else prefill_lote %}
           {% for lote in ['Mayo','Septiembre','Diciembre','Otro'] %}
           <option value="{{ lote }}" {% if lote_sel==lote %}selected{% endif %}>{{ lote }}</option>
           {% endfor %}
@@ -127,12 +145,12 @@
       </div>
       <div>
         <div style="font-size:12px;color:#64748b;margin-bottom:4px">Fecha recarga</div>
-        <input type="date" name="fecha_recarga" value="{{ edit_row.fecha_recarga if edit_row else '' }}"
+        <input type="date" name="fecha_recarga" value="{{ edit_row.fecha_recarga if edit_row else prefill_fecha_recarga }}"
           style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
       </div>
       <div>
         <div style="font-size:12px;color:#64748b;margin-bottom:4px">Fecha vencimiento</div>
-        <input type="date" name="fecha_vencimiento" value="{{ edit_row.fecha_vencimiento if edit_row else '' }}"
+        <input type="date" name="fecha_vencimiento" value="{{ edit_row.fecha_vencimiento if edit_row else prefill_fecha_vencimiento }}"
           style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
       </div>
       <div>
