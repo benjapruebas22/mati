@@ -279,7 +279,7 @@
                 </select>
                 <input type="number" min="0" name="item_requerida_{{ item.code }}" value="{{ item_row.get('cantidad_requerida', 0) }}" data-cart-req>
                 <input type="number" min="0" name="item_instalada_{{ item.code }}" value="{{ item_row.get('cantidad_instalada', 0) }}" data-cart-inst>
-                <span class="sst-status-badge sin-dato" data-cart-faltante>{{ item_row.get('cantidad_faltante', 0) }}</span>
+                <span class="sst-carteleria-value-cell is-empty" data-cart-faltante>{{ item_row.get('cantidad_faltante', 0) }}</span>
               </div>
               {% endfor %}
             </div>
@@ -380,8 +380,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const faltValue = aplicaValue === 'SI' ? Math.max(reqValue - instValue, 0) : 0;
     if (faltante) {
       faltante.textContent = String(faltValue);
-      faltante.classList.remove('correcto', 'pendiente', 'sin-dato');
-      faltante.classList.add(aplicaValue === 'SI' ? (faltValue > 0 ? 'pendiente' : 'correcto') : 'sin-dato');
+      faltante.classList.remove('is-empty', 'is-pending', 'is-done');
+      faltante.classList.add(aplicaValue === 'SI' ? (faltValue > 0 ? 'is-pending' : 'is-done') : 'is-empty');
     }
 
     return {

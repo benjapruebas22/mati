@@ -277,7 +277,7 @@
 
 .sst-carteleria-checklist {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
   gap: 12px;
   padding: 14px;
   align-items: start;
@@ -285,6 +285,7 @@
 
 .sst-carteleria-checklist-card {
   overflow: hidden;
+  min-width: 0;
 }
 
 .sst-carteleria-checklist-card .sst-op-card-head {
@@ -293,11 +294,12 @@
 
 .sst-carteleria-grid-head {
   display: grid;
-  grid-template-columns: minmax(140px, 1fr) 104px 56px 56px 56px;
+  grid-template-columns: minmax(180px, 1fr) 118px 60px 60px 60px;
   gap: 6px;
   align-items: center;
   padding: 0 14px 10px;
   color: var(--sst-muted);
+  font-family: inherit;
   font-size: 11px;
   font-weight: 800;
   text-transform: uppercase;
@@ -311,7 +313,7 @@
 
 .sst-carteleria-grid-row {
   display: grid;
-  grid-template-columns: minmax(140px, 1fr) 104px 56px 56px 56px;
+  grid-template-columns: minmax(180px, 1fr) 118px 60px 60px 60px;
   align-items: center;
   gap: 6px;
   min-height: 46px;
@@ -322,14 +324,17 @@
 }
 
 .sst-carteleria-item-name {
-  font-size: 13px;
-  font-weight: 700;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
   line-height: 1.25;
   overflow-wrap: anywhere;
 }
 
 .sst-carteleria-grid-row input,
 .sst-carteleria-grid-row select {
+  font-family: inherit;
+  font-size: 12px;
   min-width: 0;
   width: 100%;
   height: 38px;
@@ -344,6 +349,40 @@
 .sst-carteleria-grid-row .sst-status-badge {
   justify-self: stretch;
   text-align: center;
+}
+
+.sst-carteleria-value-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  width: 100%;
+  height: 38px;
+  border: 1px solid #d7dfeb;
+  border-radius: 10px;
+  background: #eef2f7;
+  color: #344054;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.sst-carteleria-value-cell.is-empty {
+  color: #98a2b3;
+  background: #f8fafc;
+}
+
+.sst-carteleria-value-cell.is-pending {
+  color: #996300;
+  background: #fff5df;
+  border-color: #f0d99f;
+}
+
+.sst-carteleria-value-cell.is-done {
+  color: #157347;
+  background: #eaf8f0;
+  border-color: #cce9d7;
 }
 
 .sst-carteleria-form-grid-row.is-invalid {
@@ -382,6 +421,12 @@
 @media (min-width: 1500px) {
   .sst-carteleria-checklist {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1320px) {
+  .sst-carteleria-checklist {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
