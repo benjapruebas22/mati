@@ -162,6 +162,115 @@
   color: #475467;
 }
 
+.sst-luces-filter-card {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  align-items: end;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.sst-luces-filter-actions {
+  grid-column: 1 / -1;
+}
+
+.sst-luces-kpis,
+.sst-luces-table-card,
+.sst-luces-form-card {
+  margin-bottom: 12px;
+}
+
+.sst-luces-table-wrap {
+  overflow-x: auto;
+}
+
+.sst-luces-next-action {
+  min-width: 180px;
+  color: var(--sst-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.sst-op-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 32px 16px;
+  background: rgba(15, 23, 42, .28);
+}
+
+.sst-op-modal-card {
+  width: min(860px, 100%);
+  max-height: calc(100vh - 64px);
+  overflow: auto;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, .16);
+}
+
+.sst-luces-inline-note {
+  padding-top: 0;
+  padding-bottom: 12px;
+  text-align: left;
+}
+
+.sst-luces-modal-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 14px;
+  border-top: 1px solid #edf0f4;
+}
+
+.sst-luces-modal-actions form {
+  margin: 0;
+}
+
+.sst-luces-details {
+  padding: 12px 14px 14px;
+}
+
+.sst-luces-form-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.sst-luces-calc-card {
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+  align-self: end;
+}
+
+.sst-luces-calc-card small {
+  color: var(--sst-muted);
+}
+
+.sst-luces-calc-card strong {
+  font-size: 16px;
+}
+
+.sst-luces-calc-card span {
+  color: var(--sst-muted);
+  font-size: 12px;
+}
+
+.sst-luces-full {
+  grid-column: 1 / -1;
+}
+
+.sst-luces-form-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #edf0f4;
+}
+
 .sst-op-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .sst-op-card { border: 1px solid var(--sst-line); border-radius: 12px; background: #fff; overflow: hidden; }
 .sst-op-card.wide { grid-column: 1 / -1; }
@@ -1061,6 +1170,9 @@
     flex-direction: column;
     gap: 4px;
   }
+  .sst-op-modal-backdrop {
+    padding: 18px 12px;
+  }
   .sst-calendar-page-ops .sst-calendar-legend-title {
     min-width: 0;
   }
@@ -1085,6 +1197,14 @@
   }
   .sst-calendar-mobile-shell {
     display: block;
+  }
+  .sst-luces-calc-card,
+  .sst-luces-form-footer,
+  .sst-luces-modal-actions {
+    grid-column: 1 / -1;
+  }
+  .sst-luces-form-footer {
+    justify-content: flex-start;
   }
   .sst-calendar-type-token small {
     font-size: 11px;

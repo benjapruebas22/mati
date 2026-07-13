@@ -2,7 +2,7 @@
 
 {% block extra_head %}
   <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-13-01') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-13-02') }}">
 {% endblock %}
 
 {% block content %}
@@ -11,21 +11,20 @@
   {% include '_sst_operational_nav.html' %}
   <header class="sst-op-header">
     <div>
-      <p class="sst-op-eyebrow">SG-SST · Luces de emergencia</p>
+      <p class="sst-op-eyebrow">SG-SST | Luces de emergencia</p>
       <h1>Luces de emergencia</h1>
-      <p>Gestion consolidada por sede. La unidad operativa es cobertura general, no piso ni deposito.</p>
+      <p>Gestion consolidada por sede. La pantalla principal muestra requeridas, instaladas, faltantes, estado y proxima accion.</p>
     </div>
     <div class="sst-op-actions">
-      <a class="sst-op-btn primary" href="{{ url_for('sst_luces_home', sede=f_sede or None, prefill_sede=f_sede or None, mostrar_form=1) }}#sst-luces-form">
+      <a class="sst-op-btn primary" href="{{ url_for('sst_luces_home', sede=f_sede or None, open_sede=f_open_sede or f_sede or None, prefill_sede=f_open_sede or f_sede or None, mostrar_form=1) }}#sst-luces-form">
         {% if selected_summary and selected_summary.record_exists %}Editar relevamiento{% else %}Nuevo relevamiento{% endif %}
       </a>
       <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo', sede=f_sede or None, tipo='luces') }}">Calendario operativo</a>
-      <a class="sst-op-btn" href="{{ url_for('sst_luces_home', mostrar_carga=1) }}#sst-luces-carga">Carga inicial</a>
       {% if selected_sede %}<a class="sst-op-btn" href="{{ url_for('sst_sede_ficha', codigo=selected_sede.codigo) }}">Estado de sede</a>{% endif %}
     </div>
   </header>
 
-  <form class="sst-op-card sst-op-filter-form" method="get" action="{{ url_for('sst_luces_home') }}" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:12px;margin-bottom:12px;">
+  <form class="sst-op-card sst-op-filter-form sst-luces-filter-card" method="get" action="{{ url_for('sst_luces_home') }}">
     <label class="sst-op-field">
       <small>Sede</small>
       <select name="sede">
@@ -57,202 +56,152 @@
       <small>Buscar</small>
       <input name="q" value="{{ f_q }}" placeholder="Sede, motivo, observacion">
     </label>
-    <div class="sst-op-form-actions" style="grid-column:1 / -1;">
+    <div class="sst-op-form-actions sst-luces-filter-actions">
       <button class="sst-op-btn" type="submit">Aplicar</button>
       <a class="sst-op-btn" href="{{ url_for('sst_luces_home') }}">Limpiar</a>
     </div>
   </form>
 
-  <div class="sst-calendar-kpis sst-calendar-kpis-4" style="margin-bottom:12px;">
+  <div class="sst-calendar-kpis sst-calendar-kpis-4 sst-luces-kpis">
     <article class="sst-op-card sst-calendar-kpi"><span>Requeridas</span><strong>{{ kpi_requeridas }}</strong><small>Total visible</small></article>
     <article class="sst-op-card sst-calendar-kpi"><span>Instaladas</span><strong>{{ kpi_instaladas }}</strong><small>Total visible</small></article>
-    <article class="sst-op-card sst-calendar-kpi"><span>Operativas</span><strong>{{ kpi_operativas }}</strong><small>Total visible</small></article>
-    <article class="sst-op-card sst-calendar-kpi"><span>Fuera de servicio</span><strong>{{ kpi_fuera_servicio }}</strong><small>Requieren atencion</small></article>
-  </div>
-  <div class="sst-calendar-kpis sst-calendar-kpis-4" style="margin-bottom:12px;">
     <article class="sst-op-card sst-calendar-kpi"><span>Faltantes</span><strong>{{ kpi_faltantes }}</strong><small>Requeridas menos instaladas</small></article>
-    <article class="sst-op-card sst-calendar-kpi"><span>Sin relevar</span><strong>{{ kpi_sin_relevar }}</strong><small>Sedes visibles</small></article>
-    <article class="sst-op-card sst-calendar-kpi"><span>Intervenciones programadas</span><strong>{{ kpi_intervenciones_programadas }}</strong><small>Con gestion activa</small></article>
-    <article class="sst-op-card sst-calendar-kpi"><span>Compras pendientes</span><strong>{{ kpi_compras_pendientes }}</strong><small>Solicitar o comprar</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Sedes completas</span><strong>{{ kpi_sedes_completas }}</strong><small>Sin pendientes</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Sedes pendientes</span><strong>{{ kpi_sedes_pendientes }}</strong><small>Con gestion abierta</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Compras en proceso</span><strong>{{ kpi_compras_en_proceso }}</strong><small>Compra activa</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Colocaciones programadas</span><strong>{{ kpi_colocaciones_programadas }}</strong><small>Con fecha definida</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Mantenimientos pendientes</span><strong>{{ kpi_mantenimientos_pendientes }}</strong><small>Requieren accion</small></article>
   </div>
 
-  <div class="sst-op-grid" style="grid-template-columns:minmax(0,1.65fr) minmax(320px,.85fr);margin-bottom:12px;">
-    <article class="sst-op-card">
-      <div class="sst-op-card-head"><h2>Estado por sede</h2><span class="sst-op-count">{{ state_by_sede|length }} sedes</span></div>
-      <div style="overflow-x:auto;">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Sede</th>
-              <th>Aplica</th>
-              <th>Req.</th>
-              <th>Inst.</th>
-              <th>Oper.</th>
-              <th>Fuera</th>
-              <th>Falt.</th>
-              <th>Estado</th>
-              <th>Ult. relev.</th>
-              <th>Prox. prueba</th>
-              <th>Accion</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for row in state_by_sede %}
-            <tr>
-              <td><strong>{{ row.sede_codigo }}</strong><br><small>{{ row.sede_nombre }}</small></td>
-              <td>{{ row.aplica_label }}</td>
-              <td>{{ row.cantidad_requerida }}</td>
-              <td>{{ row.cantidad_instalada }}</td>
-              <td>{{ row.cantidad_operativa }}</td>
-              <td>{{ row.cantidad_fuera_servicio }}</td>
-              <td>{{ row.cantidad_faltante }}</td>
-              <td><span class="sst-status-badge {{ row.state_meta.class }}">{{ row.state_meta.label }}</span></td>
-              <td>{% if row.fecha_relevamiento %}{{ fmt_fecha(row.fecha_relevamiento) }}{% else %}-{% endif %}</td>
-              <td>{% if row.fecha_proxima_prueba %}{{ fmt_fecha(row.fecha_proxima_prueba) }}{% else %}-{% endif %}</td>
-              <td style="min-width:160px;">
-                <div class="sst-op-meta" style="margin-bottom:6px;">{{ row.action_label }}</div>
-                <a class="sst-op-btn" href="{{ row.url }}">Abrir</a>
-              </td>
-            </tr>
-            {% else %}
-            <tr><td colspan="11" class="sst-op-empty">No hay sedes para este filtro.</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </article>
-
-    <div style="display:grid;gap:12px;">
-      <article class="sst-op-card">
-        <div class="sst-op-card-head"><h2>Ficha de sede</h2><span class="sst-op-count">{% if selected_summary %}{{ selected_summary.sede_codigo }}{% else %}Seleccionar{% endif %}</span></div>
-        {% if selected_summary %}
-        <div class="sst-status-list">
-          <div class="sst-status-row">
-            <div class="sst-status-label">Sede</div>
-            <div class="sst-status-detail">{{ selected_summary.sede_codigo }} - {{ selected_summary.sede_nombre }}</div>
-            <span class="sst-status-badge {{ selected_summary.state_meta.class }}">{{ selected_summary.state_meta.label }}</span>
-          </div>
-          <div class="sst-status-row">
-            <div class="sst-status-label">Aplica</div>
-            <div class="sst-status-detail">{% if selected_summary.aplica %}Si{% else %}No{% endif %}{% if not selected_summary.aplica and selected_summary.motivo_no_aplica %} · {{ selected_summary.motivo_no_aplica }}{% endif %}</div>
-            <span class="sst-status-badge {{ 'sin-dato' if not selected_summary.aplica else 'correcto' }}">{{ 'Si' if selected_summary.aplica else 'No' }}</span>
-          </div>
-          <div class="sst-status-row">
-            <div class="sst-status-label">Cobertura</div>
-            <div class="sst-status-detail">
-              Requeridas {{ selected_summary.cantidad_requerida }} · Instaladas {{ selected_summary.cantidad_instalada }} · Operativas {{ selected_summary.cantidad_operativa }}
-            </div>
-            <span class="sst-status-badge {{ 'atencion' if selected_summary.cantidad_faltante or selected_summary.cantidad_fuera_servicio else 'correcto' }}">
-              Faltan {{ selected_summary.cantidad_faltante }} · Fuera {{ selected_summary.cantidad_fuera_servicio }}
-            </span>
-          </div>
-          <div class="sst-status-row">
-            <div class="sst-status-label">Fechas</div>
-            <div class="sst-status-detail">
-              Relevamiento {% if selected_summary.fecha_relevamiento %}{{ fmt_fecha(selected_summary.fecha_relevamiento) }}{% else %}-{% endif %}
-              · Ultima prueba {% if selected_summary.fecha_ultima_prueba %}{{ fmt_fecha(selected_summary.fecha_ultima_prueba) }}{% else %}-{% endif %}
-              · Proxima {% if selected_summary.fecha_proxima_prueba %}{{ fmt_fecha(selected_summary.fecha_proxima_prueba) }}{% else %}-{% endif %}
-            </div>
-            <span class="sst-status-badge {{ 'pendiente' if selected_summary.fecha_intervencion_programada or selected_summary.fecha_verificacion else 'sin-dato' }}">
-              {% if selected_summary.fecha_verificacion %}Verif. {{ fmt_fecha(selected_summary.fecha_verificacion) }}{% elif selected_summary.fecha_intervencion_programada %}Interv. {{ fmt_fecha(selected_summary.fecha_intervencion_programada) }}{% else %}Sin gestion{% endif %}
-            </span>
-          </div>
-          <div class="sst-status-row">
-            <div class="sst-status-label">Observaciones</div>
-            <div class="sst-status-detail">{{ selected_summary.observaciones or 'Sin observaciones cargadas.' }}</div>
-            <span class="sst-status-badge {{ 'sin-dato' if not selected_summary.observaciones else 'pendiente' }}">{{ 'Vacio' if not selected_summary.observaciones else 'Con nota' }}</span>
-          </div>
-        </div>
-        {% if selected_summary.legacy_multiple %}
-        <div class="sst-op-empty" style="padding-top:0;">Se detectaron registros legacy multiples; la vista muestra el consolidado por sede.</div>
-        {% endif %}
-        {% if not selected_summary.record_exists and selected_seed %}
-        <div class="sst-op-empty" style="padding-top:0;">
-          Base sugerida:
-          {% if selected_seed.aplica %}
-            {{ selected_seed.cantidad_requerida }} luces requeridas.
-          {% else %}
-            No aplica · {{ selected_seed.motivo_no_aplica }}.
-          {% endif %}
-        </div>
-        {% endif %}
-        <div style="display:flex;gap:8px;flex-wrap:wrap;padding:0 14px 14px;">
-          <a class="sst-op-btn" href="{{ url_for('sst_luces_home', sede=selected_summary.sede_codigo, registro=(selected_summary.primary_record_id or None), prefill_sede=selected_summary.sede_codigo, mostrar_form=1) }}#sst-luces-form">Editar relevamiento</a>
-          <a class="sst-op-btn" href="{{ url_for('sst_luces_home', sede=selected_summary.sede_codigo, registro=(selected_summary.primary_record_id or None), prefill_sede=selected_summary.sede_codigo, prefill_estado='INTERVENCION_PROGRAMADA', mostrar_form=1) }}#sst-luces-form">Programar intervencion</a>
-          <a class="sst-op-btn" href="{{ url_for('sst_luces_home', sede=selected_summary.sede_codigo, registro=(selected_summary.primary_record_id or None), prefill_sede=selected_summary.sede_codigo, prefill_estado='VERIFICACION_PENDIENTE', mostrar_form=1) }}#sst-luces-form">Registrar intervencion</a>
-          <a class="sst-op-btn" href="{{ url_for('sst_luces_home', sede=selected_summary.sede_codigo, registro=(selected_summary.primary_record_id or None), prefill_sede=selected_summary.sede_codigo, prefill_estado='VERIFICADO', mostrar_form=1) }}#sst-luces-form">Registrar verificacion</a>
-          {% if selected_summary.record_exists %}
-            {% if selected_summary.seguimiento_id %}
-            <a class="sst-op-btn" href="{{ url_for('sst_general_editar', sst_id=selected_summary.seguimiento_id) }}">Ver seguimiento</a>
-            {% else %}
-            <form method="post" action="{{ url_for('sst_luces_home') }}" style="display:inline;">
-              <input type="hidden" name="action" value="followup">
-              <input type="hidden" name="record_id" value="{{ selected_summary.primary_record_id }}">
-              <button class="sst-op-btn" type="submit">Crear seguimiento</button>
-            </form>
-            {% endif %}
-          {% endif %}
-          <a class="sst-op-btn" href="#sst-luces-historial">Ver historial</a>
-        </div>
-        {% else %}
-        <div class="sst-op-empty">Usa "Abrir" en la tabla para ver la ficha compacta de una sede.</div>
-        {% endif %}
-      </article>
-
-      <article class="sst-op-card">
-        <div class="sst-op-card-head"><h2>Proximas pruebas</h2><span class="sst-op-count">{{ upcoming_tests|length }} registros</span></div>
-        <ul class="sst-op-list">
-          {% for item in upcoming_tests %}
-          <li class="sst-op-item">
-            <div>
-              <strong>{{ item.sede_codigo }} · {{ item.sede_nombre }}</strong>
-              <div class="sst-op-meta">{{ item.state_meta.label }} · Operativas {{ item.cantidad_operativa }} / {{ item.cantidad_instalada }}</div>
-            </div>
-            <a class="sst-op-date" href="{{ item.url }}">{{ fmt_fecha(item.fecha_proxima_prueba) }}</a>
-          </li>
-          {% else %}
-          <li class="sst-op-empty">Sin pruebas programadas visibles.</li>
-          {% endfor %}
-        </ul>
-      </article>
+  <article class="sst-op-card wide sst-luces-table-card">
+    <div class="sst-op-card-head">
+      <h2>Estado por sede</h2>
+      <span class="sst-op-count">{{ state_by_sede|length }} sedes</span>
     </div>
-  </div>
-
-  <article class="sst-op-card" id="sst-luces-carga" style="margin-bottom:12px;">
-    <div class="sst-op-card-head"><h2>Carga inicial sugerida</h2><span class="sst-op-count">{{ seed_pending_count }} pendientes · {{ seed_existing_count }} ya cargadas</span></div>
-    <details {% if show_seed_panel %}open{% endif %} style="padding:12px 14px 14px;">
-      <summary style="cursor:pointer;font-weight:700;">Revisar base inicial por sede</summary>
-      <p class="sst-op-meta" style="margin:12px 0;">La aplicacion inserta solo sedes sin relevamiento activo. No sobrescribe datos existentes.</p>
-      <div style="overflow-x:auto;margin-bottom:12px;">
-        <table class="table">
-          <thead><tr><th>Sede</th><th>Aplica</th><th>Base requerida</th><th>Motivo</th><th>Estado</th></tr></thead>
-          <tbody>
-            {% for item in seed_preview %}
-            <tr>
-              <td><strong>{{ item.sede_codigo }}</strong><br><small>{{ item.sede_nombre }}</small></td>
-              <td>{{ 'Si' if item.aplica else 'No' }}</td>
-              <td>{{ item.cantidad_requerida }}</td>
-              <td>{{ item.motivo_no_aplica or '-' }}</td>
-              <td><span class="sst-status-badge {{ 'correcto' if item.cargada else 'sin-dato' }}">{{ 'Ya cargada' if item.cargada else 'Pendiente' }}</span></td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-      <form method="post" action="{{ url_for('sst_luces_home') }}" style="display:flex;justify-content:flex-end;">
-        <input type="hidden" name="action" value="seed">
-        <button class="sst-op-btn" type="submit">Aplicar solo sedes pendientes</button>
-      </form>
-    </details>
+    <div class="sst-luces-table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Sede</th>
+            <th>Aplica</th>
+            <th>Requeridas</th>
+            <th>Instaladas</th>
+            <th>Faltantes</th>
+            <th>Estado</th>
+            <th>Ultima actualizacion</th>
+            <th>Proxima accion</th>
+            <th>Accion</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in state_by_sede %}
+          <tr>
+            <td><strong>{{ row.sede_codigo }}</strong><br><small>{{ row.sede_nombre }}</small></td>
+            <td>{{ row.aplica_label }}</td>
+            <td>{{ row.cantidad_requerida }}</td>
+            <td>{{ row.cantidad_instalada }}</td>
+            <td>{{ row.cantidad_faltante }}</td>
+            <td><span class="sst-status-badge {{ row.state_meta.class }}">{{ row.state_meta.label }}</span></td>
+            <td>{% if row.fecha_actualizacion %}{{ fmt_fecha(row.fecha_actualizacion[:10]) }}{% else %}-{% endif %}</td>
+            <td class="sst-luces-next-action">{{ row.action_label }}</td>
+            <td><a class="sst-op-btn" href="{{ row.url }}">{{ row.action_button_label }}</a></td>
+          </tr>
+          {% else %}
+          <tr><td colspan="9" class="sst-op-empty">No hay sedes para este filtro.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </article>
 
-  <article class="sst-op-card" style="margin-bottom:12px;">
-    <div class="sst-op-card-head"><h2 id="sst-luces-form">{% if selected_record %}Editar relevamiento{% else %}Carga y relevamiento{% endif %}</h2><span class="sst-op-count">Formulario colapsado</span></div>
-    <details {% if show_form %}open{% endif %} style="padding:12px 14px 14px;">
+  {% if selected_summary %}
+  <div class="sst-op-modal-backdrop">
+    <article class="sst-op-card sst-op-modal-card">
+      <div class="sst-op-card-head">
+        <div>
+          <h2>{{ selected_summary.sede_codigo }} - {{ selected_summary.sede_nombre }}</h2>
+          <span class="sst-op-count">Vista compacta por sede</span>
+        </div>
+        <a class="sst-op-btn" href="{{ selected_summary.modal_close_url }}">Cerrar</a>
+      </div>
+      <div class="sst-status-list">
+        <div class="sst-status-row">
+          <div class="sst-status-label">Aplica</div>
+          <div class="sst-status-detail">{% if selected_summary.aplica %}Si{% else %}No{% endif %}{% if not selected_summary.aplica and selected_summary.motivo_no_aplica %} | {{ selected_summary.motivo_no_aplica }}{% endif %}</div>
+          <span class="sst-status-badge {{ 'correcto' if selected_summary.aplica else 'sin-dato' }}">{{ 'Si' if selected_summary.aplica else 'No' }}</span>
+        </div>
+        <div class="sst-status-row">
+          <div class="sst-status-label">Cobertura</div>
+          <div class="sst-status-detail">Requeridas {{ selected_summary.cantidad_requerida }} | Instaladas {{ selected_summary.cantidad_instalada }} | Faltantes {{ selected_summary.cantidad_faltante }}</div>
+          <span class="sst-status-badge {{ 'atencion' if selected_summary.cantidad_faltante else 'correcto' }}">Faltan {{ selected_summary.cantidad_faltante }}</span>
+        </div>
+        <div class="sst-status-row">
+          <div class="sst-status-label">Estado</div>
+          <div class="sst-status-detail">{{ selected_summary.state_meta.label }}</div>
+          <span class="sst-status-badge {{ selected_summary.state_meta.class }}">{{ selected_summary.state_meta.label }}</span>
+        </div>
+        <div class="sst-status-row">
+          <div class="sst-status-label">Proxima accion</div>
+          <div class="sst-status-detail">{{ selected_summary.action_label }}</div>
+          <span class="sst-status-badge {{ 'sin-dato' if selected_summary.state_code in ['NO_APLICA', 'COMPLETO'] else 'pendiente' }}">{{ 'Cerrado' if selected_summary.state_code in ['NO_APLICA', 'COMPLETO'] else 'Pendiente' }}</span>
+        </div>
+        <div class="sst-status-row">
+          <div class="sst-status-label">Fechas de gestion</div>
+          <div class="sst-status-detail">
+            Solicitud {% if selected_summary.fecha_solicitud_compra %}{{ fmt_fecha(selected_summary.fecha_solicitud_compra) }}{% else %}-{% endif %}
+            | Entrega {% if selected_summary.fecha_entrega %}{{ fmt_fecha(selected_summary.fecha_entrega) }}{% else %}-{% endif %}
+            | Colocacion programada {% if selected_summary.fecha_programada_colocacion %}{{ fmt_fecha(selected_summary.fecha_programada_colocacion) }}{% else %}-{% endif %}
+            | Colocacion {% if selected_summary.fecha_colocacion %}{{ fmt_fecha(selected_summary.fecha_colocacion) }}{% else %}-{% endif %}
+            | Mantenimiento {% if selected_summary.fecha_mantenimiento %}{{ fmt_fecha(selected_summary.fecha_mantenimiento) }}{% else %}-{% endif %}
+          </div>
+          <span class="sst-status-badge {{ 'sin-dato' if not selected_summary.fecha_actualizacion else 'correcto' }}">
+            {% if selected_summary.fecha_actualizacion %}Act. {{ fmt_fecha(selected_summary.fecha_actualizacion[:10]) }}{% else %}Sin fecha{% endif %}
+          </span>
+        </div>
+        <div class="sst-status-row">
+          <div class="sst-status-label">Pedido</div>
+          <div class="sst-status-detail">{{ selected_summary.referencia_pedido or 'Sin referencia cargada.' }}</div>
+          <span class="sst-status-badge {{ 'sin-dato' if not selected_summary.referencia_pedido else 'pendiente' }}">{{ 'Sin referencia' if not selected_summary.referencia_pedido else 'Con referencia' }}</span>
+        </div>
+        <div class="sst-status-row">
+          <div class="sst-status-label">Observaciones</div>
+          <div class="sst-status-detail">{{ selected_summary.observaciones or 'Sin observaciones cargadas.' }}</div>
+          <span class="sst-status-badge {{ 'sin-dato' if not selected_summary.observaciones else 'pendiente' }}">{{ 'Vacio' if not selected_summary.observaciones else 'Con nota' }}</span>
+        </div>
+      </div>
+      {% if selected_summary.legacy_multiple %}
+      <div class="sst-op-empty sst-luces-inline-note">Se detectaron registros legacy multiples; la vista muestra el consolidado por sede.</div>
+      {% endif %}
+      <div class="sst-luces-modal-actions">
+        <a class="sst-op-btn" href="{{ selected_summary.modal_edit_url }}#sst-luces-form">Editar</a>
+        {% for action in selected_summary.modal_actions %}
+        <a class="sst-op-btn" href="{{ action.href }}#sst-luces-form">{{ action.label }}</a>
+        {% endfor %}
+        {% if selected_summary.modal_followup_url %}
+        <a class="sst-op-btn" href="{{ selected_summary.modal_followup_url }}">Ver seguimiento</a>
+        {% elif selected_summary.modal_followup_enabled %}
+        <form method="post" action="{{ url_for('sst_luces_home') }}">
+          <input type="hidden" name="action" value="followup">
+          <input type="hidden" name="record_id" value="{{ selected_summary.primary_record_id }}">
+          <button class="sst-op-btn" type="submit">Crear seguimiento</button>
+        </form>
+        {% endif %}
+        <a class="sst-op-btn" href="#sst-luces-historial">Ver historial</a>
+      </div>
+    </article>
+  </div>
+  {% endif %}
+
+  <article class="sst-op-card sst-luces-form-card">
+    <div class="sst-op-card-head">
+      <h2 id="sst-luces-form">{% if selected_record %}Editar relevamiento{% else %}Formulario de gestion{% endif %}</h2>
+      <span class="sst-op-count">Formulario colapsado</span>
+    </div>
+    <details {% if show_form %}open{% endif %} class="sst-luces-details">
       <summary class="sst-op-form-summary">
         {% if form_defaults.sede_codigo %}Abrir formulario de {{ form_defaults.sede_codigo }}{% else %}Abrir formulario{% endif %}
       </summary>
-      <form class="sst-op-form-grid" method="post" action="{{ url_for('sst_luces_home') }}" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px;">
+      <form class="sst-op-form-grid sst-luces-form-grid" method="post" action="{{ url_for('sst_luces_home') }}">
         <input type="hidden" name="action" value="save">
         <input type="hidden" name="edit_id" value="{{ form_defaults.edit_id }}">
         <label class="sst-op-field">
@@ -272,7 +221,7 @@
           </select>
         </label>
         <label class="sst-op-field">
-          <small>Estado manual</small>
+          <small>Estado</small>
           <select name="estado">
             <option value="">Automatico</option>
             {% for item in estado_form_options %}
@@ -280,12 +229,13 @@
             {% endfor %}
           </select>
         </label>
-        <label class="sst-op-field">
-          <small>Fecha relevamiento</small>
-          <input type="date" name="fecha_relevamiento" value="{{ form_defaults.fecha_relevamiento }}">
-        </label>
+        <div class="sst-op-card sst-luces-calc-card">
+          <small>Calculado</small>
+          <strong>Faltante {{ form_defaults.cantidad_faltante }}</strong>
+          <span>Requeridas menos instaladas</span>
+        </div>
 
-        <label class="sst-op-field" style="grid-column:1 / -1;">
+        <label class="sst-op-field sst-luces-full">
           <small>Motivo no aplica</small>
           <input name="motivo_no_aplica" value="{{ form_defaults.motivo_no_aplica }}" placeholder="Ej. Dentro del Poder Judicial">
         </label>
@@ -299,77 +249,44 @@
           <input type="number" min="0" name="cantidad_instalada" value="{{ form_defaults.cantidad_instalada }}">
         </label>
         <label class="sst-op-field">
-          <small>Cantidad operativa</small>
-          <input type="number" min="0" name="cantidad_operativa" value="{{ form_defaults.cantidad_operativa }}">
-        </label>
-        <div class="sst-op-card" style="padding:10px 12px;align-self:end;">
-          <small style="display:block;color:#667085;">Calculado al guardar</small>
-          <strong>Fuera de servicio {{ form_defaults.cantidad_fuera_servicio }}</strong><br>
-          <small>Faltante {{ form_defaults.cantidad_faltante }}</small>
-        </div>
-
-        <label class="sst-op-field">
-          <small>Ultima prueba</small>
-          <input type="date" name="fecha_ultima_prueba" value="{{ form_defaults.fecha_ultima_prueba }}">
+          <small>Fecha de solicitud</small>
+          <input type="date" name="fecha_solicitud_compra" value="{{ form_defaults.fecha_solicitud_compra }}">
         </label>
         <label class="sst-op-field">
-          <small>Resultado prueba</small>
-          <input name="resultado_ultima_prueba" value="{{ form_defaults.resultado_ultima_prueba }}" placeholder="Operativa / Observada">
-        </label>
-        <label class="sst-op-field">
-          <small>Proxima prueba</small>
-          <input type="date" name="fecha_proxima_prueba" value="{{ form_defaults.fecha_proxima_prueba }}">
-        </label>
-        <label class="sst-op-field">
-          <small>Fecha pedido</small>
-          <input type="date" name="fecha_pedido" value="{{ form_defaults.fecha_pedido }}">
+          <small>Referencia de pedido</small>
+          <input name="referencia_pedido" value="{{ form_defaults.referencia_pedido }}">
         </label>
 
         <label class="sst-op-field">
-          <small>Numero pedido</small>
-          <input name="numero_pedido" value="{{ form_defaults.numero_pedido }}">
+          <small>Fecha de entrega</small>
+          <input type="date" name="fecha_entrega" value="{{ form_defaults.fecha_entrega }}">
         </label>
         <label class="sst-op-field">
-          <small>Disponible</small>
-          <input type="date" name="fecha_disponibilidad" value="{{ form_defaults.fecha_disponibilidad }}">
+          <small>Fecha programada de colocacion</small>
+          <input type="date" name="fecha_programada_colocacion" value="{{ form_defaults.fecha_programada_colocacion }}">
         </label>
         <label class="sst-op-field">
-          <small>Intervencion programada</small>
-          <input type="date" name="fecha_intervencion_programada" value="{{ form_defaults.fecha_intervencion_programada }}">
+          <small>Fecha de colocacion</small>
+          <input type="date" name="fecha_colocacion" value="{{ form_defaults.fecha_colocacion }}">
         </label>
         <label class="sst-op-field">
-          <small>Intervencion realizada</small>
-          <input type="date" name="fecha_intervencion_realizada" value="{{ form_defaults.fecha_intervencion_realizada }}">
+          <small>Fecha de mantenimiento</small>
+          <input type="date" name="fecha_mantenimiento" value="{{ form_defaults.fecha_mantenimiento }}">
         </label>
 
-        <label class="sst-op-field">
-          <small>Verificacion</small>
-          <input type="date" name="fecha_verificacion" value="{{ form_defaults.fecha_verificacion }}">
-        </label>
-        <label class="sst-op-field" style="grid-column:span 3;">
+        <label class="sst-op-field sst-luces-full">
           <small>Observaciones</small>
           <textarea name="observaciones" rows="3">{{ form_defaults.observaciones }}</textarea>
         </label>
 
-        <div class="sst-op-form-actions" style="grid-column:1 / -1;">
+        <div class="sst-op-form-actions sst-luces-full">
           <button class="sst-op-btn primary" type="submit">Guardar registro</button>
         </div>
       </form>
 
       {% if selected_record %}
-      <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;margin-top:16px;padding-top:12px;border-top:1px solid #edf0f4;">
-        <form class="sst-op-inline-form" method="post" action="{{ url_for('sst_luces_home') }}" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;">
-          <input type="hidden" name="action" value="test">
-          <input type="hidden" name="record_id" value="{{ selected_record.id }}">
-          <label class="sst-op-field"><small>Fecha prueba</small><input type="date" name="fecha_prueba" value="{{ selected_record.fecha_ultima_prueba }}"></label>
-          <label class="sst-op-field"><small>Resultado</small><input name="resultado_prueba" placeholder="Operativa / Observada"></label>
-          <label class="sst-op-field"><small>Proxima prueba</small><input type="date" name="fecha_proxima_prueba_test" value="{{ selected_record.fecha_proxima_prueba }}"></label>
-          <label class="sst-op-field"><small>Observacion</small><input name="observaciones_prueba" placeholder="Detalle de la prueba"></label>
-          <div class="sst-op-form-actions" style="grid-column:1 / -1;">
-            <button class="sst-op-btn" type="submit">Registrar prueba</button>
-          </div>
-        </form>
-        <form method="post" action="{{ url_for('sst_luces_home') }}" style="display:flex;align-items:flex-start;">
+      <div class="sst-luces-form-footer">
+        <form method="post" action="{{ url_for('sst_luces_home') }}">
           <input type="hidden" name="action" value="delete">
           <input type="hidden" name="record_id" value="{{ selected_record.id }}">
           <button class="sst-op-btn" type="submit" onclick="return confirm('Dar de baja logica este registro?');">Baja logica</button>
@@ -380,20 +297,26 @@
   </article>
 
   <article class="sst-op-card" id="sst-luces-historial">
-    <div class="sst-op-card-head"><h2>Historial</h2><span class="sst-op-count">{{ history_rows|length }} movimientos</span></div>
-    <ul class="sst-op-list">
-      {% for item in history_rows %}
-      <li class="sst-op-item">
-        <div>
-          <strong>{{ item.accion|replace('_', ' ')|title }}</strong>
-          <div class="sst-op-meta">{{ item.sede_codigo or '-' }} · {{ item.detalle or 'Sin detalle' }}</div>
-        </div>
-        <span class="sst-op-date">{{ fmt_fecha(item.fecha_evento[:10]) }}</span>
-      </li>
-      {% else %}
-      <li class="sst-op-empty">Sin historial todavia.</li>
-      {% endfor %}
-    </ul>
+    <div class="sst-op-card-head">
+      <h2>Historial</h2>
+      <span class="sst-op-count">{{ history_rows|length }} movimientos</span>
+    </div>
+    <details {% if f_open_sede %}open{% endif %} class="sst-luces-details">
+      <summary class="sst-op-form-summary">{% if f_open_sede %}Ver historial de {{ f_open_sede }}{% else %}Ver historial{% endif %}</summary>
+      <ul class="sst-op-list">
+        {% for item in history_rows %}
+        <li class="sst-op-item">
+          <div>
+            <strong>{% if item.accion == 'cambio_estado' %}Cambio de estado{% else %}{{ item.accion|replace('_', ' ')|title }}{% endif %}</strong>
+            <div class="sst-op-meta">{{ item.sede_codigo or '-' }} | {{ item.detalle or 'Sin detalle' }}</div>
+          </div>
+          <span class="sst-op-date">{{ fmt_fecha(item.fecha_evento[:10]) }}</span>
+        </li>
+        {% else %}
+        <li class="sst-op-empty">Sin historial todavia.</li>
+        {% endfor %}
+      </ul>
+    </details>
   </article>
 </section>
 {% endblock %}
