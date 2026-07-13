@@ -7574,29 +7574,29 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         prefill_seed = seed_map.get(prefill_sede, {})
         prefill_fecha_programada = (request.args.get("prefill_fecha_programada") or (selected_record.get("fecha_intervencion_programada") if selected_record else "") or "").strip()
         prefill_estado = _sst_luces_normalize_manual_state(request.args.get("prefill_estado") or (selected_record.get("estado") if selected_record else ""))
-        show_form = bool(selected_record or prefill_sede or request.args.get("mostrar_form"))
+        show_form = bool(request.method == "POST" or request.args.get("mostrar_form"))
         form_defaults = {
             "edit_id": int(selected_record["id"]) if selected_record else 0,
             "sede_codigo": (selected_record["sede_codigo"] if selected_record else prefill_sede),
             "aplica": (int(selected_record.get("aplica", 1)) if selected_record else int(prefill_seed.get("aplica", 1) or 0)),
-            "motivo_no_aplica": (selected_record.get("motivo_no_aplica") if selected_record else prefill_seed.get("motivo_no_aplica", "")),
+            "motivo_no_aplica": ((selected_record.get("motivo_no_aplica") or "") if selected_record else prefill_seed.get("motivo_no_aplica", "")),
             "cantidad_requerida": int(selected_record["cantidad_requerida"]) if selected_record else int(prefill_seed.get("cantidad_requerida", 0) or 0),
             "cantidad_instalada": int(selected_record["cantidad_instalada"]) if selected_record else 0,
             "cantidad_operativa": int(selected_record["cantidad_operativa"]) if selected_record else 0,
             "cantidad_fuera_servicio": int(selected_record["cantidad_fuera_servicio"]) if selected_record else 0,
             "cantidad_faltante": int(selected_record["cantidad_faltante"]) if selected_record else max(int(prefill_seed.get("cantidad_requerida", 0) or 0), 0),
-            "estado": (selected_record.get("estado") if selected_record else prefill_estado),
-            "fecha_relevamiento": (selected_record.get("fecha_relevamiento") if selected_record else ""),
-            "fecha_ultima_prueba": (selected_record.get("fecha_ultima_prueba") if selected_record else ""),
-            "resultado_ultima_prueba": (selected_record.get("resultado_ultima_prueba") if selected_record else ""),
-            "fecha_proxima_prueba": (selected_record.get("fecha_proxima_prueba") if selected_record else prefill_fecha_programada),
-            "fecha_pedido": (selected_record.get("fecha_pedido") if selected_record else ""),
-            "numero_pedido": (selected_record.get("numero_pedido") if selected_record else ""),
-            "fecha_disponibilidad": (selected_record.get("fecha_disponibilidad") if selected_record else ""),
-            "fecha_intervencion_programada": (selected_record.get("fecha_intervencion_programada") if selected_record else prefill_fecha_programada),
-            "fecha_intervencion_realizada": (selected_record.get("fecha_intervencion_realizada") if selected_record else ""),
-            "fecha_verificacion": (selected_record.get("fecha_verificacion") if selected_record else ""),
-            "observaciones": (selected_record.get("observaciones") if selected_record else ""),
+            "estado": ((selected_record.get("estado") or "") if selected_record else prefill_estado),
+            "fecha_relevamiento": ((selected_record.get("fecha_relevamiento") or "") if selected_record else ""),
+            "fecha_ultima_prueba": ((selected_record.get("fecha_ultima_prueba") or "") if selected_record else ""),
+            "resultado_ultima_prueba": ((selected_record.get("resultado_ultima_prueba") or "") if selected_record else ""),
+            "fecha_proxima_prueba": ((selected_record.get("fecha_proxima_prueba") or "") if selected_record else prefill_fecha_programada),
+            "fecha_pedido": ((selected_record.get("fecha_pedido") or "") if selected_record else ""),
+            "numero_pedido": ((selected_record.get("numero_pedido") or "") if selected_record else ""),
+            "fecha_disponibilidad": ((selected_record.get("fecha_disponibilidad") or "") if selected_record else ""),
+            "fecha_intervencion_programada": ((selected_record.get("fecha_intervencion_programada") or "") if selected_record else prefill_fecha_programada),
+            "fecha_intervencion_realizada": ((selected_record.get("fecha_intervencion_realizada") or "") if selected_record else ""),
+            "fecha_verificacion": ((selected_record.get("fecha_verificacion") or "") if selected_record else ""),
+            "observaciones": ((selected_record.get("observaciones") or "") if selected_record else ""),
         }
         if request.method == "POST" and (request.form.get("action") or "save").strip().lower() == "save":
             posted_aplica = _sst_bool_flag(request.form.get("aplica"))

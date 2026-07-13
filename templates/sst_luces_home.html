@@ -2,7 +2,7 @@
 
 {% block extra_head %}
   <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-12-06') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-13-01') }}">
 {% endblock %}
 
 {% block content %}
@@ -25,8 +25,8 @@
     </div>
   </header>
 
-  <form class="sst-op-card" method="get" action="{{ url_for('sst_luces_home') }}" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:12px;margin-bottom:12px;">
-    <label>
+  <form class="sst-op-card sst-op-filter-form" method="get" action="{{ url_for('sst_luces_home') }}" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:12px;margin-bottom:12px;">
+    <label class="sst-op-field">
       <small>Sede</small>
       <select name="sede">
         <option value="">Todas</option>
@@ -35,7 +35,7 @@
         {% endfor %}
       </select>
     </label>
-    <label>
+    <label class="sst-op-field">
       <small>Estado</small>
       <select name="estado">
         <option value="">Todos</option>
@@ -44,7 +44,7 @@
         {% endfor %}
       </select>
     </label>
-    <label>
+    <label class="sst-op-field">
       <small>Mes</small>
       <select name="month">
         <option value="">Todos</option>
@@ -53,11 +53,11 @@
         {% endfor %}
       </select>
     </label>
-    <label>
+    <label class="sst-op-field">
       <small>Buscar</small>
       <input name="q" value="{{ f_q }}" placeholder="Sede, motivo, observacion">
     </label>
-    <div style="grid-column:1 / -1;display:flex;gap:8px;justify-content:flex-end;">
+    <div class="sst-op-form-actions" style="grid-column:1 / -1;">
       <button class="sst-op-btn" type="submit">Aplicar</button>
       <a class="sst-op-btn" href="{{ url_for('sst_luces_home') }}">Limpiar</a>
     </div>
@@ -249,13 +249,13 @@
   <article class="sst-op-card" style="margin-bottom:12px;">
     <div class="sst-op-card-head"><h2 id="sst-luces-form">{% if selected_record %}Editar relevamiento{% else %}Carga y relevamiento{% endif %}</h2><span class="sst-op-count">Formulario colapsado</span></div>
     <details {% if show_form %}open{% endif %} style="padding:12px 14px 14px;">
-      <summary style="cursor:pointer;font-weight:700;">
+      <summary class="sst-op-form-summary">
         {% if form_defaults.sede_codigo %}Abrir formulario de {{ form_defaults.sede_codigo }}{% else %}Abrir formulario{% endif %}
       </summary>
-      <form method="post" action="{{ url_for('sst_luces_home') }}" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px;">
+      <form class="sst-op-form-grid" method="post" action="{{ url_for('sst_luces_home') }}" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px;">
         <input type="hidden" name="action" value="save">
         <input type="hidden" name="edit_id" value="{{ form_defaults.edit_id }}">
-        <label>
+        <label class="sst-op-field">
           <small>Sede</small>
           <select name="sede_codigo" required>
             <option value="">Seleccionar</option>
@@ -264,14 +264,14 @@
             {% endfor %}
           </select>
         </label>
-        <label>
+        <label class="sst-op-field">
           <small>Aplica</small>
           <select name="aplica">
             <option value="1" {% if form_defaults.aplica %}selected{% endif %}>Si</option>
             <option value="0" {% if not form_defaults.aplica %}selected{% endif %}>No</option>
           </select>
         </label>
-        <label>
+        <label class="sst-op-field">
           <small>Estado manual</small>
           <select name="estado">
             <option value="">Automatico</option>
@@ -280,25 +280,25 @@
             {% endfor %}
           </select>
         </label>
-        <label>
+        <label class="sst-op-field">
           <small>Fecha relevamiento</small>
           <input type="date" name="fecha_relevamiento" value="{{ form_defaults.fecha_relevamiento }}">
         </label>
 
-        <label style="grid-column:1 / -1;">
+        <label class="sst-op-field" style="grid-column:1 / -1;">
           <small>Motivo no aplica</small>
           <input name="motivo_no_aplica" value="{{ form_defaults.motivo_no_aplica }}" placeholder="Ej. Dentro del Poder Judicial">
         </label>
 
-        <label>
+        <label class="sst-op-field">
           <small>Cantidad requerida</small>
           <input type="number" min="0" name="cantidad_requerida" value="{{ form_defaults.cantidad_requerida }}">
         </label>
-        <label>
+        <label class="sst-op-field">
           <small>Cantidad instalada</small>
           <input type="number" min="0" name="cantidad_instalada" value="{{ form_defaults.cantidad_instalada }}">
         </label>
-        <label>
+        <label class="sst-op-field">
           <small>Cantidad operativa</small>
           <input type="number" min="0" name="cantidad_operativa" value="{{ form_defaults.cantidad_operativa }}">
         </label>
@@ -308,64 +308,64 @@
           <small>Faltante {{ form_defaults.cantidad_faltante }}</small>
         </div>
 
-        <label>
+        <label class="sst-op-field">
           <small>Ultima prueba</small>
           <input type="date" name="fecha_ultima_prueba" value="{{ form_defaults.fecha_ultima_prueba }}">
         </label>
-        <label>
+        <label class="sst-op-field">
           <small>Resultado prueba</small>
           <input name="resultado_ultima_prueba" value="{{ form_defaults.resultado_ultima_prueba }}" placeholder="Operativa / Observada">
         </label>
-        <label>
+        <label class="sst-op-field">
           <small>Proxima prueba</small>
           <input type="date" name="fecha_proxima_prueba" value="{{ form_defaults.fecha_proxima_prueba }}">
         </label>
-        <label>
+        <label class="sst-op-field">
           <small>Fecha pedido</small>
           <input type="date" name="fecha_pedido" value="{{ form_defaults.fecha_pedido }}">
         </label>
 
-        <label>
+        <label class="sst-op-field">
           <small>Numero pedido</small>
           <input name="numero_pedido" value="{{ form_defaults.numero_pedido }}">
         </label>
-        <label>
+        <label class="sst-op-field">
           <small>Disponible</small>
           <input type="date" name="fecha_disponibilidad" value="{{ form_defaults.fecha_disponibilidad }}">
         </label>
-        <label>
+        <label class="sst-op-field">
           <small>Intervencion programada</small>
           <input type="date" name="fecha_intervencion_programada" value="{{ form_defaults.fecha_intervencion_programada }}">
         </label>
-        <label>
+        <label class="sst-op-field">
           <small>Intervencion realizada</small>
           <input type="date" name="fecha_intervencion_realizada" value="{{ form_defaults.fecha_intervencion_realizada }}">
         </label>
 
-        <label>
+        <label class="sst-op-field">
           <small>Verificacion</small>
           <input type="date" name="fecha_verificacion" value="{{ form_defaults.fecha_verificacion }}">
         </label>
-        <label style="grid-column:span 3;">
+        <label class="sst-op-field" style="grid-column:span 3;">
           <small>Observaciones</small>
           <textarea name="observaciones" rows="3">{{ form_defaults.observaciones }}</textarea>
         </label>
 
-        <div style="grid-column:1 / -1;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;">
+        <div class="sst-op-form-actions" style="grid-column:1 / -1;">
           <button class="sst-op-btn primary" type="submit">Guardar registro</button>
         </div>
       </form>
 
       {% if selected_record %}
       <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;margin-top:16px;padding-top:12px;border-top:1px solid #edf0f4;">
-        <form method="post" action="{{ url_for('sst_luces_home') }}" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;">
+        <form class="sst-op-inline-form" method="post" action="{{ url_for('sst_luces_home') }}" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;">
           <input type="hidden" name="action" value="test">
           <input type="hidden" name="record_id" value="{{ selected_record.id }}">
-          <label><small>Fecha prueba</small><input type="date" name="fecha_prueba" value="{{ selected_record.fecha_ultima_prueba }}"></label>
-          <label><small>Resultado</small><input name="resultado_prueba" placeholder="Operativa / Observada"></label>
-          <label><small>Proxima prueba</small><input type="date" name="fecha_proxima_prueba_test" value="{{ selected_record.fecha_proxima_prueba }}"></label>
-          <label><small>Observacion</small><input name="observaciones_prueba" placeholder="Detalle de la prueba"></label>
-          <div style="grid-column:1 / -1;display:flex;gap:8px;justify-content:flex-end;">
+          <label class="sst-op-field"><small>Fecha prueba</small><input type="date" name="fecha_prueba" value="{{ selected_record.fecha_ultima_prueba }}"></label>
+          <label class="sst-op-field"><small>Resultado</small><input name="resultado_prueba" placeholder="Operativa / Observada"></label>
+          <label class="sst-op-field"><small>Proxima prueba</small><input type="date" name="fecha_proxima_prueba_test" value="{{ selected_record.fecha_proxima_prueba }}"></label>
+          <label class="sst-op-field"><small>Observacion</small><input name="observaciones_prueba" placeholder="Detalle de la prueba"></label>
+          <div class="sst-op-form-actions" style="grid-column:1 / -1;">
             <button class="sst-op-btn" type="submit">Registrar prueba</button>
           </div>
         </form>
