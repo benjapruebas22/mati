@@ -277,9 +277,10 @@
 
 .sst-carteleria-checklist {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
   gap: 12px;
   padding: 14px;
+  align-items: start;
 }
 
 .sst-carteleria-checklist-card {
@@ -292,8 +293,8 @@
 
 .sst-carteleria-grid-head {
   display: grid;
-  grid-template-columns: minmax(0, 1.55fr) 112px 64px 64px 64px;
-  gap: 8px;
+  grid-template-columns: minmax(140px, 1fr) 104px 56px 56px 56px;
+  gap: 6px;
   align-items: center;
   padding: 0 14px 10px;
   color: var(--sst-muted);
@@ -310,10 +311,10 @@
 
 .sst-carteleria-grid-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.55fr) 112px 64px 64px 64px;
+  grid-template-columns: minmax(140px, 1fr) 104px 56px 56px 56px;
   align-items: center;
-  gap: 8px;
-  min-height: 40px;
+  gap: 6px;
+  min-height: 46px;
   padding: 8px 10px;
   border: 1px solid #edf0f4;
   border-radius: 10px;
@@ -323,6 +324,8 @@
 .sst-carteleria-item-name {
   font-size: 13px;
   font-weight: 700;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .sst-carteleria-grid-row input,
@@ -374,6 +377,12 @@
   margin-top: 2px;
   font-size: 20px;
   line-height: 1.1;
+}
+
+@media (min-width: 1500px) {
+  .sst-carteleria-checklist {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .sst-op-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
