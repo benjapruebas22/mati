@@ -2,7 +2,7 @@
 
 {% block extra_head %}
   <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-13-03') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-13-04') }}">
 {% endblock %}
 
 {% block content %}
@@ -125,14 +125,14 @@
           <span class="sst-status-badge {{ selected_summary.state_meta.class }}">{{ selected_summary.state_meta.label }}</span>
         </div>
         <div class="sst-status-row">
-          <div class="sst-status-label">Estado</div>
-          <div class="sst-status-detail">{{ selected_summary.state_meta.label }}</div>
-          <span class="sst-status-badge {{ selected_summary.state_meta.class }}">{{ selected_summary.state_meta.label }}</span>
-        </div>
-        <div class="sst-status-row">
           <div class="sst-status-label">Carteles</div>
           <div class="sst-status-detail">Requeridos {{ selected_summary.cantidad_requerida }} | Instalados {{ selected_summary.cantidad_instalada }} | Faltantes {{ selected_summary.cantidad_faltante }}</div>
           <span class="sst-status-badge {{ 'atencion' if selected_summary.cantidad_faltante else 'correcto' }}">Faltan {{ selected_summary.cantidad_faltante }}</span>
+        </div>
+        <div class="sst-status-row">
+          <div class="sst-status-label">Tipos relevados</div>
+          <div class="sst-status-detail">{{ selected_summary.tipos_relevados }} relevados | {{ selected_summary.tipos_sin_relevar }} sin relevar</div>
+          <span class="sst-status-badge {{ 'pendiente' if selected_summary.tipos_sin_relevar else 'correcto' }}">{{ selected_summary.tipos_sin_relevar }} pendientes</span>
         </div>
         <div class="sst-status-row">
           <div class="sst-status-label">Proxima accion</div>
@@ -141,8 +141,8 @@
         </div>
         <div class="sst-status-row">
           <div class="sst-status-label">Cumplimiento</div>
-          <div class="sst-status-detail">{{ selected_summary.porcentaje_cumplimiento }}% de carteles instalados sobre los requeridos.</div>
-          <span class="sst-status-badge {{ 'correcto' if selected_summary.porcentaje_cumplimiento == 100 and selected_summary.cantidad_requerida else 'pendiente' }}">{{ selected_summary.porcentaje_cumplimiento }}%</span>
+          <div class="sst-status-detail">{{ selected_summary.porcentaje_cumplimiento }}% de cumplimiento sobre los tipos aplicables.</div>
+          <span class="sst-status-badge {{ 'correcto' if selected_summary.porcentaje_cumplimiento == 100 and selected_summary.tipos_sin_relevar == 0 else 'pendiente' }}">{{ selected_summary.porcentaje_cumplimiento }}%</span>
         </div>
         <div class="sst-status-row">
           <div class="sst-status-label">Fechas</div>
@@ -165,15 +165,23 @@
         <section class="sst-op-card sst-carteleria-checklist-card">
           <div class="sst-op-card-head">
             <h3>{{ group.label }}</h3>
-            <span class="sst-op-count">{{ group["items"]|length }} items</span>
+            <span class="sst-op-count">{{ group["items"]|length }} tipos</span>
+          </div>
+          <div class="sst-carteleria-grid-head">
+            <span>Tipo</span>
+            <span>Aplica</span>
+            <span>Req.</span>
+            <span>Inst.</span>
+            <span>Falt.</span>
           </div>
           <div class="sst-carteleria-checklist-list">
             {% for item in group["items"] %}
-            <div class="sst-carteleria-checklist-row">
-              <span>{{ item.label }}</span>
-              <span class="sst-status-badge {{ 'correcto' if item.check_state == 'INSTALADO' else 'pendiente' if item.check_state == 'REQUERIDO' else 'sin-dato' }}">
-                {% if item.check_state == 'INSTALADO' %}Instalado{% elif item.check_state == 'REQUERIDO' %}Falta{% else %}No aplica{% endif %}
-              </span>
+            <div class="sst-carteleria-grid-row">
+              <span class="sst-carteleria-item-name">{{ item.label }}</span>
+              <span>{{ item.aplica_label }}</span>
+              <span>{{ item.cantidad_requerida }}</span>
+              <span>{{ item.cantidad_instalada }}</span>
+              <span class="sst-status-badge {{ 'correcto' if item.cantidad_faltante == 0 and item.aplica == 'SI' else 'pendiente' if item.aplica == 'SI' else 'sin-dato' }}">{{ item.cantidad_faltante }}</span>
             </div>
             {% endfor %}
           </div>
@@ -208,9 +216,10 @@
       <summary class="sst-op-form-summary">
         {% if form_defaults.sede_codigo %}Abrir formulario de {{ form_defaults.sede_codigo }}{% else %}Abrir formulario{% endif %}
       </summary>
-      <form class="sst-op-form-grid sst-luces-form-grid" method="post" action="{{ url_for('sst_carteleria_home') }}">
+      <form class="sst-op-form-grid sst-luces-form-grid" method="post" action="{{ url_for('sst_carteleria_home') }}" data-carteleria-form>
         <input type="hidden" name="action" value="save">
         <input type="hidden" name="edit_id" value="{{ form_defaults.edit_id }}">
+
         <label class="sst-op-field">
           <small>Sede</small>
           <select name="sede_codigo" required>
@@ -220,21 +229,6 @@
             {% endfor %}
           </select>
         </label>
-        <label class="sst-op-field">
-          <small>Estado</small>
-          <select name="estado">
-            <option value="">Automatico</option>
-            {% for item in estado_options %}
-            <option value="{{ item.code }}" {% if form_defaults.estado == item.code %}selected{% endif %}>{{ item.label }}</option>
-            {% endfor %}
-          </select>
-        </label>
-        <div class="sst-op-card sst-luces-calc-card">
-          <small>Calculado</small>
-          <strong>{{ form_faltantes }} faltantes</strong>
-          <span>{{ form_instalados }}/{{ form_requeridos }} instalados | {{ form_porcentaje }}%</span>
-        </div>
-
         <label class="sst-op-field">
           <small>Fecha de solicitud</small>
           <input type="date" name="fecha_solicitud" value="{{ form_defaults.fecha_solicitud }}">
@@ -248,23 +242,45 @@
           <input type="date" name="fecha_instalacion" value="{{ form_defaults.fecha_instalacion }}">
         </label>
 
+        <div class="sst-op-card sst-carteleria-summary-card sst-luces-full">
+          <div class="sst-carteleria-summary-grid">
+            <div><small>Requeridos</small><strong data-cart-total-req>{{ form_requeridos }}</strong></div>
+            <div><small>Instalados</small><strong data-cart-total-inst>{{ form_instalados }}</strong></div>
+            <div><small>Faltantes</small><strong data-cart-total-falt>{{ form_faltantes }}</strong></div>
+            <div><small>Tipos relevados</small><strong data-cart-total-rel>{{ form_tipos_relevados }}</strong></div>
+            <div><small>Sin relevar</small><strong data-cart-total-pend>{{ form_tipos_sin_relevar }}</strong></div>
+            <div><small>Cumplimiento</small><strong data-cart-total-pct>{{ form_porcentaje }}%</strong></div>
+          </div>
+        </div>
+
         <div class="sst-carteleria-checklist sst-luces-full">
           {% for group in checklist_groups %}
           <section class="sst-op-card sst-carteleria-checklist-card">
             <div class="sst-op-card-head">
               <h3>{{ group.label }}</h3>
-              <span class="sst-op-count">{{ group["items"]|length }} items</span>
+              <span class="sst-op-count">{{ group["items"]|length }} tipos</span>
+            </div>
+            <div class="sst-carteleria-grid-head">
+              <span>Tipo</span>
+              <span>Aplica</span>
+              <span>Req.</span>
+              <span>Inst.</span>
+              <span>Falt.</span>
             </div>
             <div class="sst-carteleria-checklist-list">
               {% for item in group["items"] %}
-              <label class="sst-carteleria-form-row">
-                <span>{{ item.label }}</span>
-                <select name="item_state_{{ item.code }}">
-                  {% for option in item_state_options %}
-                  <option value="{{ option.code }}" {% if form_defaults.item_states.get(item.code, 'NO_APLICA') == option.code %}selected{% endif %}>{{ option.label }}</option>
+              {% set item_row = form_defaults.item_rows.get(item.code, {}) %}
+              <div class="sst-carteleria-grid-row sst-carteleria-form-grid-row" data-cart-row>
+                <span class="sst-carteleria-item-name">{{ item.label }}</span>
+                <select name="item_aplica_{{ item.code }}" data-cart-aplica>
+                  {% for option in item_aplica_options %}
+                  <option value="{{ option.code }}" {% if item_row.get('aplica', 'NO_RELEVADO') == option.code %}selected{% endif %}>{{ option.label }}</option>
                   {% endfor %}
                 </select>
-              </label>
+                <input type="number" min="0" name="item_requerida_{{ item.code }}" value="{{ item_row.get('cantidad_requerida', 0) }}" data-cart-req>
+                <input type="number" min="0" name="item_instalada_{{ item.code }}" value="{{ item_row.get('cantidad_instalada', 0) }}" data-cart-inst>
+                <span class="sst-status-badge sin-dato" data-cart-faltante>{{ item_row.get('cantidad_faltante', 0) }}</span>
+              </div>
               {% endfor %}
             </div>
           </section>
@@ -306,4 +322,114 @@
     </details>
   </article>
 </section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.querySelector('[data-carteleria-form]');
+  if (!form) return;
+
+  const rows = Array.from(form.querySelectorAll('[data-cart-row]'));
+  const totals = {
+    requerida: form.querySelector('[data-cart-total-req]'),
+    instalada: form.querySelector('[data-cart-total-inst]'),
+    faltante: form.querySelector('[data-cart-total-falt]'),
+    relevados: form.querySelector('[data-cart-total-rel]'),
+    pendientes: form.querySelector('[data-cart-total-pend]'),
+    porcentaje: form.querySelector('[data-cart-total-pct]')
+  };
+
+  function parseNonNegative(value) {
+    const parsed = parseInt(value || '0', 10);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+  }
+
+  function syncRow(row) {
+    const aplica = row.querySelector('[data-cart-aplica]');
+    const requerida = row.querySelector('[data-cart-req]');
+    const instalada = row.querySelector('[data-cart-inst]');
+    const faltante = row.querySelector('[data-cart-faltante]');
+    const aplicaValue = aplica ? aplica.value : 'NO_RELEVADO';
+    let reqValue = parseNonNegative(requerida ? requerida.value : '0');
+    let instValue = parseNonNegative(instalada ? instalada.value : '0');
+
+    if (aplicaValue !== 'SI') {
+      reqValue = 0;
+      instValue = 0;
+      if (requerida) {
+        requerida.value = '0';
+        requerida.disabled = true;
+      }
+      if (instalada) {
+        instalada.value = '0';
+        instalada.disabled = true;
+      }
+      row.classList.remove('is-invalid');
+      if (instalada) instalada.removeAttribute('aria-invalid');
+    } else {
+      if (requerida) requerida.disabled = false;
+      if (instalada) instalada.disabled = false;
+      if (instValue > reqValue) {
+        row.classList.add('is-invalid');
+        if (instalada) instalada.setAttribute('aria-invalid', 'true');
+      } else {
+        row.classList.remove('is-invalid');
+        if (instalada) instalada.removeAttribute('aria-invalid');
+      }
+    }
+
+    const faltValue = aplicaValue === 'SI' ? Math.max(reqValue - instValue, 0) : 0;
+    if (faltante) {
+      faltante.textContent = String(faltValue);
+      faltante.classList.remove('correcto', 'pendiente', 'sin-dato');
+      faltante.classList.add(aplicaValue === 'SI' ? (faltValue > 0 ? 'pendiente' : 'correcto') : 'sin-dato');
+    }
+
+    return {
+      aplica: aplicaValue,
+      requerida: reqValue,
+      instalada: instValue,
+      faltante: faltValue
+    };
+  }
+
+  function syncTotals() {
+    let totalReq = 0;
+    let totalInst = 0;
+    let totalFalt = 0;
+    let totalRelevados = 0;
+    let totalPendientes = 0;
+
+    rows.forEach((row) => {
+      const values = syncRow(row);
+      if (values.aplica === 'NO_RELEVADO') {
+        totalPendientes += 1;
+        return;
+      }
+      totalRelevados += 1;
+      if (values.aplica === 'SI') {
+        totalReq += values.requerida;
+        totalInst += values.instalada;
+        totalFalt += values.faltante;
+      }
+    });
+
+    const percentage = totalReq > 0 ? Math.round((totalInst / totalReq) * 100) : (totalPendientes === 0 ? 100 : 0);
+    if (totals.requerida) totals.requerida.textContent = String(totalReq);
+    if (totals.instalada) totals.instalada.textContent = String(totalInst);
+    if (totals.faltante) totals.faltante.textContent = String(totalFalt);
+    if (totals.relevados) totals.relevados.textContent = String(totalRelevados);
+    if (totals.pendientes) totals.pendientes.textContent = String(totalPendientes);
+    if (totals.porcentaje) totals.porcentaje.textContent = String(percentage) + '%';
+  }
+
+  rows.forEach((row) => {
+    row.querySelectorAll('select, input').forEach((control) => {
+      control.addEventListener('change', syncTotals);
+      control.addEventListener('input', syncTotals);
+    });
+  });
+
+  syncTotals();
+});
+</script>
 {% endblock %}

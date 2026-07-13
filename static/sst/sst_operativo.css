@@ -290,27 +290,90 @@
   padding-bottom: 12px;
 }
 
+.sst-carteleria-grid-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) 112px 64px 64px 64px;
+  gap: 8px;
+  align-items: center;
+  padding: 0 14px 10px;
+  color: var(--sst-muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
 .sst-carteleria-checklist-list {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   padding: 0 14px 14px;
 }
 
-.sst-carteleria-checklist-row,
-.sst-carteleria-form-row {
-  display: flex;
+.sst-carteleria-grid-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) 112px 64px 64px 64px;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   min-height: 40px;
-  padding: 10px 12px;
+  padding: 8px 10px;
   border: 1px solid #edf0f4;
   border-radius: 10px;
   background: #f8fafc;
 }
 
-.sst-carteleria-form-row select {
-  min-width: 132px;
+.sst-carteleria-item-name {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.sst-carteleria-grid-row input,
+.sst-carteleria-grid-row select {
+  min-width: 0;
+  width: 100%;
+  height: 38px;
+}
+
+.sst-carteleria-grid-row input[disabled],
+.sst-carteleria-grid-row select[disabled] {
+  background: #f8fafc;
+  color: #98a2b3;
+}
+
+.sst-carteleria-grid-row .sst-status-badge {
+  justify-self: stretch;
+  text-align: center;
+}
+
+.sst-carteleria-form-grid-row.is-invalid {
+  border-color: #f5b7b1;
+  background: #fff7f6;
+}
+
+.sst-carteleria-form-grid-row [aria-invalid="true"] {
+  border-color: #d92d20;
+  box-shadow: 0 0 0 1px rgba(217, 45, 32, .16);
+}
+
+.sst-carteleria-summary-card {
+  padding: 12px 14px;
+}
+
+.sst-carteleria-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.sst-carteleria-summary-grid small {
+  display: block;
+  color: var(--sst-muted);
+  font-size: 12px;
+}
+
+.sst-carteleria-summary-grid strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 20px;
+  line-height: 1.1;
 }
 
 .sst-op-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
@@ -1218,6 +1281,9 @@
   .sst-carteleria-checklist {
     grid-template-columns: 1fr;
   }
+  .sst-carteleria-summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
   .sst-calendar-page-ops .sst-calendar-legend-title {
     min-width: 0;
   }
@@ -1248,13 +1314,17 @@
   .sst-luces-modal-actions {
     grid-column: 1 / -1;
   }
-  .sst-carteleria-checklist-row,
-  .sst-carteleria-form-row {
-    align-items: flex-start;
-    flex-direction: column;
+  .sst-carteleria-grid-head {
+    display: none;
   }
-  .sst-carteleria-form-row select {
-    width: 100%;
+  .sst-carteleria-grid-row {
+    grid-template-columns: 1fr 1fr;
+  }
+  .sst-carteleria-grid-row > *:first-child {
+    grid-column: 1 / -1;
+  }
+  .sst-carteleria-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .sst-luces-form-footer {
     justify-content: flex-start;
