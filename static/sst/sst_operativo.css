@@ -181,6 +181,10 @@
   margin-bottom: 12px;
 }
 
+.sst-luces-kpis {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .sst-luces-table-wrap {
   overflow-x: auto;
 }

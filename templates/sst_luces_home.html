@@ -66,11 +66,9 @@
     <article class="sst-op-card sst-calendar-kpi"><span>Requeridas</span><strong>{{ kpi_requeridas }}</strong><small>Total visible</small></article>
     <article class="sst-op-card sst-calendar-kpi"><span>Instaladas</span><strong>{{ kpi_instaladas }}</strong><small>Total visible</small></article>
     <article class="sst-op-card sst-calendar-kpi"><span>Faltantes</span><strong>{{ kpi_faltantes }}</strong><small>Requeridas menos instaladas</small></article>
-    <article class="sst-op-card sst-calendar-kpi"><span>Sedes completas</span><strong>{{ kpi_sedes_completas }}</strong><small>Sin pendientes</small></article>
     <article class="sst-op-card sst-calendar-kpi"><span>Sedes pendientes</span><strong>{{ kpi_sedes_pendientes }}</strong><small>Con gestion abierta</small></article>
     <article class="sst-op-card sst-calendar-kpi"><span>Compras en proceso</span><strong>{{ kpi_compras_en_proceso }}</strong><small>Compra activa</small></article>
     <article class="sst-op-card sst-calendar-kpi"><span>Colocaciones programadas</span><strong>{{ kpi_colocaciones_programadas }}</strong><small>Con fecha definida</small></article>
-    <article class="sst-op-card sst-calendar-kpi"><span>Mantenimientos pendientes</span><strong>{{ kpi_mantenimientos_pendientes }}</strong><small>Requieren accion</small></article>
   </div>
 
   <article class="sst-op-card wide sst-luces-table-card">
@@ -88,9 +86,8 @@
             <th>Instaladas</th>
             <th>Faltantes</th>
             <th>Estado</th>
-            <th>Ultima actualizacion</th>
             <th>Proxima accion</th>
-            <th>Accion</th>
+            <th>Abrir</th>
           </tr>
         </thead>
         <tbody>
@@ -102,12 +99,11 @@
             <td>{{ row.cantidad_instalada }}</td>
             <td>{{ row.cantidad_faltante }}</td>
             <td><span class="sst-status-badge {{ row.state_meta.class }}">{{ row.state_meta.label }}</span></td>
-            <td>{% if row.fecha_actualizacion %}{{ fmt_fecha(row.fecha_actualizacion[:10]) }}{% else %}-{% endif %}</td>
             <td class="sst-luces-next-action">{{ row.action_label }}</td>
             <td><a class="sst-op-btn" href="{{ row.url }}">{{ row.action_button_label }}</a></td>
           </tr>
           {% else %}
-          <tr><td colspan="9" class="sst-op-empty">No hay sedes para este filtro.</td></tr>
+          <tr><td colspan="8" class="sst-op-empty">No hay sedes para este filtro.</td></tr>
           {% endfor %}
         </tbody>
       </table>
@@ -126,6 +122,11 @@
       </div>
       <div class="sst-status-list">
         <div class="sst-status-row">
+          <div class="sst-status-label">Donde estoy</div>
+          <div class="sst-status-detail">{{ selected_summary.sede_codigo }} | {{ selected_summary.sede_nombre }}</div>
+          <span class="sst-status-badge {{ selected_summary.state_meta.class }}">{{ selected_summary.state_meta.label }}</span>
+        </div>
+        <div class="sst-status-row">
           <div class="sst-status-label">Aplica</div>
           <div class="sst-status-detail">{% if selected_summary.aplica %}Si{% else %}No{% endif %}{% if not selected_summary.aplica and selected_summary.motivo_no_aplica %} | {{ selected_summary.motivo_no_aplica }}{% endif %}</div>
           <span class="sst-status-badge {{ 'correcto' if selected_summary.aplica else 'sin-dato' }}">{{ 'Si' if selected_summary.aplica else 'No' }}</span>
@@ -141,27 +142,20 @@
           <span class="sst-status-badge {{ selected_summary.state_meta.class }}">{{ selected_summary.state_meta.label }}</span>
         </div>
         <div class="sst-status-row">
-          <div class="sst-status-label">Proxima accion</div>
+          <div class="sst-status-label">Que sigue</div>
           <div class="sst-status-detail">{{ selected_summary.action_label }}</div>
-          <span class="sst-status-badge {{ 'sin-dato' if selected_summary.state_code in ['NO_APLICA', 'COMPLETO'] else 'pendiente' }}">{{ 'Cerrado' if selected_summary.state_code in ['NO_APLICA', 'COMPLETO'] else 'Pendiente' }}</span>
+          <span class="sst-status-badge {{ 'sin-dato' if selected_summary.state_code == 'COMPLETO' or not selected_summary.aplica else 'pendiente' }}">{{ 'Cerrado' if selected_summary.state_code == 'COMPLETO' or not selected_summary.aplica else 'Pendiente' }}</span>
         </div>
         <div class="sst-status-row">
           <div class="sst-status-label">Fechas de gestion</div>
           <div class="sst-status-detail">
             Solicitud {% if selected_summary.fecha_solicitud_compra %}{{ fmt_fecha(selected_summary.fecha_solicitud_compra) }}{% else %}-{% endif %}
             | Entrega {% if selected_summary.fecha_entrega %}{{ fmt_fecha(selected_summary.fecha_entrega) }}{% else %}-{% endif %}
-            | Colocacion programada {% if selected_summary.fecha_programada_colocacion %}{{ fmt_fecha(selected_summary.fecha_programada_colocacion) }}{% else %}-{% endif %}
-            | Colocacion {% if selected_summary.fecha_colocacion %}{{ fmt_fecha(selected_summary.fecha_colocacion) }}{% else %}-{% endif %}
-            | Mantenimiento {% if selected_summary.fecha_mantenimiento %}{{ fmt_fecha(selected_summary.fecha_mantenimiento) }}{% else %}-{% endif %}
+            | Instalacion {% if selected_summary.fecha_instalacion %}{{ fmt_fecha(selected_summary.fecha_instalacion) }}{% else %}-{% endif %}
           </div>
-          <span class="sst-status-badge {{ 'sin-dato' if not selected_summary.fecha_actualizacion else 'correcto' }}">
-            {% if selected_summary.fecha_actualizacion %}Act. {{ fmt_fecha(selected_summary.fecha_actualizacion[:10]) }}{% else %}Sin fecha{% endif %}
+          <span class="sst-status-badge {{ 'sin-dato' if not (selected_summary.fecha_solicitud_compra or selected_summary.fecha_entrega or selected_summary.fecha_instalacion) else 'correcto' }}">
+            {{ 'Sin fechas' if not (selected_summary.fecha_solicitud_compra or selected_summary.fecha_entrega or selected_summary.fecha_instalacion) else 'Con fechas' }}
           </span>
-        </div>
-        <div class="sst-status-row">
-          <div class="sst-status-label">Pedido</div>
-          <div class="sst-status-detail">{{ selected_summary.referencia_pedido or 'Sin referencia cargada.' }}</div>
-          <span class="sst-status-badge {{ 'sin-dato' if not selected_summary.referencia_pedido else 'pendiente' }}">{{ 'Sin referencia' if not selected_summary.referencia_pedido else 'Con referencia' }}</span>
         </div>
         <div class="sst-status-row">
           <div class="sst-status-label">Observaciones</div>
@@ -174,12 +168,10 @@
       {% endif %}
       <div class="sst-luces-modal-actions">
         <a class="sst-op-btn" href="{{ selected_summary.modal_edit_url }}#sst-luces-form">Editar</a>
-        {% for action in selected_summary.modal_actions %}
-        <a class="sst-op-btn" href="{{ action.href }}#sst-luces-form">{{ action.label }}</a>
-        {% endfor %}
-        {% if selected_summary.modal_followup_url %}
-        <a class="sst-op-btn" href="{{ selected_summary.modal_followup_url }}">Ver seguimiento</a>
-        {% elif selected_summary.modal_followup_enabled %}
+        {% if selected_summary.show_register_delivery %}
+        <a class="sst-op-btn" href="{{ selected_summary.modal_delivery_url }}#sst-luces-form">Registrar entrega</a>
+        {% endif %}
+        {% if selected_summary.modal_followup_enabled %}
         <form method="post" action="{{ url_for('sst_luces_home') }}">
           <input type="hidden" name="action" value="followup">
           <input type="hidden" name="record_id" value="{{ selected_summary.primary_record_id }}">
@@ -253,25 +245,12 @@
           <input type="date" name="fecha_solicitud_compra" value="{{ form_defaults.fecha_solicitud_compra }}">
         </label>
         <label class="sst-op-field">
-          <small>Referencia de pedido</small>
-          <input name="referencia_pedido" value="{{ form_defaults.referencia_pedido }}">
-        </label>
-
-        <label class="sst-op-field">
           <small>Fecha de entrega</small>
           <input type="date" name="fecha_entrega" value="{{ form_defaults.fecha_entrega }}">
         </label>
         <label class="sst-op-field">
-          <small>Fecha programada de colocacion</small>
-          <input type="date" name="fecha_programada_colocacion" value="{{ form_defaults.fecha_programada_colocacion }}">
-        </label>
-        <label class="sst-op-field">
-          <small>Fecha de colocacion</small>
-          <input type="date" name="fecha_colocacion" value="{{ form_defaults.fecha_colocacion }}">
-        </label>
-        <label class="sst-op-field">
-          <small>Fecha de mantenimiento</small>
-          <input type="date" name="fecha_mantenimiento" value="{{ form_defaults.fecha_mantenimiento }}">
+          <small>Fecha de instalacion</small>
+          <input type="date" name="fecha_instalacion" value="{{ form_defaults.fecha_instalacion }}">
         </label>
 
         <label class="sst-op-field sst-luces-full">
@@ -283,16 +262,6 @@
           <button class="sst-op-btn primary" type="submit">Guardar registro</button>
         </div>
       </form>
-
-      {% if selected_record %}
-      <div class="sst-luces-form-footer">
-        <form method="post" action="{{ url_for('sst_luces_home') }}">
-          <input type="hidden" name="action" value="delete">
-          <input type="hidden" name="record_id" value="{{ selected_record.id }}">
-          <button class="sst-op-btn" type="submit" onclick="return confirm('Dar de baja logica este registro?');">Baja logica</button>
-        </form>
-      </div>
-      {% endif %}
     </details>
   </article>
 

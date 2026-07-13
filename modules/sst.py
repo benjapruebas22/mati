@@ -231,29 +231,25 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         "OBSERVADO": "Observado",
     }
     SST_LUCES_STATE_LABELS = {
-        "NO_APLICA": "No aplica",
-        "FALTA_SOLICITAR": "Falta solicitar",
-        "SOLICITADO_A_COMPRAS": "Solicitado a Compras",
+        "SIN_RELEVAR": "Sin relevar",
+        "RELEVADO": "Relevado",
+        "PENDIENTE_DE_SOLICITUD": "Pendiente de solicitud",
         "EN_PROCESO_DE_COMPRA": "En proceso de compra",
-        "ENTREGADO": "Entregado",
-        "PENDIENTE_DE_COLOCACION": "Pendiente de colocacion",
-        "COLOCACION_PROGRAMADA": "Colocacion programada",
-        "INSTALADO": "Instalado",
-        "REQUIERE_MANTENIMIENTO": "Requiere mantenimiento",
+        "MATERIAL_RECIBIDO": "Material recibido",
+        "INSTALACION_PROGRAMADA": "Instalacion programada",
         "COMPLETO": "Completo",
-        "OBSERVADO": "Observado",
+        "MANTENIMIENTO": "Mantenimiento",
     }
     SST_PURCHASE_STATES = {"SOLICITAR_A_COMPRAS", "PEDIDO_REALIZADO", "EN_PROCESO_DE_COMPRA"}
-    SST_LUCES_PURCHASE_STATES = {"SOLICITADO_A_COMPRAS", "EN_PROCESO_DE_COMPRA"}
+    SST_LUCES_PURCHASE_STATES = {"EN_PROCESO_DE_COMPRA"}
     SST_CARTELERIA_PENDING_STATES = SST_PURCHASE_STATES | {"RELEVADO_CON_FALTANTES", "DISPONIBLE", "PROGRAMADO", "OBSERVADO"}
-    SST_LUCES_PENDING_STATES = SST_LUCES_PURCHASE_STATES | {
-        "FALTA_SOLICITAR",
-        "ENTREGADO",
-        "PENDIENTE_DE_COLOCACION",
-        "COLOCACION_PROGRAMADA",
-        "INSTALADO",
-        "REQUIERE_MANTENIMIENTO",
-        "OBSERVADO",
+    SST_LUCES_PENDING_STATES = {
+        "SIN_RELEVAR",
+        "PENDIENTE_DE_SOLICITUD",
+        "EN_PROCESO_DE_COMPRA",
+        "MATERIAL_RECIBIDO",
+        "INSTALACION_PROGRAMADA",
+        "MANTENIMIENTO",
     }
     SST_MANUAL_CARTELERIA_STATES = SST_PURCHASE_STATES | {"DISPONIBLE", "PROGRAMADO", "EJECUTADO", "VERIFICADO", "OBSERVADO"}
     SST_MANUAL_LUCES_STATES = set(SST_LUCES_STATE_LABELS.keys())
@@ -307,11 +303,11 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
     def _sst_state_badge(state_code, state_labels):
         code = _sst_clean_upper(state_code)
         label = state_labels.get(code, code.replace("_", " ").title() if code else "-")
-        if code in {"VERIFICADO", "VERIFICADA", "OPERATIVA", "RELEVADO_SIN_FALTANTES", "COMPLETO_OPERATIVO", "COMPLETO"}:
+        if code in {"VERIFICADO", "VERIFICADA", "OPERATIVA", "RELEVADO_SIN_FALTANTES", "COMPLETO_OPERATIVO", "COMPLETO", "RELEVADO"}:
             badge = "correcto"
-        elif code in {"OBSERVADO", "OBSERVADA", "FUERA_DE_SERVICIO", "FALTA_EQUIPO", "FALTAN_EQUIPOS", "REQUIERE_REPARACION", "REQUIERE_REEMPLAZO", "FALTA_SOLICITAR", "REQUIERE_MANTENIMIENTO"}:
+        elif code in {"OBSERVADO", "OBSERVADA", "FUERA_DE_SERVICIO", "FALTA_EQUIPO", "FALTAN_EQUIPOS", "REQUIERE_REPARACION", "REQUIERE_REEMPLAZO", "FALTA_SOLICITAR", "REQUIERE_MANTENIMIENTO", "MANTENIMIENTO"}:
             badge = "atencion"
-        elif code in {"NO_RELEVADO", "NO_APLICA"}:
+        elif code in {"NO_RELEVADO", "NO_APLICA", "SIN_RELEVAR"}:
             badge = "sin-dato"
         else:
             badge = "pendiente"
@@ -6985,48 +6981,56 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
     def _sst_luces_normalize_manual_state(value):
         raw_state = _sst_clean_upper(value)
         legacy_map = {
-            "NO_RELEVADO": "OBSERVADO",
+            "NO_APLICA": "RELEVADO",
+            "NO_RELEVADO": "SIN_RELEVAR",
             "OPERATIVA": "COMPLETO",
             "COMPLETO_OPERATIVO": "COMPLETO",
-            "PARCIALMENTE_OPERATIVA": "REQUIERE_MANTENIMIENTO",
-            "FUERA_DE_SERVICIO": "REQUIERE_MANTENIMIENTO",
-            "FALTA_EQUIPO": "FALTA_SOLICITAR",
-            "FALTAN_EQUIPOS": "FALTA_SOLICITAR",
-            "SOLICITAR_A_COMPRAS": "FALTA_SOLICITAR",
+            "PARCIALMENTE_OPERATIVA": "MANTENIMIENTO",
+            "FUERA_DE_SERVICIO": "MANTENIMIENTO",
+            "FALTA_EQUIPO": "PENDIENTE_DE_SOLICITUD",
+            "FALTAN_EQUIPOS": "PENDIENTE_DE_SOLICITUD",
+            "SOLICITAR_A_COMPRAS": "PENDIENTE_DE_SOLICITUD",
+            "FALTA_SOLICITAR": "PENDIENTE_DE_SOLICITUD",
             "PEDIDO_REALIZADO": "EN_PROCESO_DE_COMPRA",
-            "DISPONIBLE": "ENTREGADO",
-            "INTERVENCION_PROGRAMADA": "COLOCACION_PROGRAMADA",
-            "INTERVENCION_REALIZADA": "INSTALADO",
-            "VERIFICACION_PENDIENTE": "INSTALADO",
+            "SOLICITADO_A_COMPRAS": "EN_PROCESO_DE_COMPRA",
+            "DISPONIBLE": "MATERIAL_RECIBIDO",
+            "ENTREGADO": "MATERIAL_RECIBIDO",
+            "PENDIENTE_DE_COLOCACION": "MATERIAL_RECIBIDO",
+            "INTERVENCION_PROGRAMADA": "INSTALACION_PROGRAMADA",
+            "COLOCACION_PROGRAMADA": "INSTALACION_PROGRAMADA",
+            "INTERVENCION_REALIZADA": "COMPLETO",
+            "INSTALADO": "COMPLETO",
+            "VERIFICACION_PENDIENTE": "COMPLETO",
             "VERIFICADO": "COMPLETO",
             "VERIFICADA": "COMPLETO",
-            "REQUIERE_REPARACION": "REQUIERE_MANTENIMIENTO",
-            "REQUIERE_BATERIA": "REQUIERE_MANTENIMIENTO",
-            "REQUIERE_REEMPLAZO": "REQUIERE_MANTENIMIENTO",
-            "OBSERVADA": "OBSERVADO",
+            "REQUIERE_REPARACION": "MANTENIMIENTO",
+            "REQUIERE_BATERIA": "MANTENIMIENTO",
+            "REQUIERE_REEMPLAZO": "MANTENIMIENTO",
+            "REQUIERE_MANTENIMIENTO": "MANTENIMIENTO",
+            "OBSERVADO": "RELEVADO",
+            "OBSERVADA": "RELEVADO",
         }
         normalized = legacy_map.get(raw_state, raw_state)
         return normalized if normalized in SST_LUCES_STATE_LABELS else ""
 
     def _sst_luces_has_relevamiento(record):
-        if not _sst_bool_flag(record.get("aplica", 1)):
-            return True
         for field in (
             "fecha_solicitud_compra",
-            "referencia_pedido",
             "fecha_entrega",
             "fecha_programada_colocacion",
             "fecha_colocacion",
-            "fecha_mantenimiento",
             "observaciones",
+            "motivo_no_aplica",
         ):
             if str(record.get(field) or "").strip():
                 return True
         return any(_sst_int_nonneg(record.get(field)) for field in ("cantidad_requerida", "cantidad_instalada"))
 
     def _sst_luces_state_code(record):
+        if not _sst_luces_has_relevamiento(record):
+            return "SIN_RELEVAR"
         if not _sst_bool_flag(record.get("aplica", 1)):
-            return "NO_APLICA"
+            return "RELEVADO"
         raw_state = _sst_luces_normalize_manual_state(record.get("estado"))
         if raw_state in SST_MANUAL_LUCES_STATES:
             return raw_state
@@ -7034,79 +7038,66 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         instalada = _sst_int_nonneg(record.get("cantidad_instalada"))
         faltante = max(requerida - instalada, 0)
         fecha_solicitud = str(record.get("fecha_solicitud_compra") or "").strip()
-        referencia = str(record.get("referencia_pedido") or "").strip()
         fecha_entrega = str(record.get("fecha_entrega") or "").strip()
-        fecha_programada = str(record.get("fecha_programada_colocacion") or "").strip()
-        fecha_colocacion = str(record.get("fecha_colocacion") or "").strip()
+        fecha_instalacion = (
+            str(record.get("fecha_colocacion") or "").strip()
+            or str(record.get("fecha_programada_colocacion") or "").strip()
+        )
         fecha_mantenimiento = str(record.get("fecha_mantenimiento") or "").strip()
         if fecha_mantenimiento:
-            return "REQUIERE_MANTENIMIENTO"
+            return "MANTENIMIENTO"
         if requerida > 0 and instalada >= requerida:
             return "COMPLETO"
-        if fecha_programada:
-            return "COLOCACION_PROGRAMADA"
-        if fecha_colocacion and instalada > 0:
-            return "INSTALADO"
-        if fecha_entrega and faltante > 0:
-            return "PENDIENTE_DE_COLOCACION"
         if fecha_entrega:
-            return "ENTREGADO"
-        if referencia:
-            return "EN_PROCESO_DE_COMPRA"
+            if fecha_instalacion:
+                return "INSTALACION_PROGRAMADA"
+            return "MATERIAL_RECIBIDO"
         if fecha_solicitud:
-            return "SOLICITADO_A_COMPRAS"
+            return "EN_PROCESO_DE_COMPRA"
         if requerida > instalada:
-            return "FALTA_SOLICITAR"
-        return "OBSERVADO"
+            return "PENDIENTE_DE_SOLICITUD"
+        return "RELEVADO"
 
     def _sst_luces_action_text(record):
         state_code = _sst_clean_upper(record.get("state_code") or _sst_luces_state_code(record))
         faltantes = _sst_int_nonneg(record.get("cantidad_faltante") or record.get("faltantes"))
-        if state_code == "NO_APLICA":
-            return (str(record.get("motivo_no_aplica") or "").strip() or "Sin acciones pendientes")
-        if state_code == "FALTA_SOLICITAR":
-            cantidad = max(faltantes, 1)
-            return f"Solicitar compra de {cantidad} luz{'es' if cantidad != 1 else ''}"
-        if state_code == "SOLICITADO_A_COMPRAS":
-            return "Confirmar recepcion por Compras"
+        if state_code == "SIN_RELEVAR":
+            return "Relevar sede."
+        if state_code == "RELEVADO":
+            if not _sst_bool_flag(record.get("aplica", 1)):
+                return "Sin acciones pendientes."
+            return "Solicitar compra." if faltantes > 0 else "Sin acciones pendientes."
+        if state_code == "PENDIENTE_DE_SOLICITUD":
+            return "Solicitar compra."
         if state_code == "EN_PROCESO_DE_COMPRA":
-            return "Esperar entrega"
-        if state_code == "ENTREGADO":
-            return "Programar colocacion"
-        if state_code == "PENDIENTE_DE_COLOCACION":
-            return "Definir fecha"
-        if state_code == "COLOCACION_PROGRAMADA":
-            return "Colocar el dia indicado"
-        if state_code == "INSTALADO":
-            return "Verificar cantidad"
-        if state_code == "REQUIERE_MANTENIMIENTO":
-            return "Programar recambio"
+            return "Esperar entrega."
+        if state_code == "MATERIAL_RECIBIDO":
+            return "Programar instalacion."
+        if state_code == "INSTALACION_PROGRAMADA":
+            return "Instalar equipos."
         if state_code == "COMPLETO":
-            return "Sin acciones pendientes"
-        if state_code == "OBSERVADO":
-            return "Revisar gestion cargada"
+            return "Sin acciones pendientes."
+        if state_code == "MANTENIMIENTO":
+            return "Coordinar mantenimiento."
         return "Abrir"
 
     def _sst_luces_followup_text(record):
         state_code = _sst_clean_upper(record.get("state_code") or _sst_luces_state_code(record))
-        faltantes = _sst_int_nonneg(record.get("cantidad_faltante") or record.get("faltantes"))
-        if state_code == "FALTA_SOLICITAR":
-            cantidad = max(faltantes, 1)
-            return f"Solicitar compra e instalar {cantidad} luz{'es' if cantidad != 1 else ''} de emergencia."
-        if state_code == "SOLICITADO_A_COMPRAS":
-            return "Confirmar recepcion de la solicitud de compra de luces de emergencia."
+        faltantes = max(_sst_int_nonneg(record.get("cantidad_faltante") or record.get("faltantes")), 1)
+        if state_code == "SIN_RELEVAR":
+            return "Realizar relevamiento de luces de emergencia."
+        if state_code in {"RELEVADO", "PENDIENTE_DE_SOLICITUD"}:
+            return f"Solicitar compra e implementar {faltantes} luz{'es' if faltantes != 1 else ''} de emergencia."
         if state_code == "EN_PROCESO_DE_COMPRA":
-            return "Hacer seguimiento de la compra y esperar la entrega de luces de emergencia."
-        if state_code in {"ENTREGADO", "PENDIENTE_DE_COLOCACION"}:
-            return "Programar la colocacion de las luces de emergencia entregadas."
-        if state_code == "COLOCACION_PROGRAMADA":
-            return "Ejecutar la colocacion programada de luces de emergencia."
-        if state_code == "INSTALADO":
-            return "Verificar la cantidad instalada de luces de emergencia."
-        if state_code == "REQUIERE_MANTENIMIENTO":
-            return "Programar mantenimiento o recambio de luces de emergencia."
-        if state_code == "OBSERVADO":
-            return "Revisar observaciones y definir la siguiente accion sobre luces de emergencia."
+            return "Hacer seguimiento de la compra de luces de emergencia."
+        if state_code == "MATERIAL_RECIBIDO":
+            return "Programar instalacion de luces de emergencia recibidas."
+        if state_code == "INSTALACION_PROGRAMADA":
+            return "Ejecutar la instalacion programada de luces de emergencia."
+        if state_code == "MANTENIMIENTO":
+            return "Coordinar mantenimiento de luces de emergencia."
+        if state_code == "COMPLETO":
+            return "Sin acciones pendientes sobre luces de emergencia."
         return "Gestionar luces de emergencia de la sede."
 
     def _sst_luces_has_pending_action(record):
@@ -7247,11 +7238,12 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             item["cantidad_fuera_servicio"] = max(item["cantidad_instalada"] - item["cantidad_operativa"], 0)
             item["cantidad_faltante"] = max(item["cantidad_requerida"] - item["cantidad_instalada"], 0)
             item["faltantes"] = item["cantidad_faltante"]
+            item["fecha_instalacion"] = item["fecha_colocacion"] or item["fecha_programada_colocacion"]
             item["estado"] = _sst_luces_normalize_manual_state(_row_value(row, "estado", "")) or (_row_value(row, "estado", "") or "").strip().upper()
             item["state_code"] = _sst_luces_state_code(item)
             item["state_meta"] = _sst_state_badge(item["state_code"], SST_LUCES_STATE_LABELS)
             item["action_label"] = _sst_luces_action_text(item)
-            item["action_button_label"] = "Ver" if item["state_code"] == "NO_APLICA" else "Abrir"
+            item["action_button_label"] = "Abrir"
             item["ultima_actualizacion"] = max([
                 str(item.get("fecha_actualizacion") or "").strip(),
                 str(item.get("fecha_mantenimiento") or "").strip(),
@@ -7333,10 +7325,11 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             summary["cantidad_fuera_servicio"] = max(summary["cantidad_instalada"] - summary["cantidad_operativa"], 0)
             summary["cantidad_faltante"] = max(summary["cantidad_requerida"] - summary["cantidad_instalada"], 0)
             summary["faltantes"] = summary["cantidad_faltante"]
+            summary["fecha_instalacion"] = summary["fecha_colocacion"] or summary["fecha_programada_colocacion"]
             summary["state_code"] = _sst_luces_state_code(summary)
             summary["state_meta"] = _sst_state_badge(summary["state_code"], SST_LUCES_STATE_LABELS)
             summary["action_label"] = _sst_luces_action_text(summary)
-            summary["action_button_label"] = "Ver" if summary["state_code"] == "NO_APLICA" else "Abrir"
+            summary["action_button_label"] = "Abrir"
             out[sede_codigo] = summary
         return out
 
@@ -7365,6 +7358,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             "fecha_programada_colocacion": "",
             "fecha_colocacion": "",
             "fecha_mantenimiento": "",
+            "fecha_instalacion": "",
             "observaciones": "",
             "seguimiento_id": 0,
             "estado": "",
@@ -7374,7 +7368,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         summary["state_code"] = _sst_luces_state_code(summary)
         summary["state_meta"] = _sst_state_badge(summary["state_code"], SST_LUCES_STATE_LABELS)
         summary["action_label"] = _sst_luces_action_text(summary)
-        summary["action_button_label"] = "Ver" if summary["state_code"] == "NO_APLICA" else "Abrir"
+        summary["action_button_label"] = "Abrir"
         return summary
 
     def _sst_fetch_historial_rows(con, componente, sede_codigo=""):
@@ -7594,7 +7588,6 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                         "fecha_entrega",
                         "fecha_programada_colocacion",
                         "fecha_colocacion",
-                        "fecha_mantenimiento",
                         "fecha_actualizacion",
                     ],
                 )
@@ -7621,11 +7614,17 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         history_rows = [
             item
             for item in _sst_fetch_historial_rows(con, "luces", detail_sede or f_sede)
-            if item.get("accion") in {"alta", "actualizacion", "cambio_estado", "seguimiento", "baja_logica", "carga_inicial"}
+            if item.get("accion") in {"alta", "cambio_estado"}
         ]
         prefill_sede = (_sst_clean_upper(request.args.get("prefill_sede") or f_sede) or "").strip().upper()
         prefill_seed = seed_map.get(prefill_sede, {})
-        prefill_fecha_programada = (request.args.get("prefill_fecha_programada") or (selected_record.get("fecha_programada_colocacion") if selected_record else "") or "").strip()
+        prefill_fecha_instalacion = (
+            request.args.get("prefill_fecha_instalacion")
+            or (selected_record.get("fecha_instalacion") if selected_record else "")
+            or (selected_record.get("fecha_colocacion") if selected_record else "")
+            or (selected_record.get("fecha_programada_colocacion") if selected_record else "")
+            or ""
+        ).strip()
         prefill_estado = _sst_luces_normalize_manual_state(request.args.get("prefill_estado") or (selected_record.get("estado") if selected_record else ""))
         show_form = bool(request.method == "POST" or request.args.get("mostrar_form"))
         form_defaults = {
@@ -7638,11 +7637,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             "cantidad_faltante": int(selected_record["cantidad_faltante"]) if selected_record else max(int(prefill_seed.get("cantidad_requerida", 0) or 0), 0),
             "estado": ((selected_record.get("estado") or "") if selected_record else prefill_estado),
             "fecha_solicitud_compra": ((selected_record.get("fecha_solicitud_compra") or "") if selected_record else ""),
-            "referencia_pedido": ((selected_record.get("referencia_pedido") or "") if selected_record else ""),
             "fecha_entrega": ((selected_record.get("fecha_entrega") or "") if selected_record else ""),
-            "fecha_programada_colocacion": ((selected_record.get("fecha_programada_colocacion") or "") if selected_record else prefill_fecha_programada),
-            "fecha_colocacion": ((selected_record.get("fecha_colocacion") or "") if selected_record else ""),
-            "fecha_mantenimiento": ((selected_record.get("fecha_mantenimiento") or "") if selected_record else ""),
+            "fecha_instalacion": (prefill_fecha_instalacion if not selected_record else (selected_record.get("fecha_instalacion") or selected_record.get("fecha_colocacion") or selected_record.get("fecha_programada_colocacion") or "")),
             "observaciones": ((selected_record.get("observaciones") or "") if selected_record else ""),
         }
         if request.method == "POST" and (request.form.get("action") or "save").strip().lower() == "save":
@@ -7662,11 +7658,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 "cantidad_faltante": max(posted_requerida - posted_instalada, 0),
                 "estado": _sst_luces_normalize_manual_state(request.form.get("estado")),
                 "fecha_solicitud_compra": (request.form.get("fecha_solicitud_compra") or "").strip(),
-                "referencia_pedido": (request.form.get("referencia_pedido") or "").strip(),
                 "fecha_entrega": (request.form.get("fecha_entrega") or "").strip(),
-                "fecha_programada_colocacion": (request.form.get("fecha_programada_colocacion") or "").strip(),
-                "fecha_colocacion": (request.form.get("fecha_colocacion") or "").strip(),
-                "fecha_mantenimiento": (request.form.get("fecha_mantenimiento") or "").strip(),
+                "fecha_instalacion": (request.form.get("fecha_instalacion") or "").strip(),
                 "observaciones": (request.form.get("observaciones") or "").strip(),
             })
         selected_context_sede = next((item for item in sedes if item["codigo"] == (detail_sede or f_sede)), None)
@@ -7692,33 +7685,17 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     mostrar_form=1,
                 )
 
-            modal_actions = []
-            state_code = selected_summary["state_code"]
-            if state_code == "FALTA_SOLICITAR":
-                modal_actions.append({"label": "Solicitar a Compras", "href": _luces_form_url("SOLICITADO_A_COMPRAS")})
-            elif state_code == "SOLICITADO_A_COMPRAS":
-                modal_actions.append({"label": "Registrar pedido", "href": _luces_form_url("EN_PROCESO_DE_COMPRA")})
-                modal_actions.append({"label": "Marcar en proceso", "href": _luces_form_url("EN_PROCESO_DE_COMPRA")})
-            elif state_code == "EN_PROCESO_DE_COMPRA":
-                modal_actions.append({"label": "Registrar entrega", "href": _luces_form_url("ENTREGADO")})
-            elif state_code in {"ENTREGADO", "PENDIENTE_DE_COLOCACION"}:
-                modal_actions.append({"label": "Programar colocacion", "href": _luces_form_url("COLOCACION_PROGRAMADA")})
-            elif state_code == "COLOCACION_PROGRAMADA":
-                modal_actions.append({"label": "Registrar colocacion", "href": _luces_form_url("INSTALADO")})
-            elif state_code in {"INSTALADO", "REQUIERE_MANTENIMIENTO", "OBSERVADO"}:
-                modal_actions.append({"label": "Registrar mantenimiento", "href": _luces_form_url("REQUIERE_MANTENIMIENTO")})
             selected_summary = dict(selected_summary)
-            selected_summary["modal_actions"] = modal_actions
             selected_summary["modal_edit_url"] = _luces_form_url(selected_summary.get("estado") or "")
+            selected_summary["modal_delivery_url"] = _luces_form_url("MATERIAL_RECIBIDO")
+            selected_summary["show_register_delivery"] = bool(
+                selected_summary.get("aplica")
+                and selected_summary["state_code"] in {"PENDIENTE_DE_SOLICITUD", "EN_PROCESO_DE_COMPRA"}
+            )
             selected_summary["modal_followup_enabled"] = bool(
                 selected_summary.get("record_exists")
                 and not selected_summary.get("seguimiento_id")
                 and _sst_luces_has_pending_action(selected_summary)
-            )
-            selected_summary["modal_followup_url"] = (
-                url_for("sst_general_editar", sst_id=selected_summary["seguimiento_id"])
-                if int(selected_summary.get("seguimiento_id") or 0) > 0
-                else ""
             )
             selected_summary["modal_close_url"] = close_modal_url
         return {
@@ -7744,11 +7721,9 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             "kpi_requeridas": sum(item["cantidad_requerida"] for item in filtered_rows),
             "kpi_instaladas": sum(item["cantidad_instalada"] for item in filtered_rows),
             "kpi_faltantes": sum(item["cantidad_faltante"] for item in filtered_rows),
-            "kpi_sedes_completas": sum(1 for item in filtered_rows if item["state_code"] == "COMPLETO"),
-            "kpi_sedes_pendientes": sum(1 for item in filtered_rows if item["state_code"] not in {"NO_APLICA", "COMPLETO"}),
+            "kpi_sedes_pendientes": sum(1 for item in filtered_rows if _sst_luces_has_pending_action(item)),
             "kpi_compras_en_proceso": sum(1 for item in filtered_rows if item["state_code"] in SST_LUCES_PURCHASE_STATES),
-            "kpi_colocaciones_programadas": sum(1 for item in filtered_rows if item["state_code"] == "COLOCACION_PROGRAMADA"),
-            "kpi_mantenimientos_pendientes": sum(1 for item in filtered_rows if item["state_code"] == "REQUIERE_MANTENIMIENTO"),
+            "kpi_colocaciones_programadas": sum(1 for item in filtered_rows if item["state_code"] == "INSTALACION_PROGRAMADA"),
             "close_modal_url": close_modal_url,
             "fmt_fecha": _sst_fmt_fecha,
         }
@@ -7841,23 +7816,27 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     if len(existing_rows) > 1:
                         flash("Se detectaron registros legacy multiples para la sede. Se actualizara el mas reciente y la vista seguira consolidando por sede.", "warning")
                     fecha_solicitud_compra = (request.form.get("fecha_solicitud_compra") or "").strip()
-                    referencia_pedido = (request.form.get("referencia_pedido") or "").strip()
                     fecha_entrega = (request.form.get("fecha_entrega") or "").strip()
-                    fecha_programada_colocacion = (request.form.get("fecha_programada_colocacion") or "").strip()
-                    fecha_colocacion = (request.form.get("fecha_colocacion") or "").strip()
-                    fecha_mantenimiento = (request.form.get("fecha_mantenimiento") or "").strip()
+                    fecha_instalacion = (request.form.get("fecha_instalacion") or "").strip()
+                    referencia_pedido = str((previous_summary or {}).get("referencia_pedido") or "").strip()
+                    fecha_programada_colocacion = fecha_instalacion
+                    fecha_colocacion = (
+                        fecha_instalacion
+                        if (estado == "COMPLETO" or cantidad_instalada >= cantidad_requerida)
+                        else ""
+                    )
+                    fecha_mantenimiento = str((previous_summary or {}).get("fecha_mantenimiento") or "").strip()
                     observaciones = (request.form.get("observaciones") or "").strip()
                     if not aplica:
                         cantidad_requerida = 0
                         cantidad_instalada = 0
                         motivo_no_aplica = motivo_no_aplica.strip()
-                        estado = ""
+                        estado = "RELEVADO"
                         fecha_solicitud_compra = ""
                         referencia_pedido = ""
                         fecha_entrega = ""
                         fecha_programada_colocacion = ""
                         fecha_colocacion = ""
-                        fecha_mantenimiento = ""
                     cantidad_operativa = cantidad_instalada if aplica else 0
                     cantidad_fuera_servicio = 0
                     if edit_id:
@@ -8036,8 +8015,9 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                         user_name,
                         accion_correctiva,
                         record.get("fecha_programada_colocacion")
-                        or record.get("fecha_mantenimiento")
+                        or record.get("fecha_colocacion")
                         or record.get("fecha_entrega")
+                        or record.get("fecha_solicitud_compra")
                         or date.today().isoformat(),
                         int(record.get("primary_record_id") or record_id),
                         None,
@@ -10074,8 +10054,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         entries = []
         solicitud_anchor = _sst_calendar_parse_date(record.get("fecha_solicitud_compra"))
         entrega_anchor = _sst_calendar_parse_date(record.get("fecha_entrega"))
-        colocacion_anchor = _sst_calendar_parse_date(record.get("fecha_programada_colocacion"))
-        mantenimiento_anchor = _sst_calendar_parse_date(record.get("fecha_mantenimiento"))
+        colocacion_anchor = _sst_calendar_parse_date(record.get("fecha_colocacion")) or _sst_calendar_parse_date(record.get("fecha_programada_colocacion"))
         detail_base = (
             f"Estado: {record.get('state_meta', {}).get('label', '-')} | "
             f"Requeridas: {int(record.get('cantidad_requerida') or 0)} | "
@@ -10100,14 +10079,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             entries.append({
                 "event_date": colocacion_anchor,
                 "state_key": ("cumplido" if state_code == "COMPLETO" else _sst_calendar_open_state(colocacion_anchor, today_ref)),
-                "title": "Colocacion programada de luces",
-                "detail": detail_base,
-            })
-        if mantenimiento_anchor:
-            entries.append({
-                "event_date": mantenimiento_anchor,
-                "state_key": _sst_calendar_open_state(mantenimiento_anchor, today_ref),
-                "title": "Mantenimiento programado de luces",
+                "title": "Instalacion de luces",
                 "detail": detail_base,
             })
         return entries
@@ -11468,7 +11440,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         if luces_summary:
             luces_estado = luces_summary["state_meta"]["label"]
             luces_clase = luces_summary["state_meta"]["class"]
-            if luces_summary["state_code"] == "NO_APLICA":
+            if not _sst_bool_flag(luces_summary.get("aplica", 1)):
                 luces_detail = luces_summary.get("motivo_no_aplica") or "No aplica"
             else:
                 luces_detail = (
