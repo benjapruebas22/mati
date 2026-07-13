@@ -165,10 +165,10 @@
         <section class="sst-op-card sst-carteleria-checklist-card">
           <div class="sst-op-card-head">
             <h3>{{ group.label }}</h3>
-            <span class="sst-op-count">{{ group.items|length }} items</span>
+            <span class="sst-op-count">{{ group["items"]|length }} items</span>
           </div>
           <div class="sst-carteleria-checklist-list">
-            {% for item in group.items %}
+            {% for item in group["items"] %}
             <div class="sst-carteleria-checklist-row">
               <span>{{ item.label }}</span>
               <span class="sst-status-badge {{ 'correcto' if item.check_state == 'INSTALADO' else 'pendiente' if item.check_state == 'REQUERIDO' else 'sin-dato' }}">
@@ -253,10 +253,10 @@
           <section class="sst-op-card sst-carteleria-checklist-card">
             <div class="sst-op-card-head">
               <h3>{{ group.label }}</h3>
-              <span class="sst-op-count">{{ group.items|length }} items</span>
+              <span class="sst-op-count">{{ group["items"]|length }} items</span>
             </div>
             <div class="sst-carteleria-checklist-list">
-              {% for item in group.items %}
+              {% for item in group["items"] %}
               <label class="sst-carteleria-form-row">
                 <span>{{ item.label }}</span>
                 <select name="item_state_{{ item.code }}">
