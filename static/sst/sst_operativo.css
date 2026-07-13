@@ -275,6 +275,44 @@
   border-top: 1px solid #edf0f4;
 }
 
+.sst-carteleria-checklist {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 14px;
+}
+
+.sst-carteleria-checklist-card {
+  overflow: hidden;
+}
+
+.sst-carteleria-checklist-card .sst-op-card-head {
+  padding-bottom: 12px;
+}
+
+.sst-carteleria-checklist-list {
+  display: grid;
+  gap: 8px;
+  padding: 0 14px 14px;
+}
+
+.sst-carteleria-checklist-row,
+.sst-carteleria-form-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 40px;
+  padding: 10px 12px;
+  border: 1px solid #edf0f4;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.sst-carteleria-form-row select {
+  min-width: 132px;
+}
+
 .sst-op-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .sst-op-card { border: 1px solid var(--sst-line); border-radius: 12px; background: #fff; overflow: hidden; }
 .sst-op-card.wide { grid-column: 1 / -1; }
@@ -1177,6 +1215,9 @@
   .sst-op-modal-backdrop {
     padding: 18px 12px;
   }
+  .sst-carteleria-checklist {
+    grid-template-columns: 1fr;
+  }
   .sst-calendar-page-ops .sst-calendar-legend-title {
     min-width: 0;
   }
@@ -1206,6 +1247,14 @@
   .sst-luces-form-footer,
   .sst-luces-modal-actions {
     grid-column: 1 / -1;
+  }
+  .sst-carteleria-checklist-row,
+  .sst-carteleria-form-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .sst-carteleria-form-row select {
+    width: 100%;
   }
   .sst-luces-form-footer {
     justify-content: flex-start;

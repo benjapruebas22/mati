@@ -187,50 +187,62 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         "S13": {"due_date": "2026-12-01", "lot_label": "Lote 3", "lot_month": "Diciembre"},
     }
     SST_CARTELERIA_GROUP_LABELS = {
-        "IDENTIFICACION": "Identificacion",
         "SEGURIDAD": "Seguridad",
         "PROTOCOLOS": "Protocolos",
+        "IDENTIFICACION": "Identificacion",
     }
+    SST_CARTELERIA_GROUP_ORDER = ["SEGURIDAD", "PROTOCOLOS", "IDENTIFICACION"]
     SST_CARTELERIA_TIPOS_SEED = [
-        ("IDENTIFICACION", "CARTEL_SALIENTE_OFICINA", "Cartel saliente de oficina", 10),
-        ("IDENTIFICACION", "IDENTIFICACION_PUERTA", "Identificacion en puerta", 20),
-        ("IDENTIFICACION", "PLANO_DIRECTORIO", "Plano o directorio", 30),
-        ("IDENTIFICACION", "IDENTIFICACION_EXTERIOR", "Identificacion exterior de sede", 40),
-        ("IDENTIFICACION", "IDENTIFICACION_SECTOR", "Identificacion de sector", 50),
-        ("IDENTIFICACION", "IDENTIFICACION_BANO", "Identificacion de bano", 60),
-        ("SEGURIDAD", "MATAFUEGOS", "Matafuegos", 110),
-        ("SEGURIDAD", "RIESGO_ELECTRICO", "Riesgo electrico", 120),
-        ("SEGURIDAD", "SALIDA_DERECHA", "Salida derecha", 130),
-        ("SEGURIDAD", "SALIDA_IZQUIERDA", "Salida izquierda", 140),
-        ("SEGURIDAD", "LUZ_EMERGENCIA", "Luz de emergencia", 150),
-        ("SEGURIDAD", "ESCALERA_SUBIDA", "Escalera de subida", 160),
-        ("SEGURIDAD", "ESCALERA_BAJADA", "Escalera de bajada", 170),
-        ("SEGURIDAD", "PUNTO_REUNION", "Punto de reunion", 180),
-        ("SEGURIDAD", "SALIDA_EMERGENCIA", "Salida de emergencia", 190),
-        ("SEGURIDAD", "BOTIQUIN", "Botiquin", 200),
-        ("SEGURIDAD", "OTROS_SEGURIDAD", "Otros de seguridad", 210),
-        ("PROTOCOLOS", "PROHIBIDO_FUMAR", "Prohibido fumar", 310),
-        ("PROTOCOLOS", "RESIDUOS_SECOS", "Residuos secos", 320),
-        ("PROTOCOLOS", "RESIDUOS_HUMEDOS", "Residuos humedos", 330),
-        ("PROTOCOLOS", "USO_RESPONSABLE_BANO", "Uso responsable del bano", 340),
-        ("PROTOCOLOS", "USO_RESPONSABLE_COCINA", "Uso responsable de cocina", 350),
-        ("PROTOCOLOS", "AHORRO_ENERGIA", "Ahorro de energia", 360),
-        ("PROTOCOLOS", "OTROS_PROTOCOLOS", "Otros protocolos institucionales", 370),
+        ("SEGURIDAD", "MATAFUEGOS", "Matafuegos", 10),
+        ("SEGURIDAD", "SALIDA", "Salida", 20),
+        ("SEGURIDAD", "SALIDA_IZQUIERDA", "Salida izquierda", 30),
+        ("SEGURIDAD", "SALIDA_DERECHA", "Salida derecha", 40),
+        ("SEGURIDAD", "CHOQUE_ELECTRICO", "Choque electrico", 50),
+        ("SEGURIDAD", "ESCALERA_SUBIDA", "Escalera subida", 60),
+        ("SEGURIDAD", "ESCALERA_BAJADA", "Escalera bajada", 70),
+        ("SEGURIDAD", "LUZ_EMERGENCIA", "Luz de emergencia", 80),
+        ("PROTOCOLOS", "PROHIBIDO_FUMAR", "Prohibido fumar", 110),
+        ("PROTOCOLOS", "RESIDUOS_SECOS", "Residuos secos", 120),
+        ("PROTOCOLOS", "RESIDUOS_HUMEDOS", "Residuos humedos", 130),
+        ("PROTOCOLOS", "USO_RESPONSABLE_BANO", "Uso responsable del bano", 140),
+        ("IDENTIFICACION", "CARTEL_IDENTIFICATORIO_SEDE", "Cartel identificatorio de la sede", 210),
+        ("IDENTIFICACION", "PLANO_EVACUACION", "Plano de evacuacion", 220),
     ]
+    SST_CARTELERIA_TIPO_LABELS = {codigo: nombre for _, codigo, nombre, _ in SST_CARTELERIA_TIPOS_SEED}
+    SST_CARTELERIA_TIPO_GROUPS = {codigo: grupo for grupo, codigo, _, _ in SST_CARTELERIA_TIPOS_SEED}
+    SST_CARTELERIA_TIPO_ORDER = {codigo: orden for _, codigo, _, orden in SST_CARTELERIA_TIPOS_SEED}
+    SST_CARTELERIA_VISIBLE_CODES = [codigo for _, codigo, _, _ in SST_CARTELERIA_TIPOS_SEED]
+    SST_CARTELERIA_CANONICAL_TIPO_MAP = {
+        "MATAFUEGOS": "MATAFUEGOS",
+        "SALIDA": "SALIDA",
+        "SALIDA_EMERGENCIA": "SALIDA",
+        "SALIDA_IZQUIERDA": "SALIDA_IZQUIERDA",
+        "SALIDA_DERECHA": "SALIDA_DERECHA",
+        "RIESGO_ELECTRICO": "CHOQUE_ELECTRICO",
+        "CHOQUE_ELECTRICO": "CHOQUE_ELECTRICO",
+        "ESCALERA_SUBIDA": "ESCALERA_SUBIDA",
+        "ESCALERA_BAJADA": "ESCALERA_BAJADA",
+        "LUZ_EMERGENCIA": "LUZ_EMERGENCIA",
+        "PROHIBIDO_FUMAR": "PROHIBIDO_FUMAR",
+        "RESIDUOS_SECOS": "RESIDUOS_SECOS",
+        "RESIDUOS_HUMEDOS": "RESIDUOS_HUMEDOS",
+        "USO_RESPONSABLE_BANO": "USO_RESPONSABLE_BANO",
+        "IDENTIFICACION_EXTERIOR": "CARTEL_IDENTIFICATORIO_SEDE",
+        "PLANO_DIRECTORIO": "PLANO_EVACUACION",
+        "PLANO_EVACUACION": "PLANO_EVACUACION",
+        "CARTEL_IDENTIFICATORIO_SEDE": "CARTEL_IDENTIFICATORIO_SEDE",
+    }
     SST_CARTELERIA_STATE_LABELS = {
         "NO_RELEVADO": "No relevado",
-        "RELEVADO_SIN_FALTANTES": "Relevado sin faltantes",
-        "RELEVADO_CON_FALTANTES": "Relevado con faltantes",
-        "SOLICITAR_A_COMPRAS": "Solicitar a Compras",
-        "PEDIDO_REALIZADO": "Pedido realizado",
-        "EN_PROCESO_DE_COMPRA": "En proceso de compra",
-        "DISPONIBLE": "Disponible",
-        "PROGRAMADO": "Programado",
-        "EJECUTADO": "Ejecutado",
-        "VERIFICADO": "Verificado",
-        "OBSERVADO": "Observado",
+        "RELEVADO": "Relevado",
+        "PENDIENTE_SOLICITUD": "Pendiente solicitud",
+        "COMPRA_EN_PROCESO": "Compra en proceso",
+        "MATERIAL_RECIBIDO": "Material recibido",
+        "INSTALACION_PROGRAMADA": "Instalacion programada",
+        "COMPLETO": "Completo",
     }
     SST_LUCES_STATE_LABELS = {
+        "NO_APLICA": "No aplica",
         "SIN_RELEVAR": "Sin relevar",
         "RELEVADO": "Relevado",
         "PENDIENTE_DE_SOLICITUD": "Pendiente de solicitud",
@@ -240,9 +252,16 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         "COMPLETO": "Completo",
         "MANTENIMIENTO": "Mantenimiento",
     }
-    SST_PURCHASE_STATES = {"SOLICITAR_A_COMPRAS", "PEDIDO_REALIZADO", "EN_PROCESO_DE_COMPRA"}
+    SST_CARTELERIA_PURCHASE_STATES = {"PENDIENTE_SOLICITUD", "COMPRA_EN_PROCESO"}
     SST_LUCES_PURCHASE_STATES = {"EN_PROCESO_DE_COMPRA"}
-    SST_CARTELERIA_PENDING_STATES = SST_PURCHASE_STATES | {"RELEVADO_CON_FALTANTES", "DISPONIBLE", "PROGRAMADO", "OBSERVADO"}
+    SST_CARTELERIA_PENDING_STATES = {
+        "NO_RELEVADO",
+        "RELEVADO",
+        "PENDIENTE_SOLICITUD",
+        "COMPRA_EN_PROCESO",
+        "MATERIAL_RECIBIDO",
+        "INSTALACION_PROGRAMADA",
+    }
     SST_LUCES_PENDING_STATES = {
         "SIN_RELEVAR",
         "PENDIENTE_DE_SOLICITUD",
@@ -251,9 +270,11 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         "INSTALACION_PROGRAMADA",
         "MANTENIMIENTO",
     }
-    SST_MANUAL_CARTELERIA_STATES = SST_PURCHASE_STATES | {"DISPONIBLE", "PROGRAMADO", "EJECUTADO", "VERIFICADO", "OBSERVADO"}
+    SST_MANUAL_CARTELERIA_STATES = set(SST_CARTELERIA_STATE_LABELS.keys())
     SST_MANUAL_LUCES_STATES = set(SST_LUCES_STATE_LABELS.keys())
     SST_LUCES_FORM_STATE_LABELS = {key: value for key, value in SST_LUCES_STATE_LABELS.items()}
+    SST_CARTELERIA_PLACEHOLDER_PISO = "SEDE"
+    SST_CARTELERIA_PLACEHOLDER_DEPOSITO = "SEDE"
     SST_LUCES_PLACEHOLDER_PISO = "SEDE"
     SST_LUCES_PLACEHOLDER_DEPOSITO = "SEDE"
     SST_LUCES_INITIAL_LOAD = [
@@ -347,8 +368,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             CREATE TABLE IF NOT EXISTS sst_carteleria_registros(
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 sede_codigo TEXT NOT NULL,
-                piso TEXT DEFAULT 'PB',
-                deposito_codigo TEXT NOT NULL,
+                piso TEXT DEFAULT 'SEDE',
+                deposito_codigo TEXT NOT NULL DEFAULT 'SEDE',
                 tipo_id INTEGER NOT NULL,
                 cantidad_requerida INTEGER DEFAULT 0,
                 cantidad_instalada INTEGER DEFAULT 0,
@@ -6953,35 +6974,145 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 values.append(parsed)
         return values
 
+    def _sst_carteleria_canonical_tipo_code(value):
+        raw_code = (_sst_clean_upper(value) or "").strip().upper()
+        if not raw_code:
+            return ""
+        canonical = SST_CARTELERIA_CANONICAL_TIPO_MAP.get(raw_code, raw_code)
+        return canonical if canonical in SST_CARTELERIA_TIPO_LABELS else ""
+
+    def _sst_carteleria_normalize_manual_state(value):
+        raw_state = (_sst_clean_upper(value) or "").strip().upper()
+        legacy_map = {
+            "NO_RELEVADO": "NO_RELEVADO",
+            "RELEVADO": "RELEVADO",
+            "RELEVADO_SIN_FALTANTES": "RELEVADO",
+            "RELEVADO_CON_FALTANTES": "PENDIENTE_SOLICITUD",
+            "SOLICITAR_A_COMPRAS": "PENDIENTE_SOLICITUD",
+            "PENDIENTE_DE_SOLICITUD": "PENDIENTE_SOLICITUD",
+            "PENDIENTE_SOLICITUD": "PENDIENTE_SOLICITUD",
+            "PEDIDO_REALIZADO": "COMPRA_EN_PROCESO",
+            "EN_PROCESO_DE_COMPRA": "COMPRA_EN_PROCESO",
+            "COMPRA_EN_PROCESO": "COMPRA_EN_PROCESO",
+            "DISPONIBLE": "MATERIAL_RECIBIDO",
+            "MATERIAL_RECIBIDO": "MATERIAL_RECIBIDO",
+            "PROGRAMADO": "INSTALACION_PROGRAMADA",
+            "INSTALACION_PROGRAMADA": "INSTALACION_PROGRAMADA",
+            "EJECUTADO": "COMPLETO",
+            "VERIFICADO": "COMPLETO",
+            "COMPLETO": "COMPLETO",
+            "OBSERVADO": "RELEVADO",
+        }
+        normalized = legacy_map.get(raw_state, raw_state)
+        return normalized if normalized in SST_CARTELERIA_STATE_LABELS else ""
+
+    def _sst_carteleria_has_relevamiento(record):
+        for field in (
+            "fecha_solicitud",
+            "fecha_pedido",
+            "fecha_entrega",
+            "fecha_disponibilidad",
+            "fecha_instalacion",
+            "fecha_programada_colocacion",
+            "fecha_colocacion",
+            "observaciones",
+        ):
+            if str(record.get(field) or "").strip():
+                return True
+        if _sst_carteleria_normalize_manual_state(record.get("estado")):
+            return True
+        return any(_sst_int_nonneg(record.get(field)) for field in ("cantidad_requerida", "cantidad_instalada"))
+
     def _sst_carteleria_state_code(record):
-        raw_state = _sst_clean_upper(record.get("estado"))
+        if not _sst_carteleria_has_relevamiento(record):
+            return "NO_RELEVADO"
+        raw_state = _sst_carteleria_normalize_manual_state(record.get("estado"))
         if raw_state in SST_MANUAL_CARTELERIA_STATES:
             return raw_state
-        if record.get("fecha_verificacion"):
-            return "VERIFICADO"
-        if record.get("fecha_colocacion"):
-            return "EJECUTADO"
-        faltante = max(_sst_int_nonneg(record.get("cantidad_requerida")) - _sst_int_nonneg(record.get("cantidad_instalada")), 0)
-        if record.get("fecha_programada_colocacion") and faltante > 0:
-            return "PROGRAMADO"
-        if record.get("fecha_disponibilidad") and faltante > 0:
-            return "DISPONIBLE"
-        if record.get("fecha_pedido") and faltante > 0:
-            return "PEDIDO_REALIZADO"
-        if not any([
-            record.get("fecha_relevamiento"),
-            _sst_int_nonneg(record.get("cantidad_requerida")),
-            _sst_int_nonneg(record.get("cantidad_instalada")),
-        ]):
-            return "NO_RELEVADO"
-        if faltante > 0:
-            return "RELEVADO_CON_FALTANTES"
-        return "RELEVADO_SIN_FALTANTES"
+        requerida = _sst_int_nonneg(record.get("cantidad_requerida") or record.get("requeridos"))
+        instalada = _sst_int_nonneg(record.get("cantidad_instalada") or record.get("instalados"))
+        faltante = max(requerida - instalada, 0)
+        fecha_solicitud = str(record.get("fecha_solicitud") or record.get("fecha_pedido") or "").strip()
+        fecha_entrega = str(record.get("fecha_entrega") or record.get("fecha_disponibilidad") or "").strip()
+        fecha_instalacion = (
+            str(record.get("fecha_instalacion") or "").strip()
+            or str(record.get("fecha_colocacion") or "").strip()
+            or str(record.get("fecha_programada_colocacion") or "").strip()
+        )
+        if requerida > 0 and instalada >= requerida:
+            return "COMPLETO"
+        if fecha_instalacion and faltante > 0:
+            return "INSTALACION_PROGRAMADA"
+        if fecha_entrega and faltante > 0:
+            return "MATERIAL_RECIBIDO"
+        if fecha_solicitud and faltante > 0:
+            return "COMPRA_EN_PROCESO"
+        if requerida > 0 and faltante > 0:
+            return "PENDIENTE_SOLICITUD"
+        return "RELEVADO"
+
+    def _sst_carteleria_action_text(record):
+        state_code = _sst_clean_upper(record.get("state_code") or _sst_carteleria_state_code(record))
+        if state_code == "NO_RELEVADO":
+            return "Relevar sede."
+        if state_code == "RELEVADO":
+            return "Solicitar compra."
+        if state_code == "PENDIENTE_SOLICITUD":
+            return "Solicitar compra."
+        if state_code == "COMPRA_EN_PROCESO":
+            return "Esperar entrega."
+        if state_code == "MATERIAL_RECIBIDO":
+            return "Programar instalacion."
+        if state_code == "INSTALACION_PROGRAMADA":
+            return "Instalar carteles."
+        if state_code == "COMPLETO":
+            return "Sin acciones pendientes."
+        return "Abrir"
+
+    def _sst_carteleria_followup_text(record):
+        state_code = _sst_clean_upper(record.get("state_code") or _sst_carteleria_state_code(record))
+        faltantes = max(_sst_int_nonneg(record.get("cantidad_faltante") or record.get("faltantes")), 1)
+        if state_code == "NO_RELEVADO":
+            return "Realizar relevamiento de carteleria por sede."
+        if state_code in {"RELEVADO", "PENDIENTE_SOLICITUD"}:
+            return f"Solicitar compra e implementar {faltantes} cart{'eles' if faltantes != 1 else 'el'} pendientes."
+        if state_code == "COMPRA_EN_PROCESO":
+            return "Hacer seguimiento de la compra de carteleria."
+        if state_code == "MATERIAL_RECIBIDO":
+            return "Programar instalacion de la carteleria recibida."
+        if state_code == "INSTALACION_PROGRAMADA":
+            return "Ejecutar la instalacion programada de carteleria."
+        if state_code == "COMPLETO":
+            return "Sin acciones pendientes sobre carteleria."
+        return "Gestionar carteleria de la sede."
+
+    def _sst_carteleria_has_pending_action(record):
+        state_code = _sst_clean_upper(record.get("state_code") or _sst_carteleria_state_code(record))
+        return state_code in SST_CARTELERIA_PENDING_STATES
+
+    def _sst_carteleria_record_sort_key(item):
+        return (
+            str(item.get("ultima_actualizacion") or ""),
+            str(item.get("fecha_actualizacion") or ""),
+            str(item.get("fecha_creacion") or ""),
+            int(item.get("id") or 0),
+        )
+
+    def _sst_carteleria_item_check_state(record):
+        if not record:
+            return "NO_APLICA"
+        requerida = _sst_int_nonneg(record.get("cantidad_requerida"))
+        instalada = _sst_int_nonneg(record.get("cantidad_instalada"))
+        if requerida > 0 or instalada > 0:
+            return "INSTALADO" if requerida > 0 and instalada >= requerida else "REQUERIDO"
+        if _sst_carteleria_state_code(record) == "COMPLETO":
+            return "INSTALADO"
+        return "REQUERIDO" if _sst_carteleria_has_relevamiento(record) else "NO_APLICA"
 
     def _sst_luces_normalize_manual_state(value):
         raw_state = _sst_clean_upper(value)
         legacy_map = {
-            "NO_APLICA": "RELEVADO",
+            "NO_APLICA": "NO_APLICA",
             "NO_RELEVADO": "SIN_RELEVAR",
             "OPERATIVA": "COMPLETO",
             "COMPLETO_OPERATIVO": "COMPLETO",
@@ -7030,7 +7161,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         if not _sst_luces_has_relevamiento(record):
             return "SIN_RELEVAR"
         if not _sst_bool_flag(record.get("aplica", 1)):
-            return "RELEVADO"
+            return "NO_APLICA"
         raw_state = _sst_luces_normalize_manual_state(record.get("estado"))
         if raw_state in SST_MANUAL_LUCES_STATES:
             return raw_state
@@ -7061,6 +7192,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
     def _sst_luces_action_text(record):
         state_code = _sst_clean_upper(record.get("state_code") or _sst_luces_state_code(record))
         faltantes = _sst_int_nonneg(record.get("cantidad_faltante") or record.get("faltantes"))
+        if state_code == "NO_APLICA":
+            return "Sin acciones pendientes."
         if state_code == "SIN_RELEVAR":
             return "Relevar sede."
         if state_code == "RELEVADO":
@@ -7084,6 +7217,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
     def _sst_luces_followup_text(record):
         state_code = _sst_clean_upper(record.get("state_code") or _sst_luces_state_code(record))
         faltantes = max(_sst_int_nonneg(record.get("cantidad_faltante") or record.get("faltantes")), 1)
+        if state_code == "NO_APLICA":
+            return "Sin acciones pendientes sobre luces de emergencia."
         if state_code == "SIN_RELEVAR":
             return "Realizar relevamiento de luces de emergencia."
         if state_code in {"RELEVADO", "PENDIENTE_DE_SOLICITUD"}:
@@ -7127,26 +7262,182 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             item = {key: row[key] for key in row.keys()}
             item["id"] = int(_row_value(row, "id", 0) or 0)
             item["sede_codigo"] = (_row_value(row, "sede_codigo", "") or "").strip().upper()
-            item["piso"] = (_row_value(row, "piso", "PB") or "PB").strip().upper()
-            item["deposito_codigo"] = (_row_value(row, "deposito_codigo", "") or "").strip().upper()
+            item["piso"] = (_row_value(row, "piso", SST_CARTELERIA_PLACEHOLDER_PISO) or SST_CARTELERIA_PLACEHOLDER_PISO).strip().upper()
+            item["deposito_codigo"] = (_row_value(row, "deposito_codigo", SST_CARTELERIA_PLACEHOLDER_DEPOSITO) or SST_CARTELERIA_PLACEHOLDER_DEPOSITO).strip().upper()
             item["cantidad_requerida"] = _sst_int_nonneg(_row_value(row, "cantidad_requerida", 0))
             item["cantidad_instalada"] = _sst_int_nonneg(_row_value(row, "cantidad_instalada", 0))
             item["cantidad_faltante"] = max(item["cantidad_requerida"] - item["cantidad_instalada"], 0)
-            item["grupo_label"] = SST_CARTELERIA_GROUP_LABELS.get((_row_value(row, "grupo", "") or "").strip().upper(), (_row_value(row, "grupo", "") or "").strip().title())
+            item["tipo_codigo"] = (_row_value(row, "tipo_codigo", "") or "").strip().upper()
+            item["canonical_tipo_codigo"] = _sst_carteleria_canonical_tipo_code(item["tipo_codigo"])
+            if item["canonical_tipo_codigo"]:
+                item["grupo_label"] = SST_CARTELERIA_GROUP_LABELS.get(
+                    SST_CARTELERIA_TIPO_GROUPS.get(item["canonical_tipo_codigo"], ""),
+                    (_row_value(row, "grupo", "") or "").strip().title(),
+                )
+                item["tipo_nombre"] = SST_CARTELERIA_TIPO_LABELS.get(item["canonical_tipo_codigo"], (_row_value(row, "tipo_nombre", "") or "").strip())
+            else:
+                item["grupo_label"] = SST_CARTELERIA_GROUP_LABELS.get((_row_value(row, "grupo", "") or "").strip().upper(), (_row_value(row, "grupo", "") or "").strip().title())
+                item["tipo_nombre"] = (_row_value(row, "tipo_nombre", "") or "").strip()
             item["deposito_label"] = _sst_deposito_label(item["sede_codigo"], item["deposito_codigo"], depositos_map)
+            item["fecha_solicitud"] = (_row_value(row, "fecha_pedido", "") or "").strip()
+            item["fecha_entrega"] = (_row_value(row, "fecha_disponibilidad", "") or "").strip()
+            item["fecha_instalacion"] = (
+                (_row_value(row, "fecha_colocacion", "") or "").strip()
+                or (_row_value(row, "fecha_programada_colocacion", "") or "").strip()
+            )
+            item["estado"] = _sst_carteleria_normalize_manual_state(_row_value(row, "estado", "")) or (_row_value(row, "estado", "") or "").strip().upper()
             item["state_code"] = _sst_carteleria_state_code(item)
             item["state_meta"] = _sst_state_badge(item["state_code"], SST_CARTELERIA_STATE_LABELS)
+            item["action_label"] = _sst_carteleria_action_text(item)
             item["ultima_actualizacion"] = max([
                 str(item.get("fecha_actualizacion") or "").strip(),
-                str(item.get("fecha_verificacion") or "").strip(),
                 str(item.get("fecha_colocacion") or "").strip(),
                 str(item.get("fecha_programada_colocacion") or "").strip(),
-                str(item.get("fecha_disponibilidad") or "").strip(),
-                str(item.get("fecha_pedido") or "").strip(),
+                str(item.get("fecha_entrega") or "").strip(),
+                str(item.get("fecha_solicitud") or "").strip(),
                 str(item.get("fecha_relevamiento") or "").strip(),
+                str(item.get("fecha_creacion") or "").strip(),
             ])
             out.append(item)
         return out
+
+    def _sst_carteleria_primary_record(records):
+        if not records:
+            return None
+        return sorted(list(records), key=_sst_carteleria_record_sort_key, reverse=True)[0]
+
+    def _sst_carteleria_checklist_groups(items):
+        groups = []
+        for group_code in SST_CARTELERIA_GROUP_ORDER:
+            members = [item for item in items if item["group_code"] == group_code]
+            if members:
+                groups.append({
+                    "code": group_code,
+                    "label": SST_CARTELERIA_GROUP_LABELS.get(group_code, group_code.title()),
+                    "items": members,
+                })
+        return groups
+
+    def _sst_carteleria_aggregate_by_sede(records):
+        grouped = defaultdict(list)
+        for item in records:
+            sede_codigo = (_sst_clean_upper(item.get("sede_codigo")) or "").strip().upper()
+            if not sede_codigo:
+                continue
+            grouped[sede_codigo].append(item)
+        out = {}
+        for sede_codigo, sede_records in grouped.items():
+            by_tipo = defaultdict(list)
+            for item in sede_records:
+                canonical_code = item.get("canonical_tipo_codigo") or ""
+                if not canonical_code:
+                    continue
+                by_tipo[canonical_code].append(item)
+            checklist_items = []
+            authoritative_records = []
+            requeridos = 0
+            instalados = 0
+            for canonical_code in SST_CARTELERIA_VISIBLE_CODES:
+                tipo_records = sorted(by_tipo.get(canonical_code, []), key=_sst_carteleria_record_sort_key, reverse=True)
+                placeholder_records = [
+                    item for item in tipo_records
+                    if item.get("piso") == SST_CARTELERIA_PLACEHOLDER_PISO and item.get("deposito_codigo") == SST_CARTELERIA_PLACEHOLDER_DEPOSITO
+                ]
+                effective_records = placeholder_records or tipo_records
+                primary_record = _sst_carteleria_primary_record(effective_records)
+                if placeholder_records:
+                    check_state = _sst_carteleria_item_check_state(primary_record)
+                else:
+                    check_state = "NO_APLICA"
+                    if any(_sst_carteleria_item_check_state(item) == "INSTALADO" for item in effective_records):
+                        check_state = "INSTALADO"
+                    elif any(_sst_carteleria_item_check_state(item) == "REQUERIDO" for item in effective_records):
+                        check_state = "REQUERIDO"
+                if primary_record:
+                    authoritative_records.append(primary_record)
+                if check_state in {"REQUERIDO", "INSTALADO"}:
+                    requeridos += 1
+                if check_state == "INSTALADO":
+                    instalados += 1
+                checklist_items.append({
+                    "code": canonical_code,
+                    "label": SST_CARTELERIA_TIPO_LABELS[canonical_code],
+                    "group_code": SST_CARTELERIA_TIPO_GROUPS[canonical_code],
+                    "group_label": SST_CARTELERIA_GROUP_LABELS.get(SST_CARTELERIA_TIPO_GROUPS[canonical_code], ""),
+                    "order": SST_CARTELERIA_TIPO_ORDER[canonical_code],
+                    "check_state": check_state,
+                    "record_id": int(primary_record.get("id") or 0) if primary_record else 0,
+                    "has_data": bool(primary_record),
+                })
+            primary_record = _sst_carteleria_primary_record(authoritative_records)
+            summary = dict(primary_record or {})
+            summary.update({
+                "id": int(primary_record.get("id") or 0) if primary_record else 0,
+                "primary_record_id": int(primary_record.get("id") or 0) if primary_record else 0,
+                "record_count": len(authoritative_records),
+                "record_ids": [int(item.get("id") or 0) for item in authoritative_records if int(item.get("id") or 0) > 0],
+                "sede_codigo": sede_codigo,
+                "cantidad_requerida": requeridos,
+                "cantidad_instalada": instalados,
+                "cantidad_faltante": max(requeridos - instalados, 0),
+                "faltantes": max(requeridos - instalados, 0),
+                "fecha_solicitud": max((str(item.get("fecha_solicitud") or "").strip() for item in authoritative_records if str(item.get("fecha_solicitud") or "").strip()), default=""),
+                "fecha_entrega": max((str(item.get("fecha_entrega") or "").strip() for item in authoritative_records if str(item.get("fecha_entrega") or "").strip()), default=""),
+                "fecha_instalacion": max((str(item.get("fecha_instalacion") or "").strip() for item in authoritative_records if str(item.get("fecha_instalacion") or "").strip()), default=""),
+                "observaciones": next((str(item.get("observaciones") or "").strip() for item in authoritative_records if str(item.get("observaciones") or "").strip()), ""),
+                "seguimiento_id": next((int(item.get("seguimiento_id") or 0) for item in authoritative_records if int(item.get("seguimiento_id") or 0) > 0), 0),
+                "estado": next((_sst_carteleria_normalize_manual_state(item.get("estado")) for item in authoritative_records if _sst_carteleria_normalize_manual_state(item.get("estado"))), ""),
+                "ultima_actualizacion": max((str(item.get("ultima_actualizacion") or "").strip() for item in authoritative_records if str(item.get("ultima_actualizacion") or "").strip()), default=""),
+                "checklist_items": checklist_items,
+                "checklist_groups": _sst_carteleria_checklist_groups(checklist_items),
+            })
+            summary["porcentaje_cumplimiento"] = int(round((summary["cantidad_instalada"] / summary["cantidad_requerida"]) * 100)) if summary["cantidad_requerida"] else 0
+            summary["state_code"] = _sst_carteleria_state_code(summary)
+            summary["state_meta"] = _sst_state_badge(summary["state_code"], SST_CARTELERIA_STATE_LABELS)
+            summary["action_label"] = _sst_carteleria_action_text(summary)
+            summary["action_button_label"] = "Abrir"
+            out[sede_codigo] = summary
+        return out
+
+    def _sst_carteleria_empty_summary(sede):
+        sede_codigo = (_row_value(sede, "codigo", "") or "").strip().upper()
+        checklist_items = [{
+            "code": code,
+            "label": SST_CARTELERIA_TIPO_LABELS[code],
+            "group_code": SST_CARTELERIA_TIPO_GROUPS[code],
+            "group_label": SST_CARTELERIA_GROUP_LABELS.get(SST_CARTELERIA_TIPO_GROUPS[code], ""),
+            "order": SST_CARTELERIA_TIPO_ORDER[code],
+            "check_state": "NO_APLICA",
+            "record_id": 0,
+            "has_data": False,
+        } for code in SST_CARTELERIA_VISIBLE_CODES]
+        summary = {
+            "id": 0,
+            "primary_record_id": 0,
+            "record_count": 0,
+            "record_ids": [],
+            "sede_codigo": sede_codigo,
+            "sede_nombre": (_row_value(sede, "nombre", "") or "").strip(),
+            "cantidad_requerida": 0,
+            "cantidad_instalada": 0,
+            "cantidad_faltante": 0,
+            "faltantes": 0,
+            "porcentaje_cumplimiento": 0,
+            "fecha_solicitud": "",
+            "fecha_entrega": "",
+            "fecha_instalacion": "",
+            "observaciones": "",
+            "seguimiento_id": 0,
+            "estado": "",
+            "ultima_actualizacion": "",
+            "checklist_items": checklist_items,
+            "checklist_groups": _sst_carteleria_checklist_groups(checklist_items),
+        }
+        summary["state_code"] = _sst_carteleria_state_code(summary)
+        summary["state_meta"] = _sst_state_badge(summary["state_code"], SST_CARTELERIA_STATE_LABELS)
+        summary["action_label"] = _sst_carteleria_action_text(summary)
+        summary["action_button_label"] = "Abrir"
+        return summary
 
     def _sst_fetch_luces_records(con):
         ensure_sst_luces_tables(con)
@@ -7398,144 +7689,180 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
     def _sst_carteleria_context(con):
         ensure_sst_general_table(con)
         ensure_sst_carteleria_tables(con)
-        sedes = _sst_fetch_sedes_base(con)
-        _, depositos_by_sede = _sst_fetch_depositos_map(con)
+        sedes = list(_sst_fetch_sedes_base(con))
         all_records = _sst_fetch_carteleria_records(con)
-        tipos_catalogo = con.execute("""
-            SELECT id, grupo, codigo, nombre, orden
-            FROM sst_carteleria_tipos
-            WHERE COALESCE(activo, 1) = 1
-            ORDER BY grupo, orden, nombre
-        """).fetchall()
+        summary_map = _sst_carteleria_aggregate_by_sede(all_records)
         f_sede = (_sst_clean_upper(request.args.get("sede")) or "").strip().upper()
-        f_piso = (_sst_clean_upper(request.args.get("piso")) or "").strip().upper()
-        f_deposito = (_sst_clean_upper(request.args.get("deposito")) or "").strip().upper()
         f_estado = (_sst_clean_upper(request.args.get("estado")) or "").strip().upper()
         f_q = (request.args.get("q") or "").strip().lower()
         f_month = _sst_int_nonneg(request.args.get("month"))
+        f_open_sede = (_sst_clean_upper(request.args.get("open_sede")) or "").strip().upper()
         f_registro = _sst_int_nonneg(request.args.get("registro") or request.args.get("edit"))
-        filtered = []
-        for item in all_records:
-            if f_sede and item["sede_codigo"] != f_sede:
-                continue
-            if f_piso and item["piso"] != f_piso:
-                continue
-            if f_deposito and item["deposito_codigo"] != f_deposito:
-                continue
-            if f_estado and item["state_code"] != f_estado:
-                continue
-            if f_month:
-                month_dates = _sst_dates_for_month(item, ["fecha_relevamiento", "fecha_pedido", "fecha_disponibilidad", "fecha_programada_colocacion", "fecha_colocacion", "fecha_verificacion", "fecha_actualizacion"])
-                if not any(d.month == f_month for d in month_dates):
-                    continue
-            if f_q:
-                haystack = " ".join([item["sede_codigo"], str(item.get("sede_nombre") or ""), item["piso"], item["deposito_codigo"], str(item.get("deposito_label") or ""), str(item.get("grupo_label") or ""), str(item.get("tipo_nombre") or ""), str(item.get("observaciones") or "")]).lower()
-                if f_q not in haystack:
-                    continue
-            filtered.append(item)
-        selected_sede = next((item for item in sedes if item["codigo"] == f_sede), None)
-        visible_sedes = [selected_sede] if selected_sede else list(sedes)
-        filtered_by_sede = defaultdict(list)
-        for item in filtered:
-            filtered_by_sede[item["sede_codigo"]].append(item)
-        state_by_sede = []
+        selected_filter_sede = next((item for item in sedes if item["codigo"] == f_sede), None)
+        visible_sedes = [selected_filter_sede] if selected_filter_sede else list(sedes)
+        base_rows = []
         for sede in visible_sedes:
             if not sede:
                 continue
             sede_codigo = (_row_value(sede, "codigo", "") or "").strip().upper()
-            sede_records = filtered_by_sede.get(sede_codigo, [])
-            depositos_totales = len(depositos_by_sede.get(sede_codigo, []))
-            depositos_relevados = len({item["deposito_codigo"] for item in sede_records if item["deposito_codigo"]})
-            requeridos = sum(item["cantidad_requerida"] for item in sede_records)
-            instalados = sum(item["cantidad_instalada"] for item in sede_records)
-            faltantes = sum(item["cantidad_faltante"] for item in sede_records)
-            ultima_actualizacion = max((item["ultima_actualizacion"] for item in sede_records if item["ultima_actualizacion"]), default="")
-            if not sede_records:
-                badge = {"label": "No relevado", "class": "sin-dato"}
-            elif any(item["state_code"] == "OBSERVADO" for item in sede_records):
-                badge = {"label": "Observado", "class": "atencion"}
-            elif faltantes > 0:
-                badge = {"label": "Relevado con faltantes", "class": "pendiente"}
-            elif all(item["state_code"] == "VERIFICADO" for item in sede_records):
-                badge = {"label": "Verificado", "class": "correcto"}
-            else:
-                badge = {"label": "Relevado sin faltantes", "class": "correcto"}
-            state_by_sede.append({
-                "sede_codigo": sede_codigo,
-                "sede_nombre": (_row_value(sede, "nombre", "") or "").strip(),
-                "depositos_totales": depositos_totales,
-                "depositos_relevados": depositos_relevados,
-                "requeridos": requeridos,
-                "instalados": instalados,
-                "faltantes": faltantes,
-                "estado_label": badge["label"],
-                "estado_class": badge["class"],
-                "ultima_actualizacion": ultima_actualizacion,
-                "url": url_for("sst_carteleria_home", sede=sede_codigo),
-            })
-        total_sedes_base = len(visible_sedes)
-        sedes_relevadas = len({item["sede_codigo"] for item in filtered if item.get("fecha_relevamiento") or item["cantidad_requerida"] or item["cantidad_instalada"]})
-        pending_rows = [item for item in filtered if item["state_code"] in SST_CARTELERIA_PENDING_STATES]
-        detail_rows = sorted([item for item in filtered if (not selected_sede or item["sede_codigo"] == selected_sede["codigo"])], key=lambda item: (item["piso"], item["deposito_codigo"], item["grupo_label"], item["tipo_nombre"], item["id"]))
-        history_rows = _sst_fetch_historial_rows(con, "carteleria", f_sede)
+            row = dict(summary_map.get(sede_codigo) or _sst_carteleria_empty_summary(sede))
+            row["sede_codigo"] = sede_codigo
+            row["sede_nombre"] = (_row_value(sede, "nombre", "") or "").strip()
+            row["url"] = url_for(
+                "sst_carteleria_home",
+                sede=f_sede or None,
+                estado=f_estado or None,
+                q=f_q or None,
+                month=(f_month or None),
+                open_sede=sede_codigo,
+                registro=(int(row.get("primary_record_id") or 0) or None),
+            )
+            base_rows.append(row)
+        filtered_rows = []
+        for row in base_rows:
+            if f_estado and row["state_code"] != f_estado:
+                continue
+            if f_month:
+                month_dates = _sst_dates_for_month(
+                    row,
+                    ["fecha_solicitud", "fecha_entrega", "fecha_instalacion", "ultima_actualizacion"],
+                )
+                if not any(d.month == f_month for d in month_dates):
+                    continue
+            if f_q:
+                haystack = " ".join([
+                    row["sede_codigo"],
+                    str(row.get("sede_nombre") or ""),
+                    str(row.get("state_meta", {}).get("label", "") or ""),
+                    str(row.get("action_label") or ""),
+                    str(row.get("observaciones") or ""),
+                ]).lower()
+                if f_q not in haystack:
+                    continue
+            filtered_rows.append(row)
+        state_by_sede = sorted(filtered_rows, key=lambda item: item["sede_codigo"])
         selected_record = next((item for item in all_records if int(item["id"]) == f_registro), None)
-        prefill_sede = (_sst_clean_upper(request.args.get("prefill_sede") or f_sede) or "").strip().upper()
-        prefill_piso = (_sst_clean_upper(request.args.get("prefill_piso") or (selected_record.get("piso") if selected_record else "") or "PB") or "PB").strip().upper()
-        prefill_deposito = (_sst_clean_upper(request.args.get("prefill_deposito") or (selected_record.get("deposito_codigo") if selected_record else "") or f_deposito) or "").strip().upper()
-        prefill_tipo_id = _sst_int_nonneg(request.args.get("prefill_tipo_id") or (selected_record.get("tipo_id") if selected_record else 0))
-        prefill_fecha_programada = (request.args.get("prefill_fecha_programada") or (selected_record.get("fecha_programada_colocacion") if selected_record else "") or "").strip()
-        prefill_estado = (_sst_clean_upper(request.args.get("prefill_estado") or (selected_record.get("state_code") if selected_record else "")) or "").strip().upper()
+        detail_sede = f_open_sede or (selected_record.get("sede_codigo") if selected_record else "")
+        selected_summary = next((item for item in base_rows if item["sede_codigo"] == detail_sede), None)
+        history_rows = [
+            item
+            for item in _sst_fetch_historial_rows(con, "carteleria", detail_sede or f_sede)
+            if item.get("accion") in {"alta", "actualizacion", "cambio_estado", "seguimiento"}
+        ]
+        prefill_sede = (_sst_clean_upper(request.args.get("prefill_sede") or detail_sede or f_sede) or "").strip().upper()
+        prefill_estado = _sst_carteleria_normalize_manual_state(request.args.get("prefill_estado") or (selected_summary.get("estado") if selected_summary else ""))
         show_form = bool(request.method == "POST" or request.args.get("mostrar_form"))
+        default_item_states = {code: "NO_APLICA" for code in SST_CARTELERIA_VISIBLE_CODES}
+        if selected_summary:
+            for checklist_item in selected_summary.get("checklist_items", []):
+                default_item_states[checklist_item["code"]] = checklist_item["check_state"]
         form_defaults = {
-            "edit_id": int(selected_record["id"]) if selected_record else 0,
-            "sede_codigo": (selected_record["sede_codigo"] if selected_record else prefill_sede),
-            "piso": (selected_record["piso"] if selected_record else prefill_piso or "PB"),
-            "deposito_codigo": (selected_record["deposito_codigo"] if selected_record else prefill_deposito),
-            "tipo_id": int(selected_record["tipo_id"]) if selected_record else prefill_tipo_id,
-            "cantidad_requerida": int(selected_record["cantidad_requerida"]) if selected_record else 0,
-            "cantidad_instalada": int(selected_record["cantidad_instalada"]) if selected_record else 0,
-            "estado": (selected_record["state_code"] if selected_record else prefill_estado),
-            "fecha_relevamiento": (selected_record.get("fecha_relevamiento") if selected_record else ""),
-            "responsable_relevamiento": (selected_record.get("responsable_relevamiento") if selected_record else _sst_current_user()),
-            "fecha_pedido": (selected_record.get("fecha_pedido") if selected_record else ""),
-            "numero_pedido": (selected_record.get("numero_pedido") if selected_record else ""),
-            "fecha_disponibilidad": (selected_record.get("fecha_disponibilidad") if selected_record else ""),
-            "fecha_programada_colocacion": (selected_record.get("fecha_programada_colocacion") if selected_record else prefill_fecha_programada),
-            "fecha_colocacion": (selected_record.get("fecha_colocacion") if selected_record else ""),
-            "fecha_verificacion": (selected_record.get("fecha_verificacion") if selected_record else ""),
-            "observaciones": (selected_record.get("observaciones") if selected_record else ""),
+            "edit_id": int(selected_summary["primary_record_id"]) if selected_summary else 0,
+            "sede_codigo": (selected_summary["sede_codigo"] if selected_summary else prefill_sede),
+            "estado": (prefill_estado or (selected_summary.get("estado") or "") if selected_summary else prefill_estado),
+            "fecha_solicitud": ((selected_summary.get("fecha_solicitud") or "") if selected_summary else ""),
+            "fecha_entrega": ((selected_summary.get("fecha_entrega") or "") if selected_summary else ""),
+            "fecha_instalacion": ((selected_summary.get("fecha_instalacion") or "") if selected_summary else ""),
+            "observaciones": ((selected_summary.get("observaciones") or "") if selected_summary else ""),
+            "item_states": default_item_states,
         }
+        if request.method == "POST" and (request.form.get("action") or "save").strip().lower() == "save":
+            posted_item_states = {}
+            for code in SST_CARTELERIA_VISIBLE_CODES:
+                choice = (_sst_clean_upper(request.form.get(f"item_state_{code}") or "NO_APLICA") or "NO_APLICA").strip().upper()
+                if choice not in {"NO_APLICA", "REQUERIDO", "INSTALADO"}:
+                    choice = "NO_APLICA"
+                posted_item_states[code] = choice
+            form_defaults.update({
+                "edit_id": _sst_int_nonneg(request.form.get("edit_id")),
+                "sede_codigo": (_sst_clean_upper(request.form.get("sede_codigo")) or "").strip().upper(),
+                "estado": _sst_carteleria_normalize_manual_state(request.form.get("estado")),
+                "fecha_solicitud": (request.form.get("fecha_solicitud") or "").strip(),
+                "fecha_entrega": (request.form.get("fecha_entrega") or "").strip(),
+                "fecha_instalacion": (request.form.get("fecha_instalacion") or "").strip(),
+                "observaciones": (request.form.get("observaciones") or "").strip(),
+                "item_states": posted_item_states,
+            })
+        form_requeridos = sum(1 for state in form_defaults["item_states"].values() if state in {"REQUERIDO", "INSTALADO"})
+        form_instalados = sum(1 for state in form_defaults["item_states"].values() if state == "INSTALADO")
+        form_faltantes = max(form_requeridos - form_instalados, 0)
+        form_porcentaje = int(round((form_instalados / form_requeridos) * 100)) if form_requeridos else 0
+        checklist_catalog = [{
+            "code": code,
+            "label": SST_CARTELERIA_TIPO_LABELS[code],
+            "group_code": SST_CARTELERIA_TIPO_GROUPS[code],
+            "group_label": SST_CARTELERIA_GROUP_LABELS.get(SST_CARTELERIA_TIPO_GROUPS[code], ""),
+            "order": SST_CARTELERIA_TIPO_ORDER[code],
+        } for code in SST_CARTELERIA_VISIBLE_CODES]
+        checklist_groups = _sst_carteleria_checklist_groups([
+            dict(item, check_state=form_defaults["item_states"].get(item["code"], "NO_APLICA"), record_id=0, has_data=False)
+            for item in checklist_catalog
+        ])
+        close_modal_url = url_for(
+            "sst_carteleria_home",
+            sede=f_sede or None,
+            estado=f_estado or None,
+            q=f_q or None,
+            month=(f_month or None),
+        )
+        if selected_summary:
+            def _carteleria_form_url(prefill_estado_value=""):
+                return url_for(
+                    "sst_carteleria_home",
+                    sede=f_sede or None,
+                    estado=f_estado or None,
+                    q=f_q or None,
+                    month=(f_month or None),
+                    open_sede=selected_summary["sede_codigo"],
+                    registro=(int(selected_summary.get("primary_record_id") or 0) or None),
+                    prefill_sede=selected_summary["sede_codigo"],
+                    prefill_estado=(prefill_estado_value or None),
+                    mostrar_form=1,
+                )
+            selected_summary["modal_close_url"] = close_modal_url
+            selected_summary["modal_edit_url"] = _carteleria_form_url(selected_summary.get("state_code") or "")
+            selected_summary["modal_delivery_url"] = _carteleria_form_url("MATERIAL_RECIBIDO")
+            selected_summary["modal_followup_enabled"] = (
+                _sst_carteleria_has_pending_action(selected_summary)
+                and int(selected_summary.get("seguimiento_id") or 0) <= 0
+                and int(selected_summary.get("primary_record_id") or 0) > 0
+            )
+            selected_summary["show_register_delivery"] = selected_summary["state_code"] in {"RELEVADO", "PENDIENTE_SOLICITUD", "COMPRA_EN_PROCESO"}
         return {
             "sst_section": "carteleria",
             "sedes": sedes,
-            "selected_sede": selected_sede,
-            "depositos_options": depositos_by_sede.get(f_sede, []) if f_sede else [],
-            "records": filtered,
+            "selected_sede": next((item for item in sedes if item["codigo"] == (detail_sede or f_sede)), None),
+            "records": all_records,
             "state_by_sede": state_by_sede,
-            "pending_rows": sorted(pending_rows, key=lambda item: (item["sede_codigo"], item["deposito_codigo"], item["tipo_nombre"])),
-            "detail_rows": detail_rows,
             "history_rows": history_rows,
-            "tipos_catalogo": tipos_catalogo,
             "estado_options": [{"code": key, "label": value} for key, value in SST_CARTELERIA_STATE_LABELS.items()],
             "month_options": [{"value": number, "label": label} for number, label in SST_CALENDAR_MONTHS],
+            "checklist_groups": checklist_groups,
+            "item_state_options": [
+                {"code": "NO_APLICA", "label": "No aplica"},
+                {"code": "REQUERIDO", "label": "Falta"},
+                {"code": "INSTALADO", "label": "Instalado"},
+            ],
             "f_sede": f_sede,
-            "f_piso": f_piso,
-            "f_deposito": f_deposito,
             "f_estado": f_estado,
             "f_q": f_q,
             "f_month": f_month,
+            "f_open_sede": f_open_sede,
             "f_registro": f_registro,
             "show_form": show_form,
             "form_defaults": form_defaults,
+            "form_requeridos": form_requeridos,
+            "form_instalados": form_instalados,
+            "form_faltantes": form_faltantes,
+            "form_porcentaje": form_porcentaje,
             "selected_record": selected_record,
-            "kpi_sedes_relevadas": sedes_relevadas,
-            "kpi_sedes_sin_relevar": max(total_sedes_base - sedes_relevadas, 0),
-            "kpi_requeridos": sum(item["cantidad_requerida"] for item in filtered),
-            "kpi_instalados": sum(item["cantidad_instalada"] for item in filtered),
-            "kpi_faltantes": sum(item["cantidad_faltante"] for item in filtered),
-            "kpi_pendiente_compra": sum(1 for item in filtered if item["state_code"] in SST_PURCHASE_STATES),
-            "kpi_pendiente_colocacion": sum(1 for item in filtered if item["state_code"] in {"DISPONIBLE", "PROGRAMADO"}),
-            "kpi_observados": sum(1 for item in filtered if item["state_code"] == "OBSERVADO"),
+            "selected_summary": selected_summary,
+            "kpi_requeridos": sum(item["cantidad_requerida"] for item in state_by_sede),
+            "kpi_instalados": sum(item["cantidad_instalada"] for item in state_by_sede),
+            "kpi_faltantes": sum(item["cantidad_faltante"] for item in state_by_sede),
+            "kpi_sedes_pendientes": sum(1 for item in state_by_sede if item["state_code"] in SST_CARTELERIA_PENDING_STATES),
+            "kpi_compras_en_proceso": sum(1 for item in state_by_sede if item["state_code"] == "COMPRA_EN_PROCESO"),
+            "kpi_colocaciones_programadas": sum(1 for item in state_by_sede if item["state_code"] == "INSTALACION_PROGRAMADA"),
             "fmt_fecha": _sst_fmt_fecha,
         }
 
@@ -7831,7 +8158,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                         cantidad_requerida = 0
                         cantidad_instalada = 0
                         motivo_no_aplica = motivo_no_aplica.strip()
-                        estado = "RELEVADO"
+                        estado = "NO_APLICA"
                         fecha_solicitud_compra = ""
                         referencia_pedido = ""
                         fecha_entrega = ""
@@ -8049,52 +8376,79 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             action = (request.form.get("action") or "save").strip().lower()
             user_name = _sst_current_user()
             if action == "save":
-                edit_id = _sst_int_nonneg(request.form.get("edit_id"))
                 sede_codigo = (_sst_clean_upper(request.form.get("sede_codigo")) or "").strip().upper()
-                piso = (_sst_clean_upper(request.form.get("piso") or "PB") or "PB").strip().upper()
-                deposito_codigo = (_sst_clean_upper(request.form.get("deposito_codigo")) or "").strip().upper()
-                tipo_id = _sst_int_nonneg(request.form.get("tipo_id"))
-                cantidad_requerida = _sst_int_nonneg(request.form.get("cantidad_requerida"))
-                cantidad_instalada = _sst_int_nonneg(request.form.get("cantidad_instalada"))
-                estado = (_sst_clean_upper(request.form.get("estado")) or "").strip().upper()
-                if estado and estado not in SST_CARTELERIA_STATE_LABELS:
-                    estado = ""
-                if not sede_codigo or not deposito_codigo or tipo_id <= 0:
-                    flash("Completa sede, deposito y tipo de cartel.", "warning")
+                estado = _sst_carteleria_normalize_manual_state(request.form.get("estado"))
+                fecha_solicitud = (request.form.get("fecha_solicitud") or "").strip()
+                fecha_entrega = (request.form.get("fecha_entrega") or "").strip()
+                fecha_instalacion = (request.form.get("fecha_instalacion") or "").strip()
+                observaciones = (request.form.get("observaciones") or "").strip()
+                item_states = {}
+                for code in SST_CARTELERIA_VISIBLE_CODES:
+                    choice = (_sst_clean_upper(request.form.get(f"item_state_{code}") or "NO_APLICA") or "NO_APLICA").strip().upper()
+                    if choice not in {"NO_APLICA", "REQUERIDO", "INSTALADO"}:
+                        choice = "NO_APLICA"
+                    item_states[code] = choice
+                if not sede_codigo:
+                    flash("Selecciona una sede.", "warning")
                 else:
-                    duplicate = con.execute("""
-                        SELECT id
-                        FROM sst_carteleria_registros
+                    type_rows = con.execute("""
+                        SELECT id, codigo
+                        FROM sst_carteleria_tipos
                         WHERE COALESCE(activo, 1) = 1
-                          AND UPPER(COALESCE(sede_codigo, '')) = ?
-                          AND UPPER(COALESCE(piso, 'PB')) = ?
-                          AND UPPER(COALESCE(deposito_codigo, '')) = ?
-                          AND tipo_id = ?
-                          AND (? = 0 OR id <> ?)
-                        LIMIT 1
-                    """, (sede_codigo, piso, deposito_codigo, tipo_id, edit_id, edit_id)).fetchone()
-                    if duplicate:
-                        flash("Ya existe un relevamiento activo para esa sede, deposito y tipo.", "warning")
-                    else:
+                    """).fetchall()
+                    type_id_by_code = {
+                        (_row_value(row, "codigo", "") or "").strip().upper(): int(_row_value(row, "id", 0) or 0)
+                        for row in type_rows
+                    }
+                    previous_summary = _sst_carteleria_aggregate_by_sede(
+                        [item for item in _sst_fetch_carteleria_records(con) if item["sede_codigo"] == sede_codigo]
+                    ).get(sede_codigo)
+                    existing_rows = con.execute("""
+                        SELECT r.id, t.codigo
+                        FROM sst_carteleria_registros r
+                        JOIN sst_carteleria_tipos t ON t.id = r.tipo_id
+                        WHERE COALESCE(r.activo, 1) = 1
+                          AND UPPER(COALESCE(r.sede_codigo, '')) = ?
+                          AND UPPER(COALESCE(r.piso, 'SEDE')) = ?
+                          AND UPPER(COALESCE(r.deposito_codigo, 'SEDE')) = ?
+                    """, (sede_codigo, SST_CARTELERIA_PLACEHOLDER_PISO, SST_CARTELERIA_PLACEHOLDER_DEPOSITO)).fetchall()
+                    existing_by_code = {
+                        (_row_value(row, "codigo", "") or "").strip().upper(): int(_row_value(row, "id", 0) or 0)
+                        for row in existing_rows
+                    }
+                    requeridos = sum(1 for choice in item_states.values() if choice in {"REQUERIDO", "INSTALADO"})
+                    instalados = sum(1 for choice in item_states.values() if choice == "INSTALADO")
+                    auto_complete = requeridos > 0 and instalados >= requeridos
+                    fecha_programada = fecha_instalacion if fecha_instalacion and (estado == "INSTALACION_PROGRAMADA" or (not estado and not auto_complete)) else None
+                    fecha_colocacion = fecha_instalacion if fecha_instalacion and (estado == "COMPLETO" or (not estado and auto_complete)) else None
+                    registro_id = 0
+                    for code in SST_CARTELERIA_VISIBLE_CODES:
+                        tipo_id = type_id_by_code.get(code)
+                        if not tipo_id:
+                            continue
+                        choice = item_states.get(code, "NO_APLICA")
+                        cantidad_requerida = 1 if choice in {"REQUERIDO", "INSTALADO"} else 0
+                        cantidad_instalada = 1 if choice == "INSTALADO" else 0
+                        existing_id = int(existing_by_code.get(code) or 0)
                         payload = (
                             sede_codigo,
-                            piso,
-                            deposito_codigo,
+                            SST_CARTELERIA_PLACEHOLDER_PISO,
+                            SST_CARTELERIA_PLACEHOLDER_DEPOSITO,
                             tipo_id,
                             cantidad_requerida,
                             cantidad_instalada,
                             estado or None,
-                            (request.form.get("fecha_relevamiento") or "").strip() or None,
-                            (request.form.get("responsable_relevamiento") or "").strip() or None,
-                            (request.form.get("fecha_pedido") or "").strip() or None,
-                            (request.form.get("numero_pedido") or "").strip() or None,
-                            (request.form.get("fecha_disponibilidad") or "").strip() or None,
-                            (request.form.get("fecha_programada_colocacion") or "").strip() or None,
-                            (request.form.get("fecha_colocacion") or "").strip() or None,
-                            (request.form.get("fecha_verificacion") or "").strip() or None,
-                            (request.form.get("observaciones") or "").strip() or None,
+                            date.today().isoformat(),
+                            user_name,
+                            fecha_solicitud or None,
+                            None,
+                            fecha_entrega or None,
+                            fecha_programada,
+                            fecha_colocacion,
+                            None,
+                            observaciones or None,
                         )
-                        if edit_id:
+                        if existing_id:
                             con.execute("""
                                 UPDATE sst_carteleria_registros
                                 SET sede_codigo = ?, piso = ?, deposito_codigo = ?, tipo_id = ?,
@@ -8105,10 +8459,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                                     fecha_verificacion = ?, observaciones = ?,
                                     actualizado_por = ?, fecha_actualizacion = ?
                                 WHERE id = ?
-                            """, payload + (user_name, _sst_now_ts(), edit_id))
-                            _sst_historial_log(con, "carteleria", "actualizacion", edit_id, sede_codigo, deposito_codigo, "Actualizacion de relevamiento de carteleria.")
-                            flash("Registro de carteleria actualizado.", "success")
-                            registro_id = edit_id
+                            """, payload + (user_name, _sst_now_ts(), existing_id))
+                            registro_id = registro_id or existing_id
                         else:
                             con.execute("""
                                 INSERT INTO sst_carteleria_registros(
@@ -8119,12 +8471,26 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                                 )
                                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                             """, payload + (user_name, user_name, _sst_now_ts(), _sst_now_ts()))
-                            registro_id = int(con.execute("SELECT last_insert_rowid()").fetchone()[0])
-                            _sst_historial_log(con, "carteleria", "alta", registro_id, sede_codigo, deposito_codigo, "Alta de relevamiento de carteleria.")
-                            flash("Registro de carteleria creado.", "success")
-                        con.commit()
-                        con.close()
-                        return redirect(url_for("sst_carteleria_home", sede=sede_codigo, piso=piso, deposito=deposito_codigo, registro=registro_id, mostrar_form=1))
+                            registro_id = registro_id or int(con.execute("SELECT last_insert_rowid()").fetchone()[0])
+                    updated_summary = _sst_carteleria_aggregate_by_sede(
+                        [item for item in _sst_fetch_carteleria_records(con) if item["sede_codigo"] == sede_codigo]
+                    ).get(sede_codigo)
+                    if previous_summary:
+                        _sst_historial_log(con, "carteleria", "actualizacion", registro_id, sede_codigo, "", "Actualizacion de gestion consolidada por sede.")
+                    else:
+                        _sst_historial_log(con, "carteleria", "alta", registro_id, sede_codigo, "", "Alta de gestion consolidada por sede.")
+                    if updated_summary:
+                        previous_label = previous_summary["state_meta"]["label"] if previous_summary else "Sin estado"
+                        current_label = updated_summary["state_meta"]["label"]
+                        if not previous_summary or previous_summary["state_code"] != updated_summary["state_code"]:
+                            detalle = f"{previous_label} -> {current_label}"
+                            if observaciones:
+                                detalle += f" | {observaciones}"
+                            _sst_historial_log(con, "carteleria", "cambio_estado", registro_id, sede_codigo, "", detalle)
+                    flash("Registro de carteleria guardado.", "success")
+                    con.commit()
+                    con.close()
+                    return redirect(url_for("sst_carteleria_home", sede=sede_codigo, open_sede=sede_codigo, registro=registro_id))
             elif action == "delete":
                 record_id = _sst_int_nonneg(request.form.get("record_id"))
                 row = con.execute("SELECT sede_codigo, piso, deposito_codigo FROM sst_carteleria_registros WHERE id = ?", (record_id,)).fetchone()
@@ -8137,15 +8503,34 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     con.commit()
                     con.close()
                     flash("Registro de carteleria dado de baja.", "success")
-                    return redirect(url_for("sst_carteleria_home", sede=sede_codigo, piso=piso, deposito=deposito_codigo))
+                    return redirect(url_for("sst_carteleria_home", sede=sede_codigo))
             elif action == "followup":
                 record_id = _sst_int_nonneg(request.form.get("record_id"))
-                record = next((item for item in _sst_fetch_carteleria_records(con) if int(item["id"]) == record_id), None)
+                raw_record = next((item for item in _sst_fetch_carteleria_records(con) if int(item["id"]) == record_id), None)
+                record = None
+                if raw_record:
+                    record = _sst_carteleria_aggregate_by_sede(
+                        [item for item in _sst_fetch_carteleria_records(con) if item["sede_codigo"] == raw_record["sede_codigo"]]
+                    ).get(raw_record["sede_codigo"])
                 if record:
+                    if not _sst_carteleria_has_pending_action(record):
+                        con.close()
+                        flash("La sede no tiene acciones pendientes para seguimiento.", "warning")
+                        return redirect(url_for("sst_carteleria_home", sede=record["sede_codigo"], open_sede=record["sede_codigo"], registro=record_id))
+                    if int(record.get("seguimiento_id") or 0) > 0:
+                        con.close()
+                        flash("La sede ya tiene un seguimiento vinculado para carteleria.", "warning")
+                        return redirect(url_for("sst_carteleria_home", sede=record["sede_codigo"], open_sede=record["sede_codigo"], registro=record_id))
+                    accion_correctiva = _sst_carteleria_followup_text(record)
                     detalle = (
-                        f"{record['deposito_label']} - {record['tipo_nombre']} - "
-                        f"Faltantes: {record['cantidad_faltante']} - Estado: {record['state_meta']['label']}"
+                        f"Estado: {record['state_meta']['label']} | "
+                        f"Requeridos: {record['cantidad_requerida']} | "
+                        f"Instalados: {record['cantidad_instalada']} | "
+                        f"Faltantes: {record['cantidad_faltante']} | "
+                        f"Proxima accion: {record['action_label']}"
                     )
+                    if str(record.get("observaciones") or "").strip():
+                        detalle += f" | Observaciones: {record['observaciones']}"
                     con.execute("""
                         INSERT INTO sst_general(
                             fecha, sede_codigo, tipo, categoria, area, titulo, detalle,
@@ -8156,21 +8541,25 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     """, (
                         date.today().isoformat(),
                         record["sede_codigo"],
-                        f"Carteleria {record['sede_codigo']} {record['deposito_codigo']}",
+                        f"Carteleria {record['sede_codigo']}",
                         detalle,
                         user_name,
-                        "Solicitar compra o programar colocacion segun corresponda.",
-                        record.get("fecha_programada_colocacion") or record.get("fecha_pedido") or date.today().isoformat(),
-                        record_id,
-                        record["deposito_codigo"],
+                        accion_correctiva,
+                        record.get("fecha_instalacion") or record.get("fecha_entrega") or record.get("fecha_solicitud") or date.today().isoformat(),
+                        int(record.get("primary_record_id") or record_id),
+                        None,
                     ))
                     seguimiento_id = int(con.execute("SELECT last_insert_rowid()").fetchone()[0])
-                    con.execute("UPDATE sst_carteleria_registros SET seguimiento_id = ?, actualizado_por = ?, fecha_actualizacion = ? WHERE id = ?", (seguimiento_id, user_name, _sst_now_ts(), record_id))
-                    _sst_historial_log(con, "carteleria", "seguimiento", record_id, record["sede_codigo"], record["deposito_codigo"], f"Seguimiento #{seguimiento_id} creado.")
+                    con.execute("""
+                        UPDATE sst_carteleria_registros
+                        SET seguimiento_id = ?, actualizado_por = ?, fecha_actualizacion = ?
+                        WHERE COALESCE(activo, 1) = 1 AND UPPER(COALESCE(sede_codigo, '')) = ?
+                    """, (seguimiento_id, user_name, _sst_now_ts(), record["sede_codigo"]))
+                    _sst_historial_log(con, "carteleria", "seguimiento", int(record.get("primary_record_id") or record_id), record["sede_codigo"], "", f"Seguimiento #{seguimiento_id} creado.")
                     con.commit()
                     con.close()
                     flash("Seguimiento creado desde carteleria.", "success")
-                    return redirect(url_for("sst_carteleria_home", sede=record["sede_codigo"], registro=record_id))
+                    return redirect(url_for("sst_carteleria_home", sede=record["sede_codigo"], open_sede=record["sede_codigo"], registro=record_id))
             con.commit()
         context = _sst_carteleria_context(con)
         con.close()
@@ -10018,28 +10407,27 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
 
     def _sst_carteleria_calendar_entry(record, today_ref):
         state_code = _sst_clean_upper(record.get("state_code"))
-        if state_code in {"NO_RELEVADO", "RELEVADO_SIN_FALTANTES"}:
+        if state_code == "COMPLETO":
             return None
         anchor = (
-            _sst_calendar_parse_date(record.get("fecha_programada_colocacion"))
+            _sst_calendar_parse_date(record.get("fecha_instalacion"))
+            or _sst_calendar_parse_date(record.get("fecha_programada_colocacion"))
+            or _sst_calendar_parse_date(record.get("fecha_solicitud"))
             or _sst_calendar_parse_date(record.get("fecha_pedido"))
+            or _sst_calendar_parse_date(record.get("fecha_entrega"))
             or _sst_calendar_parse_date(record.get("fecha_disponibilidad"))
-            or _sst_calendar_parse_date(record.get("fecha_verificacion"))
             or _sst_calendar_parse_date(record.get("fecha_colocacion"))
             or _sst_calendar_parse_date(record.get("fecha_relevamiento"))
             or _sst_calendar_parse_date(record.get("fecha_actualizacion"))
         )
         if not anchor:
             return None
-        if state_code in {"VERIFICADO", "EJECUTADO"}:
-            calendar_state = "cumplido"
-        elif state_code == "OBSERVADO":
-            calendar_state = "pendiente"
-        else:
-            calendar_state = _sst_calendar_open_state(anchor, today_ref)
+        calendar_state = _sst_calendar_open_state(anchor, today_ref)
         detail = (
-            f"{record.get('deposito_label') or '-'} | {record.get('tipo_nombre') or 'Cartel'} | "
-            f"{int(record.get('cantidad_faltante') or 0)} faltantes | Estado: {record.get('state_meta', {}).get('label', '-')}"
+            f"Requeridos: {int(record.get('cantidad_requerida') or 0)} | "
+            f"Instalados: {int(record.get('cantidad_instalada') or 0)} | "
+            f"Faltantes: {int(record.get('cantidad_faltante') or 0)} | "
+            f"Estado: {record.get('state_meta', {}).get('label', '-')}"
         )
         title = "Carteleria operativa"
         return {
@@ -10488,7 +10876,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 ))
 
         if has_carteleria_operativa:
-            for record in _sst_fetch_carteleria_records(con):
+            for record in _sst_carteleria_aggregate_by_sede(_sst_fetch_carteleria_records(con)).values():
                 event_meta = _sst_carteleria_calendar_entry(record, today_ref)
                 if not event_meta or event_meta["event_date"].year != selected_year:
                     continue
@@ -10511,7 +10899,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                         sede=record["sede_codigo"],
                         month=event_meta["event_date"].month,
                         estado=record["state_code"],
-                        registro=record["id"],
+                        open_sede=record["sede_codigo"],
+                        registro=record["primary_record_id"],
                     ),
                     action_label="Abrir carteleria",
                     active=(event_meta["state_key"] != "cumplido"),
@@ -11416,23 +11805,19 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             return ("Requiere atención", "atencion")
 
         if carteleria_records:
-            cart_depositos = len({(item["piso"], item["deposito_codigo"]) for item in carteleria_records})
-            cart_requeridos = sum(int(item.get("cantidad_requerida") or 0) for item in carteleria_records)
-            cart_instalados = sum(int(item.get("cantidad_instalada") or 0) for item in carteleria_records)
-            cart_faltantes = sum(int(item.get("cantidad_faltante") or 0) for item in carteleria_records)
-            cart_pendiente = any(item["state_code"] in SST_CARTELERIA_PENDING_STATES for item in carteleria_records)
-            cart_observado = any(item["state_code"] == "OBSERVADO" for item in carteleria_records)
-            if cart_observado:
-                cart_estado, cart_clase = ("Observado", "atencion")
-            elif cart_faltantes or cart_pendiente:
-                cart_estado, cart_clase = ("Requiere atención", "atencion")
-            elif any(item["state_code"] == "VERIFICADO" for item in carteleria_records):
-                cart_estado, cart_clase = ("Verificado", "correcto")
+            cart_summary = _sst_carteleria_aggregate_by_sede(carteleria_records).get(sede_codigo)
+            if cart_summary:
+                cart_requeridos = int(cart_summary.get("cantidad_requerida") or 0)
+                cart_instalados = int(cart_summary.get("cantidad_instalada") or 0)
+                cart_faltantes = int(cart_summary.get("cantidad_faltante") or 0)
+                cart_estado = cart_summary["state_meta"]["label"]
+                cart_clase = cart_summary["state_meta"]["class"]
+                cart_detail = f"{cart_requeridos} requeridos · {cart_instalados} instalados"
+                if cart_faltantes:
+                    cart_detail += f" · {cart_faltantes} faltantes"
             else:
-                cart_estado, cart_clase = ("Correcto", "correcto")
-            cart_detail = f"{cart_depositos} depósitos relevados · {cart_requeridos} requeridos · {cart_instalados} instalados"
-            if cart_faltantes:
-                cart_detail += f" · {cart_faltantes} faltantes"
+                cart_estado, cart_clase = _control_estado(("cartel", "señal", "senal"))
+                cart_detail = cart_estado
         else:
             cart_estado, cart_clase = _control_estado(("cartel", "señal", "senal"))
             cart_detail = cart_estado
