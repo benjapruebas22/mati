@@ -120,6 +120,30 @@
   box-sizing: border-box;
 }
 
+.sst-op-field select,
+.sst-op-inline-form select,
+.sst-carteleria-grid-row select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  padding-right: 34px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #667085 50%),
+    linear-gradient(135deg, #667085 50%, transparent 50%);
+  background-position:
+    calc(100% - 16px) calc(50% - 2px),
+    calc(100% - 11px) calc(50% - 2px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.sst-op-field select option,
+.sst-op-inline-form select option,
+.sst-carteleria-grid-row select option {
+  font-family: inherit;
+  font-size: 13px;
+}
+
 .sst-op-field textarea,
 .sst-op-inline-form textarea {
   min-height: 86px;
@@ -326,7 +350,7 @@
 .sst-carteleria-item-name {
   font-family: inherit;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.25;
   overflow-wrap: anywhere;
 }
@@ -335,6 +359,7 @@
 .sst-carteleria-grid-row select {
   font-family: inherit;
   font-size: 12px;
+  font-weight: 500;
   min-width: 0;
   width: 100%;
   height: 38px;
