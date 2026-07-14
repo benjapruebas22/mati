@@ -68,36 +68,13 @@
   }
 
   function buildTooltipLines(group) {
-    const event = firstEvent(group);
     const lines = [];
-
-    if (group.type_key === 'matafuegos') {
-      const record = firstRecord(group);
-      if (record && record.label) lines.push(record.label);
-      splitDetailText(group.detail || '')
-        .filter((item) => item.toLowerCase().startsWith('lote'))
-        .forEach((item) => pushIf(lines, item));
-      lines.push(`${Number(group.count || 0)} equipo${Number(group.count || 0) === 1 ? '' : 's'}`);
-      if (group.fecha_evento) lines.push(`Vence: ${formatDate(group.fecha_evento)}`);
-      if (event && event.last_service_date) lines.push(`Ultima recarga: ${formatDate(event.last_service_date)}`);
-    } else if (group.type_key === 'visita') {
-      if (group.fecha_evento) lines.push(`Ultima visita: ${formatDate(group.fecha_evento)}`);
-      pushIf(lines, event && event.visit_type);
-      lines.push(event && event.art_loaded ? 'ART cargada' : 'ART pendiente');
-      lines.push((event && event.observaciones) ? event.observaciones : 'Sin observaciones');
-    } else if (group.type_key === 'desinfeccion') {
-      pushIf(lines, group.title || '');
-      if (event && event.start_date) lines.push(`Inicio: ${formatDate(event.start_date)}`);
-      if (event && event.end_date) lines.push(`Finalizacion: ${formatDate(event.end_date)}`);
-      splitDetailText(group.detail || '').forEach((item) => pushIf(lines, item));
+    if (Array.isArray(group.tooltip_lines)) {
+      group.tooltip_lines.forEach((line) => pushIf(lines, line));
     } else {
       pushIf(lines, group.title || '');
-      splitDetailText(group.detail || '').forEach((item) => pushIf(lines, item));
-      const dateValue = formatDate(group.fecha_evento || '');
-      if (dateValue) lines.push(dateValue);
+      pushIf(lines, group.detail || '');
     }
-
-    if (group.state_label) lines.push(`Estado: ${group.state_label}`);
     lines.push('Click para abrir.');
     return lines;
   }

@@ -4,7 +4,7 @@
 
 {% block extra_head %}
   <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-12-06') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-13-06') }}">
 {% endblock %}
 
 {% block content %}
@@ -103,19 +103,37 @@
 
   <div class="sst-calendar-legend-board sst-calendar-legend-strip">
     <div class="sst-calendar-legend-row">
+      <span class="sst-calendar-legend-title">Modulos</span>
+      <div class="sst-calendar-type-legend">
+        {% for type_item in type_options %}
+        <span class="sst-calendar-type-token"><b>{{ type_item.icon }}</b><small>{{ type_item.label }}</small></span>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="sst-calendar-legend-row">
       <span class="sst-calendar-legend-title">Estados</span>
       <div class="sst-calendar-legend sst-calendar-legend-chips">
         {% for state_item in state_options %}
-        <span class="sst-calendar-legend-item is-{{ state_item.value }}">{{ state_item.icon }} {{ state_item.label }}</span>
+        <span class="sst-calendar-legend-item is-{{ state_item.class }}">{{ state_item.icon }} {{ state_item.label }}</span>
         {% endfor %}
       </div>
     </div>
   </div>
 
+  {% if matafuegos_next and matafuegos_next.year != selected_year %}
+  <div class="sst-calendar-horizon-note">
+    <div>
+      <strong>🧯 Matafuegos fuera del año visible</strong>
+      <span>Proximo vencimiento: {{ matafuegos_next.month_label }} {{ matafuegos_next.year }} · {{ matafuegos_next.sedes_count }} sedes · {{ matafuegos_next.count }} equipos</span>
+    </div>
+    <a class="sst-op-btn" href="{{ url_for('matafuegos_home', sede=filters.sede or None, vencimiento='proximos') }}">Ver Matafuegos</a>
+  </div>
+  {% endif %}
+
   <section class="sst-calendar-matrix-shell">
     <div class="sst-calendar-matrix-titlebar">
       <h2>Matriz operativa anual</h2>
-      <div class="sst-op-count">{{ total_filtered_events }} registros visibles</div>
+      <div class="sst-op-count">{{ total_filtered_events }} eventos visibles</div>
     </div>
 
     <div class="sst-calendar-table-wrap sst-calendar-table-wrap-wide">
@@ -148,7 +166,7 @@
                   aria-label="{{ group.aria_label }}"
                 >
                   <span class="sst-cal-group-icon">{{ group.type_icon }}</span>
-                  {% if group.count > 1 %}<sup class="sst-cal-group-count">{{ group.count }}</sup>{% endif %}
+                  {% if group.badge_count %}<sup class="sst-cal-group-count">{{ group.badge_count }}</sup>{% endif %}
                 </a>
                 {% endfor %}
               </div>
@@ -195,7 +213,7 @@
               aria-label="{{ group.aria_label }}"
             >
               <span class="sst-cal-group-icon">{{ group.type_icon }}</span>
-              {% if group.count > 1 %}<sup class="sst-cal-group-count">{{ group.count }}</sup>{% endif %}
+              {% if group.badge_count %}<sup class="sst-cal-group-count">{{ group.badge_count }}</sup>{% endif %}
             </a>
             {% endfor %}
           </div>
@@ -234,5 +252,5 @@
   </div>
 </div>
 <script id="sstCalendarPayload" type="application/json">{{ matrix_payload|tojson }}</script>
-<script src="{{ url_for('static', filename='sst/sst_calendario_operativo.js', v='2026-07-12-03') }}"></script>
+<script src="{{ url_for('static', filename='sst/sst_calendario_operativo.js', v='2026-07-13-01') }}"></script>
 {% endblock %}

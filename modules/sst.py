@@ -161,7 +161,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         "cumplido": {"label": "Cumplido", "class": "ok", "rank": 10, "icon": "🟢"},
         "programado": {"label": "Programado", "class": "info", "rank": 20, "icon": "🔵"},
         "proximo": {"label": "Proximo", "class": "warn", "rank": 40, "icon": "🟡"},
-        "pendiente": {"label": "Pendiente", "class": "warn", "rank": 45, "icon": "🟠"},
+        "pendiente": {"label": "Pendiente", "class": "pending", "rank": 45, "icon": "🟠"},
         "en_seguimiento": {"label": "En seguimiento", "class": "follow", "rank": 50, "icon": "🟣"},
         "vencido": {"label": "Vencido", "class": "danger", "rank": 60, "icon": "🔴"},
         "sin_datos": {"label": "Sin datos", "class": "muted", "rank": 15, "icon": "⚪"},
@@ -10543,72 +10543,220 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             return "proximo"
         return "programado"
 
+    def _sst_calendar_short_date(value):
+        parsed = value if isinstance(value, date) else _sst_calendar_parse_date(value)
+        if not parsed:
+            return ""
+        return parsed.strftime("%d/%m/%Y")
+
+    def _sst_calendar_count_text(count_value, singular, plural):
+        count = max(0, int(count_value or 0))
+        return f"{count} {singular if count == 1 else plural}"
+
+    def _sst_calendar_carteleria_state_key(state_code, anchor_date, today_ref):
+        state = _sst_clean_upper(state_code)
+        if state == "NO_RELEVADO":
+            return "sin_datos"
+        if state in {"RELEVADO", "PENDIENTE_SOLICITUD"}:
+            return "pendiente"
+        if state == "COMPRA_EN_PROCESO":
+            return "en_seguimiento"
+        if state == "MATERIAL_RECIBIDO":
+            return "pendiente"
+        if state == "INSTALACION_PROGRAMADA":
+            if anchor_date and anchor_date < today_ref:
+                return "vencido"
+            return "programado"
+        if state == "COMPLETO":
+            return "cumplido"
+        return "pendiente"
+
+    def _sst_calendar_luces_state_key(state_code, anchor_date, today_ref):
+        state = _sst_clean_upper(state_code)
+        if state == "SIN_RELEVAR":
+            return "sin_datos"
+        if state in {"RELEVADO", "PENDIENTE_DE_SOLICITUD"}:
+            return "pendiente"
+        if state == "EN_PROCESO_DE_COMPRA":
+            return "en_seguimiento"
+        if state == "MATERIAL_RECIBIDO":
+            return "pendiente"
+        if state == "INSTALACION_PROGRAMADA":
+            if anchor_date and anchor_date < today_ref:
+                return "vencido"
+            return "programado"
+        if state == "MANTENIMIENTO":
+            return "vencido"
+        if state == "COMPLETO":
+            return "cumplido"
+        return "pendiente"
+
     def _sst_carteleria_calendar_entry(record, today_ref):
         state_code = _sst_clean_upper(record.get("state_code"))
-        if state_code == "COMPLETO":
-            return None
-        anchor = (
-            _sst_calendar_parse_date(record.get("fecha_instalacion"))
-            or _sst_calendar_parse_date(record.get("fecha_programada_colocacion"))
-            or _sst_calendar_parse_date(record.get("fecha_solicitud"))
-            or _sst_calendar_parse_date(record.get("fecha_pedido"))
-            or _sst_calendar_parse_date(record.get("fecha_entrega"))
-            or _sst_calendar_parse_date(record.get("fecha_disponibilidad"))
-            or _sst_calendar_parse_date(record.get("fecha_colocacion"))
-            or _sst_calendar_parse_date(record.get("fecha_relevamiento"))
-            or _sst_calendar_parse_date(record.get("fecha_actualizacion"))
-        )
-        if not anchor:
-            return None
-        calendar_state = _sst_calendar_open_state(anchor, today_ref)
-        detail = (
-            f"Requeridos: {int(record.get('cantidad_requerida') or 0)} | "
-            f"Instalados: {int(record.get('cantidad_instalada') or 0)} | "
-            f"Faltantes: {int(record.get('cantidad_faltante') or 0)} | "
-            f"Estado: {record.get('state_meta', {}).get('label', '-')}"
-        )
-        title = "Carteleria operativa"
+        requerida = int(record.get("cantidad_requerida") or 0)
+        faltante = int(record.get("cantidad_faltante") or 0)
+        anchor_sources = {
+            "NO_RELEVADO": (
+                record.get("fecha_relevamiento"),
+                record.get("fecha_actualizacion"),
+            ),
+            "RELEVADO": (
+                record.get("fecha_relevamiento"),
+                record.get("fecha_actualizacion"),
+            ),
+            "PENDIENTE_SOLICITUD": (
+                record.get("fecha_relevamiento"),
+                record.get("fecha_solicitud"),
+                record.get("fecha_pedido"),
+                record.get("fecha_actualizacion"),
+            ),
+            "COMPRA_EN_PROCESO": (
+                record.get("fecha_solicitud"),
+                record.get("fecha_pedido"),
+                record.get("fecha_actualizacion"),
+            ),
+            "MATERIAL_RECIBIDO": (
+                record.get("fecha_entrega"),
+                record.get("fecha_disponibilidad"),
+                record.get("fecha_actualizacion"),
+            ),
+            "INSTALACION_PROGRAMADA": (
+                record.get("fecha_instalacion"),
+                record.get("fecha_programada_colocacion"),
+                record.get("fecha_colocacion"),
+                record.get("fecha_actualizacion"),
+            ),
+            "COMPLETO": (
+                record.get("fecha_colocacion"),
+                record.get("fecha_instalacion"),
+                record.get("fecha_programada_colocacion"),
+                record.get("fecha_entrega"),
+                record.get("fecha_actualizacion"),
+            ),
+        }
+        anchor = next(
+            (
+                _sst_calendar_parse_date(value)
+                for value in anchor_sources.get(state_code, ())
+                if _sst_calendar_parse_date(value)
+            ),
+            None,
+        ) or today_ref
+        if state_code == "NO_RELEVADO":
+            title = "Relevamiento pendiente"
+            detail = ""
+        elif state_code == "RELEVADO":
+            title = "Relevada"
+            detail = (f"{faltante} faltantes" if faltante > 0 else "")
+        elif state_code == "PENDIENTE_SOLICITUD":
+            title = "Pendiente de solicitud"
+            detail = _sst_calendar_count_text(max(faltante, requerida), "cartel", "carteles")
+        elif state_code == "COMPRA_EN_PROCESO":
+            title = "En proceso de compra"
+            detail = _sst_calendar_count_text(max(faltante, requerida), "cartel", "carteles")
+        elif state_code == "MATERIAL_RECIBIDO":
+            title = "Material recibido"
+            detail = _sst_calendar_count_text(max(faltante, requerida), "cartel", "carteles")
+        elif state_code == "INSTALACION_PROGRAMADA":
+            title = "Colocacion programada"
+            detail = _sst_calendar_short_date(anchor) or _sst_calendar_count_text(max(faltante, requerida), "cartel", "carteles")
+        else:
+            title = "Completa"
+            detail = _sst_calendar_short_date(anchor)
         return {
             "event_date": anchor,
-            "state_key": calendar_state,
+            "state_key": _sst_calendar_carteleria_state_key(state_code, anchor, today_ref),
             "title": title,
             "detail": detail,
+            "units": (max(faltante, 1) if state_code != "COMPLETO" else 1),
         }
 
     def _sst_luces_calendar_entries(record, today_ref):
         state_code = _sst_clean_upper(record.get("state_code"))
-        entries = []
-        solicitud_anchor = _sst_calendar_parse_date(record.get("fecha_solicitud_compra"))
-        entrega_anchor = _sst_calendar_parse_date(record.get("fecha_entrega"))
-        colocacion_anchor = _sst_calendar_parse_date(record.get("fecha_colocacion")) or _sst_calendar_parse_date(record.get("fecha_programada_colocacion"))
-        detail_base = (
-            f"Estado: {record.get('state_meta', {}).get('label', '-')} | "
-            f"Requeridas: {int(record.get('cantidad_requerida') or 0)} | "
-            f"Instaladas: {int(record.get('cantidad_instalada') or 0)} | "
-            f"Faltantes: {int(record.get('cantidad_faltante') or 0)}"
-        )
-        if solicitud_anchor:
-            entries.append({
-                "event_date": solicitud_anchor,
-                "state_key": _sst_calendar_open_state(solicitud_anchor, today_ref),
-                "title": "Solicitud de compra de luces",
-                "detail": detail_base,
-            })
-        if entrega_anchor:
-            entries.append({
-                "event_date": entrega_anchor,
-                "state_key": _sst_calendar_open_state(entrega_anchor, today_ref),
-                "title": "Entrega prevista de luces",
-                "detail": detail_base,
-            })
-        if colocacion_anchor:
-            entries.append({
-                "event_date": colocacion_anchor,
-                "state_key": ("cumplido" if state_code == "COMPLETO" else _sst_calendar_open_state(colocacion_anchor, today_ref)),
-                "title": "Instalacion de luces",
-                "detail": detail_base,
-            })
-        return entries
+        if state_code == "NO_APLICA":
+            return []
+        requerida = int(record.get("cantidad_requerida") or 0)
+        faltante = int(record.get("cantidad_faltante") or 0)
+        fuera_servicio = int(record.get("cantidad_fuera_servicio") or 0)
+        anchor_sources = {
+            "SIN_RELEVAR": (
+                record.get("fecha_actualizacion"),
+                record.get("fecha_creacion"),
+            ),
+            "RELEVADO": (
+                record.get("fecha_actualizacion"),
+                record.get("fecha_creacion"),
+            ),
+            "PENDIENTE_DE_SOLICITUD": (
+                record.get("fecha_actualizacion"),
+                record.get("fecha_creacion"),
+            ),
+            "EN_PROCESO_DE_COMPRA": (
+                record.get("fecha_solicitud_compra"),
+                record.get("fecha_actualizacion"),
+            ),
+            "MATERIAL_RECIBIDO": (
+                record.get("fecha_entrega"),
+                record.get("fecha_actualizacion"),
+            ),
+            "INSTALACION_PROGRAMADA": (
+                record.get("fecha_colocacion"),
+                record.get("fecha_programada_colocacion"),
+                record.get("fecha_actualizacion"),
+            ),
+            "COMPLETO": (
+                record.get("fecha_colocacion"),
+                record.get("fecha_programada_colocacion"),
+                record.get("fecha_actualizacion"),
+            ),
+            "MANTENIMIENTO": (
+                record.get("fecha_mantenimiento"),
+                record.get("fecha_actualizacion"),
+            ),
+        }
+        anchor = next(
+            (
+                _sst_calendar_parse_date(value)
+                for value in anchor_sources.get(state_code, ())
+                if _sst_calendar_parse_date(value)
+            ),
+            None,
+        ) or today_ref
+        if state_code == "SIN_RELEVAR":
+            title = "Sin relevar"
+            detail = ""
+            units = 1
+        elif state_code in {"RELEVADO", "PENDIENTE_DE_SOLICITUD"}:
+            title = "Pendiente de solicitud"
+            detail = _sst_calendar_count_text(max(faltante, requerida), "equipo", "equipos")
+            units = max(faltante, 1)
+        elif state_code == "EN_PROCESO_DE_COMPRA":
+            title = "En proceso de compra"
+            detail = _sst_calendar_count_text(max(faltante, requerida), "equipo", "equipos")
+            units = max(faltante, 1)
+        elif state_code == "MATERIAL_RECIBIDO":
+            title = "Material recibido"
+            detail = _sst_calendar_count_text(max(faltante, requerida), "equipo", "equipos")
+            units = max(faltante, 1)
+        elif state_code == "INSTALACION_PROGRAMADA":
+            title = "Colocacion programada"
+            detail = _sst_calendar_short_date(anchor) or _sst_calendar_count_text(max(faltante, requerida), "equipo", "equipos")
+            units = max(faltante, 1)
+        elif state_code == "MANTENIMIENTO":
+            title = "Requiere mantenimiento"
+            detail = _sst_calendar_count_text(max(fuera_servicio, 1), "equipo", "equipos")
+            units = max(fuera_servicio, 1)
+        else:
+            title = "Completo"
+            detail = _sst_calendar_short_date(anchor)
+            units = 1
+        return [{
+            "event_date": anchor,
+            "state_key": _sst_calendar_luces_state_key(state_code, anchor, today_ref),
+            "title": title,
+            "detail": detail,
+            "units": units,
+        }]
 
     def _sst_calendar_collect_events(con, selected_year):
         ensure_sst_visitas_docs_tables(con)
@@ -10741,7 +10889,6 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 else:
                     estado = "programado"
                 count_items = len(rows_group)
-                title = "Vence 1 matafuego" if count_items == 1 else f"Vencen {count_items} matafuegos"
                 fechas_count = defaultdict(int)
                 lotes = []
                 recargas = []
@@ -10759,15 +10906,23 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                         lote = f"{lote_label} ({lote_month})"
                     if lote and lote.lower() != "otro" and lote not in lotes:
                         lotes.append(lote)
-                fechas_txt = []
-                for fecha_item in sorted(fechas_count.keys()):
-                    fechas_txt.append(f"{fecha_item.strftime('%d/%m')} ({fechas_count[fecha_item]})")
-                detail_parts = []
-                if lotes:
-                    detail_parts.append("Lote: " + ", ".join(lotes[:3]))
-                if fechas_txt:
-                    detail_parts.append("Fechas: " + " · ".join(fechas_txt[:4]))
-                detail = " | ".join(detail_parts) if detail_parts else "Vencimiento agrupado por sede y mes."
+                lote_preview = lotes[0] if lotes else ""
+                lote_titulo = lote_preview.split("(", 1)[0].strip()
+                lote_mes = ""
+                if "(" in lote_preview and ")" in lote_preview:
+                    lote_mes = lote_preview.split("(", 1)[1].split(")", 1)[0].strip().lower()
+                if estado == "vencido":
+                    title = "Vencidos"
+                    detail = _sst_calendar_count_text(count_items, "equipo", "equipos")
+                elif lote_titulo and lote_mes:
+                    title = f"{lote_titulo} vence en {lote_mes}"
+                    detail = _sst_calendar_count_text(count_items, "equipo", "equipos")
+                elif estado == "proximo":
+                    title = "Proximo vencimiento"
+                    detail = _sst_calendar_count_text(count_items, "equipo", "equipos")
+                else:
+                    title = "Vencimiento programado"
+                    detail = _sst_calendar_count_text(count_items, "equipo", "equipos")
                 ultima_recarga = max(recargas).isoformat() if recargas else ""
                 records = []
                 rows_sorted = sorted(
@@ -10820,6 +10975,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     url_detail=url_for(
                         "matafuegos_home",
                         sede=sede_codigo,
+                        lote_vencimiento=(lote_titulo or None),
                         vencimiento=("vencidos" if estado == "vencido" else ("proximos" if estado == "proximo" else "todos")),
                     ),
                     action_label="Ver matafuegos",
@@ -10880,36 +11036,37 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 if not sede_codigo:
                     continue
                 sede_info = sedes_map.get(sede_codigo, {})
-                estado_raw = (_row_value(row, "estado", "") or "").strip().upper()
-                if estado_raw in pending_states and event_date < today_ref:
-                    estado = "vencido"
-                elif estado_raw in pending_states:
-                    estado = "pendiente"
-                elif event_date > today_ref:
-                    estado = "programado"
-                else:
-                    estado = "cumplido"
-                if estado == "vencido":
-                    title = "Visita vencida"
-                elif estado == "pendiente":
-                    title = "Visita pendiente"
-                elif estado == "programado":
-                    title = "Visita programada"
-                else:
-                    title = "Visita realizada"
-                detail_parts = []
-                if (_row_value(row, "tipo_visita", "") or "").strip():
-                    detail_parts.append((_row_value(row, "tipo_visita", "") or "").strip())
-                if (_row_value(row, "responsable", "") or "").strip():
-                    detail_parts.append((_row_value(row, "responsable", "") or "").strip())
-                if (_row_value(row, "observaciones", "") or "").strip():
-                    detail_parts.append((_row_value(row, "observaciones", "") or "").strip())
                 visit_id = int(_row_value(row, "id", 0) or 0)
                 visit_docs = docs_by_visit.get(visit_id, [])
                 art_loaded = any(
                     (_row_value(item, "archivo", "") or "").strip() or (_row_value(item, "drive_url", "") or "").strip()
                     for item in visit_docs
                 )
+                estado_raw = (_row_value(row, "estado", "") or "").strip().upper()
+                visit_type = (_row_value(row, "tipo_visita", "") or "").strip().upper()
+                observaciones = (_row_value(row, "observaciones", "") or "").strip()
+                detail = _sst_calendar_short_date(event_date)
+                if event_date > today_ref:
+                    estado = "programado"
+                    title = "Programada"
+                elif estado_raw == "REQUIERE_CORRECCION":
+                    estado = "en_seguimiento"
+                    title = "Seguimiento requerido"
+                elif estado_raw == "PEND_ANALISIS":
+                    estado = "pendiente"
+                    title = "Pendiente"
+                elif estado_raw == "CON_OBS" or observaciones:
+                    estado = "en_seguimiento"
+                    title = "Con observaciones"
+                elif visit_type == "ART" and art_loaded:
+                    estado = "cumplido"
+                    title = "ART realizada"
+                elif visit_type == "ART" and not art_loaded:
+                    estado = "pendiente"
+                    title = "Pendiente"
+                else:
+                    estado = "cumplido"
+                    title = "Realizada"
                 events.append(_sst_calendar_build_event(
                     source_id=str(_row_value(row, "id", "")),
                     source_type="sst_visitas",
@@ -10919,7 +11076,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     event_date=event_date,
                     type_key="visita",
                     title=title,
-                    detail=" · ".join(detail_parts) if detail_parts else "Visita operativa de sede.",
+                    detail=detail,
                     state_key=estado,
                     responsible=(_row_value(row, "responsable", "") or "").strip(),
                     url_detail=url_for("sst_sede_ficha", codigo=sede_codigo),
@@ -10927,7 +11084,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     active=(estado != "cumplido"),
                     extra={
                         "visit_type": (_row_value(row, "tipo_visita", "") or "").strip(),
-                        "observaciones": (_row_value(row, "observaciones", "") or "").strip(),
+                        "observaciones": observaciones,
                         "art_loaded": art_loaded,
                         "visit_documents_count": len(visit_docs),
                         "type_icon": "\U0001F477",
@@ -10970,24 +11127,20 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 estado_raw = (_row_value(row, "estado", "") or "").strip().upper()
                 if estado_raw == "FINALIZADA":
                     estado = "cumplido"
-                    title = "Desinfeccion realizada"
+                    title = "Realizada"
+                    detail = _sst_calendar_short_date(fecha_fin or event_date)
                 elif fecha_inicio and fecha_inicio > today_ref:
                     estado = "programado"
-                    title = "Desinfeccion programada"
-                elif estado_raw == "EN_CURSO":
-                    estado = "pendiente"
-                    title = "Desinfeccion en curso"
+                    title = "Programada"
+                    detail = _sst_calendar_short_date(fecha_inicio)
                 elif event_date < today_ref:
-                    estado = "pendiente"
-                    title = "Desinfeccion pendiente"
+                    estado = "vencido"
+                    title = "Vencida"
+                    detail = _sst_calendar_short_date(event_date)
                 else:
-                    estado = "programado"
-                    title = "Desinfeccion programada"
-                detail_parts = []
-                if (_row_value(row, "titulo", "") or "").strip():
-                    detail_parts.append((_row_value(row, "titulo", "") or "").strip())
-                if (_row_value(row, "descripcion", "") or "").strip():
-                    detail_parts.append((_row_value(row, "descripcion", "") or "").strip())
+                    estado = "pendiente"
+                    title = "Pendiente"
+                    detail = _sst_calendar_short_date(event_date)
                 events.append(_sst_calendar_build_event(
                     source_id=str(_row_value(row, "id", "")),
                     source_type="obras_sede",
@@ -10997,7 +11150,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     event_date=event_date,
                     type_key="desinfeccion",
                     title=title,
-                    detail=" | ".join(detail_parts) if detail_parts else "Desinfeccion operativa por sede.",
+                    detail=detail,
                     state_key=estado,
                     responsible="",
                     url_detail=url_for("obras_home", sede=sede_codigo, panel="panel-desinf"),
@@ -11042,7 +11195,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     ),
                     action_label="Abrir carteleria",
                     active=(event_meta["state_key"] != "cumplido"),
-                    units=max(1, int(record.get("cantidad_faltante") or 1)),
+                    units=max(1, int(event_meta.get("units") or 1)),
                 ))
 
         if has_luces_operativa:
@@ -11074,7 +11227,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                         ),
                         action_label="Abrir luces",
                         active=(event_meta["state_key"] != "cumplido"),
-                        units=max(1, int(record.get("cantidad_faltante") or 0) or 1),
+                        units=max(1, int(event_meta.get("units") or 1)),
                     ))
 
         if _table_exists(con, "sst_general"):
@@ -11293,12 +11446,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                             region_label=sede_item["region"],
                             event_date=today_ref,
                             type_key=control_type,
-                            title=f"{_sst_calendar_type_meta(control_type)['label']} sin relevamiento",
-                            detail=(
-                                "No hay plano ni carteleria relevados para la sede."
-                                if control_type == "carteleria"
-                                else "No hay control cargado para la sede."
-                            ),
+                            title=("Relevamiento pendiente" if control_type == "carteleria" else "Sin relevar"),
+                            detail="",
                             state_key="sin_datos",
                             responsible="",
                             url_detail=(
@@ -11332,12 +11481,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                         region_label=sede_item["region"],
                         event_date=anchor,
                         type_key=control_type,
-                        title=f"{_sst_calendar_type_meta(control_type)['label']} requiere atencion",
-                        detail=(
-                            "Plano o carteleria con observacion pendiente o sin cierre."
-                            if control_type == "carteleria"
-                            else "Control con observacion pendiente o sin cierre."
-                        ),
+                        title=("Relevada" if control_type == "carteleria" else "Relevado"),
+                        detail="Pendiente de gestion.",
                         state_key="pendiente",
                         responsible="",
                         url_detail=(
@@ -11398,6 +11543,16 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 continue
             filtered.append(event)
         return filtered
+
+    def _sst_calendar_group_tooltip_lines(group):
+        lines = []
+        title = str(group.get("title") or "").strip()
+        detail = str(group.get("detail") or "").strip()
+        if title:
+            lines.append(title)
+        if detail and detail.lower() != title.lower():
+            lines.append(detail)
+        return lines[:2]
 
     def _sst_calendar_build_matrix(sedes, events):
         cells = defaultdict(list)
@@ -11469,14 +11624,15 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     ),
                 )
                 for indicator in indicators:
-                    indicator["tooltip_title"] = f"{indicator.get('type_icon', '')} {indicator['type_label']}".strip()
-                    indicator["tooltip_sede"] = indicator["sede_codigo"]
-                    indicator["tooltip_detail"] = indicator["title"] or indicator["detail"] or indicator["type_label"]
-                    indicator["tooltip_date"] = indicator["fecha_evento"]
-                    indicator["tooltip_state"] = f"{indicator.get('state_icon', '')} {indicator['state_label']}".strip()
+                    indicator["badge_count"] = (
+                        int(indicator["count"])
+                        if (indicator["events_count"] > 1 or indicator["type_key"] == "matafuegos") and int(indicator["count"]) > 1
+                        else 0
+                    )
+                    indicator["tooltip_lines"] = _sst_calendar_group_tooltip_lines(indicator)
                     indicator["aria_label"] = (
                         f"{indicator['type_label']} en {indicator['sede_codigo']}, "
-                        f"{indicator['month_label']} {indicator['count']} registros, estado {indicator['state_label']}"
+                        f"{indicator['month_label']}, {indicator['title'] or indicator['state_label']}"
                     )
                 cell_key = f"{sede['codigo']}|{month_number:02d}"
                 payload[cell_key] = {

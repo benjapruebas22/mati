@@ -13,9 +13,9 @@
   </p>
 
   <div class="sst-op-nav" aria-label="Vistas de vencimientos">
-    <a class="{% if vencimiento == 'todos' %}is-active{% endif %}" href="{{ url_for('matafuegos_home', sede=sede, piso=piso, q=q) }}">Inventario completo</a>
-    <a class="{% if vencimiento == 'proximos' %}is-active{% endif %}" href="{{ url_for('matafuegos_home', sede=sede, piso=piso, q=q, vencimiento='proximos') }}">Próximos vencimientos</a>
-    <a class="{% if vencimiento == 'vencidos' %}is-active{% endif %}" href="{{ url_for('matafuegos_home', sede=sede, piso=piso, q=q, vencimiento='vencidos') }}">Vencidos</a>
+    <a class="{% if vencimiento == 'todos' %}is-active{% endif %}" href="{{ url_for('matafuegos_home', sede=sede, piso=piso, q=q, lote_vencimiento=prefill_lote or None) }}">Inventario completo</a>
+    <a class="{% if vencimiento == 'proximos' %}is-active{% endif %}" href="{{ url_for('matafuegos_home', sede=sede, piso=piso, q=q, vencimiento='proximos', lote_vencimiento=prefill_lote or None) }}">Próximos vencimientos</a>
+    <a class="{% if vencimiento == 'vencidos' %}is-active{% endif %}" href="{{ url_for('matafuegos_home', sede=sede, piso=piso, q=q, vencimiento='vencidos', lote_vencimiento=prefill_lote or None) }}">Vencidos</a>
     <a href="#lotes">Vista por lotes</a>
     <a href="{{ url_for('sst_calendario_operativo') }}">Calendario operativo</a>
   </div>
@@ -40,6 +40,7 @@
 
   <form method="get" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
     <input type="hidden" name="vencimiento" value="{{ vencimiento }}">
+    <input type="hidden" name="lote_vencimiento" value="{{ prefill_lote }}">
     <input name="sede" value="{{ sede }}" placeholder="Sede (S01)"
       style="padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
     <select name="piso" style="padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">

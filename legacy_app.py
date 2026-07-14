@@ -11875,6 +11875,9 @@ def _matafuegos_home_impl():
     if piso:
         where.append("COALESCE(m.piso,'PB') = ?")
         params.append(piso)
+    if prefill_lote:
+        where.append("UPPER(COALESCE(m.lote_vencimiento,'')) = ?")
+        params.append(prefill_lote.upper())
     if q:
         where.append("""(
             COALESCE(m.local,'') LIKE ?
@@ -11925,6 +11928,9 @@ def _matafuegos_home_impl():
     if piso:
         inactive_where.append("COALESCE(m.piso,'PB') = ?")
         inactive_params.append(piso)
+    if prefill_lote:
+        inactive_where.append("UPPER(COALESCE(m.lote_vencimiento,'')) = ?")
+        inactive_params.append(prefill_lote.upper())
     if q:
         inactive_where.append("""(
             COALESCE(m.local,'') LIKE ?

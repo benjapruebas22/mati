@@ -632,8 +632,8 @@
 }
 .sst-calendar-legend-item.is-cumplido { background: #eaf8f0; color: #157347; }
 .sst-calendar-legend-item.is-programado { background: #eef4ff; color: #2556a8; }
-.sst-calendar-legend-item.is-proximo,
-.sst-calendar-legend-item.is-pendiente { background: #fff6df; color: #9a6400; }
+.sst-calendar-legend-item.is-proximo { background: #fff6df; color: #9a6400; }
+.sst-calendar-legend-item.is-pending { background: #fff1e6; color: #c25400; }
 .sst-calendar-legend-item.is-vencido { background: #fff0f0; color: #b42318; }
 .sst-calendar-legend-item.is-en_seguimiento { background: #f5efff; color: #6a40c2; }
 .sst-calendar-legend-item.is-sin_datos { background: #eef1f5; color: #667085; }
@@ -704,6 +704,7 @@
 .sst-cal-indicator.is-ok { background: #eaf8f0; color: #157347; }
 .sst-cal-indicator.is-info { background: #eef4ff; color: #2556a8; }
 .sst-cal-indicator.is-warn { background: #fff6df; color: #9a6400; }
+.sst-cal-indicator.is-pending { background: #fff1e6; color: #c25400; }
 .sst-cal-indicator.is-danger { background: #fff0f0; color: #b42318; }
 .sst-cal-indicator.is-follow { background: #f5efff; color: #6a40c2; }
 .sst-cal-indicator.is-muted { background: #eef1f5; color: #667085; }
@@ -765,6 +766,7 @@
 .sst-cal-group-link.is-ok { background: #eaf8f0; color: #157347; }
 .sst-cal-group-link.is-info { background: #eef4ff; color: #2556a8; }
 .sst-cal-group-link.is-warn { background: #fff6df; color: #9a6400; }
+.sst-cal-group-link.is-pending { background: #fff1e6; color: #c25400; }
 .sst-cal-group-link.is-danger { background: #fff0f0; color: #b42318; }
 .sst-cal-group-link.is-follow { background: #f5efff; color: #6a40c2; }
 .sst-cal-group-link.is-muted { background: #eef1f5; color: #667085; }
@@ -1163,10 +1165,37 @@
 .sst-calendar-page-ops .sst-calendar-legend-item.is-cumplido { color: #147543; }
 .sst-calendar-page-ops .sst-calendar-legend-item.is-programado { color: #2457ad; }
 .sst-calendar-page-ops .sst-calendar-legend-item.is-proximo { color: #9a6400; }
-.sst-calendar-page-ops .sst-calendar-legend-item.is-pendiente { color: #b66a04; }
+.sst-calendar-page-ops .sst-calendar-legend-item.is-pending { color: #c25400; }
 .sst-calendar-page-ops .sst-calendar-legend-item.is-en_seguimiento { color: #6b46c1; }
 .sst-calendar-page-ops .sst-calendar-legend-item.is-vencido { color: #b42318; }
 .sst-calendar-page-ops .sst-calendar-legend-item.is-sin_datos { color: #667085; }
+
+.sst-calendar-horizon-note {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border: 1px solid #dfe4ec;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.sst-calendar-horizon-note strong {
+  display: block;
+  color: #192335;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.sst-calendar-horizon-note span {
+  display: block;
+  margin-top: 2px;
+  color: #667085;
+  font-size: 12px;
+  line-height: 1.35;
+}
 
 .sst-calendar-matrix-shell,
 .sst-calendar-mobile-shell {
@@ -1313,6 +1342,7 @@
 .sst-cal-group-link-glyph.is-ok { color: #157347; }
 .sst-cal-group-link-glyph.is-info { color: #2556a8; }
 .sst-cal-group-link-glyph.is-warn { color: #a15d00; }
+.sst-cal-group-link-glyph.is-pending { color: #c25400; }
 .sst-cal-group-link-glyph.is-danger { color: #b42318; }
 .sst-cal-group-link-glyph.is-follow { color: #6a40c2; }
 .sst-cal-group-link-glyph.is-muted { color: #667085; }
