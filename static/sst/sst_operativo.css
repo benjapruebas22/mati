@@ -238,6 +238,10 @@
   box-shadow: 0 24px 60px rgba(15, 23, 42, .16);
 }
 
+.sst-op-modal-card-compact {
+  width: min(640px, 100%);
+}
+
 .sst-luces-inline-note {
   padding-top: 0;
   padding-bottom: 12px;
@@ -254,6 +258,10 @@
 
 .sst-luces-modal-actions form {
   margin: 0;
+}
+
+.sst-op-modal-card-compact .sst-status-detail {
+  max-width: 100%;
 }
 
 .sst-luces-details {

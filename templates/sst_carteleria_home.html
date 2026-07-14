@@ -108,13 +108,13 @@
     </div>
   </article>
 
-  {% if selected_summary %}
+  {% if selected_summary and not show_form %}
   <div class="sst-op-modal-backdrop">
-    <article class="sst-op-card sst-op-modal-card">
+    <article class="sst-op-card sst-op-modal-card sst-op-modal-card-compact">
       <div class="sst-op-card-head">
         <div>
           <h2>{{ selected_summary.sede_codigo }} - {{ selected_summary.sede_nombre }}</h2>
-          <span class="sst-op-count">Vista compacta por sede</span>
+          <span class="sst-op-count">Resumen rapido por sede</span>
         </div>
         <a class="sst-op-btn" href="{{ selected_summary.modal_close_url }}">Cerrar</a>
       </div>
@@ -130,18 +130,13 @@
           <span class="sst-status-badge {{ 'atencion' if selected_summary.cantidad_faltante else 'correcto' }}">Faltan {{ selected_summary.cantidad_faltante }}</span>
         </div>
         <div class="sst-status-row">
-          <div class="sst-status-label">Tipos relevados</div>
-          <div class="sst-status-detail">{{ selected_summary.tipos_relevados }} relevados | {{ selected_summary.tipos_sin_relevar }} sin relevar</div>
-          <span class="sst-status-badge {{ 'pendiente' if selected_summary.tipos_sin_relevar else 'correcto' }}">{{ selected_summary.tipos_sin_relevar }} pendientes</span>
-        </div>
-        <div class="sst-status-row">
           <div class="sst-status-label">Proxima accion</div>
           <div class="sst-status-detail">{{ selected_summary.action_label }}</div>
           <span class="sst-status-badge {{ 'sin-dato' if selected_summary.state_code == 'COMPLETO' else 'pendiente' }}">{{ 'Cerrado' if selected_summary.state_code == 'COMPLETO' else 'Pendiente' }}</span>
         </div>
         <div class="sst-status-row">
           <div class="sst-status-label">Cumplimiento</div>
-          <div class="sst-status-detail">{{ selected_summary.porcentaje_cumplimiento }}% de cumplimiento sobre los tipos aplicables.</div>
+          <div class="sst-status-detail">{{ selected_summary.porcentaje_cumplimiento }}% sobre los tipos aplicables.</div>
           <span class="sst-status-badge {{ 'correcto' if selected_summary.porcentaje_cumplimiento == 100 and selected_summary.tipos_sin_relevar == 0 else 'pendiente' }}">{{ selected_summary.porcentaje_cumplimiento }}%</span>
         </div>
         <div class="sst-status-row">
@@ -160,35 +155,6 @@
         </div>
       </div>
 
-      <div class="sst-carteleria-checklist">
-        {% for group in selected_summary.checklist_groups %}
-        <section class="sst-op-card sst-carteleria-checklist-card">
-          <div class="sst-op-card-head">
-            <h3>{{ group.label }}</h3>
-            <span class="sst-op-count">{{ group["items"]|length }} tipos</span>
-          </div>
-          <div class="sst-carteleria-grid-head">
-            <span>Tipo</span>
-            <span>Aplica</span>
-            <span>Req.</span>
-            <span>Inst.</span>
-            <span>Falt.</span>
-          </div>
-          <div class="sst-carteleria-checklist-list">
-            {% for item in group["items"] %}
-            <div class="sst-carteleria-grid-row">
-              <span class="sst-carteleria-item-name">{{ item.label }}</span>
-              <span>{{ item.aplica_label }}</span>
-              <span>{{ item.cantidad_requerida }}</span>
-              <span>{{ item.cantidad_instalada }}</span>
-              <span class="sst-status-badge {{ 'correcto' if item.cantidad_faltante == 0 and item.aplica == 'SI' else 'pendiente' if item.aplica == 'SI' else 'sin-dato' }}">{{ item.cantidad_faltante }}</span>
-            </div>
-            {% endfor %}
-          </div>
-        </section>
-        {% endfor %}
-      </div>
-
       <div class="sst-luces-modal-actions">
         <a class="sst-op-btn" href="{{ selected_summary.modal_edit_url }}#sst-carteleria-form">Editar</a>
         {% if selected_summary.show_register_delivery %}
@@ -198,10 +164,10 @@
         <form method="post" action="{{ url_for('sst_carteleria_home') }}">
           <input type="hidden" name="action" value="followup">
           <input type="hidden" name="record_id" value="{{ selected_summary.primary_record_id }}">
-          <button class="sst-op-btn" type="submit">Crear seguimiento</button>
+          <button class="sst-op-btn" type="submit">Crear seguimiento SG-SST</button>
         </form>
         {% endif %}
-        <a class="sst-op-btn" href="#sst-carteleria-historial">Ver historial</a>
+        <a class="sst-op-btn" href="{{ selected_summary.modal_close_url }}#sst-carteleria-historial">Ver historial</a>
       </div>
     </article>
   </div>
@@ -210,7 +176,7 @@
   <article class="sst-op-card sst-luces-form-card">
     <div class="sst-op-card-head">
       <h2 id="sst-carteleria-form">{% if form_defaults.sede_codigo %}Formulario de {{ form_defaults.sede_codigo }}{% else %}Formulario de gestion{% endif %}</h2>
-      <span class="sst-op-count">Formulario colapsado</span>
+      <span class="sst-op-count">{% if show_form %}Formulario abierto{% else %}Formulario colapsado{% endif %}</span>
     </div>
     <details {% if show_form %}open{% endif %} class="sst-luces-details">
       <summary class="sst-op-form-summary">

@@ -8697,7 +8697,13 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     con.commit()
                     con.close()
                     flash("Seguimiento creado desde carteleria.", "success")
-                    return redirect(url_for("sst_carteleria_home", sede=record["sede_codigo"], open_sede=record["sede_codigo"], registro=record_id))
+                    return redirect(url_for(
+                        "sst_general",
+                        modo="gestion",
+                        sede=record["sede_codigo"],
+                        tipo="no_conformidad",
+                        q=f"Carteleria {record['sede_codigo']}",
+                    ))
             con.commit()
         context = _sst_carteleria_context(con)
         con.close()
