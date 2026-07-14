@@ -4104,7 +4104,7 @@ def sedes_mapa_general():
             })
     db.close()
 
-    selected_code = str(request.args.get("sede") or "S05").strip().upper()
+    selected_code = str(request.args.get("sede") or "S01").strip().upper()
     if selected_code not in {item["codigo"] for item in sedes} and sedes:
         selected_code = sedes[0]["codigo"]
 
