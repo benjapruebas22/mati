@@ -10652,6 +10652,25 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             return ("equipo_interdisciplinario", "#4D4D4D")
         return ("otro", "#64748b")
 
+    def _sst_sede_fuero_style(sede_codigo, fuero_raw):
+        code = (_sst_clean_upper(sede_codigo) or "").strip().upper()
+        code_overrides = {
+            "S08": ("administracion", "#f58a5e"),
+            "S11": ("juridico_social", "#F14B94"),
+            "S12": ("administracion", "#f58a5e"),
+            "S13": ("menores_incapaces", "#65BFF4"),
+            "S14": ("juridico_social", "#F14B94"),
+            "S15": ("juridico_social", "#F14B94"),
+            "S16": ("juridico_social", "#F14B94"),
+            "S17": ("juridico_social", "#F14B94"),
+            "S18": ("juridico_social", "#F14B94"),
+            "S19": ("juridico_social", "#F14B94"),
+            "S20": ("juridico_social", "#F14B94"),
+        }
+        if code in code_overrides:
+            return code_overrides[code]
+        return _sst_fuero_style(fuero_raw)
+
     def _sst_calendar_parse_date(value):
         raw = str(value or "").strip()
         if not raw:
@@ -11027,7 +11046,10 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         sedes_map = {}
         for row in sedes_rows:
             fuero_raw = (_row_value(row, "fuero", "") or "").strip()
-            fuero_class, fuero_color = _sst_fuero_style(fuero_raw)
+            fuero_class, fuero_color = _sst_sede_fuero_style(
+                (_row_value(row, "codigo", "") or "").strip().upper(),
+                fuero_raw,
+            )
             sede_item = {
                 "codigo": (_row_value(row, "codigo", "") or "").strip().upper(),
                 "nombre": (_row_value(row, "nombre", "") or "").strip(),
