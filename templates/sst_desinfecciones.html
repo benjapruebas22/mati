@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-14-02') }}">
+{% endblock %}
+
+{% block content %}
+{% set current_open_sede = selected_summary.sede_codigo if selected_summary else (f_sede or '') %}
+<section class="sst-operativo sst-shell">
+  {% include '_sst_operational_nav.html' %}
+  <header class="sst-op-header">
+    <div>
+      <p class="sst-op-eyebrow">SG-SST | Desinfecciones</p>
+      <h1>Desinfecciones</h1>
+      <p>Control consolidado por sede de intervenciones realizadas, modalidad, proxima programacion y estado.</p>
+    </div>
+    <div class="sst-op-actions">
+      <a class="sst-op-btn primary" href="{{ url_for('sst_desinfecciones_home', sede=f_sede or None, estado=f_estado or None, modalidad=f_modalidad or None, year=f_year or None, month=f_month or None, q=f_q or None, open_sede=current_open_sede or None, prefill_sede=current_open_sede or f_sede or None, mostrar_form=1) }}#sst-desinfecciones-form">
+        Registrar desinfeccion
+      </a>
+      <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo', sede=f_sede or None, tipo='desinfeccion') }}">Calendario operativo</a>
+    </div>
+  </header>
+
+  <form class="sst-op-card sst-op-filter-form sst-luces-filter-card" method="get" action="{{ url_for('sst_desinfecciones_home') }}">
+    <label class="sst-op-field">
+      <small>Sede</small>
+      <select name="sede">
+        <option value="">Todas</option>
+        {% for sede in sedes %}
+        <option value="{{ sede.codigo }}" {% if f_sede == sede.codigo %}selected{% endif %}>{{ sede.codigo }} - {{ sede.nombre }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="sst-op-field">
+      <small>Estado</small>
+      <select name="estado">
+        <option value="">Todos</option>
+        {% for item in estado_options %}
+        <option value="{{ item.code }}" {% if f_estado == item.code %}selected{% endif %}>{{ item.label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="sst-op-field">
+      <small>Modalidad</small>
+      <select name="modalidad">
+        <option value="">Todas</option>
+        {% for item in modalidad_options %}
+        <option value="{{ item.code }}" {% if f_modalidad == item.code %}selected{% endif %}>{{ item.label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="sst-op-field">
+      <small>Ano</small>
+      <select name="year">
+        <option value="">Todos</option>
+        {% for item in year_options %}
+        <option value="{{ item }}" {% if f_year == item %}selected{% endif %}>{{ item }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="sst-op-field">
+      <small>Mes</small>
+      <select name="month">
+        <option value="">Todos</option>
+        {% for item in month_options %}
+        <option value="{{ item.value }}" {% if f_month == item.value %}selected{% endif %}>{{ item.label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="sst-op-field">
+      <small>Buscar</small>
+      <input name="q" value="{{ f_q }}" placeholder="Sede, modalidad, responsable u observacion">
+    </label>
+    <div class="sst-op-form-actions sst-luces-filter-actions">
+      <button class="sst-op-btn" type="submit">Aplicar</button>
+      <a class="sst-op-btn" href="{{ url_for('sst_desinfecciones_home') }}">Limpiar</a>
+    </div>
+  </form>
+
+  <div class="sst-calendar-kpis sst-calendar-kpis-4 sst-luces-kpis">
+    <article class="sst-op-card sst-calendar-kpi"><span>Sedes con registro</span><strong>{{ kpi_sedes_con_registro }}</strong><small>Con historial cargado</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Sedes sin registro</span><strong>{{ kpi_sedes_sin_registro }}</strong><small>Sin gestion previa</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Realizadas</span><strong>{{ kpi_realizadas }}</strong><small>Con ultima desinfeccion registrada</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Programadas</span><strong>{{ kpi_programadas }}</strong><small>Con fecha futura</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Pendientes</span><strong>{{ kpi_pendientes }}</strong><small>Sin cierre operativo</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Vencidas</span><strong>{{ kpi_vencidas }}</strong><small>Con fecha superada</small></article>
+  </div>
+
+  <article class="sst-op-card wide sst-luces-table-card">
+    <div class="sst-op-card-head">
+      <h2>Tabla general por sede</h2>
+      <span class="sst-op-count">{{ state_by_sede|length }} sedes</span>
+    </div>
+    <div class="sst-luces-table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Sede</th>
+            <th>Ultima desinfeccion</th>
+            <th>Modalidad</th>
+            <th>Proxima prevista</th>
+            <th>Estado</th>
+            <th>Proxima accion</th>
+            <th>Abrir</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in state_by_sede %}
+          <tr>
+            <td><strong>{{ row.sede_codigo }}</strong><br><small>{{ row.sede_nombre }}</small></td>
+            <td>{{ fmt_fecha(row.ultima_desinfeccion) if row.ultima_desinfeccion else '-' }}</td>
+            <td>{{ row.modalidad_label }}</td>
+            <td>{{ fmt_fecha(row.proxima_prevista) if row.proxima_prevista else '-' }}</td>
+            <td><span class="sst-status-badge {{ row.state_meta.class }}">{{ row.state_meta.label }}</span></td>
+            <td class="sst-luces-next-action">{{ row.next_action }}</td>
+            <td><a class="sst-op-btn" href="{{ row.url }}">Abrir</a></td>
+          </tr>
+          {% else %}
+          <tr><td colspan="7" class="sst-op-empty">No hay sedes para este filtro.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  {% if selected_summary and not show_form %}
+  <div class="sst-op-modal-backdrop">
+    <article class="sst-op-card sst-op-modal-card sst-op-modal-card-compact">
+      <div class="sst-op-card-head">
+        <div>
+          <h2>{{ selected_summary.sede_codigo }} - {{ selected_summary.sede_nombre }}</h2>
+          <span class="sst-op-count">Ficha compacta por sede</span>
+        </div>
+        <a class="sst-op-btn" href="{{ selected_summary.modal_close_url }}">Cerrar</a>
+      </div>
+      <div class="sst-status-list">
+        <div class="sst-status-row">
+          <div class="sst-status-label">Ultima desinfeccion</div>
+          <div class="sst-status-detail">{{ fmt_fecha(selected_summary.ultima_desinfeccion) if selected_summary.ultima_desinfeccion else 'Sin registro cargado.' }}</div>
+          <span class="sst-status-badge {{ 'sin-dato' if not selected_summary.ultima_desinfeccion else 'correcto' }}">{{ 'Sin fecha' if not selected_summary.ultima_desinfeccion else 'Registrada' }}</span>
+        </div>
+        <div class="sst-status-row">
+          <div class="sst-status-label">Modalidad</div>
+          <div class="sst-status-detail">{{ selected_summary.modalidad_label }}</div>
+          <span class="sst-status-badge {{ 'sin-dato' if selected_summary.modalidad_label == '-' else 'pendiente' }}">{{ selected_summary.modalidad_label }}</span>
+        </div>
+        <div class="sst-status-row">
+          <div class="sst-status-label">Responsable o empresa</div>
+          <div class="sst-status-detail">{{ selected_summary.responsable or 'Sin responsable cargado.' }}</div>
+          <span class="sst-status-badge {{ 'sin-dato' if not selected_summary.responsable else 'correcto' }}">{{ 'Sin dato' if not selected_summary.responsable else 'Asignado' }}</span>
+        </div>
+        <div class="sst-status-row">
+          <div class="sst-status-label">Proxima prevista</div>
+          <div class="sst-status-detail">{{ fmt_fecha(selected_summary.proxima_prevista) if selected_summary.proxima_prevista else 'Sin fecha programada.' }}</div>
+          <span class="sst-status-badge {{ 'sin-dato' if not selected_summary.proxima_prevista else 'pendiente' }}">{{ 'Sin fecha' if not selected_summary.proxima_prevista else 'Programada' }}</span>
+        </div>
+        <div class="sst-status-row">
+          <div class="sst-status-label">Estado</div>
+          <div class="sst-status-detail">{{ selected_summary.state_meta.label }}</div>
+          <span class="sst-status-badge {{ selected_summary.state_meta.class }}">{{ selected_summary.state_meta.label }}</span>
+        </div>
+        <div class="sst-status-row">
+          <div class="sst-status-label">Proxima accion</div>
+          <div class="sst-status-detail">{{ selected_summary.next_action }}</div>
+          <span class="sst-status-badge {{ 'correcto' if selected_summary.state_code == 'REALIZADA' else 'pendiente' }}">{{ 'Gestion' }}</span>
+        </div>
+        <div class="sst-status-row">
+          <div class="sst-status-label">Observaciones</div>
+          <div class="sst-status-detail">{{ selected_summary.observaciones or 'Sin observaciones.' }}</div>
+          <span class="sst-status-badge {{ 'sin-dato' if not selected_summary.observaciones else 'pendiente' }}">{{ 'Vacio' if not selected_summary.observaciones else 'Con nota' }}</span>
+        </div>
+      </div>
+
+      <div class="sst-luces-modal-actions">
+        <a class="sst-op-btn" href="{{ selected_summary.modal_edit_url }}#sst-desinfecciones-form">Registrar nueva</a>
+        <a class="sst-op-btn" href="{{ selected_summary.modal_edit_url }}#sst-desinfecciones-form">Programar proxima</a>
+        <a class="sst-op-btn" href="{{ selected_summary.modal_edit_url }}#sst-desinfecciones-form">Marcar realizada</a>
+        <a class="sst-op-btn" href="{{ selected_summary.modal_edit_url }}#sst-desinfecciones-form">Reprogramar</a>
+        {% if selected_summary.show_followup %}
+        <form method="post" action="{{ url_for('sst_desinfecciones_home') }}">
+          <input type="hidden" name="action" value="followup">
+          <input type="hidden" name="record_id" value="{{ selected_summary.primary_record_id }}">
+          <button class="sst-op-btn" type="submit">Crear seguimiento</button>
+        </form>
+        {% endif %}
+        <a class="sst-op-btn" href="{{ selected_summary.history_url }}">Ver historial</a>
+      </div>
+    </article>
+  </div>
+  {% endif %}
+
+  <article class="sst-op-card sst-luces-form-card">
+    <div class="sst-op-card-head">
+      <h2 id="sst-desinfecciones-form">{% if form_defaults.sede_codigo %}Formulario de {{ form_defaults.sede_codigo }}{% else %}Formulario de gestion{% endif %}</h2>
+      <span class="sst-op-count">{% if show_form %}Formulario abierto{% else %}Formulario colapsado{% endif %}</span>
+    </div>
+    <details {% if show_form %}open{% endif %} class="sst-luces-details">
+      <summary class="sst-op-form-summary">{% if form_defaults.sede_codigo %}Abrir formulario de {{ form_defaults.sede_codigo }}{% else %}Abrir formulario{% endif %}</summary>
+      <form class="sst-op-form-grid sst-luces-form-grid" method="post" action="{{ url_for('sst_desinfecciones_home', sede=f_sede or None, estado=f_estado or None, modalidad=f_modalidad or None, year=f_year or None, month=f_month or None, q=f_q or None, open_sede=current_open_sede or None, registro=form_defaults.edit_id or None) }}">
+        <input type="hidden" name="action" value="save">
+        <input type="hidden" name="edit_id" value="{{ form_defaults.edit_id }}">
+
+        <label class="sst-op-field">
+          <small>Sede</small>
+          <select name="sede_codigo" required>
+            <option value="">Seleccionar</option>
+            {% for sede in sedes %}
+            <option value="{{ sede.codigo }}" {% if form_defaults.sede_codigo == sede.codigo %}selected{% endif %}>{{ sede.codigo }} - {{ sede.nombre }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="sst-op-field">
+          <small>Fecha programada</small>
+          <input type="date" name="fecha_programada" value="{{ form_defaults.fecha_programada }}">
+        </label>
+        <label class="sst-op-field">
+          <small>Fecha realizada</small>
+          <input type="date" name="fecha_realizada" value="{{ form_defaults.fecha_realizada }}">
+        </label>
+        <label class="sst-op-field">
+          <small>Modalidad</small>
+          <select name="modalidad">
+            <option value="">Seleccionar</option>
+            {% for item in modalidad_options %}
+            <option value="{{ item.code }}" {% if form_defaults.modalidad == item.code %}selected{% endif %}>{{ item.label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <label class="sst-op-field">
+          <small>Empresa o responsable</small>
+          <input name="responsable" value="{{ form_defaults.responsable }}" placeholder="Empresa o responsable">
+        </label>
+        <label class="sst-op-field">
+          <small>Producto o detalle</small>
+          <input name="producto_detalle" value="{{ form_defaults.producto_detalle }}" placeholder="Detalle opcional">
+        </label>
+        <label class="sst-op-field">
+          <small>Estado</small>
+          <select name="estado">
+            <option value="">Automatico</option>
+            {% for item in estado_options %}
+            <option value="{{ item.code }}" {% if form_defaults.estado == item.code %}selected{% endif %}>{{ item.label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <label class="sst-op-field sst-luces-full">
+          <small>Observaciones</small>
+          <textarea name="observaciones" rows="3" placeholder="Notas generales de la intervencion">{{ form_defaults.observaciones }}</textarea>
+        </label>
+
+        <div class="sst-op-form-actions sst-luces-full">
+          <button class="sst-op-btn primary" type="submit">Guardar registro</button>
+        </div>
+      </form>
+    </details>
+  </article>
+
+  <article class="sst-op-card" id="sst-desinfecciones-historial">
+    <div class="sst-op-card-head">
+      <h2>Historial</h2>
+      <span class="sst-op-count">{{ history_rows|length }} intervenciones</span>
+    </div>
+    <details {% if selected_summary %}open{% endif %} class="sst-luces-details">
+      <summary class="sst-op-form-summary">{% if selected_summary %}Ver historial de {{ selected_summary.sede_codigo }}{% else %}Ver historial{% endif %}</summary>
+      <div class="sst-luces-table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Modalidad</th>
+              <th>Responsable o empresa</th>
+              <th>Estado</th>
+              <th>Observacion</th>
+              <th>Usuario</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in history_rows %}
+            <tr>
+              <td>{{ fmt_fecha(item.fecha) if item.fecha else '-' }}</td>
+              <td>{{ item.modalidad_label }}</td>
+              <td>{{ item.responsable }}</td>
+              <td><span class="sst-status-badge {{ item.state_meta.class }}">{{ item.state_meta.label }}</span></td>
+              <td>{{ item.observaciones or '-' }}</td>
+              <td>{{ item.usuario or '-' }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="sst-op-empty">Sin historial todavia.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </details>
+  </article>
+</section>
+{% endblock %}

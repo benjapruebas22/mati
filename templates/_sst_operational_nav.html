@@ -2,7 +2,7 @@
   <a class="{% if sst_section == 'inicio' %}is-active{% endif %}" href="{{ url_for('sst_inicio_operativo') }}">Inicio</a>
   <a class="{% if sst_section == 'visitas' %}is-active{% endif %}" href="{{ url_for('sst_visitas') }}">Visitas ART</a>
   <a class="{% if sst_section == 'matafuegos' %}is-active{% endif %}" href="{{ url_for('matafuegos_home') }}">Matafuegos</a>
-  <a href="{{ url_for('obras_home', panel='panel-desinf') }}">Desinfecciones</a>
+  <a class="{% if sst_section == 'desinfecciones' %}is-active{% endif %}" href="{{ url_for('sst_desinfecciones_home') }}">Desinfecciones</a>
   <a class="{% if sst_section == 'luces' %}is-active{% endif %}" href="{{ url_for('sst_luces_home') }}">Luces de emergencia</a>
   <a class="{% if sst_section == 'carteleria' %}is-active{% endif %}" href="{{ url_for('sst_carteleria_home') }}">Carteleria</a>
   <a class="{% if sst_section == 'seguimiento' %}is-active{% endif %}" href="{{ url_for('sst_plan') }}">Seguimientos</a>

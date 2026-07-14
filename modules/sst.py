@@ -11354,76 +11354,60 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                         },
                     ))
 
-        if _table_exists(con, "obras_sede"):
-            desinf_rows = con.execute("""
-                SELECT
-                    o.id,
-                    UPPER(COALESCE(o.codigo_sede, '')) AS sede_codigo,
-                    COALESCE(o.estado, '') AS estado,
-                    COALESCE(o.tipo, '') AS tipo,
-                    COALESCE(o.titulo, '') AS titulo,
-                    COALESCE(o.descripcion, '') AS descripcion,
-                    COALESCE(o.fecha_solicitud, '') AS fecha_solicitud,
-                    COALESCE(o.fecha_inicio, '') AS fecha_inicio,
-                    COALESCE(o.fecha_fin_real, '') AS fecha_fin_real
-                FROM obras_sede o
-                WHERE
-                    LOWER(COALESCE(o.tipo, '')) LIKE '%desinfecc%'
-                    OR LOWER(COALESCE(o.titulo, '')) LIKE '%desinfecc%'
-                    OR LOWER(COALESCE(o.descripcion, '')) LIKE '%desinfecc%'
-                ORDER BY COALESCE(o.fecha_fin_real, o.fecha_inicio, o.fecha_solicitud), o.id
-            """).fetchall()
-            for row in desinf_rows:
-                fecha_fin = _sst_calendar_parse_date(_row_value(row, "fecha_fin_real", ""))
-                fecha_inicio = _sst_calendar_parse_date(_row_value(row, "fecha_inicio", ""))
-                fecha_solicitud = _sst_calendar_parse_date(_row_value(row, "fecha_solicitud", ""))
-                event_date = fecha_fin or fecha_inicio or fecha_solicitud
-                if not event_date or event_date.year != selected_year:
-                    continue
-                event_years.add(event_date.year)
-                sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
-                if not sede_codigo:
-                    continue
-                sede_info = sedes_map.get(sede_codigo, {})
-                estado_raw = (_row_value(row, "estado", "") or "").strip().upper()
-                if estado_raw == "FINALIZADA":
-                    estado = "cumplido"
-                    title = "Realizada"
-                    detail = _sst_calendar_short_date(fecha_fin or event_date)
-                elif fecha_inicio and fecha_inicio > today_ref:
-                    estado = "programado"
-                    title = "Programada"
-                    detail = _sst_calendar_short_date(fecha_inicio)
-                elif event_date < today_ref:
-                    estado = "vencido"
-                    title = "Vencida"
-                    detail = _sst_calendar_short_date(event_date)
-                else:
-                    estado = "pendiente"
-                    title = "Pendiente"
-                    detail = _sst_calendar_short_date(event_date)
+        for record in _sst_desinf_fetch_records(con):
+            sede_codigo = (record.get("sede_codigo") or "").strip().upper()
+            if not sede_codigo:
+                continue
+            sede_info = sedes_map.get(sede_codigo, {})
+            fecha_realizada = _sst_calendar_parse_date(record.get("fecha_realizada"))
+            fecha_programada = _sst_calendar_parse_date(record.get("fecha_programada"))
+            if fecha_realizada and fecha_realizada.year == selected_year:
+                event_years.add(fecha_realizada.year)
                 events.append(_sst_calendar_build_event(
-                    source_id=str(_row_value(row, "id", "")),
-                    source_type="obras_sede",
+                    source_id=f"desinf-real-{record.get('source')}-{record.get('source_id')}",
+                    source_type=record.get("source") or "desinfecciones_sede",
                     sede_codigo=sede_codigo,
                     sede_nombre=sede_info.get("nombre", ""),
                     region_label=sede_info.get("region", ""),
-                    event_date=event_date,
+                    event_date=fecha_realizada,
                     type_key="desinfeccion",
-                    title=title,
-                    detail=detail,
-                    state_key=estado,
-                    responsible="",
-                    url_detail=url_for("obras_home", sede=sede_codigo, panel="panel-desinf"),
-                    action_label="Abrir historial de desinfecciones",
-                    active=(estado != "cumplido"),
+                    title="Realizada",
+                    detail=_sst_calendar_short_date(fecha_realizada),
+                    state_key="cumplido",
+                    responsible=record.get("responsable") or "",
+                    url_detail=url_for("sst_desinfecciones_home", sede=sede_codigo, open_sede=sede_codigo),
+                    action_label="Abrir desinfecciones",
+                    active=False,
                     extra={
-                        "start_date": fecha_inicio.isoformat() if fecha_inicio else "",
-                        "end_date": fecha_fin.isoformat() if fecha_fin else "",
-                        "source_status": estado_raw,
                         "type_icon": "\U0001F9F9",
                         "type_label": "Desinfeccion",
                         "type_short": "DES",
+                        "modality": record.get("modalidad_label") or "",
+                    },
+                ))
+            if fecha_programada and not fecha_realizada and fecha_programada.year == selected_year:
+                event_years.add(fecha_programada.year)
+                overdue = fecha_programada < today_ref
+                events.append(_sst_calendar_build_event(
+                    source_id=f"desinf-plan-{record.get('source')}-{record.get('source_id')}",
+                    source_type=record.get("source") or "desinfecciones_sede",
+                    sede_codigo=sede_codigo,
+                    sede_nombre=sede_info.get("nombre", ""),
+                    region_label=sede_info.get("region", ""),
+                    event_date=fecha_programada,
+                    type_key="desinfeccion",
+                    title=("Vencida" if overdue else "Programada"),
+                    detail=_sst_calendar_short_date(fecha_programada),
+                    state_key=("vencido" if overdue else "programado"),
+                    responsible=record.get("responsable") or "",
+                    url_detail=url_for("sst_desinfecciones_home", sede=sede_codigo, open_sede=sede_codigo),
+                    action_label="Abrir desinfecciones",
+                    active=True,
+                    extra={
+                        "type_icon": "\U0001F9F9",
+                        "type_label": "Desinfeccion",
+                        "type_short": "DES",
+                        "modality": record.get("modalidad_label") or "",
                     },
                 ))
 
@@ -12643,6 +12627,669 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
     @app.route("/sst/docs/archivo/<path:filename>", methods=["GET"], endpoint="sst_doc_archivo")
     def sst_doc_archivo(filename):
         return send_from_directory(SST_DOCS_FOLDER, filename, as_attachment=False)
+
+    SST_DESINFECCION_STATE_LABELS = {
+        "SIN_REGISTRO": "Sin registro",
+        "PENDIENTE_DE_PROGRAMACION": "Pendiente de programacion",
+        "PROGRAMADA": "Programada",
+        "REALIZADA": "Realizada",
+        "VENCIDA": "Vencida",
+        "OBSERVADA": "Observada",
+        "CANCELADA": "Cancelada",
+    }
+    SST_DESINFECCION_MODALIDAD_LABELS = {
+        "TERCERO_CONTRATADO": "Tercero contratado",
+        "PERSONAL_INTENDENCIA": "Personal de Intendencia",
+    }
+    SST_DESINFECCION_PENDING_STATES = {
+        "SIN_REGISTRO",
+        "PENDIENTE_DE_PROGRAMACION",
+        "PROGRAMADA",
+        "VENCIDA",
+        "OBSERVADA",
+        "CANCELADA",
+    }
+
+    def ensure_sst_desinfecciones_tables(con):
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS desinfecciones_sede(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                cod_sede TEXT NOT NULL,
+                fecha TEXT,
+                empresa TEXT,
+                observaciones TEXT
+            )
+        """)
+        ensure_cols(con, "desinfecciones_sede", [
+            ("fecha_programada", "TEXT"),
+            ("fecha_realizada", "TEXT"),
+            ("modalidad", "TEXT"),
+            ("responsable", "TEXT"),
+            ("producto_detalle", "TEXT"),
+            ("estado", "TEXT"),
+            ("seguimiento_id", "INTEGER"),
+            ("activo", "INTEGER DEFAULT 1"),
+            ("creado_por", "TEXT"),
+            ("actualizado_por", "TEXT"),
+            ("fecha_creacion", "TEXT"),
+            ("fecha_actualizacion", "TEXT"),
+        ])
+        con.execute("CREATE INDEX IF NOT EXISTS idx_desinf_sede_fecha ON desinfecciones_sede(cod_sede, fecha)")
+        con.execute("CREATE INDEX IF NOT EXISTS idx_desinf_sede_estado ON desinfecciones_sede(cod_sede, estado)")
+        con.commit()
+
+    def _sst_desinf_normalize_modalidad(value, responsable=""):
+        raw = _sst_clean_upper(value)
+        merged = " ".join([raw, _sst_clean_upper(responsable)]).strip()
+        if any(token in merged for token in ("INTENDENCIA", "INTERNO", "PERSONAL")):
+            return "PERSONAL_INTENDENCIA"
+        if raw in SST_DESINFECCION_MODALIDAD_LABELS:
+            return raw
+        if merged:
+            return "TERCERO_CONTRATADO"
+        return ""
+
+    def _sst_desinf_normalize_state(value):
+        raw = _sst_clean_upper(value)
+        legacy_map = {
+            "SIN REGISTRO": "SIN_REGISTRO",
+            "PENDIENTE": "PENDIENTE_DE_PROGRAMACION",
+            "PENDIENTE DE PROGRAMACION": "PENDIENTE_DE_PROGRAMACION",
+            "PENDIENTE PROGRAMACION": "PENDIENTE_DE_PROGRAMACION",
+            "PROGRAMADA": "PROGRAMADA",
+            "REALIZADA": "REALIZADA",
+            "VENCIDA": "VENCIDA",
+            "OBSERVADA": "OBSERVADA",
+            "CANCELADA": "CANCELADA",
+        }
+        normalized = legacy_map.get(raw, raw)
+        return normalized if normalized in SST_DESINFECCION_STATE_LABELS else ""
+
+    def _sst_desinf_auto_state(record, today_ref=None):
+        today_value = today_ref or date.today()
+        manual_state = _sst_desinf_normalize_state(record.get("estado"))
+        if manual_state in {"OBSERVADA", "CANCELADA"}:
+            return manual_state
+        fecha_programada = _sst_calendar_parse_date(record.get("fecha_programada"))
+        fecha_realizada = _sst_calendar_parse_date(record.get("fecha_realizada") or record.get("fecha"))
+        if fecha_programada and not fecha_realizada:
+            return "VENCIDA" if fecha_programada < today_value else "PROGRAMADA"
+        if fecha_realizada:
+            return "REALIZADA"
+        return manual_state or "SIN_REGISTRO"
+
+    def _sst_desinf_next_action(state_code):
+        mapping = {
+            "SIN_REGISTRO": "Registrar primera desinfeccion.",
+            "PENDIENTE_DE_PROGRAMACION": "Programar proxima.",
+            "PROGRAMADA": "Coordinar ejecucion.",
+            "REALIZADA": "Definir proxima fecha.",
+            "VENCIDA": "Reprogramar.",
+            "OBSERVADA": "Resolver observacion.",
+            "CANCELADA": "Definir nueva fecha.",
+        }
+        return mapping.get(_sst_desinf_normalize_state(state_code), "Revisar gestion de desinfecciones.")
+
+    def _sst_desinf_fetch_records(con):
+        ensure_sst_desinfecciones_tables(con)
+        records = []
+        if _table_exists(con, "desinfecciones_sede"):
+            rows = con.execute("""
+                SELECT
+                    id,
+                    UPPER(COALESCE(cod_sede, '')) AS sede_codigo,
+                    COALESCE(fecha, '') AS fecha,
+                    COALESCE(fecha_programada, '') AS fecha_programada,
+                    COALESCE(fecha_realizada, '') AS fecha_realizada,
+                    COALESCE(modalidad, '') AS modalidad,
+                    COALESCE(responsable, '') AS responsable,
+                    COALESCE(empresa, '') AS empresa,
+                    COALESCE(producto_detalle, '') AS producto_detalle,
+                    COALESCE(estado, '') AS estado,
+                    COALESCE(observaciones, '') AS observaciones,
+                    COALESCE(seguimiento_id, 0) AS seguimiento_id,
+                    COALESCE(activo, 1) AS activo,
+                    COALESCE(creado_por, '') AS creado_por,
+                    COALESCE(actualizado_por, '') AS actualizado_por,
+                    COALESCE(fecha_creacion, '') AS fecha_creacion,
+                    COALESCE(fecha_actualizacion, '') AS fecha_actualizacion
+                FROM desinfecciones_sede
+                WHERE COALESCE(activo, 1) = 1
+                ORDER BY COALESCE(fecha_realizada, fecha_programada, fecha, fecha_actualizacion, fecha_creacion, '') DESC, id DESC
+            """).fetchall()
+            for row in rows:
+                responsable = (_row_value(row, "responsable", "") or "").strip() or (_row_value(row, "empresa", "") or "").strip()
+                modalidad = _sst_desinf_normalize_modalidad(_row_value(row, "modalidad", ""), responsable)
+                fecha_realizada = (_row_value(row, "fecha_realizada", "") or "").strip() or (_row_value(row, "fecha", "") or "").strip()
+                fecha_programada = (_row_value(row, "fecha_programada", "") or "").strip()
+                manual_state = _sst_desinf_normalize_state(_row_value(row, "estado", ""))
+                state_code = manual_state or _sst_desinf_auto_state({
+                    "fecha": _row_value(row, "fecha", ""),
+                    "fecha_programada": fecha_programada,
+                    "fecha_realizada": fecha_realizada,
+                    "estado": manual_state,
+                }, date.today())
+                anchor_date = fecha_realizada or fecha_programada or (_row_value(row, "fecha", "") or "").strip() or (_row_value(row, "fecha_actualizacion", "") or "").strip()[:10]
+                records.append({
+                    "id": int(_row_value(row, "id", 0) or 0),
+                    "source_id": int(_row_value(row, "id", 0) or 0),
+                    "source": "desinfecciones_sede",
+                    "editable": True,
+                    "sede_codigo": (_row_value(row, "sede_codigo", "") or "").strip().upper(),
+                    "fecha": (_row_value(row, "fecha", "") or "").strip(),
+                    "fecha_programada": fecha_programada,
+                    "fecha_realizada": fecha_realizada,
+                    "modalidad": modalidad,
+                    "modalidad_label": SST_DESINFECCION_MODALIDAD_LABELS.get(modalidad, "-"),
+                    "responsable": responsable,
+                    "producto_detalle": (_row_value(row, "producto_detalle", "") or "").strip(),
+                    "estado": manual_state,
+                    "state_code": state_code,
+                    "state_meta": _sst_state_badge(state_code, SST_DESINFECCION_STATE_LABELS),
+                    "observaciones": (_row_value(row, "observaciones", "") or "").strip(),
+                    "seguimiento_id": int(_row_value(row, "seguimiento_id", 0) or 0),
+                    "usuario": (_row_value(row, "actualizado_por", "") or "").strip() or (_row_value(row, "creado_por", "") or "").strip(),
+                    "anchor_date": anchor_date,
+                })
+        if _table_exists(con, "obras_sede"):
+            rows = con.execute("""
+                SELECT
+                    id,
+                    UPPER(COALESCE(codigo_sede, '')) AS sede_codigo,
+                    COALESCE(estado, '') AS estado,
+                    COALESCE(tipo, '') AS tipo,
+                    COALESCE(titulo, '') AS titulo,
+                    COALESCE(descripcion, '') AS descripcion,
+                    COALESCE(observaciones, '') AS observaciones,
+                    COALESCE(responsable_actual, '') AS responsable_actual,
+                    COALESCE(fecha_solicitud, '') AS fecha_solicitud,
+                    COALESCE(fecha_inicio, '') AS fecha_inicio,
+                    COALESCE(fecha_fin_prevista, '') AS fecha_fin_prevista,
+                    COALESCE(fecha_fin_real, '') AS fecha_fin_real
+                FROM obras_sede
+                WHERE
+                    LOWER(COALESCE(tipo, '')) LIKE '%desinfecc%'
+                    OR LOWER(COALESCE(titulo, '')) LIKE '%desinfecc%'
+                    OR LOWER(COALESCE(descripcion, '')) LIKE '%desinfecc%'
+                ORDER BY COALESCE(fecha_fin_real, fecha_inicio, fecha_fin_prevista, fecha_solicitud, '') DESC, id DESC
+            """).fetchall()
+            for row in rows:
+                responsable = (_row_value(row, "responsable_actual", "") or "").strip()
+                detalle = " | ".join([
+                    (_row_value(row, "tipo", "") or "").strip(),
+                    (_row_value(row, "titulo", "") or "").strip(),
+                    (_row_value(row, "descripcion", "") or "").strip(),
+                ]).strip(" |")
+                modalidad = _sst_desinf_normalize_modalidad("", detalle)
+                fecha_programada = (
+                    (_row_value(row, "fecha_inicio", "") or "").strip()
+                    or (_row_value(row, "fecha_fin_prevista", "") or "").strip()
+                    or (_row_value(row, "fecha_solicitud", "") or "").strip()
+                )
+                fecha_realizada = (_row_value(row, "fecha_fin_real", "") or "").strip()
+                raw_state = _sst_clean_upper(_row_value(row, "estado", ""))
+                manual_state = "REALIZADA" if raw_state == "FINALIZADA" and fecha_realizada else ""
+                state_code = manual_state or _sst_desinf_auto_state({
+                    "fecha_programada": fecha_programada,
+                    "fecha_realizada": fecha_realizada,
+                    "estado": manual_state,
+                }, date.today())
+                anchor_date = fecha_realizada or fecha_programada
+                records.append({
+                    "id": f"obra-{int(_row_value(row, 'id', 0) or 0)}",
+                    "source_id": int(_row_value(row, "id", 0) or 0),
+                    "source": "obras_sede",
+                    "editable": False,
+                    "sede_codigo": (_row_value(row, "sede_codigo", "") or "").strip().upper(),
+                    "fecha": (_row_value(row, "fecha_solicitud", "") or "").strip(),
+                    "fecha_programada": fecha_programada,
+                    "fecha_realizada": fecha_realizada,
+                    "modalidad": modalidad,
+                    "modalidad_label": SST_DESINFECCION_MODALIDAD_LABELS.get(modalidad, "-"),
+                    "responsable": responsable,
+                    "producto_detalle": detalle,
+                    "estado": manual_state,
+                    "state_code": state_code,
+                    "state_meta": _sst_state_badge(state_code, SST_DESINFECCION_STATE_LABELS),
+                    "observaciones": (_row_value(row, "observaciones", "") or "").strip() or detalle,
+                    "seguimiento_id": 0,
+                    "usuario": "",
+                    "anchor_date": anchor_date,
+                })
+        return records
+
+    def _sst_desinf_empty_summary(sede_info):
+        return {
+            "sede_codigo": (_row_value(sede_info, "codigo", "") or "").strip().upper(),
+            "sede_nombre": (_row_value(sede_info, "nombre", "") or "").strip(),
+            "ultima_desinfeccion": "",
+            "modalidad": "",
+            "modalidad_label": "-",
+            "responsable": "",
+            "proxima_prevista": "",
+            "state_code": "SIN_REGISTRO",
+            "state_meta": _sst_state_badge("SIN_REGISTRO", SST_DESINFECCION_STATE_LABELS),
+            "next_action": _sst_desinf_next_action("SIN_REGISTRO"),
+            "observaciones": "",
+            "record_count": 0,
+            "primary_record_id": 0,
+            "seguimiento_id": 0,
+            "history_records": [],
+        }
+
+    def _sst_desinf_aggregate_by_sede(records):
+        grouped = defaultdict(list)
+        for record in records:
+            sede_codigo = (record.get("sede_codigo") or "").strip().upper()
+            if sede_codigo:
+                grouped[sede_codigo].append(record)
+        summary_map = {}
+        today_ref = date.today()
+        for sede_codigo, items in grouped.items():
+            ordered = sorted(items, key=lambda item: ((item.get("anchor_date") or ""), int(item.get("source_id") or 0)), reverse=True)
+            latest_record = ordered[0]
+            latest_realizadas = sorted(
+                [item for item in items if item.get("fecha_realizada")],
+                key=lambda item: item.get("fecha_realizada") or "",
+                reverse=True,
+            )
+            pending_programadas = sorted(
+                [
+                    item for item in items
+                    if item.get("fecha_programada")
+                    and not item.get("fecha_realizada")
+                    and item.get("state_code") not in {"CANCELADA", "REALIZADA"}
+                ],
+                key=lambda item: item.get("fecha_programada") or "",
+            )
+            manual_latest = next((item for item in ordered if item.get("state_code") in {"OBSERVADA", "CANCELADA"}), None)
+            if manual_latest:
+                state_code = manual_latest["state_code"]
+            elif pending_programadas:
+                first_pending = pending_programadas[0]
+                pending_date = _sst_calendar_parse_date(first_pending.get("fecha_programada"))
+                state_code = "VENCIDA" if pending_date and pending_date < today_ref else "PROGRAMADA"
+            elif latest_realizadas:
+                state_code = "PENDIENTE_DE_PROGRAMACION"
+            else:
+                state_code = "SIN_REGISTRO"
+            current_record = next((item for item in pending_programadas if item.get("editable")), None)
+            if not current_record:
+                current_record = next((item for item in ordered if item.get("editable")), None)
+            if not current_record:
+                current_record = latest_record
+            history_records = []
+            for item in ordered[:24]:
+                history_date = item.get("fecha_realizada") or item.get("fecha_programada") or item.get("fecha") or ""
+                history_records.append({
+                    "fecha": history_date,
+                    "modalidad_label": item.get("modalidad_label") or "-",
+                    "responsable": item.get("responsable") or "-",
+                    "state_meta": item.get("state_meta") or _sst_state_badge(item.get("state_code"), SST_DESINFECCION_STATE_LABELS),
+                    "observaciones": item.get("observaciones") or item.get("producto_detalle") or "",
+                    "usuario": item.get("usuario") or "",
+                    "editable": bool(item.get("editable")),
+                    "source_id": int(item.get("source_id") or 0) if item.get("editable") else 0,
+                })
+            summary_map[sede_codigo] = {
+                "sede_codigo": sede_codigo,
+                "sede_nombre": "",
+                "ultima_desinfeccion": (latest_realizadas[0].get("fecha_realizada") if latest_realizadas else ""),
+                "modalidad": current_record.get("modalidad") or latest_record.get("modalidad") or "",
+                "modalidad_label": current_record.get("modalidad_label") or latest_record.get("modalidad_label") or "-",
+                "responsable": current_record.get("responsable") or latest_record.get("responsable") or "",
+                "proxima_prevista": (pending_programadas[0].get("fecha_programada") if pending_programadas else ""),
+                "state_code": state_code,
+                "state_meta": _sst_state_badge(state_code, SST_DESINFECCION_STATE_LABELS),
+                "next_action": _sst_desinf_next_action(state_code),
+                "observaciones": current_record.get("observaciones") or latest_record.get("observaciones") or "",
+                "record_count": len(items),
+                "primary_record_id": int(current_record.get("source_id") or 0) if current_record.get("editable") else 0,
+                "seguimiento_id": int(current_record.get("seguimiento_id") or 0) if current_record.get("editable") else 0,
+                "history_records": history_records,
+                "current_record": current_record,
+                "show_followup": bool(int(current_record.get("source_id") or 0) > 0 and current_record.get("editable") and state_code in SST_DESINFECCION_PENDING_STATES and not int(current_record.get("seguimiento_id") or 0)),
+            }
+        return summary_map
+
+    def _sst_desinfecciones_context(con):
+        ensure_sst_general_table(con)
+        ensure_sst_operativo_historial_tables(con)
+        ensure_sst_desinfecciones_tables(con)
+        sedes = list(_sst_fetch_sedes_base(con))
+        all_records = _sst_desinf_fetch_records(con)
+        summary_map = _sst_desinf_aggregate_by_sede(all_records)
+        f_sede = (_sst_clean_upper(request.args.get("sede")) or "").strip().upper()
+        f_estado = _sst_desinf_normalize_state(request.args.get("estado"))
+        f_modalidad = _sst_desinf_normalize_modalidad(request.args.get("modalidad"))
+        f_q = (request.args.get("q") or "").strip().lower()
+        f_open_sede = (_sst_clean_upper(request.args.get("open_sede")) or "").strip().upper()
+        f_registro = _sst_int_nonneg(request.args.get("registro") or request.args.get("edit"))
+        try:
+            f_year = max(int(request.args.get("year") or 0), 0)
+        except Exception:
+            f_year = 0
+        try:
+            f_month = max(int(request.args.get("month") or 0), 0)
+        except Exception:
+            f_month = 0
+        visible_sedes = [item for item in sedes if not f_sede or item["codigo"] == f_sede]
+        base_rows = []
+        for sede_info in visible_sedes:
+            sede_codigo = (_row_value(sede_info, "codigo", "") or "").strip().upper()
+            row = dict(summary_map.get(sede_codigo) or _sst_desinf_empty_summary(sede_info))
+            row["sede_codigo"] = sede_codigo
+            row["sede_nombre"] = (_row_value(sede_info, "nombre", "") or "").strip()
+            row["url"] = url_for(
+                "sst_desinfecciones_home",
+                sede=f_sede or None,
+                estado=f_estado or None,
+                modalidad=f_modalidad or None,
+                year=(f_year or None),
+                month=(f_month or None),
+                q=f_q or None,
+                open_sede=sede_codigo,
+                registro=(int(row.get("primary_record_id") or 0) or None),
+            )
+            haystack = " ".join([
+                row["sede_codigo"],
+                row["sede_nombre"],
+                row.get("modalidad_label") or "",
+                row.get("responsable") or "",
+                row.get("next_action") or "",
+                row.get("observaciones") or "",
+            ]).lower()
+            row["haystack"] = haystack
+            base_rows.append(row)
+        filtered_rows = []
+        for row in base_rows:
+            if f_estado and row["state_code"] != f_estado:
+                continue
+            if f_modalidad and row.get("modalidad") != f_modalidad:
+                continue
+            if f_year or f_month:
+                date_candidates = []
+                for key in ("ultima_desinfeccion", "proxima_prevista"):
+                    date_value = _sst_calendar_parse_date(row.get(key))
+                    if date_value:
+                        date_candidates.append(date_value)
+                if not date_candidates:
+                    continue
+                if f_year and not any(item.year == f_year for item in date_candidates):
+                    continue
+                if f_month and not any(item.month == f_month for item in date_candidates):
+                    continue
+            if f_q and f_q not in row["haystack"]:
+                continue
+            filtered_rows.append(row)
+        state_by_sede = sorted(filtered_rows, key=lambda item: item["sede_codigo"])
+        selected_record = next((item for item in all_records if item.get("editable") and int(item.get("source_id") or 0) == f_registro), None)
+        detail_sede = f_open_sede or (selected_record.get("sede_codigo") if selected_record else "")
+        selected_summary = next((item for item in base_rows if item["sede_codigo"] == detail_sede), None)
+        if selected_summary:
+            selected_summary = dict(selected_summary)
+            selected_summary["modal_close_url"] = url_for(
+                "sst_desinfecciones_home",
+                sede=f_sede or None,
+                estado=f_estado or None,
+                modalidad=f_modalidad or None,
+                year=(f_year or None),
+                month=(f_month or None),
+                q=f_q or None,
+            )
+            selected_summary["modal_edit_url"] = url_for(
+                "sst_desinfecciones_home",
+                sede=f_sede or None,
+                estado=f_estado or None,
+                modalidad=f_modalidad or None,
+                year=(f_year or None),
+                month=(f_month or None),
+                q=f_q or None,
+                open_sede=selected_summary["sede_codigo"],
+                registro=(int(selected_summary.get("primary_record_id") or 0) or None),
+                prefill_sede=selected_summary["sede_codigo"],
+                mostrar_form=1,
+            )
+            selected_summary["history_url"] = f"{selected_summary['modal_close_url']}#sst-desinfecciones-historial"
+        prefill_sede = (_sst_clean_upper(request.args.get("prefill_sede") or detail_sede or f_sede) or "").strip().upper()
+        show_form = bool(request.method == "POST" or request.args.get("mostrar_form"))
+        form_defaults = {
+            "edit_id": int(selected_record.get("source_id") or 0) if selected_record else 0,
+            "sede_codigo": (selected_record.get("sede_codigo") if selected_record else prefill_sede),
+            "fecha_programada": ((selected_record.get("fecha_programada") or "") if selected_record else ""),
+            "fecha_realizada": ((selected_record.get("fecha_realizada") or "") if selected_record else ""),
+            "modalidad": ((selected_record.get("modalidad") or "") if selected_record else ""),
+            "responsable": ((selected_record.get("responsable") or "") if selected_record else ""),
+            "producto_detalle": ((selected_record.get("producto_detalle") or "") if selected_record else ""),
+            "estado": ((selected_record.get("estado") or "") if selected_record else ""),
+            "observaciones": ((selected_record.get("observaciones") or "") if selected_record else ""),
+        }
+        if request.method == "POST" and (request.form.get("action") or "save").strip().lower() == "save":
+            form_defaults.update({
+                "edit_id": _sst_int_nonneg(request.form.get("edit_id")),
+                "sede_codigo": (_sst_clean_upper(request.form.get("sede_codigo")) or "").strip().upper(),
+                "fecha_programada": (request.form.get("fecha_programada") or "").strip(),
+                "fecha_realizada": (request.form.get("fecha_realizada") or "").strip(),
+                "modalidad": _sst_desinf_normalize_modalidad(request.form.get("modalidad")),
+                "responsable": (request.form.get("responsable") or "").strip(),
+                "producto_detalle": (request.form.get("producto_detalle") or "").strip(),
+                "estado": _sst_desinf_normalize_state(request.form.get("estado")),
+                "observaciones": (request.form.get("observaciones") or "").strip(),
+            })
+        history_rows = selected_summary["history_records"] if selected_summary else []
+        if not history_rows:
+            merged_history = []
+            for row in state_by_sede:
+                merged_history.extend(row.get("history_records") or [])
+            history_rows = merged_history[:24]
+        year_options = sorted({
+            item.year
+            for row in base_rows
+            for item in [
+                _sst_calendar_parse_date(row.get("ultima_desinfeccion")),
+                _sst_calendar_parse_date(row.get("proxima_prevista")),
+            ]
+            if item
+        })
+        return {
+            "sst_section": "desinfecciones",
+            "sedes": sedes,
+            "state_by_sede": state_by_sede,
+            "selected_summary": selected_summary,
+            "selected_record": selected_record,
+            "history_rows": history_rows,
+            "estado_options": [{"code": key, "label": value} for key, value in SST_DESINFECCION_STATE_LABELS.items()],
+            "modalidad_options": [{"code": key, "label": value} for key, value in SST_DESINFECCION_MODALIDAD_LABELS.items()],
+            "month_options": [{"value": number, "label": label} for number, label in SST_CALENDAR_MONTHS],
+            "year_options": year_options,
+            "f_sede": f_sede,
+            "f_estado": f_estado,
+            "f_modalidad": f_modalidad,
+            "f_q": f_q,
+            "f_year": f_year,
+            "f_month": f_month,
+            "show_form": show_form,
+            "form_defaults": form_defaults,
+            "kpi_sedes_con_registro": sum(1 for item in state_by_sede if int(item.get("record_count") or 0) > 0),
+            "kpi_sedes_sin_registro": sum(1 for item in state_by_sede if int(item.get("record_count") or 0) == 0),
+            "kpi_realizadas": sum(1 for item in state_by_sede if item.get("ultima_desinfeccion")),
+            "kpi_programadas": sum(1 for item in state_by_sede if item.get("state_code") == "PROGRAMADA"),
+            "kpi_pendientes": sum(1 for item in state_by_sede if item.get("state_code") in {"SIN_REGISTRO", "PENDIENTE_DE_PROGRAMACION", "OBSERVADA", "CANCELADA"}),
+            "kpi_vencidas": sum(1 for item in state_by_sede if item.get("state_code") == "VENCIDA"),
+            "fmt_fecha": _sst_fmt_fecha,
+        }
+
+    @app.route("/sst/desinfecciones", methods=["GET", "POST"], endpoint="sst_desinfecciones_home")
+    def sst_desinfecciones_home():
+        con = get_db()
+        ensure_sst_general_table(con)
+        ensure_sst_operativo_historial_tables(con)
+        ensure_sst_desinfecciones_tables(con)
+        if request.method == "POST":
+            action = (request.form.get("action") or "save").strip().lower()
+            user_name = _sst_current_user()
+            if action == "save":
+                edit_id = _sst_int_nonneg(request.form.get("edit_id"))
+                sede_codigo = (_sst_clean_upper(request.form.get("sede_codigo")) or "").strip().upper()
+                fecha_programada = (request.form.get("fecha_programada") or "").strip()
+                fecha_realizada = (request.form.get("fecha_realizada") or "").strip()
+                modalidad = _sst_desinf_normalize_modalidad(request.form.get("modalidad"), request.form.get("responsable"))
+                responsable = (request.form.get("responsable") or "").strip()
+                producto_detalle = (request.form.get("producto_detalle") or "").strip()
+                observaciones = (request.form.get("observaciones") or "").strip()
+                estado = _sst_desinf_normalize_state(request.form.get("estado"))
+                if not sede_codigo:
+                    flash("Selecciona una sede para guardar la desinfeccion.", "warning")
+                elif not (fecha_programada or fecha_realizada):
+                    flash("Carga una fecha programada o una fecha realizada.", "warning")
+                else:
+                    if not modalidad:
+                        modalidad = _sst_desinf_normalize_modalidad("", responsable)
+                    computed_state = estado or _sst_desinf_auto_state({
+                        "fecha_programada": fecha_programada,
+                        "fecha_realizada": fecha_realizada,
+                    }, date.today())
+                    previous_record = None
+                    if edit_id:
+                        previous_record = con.execute("""
+                            SELECT fecha_programada, fecha_realizada, fecha, estado
+                            FROM desinfecciones_sede
+                            WHERE id = ?
+                        """, (edit_id,)).fetchone()
+                    alias_fecha = fecha_realizada or fecha_programada or None
+                    if edit_id:
+                        con.execute("""
+                            UPDATE desinfecciones_sede
+                            SET cod_sede = ?,
+                                fecha = ?,
+                                fecha_programada = ?,
+                                fecha_realizada = ?,
+                                modalidad = ?,
+                                responsable = ?,
+                                empresa = ?,
+                                producto_detalle = ?,
+                                estado = ?,
+                                observaciones = ?,
+                                actualizado_por = ?,
+                                fecha_actualizacion = ?
+                            WHERE id = ?
+                        """, (
+                            sede_codigo,
+                            alias_fecha,
+                            fecha_programada or None,
+                            fecha_realizada or None,
+                            modalidad or None,
+                            responsable or None,
+                            responsable or None,
+                            producto_detalle or None,
+                            computed_state or None,
+                            observaciones or None,
+                            user_name,
+                            _sst_now_ts(),
+                            edit_id,
+                        ))
+                        record_id = edit_id
+                        _sst_historial_log(con, "desinfecciones", "actualizacion", record_id, sede_codigo, "", "Actualizacion de desinfeccion por sede.")
+                    else:
+                        con.execute("""
+                            INSERT INTO desinfecciones_sede(
+                                cod_sede, fecha, fecha_programada, fecha_realizada,
+                                modalidad, responsable, empresa, producto_detalle,
+                                estado, observaciones, activo,
+                                creado_por, actualizado_por, fecha_creacion, fecha_actualizacion
+                            )
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)
+                        """, (
+                            sede_codigo,
+                            alias_fecha,
+                            fecha_programada or None,
+                            fecha_realizada or None,
+                            modalidad or None,
+                            responsable or None,
+                            responsable or None,
+                            producto_detalle or None,
+                            computed_state or None,
+                            observaciones or None,
+                            user_name,
+                            user_name,
+                            _sst_now_ts(),
+                            _sst_now_ts(),
+                        ))
+                        record_id = int(con.execute("SELECT last_insert_rowid()").fetchone()[0])
+                        _sst_historial_log(con, "desinfecciones", "alta", record_id, sede_codigo, "", "Alta de desinfeccion por sede.")
+                    previous_state = _sst_desinf_auto_state(dict(previous_record or {}), date.today()) if previous_record else ""
+                    if previous_state != computed_state:
+                        _sst_historial_log(
+                            con,
+                            "desinfecciones",
+                            "cambio_estado",
+                            record_id,
+                            sede_codigo,
+                            "",
+                            f"{SST_DESINFECCION_STATE_LABELS.get(previous_state, 'Sin estado')} -> {SST_DESINFECCION_STATE_LABELS.get(computed_state, computed_state)}",
+                        )
+                    con.commit()
+                    con.close()
+                    flash("Registro de desinfeccion guardado.", "success")
+                    return redirect(url_for("sst_desinfecciones_home", sede=sede_codigo, open_sede=sede_codigo, registro=record_id))
+            elif action == "followup":
+                record_id = _sst_int_nonneg(request.form.get("record_id"))
+                record = next((item for item in _sst_desinf_fetch_records(con) if item.get("editable") and int(item.get("source_id") or 0) == record_id), None)
+                summary = None
+                if record:
+                    summary = _sst_desinf_aggregate_by_sede([item for item in _sst_desinf_fetch_records(con) if item.get("sede_codigo") == record.get("sede_codigo")]).get(record.get("sede_codigo"))
+                if not summary:
+                    con.close()
+                    flash("No se encontro la sede para crear seguimiento.", "warning")
+                    return redirect(url_for("sst_desinfecciones_home"))
+                if int(summary.get("seguimiento_id") or 0) > 0:
+                    con.close()
+                    flash("La sede ya tiene un seguimiento vinculado para desinfecciones.", "warning")
+                    return redirect(url_for("sst_desinfecciones_home", sede=summary["sede_codigo"], open_sede=summary["sede_codigo"], registro=record_id))
+                if summary.get("state_code") not in SST_DESINFECCION_PENDING_STATES:
+                    con.close()
+                    flash("La sede no tiene acciones pendientes para seguimiento.", "warning")
+                    return redirect(url_for("sst_desinfecciones_home", sede=summary["sede_codigo"], open_sede=summary["sede_codigo"], registro=record_id))
+                detalle = (
+                    f"Estado: {summary['state_meta']['label']} | "
+                    f"Ultima: {summary['ultima_desinfeccion'] or '-'} | "
+                    f"Proxima: {summary['proxima_prevista'] or '-'} | "
+                    f"Modalidad: {summary['modalidad_label']} | "
+                    f"Accion: {summary['next_action']}"
+                )
+                if str(summary.get("observaciones") or "").strip():
+                    detalle += f" | Observaciones: {summary['observaciones']}"
+                con.execute("""
+                    INSERT INTO sst_general(
+                        fecha, sede_codigo, tipo, categoria, area, titulo, detalle,
+                        estado, prioridad, responsable, accion_correctiva, fecha_objetivo,
+                        origen_tipo, origen_id, origen_deposito_codigo
+                    )
+                    VALUES (?, ?, 'no_conformidad', 'Desinfecciones', 'SG-SST', ?, ?, 'ABIERTO', 'Media', ?, ?, ?, 'desinfecciones', ?, '')
+                """, (
+                    date.today().isoformat(),
+                    summary["sede_codigo"],
+                    f"Desinfecciones - {summary['sede_codigo']}",
+                    detalle,
+                    user_name,
+                    summary["next_action"],
+                    summary["proxima_prevista"] or None,
+                    record_id,
+                ))
+                seguimiento_id = int(con.execute("SELECT last_insert_rowid()").fetchone()[0])
+                con.execute("""
+                    UPDATE desinfecciones_sede
+                    SET seguimiento_id = ?, actualizado_por = ?, fecha_actualizacion = ?
+                    WHERE id = ?
+                """, (seguimiento_id, user_name, _sst_now_ts(), record_id))
+                _sst_historial_log(con, "desinfecciones", "seguimiento", record_id, summary["sede_codigo"], "", f"Seguimiento #{seguimiento_id} creado.")
+                con.commit()
+                con.close()
+                flash("Seguimiento creado para desinfecciones.", "success")
+                return redirect(url_for("sst_desinfecciones_home", sede=summary["sede_codigo"], open_sede=summary["sede_codigo"], registro=record_id))
+        context = _sst_desinfecciones_context(con)
+        con.close()
+        return render_template("sst_desinfecciones.html", **context)
 
     @app.route("/sst/sedes/<codigo>", methods=["GET"], endpoint="sst_sede_ficha")
     def sst_sede_ficha(codigo):

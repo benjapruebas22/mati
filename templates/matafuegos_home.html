@@ -1,284 +1,385 @@
 {% extends "base.html" %}
+
 {% block extra_head %}
-  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-12-03') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-14-02') }}">
 {% endblock %}
+
 {% block content %}
-
-{% set sst_section = 'matafuegos' %}
-<section class="sedes-section sst-operativo" style="max-width:1180px;margin:auto">
+{% set current_open_sede = selected_summary.sede_codigo if selected_summary else (f_sede or '') %}
+<section class="sst-operativo sst-shell">
   {% include '_sst_operational_nav.html' %}
-  <h2 style="margin:0 0 6px 0">Matafuegos</h2>
-  <p style="margin:0 0 12px 0;font-size:13px;color:#64748b">
-    Tabla madre unica para carga, edicion, baja logica y reactivacion.
-  </p>
+  <header class="sst-op-header">
+    <div>
+      <p class="sst-op-eyebrow">SG-SST | Matafuegos</p>
+      <h1>Matafuegos</h1>
+      <p>Control consolidado por sede de cantidad, vigencia, lotes, vencimientos y proximas acciones.</p>
+    </div>
+    <div class="sst-op-actions">
+      <a class="sst-op-btn primary" href="{{ url_for('matafuegos_home', sede=f_sede or None, estado=f_estado or None, lote=f_lote or None, year=f_year or None, month=f_month or None, q=f_q or None, open_sede=current_open_sede or None, prefill_sede=current_open_sede or f_sede or None, mostrar_form=1) }}#matafuegos-form">
+        Cargar matafuego
+      </a>
+      <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo', sede=f_sede or None, tipo='matafuegos') }}">Calendario operativo</a>
+    </div>
+  </header>
 
-  <div class="sst-op-nav" aria-label="Vistas de vencimientos">
-    <a class="{% if vencimiento == 'todos' %}is-active{% endif %}" href="{{ url_for('matafuegos_home', sede=sede, piso=piso, q=q, lote_vencimiento=prefill_lote or None) }}">Inventario completo</a>
-    <a class="{% if vencimiento == 'proximos' %}is-active{% endif %}" href="{{ url_for('matafuegos_home', sede=sede, piso=piso, q=q, vencimiento='proximos', lote_vencimiento=prefill_lote or None) }}">Próximos vencimientos</a>
-    <a class="{% if vencimiento == 'vencidos' %}is-active{% endif %}" href="{{ url_for('matafuegos_home', sede=sede, piso=piso, q=q, vencimiento='vencidos', lote_vencimiento=prefill_lote or None) }}">Vencidos</a>
-    <a href="#lotes">Vista por lotes</a>
-    <a href="{{ url_for('sst_calendario_operativo') }}">Calendario operativo</a>
-  </div>
-
-  <div id="lotes" class="sst-lot-grid" style="margin-bottom:12px">
-    {% for lote in lotes_resumen %}
-    <article class="sst-lot-card">
-      <span class="sst-lot-kicker">{{ lote.label }}</span>
-      <strong>{{ lote.sedes_count }} sede{% if lote.sedes_count != 1 %}s{% endif %}</strong>
-      <div class="sst-lot-meta">Vence: {{ lote.due_date[8:10] }}/{{ lote.due_date[5:7] }}/{{ lote.due_date[:4] }}</div>
-      <div class="sst-lot-meta">{{ lote.equipos }} equipo{% if lote.equipos != 1 %}s{% endif %}{% if lote.sedes_text %} · {{ lote.sedes_text }}{% endif %}</div>
-      <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo', tipo='matafuegos', year=lote.year, month=lote.month) }}">Abrir lote</a>
-    </article>
-    {% else %}
-    <article class="sst-lot-card">
-      <span class="sst-lot-kicker">Vencimientos</span>
-      <strong>Sin lotes visibles</strong>
-      <div class="sst-lot-meta">Ajusta filtros o carga inventario activo para ver la vista operativa.</div>
-    </article>
-    {% endfor %}
-  </div>
-
-  <form method="get" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
-    <input type="hidden" name="vencimiento" value="{{ vencimiento }}">
-    <input type="hidden" name="lote_vencimiento" value="{{ prefill_lote }}">
-    <input name="sede" value="{{ sede }}" placeholder="Sede (S01)"
-      style="padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
-    <select name="piso" style="padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
-      <option value="" {% if not piso %}selected{% endif %}>Todos los pisos</option>
-      {% for p in ['PB','P1','P2','P3','P4'] %}
-      <option value="{{ p }}" {% if piso==p %}selected{% endif %}>{{ p }}</option>
-      {% endfor %}
-    </select>
-    <input name="q" value="{{ q }}" placeholder="Buscar (sede, local, tipo, serie)"
-      style="min-width:280px;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
-    <button style="padding:8px 12px;border-radius:10px;border:1px solid #e5e7eb;background:#fff">Filtrar</button>
-    <a href="{{ url_for('matafuegos_home') }}"
-      style="padding:8px 12px;border-radius:10px;border:1px solid #e5e7eb;background:#fff;text-decoration:none;color:#111827">
-      Limpiar
-    </a>
-    <a href="{{ url_for('dashboard') }}"
-      style="padding:8px 12px;border-radius:10px;border:1px solid #e5e7eb;background:#fff;text-decoration:none;color:#111827">
-      Volver
-    </a>
+  <form class="sst-op-card sst-op-filter-form sst-luces-filter-card" method="get" action="{{ url_for('matafuegos_home') }}">
+    <label class="sst-op-field">
+      <small>Sede</small>
+      <select name="sede">
+        <option value="">Todas</option>
+        {% for sede in sedes %}
+        <option value="{{ sede.codigo }}" {% if f_sede == sede.codigo %}selected{% endif %}>{{ sede.codigo }} - {{ sede.nombre }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="sst-op-field">
+      <small>Estado</small>
+      <select name="estado">
+        <option value="">Todos</option>
+        {% for item in estado_options %}
+        <option value="{{ item.code }}" {% if f_estado == item.code %}selected{% endif %}>{{ item.label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="sst-op-field">
+      <small>Lote</small>
+      <select name="lote">
+        <option value="">Todos</option>
+        {% for item in lot_options %}
+        <option value="{{ item }}" {% if f_lote == item %}selected{% endif %}>{{ item }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="sst-op-field">
+      <small>Ano de vencimiento</small>
+      <select name="year">
+        <option value="">Todos</option>
+        {% for item in year_options %}
+        <option value="{{ item }}" {% if f_year == item %}selected{% endif %}>{{ item }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="sst-op-field">
+      <small>Mes de vencimiento</small>
+      <select name="month">
+        <option value="">Todos</option>
+        {% for item in month_options %}
+        <option value="{{ item.value }}" {% if f_month == item.value %}selected{% endif %}>{{ item.label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="sst-op-field">
+      <small>Buscar</small>
+      <input name="q" value="{{ f_q }}" placeholder="Sede, serie o numero de extintor">
+    </label>
+    <div class="sst-op-form-actions sst-luces-filter-actions">
+      <button class="sst-op-btn" type="submit">Aplicar</button>
+      <a class="sst-op-btn" href="{{ url_for('matafuegos_home') }}">Limpiar</a>
+    </div>
   </form>
 
-  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
-    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px">
-      <div style="font-size:12px;color:#64748b">Activos</div>
-      <div style="font-size:18px;font-weight:900">{{ kpi.total if kpi else 0 }}</div>
-    </div>
-    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px">
-      <div style="font-size:12px;color:#64748b">Vencen pronto</div>
-      <div style="font-size:18px;font-weight:900">{{ kpi.vencen_pronto if kpi else 0 }}</div>
-    </div>
-    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px">
-      <div style="font-size:12px;color:#64748b">Vencidos</div>
-      <div style="font-size:18px;font-weight:900">{{ kpi.vencidos if kpi else 0 }}</div>
-    </div>
+  <div class="sst-calendar-kpis sst-calendar-kpis-4 sst-luces-kpis">
+    <article class="sst-op-card sst-calendar-kpi"><span>Total de matafuegos</span><strong>{{ kpi_total_matafuegos }}</strong><small>Activos en la vista</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Vigentes</span><strong>{{ kpi_vigentes }}</strong><small>Sin vencimiento inmediato</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Proximos a vencer</span><strong>{{ kpi_proximos }}</strong><small>Dentro del plazo operativo</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Vencidos</span><strong>{{ kpi_vencidos }}</strong><small>Requieren recarga</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Sedes con atencion</span><strong>{{ kpi_sedes_atencion }}</strong><small>Con gestion abierta</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Lotes activos</span><strong>{{ kpi_lotes_activos }}</strong><small>Con proximo vencimiento visible</small></article>
   </div>
 
-  <div id="alta" style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:14px;margin-bottom:14px">
-    <form method="post" style="display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:10px;align-items:end">
-      <input type="hidden" name="id" value="{{ edit_row.id if edit_row else '' }}">
-      <div>
-        <div style="font-size:12px;color:#64748b;margin-bottom:4px">Sede</div>
-        <select name="sede" style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
-          <option value="">--</option>
-          {% set sede_sel = edit_row.sede if edit_row else sede %}
-          {% for sopt in sede_opts %}
-          <option value="{{ sopt.codigo }}" {% if sede_sel == sopt.codigo %}selected{% endif %}>{{ sopt.codigo }}{% if sopt.nombre %} - {{ sopt.nombre }}{% endif %}</option>
+  <article class="sst-op-card wide sst-luces-table-card">
+    <div class="sst-op-card-head">
+      <h2>Tabla general por sede</h2>
+      <span class="sst-op-count">{{ state_by_sede|length }} sedes</span>
+    </div>
+    <div class="sst-luces-table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Sede</th>
+            <th>Cantidad</th>
+            <th>Vigentes</th>
+            <th>Proximos</th>
+            <th>Vencidos</th>
+            <th>Lote</th>
+            <th>Proximo vencimiento</th>
+            <th>Estado</th>
+            <th>Proxima accion</th>
+            <th>Abrir</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in state_by_sede %}
+          <tr>
+            <td><strong>{{ row.sede_codigo }}</strong><br><small>{{ row.sede_nombre }}</small></td>
+            <td>{{ row.total }}</td>
+            <td>{{ row.vigentes }}</td>
+            <td>{{ row.proximos }}</td>
+            <td>{{ row.vencidos }}</td>
+            <td>{{ row.primary_lot }}</td>
+            <td>{{ row.next_due_label }}</td>
+            <td><span class="sst-status-badge {{ row.state_meta.class }}">{{ row.state_meta.label }}</span></td>
+            <td class="sst-luces-next-action">{{ row.next_action }}</td>
+            <td><a class="sst-op-btn" href="{{ row.url }}">Abrir</a></td>
+          </tr>
+          {% else %}
+          <tr><td colspan="10" class="sst-op-empty">No hay sedes para este filtro.</td></tr>
           {% endfor %}
-        </select>
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  {% if selected_summary and not show_form %}
+  <div class="sst-op-modal-backdrop">
+    <article class="sst-op-card sst-op-modal-card">
+      <div class="sst-op-card-head">
+        <div>
+          <h2>{{ selected_summary.sede_codigo }} - {{ selected_summary.sede_nombre }}</h2>
+          <span class="sst-op-count">Ficha compacta por sede</span>
+        </div>
+        <a class="sst-op-btn" href="{{ selected_summary.modal_close_url }}">Cerrar</a>
       </div>
-      <div>
-        <div style="font-size:12px;color:#64748b;margin-bottom:4px">Piso</div>
-        <select name="piso" style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
-          {% set piso_sel = edit_row.piso if edit_row else 'PB' %}
-          <option value="PB" {% if piso_sel == 'PB' %}selected{% endif %}>PB</option>
-          <option value="P1" {% if piso_sel == 'P1' %}selected{% endif %}>P1</option>
-          <option value="P2" {% if piso_sel == 'P2' %}selected{% endif %}>P2</option>
-          <option value="P3" {% if piso_sel == 'P3' %}selected{% endif %}>P3</option>
-        </select>
+      <div class="sst-status-list">
+        <div class="sst-status-row">
+          <div class="sst-status-label">Cantidad total</div>
+          <div class="sst-status-detail">{{ selected_summary.total }} matafuegos activos.</div>
+          <span class="sst-status-badge {{ 'sin-dato' if selected_summary.total == 0 else 'correcto' if selected_summary.total == selected_summary.vigentes else 'pendiente' }}">{{ selected_summary.total }}</span>
+        </div>
+        <div class="sst-status-row">
+          <div class="sst-status-label">Vigentes</div>
+          <div class="sst-status-detail">{{ selected_summary.vigentes }} equipos sin alerta inmediata.</div>
+          <span class="sst-status-badge correcto">{{ selected_summary.vigentes }}</span>
+        </div>
+        <div class="sst-status-row">
+          <div class="sst-status-label">Proximos</div>
+          <div class="sst-status-detail">{{ selected_summary.proximos }} equipos dentro del plazo de control.</div>
+          <span class="sst-status-badge pendiente">{{ selected_summary.proximos }}</span>
+        </div>
+        <div class="sst-status-row">
+          <div class="sst-status-label">Vencidos</div>
+          <div class="sst-status-detail">{{ selected_summary.vencidos }} equipos con recarga pendiente.</div>
+          <span class="sst-status-badge atencion">{{ selected_summary.vencidos }}</span>
+        </div>
+        <div class="sst-status-row">
+          <div class="sst-status-label">Lotes</div>
+          <div class="sst-status-detail">{{ selected_summary.lotes_text }}</div>
+          <span class="sst-status-badge {{ 'sin-dato' if selected_summary.lotes_text == '-' else 'pendiente' }}">{{ selected_summary.primary_lot }}</span>
+        </div>
+        <div class="sst-status-row">
+          <div class="sst-status-label">Proximo vencimiento</div>
+          <div class="sst-status-detail">{{ selected_summary.next_due_label if selected_summary.next_due_label != '-' else 'Sin fecha visible.' }}</div>
+          <span class="sst-status-badge {{ 'sin-dato' if selected_summary.next_due_label == '-' else 'pendiente' }}">Fecha</span>
+        </div>
+        <div class="sst-status-row">
+          <div class="sst-status-label">Estado</div>
+          <div class="sst-status-detail">{{ selected_summary.state_meta.label }}</div>
+          <span class="sst-status-badge {{ selected_summary.state_meta.class }}">{{ selected_summary.state_meta.label }}</span>
+        </div>
+        <div class="sst-status-row">
+          <div class="sst-status-label">Proxima accion</div>
+          <div class="sst-status-detail">{{ selected_summary.next_action }}</div>
+          <span class="sst-status-badge {{ 'correcto' if selected_summary.state_code in ['VIGENTE', 'RECARGA_REALIZADA'] else 'pendiente' }}">Gestion</span>
+        </div>
       </div>
-      <div>
-        <div style="font-size:12px;color:#64748b;margin-bottom:4px">Local</div>
-        <input name="local" value="{{ edit_row.local if edit_row else '' }}" placeholder="D01 / Oficina / Pasillo"
-          style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
+
+      <article class="sst-op-card wide" style="margin:14px;">
+        <div class="sst-op-card-head">
+          <h2>Inventario tecnico de la sede</h2>
+          <span class="sst-op-count">{{ selected_summary.inventory_rows|length }} registros</span>
+        </div>
+        <div class="sst-luces-table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Ubicacion</th>
+                <th>Tipo</th>
+                <th>Kg</th>
+                <th>Serie</th>
+                <th>Extintor</th>
+                <th>Lote</th>
+                <th>Fecha recarga</th>
+                <th>Fecha vencimiento</th>
+                <th>Prueba hidro</th>
+                <th>Estado</th>
+                <th>Accion</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in selected_summary.inventory_rows %}
+              <tr>
+                <td>{{ item.location_label or '-' }}</td>
+                <td>{{ item.tipo or '-' }}</td>
+                <td>{{ item.capacidad_kg or '-' }}</td>
+                <td>{{ item.numero_serie or '-' }}</td>
+                <td>{{ item.nro_extintor or '-' }}</td>
+                <td>{{ item.schedule_lot_month or item.lote_vencimiento or '-' }}</td>
+                <td>{{ item.fecha_recarga_label }}</td>
+                <td>{{ item.fecha_vencimiento_label }}</td>
+                <td>{{ item.fecha_prueba_hidro_label }}</td>
+                <td><span class="sst-status-badge {{ item.state_meta.class }}">{{ item.state_meta.label }}</span></td>
+                <td>
+                  <div style="display:flex;gap:6px;flex-wrap:wrap">
+                    <a class="sst-op-btn" href="{{ url_for('matafuegos_home', sede=f_sede or None, estado=f_estado or None, lote=f_lote or None, year=f_year or None, month=f_month or None, q=f_q or None, open_sede=selected_summary.sede_codigo, registro=item.id, prefill_sede=selected_summary.sede_codigo, mostrar_form=1) }}#matafuegos-form">Editar</a>
+                    {% if item.is_active %}
+                    <form method="post" action="{{ form_action_url }}">
+                      <input type="hidden" name="id" value="{{ item.id }}">
+                      <button class="sst-op-btn" type="submit" name="action" value="deactivate">Baja</button>
+                    </form>
+                    {% else %}
+                    <form method="post" action="{{ form_action_url }}">
+                      <input type="hidden" name="id" value="{{ item.id }}">
+                      <button class="sst-op-btn" type="submit" name="action" value="reactivate">Reactivar</button>
+                    </form>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+              {% else %}
+              <tr><td colspan="11" class="sst-op-empty">Sin inventario tecnico cargado para esta sede.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <div class="sst-luces-modal-actions">
+        <a class="sst-op-btn" href="{{ selected_summary.modal_edit_url }}#matafuegos-form">{% if selected_summary.primary_record_id %}Editar{% else %}Cargar matafuego{% endif %}</a>
+        <a class="sst-op-btn" href="{{ selected_summary.history_url }}">Ver historial</a>
       </div>
-      <div>
-        <div style="font-size:12px;color:#64748b;margin-bottom:4px">Tipo</div>
-        <select name="tipo" style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
-          {% set tipo_sel = edit_row.tipo if edit_row else '' %}
-          <option value="">--</option>
-          {% for topt in tipo_opts %}
-          <option value="{{ topt }}" {% if tipo_sel == topt %}selected{% endif %}>{{ topt }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div>
-        <div style="font-size:12px;color:#64748b;margin-bottom:4px">Capacidad (kg)</div>
-        <select name="capacidad_kg" style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
-          {% set cap_sel = edit_row.capacidad_kg if edit_row else '' %}
-          <option value="">--</option>
-          {% for cap in capacidad_opts %}
-          <option value="{{ cap }}" {% if cap_sel|float == cap|float %}selected{% endif %}>{{ cap }} kg</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div>
-        <div style="font-size:12px;color:#64748b;margin-bottom:4px">N° Serie</div>
-        <input name="numero_serie" value="{{ edit_row.numero_serie if edit_row else '' }}"
-          style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
-      </div>
-      <div>
-        <div style="font-size:12px;color:#64748b;margin-bottom:4px">N° Extintor</div>
-        <input name="nro_extintor" value="{{ edit_row.nro_extintor if edit_row else '' }}"
-          style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
-      </div>
-      <div>
-        <div style="font-size:12px;color:#64748b;margin-bottom:4px">Lote venc.</div>
-        <select name="lote_vencimiento" style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
-          {% set lote_sel = edit_row.lote_vencimiento if edit_row else prefill_lote %}
-          {% for lote in ['Mayo','Septiembre','Diciembre','Otro'] %}
-          <option value="{{ lote }}" {% if lote_sel==lote %}selected{% endif %}>{{ lote }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div>
-        <div style="font-size:12px;color:#64748b;margin-bottom:4px">Fecha recarga</div>
-        <input type="date" name="fecha_recarga" value="{{ edit_row.fecha_recarga if edit_row else prefill_fecha_recarga }}"
-          style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
-      </div>
-      <div>
-        <div style="font-size:12px;color:#64748b;margin-bottom:4px">Fecha vencimiento</div>
-        <input type="date" name="fecha_vencimiento" value="{{ edit_row.fecha_vencimiento if edit_row else prefill_fecha_vencimiento }}"
-          style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
-      </div>
-      <div>
-        <div style="font-size:12px;color:#64748b;margin-bottom:4px">Prueba hidro</div>
-        <input type="date" name="fecha_prueba_hidro" value="{{ edit_row.fecha_prueba_hidro if edit_row else '' }}"
-          style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
-      </div>
-      <div>
-        <div style="font-size:12px;color:#64748b;margin-bottom:4px">Activo</div>
-        {% set act = (edit_row.activo if edit_row else 1) %}
-        <label style="display:flex;gap:8px;align-items:center">
-          <input type="checkbox" name="activo" value="1" {% if act==1 %}checked{% endif %}>
-          <span style="font-size:13px">Si</span>
+    </article>
+  </div>
+  {% endif %}
+
+  <article class="sst-op-card sst-luces-form-card">
+    <div class="sst-op-card-head">
+      <h2 id="matafuegos-form">{% if form_defaults.sede_codigo %}Formulario de {{ form_defaults.sede_codigo }}{% else %}Formulario tecnico{% endif %}</h2>
+      <span class="sst-op-count">{% if show_form %}Formulario abierto{% else %}Formulario colapsado{% endif %}</span>
+    </div>
+    <details {% if show_form %}open{% endif %} class="sst-luces-details">
+      <summary class="sst-op-form-summary">{% if form_defaults.sede_codigo %}Abrir formulario de {{ form_defaults.sede_codigo }}{% else %}Abrir formulario{% endif %}</summary>
+      <form class="sst-op-form-grid sst-luces-form-grid" method="post" action="{{ form_action_url }}">
+        <input type="hidden" name="action" value="save">
+        <input type="hidden" name="edit_id" value="{{ form_defaults.edit_id }}">
+
+        <label class="sst-op-field">
+          <small>Sede</small>
+          <select name="sede_codigo" required>
+            <option value="">Seleccionar</option>
+            {% for sede in sedes %}
+            <option value="{{ sede.codigo }}" {% if form_defaults.sede_codigo == sede.codigo %}selected{% endif %}>{{ sede.codigo }} - {{ sede.nombre }}</option>
+            {% endfor %}
+          </select>
         </label>
-      </div>
-      <div style="grid-column:1 / -1">
-        <div style="font-size:12px;color:#64748b;margin-bottom:4px">Observaciones</div>
-        <input name="observaciones" value="{{ edit_row.observaciones if edit_row else '' }}"
-          style="width:100%;padding:8px 10px;border:1px solid #e5e7eb;border-radius:10px">
-      </div>
-      <div style="grid-column:1 / -1;display:flex;gap:8px;flex-wrap:wrap">
-        <button name="accion" value="guardar"
-          style="padding:8px 12px;border-radius:10px;border:1px solid #1d4ed8;background:#1d4ed8;color:#fff">
-          Guardar
-        </button>
-        {% if edit_row and not edit_row.activo %}
-        <button name="accion" value="reactivar"
-          style="padding:8px 12px;border-radius:10px;border:1px solid #16a34a;background:#fff;color:#16a34a">
-          Reactivar
-        </button>
-        {% endif %}
-        <a href="{{ url_for('matafuegos_home', sede=sede, piso=piso, q=q) }}"
-          style="padding:8px 12px;border-radius:10px;border:1px solid #e5e7eb;background:#fff;text-decoration:none;color:#111827">
-          Cancelar
-        </a>
-      </div>
-    </form>
-  </div>
+        <label class="sst-op-field">
+          <small>Piso o ubicacion</small>
+          <select name="piso">
+            {% for item in ['PB', 'P1', 'P2', 'P3', 'P4'] %}
+            <option value="{{ item }}" {% if form_defaults.piso == item %}selected{% endif %}>{{ item }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="sst-op-field">
+          <small>Local o sector</small>
+          <input name="local" value="{{ form_defaults.local }}" placeholder="Pasillo, oficina o referencia">
+        </label>
+        <label class="sst-op-field">
+          <small>Tipo</small>
+          <select name="tipo">
+            {% for item in tipo_opts %}
+            <option value="{{ item }}" {% if form_defaults.tipo == item %}selected{% endif %}>{{ item }}</option>
+            {% endfor %}
+          </select>
+        </label>
 
-  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;overflow:hidden;margin-bottom:14px">
-    <table style="width:100%;border-collapse:collapse;font-size:12px">
-      <thead style="background:#f3f4f6">
-        <tr>
-          <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Sede</th>
-          <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Piso</th>
-          <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Local</th>
-          <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Tipo</th>
-          <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb">Kg</th>
-          <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Serie</th>
-          <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Extintor</th>
-          <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Lote</th>
-          <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Vence</th>
-          <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Estado</th>
-          <th style="text-align:center;padding:8px;border-bottom:1px solid #e5e7eb">Activo</th>
-          <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb">Accion</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in rows %}
-        <tr {% if r.fecha_vencimiento and (r.fecha_vencimiento|string) <= (fecha_45d|string) %}style="background:#fff1f2"{% endif %}>
-          <td style="padding:8px;border-bottom:1px solid #e5e7eb;font-weight:700">{{ r.sede }}</td>
-          <td style="padding:8px;border-bottom:1px solid #e5e7eb">{{ r.piso or 'PB' }}</td>
-          <td style="padding:8px;border-bottom:1px solid #e5e7eb">{{ r.local or '' }}</td>
-          <td style="padding:8px;border-bottom:1px solid #e5e7eb">{{ r.tipo or '' }}</td>
-          <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center">{{ r.capacidad_kg or '' }}</td>
-          <td style="padding:8px;border-bottom:1px solid #e5e7eb">{{ r.numero_serie or '' }}</td>
-          <td style="padding:8px;border-bottom:1px solid #e5e7eb">{{ r.nro_extintor or '' }}</td>
-          <td style="padding:8px;border-bottom:1px solid #e5e7eb">{{ r.lote_vencimiento or '' }}</td>
-          <td style="padding:8px;border-bottom:1px solid #e5e7eb;font-weight:800">{{ r.fecha_vencimiento or '' }}</td>
-          <td style="padding:8px;border-bottom:1px solid #e5e7eb">{{ r.estado or 'Sin dato' }}</td>
-          <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:center">{{ 'Si' if r.activo else 'No' }}</td>
-          <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right">
-            <a href="{{ url_for('matafuegos_home', sede=sede, piso=piso, q=q, edit=r.id) }}">Editar</a>
-          </td>
-        </tr>
-        {% endfor %}
-        {% if not rows or rows|length == 0 %}
-        <tr>
-          <td colspan="12" style="padding:10px;color:#64748b">Sin registros para el filtro.</td>
-        </tr>
-        {% endif %}
-      </tbody>
-    </table>
-  </div>
+        <label class="sst-op-field">
+          <small>Capacidad (kg)</small>
+          <select name="capacidad_kg">
+            <option value="">-</option>
+            {% for item in capacidad_opts %}
+            <option value="{{ item }}" {% if form_defaults.capacidad_kg|string == item|string %}selected{% endif %}>{{ item }} kg</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="sst-op-field">
+          <small>Numero de serie</small>
+          <input name="numero_serie" value="{{ form_defaults.numero_serie }}">
+        </label>
+        <label class="sst-op-field">
+          <small>Numero de extintor</small>
+          <input name="nro_extintor" value="{{ form_defaults.nro_extintor }}">
+        </label>
+        <label class="sst-op-field">
+          <small>Lote</small>
+          <select name="lote_vencimiento">
+            {% for item in ['Mayo', 'Septiembre', 'Diciembre', 'Otro'] %}
+            <option value="{{ item }}" {% if form_defaults.lote_vencimiento == item %}selected{% endif %}>{{ item }}</option>
+            {% endfor %}
+          </select>
+        </label>
 
-  <div style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;overflow:hidden">
-    <div style="padding:12px 14px;border-bottom:1px solid #e5e7eb;font-weight:700">Bajas logicas</div>
-    {% if inactive_rows and inactive_rows|length > 0 %}
-    <table style="width:100%;border-collapse:collapse;font-size:12px">
-      <thead style="background:#f9fafb">
-        <tr>
-          <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Sede</th>
-          <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Piso</th>
-          <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Local</th>
-          <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Serie</th>
-          <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Extintor</th>
-          <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Vence</th>
-          <th style="text-align:left;padding:8px;border-bottom:1px solid #e5e7eb">Estado</th>
-          <th style="text-align:right;padding:8px;border-bottom:1px solid #e5e7eb">Accion</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in inactive_rows %}
-        <tr>
-          <td style="padding:8px;border-bottom:1px solid #e5e7eb">{{ r.sede }}</td>
-          <td style="padding:8px;border-bottom:1px solid #e5e7eb">{{ r.piso or 'PB' }}</td>
-          <td style="padding:8px;border-bottom:1px solid #e5e7eb">{{ r.local or '' }}</td>
-          <td style="padding:8px;border-bottom:1px solid #e5e7eb">{{ r.numero_serie or '' }}</td>
-          <td style="padding:8px;border-bottom:1px solid #e5e7eb">{{ r.nro_extintor or '' }}</td>
-          <td style="padding:8px;border-bottom:1px solid #e5e7eb">{{ r.fecha_vencimiento or '' }}</td>
-          <td style="padding:8px;border-bottom:1px solid #e5e7eb">{{ r.estado or 'Fuera de servicio' }}</td>
-          <td style="padding:8px;border-bottom:1px solid #e5e7eb;text-align:right">
-            <form method="post" style="display:inline">
-              <input type="hidden" name="id" value="{{ r.id }}">
-              <button name="accion" value="reactivar"
-                style="padding:6px 10px;border-radius:10px;border:1px solid #16a34a;background:#fff;color:#16a34a">
-                Reactivar
-              </button>
-            </form>
-          </td>
-        </tr>
+        <label class="sst-op-field">
+          <small>Fecha de recarga</small>
+          <input type="date" name="fecha_recarga" value="{{ form_defaults.fecha_recarga }}">
+        </label>
+        <label class="sst-op-field">
+          <small>Fecha de vencimiento</small>
+          <input type="date" name="fecha_vencimiento" value="{{ form_defaults.fecha_vencimiento }}">
+        </label>
+        <label class="sst-op-field">
+          <small>Prueba hidraulica</small>
+          <input type="date" name="fecha_prueba_hidro" value="{{ form_defaults.fecha_prueba_hidro }}">
+        </label>
+        <label class="sst-op-field">
+          <small>Estado manual</small>
+          <select name="estado_manual">
+            <option value="">Automatico</option>
+            {% for item in manual_state_options %}
+            <option value="{{ item.code }}" {% if form_defaults.estado_manual == item.code %}selected{% endif %}>{{ item.label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <label class="sst-op-field sst-luces-full">
+          <small>Observaciones</small>
+          <textarea name="observaciones" rows="3" placeholder="Observaciones tecnicas u operativas">{{ form_defaults.observaciones }}</textarea>
+        </label>
+        <label class="sst-op-field">
+          <small>Activo</small>
+          <select name="activo">
+            <option value="1" {% if form_defaults.activo == 1 %}selected{% endif %}>Si</option>
+            <option value="0" {% if form_defaults.activo != 1 %}selected{% endif %}>No</option>
+          </select>
+        </label>
+
+        <div class="sst-op-form-actions sst-luces-full">
+          <button class="sst-op-btn primary" type="submit">Guardar registro</button>
+        </div>
+      </form>
+    </details>
+  </article>
+
+  <article class="sst-op-card" id="matafuegos-historial">
+    <div class="sst-op-card-head">
+      <h2>Historial</h2>
+      <span class="sst-op-count">{{ history_rows|length }} movimientos</span>
+    </div>
+    <details {% if selected_summary %}open{% endif %} class="sst-luces-details">
+      <summary class="sst-op-form-summary">{% if selected_summary %}Ver historial de {{ selected_summary.sede_codigo }}{% else %}Ver historial{% endif %}</summary>
+      <ul class="sst-op-list">
+        {% for item in history_rows %}
+        <li class="sst-op-item">
+          <div>
+            <strong>{{ item.accion|replace('_', ' ')|title }}</strong>
+            <div class="sst-op-meta">{{ item.sede_codigo or '-' }} | {{ item.detalle or 'Sin detalle' }}{% if item.usuario %} | {{ item.usuario }}{% endif %}</div>
+          </div>
+          <span class="sst-op-date">{{ fmt_fecha(item.fecha_evento[:10]) if item.fecha_evento else '-' }}</span>
+        </li>
+        {% else %}
+        <li class="sst-op-empty">Sin historial todavia.</li>
         {% endfor %}
-      </tbody>
-    </table>
-    {% else %}
-    <div style="padding:12px 14px;color:#64748b">No hay bajas logicas para este filtro.</div>
-    {% endif %}
-  </div>
+      </ul>
+    </details>
+  </article>
 </section>
 {% endblock %}

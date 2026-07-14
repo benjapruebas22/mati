@@ -175,6 +175,12 @@ def register_obras(app, get_db, rebuild_eventos_obras):
         iv_tipo_filtro = _sanitize_interv_tipo(request.args.get("iv_tipo"))
         iv_fecha_filtro = _sanitize_interv_fecha(request.args.get("iv_fecha"))
         active_panel = (request.args.get("panel") or "").strip()
+        if active_panel == "panel-desinf":
+            return redirect(url_for(
+                "sst_desinfecciones_home",
+                sede=cod_filtro or None,
+                open_sede=cod_filtro or None,
+            ))
         prefill_sede = (request.args.get("prefill_sede") or cod_filtro or "").strip().upper()
         prefill_tipo = (request.args.get("prefill_tipo") or "").strip()
         prefill_titulo = (request.args.get("prefill_titulo") or "").strip()

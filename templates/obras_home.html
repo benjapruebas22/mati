@@ -26,7 +26,7 @@
     <button class="btn btn-sm action-carga" type="button" data-panel="panel-carga">➕ Cargar obra</button>
     <button class="btn btn-sm action-interv" type="button" data-panel="panel-intervenciones">+ Registrar intervencion</button>
     <button class="btn btn-sm action-filtros" type="button" data-panel="panel-filtros">Filtrar</button>
-    <button class="btn btn-sm action-desinf" type="button" data-panel="panel-desinf">🧴 Desinfecciones</button>
+    <a class="btn btn-sm action-desinf" href="{{ url_for('sst_desinfecciones_home') }}">🧴 Desinfecciones</a>
     <a class="btn btn-sm action-hist" href="{{ url_for('obras_home', sede=cod_filtro, estado='FINALIZADA', prioridad=prioridad_filtro) }}">Historial</a>
     {# Materiales/stock fuera de Obras #}
     <button class="btn btn-sm action-stats" type="button" data-panel="panel-stats">📊 Estadisticas por sede</button>

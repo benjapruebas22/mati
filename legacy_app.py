@@ -2961,16 +2961,9 @@ def matafuego_nuevo(codigo):
 )
 def desinfeccion_borrar(codigo, did):
     con = get_db()
-
-    con.execute("""
-        DELETE FROM desinfecciones_sede
-        WHERE id = ? AND cod_sede = ?
-    """, (did, codigo))
-
-    con.commit()
     con.close()
-    flash("Desinfección eliminada.", "info")
-    return redirect(url_for("sede_seguridad", codigo=codigo))
+    flash("La gestion de desinfecciones ahora se hace desde SG-SST.", "info")
+    return redirect(url_for("sst_desinfecciones_home", sede=codigo, open_sede=codigo))
 
 # -------------------------------------------------
 # EDITAR MATAFUEGO
@@ -3083,56 +3076,9 @@ def desinfeccion_nueva(codigo):
         con.close()
         flash("Sede no encontrada.", "warning")
         return redirect(url_for("dashboard"))
-
-    if request.method == "POST":
-        fecha         = request.form.get("fecha") or None
-        empresa       = (request.form.get("empresa") or "").strip()
-        observaciones = (request.form.get("observaciones") or "").strip() or None
-
-        if not fecha:
-            con.close()
-            flash("La fecha de desinfección es obligatoria.", "warning")
-            return redirect(url_for("desinfeccion_nueva", codigo=codigo))
-
-        # Insert en tabla de desinfecciones de la sede
-        cur = con.execute("""
-            INSERT INTO desinfecciones_sede
-            (cod_sede, fecha, empresa, observaciones)
-            VALUES (?, ?, ?, ?)
-        """, (
-            codigo,
-            fecha,
-            empresa,
-            observaciones
-        ))
-        desinf_id = cur.lastrowid
-
-        # ---------- Evento para el calendario (desinfección realizada) ----------
-        titulo  = f"Desinfección – {empresa or 'Empresa s/d'}"
-        detalle = f"Sede {codigo}"
-
-        con.execute("""
-            INSERT INTO calendario_eventos
-            (fecha, titulo, detalle, area, tipo_evento, ref_id, fuente)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (
-            fecha,
-            titulo,
-            detalle,
-            "Seguridad",
-            "desinfeccion",
-            str(desinf_id),
-            "seguridad_desinfecciones"
-        ))
-
-        con.commit()
-        con.close()
-        flash("Desinfección cargada correctamente.", "success")
-        return redirect(url_for("sede_seguridad", codigo=codigo))
-
-    # GET → mostrar formulario
     con.close()
-    return render_template("desinfeccion_form.html", sede=sede)
+    flash("La gestion de desinfecciones ahora se hace desde SG-SST.", "info")
+    return redirect(url_for("sst_desinfecciones_home", sede=codigo, open_sede=codigo, prefill_sede=codigo, mostrar_form=1))
 
 
 
@@ -6813,6 +6759,211 @@ def _matafuego_operativo_schedule(sede_codigo: str | None, fecha_vencimiento: st
         "lot_label": lot_label,
         "lot_month": lot_month,
     }
+
+
+MATAFUEGOS_STATE_LABELS = {
+    "SIN_RELEVAMIENTO": "Sin relevamiento",
+    "VIGENTE": "Vigente",
+    "PROXIMO_A_VENCER": "Proximo a vencer",
+    "VENCIDO": "Vencido",
+    "RECARGA_PROGRAMADA": "Recarga programada",
+    "EN_RECARGA": "En recarga",
+    "RECARGA_REALIZADA": "Recarga realizada",
+    "OBSERVADO": "Observado",
+    "FUERA_DE_SERVICIO": "Fuera de servicio",
+}
+
+MATAFUEGOS_MANUAL_STATE_CODES = {
+    "SIN_RELEVAMIENTO",
+    "RECARGA_PROGRAMADA",
+    "EN_RECARGA",
+    "RECARGA_REALIZADA",
+    "OBSERVADO",
+    "FUERA_DE_SERVICIO",
+}
+
+MATAFUEGOS_MONTH_LABELS = {
+    1: "Enero",
+    2: "Febrero",
+    3: "Marzo",
+    4: "Abril",
+    5: "Mayo",
+    6: "Junio",
+    7: "Julio",
+    8: "Agosto",
+    9: "Septiembre",
+    10: "Octubre",
+    11: "Noviembre",
+    12: "Diciembre",
+}
+
+
+def _ensure_sst_operativo_historial_compat(con):
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS sst_operativo_historial(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            componente TEXT NOT NULL,
+            origen_id INTEGER,
+            sede_codigo TEXT,
+            deposito_codigo TEXT,
+            accion TEXT NOT NULL,
+            detalle TEXT,
+            usuario TEXT,
+            fecha_evento TEXT DEFAULT (datetime('now'))
+        )
+    """)
+    con.execute("CREATE INDEX IF NOT EXISTS idx_sst_historial_componente_fecha ON sst_operativo_historial(componente, fecha_evento DESC)")
+    con.execute("CREATE INDEX IF NOT EXISTS idx_sst_historial_sede ON sst_operativo_historial(sede_codigo, deposito_codigo)")
+    con.commit()
+
+
+def _sst_historial_log_compat(con, componente, accion, origen_id=None, sede_codigo="", detalle=""):
+    _ensure_sst_operativo_historial_compat(con)
+    user_name = (session.get("full_name") or session.get("username") or "sistema").strip() or "sistema"
+    con.execute("""
+        INSERT INTO sst_operativo_historial(
+            componente, origen_id, sede_codigo, deposito_codigo,
+            accion, detalle, usuario, fecha_evento
+        )
+        VALUES (?, ?, ?, '', ?, ?, ?, datetime('now'))
+    """, (
+        (componente or "").strip().lower(),
+        int(origen_id or 0) if origen_id else None,
+        (sede_codigo or "").strip().upper(),
+        (accion or "").strip().lower(),
+        (detalle or "").strip() or None,
+        user_name,
+    ))
+
+
+def _sst_fetch_historial_rows_compat(con, componente, sede_codigo=""):
+    _ensure_sst_operativo_historial_compat(con)
+    where = ["LOWER(COALESCE(componente, '')) = ?"]
+    params = [str(componente or "").strip().lower()]
+    if sede_codigo:
+        where.append("UPPER(COALESCE(sede_codigo, '')) = ?")
+        params.append(str(sede_codigo or "").strip().upper())
+    rows = con.execute(f"""
+        SELECT id, sede_codigo, accion, detalle, usuario, fecha_evento
+        FROM sst_operativo_historial
+        WHERE {' AND '.join(where)}
+        ORDER BY COALESCE(fecha_evento, '') DESC, id DESC
+        LIMIT 24
+    """, params).fetchall()
+    return [dict(row) for row in rows]
+
+
+def _matafuego_fmt_fecha(value):
+    raw = str(value or "").strip()
+    if len(raw) >= 10 and raw[4:5] == "-" and raw[7:8] == "-":
+        return f"{raw[8:10]}/{raw[5:7]}/{raw[0:4]}"
+    return raw or "-"
+
+
+def _matafuego_parse_date(value):
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    try:
+        return datetime.strptime(raw[:10], "%Y-%m-%d").date()
+    except Exception:
+        return None
+
+
+def _matafuego_normalize_lote(value):
+    raw = str(value or "").strip()
+    if not raw:
+        return ""
+    lowered = raw.lower().replace("lote ", "").strip()
+    for label in ("Mayo", "Septiembre", "Diciembre", "Otro"):
+        if lowered == label.lower():
+            return label
+    return raw.strip()
+
+
+def _matafuego_normalize_state(value):
+    raw = str(value or "").strip().upper()
+    if not raw:
+        return ""
+    legacy_map = {
+        "SIN RELEVAMIENTO": "SIN_RELEVAMIENTO",
+        "SIN DATO": "SIN_RELEVAMIENTO",
+        "VIGENTE": "VIGENTE",
+        "OK": "VIGENTE",
+        "PROXIMO A VENCER": "PROXIMO_A_VENCER",
+        "VENCE PRONTO": "PROXIMO_A_VENCER",
+        "VENCIDO": "VENCIDO",
+        "RECARGA PROGRAMADA": "RECARGA_PROGRAMADA",
+        "EN RECARGA": "EN_RECARGA",
+        "RECARGA REALIZADA": "RECARGA_REALIZADA",
+        "OBSERVADO": "OBSERVADO",
+        "FUERA DE SERVICIO": "FUERA_DE_SERVICIO",
+    }
+    normalized = legacy_map.get(raw, raw.replace(" ", "_"))
+    return normalized if normalized in MATAFUEGOS_STATE_LABELS else ""
+
+
+def _matafuego_state_meta(state_code):
+    code = _matafuego_normalize_state(state_code)
+    label = MATAFUEGOS_STATE_LABELS.get(code, code.replace("_", " ").title() if code else "-")
+    if code in {"VIGENTE", "RECARGA_REALIZADA"}:
+        badge = "correcto"
+    elif code in {"OBSERVADO", "VENCIDO", "FUERA_DE_SERVICIO"}:
+        badge = "atencion"
+    elif code in {"SIN_RELEVAMIENTO"}:
+        badge = "sin-dato"
+    else:
+        badge = "pendiente"
+    return {"code": code, "label": label, "class": badge}
+
+
+def _matafuego_row_state_code(row, today_ref=None):
+    today_value = today_ref or date.today()
+    activo = int(row.get("activo", 1) or 0)
+    if not activo:
+        return "FUERA_DE_SERVICIO"
+    raw_code = _matafuego_normalize_state(row.get("estado"))
+    if raw_code in MATAFUEGOS_MANUAL_STATE_CODES:
+        return raw_code
+    fecha_vto = _matafuego_parse_date(row.get("fecha_vencimiento"))
+    if not fecha_vto:
+        return "SIN_RELEVAMIENTO"
+    days_left = (fecha_vto - today_value).days
+    if days_left < 0:
+        return "VENCIDO"
+    if days_left <= 45:
+        return "PROXIMO_A_VENCER"
+    return "VIGENTE"
+
+
+def _matafuego_next_action(state_code):
+    mapping = {
+        "SIN_RELEVAMIENTO": "Completar relevamiento.",
+        "VIGENTE": "Controlar proximo vencimiento.",
+        "PROXIMO_A_VENCER": "Coordinar recarga.",
+        "VENCIDO": "Gestionar recarga inmediata.",
+        "RECARGA_PROGRAMADA": "Retirar equipos en fecha prevista.",
+        "EN_RECARGA": "Esperar devolucion.",
+        "RECARGA_REALIZADA": "Registrar nuevos vencimientos.",
+        "OBSERVADO": "Resolver observacion.",
+        "FUERA_DE_SERVICIO": "Definir reemplazo o baja definitiva.",
+    }
+    return mapping.get(_matafuego_normalize_state(state_code), "Revisar estado operativo.")
+
+
+def _matafuego_state_priority(state_code):
+    order = {
+        "OBSERVADO": 0,
+        "FUERA_DE_SERVICIO": 1,
+        "EN_RECARGA": 2,
+        "RECARGA_PROGRAMADA": 3,
+        "VENCIDO": 4,
+        "PROXIMO_A_VENCER": 5,
+        "RECARGA_REALIZADA": 6,
+        "VIGENTE": 7,
+        "SIN_RELEVAMIENTO": 8,
+    }
+    return order.get(_matafuego_normalize_state(state_code), 99)
 
     # MOBILIARIO total
     try:
@@ -11602,171 +11753,194 @@ def aires_sede_editar(id):
     return render_template("aires_sede_form.html", modo="editar", sedes=sedes, r=r, id=id)
 def _matafuegos_home_impl():
     db = get_db()
+    ensure_matafuegos_schema(db)
+    _ensure_sst_operativo_historial_compat(db)
 
-    sede = (request.args.get("sede") or "").upper().strip()
-    piso = (request.args.get("piso") or "").upper().strip()
-    q = (request.args.get("q") or "").strip()
-    vencimiento = (request.args.get("vencimiento") or "todos").strip().lower()
-    edit = request.args.get("edit")
+    f_sede = (request.args.get("sede") or "").strip().upper()
+    f_estado = _matafuego_normalize_state(request.args.get("estado"))
+    f_lote = _matafuego_normalize_lote(request.args.get("lote") or request.args.get("lote_vencimiento"))
+    f_q = (request.args.get("q") or "").strip().lower()
+    f_open_sede = (request.args.get("open_sede") or "").strip().upper()
+    prefill_sede = (request.args.get("prefill_sede") or f_open_sede or f_sede or "").strip().upper()
+    legacy_vencimiento = (request.args.get("vencimiento") or "").strip().lower()
     prefill_fecha_vencimiento = (request.args.get("fecha_vencimiento") or "").strip()
     prefill_fecha_recarga = (request.args.get("fecha_recarga") or "").strip()
-    prefill_lote = (request.args.get("lote_vencimiento") or "").strip()
 
-    if piso == "2P":
-        piso = "P2"
-    if piso == "1P":
-        piso = "P1"
-    if not prefill_lote and prefill_fecha_vencimiento:
-        prefill_lote = _matafuego_lote_from_vto(prefill_fecha_vencimiento)
+    try:
+        f_registro = int((request.args.get("registro") or request.args.get("edit") or 0) or 0)
+    except Exception:
+        f_registro = 0
+    try:
+        f_year = max(int(request.args.get("year") or 0), 0)
+    except Exception:
+        f_year = 0
+    try:
+        f_month = max(int(request.args.get("month") or 0), 0)
+    except Exception:
+        f_month = 0
 
-    fecha_45d = db.execute("SELECT date('now','+45 day') AS f").fetchone()["f"]
-    sede_opts = db.execute("""
-        SELECT UPPER(COALESCE(codigo,'')) AS codigo,
-               COALESCE(nombre,'') AS nombre
-        FROM sedes_mpd
-        WHERE TRIM(COALESCE(codigo,'')) <> ''
-        ORDER BY codigo
-    """).fetchall()
-    local_opts = db.execute("""
-        SELECT DISTINCT UPPER(TRIM(COALESCE(local,''))) AS local
-        FROM matafuegos
-        WHERE TRIM(COALESCE(local,'')) <> ''
-        ORDER BY local
-    """).fetchall()
-    tipo_opts = ["Sin dato", "ABC", "ABC / CO2", "CO2"]
-    capacidad_opts = [5, 10]
+    if not f_estado:
+        if legacy_vencimiento == "proximos":
+            f_estado = "PROXIMO_A_VENCER"
+        elif legacy_vencimiento == "vencidos":
+            f_estado = "VENCIDO"
+    if not f_lote and prefill_fecha_vencimiento:
+        f_lote = _matafuego_lote_from_vto(prefill_fecha_vencimiento)
+
+    def _redirect_url(target_sede="", open_sede="", registro_id=0, mostrar_form=False):
+        args = {}
+        sede_value = (target_sede or f_sede or "").strip().upper()
+        if sede_value:
+            args["sede"] = sede_value
+        if f_estado:
+            args["estado"] = f_estado
+        if f_lote:
+            args["lote"] = f_lote
+        if f_year:
+            args["year"] = f_year
+        if f_month:
+            args["month"] = f_month
+        if f_q:
+            args["q"] = f_q
+        if open_sede:
+            args["open_sede"] = open_sede
+        if registro_id:
+            args["registro"] = int(registro_id)
+        if mostrar_form:
+            args["mostrar_form"] = 1
+        return url_for("matafuegos_home", **args)
 
     if request.method == "POST":
-        accion = (request.form.get("accion") or "guardar").lower()
-        rid = (request.form.get("id") or "").strip()
-        edit_current = None
-        if rid:
-            edit_current = db.execute(
-                """
-                SELECT sede, piso, local, tipo, capacidad_kg, numero_serie, nro_extintor,
-                       fecha_recarga, fecha_vencimiento, fecha_prueba_hidro, lote_vencimiento,
-                       observaciones, activo
+        action = (request.form.get("action") or request.form.get("accion") or "save").strip().lower()
+        edit_id = int((request.form.get("edit_id") or request.form.get("id") or 0) or 0)
+        current_row = None
+        if edit_id:
+            current_row = db.execute("""
+                SELECT
+                    id, cod_sede, sede, piso, local, tipo, capacidad_kg,
+                    numero_serie, nro_extintor, ubicacion,
+                    fecha_recarga, fecha_vencimiento, fecha_prueba_hidro,
+                    estado, activo, lote_vencimiento, observaciones
                 FROM matafuegos
                 WHERE id = ?
-                """,
-                (rid,),
-            ).fetchone()
+            """, (edit_id,)).fetchone()
 
-        sede_form = (
-            request.form.get("sede")
-            or request.form.get("codigo_sede")
-            or (edit_current["sede"] if edit_current else "")
-            or sede
-            or ""
-        ).upper().strip()
-        piso_form = (request.form.get("piso") or (edit_current["piso"] if edit_current else "") or piso or "PB").upper().strip()
-        if piso_form == "2P":
-            piso_form = "P2"
-        if piso_form == "1P":
-            piso_form = "P1"
-
-        local_form = (
-            request.form.get("local")
-            or request.form.get("codigo_local")
-            or (edit_current["local"] if edit_current else "")
-            or ""
-        ).strip() or None
-        tipo = str(request.form.get("tipo") or (edit_current["tipo"] if edit_current else "") or "Sin dato").strip()
-        capacidad_raw = str(request.form.get("capacidad_kg") or (edit_current["capacidad_kg"] if edit_current and edit_current["capacidad_kg"] is not None else "") or "").strip()
-        numero_serie = (
-            request.form.get("numero_serie")
-            or request.form.get("nro_serie")
-            or request.form.get("identificador")
-            or (edit_current["numero_serie"] if edit_current else "")
-            or ""
-        ).strip()
-        nro_extintor = (request.form.get("nro_extintor") or request.form.get("numero_extintor") or (edit_current["nro_extintor"] if edit_current else "") or "").strip()
-        fecha_recarga = (request.form.get("fecha_recarga") or (edit_current["fecha_recarga"] if edit_current else "") or "").strip() or None
-        fecha_vencimiento = (request.form.get("fecha_vencimiento") or (edit_current["fecha_vencimiento"] if edit_current else "") or "").strip() or None
-        if not fecha_vencimiento and fecha_recarga:
-            try:
-                recarga_date = datetime.strptime(fecha_recarga, "%Y-%m-%d").date()
-                fecha_vencimiento = recarga_date.replace(year=recarga_date.year + 1).isoformat()
-            except ValueError:
-                fecha_vencimiento = None
-        fecha_prueba_hidro = (request.form.get("fecha_prueba_hidro") or (edit_current["fecha_prueba_hidro"] if edit_current else "") or "").strip() or None
-        lote_vencimiento = (request.form.get("lote_vencimiento") or (edit_current["lote_vencimiento"] if edit_current else "") or "").strip() or _matafuego_lote_from_vto(fecha_vencimiento)
-        observaciones = (request.form.get("observaciones") or (edit_current["observaciones"] if edit_current else "") or "").strip()
-        activo = 1 if request.form.get("activo") in {"1", "on", "true", "True"} else int(edit_current["activo"] if edit_current and edit_current["activo"] is not None else 0)
-
-        if accion == "eliminar" and rid:
-            db.execute(
-                """
+        if action == "deactivate" and edit_id:
+            sede_codigo = str((current_row["sede"] if current_row else "") or "").strip().upper()
+            db.execute("""
                 UPDATE matafuegos
                 SET activo = 0,
-                    estado = 'Fuera de servicio',
+                    estado = ?,
                     updated_at = datetime('now','localtime')
                 WHERE id = ?
-                """,
-                (rid,),
-            )
+            """, (MATAFUEGOS_STATE_LABELS["FUERA_DE_SERVICIO"], edit_id))
+            _sst_historial_log_compat(db, "matafuegos", "baja_logica", edit_id, sede_codigo, "Baja logica de matafuego.")
             db.commit()
-            flash("Matafuego dado de baja (baja lógica).", "success")
-            return redirect(url_for("matafuegos_home", sede=sede_form, piso=piso_form, q=q))
+            flash("Matafuego dado de baja.", "success")
+            return redirect(_redirect_url(sede_codigo))
 
-        if accion == "reactivar" and rid:
-            row_vto = db.execute(
-                "SELECT fecha_vencimiento FROM matafuegos WHERE id = ?",
-                (rid,),
-            ).fetchone()
-            if not fecha_vencimiento and row_vto:
-                fecha_vencimiento = row_vto["fecha_vencimiento"]
-            estado_calc = _matafuego_estado_from_vto(fecha_vencimiento, 1)
-            db.execute(
-                """
+        if action == "reactivate" and edit_id:
+            sede_codigo = str((current_row["sede"] if current_row else "") or "").strip().upper()
+            state_code = _matafuego_row_state_code({
+                "fecha_vencimiento": (current_row["fecha_vencimiento"] if current_row else ""),
+                "estado": "",
+                "activo": 1,
+            })
+            db.execute("""
                 UPDATE matafuegos
                 SET activo = 1,
                     estado = ?,
                     updated_at = datetime('now','localtime')
                 WHERE id = ?
-                """,
-                (estado_calc, rid),
-            )
+            """, (MATAFUEGOS_STATE_LABELS.get(state_code, MATAFUEGOS_STATE_LABELS["VIGENTE"]), edit_id))
+            _sst_historial_log_compat(db, "matafuegos", "reactivacion", edit_id, sede_codigo, "Matafuego reactivado.")
             db.commit()
             flash("Matafuego reactivado.", "success")
-            return redirect(url_for("matafuegos_home", sede=sede_form, piso=piso_form, q=q))
+            return redirect(_redirect_url(sede_codigo, sede_codigo, edit_id))
 
-        if not sede_form:
-            flash("La sede es obligatoria.", "warning")
-            return redirect(url_for("matafuegos_home", sede=sede_form or sede, piso=piso_form, q=q, edit=rid or None))
+        sede_codigo = (
+            request.form.get("sede_codigo")
+            or request.form.get("sede")
+            or (current_row["sede"] if current_row else "")
+            or prefill_sede
+            or f_sede
+            or ""
+        ).strip().upper()
+        piso = (request.form.get("piso") or (current_row["piso"] if current_row else "") or "PB").strip().upper() or "PB"
+        if piso == "1P":
+            piso = "P1"
+        if piso == "2P":
+            piso = "P2"
+        local = (request.form.get("local") or (current_row["local"] if current_row else "") or "").strip()
+        tipo = str(request.form.get("tipo") or (current_row["tipo"] if current_row else "") or "Sin dato").strip() or "Sin dato"
+        capacidad_raw = str(request.form.get("capacidad_kg") or (current_row["capacidad_kg"] if current_row and current_row["capacidad_kg"] is not None else "") or "").strip()
+        numero_serie = (request.form.get("numero_serie") or (current_row["numero_serie"] if current_row else "") or "").strip()
+        nro_extintor = (request.form.get("nro_extintor") or (current_row["nro_extintor"] if current_row else "") or "").strip()
+        fecha_recarga = (request.form.get("fecha_recarga") or (current_row["fecha_recarga"] if current_row else "") or prefill_fecha_recarga or "").strip()
+        fecha_vencimiento = (request.form.get("fecha_vencimiento") or (current_row["fecha_vencimiento"] if current_row else "") or prefill_fecha_vencimiento or "").strip()
+        fecha_prueba_hidro = (request.form.get("fecha_prueba_hidro") or (current_row["fecha_prueba_hidro"] if current_row else "") or "").strip()
+        lote_vencimiento = _matafuego_normalize_lote(
+            request.form.get("lote_vencimiento")
+            or (current_row["lote_vencimiento"] if current_row else "")
+            or f_lote
+            or _matafuego_lote_from_vto(fecha_vencimiento)
+        ) or "Otro"
+        observaciones = (request.form.get("observaciones") or (current_row["observaciones"] if current_row else "") or "").strip()
+        estado_manual = _matafuego_normalize_state(request.form.get("estado_manual"))
+        activo = 1 if str(request.form.get("activo") or "1").strip().lower() in {"1", "true", "on", "si", "yes"} else 0
+
+        if not fecha_vencimiento and fecha_recarga:
+            try:
+                fecha_recarga_dt = datetime.strptime(fecha_recarga, "%Y-%m-%d").date()
+                fecha_vencimiento = fecha_recarga_dt.replace(year=fecha_recarga_dt.year + 1).isoformat()
+            except Exception:
+                fecha_vencimiento = ""
+        if not lote_vencimiento:
+            lote_vencimiento = _matafuego_lote_from_vto(fecha_vencimiento)
+
+        if not sede_codigo:
+            flash("Selecciona una sede para guardar el matafuego.", "warning")
+            return redirect(_redirect_url(f_sede, prefill_sede or f_open_sede, edit_id, True))
 
         capacidad_kg = None
         if capacidad_raw:
             try:
                 capacidad_kg = float(capacidad_raw.replace(",", "."))
-            except ValueError:
-                flash("La capacidad debe ser numérica.", "warning")
-                return redirect(url_for("matafuegos_home", sede=sede_form or sede, piso=piso_form, q=q, edit=rid or None))
+            except Exception:
+                flash("La capacidad debe ser numerica.", "warning")
+                return redirect(_redirect_url(sede_codigo, sede_codigo, edit_id, True))
 
         serie_normalizada = numero_serie.upper().replace(" ", "")
         if numero_serie and serie_normalizada not in {"S/N", "SN", "SINNUMERO", "S-N"}:
             duplicate_sql = """
                 SELECT id
                 FROM matafuegos
-                WHERE COALESCE(activo,1)=1
-                  AND TRIM(COALESCE(numero_serie,'')) = ?
+                WHERE COALESCE(activo, 1) = 1
+                  AND UPPER(TRIM(COALESCE(numero_serie, ''))) = ?
             """
-            duplicate_params = [numero_serie]
-            if rid:
+            duplicate_params = [numero_serie.upper().strip()]
+            if edit_id:
                 duplicate_sql += " AND id <> ?"
-                duplicate_params.append(rid)
-            duplicate = db.execute(duplicate_sql, duplicate_params).fetchone()
+                duplicate_params.append(edit_id)
+            duplicate = db.execute(duplicate_sql, tuple(duplicate_params)).fetchone()
             if duplicate:
                 flash("Ya existe un matafuego activo con este numero de serie.", "warning")
-                return redirect(url_for("matafuegos_home", sede=sede_form or sede, piso=piso_form, q=q, edit=rid or None))
+                return redirect(_redirect_url(sede_codigo, sede_codigo, edit_id, True))
 
-        estado = _matafuego_estado_from_vto(fecha_vencimiento, activo)
+        next_state_code = _matafuego_row_state_code({
+            "fecha_vencimiento": fecha_vencimiento,
+            "estado": estado_manual,
+            "activo": activo,
+        })
+        stored_state_label = MATAFUEGOS_STATE_LABELS.get(estado_manual or next_state_code, MATAFUEGOS_STATE_LABELS["SIN_RELEVAMIENTO"])
+        now_ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        previous_state_code = _matafuego_row_state_code(dict(current_row)) if current_row else ""
 
-        if rid:
-            db.execute(
-                """
+        if edit_id:
+            db.execute("""
                 UPDATE matafuegos
-                SET sede = ?,
+                SET cod_sede = ?,
+                    sede = ?,
                     piso = ?,
                     local = ?,
                     tipo = ?,
@@ -11781,261 +11955,339 @@ def _matafuegos_home_impl():
                     activo = ?,
                     lote_vencimiento = ?,
                     observaciones = ?,
-                    updated_at = datetime('now','localtime')
+                    updated_at = ?
                 WHERE id = ?
-                """,
-                (
-                    sede_form,
-                    piso_form,
-                    local_form,
-                    tipo,
-                    capacidad_kg,
-                    numero_serie or None,
-                    nro_extintor or None,
-                    "",
-                    fecha_recarga,
-                    fecha_vencimiento,
-                    fecha_prueba_hidro,
-                    estado,
-                    activo,
-                    lote_vencimiento,
-                    observaciones or None,
-                    rid,
-                ),
-            )
-        else:
-            db.execute(
-                """
-                INSERT INTO matafuegos(
-                    cod_sede, sede, piso, local, tipo, capacidad_kg, numero_serie, nro_extintor,
-                    ubicacion, fecha_recarga, fecha_vencimiento,
-                    fecha_prueba_hidro, estado, activo, lote_vencimiento,
-                    observaciones, created_at, updated_at
-                ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,datetime('now','localtime'),datetime('now','localtime'))
-                """,
-                (
-                    sede_form,
-                    sede_form,
-                    piso_form,
-                    local_form,
-                    tipo,
-                    capacidad_kg,
-                    numero_serie or None,
-                    nro_extintor or None,
-                    "",
-                    fecha_recarga,
-                    fecha_vencimiento,
-                    fecha_prueba_hidro,
-                    estado,
-                    activo,
-                    lote_vencimiento,
-                    observaciones or None,
-                ),
-            )
-
-        db.commit()
-        flash("Matafuego guardado en la tabla madre.", "success")
-        return redirect(url_for("matafuegos_home", sede=sede_form, piso=piso_form, q=q))
-
-    edit_row = None
-    if edit:
-        edit_row = db.execute(
-            """
-            SELECT
-                id,
-                sede,
+            """, (
+                sede_codigo,
+                sede_codigo,
                 piso,
-                local,
+                local or None,
                 tipo,
                 capacidad_kg,
-                numero_serie,
-                nro_extintor,
-                ubicacion,
-                fecha_recarga,
-                fecha_vencimiento,
-                fecha_prueba_hidro,
-                estado,
+                numero_serie or None,
+                nro_extintor or None,
+                local or None,
+                fecha_recarga or None,
+                fecha_vencimiento or None,
+                fecha_prueba_hidro or None,
+                stored_state_label,
                 activo,
-                lote_vencimiento,
-                observaciones
-            FROM matafuegos
-            WHERE id = ?
-            """,
-            (edit,),
-        ).fetchone()
-        if edit_row:
-            sede = (edit_row["sede"] or sede)
-            piso = (edit_row["piso"] or piso)
+                lote_vencimiento or None,
+                observaciones or None,
+                now_ts,
+                edit_id,
+            ))
+            record_id = edit_id
+            _sst_historial_log_compat(db, "matafuegos", "actualizacion", record_id, sede_codigo, "Actualizacion de matafuego tecnico.")
+        else:
+            db.execute("""
+                INSERT INTO matafuegos(
+                    cod_sede, sede, piso, local, tipo, capacidad_kg, numero_serie, nro_extintor,
+                    ubicacion, fecha_recarga, fecha_vencimiento, fecha_prueba_hidro,
+                    estado, activo, lote_vencimiento, observaciones, created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                sede_codigo,
+                sede_codigo,
+                piso,
+                local or None,
+                tipo,
+                capacidad_kg,
+                numero_serie or None,
+                nro_extintor or None,
+                local or None,
+                fecha_recarga or None,
+                fecha_vencimiento or None,
+                fecha_prueba_hidro or None,
+                stored_state_label,
+                activo,
+                lote_vencimiento or None,
+                observaciones or None,
+                now_ts,
+                now_ts,
+            ))
+            record_id = int(db.execute("SELECT last_insert_rowid()").fetchone()[0])
+            _sst_historial_log_compat(db, "matafuegos", "alta", record_id, sede_codigo, "Alta de matafuego tecnico.")
 
-    where = ["COALESCE(m.activo,1)=1"]
-    params = []
-    if sede:
-        where.append("UPPER(COALESCE(m.sede,'')) = ?")
-        params.append(sede)
-    if piso:
-        where.append("COALESCE(m.piso,'PB') = ?")
-        params.append(piso)
-    if prefill_lote:
-        where.append("UPPER(COALESCE(m.lote_vencimiento,'')) = ?")
-        params.append(prefill_lote.upper())
-    if q:
-        where.append("""(
-            COALESCE(m.local,'') LIKE ?
-            OR COALESCE(m.tipo,'') LIKE ?
-            OR COALESCE(m.numero_serie,'') LIKE ?
-            OR COALESCE(m.nro_extintor,'') LIKE ?
-            OR COALESCE(m.ubicacion,'') LIKE ?
-            OR COALESCE(m.sede,'') LIKE ?
-        )""")
-        like = f"%{q}%"
-        params.extend([like, like, like, like, like, like])
-    if vencimiento == "proximos":
-        where.append("m.fecha_vencimiento IS NOT NULL AND date(m.fecha_vencimiento) BETWEEN date('now') AND date('now','+45 day')")
-    elif vencimiento == "vencidos":
-        where.append("m.fecha_vencimiento IS NOT NULL AND date(m.fecha_vencimiento) < date('now')")
+        if previous_state_code != (estado_manual or next_state_code):
+            prev_label = MATAFUEGOS_STATE_LABELS.get(previous_state_code, "Sin estado")
+            next_label = MATAFUEGOS_STATE_LABELS.get(estado_manual or next_state_code, "Sin estado")
+            _sst_historial_log_compat(db, "matafuegos", "cambio_estado", record_id, sede_codigo, f"{prev_label} -> {next_label}")
 
-    active_rows = db.execute(
-        f"""
+        db.commit()
+        flash("Matafuego guardado.", "success")
+        return redirect(_redirect_url(sede_codigo, sede_codigo, record_id))
+
+    sedes_rows = [
+        {
+            "codigo": str(row["codigo"] or "").strip().upper(),
+            "nombre": str(row["nombre"] or "").strip(),
+        }
+        for row in db.execute("""
+            SELECT UPPER(COALESCE(codigo, '')) AS codigo, COALESCE(nombre, '') AS nombre
+            FROM sedes_mpd
+            WHERE TRIM(COALESCE(codigo, '')) <> ''
+            ORDER BY codigo
+        """).fetchall()
+    ]
+    sedes_map = {row["codigo"]: row for row in sedes_rows if row["codigo"]}
+
+    all_rows = []
+    rows_by_sede = defaultdict(list)
+    today_ref = date.today()
+    raw_rows = db.execute("""
         SELECT
-            m.id,
-            m.sede,
-            m.piso,
-            m.local,
-            m.tipo,
-            m.capacidad_kg,
-            m.numero_serie,
-            m.nro_extintor,
-            m.ubicacion,
-            m.fecha_recarga,
-            m.fecha_vencimiento,
-            m.fecha_prueba_hidro,
-            COALESCE(NULLIF(TRIM(m.estado),''), 'Sin dato') AS estado,
-            COALESCE(m.activo,1) AS activo,
-            m.lote_vencimiento,
-            m.observaciones
-        FROM matafuegos m
-        WHERE {" AND ".join(where)}
-        ORDER BY COALESCE(m.sede,''), COALESCE(m.piso,''), COALESCE(m.local,''), COALESCE(m.ubicacion,''), COALESCE(m.numero_serie,'')
-        """,
-        params,
-    ).fetchall()
+            id,
+            UPPER(COALESCE(sede, cod_sede, '')) AS sede,
+            COALESCE(piso, 'PB') AS piso,
+            COALESCE(local, '') AS local,
+            COALESCE(tipo, '') AS tipo,
+            capacidad_kg,
+            COALESCE(numero_serie, '') AS numero_serie,
+            COALESCE(nro_extintor, '') AS nro_extintor,
+            COALESCE(ubicacion, '') AS ubicacion,
+            COALESCE(fecha_recarga, '') AS fecha_recarga,
+            COALESCE(fecha_vencimiento, '') AS fecha_vencimiento,
+            COALESCE(fecha_prueba_hidro, '') AS fecha_prueba_hidro,
+            COALESCE(estado, '') AS estado,
+            COALESCE(activo, 1) AS activo,
+            COALESCE(lote_vencimiento, '') AS lote_vencimiento,
+            COALESCE(observaciones, '') AS observaciones,
+            COALESCE(created_at, '') AS created_at,
+            COALESCE(updated_at, '') AS updated_at
+        FROM matafuegos
+        ORDER BY UPPER(COALESCE(sede, cod_sede, '')), COALESCE(piso, ''), COALESCE(local, ''), COALESCE(ubicacion, ''), id
+    """).fetchall()
+    for row in raw_rows:
+        item = dict(row)
+        item["is_active"] = int(item.get("activo", 1) or 0) == 1
+        item["state_code"] = _matafuego_row_state_code(item, today_ref)
+        item["state_meta"] = _matafuego_state_meta(item["state_code"])
+        schedule = _matafuego_operativo_schedule(item["sede"], item["fecha_vencimiento"])
+        item["schedule_due_date"] = str(schedule.get("due_date") or "").strip()
+        item["schedule_due_dt"] = _matafuego_parse_date(item["schedule_due_date"])
+        item["schedule_lot_month"] = _matafuego_normalize_lote(schedule.get("lot_month") or item.get("lote_vencimiento") or "")
+        item["location_label"] = " | ".join([part for part in [item["piso"], item["local"] or item["ubicacion"]] if part]).strip(" |")
+        item["fecha_vencimiento_label"] = _matafuego_fmt_fecha(item["fecha_vencimiento"])
+        item["fecha_recarga_label"] = _matafuego_fmt_fecha(item["fecha_recarga"])
+        item["fecha_prueba_hidro_label"] = _matafuego_fmt_fecha(item["fecha_prueba_hidro"])
+        item["sort_date"] = item["schedule_due_dt"] or _matafuego_parse_date(item["fecha_vencimiento"]) or date.max
+        all_rows.append(item)
+        if item["sede"]:
+            rows_by_sede[item["sede"]].append(item)
+            if item["sede"] not in sedes_map:
+                sedes_map[item["sede"]] = {"codigo": item["sede"], "nombre": ""}
 
-    inactive_where = ["COALESCE(m.activo,1)=0"]
-    inactive_params = []
-    if sede:
-        inactive_where.append("UPPER(COALESCE(m.sede,'')) = ?")
-        inactive_params.append(sede)
-    if piso:
-        inactive_where.append("COALESCE(m.piso,'PB') = ?")
-        inactive_params.append(piso)
-    if prefill_lote:
-        inactive_where.append("UPPER(COALESCE(m.lote_vencimiento,'')) = ?")
-        inactive_params.append(prefill_lote.upper())
-    if q:
-        inactive_where.append("""(
-            COALESCE(m.local,'') LIKE ?
-            OR COALESCE(m.tipo,'') LIKE ?
-            OR COALESCE(m.numero_serie,'') LIKE ?
-            OR COALESCE(m.nro_extintor,'') LIKE ?
-            OR COALESCE(m.ubicacion,'') LIKE ?
-            OR COALESCE(m.sede,'') LIKE ?
-        )""")
-        like = f"%{q}%"
-        inactive_params.extend([like, like, like, like, like, like])
+    visible_sedes = sorted(sedes_map.values(), key=lambda item: item["codigo"])
+    if f_sede:
+        visible_sedes = [item for item in visible_sedes if item["codigo"] == f_sede]
 
-    inactive_rows = db.execute(
-        f"""
-        SELECT
-            m.id,
-            m.sede,
-            m.piso,
-            m.local,
-            m.tipo,
-            m.capacidad_kg,
-            m.numero_serie,
-            m.nro_extintor,
-            m.ubicacion,
-            m.fecha_recarga,
-            m.fecha_vencimiento,
-            m.fecha_prueba_hidro,
-            COALESCE(NULLIF(TRIM(m.estado),''), 'Fuera de servicio') AS estado,
-            COALESCE(m.activo,0) AS activo,
-            m.lote_vencimiento,
-            m.observaciones
-        FROM matafuegos m
-        WHERE {" AND ".join(inactive_where)}
-        ORDER BY COALESCE(m.sede,''), COALESCE(m.piso,''), COALESCE(m.local,''), COALESCE(m.ubicacion,''), COALESCE(m.numero_serie,'')
-        """,
-        inactive_params,
-    ).fetchall()
+    selected_record = next((item for item in all_rows if int(item["id"]) == f_registro), None)
+    detail_sede = f_open_sede or (selected_record["sede"] if selected_record else "")
 
-    kpi = db.execute(
-        f"""
-        SELECT
-            COALESCE(COUNT(*),0) AS total,
-            COALESCE(SUM(CASE WHEN fecha_vencimiento IS NOT NULL AND TRIM(fecha_vencimiento) <> '' AND date(fecha_vencimiento) <= date('now','+45 day') THEN 1 ELSE 0 END),0) AS vencen_pronto,
-            COALESCE(SUM(CASE WHEN fecha_vencimiento IS NOT NULL AND TRIM(fecha_vencimiento) <> '' AND date(fecha_vencimiento) < date('now') THEN 1 ELSE 0 END),0) AS vencidos
-        FROM matafuegos m
-        WHERE {" AND ".join(where)}
-        """,
-        params,
-    ).fetchone()
+    all_summary_rows = []
+    for sede_item in visible_sedes:
+        sede_codigo = sede_item["codigo"]
+        sede_nombre = sede_item["nombre"]
+        sede_rows = list(rows_by_sede.get(sede_codigo, []))
+        active_rows = [item for item in sede_rows if item["is_active"]]
+        inactive_rows = [item for item in sede_rows if not item["is_active"]]
+        schedule_candidates = sorted(
+            [item for item in active_rows if item["schedule_due_dt"]],
+            key=lambda item: (item["schedule_due_dt"], item["id"]),
+        )
+        fallback_due = sorted(
+            [item for item in active_rows if _matafuego_parse_date(item["fecha_vencimiento"])],
+            key=lambda item: (_matafuego_parse_date(item["fecha_vencimiento"]), item["id"]),
+        )
+        due_row = schedule_candidates[0] if schedule_candidates else (fallback_due[0] if fallback_due else None)
+        primary_due_date = due_row["schedule_due_date"] if due_row and due_row["schedule_due_date"] else (due_row["fecha_vencimiento"] if due_row else "")
+        primary_lot = _matafuego_normalize_lote((due_row["schedule_lot_month"] if due_row else "") or (due_row["lote_vencimiento"] if due_row else "")) or "-"
+        lotes_activos = sorted({
+            _matafuego_normalize_lote(item.get("schedule_lot_month") or item.get("lote_vencimiento") or "")
+            for item in active_rows
+            if _matafuego_normalize_lote(item.get("schedule_lot_month") or item.get("lote_vencimiento") or "") not in {"", "Otro"}
+        })
+        if active_rows:
+            summary_state_code = min((item["state_code"] for item in active_rows), key=_matafuego_state_priority)
+        elif inactive_rows:
+            summary_state_code = "FUERA_DE_SERVICIO"
+        else:
+            summary_state_code = "SIN_RELEVAMIENTO"
+        representative = None
+        if active_rows:
+            representative = sorted(
+                active_rows,
+                key=lambda item: (_matafuego_state_priority(item["state_code"]), item["sort_date"], item["id"]),
+            )[0]
+        elif inactive_rows:
+            representative = sorted(inactive_rows, key=lambda item: (item["sort_date"], item["id"]))[0]
+        inventory_rows = sorted(
+            sede_rows,
+            key=lambda item: (0 if item["is_active"] else 1, item["sort_date"], item["piso"], item["local"], item["id"]),
+        )
+        summary = {
+            "sede_codigo": sede_codigo,
+            "sede_nombre": sede_nombre,
+            "total": len(active_rows),
+            "vigentes": sum(1 for item in active_rows if item["state_code"] in {"VIGENTE", "RECARGA_REALIZADA"}),
+            "proximos": sum(1 for item in active_rows if item["state_code"] == "PROXIMO_A_VENCER"),
+            "vencidos": sum(1 for item in active_rows if item["state_code"] == "VENCIDO"),
+            "primary_lot": primary_lot,
+            "lotes_text": ", ".join(lotes_activos) if lotes_activos else "-",
+            "next_due_date": primary_due_date,
+            "next_due_label": _matafuego_fmt_fecha(primary_due_date),
+            "state_code": summary_state_code,
+            "state_meta": _matafuego_state_meta(summary_state_code),
+            "next_action": _matafuego_next_action(summary_state_code),
+            "inventory_rows": inventory_rows,
+            "record_count": len(sede_rows),
+            "primary_record_id": int(representative["id"]) if representative else 0,
+            "updated_at": str((representative or {}).get("updated_at") or (representative or {}).get("created_at") or "").strip(),
+        }
+        summary["url"] = url_for(
+            "matafuegos_home",
+            sede=f_sede or None,
+            estado=f_estado or None,
+            lote=f_lote or None,
+            year=(f_year or None),
+            month=(f_month or None),
+            q=f_q or None,
+            open_sede=sede_codigo,
+            registro=(summary["primary_record_id"] or None),
+        )
+        haystack_parts = [
+            sede_codigo,
+            sede_nombre,
+            summary["state_meta"]["label"],
+            summary["next_action"],
+            summary["primary_lot"],
+            summary["lotes_text"],
+        ]
+        for item in inventory_rows:
+            haystack_parts.extend([
+                str(item.get("numero_serie") or ""),
+                str(item.get("nro_extintor") or ""),
+                str(item.get("local") or ""),
+                str(item.get("ubicacion") or ""),
+                str(item.get("tipo") or ""),
+            ])
+        summary["haystack"] = " ".join(haystack_parts).lower()
+        all_summary_rows.append(summary)
 
-    lotes_resumen_map = {}
-    for row in active_rows:
-        sede_codigo = str(row["sede"] or "").strip().upper()
-        schedule = _matafuego_operativo_schedule(sede_codigo, row["fecha_vencimiento"])
-        due_date = (schedule.get("due_date") or "").strip()
-        lot_month = (schedule.get("lot_month") or "").strip()
-        lot_label = (schedule.get("lot_label") or "").strip()
-        if not due_date or not lot_month or lot_month == "Otro":
+    state_by_sede = []
+    for row in all_summary_rows:
+        if f_estado and row["state_code"] != f_estado:
             continue
-        lot_item = lotes_resumen_map.setdefault(due_date, {
-            "label": lot_label,
-            "month_label": lot_month,
-            "due_date": due_date,
-            "year": int(due_date[:4]),
-            "month": int(due_date[5:7]),
-            "sedes": set(),
-            "equipos": 0,
-        })
-        if sede_codigo:
-            lot_item["sedes"].add(sede_codigo)
-        lot_item["equipos"] += 1
+        if f_lote and _matafuego_normalize_lote(row["primary_lot"]) != f_lote:
+            continue
+        if f_year or f_month:
+            due_dt = _matafuego_parse_date(row["next_due_date"])
+            if not due_dt:
+                continue
+            if f_year and due_dt.year != f_year:
+                continue
+            if f_month and due_dt.month != f_month:
+                continue
+        if f_q and f_q not in row["haystack"]:
+            continue
+        state_by_sede.append(row)
 
-    lotes_resumen = []
-    for due_date in sorted(lotes_resumen_map.keys()):
-        lot_item = lotes_resumen_map[due_date]
-        sedes_lote = sorted(lot_item["sedes"])
-        lotes_resumen.append({
-            "label": lot_item["label"],
-            "month_label": lot_item["month_label"],
-            "due_date": lot_item["due_date"],
-            "year": lot_item["year"],
-            "month": lot_item["month"],
-            "sedes_count": len(sedes_lote),
-            "equipos": int(lot_item["equipos"]),
-            "sedes_text": ", ".join(sedes_lote[:6]),
-        })
+    selected_summary = next((item for item in all_summary_rows if item["sede_codigo"] == detail_sede), None)
+    if selected_summary:
+        selected_summary = dict(selected_summary)
+        selected_summary["modal_close_url"] = url_for(
+            "matafuegos_home",
+            sede=f_sede or None,
+            estado=f_estado or None,
+            lote=f_lote or None,
+            year=(f_year or None),
+            month=(f_month or None),
+            q=f_q or None,
+        )
+        selected_summary["modal_edit_url"] = url_for(
+            "matafuegos_home",
+            sede=f_sede or None,
+            estado=f_estado or None,
+            lote=f_lote or None,
+            year=(f_year or None),
+            month=(f_month or None),
+            q=f_q or None,
+            open_sede=selected_summary["sede_codigo"],
+            registro=(selected_summary["primary_record_id"] or None),
+            prefill_sede=selected_summary["sede_codigo"],
+            mostrar_form=1,
+        )
+        selected_summary["history_url"] = f"{selected_summary['modal_close_url']}#matafuegos-historial"
+
+    history_rows = _sst_fetch_historial_rows_compat(db, "matafuegos", detail_sede or f_sede)
+    show_form = bool(request.method == "POST" or request.args.get("mostrar_form") or selected_record)
+
+    form_defaults = {
+        "edit_id": int(selected_record["id"]) if selected_record else 0,
+        "sede_codigo": selected_record["sede"] if selected_record else prefill_sede,
+        "piso": (selected_record["piso"] if selected_record else "PB"),
+        "local": (selected_record["local"] if selected_record else ""),
+        "tipo": (selected_record["tipo"] if selected_record else "Sin dato"),
+        "capacidad_kg": (selected_record["capacidad_kg"] if selected_record and selected_record["capacidad_kg"] is not None else ""),
+        "numero_serie": (selected_record["numero_serie"] if selected_record else ""),
+        "nro_extintor": (selected_record["nro_extintor"] if selected_record else ""),
+        "lote_vencimiento": (_matafuego_normalize_lote(selected_record["lote_vencimiento"]) if selected_record else (f_lote or _matafuego_lote_from_vto(prefill_fecha_vencimiento))),
+        "fecha_recarga": (selected_record["fecha_recarga"] if selected_record else prefill_fecha_recarga),
+        "fecha_vencimiento": (selected_record["fecha_vencimiento"] if selected_record else prefill_fecha_vencimiento),
+        "fecha_prueba_hidro": (selected_record["fecha_prueba_hidro"] if selected_record else ""),
+        "estado_manual": (selected_record["state_code"] if selected_record and selected_record["state_code"] in MATAFUEGOS_MANUAL_STATE_CODES else ""),
+        "observaciones": (selected_record["observaciones"] if selected_record else ""),
+        "activo": 1 if not selected_record else int(selected_record["activo"] or 0),
+    }
+
+    lot_options = sorted({
+        _matafuego_normalize_lote(item["primary_lot"])
+        for item in all_summary_rows
+        if _matafuego_normalize_lote(item["primary_lot"]) not in {"", "-", "Otro"}
+    })
+    year_options = sorted({
+        _matafuego_parse_date(item["next_due_date"]).year
+        for item in all_summary_rows
+        if _matafuego_parse_date(item["next_due_date"])
+    })
+    month_options = [
+        {"value": month_number, "label": month_label}
+        for month_number, month_label in MATAFUEGOS_MONTH_LABELS.items()
+    ]
 
     return render_template(
         "matafuegos_home.html",
-        sede=sede,
-        piso=piso,
-        q=q,
-        rows=active_rows,
-        inactive_rows=inactive_rows,
-        kpi=kpi,
-        edit_row=edit_row,
-        fecha_45d=fecha_45d,
-        sede_opts=sede_opts,
-        tipo_opts=tipo_opts,
-        capacidad_opts=capacidad_opts,
-        vencimiento=vencimiento,
-        lotes_resumen=lotes_resumen,
-        prefill_fecha_vencimiento=prefill_fecha_vencimiento,
-        prefill_fecha_recarga=prefill_fecha_recarga,
-        prefill_lote=prefill_lote,
+        sst_section="matafuegos",
+        sedes=sorted(sedes_map.values(), key=lambda item: item["codigo"]),
+        state_by_sede=state_by_sede,
+        selected_summary=selected_summary,
+        selected_record=selected_record,
+        history_rows=history_rows,
+        estado_options=[{"code": key, "label": value} for key, value in MATAFUEGOS_STATE_LABELS.items()],
+        manual_state_options=[{"code": key, "label": MATAFUEGOS_STATE_LABELS[key]} for key in MATAFUEGOS_MANUAL_STATE_CODES],
+        month_options=month_options,
+        year_options=year_options,
+        lot_options=lot_options,
+        tipo_opts=["Sin dato", "ABC", "ABC / CO2", "CO2"],
+        capacidad_opts=[5, 10],
+        f_sede=f_sede,
+        f_estado=f_estado,
+        f_lote=f_lote,
+        f_year=f_year,
+        f_month=f_month,
+        f_q=f_q,
+        show_form=show_form,
+        form_defaults=form_defaults,
+        form_action_url=_redirect_url(f_sede, detail_sede, f_registro),
+        kpi_total_matafuegos=sum(item["total"] for item in state_by_sede),
+        kpi_vigentes=sum(item["vigentes"] for item in state_by_sede),
+        kpi_proximos=sum(item["proximos"] for item in state_by_sede),
+        kpi_vencidos=sum(item["vencidos"] for item in state_by_sede),
+        kpi_sedes_atencion=sum(1 for item in state_by_sede if item["state_code"] not in {"VIGENTE", "RECARGA_REALIZADA"}),
+        kpi_lotes_activos=len({item["primary_lot"] for item in state_by_sede if item["primary_lot"] not in {"", "-", "Otro"}}),
+        fmt_fecha=_matafuego_fmt_fecha,
     )
 
 @app.route("/sgsst/matafuegos", methods=["GET","POST"], endpoint="matafuegos_home")

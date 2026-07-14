@@ -13,7 +13,7 @@
   class="sst-operativo sst-ui sst-calendar-page sst-calendar-page-ops"
   id="sstCalendarApp"
   data-launch-visita="{{ url_for('sst_visita_cargar') }}?sede=__SEDE__&fecha=__DATE__"
-  data-launch-desinfeccion="{{ url_for('obras_home') }}?panel=panel-desinf&sede=__SEDE__"
+  data-launch-desinfeccion="{{ url_for('sst_desinfecciones_home') }}?sede=__SEDE__&open_sede=__SEDE__"
   data-launch-matafuegos="{{ url_for('matafuegos_home') }}?sede=__SEDE__"
   data-launch-luces="{{ url_for('sst_luces_home') }}?sede=__SEDE__&prefill_sede=__SEDE__&prefill_fecha_programada=__DATE__&prefill_estado=INTERVENCION_PROGRAMADA&mostrar_form=1"
   data-launch-carteleria="{{ url_for('sst_carteleria_home') }}?sede=__SEDE__&prefill_sede=__SEDE__&prefill_fecha_programada=__DATE__&prefill_estado=PROGRAMADO&mostrar_form=1"
