@@ -9,50 +9,131 @@
 
 .sst-op-nav {
   display: flex;
-  align-items: center;
-  gap: 4px;
+  align-items: stretch;
+  gap: 8px;
+  flex-wrap: wrap;
   margin-bottom: 14px;
   padding: 5px;
-  overflow-x: auto;
   border: 1px solid var(--sst-line);
   border-radius: 12px;
   background: #fff;
 }
 
-.sst-op-nav > a,
+.sst-op-nav-home,
+.sst-op-stage > summary,
+.sst-op-stage-menu a,
 .sst-op-more > summary,
 .sst-op-more div a {
   display: block;
-  padding: 8px 10px;
   color: #465166;
-  font-size: 13px;
   font-weight: 700;
-  white-space: nowrap;
   text-decoration: none;
   border-radius: 8px;
 }
 
-.sst-op-nav > a:hover,
-.sst-op-nav > a.is-active,
-.sst-op-more > summary:hover {
-  color: #4f46b8;
-  background: #f0efff;
+.sst-op-nav-home {
+  display: grid;
+  gap: 2px;
+  min-width: 220px;
+  padding: 10px 12px;
+  border: 1px solid #d7deea;
+  background: #f8fbff;
 }
 
-.sst-op-more { position: relative; margin-left: auto; }
-.sst-op-more > summary { cursor: pointer; list-style: none; }
-.sst-op-more > summary::-webkit-details-marker { display: none; }
+.sst-op-nav-home strong {
+  color: #1f2b3d;
+  font-size: 14px;
+}
+
+.sst-op-nav-kicker,
+.sst-op-stage-kicker {
+  color: #667085;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.sst-op-nav-home.is-active,
+.sst-op-nav-home:hover {
+  border-color: #c7d1e2;
+  background: #eef4ff;
+  color: #4f46b8;
+}
+
+.sst-op-stage,
+.sst-op-more {
+  position: relative;
+  min-width: 0;
+}
+
+.sst-op-stage > summary,
+.sst-op-more > summary {
+  display: grid;
+  gap: 2px;
+  min-width: 170px;
+  padding: 10px 12px;
+  border: 1px solid #dfe4ec;
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  list-style: none;
+}
+
+.sst-op-stage > summary strong {
+  color: #1f2b3d;
+  font-size: 13px;
+}
+
+.sst-op-stage > summary::-webkit-details-marker,
+.sst-op-more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.sst-op-stage.is-active > summary,
+.sst-op-stage > summary:hover,
+.sst-op-more > summary:hover {
+  border-color: #c7d1e2;
+  background: #f6f8ff;
+  color: #4f46b8;
+}
+
+.sst-op-stage-menu,
 .sst-op-more div {
   position: absolute;
   z-index: 20;
   top: calc(100% + 6px);
-  right: 0;
-  min-width: 190px;
-  padding: 5px;
+  left: 0;
+  min-width: 220px;
+  padding: 6px;
   border: 1px solid var(--sst-line);
   border-radius: 10px;
   background: #fff;
   box-shadow: 0 10px 25px rgba(15, 23, 42, .12);
+}
+
+.sst-op-stage-menu a,
+.sst-op-more div a {
+  padding: 8px 10px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.sst-op-stage-menu a:hover,
+.sst-op-stage-menu a.is-active,
+.sst-op-more div a:hover {
+  color: #4f46b8;
+  background: #f0efff;
+}
+
+.sst-op-more {
+  margin-left: auto;
+}
+
+.sst-op-more div {
+  left: auto;
+  right: 0;
+  min-width: 210px;
 }
 
 .sst-op-header {

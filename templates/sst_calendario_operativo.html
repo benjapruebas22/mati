@@ -22,13 +22,22 @@
 
   <header class="sst-op-header sst-calendar-topbar">
     <div class="sst-calendar-heading">
-      <p class="sst-op-eyebrow">SG-SST - Tablero operativo</p>
-      <h1>Calendario operativo SG-SST</h1>
-      <p class="sst-calendar-heading-copy">Vista resumen anual por sede. Cada icono abre el modulo operativo correspondiente.</p>
+      {% if view_mode == 'implementacion' %}
+      <p class="sst-op-eyebrow">SG-SST - Fase 2 - Implementacion</p>
+      <h1>Tablero de Implementacion SG-SST</h1>
+      <p class="sst-calendar-heading-copy">Vista temporal reutilizada sobre el centro operativo para ordenar acciones activas sin duplicar datos ni crear una tabla nueva en esta etapa.</p>
+      {% else %}
+      <p class="sst-op-eyebrow">SG-SST - Inicio</p>
+      <h1>Centro Operativo SG-SST</h1>
+      <p class="sst-calendar-heading-copy">Vista integrada de diagnostico, implementacion, vencimientos, controles y acciones por sede.</p>
+      {% endif %}
     </div>
   </header>
 
   <form class="sst-calendar-toolbar sst-calendar-toolbar-inline" method="get" action="{{ url_for('sst_calendario_operativo') }}">
+    {% if view_mode != 'general' %}
+    <input type="hidden" name="vista" value="{{ view_mode }}">
+    {% endif %}
     <div class="sst-calendar-toolbar-label">Filtros</div>
     <div class="sst-calendar-toolbar-main">
       <label>
@@ -96,8 +105,8 @@
     </div>
     <div class="sst-calendar-toolbar-actions">
       <button class="sst-op-btn" type="submit">Aplicar</button>
-      <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo', year=today_year, month=today_month) }}">Hoy</a>
-      <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo') }}">Limpiar filtros</a>
+      <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo', vista=(view_mode if view_mode != 'general' else None), year=today_year, month=today_month) }}">Hoy</a>
+      <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo', vista=(view_mode if view_mode != 'general' else None)) }}">Limpiar filtros</a>
     </div>
   </form>
 

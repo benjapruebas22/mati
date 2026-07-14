@@ -6851,9 +6851,18 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
     def sst_inicio_operativo():
         return render_template("sst_operativo.html", **_sst_operational_home_context())
 
+    @app.route("/sst/implementacion", methods=["GET"], endpoint="sst_implementacion_tablero")
+    def sst_implementacion_tablero():
+        args = request.args.to_dict(flat=True)
+        args["vista"] = "implementacion"
+        return redirect(url_for("sst_calendario_operativo", **args))
+
     @app.route("/sst/calendario-operativo", methods=["GET"], endpoint="sst_calendario_operativo")
     def sst_calendario_operativo():
         con = get_db()
+        view_mode = (request.args.get("vista") or "").strip().lower()
+        if view_mode not in {"implementacion"}:
+            view_mode = "general"
         selected_year_raw = (request.args.get("year") or "").strip()
         selected_month_raw = (request.args.get("month") or "").strip()
         selected_year = date.today().year
@@ -6955,7 +6964,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
 
         return render_template(
             "sst_calendario_operativo.html",
-            sst_section="calendario",
+            sst_section="implementacion" if view_mode == "implementacion" else "inicio",
             selected_year=selected_year,
             selected_month=selected_month,
             focus_month=focus_month,
@@ -6981,6 +6990,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             today_iso=context_raw["today"].isoformat(),
             today_year=context_raw["today"].year,
             today_month=context_raw["today"].month,
+            view_mode=view_mode,
         )
 
     def _sst_fetch_sedes_base(con):
@@ -8769,7 +8779,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
     @app.route("/sst", methods=["GET", "POST"], endpoint="sst_general")
     def sst_general():
         if request.method == "GET" and (request.args.get("modo") or "").strip().lower() != "gestion":
-            return redirect(url_for("sst_inicio_operativo"))
+            return redirect(url_for("sst_calendario_operativo"))
         con = get_db()
         ensure_sst_general_table(con)
         q_agente_id = (request.args.get("agente_id") or "").strip()
