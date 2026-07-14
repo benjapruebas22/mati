@@ -2458,7 +2458,7 @@
       <div class="daily-group">
         <div class="daily-group-title">SST</div>
         <div class="daily-group-items">
-          <a class="daily-action" href="{{ url_for('sst_general') }}">
+          <a class="daily-action" href="{{ url_for('sst_calendario_operativo') }}">
             <span class="icon" aria-hidden="true"></span>
             <span class="label">SG-SST</span>
           </a>
@@ -2738,7 +2738,7 @@
             <span class="label">Recordatorios</span>
             <span id="resumenRecordBadge" class="ops-badge na">0</span>
           </button>
-          <a id="resumenGoSst" class="daily-action" href="{{ url_for('sst_general') }}">
+          <a id="resumenGoSst" class="daily-action" href="{{ url_for('sst_calendario_operativo') }}">
             <span class="icon" aria-hidden="true">ST</span>
             <span class="label">Alertas SG-SST</span>
             <span id="resumenSstBadge" class="ops-badge na">0</span>
@@ -7276,12 +7276,12 @@
 
     if (el.kpiCardTotal) {
       el.kpiCardTotal.addEventListener("click", function () {
-        window.location.href = "{{ url_for('sst_general') }}";
+        window.location.href = "{{ url_for('sst_calendario_operativo') }}";
       });
       el.kpiCardTotal.addEventListener("keydown", function (ev) {
         if (ev.key === "Enter" || ev.key === " ") {
           ev.preventDefault();
-          window.location.href = "{{ url_for('sst_general') }}";
+          window.location.href = "{{ url_for('sst_calendario_operativo') }}";
         }
       });
     }

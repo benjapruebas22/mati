@@ -8355,7 +8355,7 @@
               <a class="ptab tone-planos" href="{{ url_for('sst_carteleria_home', sede=sede.codigo, piso=piso if piso else None, deposito=local if local else None) }}">SG-SST Carteleria</a>
               <a class="ptab tone-lum" href="{{ url_for('sst_luces_home', sede=sede.codigo, piso=piso if piso else None, deposito=local if local else None) }}">SG-SST Luces</a>
               {% if has_sst_general %}
-              <a class="ptab tone-personal" href="{{ url_for('sst_general') }}">SG-SST</a>
+              <a class="ptab tone-personal" href="{{ url_for('sst_calendario_operativo', sede=sede.codigo) }}">SG-SST</a>
               {% endif %}
               {% if has_relevamientos %}
               <a class="ptab tone-personal" href="{{ url_for('auditoria_mobiliario') }}">Relevamientos</a>
@@ -9331,7 +9331,7 @@
 
 
 
-          <a class="btn primary" href="{{ url_for('matafuegos_home', sede=sede.codigo, piso=piso, q='') }}">Abrir en SG-SST</a>
+          <a class="btn primary" href="{{ url_for('sst_calendario_operativo', sede=sede.codigo) }}">Abrir en SG-SST</a>
 
 
 
