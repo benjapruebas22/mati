@@ -5753,12 +5753,24 @@ def sede_ficha(codigo):
         c = f"{piso}_iluminacion"
         if _pick_plan_file(codigo, c):
             plano_base = c
+    elif tab == "sst_luces":
+        c = f"{piso}_luces"
+        if _pick_plan_file(codigo, c):
+            plano_base = c
+        else:
+            c = f"{piso}_iluminacion"
+            if _pick_plan_file(codigo, c):
+                plano_base = c
     elif tab == "matafuegos":
         c = f"{piso}_seg"
         if _pick_plan_file(codigo, c):
             plano_base = c
     elif tab == "evacuacion":
         c = f"{piso}_eva"
+        if _pick_plan_file(codigo, c):
+            plano_base = c
+    elif tab == "sst_carteleria":
+        c = f"{piso}_carteles"
         if _pick_plan_file(codigo, c):
             plano_base = c
     elif tab == "aires":

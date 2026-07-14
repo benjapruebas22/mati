@@ -8352,8 +8352,10 @@
                 href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='matafuegos', view=view) }}">Matafuegos</a>
               <a class="ptab tone-eva {% if tab=='evacuacion' %}active{% endif %}" data-module="evacuacion"
                 href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='evacuacion', view=view) }}">Evacuacion</a>
-              <a class="ptab tone-planos" href="{{ url_for('sst_carteleria_home', sede=sede.codigo, piso=piso if piso else None, deposito=local if local else None) }}">SG-SST Carteleria</a>
-              <a class="ptab tone-lum" href="{{ url_for('sst_luces_home', sede=sede.codigo, piso=piso if piso else None, deposito=local if local else None) }}">SG-SST Luces</a>
+              <a class="ptab tone-planos {% if tab=='sst_carteleria' %}active{% endif %}" data-module="sst_carteleria"
+                href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='sst_carteleria', view=view) }}">SG-SST Carteleria</a>
+              <a class="ptab tone-lum {% if tab=='sst_luces' %}active{% endif %}" data-module="sst_luces"
+                href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='sst_luces', view=view) }}">SG-SST Luces</a>
               {% if has_sst_general %}
               <a class="ptab tone-personal" href="{{ url_for('sst_calendario_operativo', sede=sede.codigo) }}">SG-SST</a>
               {% endif %}
@@ -8607,6 +8609,8 @@
       'mobiliario':'Inventario operativo',
       'matafuegos':'Matafuegos',
       'evacuacion':'Evacuación',
+      'sst_carteleria':'SG-SST Carteleria',
+      'sst_luces':'SG-SST Luces',
       'resumen':'Resumen'
     } %}
     {% set panel_module_label = panel_module_map.get(tab, tab|capitalize) %}
@@ -9290,6 +9294,62 @@
         {% endif %}
 
 
+
+
+
+
+
+        {% elif tab == 'sst_carteleria' %}
+
+        <div class="panel-section-head panel-section-head-top">
+          <div>
+            <div class="panel-section-title">SG-SST Carteleria</div>
+            <div class="panel-section-sub">
+              Plano operativo del piso con la capa de carteleria. La gestion y carga siguen en el modulo SG-SST.
+            </div>
+          </div>
+
+          <a class="btn primary"
+            href="{{ url_for('sst_carteleria_home', sede=sede.codigo, piso=piso if piso else None, deposito=local if local else None) }}">
+            Abrir modulo
+          </a>
+        </div>
+
+        <div class="card" style="box-shadow:none;border:1px solid var(--border);padding:12px;">
+          <div style="font-size:12px;font-weight:800;margin-bottom:6px;">Plano cargado</div>
+          <div style="font-size:12px;color:#475467;line-height:1.45;">
+            Se muestra el plano de carteleria para <strong>{{ sede.codigo }}</strong>, piso <strong>{{ piso }}</strong>.
+            {% if local %}El filtro actual mantiene resaltado el local <strong>{{ local }}</strong>.{% endif %}
+          </div>
+        </div>
+
+
+
+
+
+        {% elif tab == 'sst_luces' %}
+
+        <div class="panel-section-head panel-section-head-top">
+          <div>
+            <div class="panel-section-title">SG-SST Luces de emergencia</div>
+            <div class="panel-section-sub">
+              Plano operativo del piso con la capa de luces de emergencia. La gestion y carga siguen en el modulo SG-SST.
+            </div>
+          </div>
+
+          <a class="btn primary"
+            href="{{ url_for('sst_luces_home', sede=sede.codigo, piso=piso if piso else None, deposito=local if local else None) }}">
+            Abrir modulo
+          </a>
+        </div>
+
+        <div class="card" style="box-shadow:none;border:1px solid var(--border);padding:12px;">
+          <div style="font-size:12px;font-weight:800;margin-bottom:6px;">Plano cargado</div>
+          <div style="font-size:12px;color:#475467;line-height:1.45;">
+            Se muestra el plano de luces de emergencia para <strong>{{ sede.codigo }}</strong>, piso <strong>{{ piso }}</strong>.
+            {% if local %}El filtro actual mantiene resaltado el local <strong>{{ local }}</strong>.{% endif %}
+          </div>
+        </div>
 
 
 
