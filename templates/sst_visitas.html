@@ -2,76 +2,416 @@
 
 {% block extra_head %}
   <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-12-06') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-14-01') }}">
 {% endblock %}
 
 {% block content %}
-{% set sst_section = 'estado' if q_vista == 'sedes' else 'visitas' %}
-<section class="sst-operativo sst-ui sst-page-visitas sst-shell">
+{% set sst_section = 'visitas' %}
+<section class="sst-operativo sst-ui sst-shell">
   {% include '_sst_operational_nav.html' %}
   <header class="sst-op-header">
     <div>
-      <p class="sst-op-eyebrow">SG-SST · Operación</p>
-      <h1>{% if q_vista == 'sedes' %}Estado por sede{% else %}Visitas a sedes{% endif %}</h1>
-      <p>{% if q_vista == 'sedes' %}Lectura rápida del último relevamiento y sus pendientes.{% else %}Registro operativo de visitas, documentación y hallazgos relacionados.{% endif %}</p>
+      <p class="sst-op-eyebrow">SG-SST | Visitas ART</p>
+      <h1>Visitas ART</h1>
+      <p>Control consolidado por sede de visitas, documentacion obligatoria, observaciones y acciones pendientes.</p>
     </div>
     <div class="sst-op-actions">
-      <a class="sst-op-btn primary" href="{{ url_for('sst_visita_cargar') }}">Registrar visita</a>
-      <a class="sst-op-btn" href="{{ url_for('sst_doc_subir') }}">Cargar documento ART</a>
-      <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo') }}">Calendario operativo</a>
+      <a class="sst-op-btn primary" href="{{ url_for('sst_visitas', sede=f_sede or None, open_sede=f_open_sede or f_sede or None, prefill_sede=f_open_sede or f_sede or None, mostrar_form=1) }}#sst-visitas-form">
+        {% if selected_summary and selected_summary.primary_record_id %}Editar visita{% else %}Registrar visita{% endif %}
+      </a>
+      <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo', sede=f_sede or None, tipo='visita') }}">Calendario operativo</a>
     </div>
   </header>
 
-  <div class="sst-op-nav" aria-label="Vistas de visitas">
-    <a class="{% if q_vista == 'proximas' %}is-active{% endif %}" href="{{ url_for('sst_visitas', vista='proximas') }}">Próximas</a>
-    <a class="{% if q_vista == 'pendientes' %}is-active{% endif %}" href="{{ url_for('sst_visitas', vista='pendientes') }}">Pendientes</a>
-    <a class="{% if q_vista == 'realizadas' %}is-active{% endif %}" href="{{ url_for('sst_visitas', vista='realizadas') }}">Realizadas</a>
-    <a class="{% if q_vista == 'todas' %}is-active{% endif %}" href="{{ url_for('sst_visitas', vista='todas') }}">Todas</a>
-    <a class="{% if q_vista == 'sedes' %}is-active{% endif %}" href="{{ url_for('sst_visitas', vista='sedes') }}">Estado por sede</a>
-    <form class="sst-search" method="get" action="{{ url_for('sst_visitas') }}" style="margin-left:auto;">
-      <input type="hidden" name="vista" value="{{ q_vista }}">
-      <input name="q" value="{{ q or '' }}" placeholder="Buscar sede o responsable">
-      <button class="sst-op-btn" type="submit">Buscar</button>
-    </form>
+  <form class="sst-op-card sst-op-filter-form sst-luces-filter-card" method="get" action="{{ url_for('sst_visitas') }}">
+    <label class="sst-op-field">
+      <small>Sede</small>
+      <select name="sede">
+        <option value="">Todas</option>
+        {% for sede in sedes %}
+        <option value="{{ sede.codigo }}" {% if f_sede == sede.codigo %}selected{% endif %}>{{ sede.codigo }} - {{ sede.nombre }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="sst-op-field">
+      <small>Estado de visita</small>
+      <select name="estado_visita">
+        <option value="">Todos</option>
+        {% for item in estado_visita_options %}
+        <option value="{{ item.code }}" {% if f_estado_visita == item.code %}selected{% endif %}>{{ item.label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="sst-op-field">
+      <small>Estado de documentacion</small>
+      <select name="estado_doc">
+        <option value="">Todos</option>
+        {% for item in estado_doc_options %}
+        <option value="{{ item.code }}" {% if f_estado_doc == item.code %}selected{% endif %}>{{ item.label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="sst-op-field">
+      <small>Observaciones ART</small>
+      <select name="observaciones_art">
+        <option value="">Todas</option>
+        {% for item in observacion_art_options %}
+        <option value="{{ item.code }}" {% if f_obs_art == item.code %}selected{% endif %}>{{ item.label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="sst-op-field">
+      <small>Responsable</small>
+      <select name="responsable">
+        <option value="">Todos</option>
+        {% for item in responsable_options %}
+        <option value="{{ item }}" {% if f_responsable == item %}selected{% endif %}>{{ item }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="sst-op-field">
+      <small>Año</small>
+      <select name="year">
+        <option value="">Todos</option>
+        {% for item in year_options %}
+        <option value="{{ item }}" {% if f_year == item %}selected{% endif %}>{{ item }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="sst-op-field">
+      <small>Buscar</small>
+      <input name="q" value="{{ f_q }}" placeholder="Sede, responsable, accion, observacion">
+    </label>
+    <div class="sst-op-form-actions sst-luces-filter-actions">
+      <button class="sst-op-btn" type="submit">Aplicar</button>
+      <a class="sst-op-btn" href="{{ url_for('sst_visitas') }}">Limpiar</a>
+    </div>
+  </form>
+
+  <div class="sst-calendar-kpis sst-calendar-kpis-4 sst-luces-kpis">
+    <article class="sst-op-card sst-calendar-kpi"><span>Sedes visitadas</span><strong>{{ kpi_visitadas }}</strong><small>Con visita realizada</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Sedes sin visitar</span><strong>{{ kpi_sin_visitar }}</strong><small>Sin visita efectiva</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Documentacion completa</span><strong>{{ kpi_docs_completa }}</strong><small>RGRL y 351/79 cargados</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Documentacion incompleta</span><strong>{{ kpi_docs_incompleta }}</strong><small>Falta carga o revision</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Visitas observadas</span><strong>{{ kpi_observadas }}</strong><small>Con observacion ART</small></article>
+    <article class="sst-op-card sst-calendar-kpi"><span>Acciones pendientes</span><strong>{{ kpi_acciones_pendientes }}</strong><small>Con gestion abierta</small></article>
   </div>
 
-  {% if q_vista != 'sedes' %}
-  <article class="sst-op-card">
-    <div class="sst-op-card-head"><h2>{{ q_vista|capitalize }}</h2><span class="sst-op-count">{{ visitas|length }} registros</span></div>
-    <div style="overflow-x:auto;">
+  <article class="sst-op-card wide sst-luces-table-card">
+    <div class="sst-op-card-head">
+      <h2>Tabla general por sede</h2>
+      <span class="sst-op-count">{{ state_by_sede|length }} sedes</span>
+    </div>
+    <div class="sst-luces-table-wrap">
       <table class="table">
-        <thead><tr><th>Fecha</th><th>Sede</th><th>Estado</th><th>Tipo</th><th>Responsable</th><th>ART</th><th>Hallazgos</th><th></th></tr></thead>
-        <tbody>
-          {% for visita in visitas %}
+        <thead>
           <tr>
-            <td style="white-space:nowrap;">{{ visita.fecha }}</td>
-            <td><strong>{{ visita.sede_codigo }}</strong><br><small>{{ visita.sede_nombre }}</small></td>
-            <td>{{ fmt_estado_visita(visita.estado) if fmt_estado_visita is defined else (visita.estado or 'Pendiente') }}</td>
-            <td>{{ visita.tipo_visita or '-' }}</td>
-            <td>{{ visita.responsable or '-' }}</td>
-            <td>{{ visita.documentos or 0 }} doc.</td>
-            <td>{{ visita.hallazgos or 0 }} abiertos</td>
-            <td><a class="sst-op-btn" href="{{ url_for('sst_sede_ficha', codigo=visita.sede_codigo) }}">Abrir</a></td>
+            <th>Sede</th>
+            <th>Ultima visita</th>
+            <th>Estado visita</th>
+            <th>RGRL</th>
+            <th>Decreto 351/79</th>
+            <th>Observacion ART</th>
+            <th>Accion requerida</th>
+            <th>Fecha programada</th>
+            <th>Ejecutado</th>
+            <th>Proxima accion</th>
+            <th>Abrir</th>
           </tr>
-          {% else %}<tr><td colspan="8" class="sst-op-empty">No hay visitas en esta vista.</td></tr>{% endfor %}
+        </thead>
+        <tbody>
+          {% for row in state_by_sede %}
+          <tr>
+            <td><strong>{{ row.sede_codigo }}</strong><br><small>{{ row.sede_nombre }}</small></td>
+            <td>{{ fmt_fecha(row.ultima_visita) if row.ultima_visita else '-' }}</td>
+            <td><span class="sst-status-badge {{ row.state_meta.class }}">{{ row.state_meta.label }}</span></td>
+            <td><span class="sst-status-badge {{ row.rgrl.meta.class }}">{{ row.rgrl.meta.label }}</span></td>
+            <td><span class="sst-status-badge {{ row.dec_351_79.meta.class }}">{{ row.dec_351_79.meta.label }}</span></td>
+            <td><span class="sst-status-badge {{ row.observation_meta.class }}">{{ row.observation_meta.label }}</span></td>
+            <td>{{ row.accion_requerida or '-' }}</td>
+            <td>{{ fmt_fecha(row.fecha_programada) if row.fecha_programada else '-' }}</td>
+            <td>{{ row.ejecutado_label }}</td>
+            <td class="sst-luces-next-action">{{ row.next_action }}</td>
+            <td><a class="sst-op-btn" href="{{ row.url }}">{{ row.action_button_label }}</a></td>
+          </tr>
+          {% else %}
+          <tr><td colspan="11" class="sst-op-empty">No hay sedes para este filtro.</td></tr>
+          {% endfor %}
         </tbody>
       </table>
     </div>
   </article>
-  {% else %}
-  <div class="sst-grid" aria-label="Estado de sedes SG-SST">
-    {% for sede in sedes %}
-    <article class="sede-card {{ sede.semaforo_cls }} sst-fuero-{{ sede.fuero_class }}" style="--fuero-accent:{{ sede.fuero_color }};">
-      <div class="sede-top"><div class="sede-id"><div class="sede-code">{{ sede.codigo }}</div><div><p class="sede-name">{{ sede.nombre }}</p><span class="sst-chip {{ sede.semaforo_cls }}">{{ sede.semaforo_label }}</span></div></div></div>
-      <div class="sede-meta">
-        <div class="meta-row"><span class="meta-k">Última visita</span><span>{{ sede.ultima_visita }}</span></div>
-        <div class="meta-row"><span class="meta-k">Documentación ART</span><span>{% if sede.docs_ok and not sede.docs_pend %}Completa{% else %}Requiere atención{% endif %}</span></div>
-        <div class="meta-row"><span class="meta-k">Hallazgos</span><span>{{ sede.pend_hallazgos or 0 }} pendientes</span></div>
+
+  {% if selected_summary and not show_form %}
+  <div class="sst-op-modal-backdrop">
+    <article class="sst-op-card sst-op-modal-card sst-op-modal-card-compact">
+      <div class="sst-op-card-head">
+        <div>
+          <h2>{{ selected_summary.sede_codigo }} - {{ selected_summary.sede_nombre }}</h2>
+          <span class="sst-op-count">Ficha compacta por sede</span>
+        </div>
+        <a class="sst-op-btn" href="{{ selected_summary.modal_close_url }}">Cerrar</a>
       </div>
-      <div class="sede-actions"><a class="sst-op-btn" href="{{ url_for('sst_sede_ficha', codigo=sede.codigo) }}">Ver estado</a><a class="sst-op-btn" href="{{ url_for('sst_visita_cargar', sede=sede.codigo) }}">Registrar visita</a><a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo', sede=sede.codigo) }}">Calendario</a></div>
+      <div class="sst-status-list">
+        <div class="sst-status-row">
+          <div class="sst-status-label">Ultima visita</div>
+          <div class="sst-status-detail">{{ fmt_fecha(selected_summary.ultima_visita) if selected_summary.ultima_visita else 'Sin visita registrada.' }}</div>
+          <span class="sst-status-badge {{ selected_summary.state_meta.class }}">{{ selected_summary.state_meta.label }}</span>
+        </div>
+        <div class="sst-status-row">
+          <div class="sst-status-label">Responsable</div>
+          <div class="sst-status-detail">{{ selected_summary.responsable or 'Sin responsable cargado.' }}</div>
+          <span class="sst-status-badge {{ 'sin-dato' if not selected_summary.responsable else 'correcto' }}">{{ 'Sin dato' if not selected_summary.responsable else 'Asignado' }}</span>
+        </div>
+        <div class="sst-status-row">
+          <div class="sst-status-label">Documentacion</div>
+          <div class="sst-status-detail">RGRL {{ selected_summary.rgrl.meta.label }} | Decreto 351/79 {{ selected_summary.dec_351_79.meta.label }}</div>
+          <span class="sst-status-badge {{ selected_summary.doc_overall_meta.class }}">{{ selected_summary.doc_overall_meta.label }}</span>
+        </div>
+        <div class="sst-status-row">
+          <div class="sst-status-label">Observacion ART</div>
+          <div class="sst-status-detail">{{ selected_summary.observacion_art or 'Sin observaciones ART registradas.' }}</div>
+          <span class="sst-status-badge {{ selected_summary.observation_meta.class }}">{{ selected_summary.observation_meta.label }}</span>
+        </div>
+        <div class="sst-status-row">
+          <div class="sst-status-label">Accion requerida</div>
+          <div class="sst-status-detail">{{ selected_summary.accion_requerida or 'Sin accion requerida.' }}</div>
+          <span class="sst-status-badge {{ 'sin-dato' if not selected_summary.accion_requerida else 'pendiente' if not selected_summary.ejecutado else 'correcto' }}">{{ selected_summary.ejecutado_label }}</span>
+        </div>
+        <div class="sst-status-row">
+          <div class="sst-status-label">Fecha programada</div>
+          <div class="sst-status-detail">{{ fmt_fecha(selected_summary.fecha_programada) if selected_summary.fecha_programada else 'Sin fecha programada.' }}</div>
+          <span class="sst-status-badge {{ 'sin-dato' if not selected_summary.fecha_programada else 'pendiente' }}">{{ 'Sin fecha' if not selected_summary.fecha_programada else 'Definida' }}</span>
+        </div>
+        <div class="sst-status-row">
+          <div class="sst-status-label">Proxima accion</div>
+          <div class="sst-status-detail">{{ selected_summary.next_action }}</div>
+          <span class="sst-status-badge {{ 'correcto' if selected_summary.next_action == 'Sin acciones pendientes.' else 'pendiente' }}">{{ 'Cerrado' if selected_summary.next_action == 'Sin acciones pendientes.' else 'Pendiente' }}</span>
+        </div>
+        <div class="sst-status-row">
+          <div class="sst-status-label">Observaciones</div>
+          <div class="sst-status-detail">{{ selected_summary.observaciones or 'Sin observaciones generales.' }}</div>
+          <span class="sst-status-badge {{ 'sin-dato' if not selected_summary.observaciones else 'pendiente' }}">{{ 'Vacio' if not selected_summary.observaciones else 'Con nota' }}</span>
+        </div>
+      </div>
+
+      <div class="sst-luces-modal-actions">
+        <a class="sst-op-btn" href="{{ selected_summary.modal_edit_url }}#sst-visitas-form">{% if selected_summary.primary_record_id %}Editar visita{% else %}Registrar visita{% endif %}</a>
+        {% if selected_summary.show_cargar_documentacion %}
+        <a class="sst-op-btn" href="{{ selected_summary.modal_edit_url }}#sst-visitas-form">Cargar documentacion</a>
+        {% endif %}
+        {% if selected_summary.show_registrar_observacion %}
+        <a class="sst-op-btn" href="{{ selected_summary.modal_edit_url }}#sst-visitas-form">Registrar observacion</a>
+        {% endif %}
+        {% if selected_summary.show_programar_accion %}
+        <a class="sst-op-btn" href="{{ selected_summary.modal_edit_url }}#sst-visitas-form">Programar accion</a>
+        {% endif %}
+        {% if selected_summary.show_marcar_ejecutado %}
+        <a class="sst-op-btn" href="{{ selected_summary.modal_edit_url }}#sst-visitas-form">Marcar ejecutado</a>
+        {% endif %}
+        {% if selected_summary.show_followup %}
+        <form method="post" action="{{ url_for('sst_visitas') }}">
+          <input type="hidden" name="action" value="followup">
+          <input type="hidden" name="record_id" value="{{ selected_summary.primary_record_id }}">
+          <button class="sst-op-btn" type="submit">Crear seguimiento</button>
+        </form>
+        {% endif %}
+        <a class="sst-op-btn" href="{{ selected_summary.modal_close_url }}#sst-visitas-historial">Ver historial</a>
+      </div>
     </article>
-    {% else %}<div class="sst-op-card sst-op-empty">No hay sedes para mostrar.</div>{% endfor %}
   </div>
   {% endif %}
+
+  <article class="sst-op-card sst-luces-form-card">
+    <div class="sst-op-card-head">
+      <h2 id="sst-visitas-form">{% if form_defaults.sede_codigo %}Formulario de {{ form_defaults.sede_codigo }}{% else %}Formulario de gestion{% endif %}</h2>
+      <span class="sst-op-count">{% if show_form %}Formulario abierto{% else %}Formulario colapsado{% endif %}</span>
+    </div>
+    <details {% if show_form %}open{% endif %} class="sst-luces-details">
+      <summary class="sst-op-form-summary">
+        {% if form_defaults.sede_codigo %}Abrir formulario de {{ form_defaults.sede_codigo }}{% else %}Abrir formulario{% endif %}
+      </summary>
+      <form class="sst-op-form-grid sst-luces-form-grid" method="post" enctype="multipart/form-data" action="{{ url_for('sst_visitas') }}">
+        <input type="hidden" name="action" value="save">
+        <input type="hidden" name="edit_id" value="{{ form_defaults.edit_id }}">
+
+        <label class="sst-op-field">
+          <small>Sede</small>
+          <select name="sede_codigo" required>
+            <option value="">Seleccionar</option>
+            {% for sede in sedes %}
+            <option value="{{ sede.codigo }}" {% if form_defaults.sede_codigo == sede.codigo %}selected{% endif %}>{{ sede.codigo }} - {{ sede.nombre }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="sst-op-field">
+          <small>Fecha de visita</small>
+          <input type="date" name="fecha" value="{{ form_defaults.fecha }}">
+        </label>
+        <label class="sst-op-field">
+          <small>Responsable</small>
+          <input name="responsable" value="{{ form_defaults.responsable }}" placeholder="Ej: ART / Intendencia / responsable de sede">
+        </label>
+        <label class="sst-op-field">
+          <small>Tipo de visita</small>
+          <select name="tipo_visita">
+            {% for item in ['ART', 'Interna', 'Seguimiento', 'Relevamiento inicial'] %}
+            <option value="{{ item }}" {% if form_defaults.tipo_visita == item %}selected{% endif %}>{{ item }}</option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <label class="sst-op-field">
+          <small>Estado</small>
+          <select name="estado">
+            <option value="">Automatico</option>
+            {% for item in estado_visita_options %}
+            <option value="{{ item.code }}" {% if form_defaults.estado == item.code %}selected{% endif %}>{{ item.label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="sst-op-field">
+          <small>Responsable de accion</small>
+          <input name="accion_responsable" value="{{ form_defaults.accion_responsable }}" placeholder="Responsable de ejecutar la accion">
+        </label>
+        <label class="sst-op-field">
+          <small>Fecha programada</small>
+          <input type="date" name="fecha_programada" value="{{ form_defaults.fecha_programada }}">
+        </label>
+        <label class="sst-op-field">
+          <small>Ejecutado</small>
+          <select name="ejecutado">
+            <option value="0" {% if form_defaults.ejecutado != '1' %}selected{% endif %}>No</option>
+            <option value="1" {% if form_defaults.ejecutado == '1' %}selected{% endif %}>Si</option>
+          </select>
+        </label>
+
+        <label class="sst-op-field">
+          <small>Fecha de ejecucion</small>
+          <input type="date" name="fecha_ejecucion" value="{{ form_defaults.fecha_ejecucion }}">
+        </label>
+        <label class="sst-op-field">
+          <small>Evidencia opcional</small>
+          <input name="evidencia_url" value="{{ form_defaults.evidencia_url }}" placeholder="Enlace a evidencia o respaldo">
+        </label>
+        <label class="sst-op-field sst-luces-full">
+          <small>Observacion ART</small>
+          <textarea name="observacion_art" rows="3" placeholder="Texto de la observacion dejada por la ART">{{ form_defaults.observacion_art }}</textarea>
+        </label>
+        <label class="sst-op-field sst-luces-full">
+          <small>Accion requerida</small>
+          <textarea name="accion_requerida" rows="3" placeholder="Accion correctiva o gestion a realizar">{{ form_defaults.accion_requerida }}</textarea>
+        </label>
+
+        <div class="sst-op-grid sst-luces-full">
+          <article class="sst-op-card">
+            <div class="sst-op-card-head">
+              <h3>RGRL</h3>
+              {% if form_defaults.rgrl_support_url %}
+              <a class="sst-op-count" href="{{ form_defaults.rgrl_support_url }}" target="_blank">{{ form_defaults.rgrl_support_label or 'Ver actual' }}</a>
+              {% else %}
+              <span class="sst-op-count">Sin respaldo</span>
+              {% endif %}
+            </div>
+            <div class="sst-visitas-doc-grid">
+              <label class="sst-op-field">
+                <small>Estado</small>
+                <select name="rgrl_estado">
+                  {% for item in doc_estado_form_options %}
+                  <option value="{{ item.code }}" {% if form_defaults.rgrl_estado == item.code %}selected{% endif %}>{{ item.label }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label class="sst-op-field">
+                <small>Fecha de carga</small>
+                <input type="date" name="rgrl_fecha_documento" value="{{ form_defaults.rgrl_fecha_documento }}">
+              </label>
+              <label class="sst-op-field sst-luces-full">
+                <small>Archivo o enlace</small>
+                <input name="rgrl_drive_url" value="{{ form_defaults.rgrl_drive_url }}" placeholder="https://drive.google.com/...">
+              </label>
+              <label class="sst-op-field sst-luces-full">
+                <small>Subir archivo</small>
+                <input type="file" name="rgrl_archivo">
+              </label>
+              <label class="sst-op-field sst-luces-full">
+                <small>Observacion documental</small>
+                <textarea name="rgrl_observacion" rows="3">{{ form_defaults.rgrl_observacion }}</textarea>
+              </label>
+            </div>
+          </article>
+
+          <article class="sst-op-card">
+            <div class="sst-op-card-head">
+              <h3>Decreto 351/79</h3>
+              {% if form_defaults.dec_351_support_url %}
+              <a class="sst-op-count" href="{{ form_defaults.dec_351_support_url }}" target="_blank">{{ form_defaults.dec_351_support_label or 'Ver actual' }}</a>
+              {% else %}
+              <span class="sst-op-count">Sin respaldo</span>
+              {% endif %}
+            </div>
+            <div class="sst-visitas-doc-grid">
+              <label class="sst-op-field">
+                <small>Estado</small>
+                <select name="dec_351_estado">
+                  {% for item in doc_estado_form_options %}
+                  <option value="{{ item.code }}" {% if form_defaults.dec_351_estado == item.code %}selected{% endif %}>{{ item.label }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label class="sst-op-field">
+                <small>Fecha de carga</small>
+                <input type="date" name="dec_351_fecha_documento" value="{{ form_defaults.dec_351_fecha_documento }}">
+              </label>
+              <label class="sst-op-field sst-luces-full">
+                <small>Archivo o enlace</small>
+                <input name="dec_351_drive_url" value="{{ form_defaults.dec_351_drive_url }}" placeholder="https://drive.google.com/...">
+              </label>
+              <label class="sst-op-field sst-luces-full">
+                <small>Subir archivo</small>
+                <input type="file" name="dec_351_archivo">
+              </label>
+              <label class="sst-op-field sst-luces-full">
+                <small>Observacion documental</small>
+                <textarea name="dec_351_observacion" rows="3">{{ form_defaults.dec_351_observacion }}</textarea>
+              </label>
+            </div>
+          </article>
+        </div>
+
+        <label class="sst-op-field sst-luces-full">
+          <small>Observaciones</small>
+          <textarea name="observaciones" rows="3" placeholder="Notas generales de la gestion ART">{{ form_defaults.observaciones }}</textarea>
+        </label>
+
+        <div class="sst-op-form-actions sst-luces-full">
+          <button class="sst-op-btn primary" type="submit">Guardar registro</button>
+        </div>
+      </form>
+    </details>
+  </article>
+
+  <article class="sst-op-card" id="sst-visitas-historial">
+    <div class="sst-op-card-head">
+      <h2>Historial</h2>
+      <span class="sst-op-count">{{ history_rows|length }} movimientos</span>
+    </div>
+    <details {% if f_open_sede %}open{% endif %} class="sst-luces-details">
+      <summary class="sst-op-form-summary">{% if f_open_sede %}Ver historial de {{ f_open_sede }}{% else %}Ver historial{% endif %}</summary>
+      <ul class="sst-op-list">
+        {% for item in history_rows %}
+        <li class="sst-op-item">
+          <div>
+            <strong>{{ item.accion|replace('_', ' ')|title }}</strong>
+            <div class="sst-op-meta">{{ item.sede_codigo or '-' }} | {{ item.detalle or 'Sin detalle' }}</div>
+          </div>
+          <span class="sst-op-date">{{ fmt_fecha(item.fecha_evento[:10]) }}</span>
+        </li>
+        {% else %}
+        <li class="sst-op-empty">Sin historial todavia.</li>
+        {% endfor %}
+      </ul>
+    </details>
+  </article>
 </section>
 {% endblock %}

@@ -114,11 +114,42 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         "Relevamiento inicial",
     ]
     SST_VISITA_ESTADOS = [
-        "SIN_OBS",
-        "CON_OBS",
-        "REQUIERE_CORRECCION",
-        "PEND_ANALISIS",
+        "SIN_VISITA",
+        "PROGRAMADA",
+        "VISITADA",
+        "OBSERVADA",
+        "EN_SEGUIMIENTO",
+        "CERRADA",
     ]
+    SST_VISITA_ART_STATE_LABELS = {
+        "SIN_VISITA": "Sin visita",
+        "PROGRAMADA": "Programada",
+        "VISITADA": "Visitada",
+        "OBSERVADA": "Observada",
+        "EN_SEGUIMIENTO": "En seguimiento",
+        "CERRADA": "Cerrada",
+    }
+    SST_VISITA_ART_DOC_TYPE_LABELS = {
+        "RGRL": "RGRL",
+        "DEC_351_79": "Decreto 351/79",
+    }
+    SST_VISITA_ART_DOC_STATE_LABELS = {
+        "SIN_DOCUMENTACION": "Sin documentacion",
+        "FALTANTE": "Faltante",
+        "CARGADO": "Cargado",
+        "OBSERVADO": "Observado",
+        "NO_APLICA": "No aplica",
+    }
+    SST_VISITA_ART_DOC_FILTER_LABELS = {
+        "COMPLETA": "Completa",
+        "INCOMPLETA": "Incompleta",
+        "SIN_DOCUMENTACION": "Sin documentacion",
+    }
+    SST_VISITA_ART_OBSERVATION_LABELS = {
+        "SIN_DATOS": "Sin datos",
+        "SIN_OBSERVACIONES": "Sin observaciones",
+        "OBSERVADA": "Observada",
+    }
     SST_DOC_TIPOS = [
         "DEC_351_79",
         "RGRL",
@@ -128,8 +159,10 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         "OTRO",
     ]
     SST_DOC_ESTADOS_REVISION = [
-        "PENDIENTE",
-        "REVISADO",
+        "FALTANTE",
+        "CARGADO",
+        "OBSERVADO",
+        "NO_APLICA",
     ]
     SST_CALENDAR_MONTHS = [
         (1, "Enero"),
@@ -148,7 +181,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
     SST_CALENDAR_TYPE_META = {
         "desinfeccion": {"label": "Desinfeccion", "short": "DES", "icon": "\U0001F9F9", "action": "Abrir desinfecciones"},
         "matafuegos": {"label": "Matafuegos", "short": "MF", "icon": "🧯", "action": "Ver matafuegos"},
-        "visita": {"label": "Visita", "short": "VS", "icon": "👷", "action": "Abrir visitas"},
+        "visita": {"label": "Visitas ART", "short": "VS", "icon": "👷", "action": "Abrir Visitas ART"},
         "documentacion": {"label": "Documentacion ART", "short": "DOC", "icon": "📄", "action": "Abrir documentacion"},
         "carteleria": {"label": "Carteleria", "short": "CAR", "icon": "🚪", "action": "Abrir sede"},
         "luces": {"label": "Luces de emergencia", "short": "LUC", "icon": "💡", "action": "Abrir sede"},
@@ -329,11 +362,19 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
     def _sst_state_badge(state_code, state_labels):
         code = _sst_clean_upper(state_code)
         label = state_labels.get(code, code.replace("_", " ").title() if code else "-")
-        if code in {"VERIFICADO", "VERIFICADA", "OPERATIVA", "RELEVADO_SIN_FALTANTES", "COMPLETO_OPERATIVO", "COMPLETO", "RELEVADO"}:
+        if code in {
+            "VERIFICADO", "VERIFICADA", "OPERATIVA", "RELEVADO_SIN_FALTANTES",
+            "COMPLETO_OPERATIVO", "COMPLETO", "COMPLETA", "RELEVADO", "VISITADA", "CERRADA",
+            "CARGADO", "SIN_OBSERVACIONES", "EJECUTADO",
+        }:
             badge = "correcto"
-        elif code in {"OBSERVADO", "OBSERVADA", "FUERA_DE_SERVICIO", "FALTA_EQUIPO", "FALTAN_EQUIPOS", "REQUIERE_REPARACION", "REQUIERE_REEMPLAZO", "FALTA_SOLICITAR", "REQUIERE_MANTENIMIENTO", "MANTENIMIENTO"}:
+        elif code in {
+            "OBSERVADO", "OBSERVADA", "FUERA_DE_SERVICIO", "FALTA_EQUIPO", "FALTAN_EQUIPOS",
+            "REQUIERE_REPARACION", "REQUIERE_REEMPLAZO", "FALTA_SOLICITAR",
+            "REQUIERE_MANTENIMIENTO", "MANTENIMIENTO", "FALTANTE", "INCOMPLETA",
+        }:
             badge = "atencion"
-        elif code in {"NO_RELEVADO", "NO_APLICA", "SIN_RELEVAR"}:
+        elif code in {"NO_RELEVADO", "NO_APLICA", "SIN_RELEVAR", "SIN_VISITA", "SIN_DOCUMENTACION", "SIN_DATOS"}:
             badge = "sin-dato"
         else:
             badge = "pendiente"
@@ -579,6 +620,18 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 creado_en TEXT DEFAULT (datetime('now'))
             )
         """)
+        ensure_cols(con, "sst_visitas", [
+            ("observacion_art", "TEXT"),
+            ("accion_requerida", "TEXT"),
+            ("accion_responsable", "TEXT"),
+            ("fecha_programada", "TEXT"),
+            ("ejecutado", "INTEGER DEFAULT 0"),
+            ("fecha_ejecucion", "TEXT"),
+            ("evidencia_url", "TEXT"),
+            ("seguimiento_id", "INTEGER"),
+            ("actualizado_por", "TEXT"),
+            ("fecha_actualizacion", "TEXT"),
+        ])
         con.execute("""
             CREATE TABLE IF NOT EXISTS sst_documentos(
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -595,6 +648,10 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 FOREIGN KEY(visita_id) REFERENCES sst_visitas(id)
             )
         """)
+        ensure_cols(con, "sst_documentos", [
+            ("actualizado_por", "TEXT"),
+            ("fecha_actualizacion", "TEXT"),
+        ])
         con.execute("CREATE INDEX IF NOT EXISTS idx_sst_visitas_sede_fecha ON sst_visitas(sede_codigo, fecha)")
         con.execute("CREATE INDEX IF NOT EXISTS idx_sst_documentos_sede_tipo ON sst_documentos(sede_codigo, tipo)")
         con.execute("CREATE INDEX IF NOT EXISTS idx_sst_documentos_visita ON sst_documentos(visita_id)")
@@ -6845,7 +6902,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             {"value": "desinfeccion", "label": "Desinfeccion", "short": "DES", "icon": "\U0001F9F9"},
             {"value": "luces", "label": "Luces de emergencia", "short": "LUC", "icon": "\U0001F6A8"},
             {"value": "carteleria", "label": "Carteleria", "short": "CAR", "icon": "\U0001F6AA"},
-            {"value": "visita", "label": "Visitas", "short": "VIS", "icon": "\U0001F477"},
+            {"value": "visita", "label": "Visitas ART", "short": "VIS", "icon": "\U0001F477"},
         ]
         state_options = [
             {"value": key, "label": meta["label"], "class": meta["class"], "icon": meta.get("icon", "")}
@@ -10386,7 +10443,167 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             pass
         return s
 
+    def _sst_visitas_art_normalize_state(value):
+        raw_state = (_sst_clean_upper(value) or "").strip().upper()
+        legacy_map = {
+            "SIN_OBS": "VISITADA",
+            "CON_OBS": "OBSERVADA",
+            "REQUIERE_CORRECCION": "EN_SEGUIMIENTO",
+            "PEND_ANALISIS": "OBSERVADA",
+        }
+        normalized = legacy_map.get(raw_state, raw_state)
+        return normalized if normalized in SST_VISITA_ART_STATE_LABELS else ""
+
+    def _sst_visitas_art_normalize_doc_state(value, has_support=False):
+        raw_state = (_sst_clean_upper(value) or "").strip().upper()
+        legacy_map = {
+            "PENDIENTE": "OBSERVADO",
+            "REVISADO": "CARGADO",
+            "APROBADO": "CARGADO",
+            "OK": "CARGADO",
+        }
+        normalized = legacy_map.get(raw_state, raw_state)
+        if normalized in SST_VISITA_ART_DOC_STATE_LABELS:
+            return normalized
+        return "CARGADO" if has_support else "SIN_DOCUMENTACION"
+
+    def _sst_visitas_art_doc_summary(doc_row):
+        if not doc_row:
+            return {
+                "id": 0,
+                "code": "SIN_DOCUMENTACION",
+                "meta": _sst_state_badge("SIN_DOCUMENTACION", SST_VISITA_ART_DOC_STATE_LABELS),
+                "fecha_documento": "",
+                "fecha_carga": "",
+                "observacion": "",
+                "drive_url": "",
+                "archivo": "",
+                "support_url": "",
+                "support_label": "",
+                "has_support": False,
+            }
+        drive_url = str(_row_value(doc_row, "drive_url", "") or "").strip()
+        archivo = str(_row_value(doc_row, "archivo", "") or "").strip()
+        has_support = bool(drive_url or archivo)
+        state_code = _sst_visitas_art_normalize_doc_state(_row_value(doc_row, "estado_revision", ""), has_support)
+        if state_code == "SIN_DOCUMENTACION" and has_support:
+            state_code = "CARGADO"
+        support_url = drive_url or (url_for("sst_doc_archivo", filename=archivo) if archivo else "")
+        support_label = "Drive" if drive_url else ("Archivo" if archivo else "")
+        return {
+            "id": int(_row_value(doc_row, "id", 0) or 0),
+            "code": state_code,
+            "meta": _sst_state_badge(state_code, SST_VISITA_ART_DOC_STATE_LABELS),
+            "fecha_documento": str(_row_value(doc_row, "fecha_documento", "") or "").strip(),
+            "fecha_carga": str(_row_value(doc_row, "fecha_carga", "") or "").strip(),
+            "observacion": str(_row_value(doc_row, "notas", "") or "").strip(),
+            "drive_url": drive_url,
+            "archivo": archivo,
+            "support_url": support_url,
+            "support_label": support_label,
+            "has_support": has_support,
+        }
+
+    def _sst_visitas_art_doc_overall_code(rgrl_summary, dec_summary):
+        codes = [rgrl_summary.get("code"), dec_summary.get("code")]
+        if all(code == "SIN_DOCUMENTACION" for code in codes):
+            return "SIN_DOCUMENTACION"
+        if any(code in {"SIN_DOCUMENTACION", "FALTANTE", "OBSERVADO"} for code in codes):
+            return "INCOMPLETA"
+        return "COMPLETA"
+
+    def _sst_visitas_art_observation_code(record):
+        if not record or not str(_row_value(record, "fecha", "") or "").strip():
+            return "SIN_DATOS"
+        if str(_row_value(record, "observacion_art", "") or "").strip() or str(_row_value(record, "accion_requerida", "") or "").strip():
+            return "OBSERVADA"
+        return "SIN_OBSERVACIONES"
+
+    def _sst_visitas_art_state_code(record, today_ref=None):
+        today_ref = today_ref or date.today()
+        if not record or not str(_row_value(record, "fecha", "") or "").strip():
+            return "SIN_VISITA"
+        visit_date = _sst_calendar_parse_date(_row_value(record, "fecha", ""))
+        manual_state = _sst_visitas_art_normalize_state(_row_value(record, "estado", ""))
+        has_observation = bool(
+            str(_row_value(record, "observacion_art", "") or "").strip()
+            or str(_row_value(record, "accion_requerida", "") or "").strip()
+        )
+        has_action = bool(
+            str(_row_value(record, "accion_requerida", "") or "").strip()
+            or str(_row_value(record, "accion_responsable", "") or "").strip()
+            or str(_row_value(record, "fecha_programada", "") or "").strip()
+            or int(_row_value(record, "seguimiento_id", 0) or 0) > 0
+        )
+        action_executed = bool(
+            _sst_bool_flag(_row_value(record, "ejecutado", 0))
+            or str(_row_value(record, "fecha_ejecucion", "") or "").strip()
+            or str(_row_value(record, "evidencia_url", "") or "").strip()
+        )
+        if manual_state == "SIN_VISITA":
+            return "SIN_VISITA"
+        if visit_date and visit_date > today_ref:
+            return "PROGRAMADA"
+        if manual_state and manual_state != "PROGRAMADA":
+            return manual_state
+        if has_action and not action_executed:
+            return "EN_SEGUIMIENTO"
+        if has_observation:
+            return "CERRADA" if action_executed else "OBSERVADA"
+        return "VISITADA"
+
+    def _sst_visitas_art_next_action(summary):
+        state_code = str(summary.get("state_code") or "").strip().upper()
+        doc_overall_code = str(summary.get("doc_overall_code") or "").strip().upper()
+        observation_code = str(summary.get("observation_code") or "").strip().upper()
+        action_required = str(summary.get("accion_requerida") or "").strip()
+        executed = bool(summary.get("ejecutado"))
+        has_evidence = bool(str(summary.get("evidencia_url") or "").strip() or str(summary.get("fecha_ejecucion") or "").strip())
+        if state_code == "SIN_VISITA":
+            return "Programar visita."
+        if state_code == "PROGRAMADA":
+            return "Realizar visita."
+        if observation_code == "OBSERVADA" and not action_required:
+            return "Definir accion requerida."
+        if action_required and not executed:
+            return "Ejecutar accion."
+        if action_required and executed and not has_evidence and state_code != "CERRADA":
+            return "Registrar evidencia o cerrar."
+        if doc_overall_code != "COMPLETA":
+            return "Cargar documentacion."
+        if action_required and executed and state_code != "CERRADA":
+            return "Registrar evidencia o cerrar."
+        return "Sin acciones pendientes."
+
+    def _sst_visitas_art_followup_text(summary):
+        state_code = str(summary.get("state_code") or "").strip().upper()
+        doc_overall_code = str(summary.get("doc_overall_code") or "").strip().upper()
+        action_required = str(summary.get("accion_requerida") or "").strip()
+        if state_code == "SIN_VISITA":
+            return "Programar visita ART de la sede."
+        if state_code == "PROGRAMADA":
+            return "Realizar la visita ART programada."
+        if action_required:
+            return f"Ejecutar accion ART: {action_required}"
+        if doc_overall_code != "COMPLETA":
+            return "Completar documentacion ART obligatoria de la sede."
+        return "Dar seguimiento a la gestion operativa de Visitas ART."
+
+    def _sst_visitas_art_anchor_year(summary):
+        for raw_value in (
+            summary.get("ultima_visita"),
+            summary.get("fecha_programada"),
+            summary.get("fecha_ejecucion"),
+        ):
+            parsed = _sst_calendar_parse_date(raw_value)
+            if parsed:
+                return int(parsed.year)
+        return 0
+
     def _sst_sede_estado_label(estado_code):
+        normalized = _sst_visitas_art_normalize_state(estado_code)
+        if normalized:
+            return SST_VISITA_ART_STATE_LABELS.get(normalized, normalized.replace("_", " ").title())
         e = (estado_code or "").strip().upper()
         if e == "SIN_OBS":
             return "Sin obs."
@@ -11028,11 +11245,17 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     COALESCE(v.tipo_visita, '') AS tipo_visita,
                     COALESCE(v.responsable, '') AS responsable,
                     COALESCE(v.estado, '') AS estado,
-                    COALESCE(v.observaciones, '') AS observaciones
+                    COALESCE(v.observaciones, '') AS observaciones,
+                    COALESCE(v.observacion_art, '') AS observacion_art,
+                    COALESCE(v.accion_requerida, '') AS accion_requerida,
+                    COALESCE(v.accion_responsable, '') AS accion_responsable,
+                    COALESCE(v.fecha_programada, '') AS fecha_programada,
+                    COALESCE(v.ejecutado, 0) AS ejecutado,
+                    COALESCE(v.fecha_ejecucion, '') AS fecha_ejecucion,
+                    COALESCE(v.evidencia_url, '') AS evidencia_url
                 FROM sst_visitas v
                 ORDER BY date(v.fecha), v.id
             """).fetchall()
-            pending_states = {"PEND_ANALISIS", "REQUIERE_CORRECCION"}
             for row in visitas_rows:
                 event_date = _sst_calendar_parse_date(_row_value(row, "fecha", ""))
                 if not event_date or event_date.year != selected_year:
@@ -11048,31 +11271,36 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     (_row_value(item, "archivo", "") or "").strip() or (_row_value(item, "drive_url", "") or "").strip()
                     for item in visit_docs
                 )
-                estado_raw = (_row_value(row, "estado", "") or "").strip().upper()
-                visit_type = (_row_value(row, "tipo_visita", "") or "").strip().upper()
-                observaciones = (_row_value(row, "observaciones", "") or "").strip()
+                observaciones = (_row_value(row, "observacion_art", "") or "").strip() or (_row_value(row, "observaciones", "") or "").strip()
+                accion_requerida = (_row_value(row, "accion_requerida", "") or "").strip()
+                accion_responsable = (_row_value(row, "accion_responsable", "") or "").strip()
+                ejecutado = bool(
+                    _sst_bool_flag(_row_value(row, "ejecutado", 0))
+                    or (_row_value(row, "fecha_ejecucion", "") or "").strip()
+                    or (_row_value(row, "evidencia_url", "") or "").strip()
+                )
+                visit_state = _sst_visitas_art_state_code(row, today_ref)
                 detail = _sst_calendar_short_date(event_date)
-                if event_date > today_ref:
+                if visit_state == "PROGRAMADA":
                     estado = "programado"
                     title = "Programada"
-                elif estado_raw == "REQUIERE_CORRECCION":
-                    estado = "en_seguimiento"
-                    title = "Seguimiento requerido"
-                elif estado_raw == "PEND_ANALISIS":
-                    estado = "pendiente"
-                    title = "Pendiente"
-                elif estado_raw == "CON_OBS" or observaciones:
-                    estado = "en_seguimiento"
-                    title = "Con observaciones"
-                elif visit_type == "ART" and art_loaded:
-                    estado = "cumplido"
-                    title = "ART realizada"
-                elif visit_type == "ART" and not art_loaded:
-                    estado = "pendiente"
-                    title = "Pendiente"
+                elif observaciones or accion_requerida:
+                    if ejecutado:
+                        estado = "cumplido"
+                        title = "Realizada"
+                        detail = "Observacion resuelta"
+                    elif accion_requerida:
+                        estado = "en_seguimiento"
+                        title = "Observada"
+                        detail = "1 accion pendiente"
+                    else:
+                        estado = "pendiente"
+                        title = "Observada"
+                        detail = "Definir accion requerida"
                 else:
                     estado = "cumplido"
                     title = "Realizada"
+                    detail = "Sin observaciones"
                 events.append(_sst_calendar_build_event(
                     source_id=str(_row_value(row, "id", "")),
                     source_type="sst_visitas",
@@ -11084,9 +11312,9 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     title=title,
                     detail=detail,
                     state_key=estado,
-                    responsible=(_row_value(row, "responsable", "") or "").strip(),
-                    url_detail=url_for("sst_sede_ficha", codigo=sede_codigo),
-                    action_label="Abrir ficha de visita",
+                    responsible=((_row_value(row, "responsable", "") or "").strip() or accion_responsable),
+                    url_detail=url_for("sst_visitas", sede=sede_codigo, open_sede=sede_codigo),
+                    action_label="Abrir Visitas ART",
                     active=(estado != "cumplido"),
                     extra={
                         "visit_type": (_row_value(row, "tipo_visita", "") or "").strip(),
@@ -11098,6 +11326,33 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                         "type_short": "VIS",
                     },
                 ))
+                action_date = _sst_calendar_parse_date(_row_value(row, "fecha_programada", ""))
+                if action_date and action_date.year == selected_year and (observaciones or accion_requerida) and not ejecutado:
+                    event_years.add(action_date.year)
+                    events.append(_sst_calendar_build_event(
+                        source_id=f"visita-accion-{_row_value(row, 'id', '')}",
+                        source_type="sst_visitas",
+                        sede_codigo=sede_codigo,
+                        sede_nombre=sede_info.get("nombre", ""),
+                        region_label=sede_info.get("region", ""),
+                        event_date=action_date,
+                        type_key="visita",
+                        title="Observada",
+                        detail=("Accion vencida" if action_date < today_ref else "1 accion pendiente"),
+                        state_key=("vencido" if action_date < today_ref else "pendiente"),
+                        responsible=(accion_responsable or (_row_value(row, "responsable", "") or "").strip()),
+                        url_detail=url_for("sst_visitas", sede=sede_codigo, open_sede=sede_codigo),
+                        action_label="Abrir Visitas ART",
+                        active=True,
+                        extra={
+                            "visit_type": (_row_value(row, "tipo_visita", "") or "").strip(),
+                            "observaciones": observaciones,
+                            "action_required": accion_requerida,
+                            "type_icon": "\U0001F477",
+                            "type_label": "Visitas ART",
+                            "type_short": "VIS",
+                        },
+                    ))
 
         if _table_exists(con, "obras_sede"):
             desinf_rows = con.execute("""
@@ -11325,83 +11580,6 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     action_label=("Abrir hallazgos" if type_key == "hallazgo" else "Abrir seguimiento"),
                     active=(estado != "cumplido"),
                 ))
-
-        if _table_exists(con, "sst_documentos"):
-            docs_rows = con.execute("""
-                SELECT
-                    id,
-                    UPPER(COALESCE(sede_codigo, '')) AS sede_codigo,
-                    UPPER(COALESCE(tipo, '')) AS tipo,
-                    COALESCE(fecha_documento, '') AS fecha_documento,
-                    COALESCE(fecha_carga, '') AS fecha_carga,
-                    COALESCE(archivo, '') AS archivo,
-                    COALESCE(drive_url, '') AS drive_url,
-                    COALESCE(estado_revision, '') AS estado_revision
-                FROM sst_documentos
-                ORDER BY COALESCE(fecha_documento, fecha_carga) DESC, id DESC
-            """).fetchall()
-            latest_docs = defaultdict(dict)
-            for row in docs_rows:
-                sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
-                doc_type = (_row_value(row, "tipo", "") or "").strip().upper()
-                if not sede_codigo or not doc_type or doc_type in latest_docs[sede_codigo]:
-                    continue
-                latest_docs[sede_codigo][doc_type] = row
-                for date_field in ("fecha_documento", "fecha_carga"):
-                    event_date = _sst_calendar_parse_date(_row_value(row, date_field, ""))
-                    if event_date:
-                        event_years.add(event_date.year)
-            if selected_year == today_ref.year:
-                for sede_item in sedes:
-                    sede_codigo = sede_item["codigo"]
-                    sede_docs = latest_docs.get(sede_codigo, {})
-                    missing_docs = []
-                    pending_docs = []
-                    for doc_type in SST_CALENDAR_REQUIRED_DOCS:
-                        doc_row = sede_docs.get(doc_type)
-                        has_support = bool(doc_row and ((_row_value(doc_row, "archivo", "") or "").strip() or (_row_value(doc_row, "drive_url", "") or "").strip()))
-                        if not has_support:
-                            missing_docs.append(doc_type)
-                            continue
-                        if ((_row_value(doc_row, "estado_revision", "") or "").strip().upper() == "PENDIENTE"):
-                            pending_docs.append(doc_row)
-                    if missing_docs:
-                        detail = "Falta: " + ", ".join(missing_docs)
-                        events.append(_sst_calendar_build_event(
-                            source_id=f"docs-missing-{sede_codigo}",
-                            source_type="sst_documentos",
-                            sede_codigo=sede_codigo,
-                            sede_nombre=sede_item["nombre"],
-                            region_label=sede_item["region"],
-                            event_date=today_ref,
-                            type_key="documentacion",
-                            title="Falta documentacion ART",
-                            detail=detail,
-                            state_key="sin_datos",
-                            responsible="",
-                            url_detail=url_for("sst_doc_subir", sede=sede_codigo),
-                            action_label="Cargar documento",
-                            active=True,
-                        ))
-                    elif pending_docs:
-                        anchor = _sst_calendar_parse_date(_row_value(pending_docs[0], "fecha_documento", "")) or today_ref
-                        detail = "Revision pendiente de " + ", ".join((_row_value(item, "tipo", "") or "").strip() for item in pending_docs)
-                        events.append(_sst_calendar_build_event(
-                            source_id=f"docs-pending-{sede_codigo}",
-                            source_type="sst_documentos",
-                            sede_codigo=sede_codigo,
-                            sede_nombre=sede_item["nombre"],
-                            region_label=sede_item["region"],
-                            event_date=anchor,
-                            type_key="documentacion",
-                            title="Documentacion ART en revision",
-                            detail=detail,
-                            state_key="pendiente",
-                            responsible="",
-                            url_detail=url_for("sst_doc_subir", sede=sede_codigo),
-                            action_label="Cargar documento",
-                            active=True,
-                        ))
 
         if _table_exists(con, "sst_control_objetivos") and _table_exists(con, "sst_control_relevamientos") and selected_year == today_ref.year:
             control_rows = con.execute("""
@@ -11693,312 +11871,774 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             ),
         }
 
-    @app.route("/sst/visitas", methods=["GET"], endpoint="sst_visitas")
+    def _sst_visitas_art_build_summary(sede_info, record, docs_by_type, today_ref):
+        sede_codigo = str(sede_info.get("codigo") or "").strip().upper()
+        rgrl_summary = _sst_visitas_art_doc_summary((docs_by_type or {}).get("RGRL"))
+        dec_summary = _sst_visitas_art_doc_summary((docs_by_type or {}).get("DEC_351_79"))
+        state_code = _sst_visitas_art_state_code(record, today_ref)
+        observation_code = _sst_visitas_art_observation_code(record)
+        ejecutado = bool(
+            record and (
+                _sst_bool_flag(_row_value(record, "ejecutado", 0))
+                or str(_row_value(record, "fecha_ejecucion", "") or "").strip()
+                or str(_row_value(record, "evidencia_url", "") or "").strip()
+            )
+        )
+        summary = {
+            "primary_record_id": int(_row_value(record, "id", 0) or 0) if record else 0,
+            "record_raw": dict(record) if record else {},
+            "sede_codigo": sede_codigo,
+            "sede_nombre": str(sede_info.get("nombre") or "").strip(),
+            "ultima_visita": str(_row_value(record, "fecha", "") or "").strip() if record else "",
+            "responsable": str(_row_value(record, "responsable", "") or "").strip() if record else "",
+            "tipo_visita": str(_row_value(record, "tipo_visita", "") or "").strip() if record else "",
+            "state_code": state_code,
+            "state_meta": _sst_state_badge(state_code, SST_VISITA_ART_STATE_LABELS),
+            "rgrl": rgrl_summary,
+            "dec_351_79": dec_summary,
+            "doc_overall_code": _sst_visitas_art_doc_overall_code(rgrl_summary, dec_summary),
+            "observation_code": observation_code,
+            "observation_meta": _sst_state_badge(observation_code, SST_VISITA_ART_OBSERVATION_LABELS),
+            "observacion_art": str(_row_value(record, "observacion_art", "") or "").strip() if record else "",
+            "accion_requerida": str(_row_value(record, "accion_requerida", "") or "").strip() if record else "",
+            "accion_responsable": str(_row_value(record, "accion_responsable", "") or "").strip() if record else "",
+            "fecha_programada": str(_row_value(record, "fecha_programada", "") or "").strip() if record else "",
+            "ejecutado": ejecutado,
+            "ejecutado_label": (
+                "Si" if ejecutado else (
+                    "No" if (
+                        record and (
+                            str(_row_value(record, "accion_requerida", "") or "").strip()
+                            or str(_row_value(record, "observacion_art", "") or "").strip()
+                        )
+                    ) else "-"
+                )
+            ),
+            "fecha_ejecucion": str(_row_value(record, "fecha_ejecucion", "") or "").strip() if record else "",
+            "evidencia_url": str(_row_value(record, "evidencia_url", "") or "").strip() if record else "",
+            "seguimiento_id": int(_row_value(record, "seguimiento_id", 0) or 0) if record else 0,
+            "observaciones": str(_row_value(record, "observaciones", "") or "").strip() if record else "",
+        }
+        summary["doc_overall_meta"] = _sst_state_badge(summary["doc_overall_code"], SST_VISITA_ART_DOC_FILTER_LABELS)
+        summary["next_action"] = _sst_visitas_art_next_action(summary)
+        summary["anchor_year"] = _sst_visitas_art_anchor_year(summary)
+        summary["visited_flag"] = bool(
+            summary["ultima_visita"]
+            and (_sst_calendar_parse_date(summary["ultima_visita"]) or today_ref) <= today_ref
+        )
+        return summary
+
+    def _sst_visitas_art_upsert_doc(con, sede_codigo, visit_id, doc_type, payload, user_name):
+        existing = con.execute("""
+            SELECT id, fecha_documento, archivo, drive_url, estado_revision, notas
+            FROM sst_documentos
+            WHERE UPPER(COALESCE(sede_codigo, '')) = ?
+              AND UPPER(COALESCE(tipo, '')) = ?
+            ORDER BY COALESCE(fecha_documento, fecha_carga) DESC, id DESC
+            LIMIT 1
+        """, (sede_codigo, doc_type)).fetchone()
+        existing = dict(existing) if existing else None
+
+        fecha_documento = str(payload.get("fecha_documento") or "").strip()
+        drive_url = str(payload.get("drive_url") or "").strip()
+        notas = str(payload.get("notas") or "").strip()
+        requested_state = str(payload.get("estado") or "").strip().upper()
+        archivo_name = str((existing or {}).get("archivo") or "").strip()
+
+        file = payload.get("file")
+        if file and getattr(file, "filename", ""):
+            if not allowed_sst_doc(file.filename):
+                raise ValueError("Archivo no permitido. Use PDF/JPG/PNG.")
+            safe = secure_filename(file.filename)
+            archivo_name = f"{sede_codigo}_{doc_type}_{uuid.uuid4().hex}_{safe}"
+            file.save(os.path.join(SST_DOCS_FOLDER, archivo_name))
+
+        has_any_value = bool(
+            fecha_documento or drive_url or notas or archivo_name or requested_state
+        )
+        if not has_any_value and not existing:
+            return None
+
+        final_state = _sst_visitas_art_normalize_doc_state(
+            requested_state or ((existing or {}).get("estado_revision") or ""),
+            bool(drive_url or archivo_name),
+        )
+        if not requested_state:
+            if drive_url or archivo_name:
+                final_state = "CARGADO"
+            elif notas:
+                final_state = "OBSERVADO"
+            elif existing:
+                final_state = _sst_visitas_art_normalize_doc_state(
+                    (existing or {}).get("estado_revision") or "",
+                    bool((existing or {}).get("drive_url") or (existing or {}).get("archivo")),
+                )
+            else:
+                final_state = "SIN_DOCUMENTACION"
+        if final_state == "CARGADO" and not (drive_url or archivo_name):
+            final_state = "FALTANTE"
+
+        payload_values = (
+            sede_codigo,
+            visit_id,
+            doc_type,
+            fecha_documento or None,
+            archivo_name or None,
+            drive_url or None,
+            final_state,
+            notas or None,
+            user_name,
+            _sst_now_ts(),
+        )
+        if existing:
+            con.execute("""
+                UPDATE sst_documentos
+                SET visita_id = ?,
+                    fecha_documento = ?,
+                    archivo = ?,
+                    drive_url = ?,
+                    estado_revision = ?,
+                    notas = ?,
+                    actualizado_por = ?,
+                    fecha_actualizacion = ?
+                WHERE id = ?
+            """, (
+                visit_id,
+                fecha_documento or None,
+                archivo_name or None,
+                drive_url or None,
+                final_state,
+                notas or None,
+                user_name,
+                _sst_now_ts(),
+                int(existing["id"]),
+            ))
+            return {"id": int(existing["id"]), "state_code": final_state, "action": "documentacion_actualizada"}
+        con.execute("""
+            INSERT INTO sst_documentos(
+                sede_codigo, visita_id, tipo, fecha_documento, archivo, drive_url,
+                estado_revision, notas, actualizado_por, fecha_actualizacion
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, payload_values)
+        return {
+            "id": int(con.execute("SELECT last_insert_rowid()").fetchone()[0]),
+            "state_code": final_state,
+            "action": "documentacion_cargada",
+        }
+
+    def _sst_visitas_art_context(con):
+        ensure_sst_visitas_docs_tables(con)
+        ensure_sst_operativo_historial_tables(con)
+
+        today_ref = date.today()
+        f_sede = (request.args.get("sede") or "").strip().upper()
+        f_estado_visita = (request.args.get("estado_visita") or "").strip().upper()
+        f_estado_doc = (request.args.get("estado_doc") or "").strip().upper()
+        f_obs_art = (request.args.get("observaciones_art") or "").strip().upper()
+        f_responsable = (request.args.get("responsable") or "").strip()
+        f_q = (request.args.get("q") or "").strip().lower()
+        f_open_sede = (request.args.get("open_sede") or "").strip().upper()
+        f_year_raw = (request.args.get("year") or "").strip()
+        f_year = int(f_year_raw) if f_year_raw.isdigit() else 0
+        show_form = str(request.args.get("mostrar_form") or "").strip().lower() in {"1", "true", "si", "yes"}
+        selected_record_id = int(request.args.get("registro") or 0) if str(request.args.get("registro") or "").isdigit() else 0
+        prefill_sede = (request.args.get("prefill_sede") or f_open_sede or f_sede).strip().upper()
+
+        sedes = [{"codigo": row["codigo"], "nombre": row["nombre"]} for row in _sst_fetch_sedes_base(con)]
+        sedes_map = {item["codigo"]: item for item in sedes}
+
+        visit_rows = con.execute("""
+            SELECT
+                id, sede_codigo, fecha, tipo_visita, responsable, estado, observaciones,
+                observacion_art, accion_requerida, accion_responsable, fecha_programada,
+                ejecutado, fecha_ejecucion, evidencia_url, seguimiento_id
+            FROM sst_visitas
+            ORDER BY date(fecha) DESC, id DESC
+        """).fetchall()
+        latest_by_sede = {}
+        visits_by_id = {}
+        responsable_options = set()
+        year_options = {today_ref.year}
+        for row in visit_rows:
+            row_dict = dict(row)
+            visits_by_id[int(row_dict["id"])] = row_dict
+            sede_codigo = str(row_dict.get("sede_codigo") or "").strip().upper()
+            if sede_codigo and sede_codigo not in latest_by_sede:
+                latest_by_sede[sede_codigo] = row_dict
+            for person_key in ("responsable", "accion_responsable"):
+                person_value = str(row_dict.get(person_key) or "").strip()
+                if person_value:
+                    responsable_options.add(person_value)
+            for date_key in ("fecha", "fecha_programada", "fecha_ejecucion"):
+                parsed = _sst_calendar_parse_date(row_dict.get(date_key))
+                if parsed:
+                    year_options.add(parsed.year)
+
+        docs_rows = con.execute("""
+            SELECT
+                id, sede_codigo, visita_id, tipo, fecha_documento, fecha_carga,
+                archivo, drive_url, estado_revision, notas
+            FROM sst_documentos
+            WHERE UPPER(COALESCE(tipo, '')) IN ('RGRL', 'DEC_351_79')
+            ORDER BY COALESCE(fecha_documento, fecha_carga) DESC, id DESC
+        """).fetchall()
+        docs_latest = defaultdict(dict)
+        for row in docs_rows:
+            row_dict = dict(row)
+            sede_codigo = str(row_dict.get("sede_codigo") or "").strip().upper()
+            doc_type = str(row_dict.get("tipo") or "").strip().upper()
+            if sede_codigo and doc_type and doc_type not in docs_latest[sede_codigo]:
+                docs_latest[sede_codigo][doc_type] = row_dict
+
+        all_rows = []
+        summary_by_sede = {}
+        for sede_info in sedes:
+            summary = _sst_visitas_art_build_summary(
+                sede_info,
+                latest_by_sede.get(sede_info["codigo"]),
+                docs_latest.get(sede_info["codigo"], {}),
+                today_ref,
+            )
+            summary_by_sede[summary["sede_codigo"]] = summary
+            all_rows.append(summary)
+
+        close_modal_url = url_for(
+            "sst_visitas",
+            sede=f_sede or None,
+            estado_visita=f_estado_visita or None,
+            estado_doc=f_estado_doc or None,
+            observaciones_art=f_obs_art or None,
+            responsable=f_responsable or None,
+            year=(f_year or None),
+            q=f_q or None,
+        )
+        for summary in all_rows:
+            summary["url"] = url_for(
+                "sst_visitas",
+                sede=f_sede or None,
+                estado_visita=f_estado_visita or None,
+                estado_doc=f_estado_doc or None,
+                observaciones_art=f_obs_art or None,
+                responsable=f_responsable or None,
+                year=(f_year or None),
+                q=f_q or None,
+                open_sede=summary["sede_codigo"],
+            )
+            summary["action_button_label"] = "Abrir"
+            summary["modal_close_url"] = close_modal_url
+            summary["modal_edit_url"] = url_for(
+                "sst_visitas",
+                sede=f_sede or None,
+                estado_visita=f_estado_visita or None,
+                estado_doc=f_estado_doc or None,
+                observaciones_art=f_obs_art or None,
+                responsable=f_responsable or None,
+                year=(f_year or None),
+                q=f_q or None,
+                open_sede=summary["sede_codigo"],
+                registro=(summary["primary_record_id"] or None),
+                prefill_sede=summary["sede_codigo"],
+                mostrar_form=1,
+            )
+            summary["show_cargar_documentacion"] = summary["doc_overall_code"] != "COMPLETA"
+            summary["show_registrar_observacion"] = bool(summary["ultima_visita"]) and summary["observation_code"] != "OBSERVADA"
+            summary["show_programar_accion"] = summary["observation_code"] == "OBSERVADA" and not summary["accion_requerida"]
+            summary["show_marcar_ejecutado"] = bool(summary["accion_requerida"]) and not summary["ejecutado"]
+            summary["show_followup"] = bool(
+                summary["primary_record_id"]
+                and summary["next_action"] != "Sin acciones pendientes."
+                and not summary["seguimiento_id"]
+            )
+
+        filtered_rows = []
+        kpi_visitadas = 0
+        kpi_sin_visitar = 0
+        kpi_docs_completa = 0
+        kpi_docs_incompleta = 0
+        kpi_observadas = 0
+        kpi_acciones_pendientes = 0
+        for summary in all_rows:
+            responsible_values = {
+                str(summary.get("responsable") or "").strip().lower(),
+                str(summary.get("accion_responsable") or "").strip().lower(),
+            }
+            haystack = " ".join([
+                summary["sede_codigo"],
+                summary["sede_nombre"],
+                summary["state_meta"]["label"],
+                summary["doc_overall_meta"]["label"],
+                summary["observation_meta"]["label"],
+                summary.get("responsable") or "",
+                summary.get("accion_responsable") or "",
+                summary.get("observacion_art") or "",
+                summary.get("accion_requerida") or "",
+                summary.get("next_action") or "",
+            ]).lower()
+            if f_sede and summary["sede_codigo"] != f_sede:
+                continue
+            if f_estado_visita and summary["state_code"] != f_estado_visita:
+                continue
+            if f_estado_doc and summary["doc_overall_code"] != f_estado_doc:
+                continue
+            if f_obs_art and summary["observation_code"] != f_obs_art:
+                continue
+            if f_responsable and f_responsable.strip().lower() not in responsible_values:
+                continue
+            if f_year and summary["anchor_year"] and summary["anchor_year"] != f_year:
+                continue
+            if f_year and not summary["anchor_year"]:
+                continue
+            if f_q and f_q not in haystack:
+                continue
+            filtered_rows.append(summary)
+            if summary["visited_flag"]:
+                kpi_visitadas += 1
+            else:
+                kpi_sin_visitar += 1
+            if summary["doc_overall_code"] == "COMPLETA":
+                kpi_docs_completa += 1
+            else:
+                kpi_docs_incompleta += 1
+            if summary["observation_code"] == "OBSERVADA":
+                kpi_observadas += 1
+            if summary["next_action"] != "Sin acciones pendientes.":
+                kpi_acciones_pendientes += 1
+
+        detail_sede = f_open_sede or prefill_sede
+        selected_summary = summary_by_sede.get(detail_sede)
+        selected_record = visits_by_id.get(selected_record_id)
+        if not selected_record and selected_summary and selected_summary["primary_record_id"]:
+            selected_record = dict(selected_summary.get("record_raw") or {})
+
+        history_sede = f_open_sede or f_sede
+        history_sql = """
+            SELECT id, componente, origen_id, sede_codigo, deposito_codigo, accion, detalle, usuario, fecha_evento
+            FROM sst_operativo_historial
+            WHERE componente = 'visitas_art'
+        """
+        history_params = []
+        if history_sede:
+            history_sql += " AND UPPER(COALESCE(sede_codigo, '')) = ?"
+            history_params.append(history_sede)
+        history_sql += " ORDER BY fecha_evento DESC, id DESC LIMIT 50"
+        history_rows = [dict(row) for row in con.execute(history_sql, tuple(history_params)).fetchall()]
+
+        selected_docs = selected_summary or {}
+        form_defaults = {
+            "edit_id": int((selected_record or {}).get("id") or 0),
+            "sede_codigo": str((selected_record or {}).get("sede_codigo") or prefill_sede or "").strip().upper(),
+            "fecha": str((selected_record or {}).get("fecha") or "").strip(),
+            "responsable": str((selected_record or {}).get("responsable") or "").strip(),
+            "tipo_visita": str((selected_record or {}).get("tipo_visita") or "ART").strip(),
+            "estado": _sst_visitas_art_normalize_state((selected_record or {}).get("estado") or ""),
+            "observacion_art": str((selected_record or {}).get("observacion_art") or "").strip(),
+            "accion_requerida": str((selected_record or {}).get("accion_requerida") or "").strip(),
+            "accion_responsable": str((selected_record or {}).get("accion_responsable") or "").strip(),
+            "fecha_programada": str((selected_record or {}).get("fecha_programada") or "").strip(),
+            "ejecutado": "1" if _sst_bool_flag((selected_record or {}).get("ejecutado")) else "0",
+            "fecha_ejecucion": str((selected_record or {}).get("fecha_ejecucion") or "").strip(),
+            "evidencia_url": str((selected_record or {}).get("evidencia_url") or "").strip(),
+            "observaciones": str((selected_record or {}).get("observaciones") or "").strip(),
+            "rgrl_estado": ((selected_docs.get("rgrl") or {}).get("code") or "SIN_DOCUMENTACION"),
+            "rgrl_fecha_documento": ((selected_docs.get("rgrl") or {}).get("fecha_documento") or ""),
+            "rgrl_drive_url": ((selected_docs.get("rgrl") or {}).get("drive_url") or ""),
+            "rgrl_observacion": ((selected_docs.get("rgrl") or {}).get("observacion") or ""),
+            "rgrl_support_url": ((selected_docs.get("rgrl") or {}).get("support_url") or ""),
+            "rgrl_support_label": ((selected_docs.get("rgrl") or {}).get("support_label") or ""),
+            "dec_351_estado": ((selected_docs.get("dec_351_79") or {}).get("code") or "SIN_DOCUMENTACION"),
+            "dec_351_fecha_documento": ((selected_docs.get("dec_351_79") or {}).get("fecha_documento") or ""),
+            "dec_351_drive_url": ((selected_docs.get("dec_351_79") or {}).get("drive_url") or ""),
+            "dec_351_observacion": ((selected_docs.get("dec_351_79") or {}).get("observacion") or ""),
+            "dec_351_support_url": ((selected_docs.get("dec_351_79") or {}).get("support_url") or ""),
+            "dec_351_support_label": ((selected_docs.get("dec_351_79") or {}).get("support_label") or ""),
+        }
+
+        return {
+            "sst_section": "visitas",
+            "sedes": sedes,
+            "state_by_sede": filtered_rows,
+            "selected_summary": selected_summary,
+            "show_form": show_form,
+            "form_defaults": form_defaults,
+            "history_rows": history_rows,
+            "estado_visita_options": [{"code": key, "label": value} for key, value in SST_VISITA_ART_STATE_LABELS.items()],
+            "estado_doc_options": [{"code": key, "label": value} for key, value in SST_VISITA_ART_DOC_FILTER_LABELS.items()],
+            "observacion_art_options": [{"code": key, "label": value} for key, value in SST_VISITA_ART_OBSERVATION_LABELS.items()],
+            "doc_estado_form_options": [{"code": key, "label": value} for key, value in SST_VISITA_ART_DOC_STATE_LABELS.items()],
+            "year_options": sorted(year_options, reverse=True),
+            "responsable_options": sorted(responsable_options),
+            "f_sede": f_sede,
+            "f_estado_visita": f_estado_visita,
+            "f_estado_doc": f_estado_doc,
+            "f_obs_art": f_obs_art,
+            "f_responsable": f_responsable,
+            "f_year": f_year,
+            "f_q": f_q,
+            "f_open_sede": f_open_sede,
+            "kpi_visitadas": kpi_visitadas,
+            "kpi_sin_visitar": kpi_sin_visitar,
+            "kpi_docs_completa": kpi_docs_completa,
+            "kpi_docs_incompleta": kpi_docs_incompleta,
+            "kpi_observadas": kpi_observadas,
+            "kpi_acciones_pendientes": kpi_acciones_pendientes,
+            "fmt_fecha": _sst_fmt_fecha,
+        }
+
+    @app.route("/sst/visitas", methods=["GET", "POST"], endpoint="sst_visitas")
     def sst_visitas():
         con = get_db()
         ensure_sst_visitas_docs_tables(con)
         ensure_sst_general_table(con)
+        if request.method == "POST":
+            action = (request.form.get("action") or "save").strip().lower()
+            user_name = _sst_current_user()
 
-        q = (request.args.get("q") or "").strip().lower()
-        q_estado = (request.args.get("estado") or "").strip().lower()
-        q_vista = (request.args.get("vista") or "pendientes").strip().lower()
-        if q_vista not in {"proximas", "pendientes", "realizadas", "todas", "sedes"}:
-            q_vista = "pendientes"
+            if action == "followup":
+                record_id = int(request.form.get("record_id") or 0) if str(request.form.get("record_id") or "").isdigit() else 0
+                record = con.execute("""
+                    SELECT
+                        id, sede_codigo, fecha, tipo_visita, responsable, estado, observaciones,
+                        observacion_art, accion_requerida, accion_responsable, fecha_programada,
+                        ejecutado, fecha_ejecucion, evidencia_url, seguimiento_id
+                    FROM sst_visitas
+                    WHERE id = ?
+                """, (record_id,)).fetchone()
+                if not record:
+                    con.close()
+                    flash("No se encontro la visita ART para crear seguimiento.", "warning")
+                    return redirect(url_for("sst_visitas"))
+                record_dict = dict(record)
+                sede_row = con.execute(
+                    "SELECT codigo, nombre FROM sedes_mpd WHERE UPPER(COALESCE(codigo, '')) = ?",
+                    ((record_dict.get("sede_codigo") or "").strip().upper(),),
+                ).fetchone()
+                sede_info = {
+                    "codigo": (record_dict.get("sede_codigo") or "").strip().upper(),
+                    "nombre": (sede_row["nombre"] if sede_row else "") or "",
+                }
+                docs_latest = {}
+                for doc_row in con.execute("""
+                    SELECT id, sede_codigo, visita_id, tipo, fecha_documento, fecha_carga, archivo, drive_url, estado_revision, notas
+                    FROM sst_documentos
+                    WHERE UPPER(COALESCE(sede_codigo, '')) = ?
+                      AND UPPER(COALESCE(tipo, '')) IN ('RGRL', 'DEC_351_79')
+                    ORDER BY COALESCE(fecha_documento, fecha_carga) DESC, id DESC
+                """, (sede_info["codigo"],)).fetchall():
+                    doc_type = str(doc_row["tipo"] or "").strip().upper()
+                    if doc_type and doc_type not in docs_latest:
+                        docs_latest[doc_type] = dict(doc_row)
+                summary = _sst_visitas_art_build_summary(sede_info, record_dict, docs_latest, date.today())
+                if not summary["primary_record_id"]:
+                    con.close()
+                    flash("La sede no tiene una visita ART cargada para seguimiento.", "warning")
+                    return redirect(url_for("sst_visitas", sede=sede_info["codigo"], open_sede=sede_info["codigo"]))
+                if summary["next_action"] == "Sin acciones pendientes.":
+                    con.close()
+                    flash("La sede no tiene acciones pendientes para seguimiento.", "warning")
+                    return redirect(url_for("sst_visitas", sede=sede_info["codigo"], open_sede=sede_info["codigo"]))
+                if summary["seguimiento_id"]:
+                    con.close()
+                    flash("La sede ya tiene un seguimiento vinculado para Visitas ART.", "warning")
+                    return redirect(url_for("sst_visitas", sede=sede_info["codigo"], open_sede=sede_info["codigo"]))
+                detalle = (
+                    f"Estado visita: {summary['state_meta']['label']} | "
+                    f"RGRL: {summary['rgrl']['meta']['label']} | "
+                    f"Decreto 351/79: {summary['dec_351_79']['meta']['label']} | "
+                    f"Observacion ART: {summary['observation_meta']['label']} | "
+                    f"Proxima accion: {summary['next_action']}"
+                )
+                if summary["accion_requerida"]:
+                    detalle += f" | Accion requerida: {summary['accion_requerida']}"
+                if summary["observacion_art"]:
+                    detalle += f" | Observacion: {summary['observacion_art']}"
+                con.execute("""
+                    INSERT INTO sst_general(
+                        fecha, sede_codigo, tipo, categoria, area, titulo, detalle,
+                        estado, prioridad, responsable, accion_correctiva, fecha_objetivo,
+                        origen_tipo, origen_id, origen_deposito_codigo
+                    )
+                    VALUES (?, ?, 'no_conformidad', 'Visitas ART', 'SG-SST', ?, ?, 'ABIERTO', 'Media', ?, ?, ?, 'visitas_art', ?, ?)
+                """, (
+                    date.today().isoformat(),
+                    sede_info["codigo"],
+                    f"Visitas ART {sede_info['codigo']}",
+                    detalle,
+                    user_name,
+                    _sst_visitas_art_followup_text(summary),
+                    summary["fecha_programada"] or summary["ultima_visita"] or date.today().isoformat(),
+                    summary["primary_record_id"],
+                    None,
+                ))
+                seguimiento_id = int(con.execute("SELECT last_insert_rowid()").fetchone()[0])
+                con.execute("""
+                    UPDATE sst_visitas
+                    SET seguimiento_id = ?, actualizado_por = ?, fecha_actualizacion = ?
+                    WHERE id = ?
+                """, (seguimiento_id, user_name, _sst_now_ts(), summary["primary_record_id"]))
+                _sst_historial_log(
+                    con,
+                    "visitas_art",
+                    "seguimiento",
+                    summary["primary_record_id"],
+                    sede_info["codigo"],
+                    "",
+                    f"Seguimiento #{seguimiento_id} creado.",
+                )
+                con.commit()
+                con.close()
+                flash("Seguimiento creado desde Visitas ART.", "success")
+                return redirect(url_for(
+                    "sst_general",
+                    modo="gestion",
+                    sede=sede_info["codigo"],
+                    tipo="no_conformidad",
+                    q=f"Visitas ART {sede_info['codigo']}",
+                ))
 
-        visitas_rows = con.execute("""
-            SELECT v.id, v.sede_codigo, v.fecha, v.tipo_visita, v.responsable,
-                   v.estado, v.observaciones, COALESCE(s.nombre, '') AS sede_nombre,
-                   (SELECT COUNT(*) FROM sst_documentos d WHERE d.visita_id = v.id) AS documentos,
-                   (SELECT COUNT(*) FROM sst_general g
-                    WHERE g.sede_codigo = v.sede_codigo
-                      AND g.tipo = 'no_conformidad'
-                      AND UPPER(COALESCE(g.estado, 'ABIERTO')) <> 'CERRADO') AS hallazgos
-            FROM sst_visitas v
-            LEFT JOIN sedes_mpd s ON s.codigo = v.sede_codigo
-            ORDER BY date(v.fecha) DESC, v.id DESC
-        """).fetchall()
+            sede_codigo = (request.form.get("sede_codigo") or "").strip().upper()
+            edit_id = int(request.form.get("edit_id") or 0) if str(request.form.get("edit_id") or "").isdigit() else 0
+            fecha = (request.form.get("fecha") or "").strip()
+            responsable = (request.form.get("responsable") or "").strip()
+            tipo_visita = (request.form.get("tipo_visita") or "").strip() or "ART"
+            estado = (request.form.get("estado") or "").strip().upper()
+            observacion_art = (request.form.get("observacion_art") or "").strip()
+            accion_requerida = (request.form.get("accion_requerida") or "").strip()
+            accion_responsable = (request.form.get("accion_responsable") or "").strip()
+            fecha_programada = (request.form.get("fecha_programada") or "").strip()
+            ejecutado = _sst_bool_flag(request.form.get("ejecutado"))
+            fecha_ejecucion = (request.form.get("fecha_ejecucion") or "").strip()
+            evidencia_url = (request.form.get("evidencia_url") or "").strip()
+            observaciones = (request.form.get("observaciones") or "").strip()
 
-        hoy = date.today().isoformat()
-        visitas_filtradas = []
-        estados_pendientes = {"PEND_ANALISIS", "REQUIERE_CORRECCION"}
-        for visita in visitas_rows:
-            estado_visita = str(visita["estado"] or "").strip().upper()
-            fecha_visita = str(visita["fecha"] or "")
-            texto_visita = f"{visita['sede_codigo']} {visita['sede_nombre']} {visita['tipo_visita'] or ''} {visita['responsable'] or ''}".lower()
-            if q and q not in texto_visita:
-                continue
-            if q_vista == "proximas" and fecha_visita < hoy:
-                continue
-            if q_vista == "pendientes" and estado_visita not in estados_pendientes:
-                continue
-            if q_vista == "realizadas" and (fecha_visita > hoy or estado_visita in estados_pendientes):
-                continue
-            visitas_filtradas.append(visita)
-
-        sedes_rows = con.execute("""
-            SELECT codigo, nombre, fuero
-            FROM sedes_mpd
-            ORDER BY codigo
-        """).fetchall()
-
-        last_visita = {}
-        for r in con.execute("""
-            SELECT id, sede_codigo, fecha, tipo_visita, responsable, estado, observaciones
-            FROM sst_visitas
-            ORDER BY fecha DESC, id DESC
-        """).fetchall():
-            sc = (r["sede_codigo"] or "").strip().upper()
-            if sc and sc not in last_visita:
-                last_visita[sc] = r
-
-        docs_latest = defaultdict(dict)  # docs_latest[sede][tipo] = row
-        for r in con.execute("""
-            SELECT id, sede_codigo, tipo, fecha_documento, fecha_carga, archivo, drive_url, estado_revision
-            FROM sst_documentos
-            ORDER BY COALESCE(fecha_documento, fecha_carga) DESC, id DESC
-        """).fetchall():
-            sc = (r["sede_codigo"] or "").strip().upper()
-            tp = (r["tipo"] or "").strip().upper()
-            if not sc or not tp:
-                continue
-            if tp not in docs_latest[sc]:
-                docs_latest[sc][tp] = r
-
-        pend_hallazgos = {}
-        for r in con.execute("""
-            SELECT sede_codigo, COUNT(*) AS cnt
-            FROM sst_general
-            WHERE tipo = 'no_conformidad'
-              AND COALESCE(estado,'') <> 'CERRADO'
-              AND sede_codigo IS NOT NULL
-              AND TRIM(COALESCE(sede_codigo,'')) <> ''
-            GROUP BY sede_codigo
-        """).fetchall():
-            pend_hallazgos[(r["sede_codigo"] or "").strip().upper()] = int(r["cnt"] or 0)
-
-        sedes = []
-        stats_total = 0
-        stats_sin_visita = 0
-        stats_docs_pend = 0
-        stats_en_seguimiento = 0
-
-        for s in sedes_rows:
-            codigo = (s["codigo"] or "").strip().upper()
-            nombre = (s["nombre"] or "").strip()
-            fuero = (s["fuero"] or "").strip()
-            fuero_class, fuero_color = _sst_fuero_style(fuero)
-            v = last_visita.get(codigo)
-            v_fecha = v["fecha"] if v else None
-            v_estado = v["estado"] if v else None
-
-            d351 = docs_latest.get(codigo, {}).get("DEC_351_79")
-            drgrl = docs_latest.get(codigo, {}).get("RGRL")
-            d351_ok = bool(d351 and (d351["drive_url"] or d351["archivo"]))
-            drgrl_ok = bool(drgrl and (drgrl["drive_url"] or drgrl["archivo"]))
-            docs_ok = d351_ok and drgrl_ok
-            docs_pend = False
-            if d351 and (str(d351["estado_revision"] or "").strip().upper() == "PENDIENTE"):
-                docs_pend = True
-            if drgrl and (str(drgrl["estado_revision"] or "").strip().upper() == "PENDIENTE"):
-                docs_pend = True
-
-            pend = int(pend_hallazgos.get(codigo, 0) or 0)
-            sem_cls, sem_label = _sst_calc_semaforo(bool(v), docs_ok, docs_pend, pend)
-
-            item = {
-                "codigo": codigo,
-                "nombre": nombre,
-                "fuero": fuero,
-                "fuero_class": fuero_class,
-                "fuero_color": fuero_color,
-                "ultima_visita": _sst_fmt_fecha(v_fecha),
-                "ultima_visita_estado": _sst_sede_estado_label(v_estado),
-                "doc_351": d351,
-                "doc_rgrl": drgrl,
-                "docs_ok": docs_ok,
-                "docs_pend": docs_pend,
-                "pend_hallazgos": pend,
-                "semaforo_cls": sem_cls,
-                "semaforo_label": sem_label,
+            rgrl_payload = {
+                "estado": (request.form.get("rgrl_estado") or "").strip().upper(),
+                "fecha_documento": (request.form.get("rgrl_fecha_documento") or "").strip(),
+                "drive_url": (request.form.get("rgrl_drive_url") or "").strip(),
+                "notas": (request.form.get("rgrl_observacion") or "").strip(),
+                "file": request.files.get("rgrl_archivo"),
             }
+            dec_payload = {
+                "estado": (request.form.get("dec_351_estado") or "").strip().upper(),
+                "fecha_documento": (request.form.get("dec_351_fecha_documento") or "").strip(),
+                "drive_url": (request.form.get("dec_351_drive_url") or "").strip(),
+                "notas": (request.form.get("dec_351_observacion") or "").strip(),
+                "file": request.files.get("dec_351_archivo"),
+            }
+            has_doc_payload = any([
+                rgrl_payload["estado"], rgrl_payload["fecha_documento"], rgrl_payload["drive_url"], rgrl_payload["notas"],
+                bool(rgrl_payload["file"] and getattr(rgrl_payload["file"], "filename", "")),
+                dec_payload["estado"], dec_payload["fecha_documento"], dec_payload["drive_url"], dec_payload["notas"],
+                bool(dec_payload["file"] and getattr(dec_payload["file"], "filename", "")),
+            ])
+            has_visit_payload = any([
+                fecha, responsable, tipo_visita, estado, observacion_art, accion_requerida,
+                accion_responsable, fecha_programada, fecha_ejecucion, evidencia_url, observaciones, ejecutado,
+            ])
 
-            hay_texto = f"{codigo} {nombre}".lower()
-            if q and q not in hay_texto:
-                continue
-            if q_estado and q_estado not in (sem_label or "").lower() and q_estado != sem_cls.lower():
-                continue
+            if not sede_codigo:
+                con.close()
+                flash("La sede es obligatoria.", "error")
+                return redirect(url_for("sst_visitas", mostrar_form=1, prefill_sede=request.args.get("prefill_sede") or None))
+            if has_visit_payload and not fecha:
+                con.close()
+                flash("La fecha de visita es obligatoria para guardar la visita ART.", "error")
+                return redirect(url_for("sst_visitas", sede=sede_codigo, open_sede=sede_codigo, mostrar_form=1, prefill_sede=sede_codigo, registro=(edit_id or None)))
+            if not has_visit_payload and not has_doc_payload and not edit_id:
+                con.close()
+                flash("No hay datos para guardar en Visitas ART.", "warning")
+                return redirect(url_for("sst_visitas", sede=sede_codigo, open_sede=sede_codigo, mostrar_form=1, prefill_sede=sede_codigo))
 
-            stats_total += 1
-            if not v:
-                stats_sin_visita += 1
-            if not docs_ok or docs_pend:
-                stats_docs_pend += 1
-            if pend > 0:
-                stats_en_seguimiento += 1
+            existing_record = None
+            if edit_id:
+                existing_row = con.execute("""
+                    SELECT
+                        id, sede_codigo, fecha, tipo_visita, responsable, estado, observaciones,
+                        observacion_art, accion_requerida, accion_responsable, fecha_programada,
+                        ejecutado, fecha_ejecucion, evidencia_url, seguimiento_id
+                    FROM sst_visitas
+                    WHERE id = ?
+                """, (edit_id,)).fetchone()
+                existing_record = dict(existing_row) if existing_row else None
 
-            sedes.append(item)
+            previous_state = _sst_visitas_art_state_code(existing_record, date.today()) if existing_record else ""
+            previous_observation = str((existing_record or {}).get("observacion_art") or "").strip()
+            previous_action = str((existing_record or {}).get("accion_requerida") or "").strip()
+            previous_executed = bool(
+                existing_record and (
+                    _sst_bool_flag((existing_record or {}).get("ejecutado"))
+                    or str((existing_record or {}).get("fecha_ejecucion") or "").strip()
+                    or str((existing_record or {}).get("evidencia_url") or "").strip()
+                )
+            )
 
+            record_id = edit_id
+            if has_visit_payload:
+                payload = (
+                    sede_codigo,
+                    fecha,
+                    tipo_visita or "ART",
+                    responsable or None,
+                    estado or None,
+                    observaciones or None,
+                    observacion_art or None,
+                    accion_requerida or None,
+                    accion_responsable or None,
+                    fecha_programada or None,
+                    ejecutado,
+                    fecha_ejecucion or None,
+                    evidencia_url or None,
+                    user_name,
+                    _sst_now_ts(),
+                )
+                if existing_record:
+                    con.execute("""
+                        UPDATE sst_visitas
+                        SET sede_codigo = ?, fecha = ?, tipo_visita = ?, responsable = ?, estado = ?,
+                            observaciones = ?, observacion_art = ?, accion_requerida = ?, accion_responsable = ?,
+                            fecha_programada = ?, ejecutado = ?, fecha_ejecucion = ?, evidencia_url = ?,
+                            actualizado_por = ?, fecha_actualizacion = ?
+                        WHERE id = ?
+                    """, payload + (edit_id,))
+                else:
+                    con.execute("""
+                        INSERT INTO sst_visitas(
+                            sede_codigo, fecha, tipo_visita, responsable, estado, observaciones,
+                            observacion_art, accion_requerida, accion_responsable, fecha_programada,
+                            ejecutado, fecha_ejecucion, evidencia_url, actualizado_por, fecha_actualizacion
+                        )
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """, payload)
+                    record_id = int(con.execute("SELECT last_insert_rowid()").fetchone()[0])
+
+            try:
+                doc_results = []
+                for doc_type, doc_payload in (("RGRL", rgrl_payload), ("DEC_351_79", dec_payload)):
+                    doc_result = _sst_visitas_art_upsert_doc(con, sede_codigo, (record_id or None), doc_type, doc_payload, user_name)
+                    if doc_result:
+                        doc_results.append((doc_type, doc_result))
+            except ValueError as exc:
+                con.close()
+                flash(str(exc), "error")
+                return redirect(url_for("sst_visitas", sede=sede_codigo, open_sede=sede_codigo, mostrar_form=1, prefill_sede=sede_codigo, registro=(record_id or None)))
+
+            sede_row = con.execute(
+                "SELECT codigo, nombre FROM sedes_mpd WHERE UPPER(COALESCE(codigo, '')) = ?",
+                (sede_codigo,),
+            ).fetchone()
+            sede_info = {"codigo": sede_codigo, "nombre": (sede_row["nombre"] if sede_row else "") or ""}
+            record_after = None
+            if record_id:
+                row = con.execute("""
+                    SELECT
+                        id, sede_codigo, fecha, tipo_visita, responsable, estado, observaciones,
+                        observacion_art, accion_requerida, accion_responsable, fecha_programada,
+                        ejecutado, fecha_ejecucion, evidencia_url, seguimiento_id
+                    FROM sst_visitas
+                    WHERE id = ?
+                """, (record_id,)).fetchone()
+                record_after = dict(row) if row else None
+            docs_after = {}
+            for row in con.execute("""
+                SELECT id, sede_codigo, visita_id, tipo, fecha_documento, fecha_carga, archivo, drive_url, estado_revision, notas
+                FROM sst_documentos
+                WHERE UPPER(COALESCE(sede_codigo, '')) = ?
+                  AND UPPER(COALESCE(tipo, '')) IN ('RGRL', 'DEC_351_79')
+                ORDER BY COALESCE(fecha_documento, fecha_carga) DESC, id DESC
+            """, (sede_codigo,)).fetchall():
+                doc_type = str(row["tipo"] or "").strip().upper()
+                if doc_type and doc_type not in docs_after:
+                    docs_after[doc_type] = dict(row)
+            summary_after = _sst_visitas_art_build_summary(sede_info, record_after, docs_after, date.today())
+
+            if has_visit_payload:
+                _sst_historial_log(
+                    con,
+                    "visitas_art",
+                    "actualizacion" if existing_record else "alta",
+                    record_id,
+                    sede_codigo,
+                    "",
+                    "Actualizacion de visita ART por sede." if existing_record else "Alta de visita ART por sede.",
+                )
+            if previous_state and previous_state != summary_after["state_code"]:
+                _sst_historial_log(
+                    con,
+                    "visitas_art",
+                    "cambio_estado",
+                    record_id or None,
+                    sede_codigo,
+                    "",
+                    f"{SST_VISITA_ART_STATE_LABELS.get(previous_state, previous_state)} -> {summary_after['state_meta']['label']}",
+                )
+            if summary_after["observacion_art"] and summary_after["observacion_art"] != previous_observation:
+                _sst_historial_log(
+                    con,
+                    "visitas_art",
+                    "observacion_registrada",
+                    record_id or None,
+                    sede_codigo,
+                    "",
+                    summary_after["observacion_art"],
+                )
+            if summary_after["accion_requerida"] and summary_after["accion_requerida"] != previous_action:
+                detail = summary_after["accion_requerida"]
+                if summary_after["fecha_programada"]:
+                    detail += f" | Fecha programada: {summary_after['fecha_programada']}"
+                _sst_historial_log(con, "visitas_art", "accion_programada", record_id or None, sede_codigo, "", detail)
+            if summary_after["ejecutado"] and not previous_executed:
+                _sst_historial_log(
+                    con,
+                    "visitas_art",
+                    "accion_ejecutada",
+                    record_id or None,
+                    sede_codigo,
+                    "",
+                    summary_after["fecha_ejecucion"] or "Accion marcada como ejecutada.",
+                )
+            if summary_after["state_code"] == "CERRADA" and previous_state != "CERRADA":
+                _sst_historial_log(con, "visitas_art", "cierre", record_id or None, sede_codigo, "", "Observacion ART cerrada.")
+            for doc_type, doc_result in doc_results:
+                _sst_historial_log(
+                    con,
+                    "visitas_art",
+                    doc_result["action"],
+                    record_id or doc_result["id"],
+                    sede_codigo,
+                    "",
+                    f"{SST_VISITA_ART_DOC_TYPE_LABELS.get(doc_type, doc_type)}: {SST_VISITA_ART_DOC_STATE_LABELS.get(doc_result['state_code'], doc_result['state_code'])}",
+                )
+
+            con.commit()
+            con.close()
+            flash("Registro de Visitas ART guardado.", "success")
+            return redirect(url_for("sst_visitas", sede=sede_codigo, open_sede=sede_codigo))
+
+        context = _sst_visitas_art_context(con)
         con.close()
-
-        return render_template(
-            "sst_visitas.html",
-            sedes=sedes,
-            visitas=visitas_filtradas,
-            q_vista=q_vista,
-            q=q,
-            q_estado=q_estado,
-            stats_total=stats_total,
-            stats_sin_visita=stats_sin_visita,
-            stats_docs_pend=stats_docs_pend,
-            stats_en_seguimiento=stats_en_seguimiento,
-        )
+        return render_template("sst_visitas.html", **context)
 
     @app.route("/sst/visitas/cargar", methods=["GET", "POST"], endpoint="sst_visita_cargar")
     def sst_visita_cargar():
-        con = get_db()
-        ensure_sst_visitas_docs_tables(con)
-
-        sedes = con.execute("""
-            SELECT codigo, nombre
-            FROM sedes_mpd
-            ORDER BY codigo
-        """).fetchall()
-
-        pre_sede = (request.args.get("sede") or "").strip().upper()
-        pre_fecha = (request.args.get("fecha") or "").strip()
-        pre_tipo_visita = (request.args.get("tipo_visita") or "").strip()
-        pre_estado = (request.args.get("estado") or "").strip()
-        pre_responsable = (request.args.get("responsable") or "").strip()
-        pre_observaciones = (request.args.get("observaciones") or "").strip()
-        if request.method == "POST":
-            sede_codigo = (request.form.get("sede_codigo") or "").strip().upper()
-            fecha = (request.form.get("fecha") or "").strip()
-            tipo_visita = (request.form.get("tipo_visita") or "").strip()
-            responsable = (request.form.get("responsable") or "").strip()
-            estado = (request.form.get("estado") or "").strip()
-            observaciones = (request.form.get("observaciones") or "").strip()
-
-            if not sede_codigo or not fecha:
-                flash("Sede y fecha son obligatorios.", "error")
-                con.close()
-                return redirect(url_for(
-                    "sst_visita_cargar",
-                    sede=pre_sede or None,
-                    fecha=pre_fecha or None,
-                    tipo_visita=pre_tipo_visita or None,
-                    estado=pre_estado or None,
-                    responsable=pre_responsable or None,
-                    observaciones=pre_observaciones or None,
-                ))
-
-            con.execute("""
-                INSERT INTO sst_visitas (sede_codigo, fecha, tipo_visita, responsable, estado, observaciones)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (
-                sede_codigo,
-                fecha,
-                (tipo_visita or None),
-                (responsable or None),
-                (estado or None),
-                (observaciones or None),
-            ))
-            con.commit()
-            con.close()
-            flash("Visita cargada.", "success")
-            return redirect(url_for("sst_sede_ficha", codigo=sede_codigo))
-
-        con.close()
-        return render_template(
-            "sst_visita_form.html",
-            sedes=sedes,
-            pre_sede=pre_sede,
-            pre_fecha=pre_fecha,
-            pre_tipo_visita=pre_tipo_visita,
-            pre_estado=pre_estado,
-            pre_responsable=pre_responsable,
-            pre_observaciones=pre_observaciones,
-            tipos=SST_VISITA_TIPOS,
-            estados=SST_VISITA_ESTADOS,
-        )
+        sede_codigo = (request.values.get("sede") or request.values.get("sede_codigo") or "").strip().upper()
+        return redirect(url_for(
+            "sst_visitas",
+            sede=sede_codigo or None,
+            open_sede=sede_codigo or None,
+            prefill_sede=sede_codigo or None,
+            mostrar_form=1,
+        ))
 
     @app.route("/sst/docs/subir", methods=["GET", "POST"], endpoint="sst_doc_subir")
     def sst_doc_subir():
-        con = get_db()
-        ensure_sst_visitas_docs_tables(con)
-
-        sedes = con.execute("""
-            SELECT codigo, nombre
-            FROM sedes_mpd
-            ORDER BY codigo
-        """).fetchall()
-
-        pre_sede = (request.args.get("sede") or "").strip().upper()
-        pre_visita_id = (request.args.get("visita_id") or "").strip()
-
-        if request.method == "POST":
-            sede_codigo = (request.form.get("sede_codigo") or "").strip().upper()
-            visita_id_raw = (request.form.get("visita_id") or "").strip()
-            doc_tipo = (request.form.get("tipo") or "").strip().upper()
-            fecha_documento = (request.form.get("fecha_documento") or "").strip()
-            drive_url = (request.form.get("drive_url") or "").strip()
-            estado_revision = (request.form.get("estado_revision") or "").strip().upper()
-            notas = (request.form.get("notas") or "").strip()
-
-            visita_id = int(visita_id_raw) if visita_id_raw.isdigit() else None
-            archivo_name = None
-
-            file = request.files.get("archivo")
-            if file and getattr(file, "filename", ""):
-                if not allowed_sst_doc(file.filename):
-                    flash("Archivo no permitido. Use PDF/JPG/PNG.", "error")
-                    con.close()
-                    return redirect(url_for("sst_doc_subir", sede=pre_sede or None))
-                safe = secure_filename(file.filename)
-                unique = f"{sede_codigo}_{doc_tipo}_{uuid.uuid4().hex}_{safe}"
-                file.save(os.path.join(SST_DOCS_FOLDER, unique))
-                archivo_name = unique
-
-            if not sede_codigo or not doc_tipo:
-                flash("Sede y tipo de documento son obligatorios.", "error")
-                con.close()
-                return redirect(url_for("sst_doc_subir", sede=pre_sede or None))
-
-            if not drive_url and not archivo_name:
-                flash("Pegue un enlace Drive o suba un archivo.", "error")
-                con.close()
-                return redirect(url_for("sst_doc_subir", sede=pre_sede or None))
-
-            con.execute("""
-                INSERT INTO sst_documentos (
-                    sede_codigo, visita_id, tipo,
-                    fecha_documento, archivo, drive_url,
-                    estado_revision, notas
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                sede_codigo,
-                visita_id,
-                doc_tipo,
-                (fecha_documento or None),
-                archivo_name,
-                (drive_url or None),
-                (estado_revision or None),
-                (notas or None),
-            ))
-            con.commit()
-            con.close()
-            flash("Documento cargado.", "success")
-            return redirect(url_for("sst_sede_ficha", codigo=sede_codigo))
-
-        con.close()
-        return render_template(
-            "sst_doc_form.html",
-            sedes=sedes,
-            pre_sede=pre_sede,
-            pre_visita_id=pre_visita_id,
-            tipos=SST_DOC_TIPOS,
-            estados_revision=SST_DOC_ESTADOS_REVISION,
-        )
+        sede_codigo = (request.values.get("sede") or request.values.get("sede_codigo") or "").strip().upper()
+        return redirect(url_for(
+            "sst_visitas",
+            sede=sede_codigo or None,
+            open_sede=sede_codigo or None,
+            prefill_sede=sede_codigo or None,
+            mostrar_form=1,
+        ))
 
     @app.route("/sst/docs/archivo/<path:filename>", methods=["GET"], endpoint="sst_doc_archivo")
     def sst_doc_archivo(filename):

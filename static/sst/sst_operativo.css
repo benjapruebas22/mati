@@ -483,6 +483,8 @@
 }
 
 .sst-op-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.sst-visitas-doc-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 14px; }
+.sst-visitas-doc-grid .sst-luces-full { grid-column: 1 / -1; }
 .sst-op-card { border: 1px solid var(--sst-line); border-radius: 12px; background: #fff; overflow: hidden; }
 .sst-op-card.wide { grid-column: 1 / -1; }
 .sst-op-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 13px 15px 10px; border-bottom: 1px solid #edf0f4; }
@@ -1382,6 +1384,7 @@
   .sst-op-header { align-items: flex-start; flex-direction: column; }
   .sst-op-actions { justify-content: flex-start; }
   .sst-op-grid { grid-template-columns: 1fr; }
+  .sst-visitas-doc-grid { grid-template-columns: 1fr; }
   .sst-op-card.wide { grid-column: auto; }
   .sst-op-filter-form,
   .sst-op-form-grid,
