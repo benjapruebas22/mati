@@ -199,6 +199,11 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         "vencido": {"label": "Vencido", "class": "danger", "rank": 60, "icon": "🔴"},
         "sin_datos": {"label": "Sin datos", "class": "muted", "rank": 15, "icon": "⚪"},
     }
+    SST_CALENDAR_PHASE_META = {
+        "diagnostico": {"key": "diagnostico", "short": "F1", "label": "Diagnostico", "title": "FASE 1 - DIAGNOSTICO"},
+        "implementacion": {"key": "implementacion", "short": "F2", "label": "Implementacion", "title": "FASE 2 - IMPLEMENTACION"},
+        "operacion": {"key": "operacion", "short": "F3", "label": "Operacion", "title": "FASE 3 - OPERACION"},
+    }
     SST_CALENDAR_REQUIRED_DOCS = ("DEC_351_79", "RGRL")
     SST_CALENDAR_VISIBLE_TYPES = ("matafuegos", "desinfeccion", "luces", "carteleria", "visita")
     SST_CALENDAR_MATAFUEGOS_SCHEDULE = {
@@ -10693,6 +10698,37 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
     def _sst_calendar_type_meta(type_key):
         return SST_CALENDAR_TYPE_META.get(type_key, SST_CALENDAR_TYPE_META["otro"])
 
+    def _sst_calendar_phase_meta(phase_key):
+        return SST_CALENDAR_PHASE_META.get(phase_key)
+
+    # The lifecycle phase is a visual derivation of the module state; it is never stored manually.
+    def _sst_calendar_phase_for_event(event):
+        type_key = str(event.get("type_key") or "").strip().lower()
+        source_type = str(event.get("source_type") or "").strip().lower()
+        module_state_code = _sst_clean_upper(event.get("module_state_code") or event.get("state_code"))
+
+        if type_key in {"visita", "documentacion", "seguimiento", "hallazgo"}:
+            return None
+        if type_key in {"matafuegos", "desinfeccion"}:
+            return _sst_calendar_phase_meta("operacion")
+        if source_type == "sst_control" and type_key in {"carteleria", "luces"}:
+            return _sst_calendar_phase_meta("diagnostico")
+        if type_key == "carteleria":
+            if module_state_code in {"NO_RELEVADO", "RELEVADO"}:
+                return _sst_calendar_phase_meta("diagnostico")
+            if module_state_code in {"PENDIENTE_SOLICITUD", "COMPRA_EN_PROCESO", "MATERIAL_RECIBIDO", "INSTALACION_PROGRAMADA"}:
+                return _sst_calendar_phase_meta("implementacion")
+            if module_state_code == "COMPLETO":
+                return _sst_calendar_phase_meta("operacion")
+        if type_key == "luces":
+            if module_state_code in {"SIN_RELEVAR", "RELEVADO"}:
+                return _sst_calendar_phase_meta("diagnostico")
+            if module_state_code in {"PENDIENTE_DE_SOLICITUD", "EN_PROCESO_DE_COMPRA", "MATERIAL_RECIBIDO", "INSTALACION_PROGRAMADA"}:
+                return _sst_calendar_phase_meta("implementacion")
+            if module_state_code in {"COMPLETO", "MANTENIMIENTO"}:
+                return _sst_calendar_phase_meta("operacion")
+        return None
+
     def _sst_calendar_due_state(target_date, today_ref, alert_days=45):
         if not target_date:
             return "sin_datos"
@@ -10784,6 +10820,11 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         }
         if isinstance(extra, dict):
             event.update(extra)
+        phase_meta = _sst_calendar_phase_for_event(event)
+        event["phase_key"] = phase_meta["key"] if phase_meta else ""
+        event["phase_short"] = phase_meta["short"] if phase_meta else ""
+        event["phase_label"] = phase_meta["label"] if phase_meta else ""
+        event["phase_title"] = phase_meta["title"] if phase_meta else ""
         return event
 
     def _sst_calendar_open_state(anchor_date, today_ref, alert_days=30):
@@ -11477,6 +11518,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     action_label="Abrir carteleria",
                     active=(event_meta["state_key"] != "cumplido"),
                     units=max(1, int(event_meta.get("units") or 1)),
+                    extra={"module_state_code": record["state_code"]},
                 ))
 
         if has_luces_operativa:
@@ -11509,6 +11551,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                         action_label="Abrir luces",
                         active=(event_meta["state_key"] != "cumplido"),
                         units=max(1, int(event_meta.get("units") or 1)),
+                        extra={"module_state_code": record["state_code"]},
                     ))
 
         if _table_exists(con, "sst_general"):
@@ -11666,6 +11709,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                             ),
                             active=True,
                             extra={
+                                "module_state_code": ("NO_RELEVADO" if control_type == "carteleria" else "SIN_RELEVAR"),
                                 "type_icon": ("\U0001F6AA" if control_type == "carteleria" else "\U0001F6A8"),
                                 "type_label": ("Carteleria" if control_type == "carteleria" else "Luces de emergencia"),
                             },
@@ -11701,6 +11745,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                         ),
                         active=True,
                         extra={
+                            "module_state_code": "RELEVADO",
                             "type_icon": ("\U0001F6AA" if control_type == "carteleria" else "\U0001F6A8"),
                             "type_label": ("Carteleria" if control_type == "carteleria" else "Luces de emergencia"),
                         },
@@ -11798,6 +11843,10 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                         "title": event.get("title", ""),
                         "detail": event.get("detail", ""),
                         "fecha_evento": event.get("fecha_evento", ""),
+                        "phase_key": event.get("phase_key", ""),
+                        "phase_short": event.get("phase_short", ""),
+                        "phase_label": event.get("phase_label", ""),
+                        "phase_title": event.get("phase_title", ""),
                         "sede_codigo": sede["codigo"],
                         "sede_nombre": sede["nombre"],
                         "month": month_number,
@@ -11807,6 +11856,11 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     group["count"] += int(event.get("units", 1) or 1)
                     group["events_count"] += 1
                     group["events"].append(event)
+                    if not group.get("phase_key") and event.get("phase_key"):
+                        group["phase_key"] = event.get("phase_key", "")
+                        group["phase_short"] = event.get("phase_short", "")
+                        group["phase_label"] = event.get("phase_label", "")
+                        group["phase_title"] = event.get("phase_title", "")
                     if int(event["state_rank"]) > int(group["state_rank"]):
                         group["state_rank"] = int(event["state_rank"])
                         group["state_key"] = event["state_key"]
@@ -11818,6 +11872,10 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                         group["title"] = event.get("title", "")
                         group["detail"] = event.get("detail", "")
                         group["fecha_evento"] = event.get("fecha_evento", "")
+                        group["phase_key"] = event.get("phase_key", "")
+                        group["phase_short"] = event.get("phase_short", "")
+                        group["phase_label"] = event.get("phase_label", "")
+                        group["phase_title"] = event.get("phase_title", "")
                 indicators = sorted(
                     type_groups.values(),
                     key=lambda item: (
@@ -11834,8 +11892,9 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                         else 0
                     )
                     indicator["tooltip_lines"] = _sst_calendar_group_tooltip_lines(indicator)
+                    phase_prefix = f"{indicator['phase_title']}. " if indicator.get("phase_title") else ""
                     indicator["aria_label"] = (
-                        f"{indicator['type_label']} en {indicator['sede_codigo']}, "
+                        f"{phase_prefix}{indicator['type_label']} en {indicator['sede_codigo']}, "
                         f"{indicator['month_label']}, {indicator['title'] or indicator['state_label']}"
                     )
                 cell_key = f"{sede['codigo']}|{month_number:02d}"

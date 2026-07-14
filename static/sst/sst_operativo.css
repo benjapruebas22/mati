@@ -1046,6 +1046,14 @@
   font-size: 11px;
   line-height: 1.35;
 }
+.sst-calendar-tooltip span.sst-calendar-tooltip-phase {
+  color: #667085;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
 
 .sst-calendar-mobile-card { display: none; }
 .sst-calendar-mobile-list { display: grid; gap: 0; }
@@ -1617,6 +1625,18 @@
   transition: background .16s ease, color .16s ease, border-color .16s ease;
 }
 
+.sst-cal-group-link-glyph.has-phase {
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: auto auto;
+  grid-template-areas:
+    "icon count"
+    "phase count";
+  column-gap: 2px;
+  row-gap: 0;
+  padding: 1px 6px 2px;
+}
+
 .sst-cal-group-link-glyph:hover,
 .sst-cal-group-link-glyph:focus-visible {
   background: #f1f5f9;
@@ -1635,6 +1655,24 @@
   line-height: 1;
 }
 
+.sst-cal-group-link-glyph.has-phase .sst-cal-group-icon {
+  grid-area: icon;
+  align-self: end;
+  justify-self: center;
+  font-size: 16px;
+}
+
+.sst-cal-group-phase {
+  grid-area: phase;
+  align-self: start;
+  justify-self: center;
+  font-size: 6.5px;
+  font-weight: 900;
+  letter-spacing: .06em;
+  line-height: 1;
+  opacity: .84;
+}
+
 .sst-cal-group-count {
   position: static;
   display: inline-flex;
@@ -1651,6 +1689,12 @@
   font-weight: 900;
   line-height: 1;
   transform: none;
+}
+
+.sst-cal-group-link-glyph.has-phase .sst-cal-group-count {
+  grid-area: count;
+  align-self: center;
+  margin-left: 0;
 }
 
 .sst-cal-group-link-glyph.is-ok {
@@ -1710,6 +1754,10 @@
 
 .sst-calendar-page-ops .sst-calendar-tooltip span {
   font-size: 11px;
+}
+
+.sst-calendar-page-ops .sst-calendar-tooltip .sst-calendar-tooltip-phase {
+  font-size: 10px;
 }
 
 @media (max-width: 850px) {

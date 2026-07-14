@@ -101,11 +101,15 @@
   function renderTooltip(group) {
     const lines = buildTooltipLines(group);
     const label = group.type_key === 'visita' ? 'Visita' : (group.type_label || 'Evento');
+    const phaseLine = group.phase_title
+      ? `<span class="sst-calendar-tooltip-phase">${escapeHtml(group.phase_title)}</span>`
+      : '';
     tooltip.innerHTML = [
+      phaseLine,
       `<strong>${escapeHtml(group.type_icon || '')} ${escapeHtml(label)}</strong>`,
       `<span>${escapeHtml(group.sede_codigo || '')} - ${escapeHtml(group.sede_nombre || '')}</span>`,
       ...lines.map((line) => `<span>${escapeHtml(line)}</span>`)
-    ].join('');
+    ].filter(Boolean).join('');
   }
 
   function placeTooltip(link, event) {

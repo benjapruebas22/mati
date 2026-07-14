@@ -4,7 +4,7 @@
 
 {% block extra_head %}
   <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-14-11') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-14-12') }}">
 {% endblock %}
 
 {% block content %}
@@ -52,12 +52,13 @@
                 {% for group in cell.groups %}
                 <a
                   href="{{ group.url_detail or '#' }}"
-                  class="sst-cal-group-link sst-cal-group-link-glyph is-{{ group.state_class }} js-sst-calendar-group"
+                  class="sst-cal-group-link sst-cal-group-link-glyph{% if group.phase_short %} has-phase{% endif %} is-{{ group.state_class }} js-sst-calendar-group"
                   data-cell-key="{{ cell.key }}"
                   data-group-key="{{ group.type_key }}"
                   aria-label="{{ group.aria_label }}"
                 >
                   <span class="sst-cal-group-icon">{{ group.type_icon }}</span>
+                  {% if group.phase_short %}<span class="sst-cal-group-phase" aria-hidden="true">{{ group.phase_short }}</span>{% endif %}
                   {% if group.badge_count %}<sup class="sst-cal-group-count">{{ group.badge_count }}</sup>{% endif %}
                 </a>
                 {% endfor %}
@@ -101,12 +102,13 @@
             {% for group in row.groups %}
             <a
               href="{{ group.url_detail or '#' }}"
-              class="sst-cal-group-link sst-cal-group-link-glyph is-{{ group.state_class }} js-sst-calendar-group"
+              class="sst-cal-group-link sst-cal-group-link-glyph{% if group.phase_short %} has-phase{% endif %} is-{{ group.state_class }} js-sst-calendar-group"
               data-cell-key="{{ row.cell_key }}"
               data-group-key="{{ group.type_key }}"
               aria-label="{{ group.aria_label }}"
             >
               <span class="sst-cal-group-icon">{{ group.type_icon }}</span>
+              {% if group.phase_short %}<span class="sst-cal-group-phase" aria-hidden="true">{{ group.phase_short }}</span>{% endif %}
               {% if group.badge_count %}<sup class="sst-cal-group-count">{{ group.badge_count }}</sup>{% endif %}
             </a>
             {% endfor %}
@@ -270,5 +272,5 @@
   </div>
 </div>
 <script id="sstCalendarPayload" type="application/json">{{ matrix_payload|tojson }}</script>
-<script src="{{ url_for('static', filename='sst/sst_calendario_operativo.js', v='2026-07-14-01') }}"></script>
+<script src="{{ url_for('static', filename='sst/sst_calendario_operativo.js', v='2026-07-14-02') }}"></script>
 {% endblock %}
