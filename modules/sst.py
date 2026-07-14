@@ -12792,20 +12792,27 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     "anchor_date": anchor_date,
                 })
         if _table_exists(con, "obras_sede"):
+            cols_obras = _table_cols(con, "obras_sede")
+
+            def _obras_expr(col_name, alias_name):
+                if col_name in cols_obras:
+                    return f"COALESCE({col_name}, '') AS {alias_name}"
+                return f"'' AS {alias_name}"
+
             rows = con.execute("""
                 SELECT
                     id,
-                    UPPER(COALESCE(codigo_sede, '')) AS sede_codigo,
-                    COALESCE(estado, '') AS estado,
-                    COALESCE(tipo, '') AS tipo,
-                    COALESCE(titulo, '') AS titulo,
-                    COALESCE(descripcion, '') AS descripcion,
-                    COALESCE(observaciones, '') AS observaciones,
-                    COALESCE(responsable_actual, '') AS responsable_actual,
-                    COALESCE(fecha_solicitud, '') AS fecha_solicitud,
-                    COALESCE(fecha_inicio, '') AS fecha_inicio,
-                    COALESCE(fecha_fin_prevista, '') AS fecha_fin_prevista,
-                    COALESCE(fecha_fin_real, '') AS fecha_fin_real
+                    """ + _obras_expr("codigo_sede", "sede_codigo").replace("COALESCE(codigo_sede, '')", "UPPER(COALESCE(codigo_sede, ''))") + """,
+                    """ + _obras_expr("estado", "estado") + """,
+                    """ + _obras_expr("tipo", "tipo") + """,
+                    """ + _obras_expr("titulo", "titulo") + """,
+                    """ + _obras_expr("descripcion", "descripcion") + """,
+                    """ + _obras_expr("observaciones", "observaciones") + """,
+                    """ + _obras_expr("responsable_actual", "responsable_actual") + """,
+                    """ + _obras_expr("fecha_solicitud", "fecha_solicitud") + """,
+                    """ + _obras_expr("fecha_inicio", "fecha_inicio") + """,
+                    """ + _obras_expr("fecha_fin_prevista", "fecha_fin_prevista") + """,
+                    """ + _obras_expr("fecha_fin_real", "fecha_fin_real") + """
                 FROM obras_sede
                 WHERE
                     LOWER(COALESCE(tipo, '')) LIKE '%desinfecc%'
