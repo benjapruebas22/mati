@@ -62,6 +62,15 @@
   align-items: flex-end;
   margin-bottom: 14px;
 }
+
+.sst-operativo > .sst-op-header { order: 1; }
+.sst-operativo > .sst-luces-table-card { order: 2; }
+.sst-operativo > .sst-luces-kpis { order: 3; }
+.sst-operativo > .sst-op-filter-card { order: 4; }
+.sst-operativo > .sst-luces-form-card { order: 5; }
+.sst-operativo > .sst-op-history-card { order: 6; }
+.sst-operativo > .sst-op-modal-backdrop { order: 20; }
+
 .sst-op-eyebrow { margin: 0 0 4px; color: var(--sst-accent); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
 .sst-op-header h1 { margin: 0; font-size: clamp(24px, 3vw, 34px); }
 .sst-op-header p:last-child { margin: 6px 0 0; color: var(--sst-muted); }
@@ -186,13 +195,61 @@
   color: #475467;
 }
 
+.sst-op-section-card {
+  margin-bottom: 12px;
+}
+
+.sst-op-section-details > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 13px;
+  font-weight: 800;
+  color: #1f2937;
+}
+
+.sst-op-section-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.sst-op-section-label::before {
+  content: "▼ " attr(data-closed);
+}
+
+.sst-op-section-details[open] .sst-op-section-label::before {
+  content: "▲ " attr(data-open);
+}
+
+.sst-op-section-body {
+  padding: 0 14px 14px;
+  border-top: 1px solid #edf0f4;
+}
+
+.sst-op-section-body-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 10px;
+  padding-top: 12px;
+}
+
+.sst-op-section-body-head h2 {
+  margin: 0;
+  font-size: 15px;
+}
+
 .sst-luces-filter-card {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   align-items: end;
-  padding: 12px;
-  margin-bottom: 12px;
+  padding: 12px 0 0;
+  margin-bottom: 0;
 }
 
 .sst-luces-filter-actions {
@@ -206,7 +263,32 @@
 }
 
 .sst-luces-kpis {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: flex;
+  gap: 8px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.sst-luces-kpis .sst-calendar-kpi {
+  flex: 1 0 150px;
+  min-width: 150px;
+  padding: 9px 12px;
+}
+
+.sst-luces-kpis .sst-calendar-kpi span {
+  font-size: 10px;
+}
+
+.sst-luces-kpis .sst-calendar-kpi strong {
+  margin-top: 4px;
+  font-size: 22px;
+}
+
+.sst-luces-kpis .sst-calendar-kpi small {
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 1.25;
 }
 
 .sst-luces-table-wrap {

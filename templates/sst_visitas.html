@@ -23,7 +23,13 @@
     </div>
   </header>
 
-  <form class="sst-op-card sst-op-filter-form sst-luces-filter-card" method="get" action="{{ url_for('sst_visitas') }}">
+  <article class="sst-op-card sst-op-section-card sst-op-filter-card" id="sst-visitas-filtros">
+    <details class="sst-op-section-details">
+      <summary>
+        <span class="sst-op-section-label" data-closed="Mostrar filtros" data-open="Ocultar filtros"></span>
+      </summary>
+      <div class="sst-op-section-body">
+      <form class="sst-op-filter-form sst-luces-filter-card" method="get" action="{{ url_for('sst_visitas') }}">
     <label class="sst-op-field">
       <small>Sede</small>
       <select name="sede">
@@ -86,7 +92,10 @@
       <button class="sst-op-btn" type="submit">Aplicar</button>
       <a class="sst-op-btn" href="{{ url_for('sst_visitas') }}">Limpiar</a>
     </div>
-  </form>
+      </form>
+      </div>
+    </details>
+  </article>
 
   <div class="sst-calendar-kpis sst-calendar-kpis-4 sst-luces-kpis">
     <article class="sst-op-card sst-calendar-kpi"><span>Sedes visitadas</span><strong>{{ kpi_visitadas }}</strong><small>Con visita realizada</small></article>
@@ -222,15 +231,16 @@
   </div>
   {% endif %}
 
-  <article class="sst-op-card sst-luces-form-card">
-    <div class="sst-op-card-head">
-      <h2 id="sst-visitas-form">{% if form_defaults.sede_codigo %}Formulario de {{ form_defaults.sede_codigo }}{% else %}Formulario de gestion{% endif %}</h2>
-      <span class="sst-op-count">{% if show_form %}Formulario abierto{% else %}Formulario colapsado{% endif %}</span>
-    </div>
-    <details {% if show_form %}open{% endif %} class="sst-luces-details">
-      <summary class="sst-op-form-summary">
-        {% if form_defaults.sede_codigo %}Abrir formulario de {{ form_defaults.sede_codigo }}{% else %}Abrir formulario{% endif %}
+  <article class="sst-op-card sst-op-section-card sst-luces-form-card">
+    <details {% if show_form %}open{% endif %} class="sst-op-section-details">
+      <summary id="sst-visitas-form">
+        <span class="sst-op-section-label" data-closed="Nuevo registro" data-open="Ocultar registro"></span>
       </summary>
+      <div class="sst-op-section-body">
+      <div class="sst-op-section-body-head">
+        <h2>{% if form_defaults.sede_codigo %}Formulario de {{ form_defaults.sede_codigo }}{% else %}Formulario de gestion{% endif %}</h2>
+        <span class="sst-op-count">{% if show_form %}Registro abierto{% else %}Carga manual{% endif %}</span>
+      </div>
       <form class="sst-op-form-grid sst-luces-form-grid" method="post" enctype="multipart/form-data" action="{{ url_for('sst_visitas') }}">
         <input type="hidden" name="action" value="save">
         <input type="hidden" name="edit_id" value="{{ form_defaults.edit_id }}">
@@ -388,16 +398,20 @@
           <button class="sst-op-btn primary" type="submit">Guardar registro</button>
         </div>
       </form>
+      </div>
     </details>
   </article>
 
-  <article class="sst-op-card" id="sst-visitas-historial">
-    <div class="sst-op-card-head">
-      <h2>Historial</h2>
-      <span class="sst-op-count">{{ history_rows|length }} movimientos</span>
-    </div>
-    <details {% if f_open_sede %}open{% endif %} class="sst-luces-details">
-      <summary class="sst-op-form-summary">{% if f_open_sede %}Ver historial de {{ f_open_sede }}{% else %}Ver historial{% endif %}</summary>
+  <article class="sst-op-card sst-op-section-card sst-op-history-card" id="sst-visitas-historial">
+    <details class="sst-op-section-details">
+      <summary>
+        <span class="sst-op-section-label" data-closed="Historial" data-open="Ocultar historial"></span>
+      </summary>
+      <div class="sst-op-section-body">
+      <div class="sst-op-section-body-head">
+        <h2>{% if f_open_sede %}Historial de {{ f_open_sede }}{% else %}Historial{% endif %}</h2>
+        <span class="sst-op-count">{{ history_rows|length }} movimientos</span>
+      </div>
       <ul class="sst-op-list">
         {% for item in history_rows %}
         <li class="sst-op-item">
@@ -411,6 +425,7 @@
         <li class="sst-op-empty">Sin historial todavia.</li>
         {% endfor %}
       </ul>
+      </div>
     </details>
   </article>
 </section>
