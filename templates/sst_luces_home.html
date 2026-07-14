@@ -119,7 +119,7 @@
     </details>
   </article>
 
-  {% if selected_summary %}
+  {% if selected_summary and not show_form %}
   <div class="sst-op-modal-backdrop">
     <article class="sst-op-card sst-op-modal-card">
       <div class="sst-op-card-head">
@@ -187,7 +187,7 @@
           <button class="sst-op-btn" type="submit">Crear seguimiento</button>
         </form>
         {% endif %}
-        <a class="sst-op-btn" href="#sst-luces-historial">Ver historial</a>
+        <a class="sst-op-btn" href="{{ selected_summary.modal_close_url }}#sst-luces-historial">Ver historial</a>
       </div>
     </article>
   </div>
