@@ -238,8 +238,8 @@
       </summary>
       <div class="sst-op-section-body">
       <div class="sst-op-section-body-head">
-        <h2>{% if form_defaults.sede_codigo %}Formulario de {{ form_defaults.sede_codigo }}{% else %}Formulario de gestion{% endif %}</h2>
-        <span class="sst-op-count">{% if show_form %}Registro abierto{% else %}Carga manual{% endif %}</span>
+        <h2>{% if form_defaults.edit_id %}Editar visita{% elif form_defaults.sede_codigo %}Formulario de {{ form_defaults.sede_codigo }}{% else %}Formulario de gestion{% endif %}</h2>
+        <span class="sst-op-count">{% if form_defaults.sede_codigo %}{{ form_defaults.sede_codigo }}{% elif show_form %}Registro abierto{% else %}Carga manual{% endif %}</span>
       </div>
       <form class="sst-op-form-grid sst-luces-form-grid" method="post" enctype="multipart/form-data" action="{{ url_for('sst_visitas') }}">
         <input type="hidden" name="action" value="save">

@@ -12606,7 +12606,14 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             con.commit()
             con.close()
             flash("Registro de Visitas ART guardado.", "success")
-            return redirect(url_for("sst_visitas", sede=sede_codigo, open_sede=sede_codigo))
+            return redirect(url_for(
+                "sst_visitas",
+                sede=sede_codigo,
+                open_sede=sede_codigo,
+                prefill_sede=sede_codigo,
+                mostrar_form=1,
+                registro=(record_id or None),
+            ))
 
         context = _sst_visitas_art_context(con)
         con.close()
