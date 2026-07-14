@@ -1188,7 +1188,7 @@
 }
 
 .sst-calendar-page-ops .sst-op-nav {
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .sst-calendar-page-ops .sst-op-header {
@@ -1376,6 +1376,57 @@
   border-radius: 14px;
   background: #fff;
   padding: 8px 10px 10px;
+}
+
+.sst-calendar-control-stack {
+  display: grid;
+  gap: 8px;
+}
+
+.sst-calendar-toggle-card {
+  overflow: hidden;
+}
+
+.sst-calendar-toggle-card .sst-op-section-details > summary {
+  padding: 11px 14px;
+}
+
+.sst-calendar-toggle-text::before {
+  content: "\25BE  " attr(data-closed);
+}
+
+.sst-calendar-toggle-card .sst-op-section-details[open] .sst-calendar-toggle-text::before {
+  content: "\25B4  " attr(data-open);
+}
+
+.sst-calendar-ref-summary::before {
+  content: "\24D8  ";
+}
+
+.sst-calendar-toggle-card .sst-op-section-body {
+  padding: 0 14px 14px;
+}
+
+.sst-calendar-toolbar-panel {
+  gap: 10px;
+  padding: 12px 0 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.sst-calendar-toolbar-panel .sst-calendar-toolbar-label {
+  display: none;
+}
+
+.sst-calendar-legend-panel {
+  gap: 8px;
+  padding-top: 12px;
+}
+
+.sst-calendar-horizon-note-secondary {
+  padding: 9px 12px;
 }
 
 .sst-calendar-mobile-shell {

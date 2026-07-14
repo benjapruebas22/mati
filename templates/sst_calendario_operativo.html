@@ -4,7 +4,7 @@
 
 {% block extra_head %}
   <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-14-03') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-14-04') }}">
 {% endblock %}
 
 {% block content %}
@@ -19,125 +19,6 @@
   data-launch-carteleria="{{ url_for('sst_carteleria_home') }}?sede=__SEDE__&prefill_sede=__SEDE__&prefill_fecha_programada=__DATE__&prefill_estado=PROGRAMADO&mostrar_form=1"
 >
   {% include '_sst_operational_nav.html' %}
-
-  <header class="sst-op-header sst-calendar-topbar">
-    <div class="sst-calendar-heading">
-      {% if view_mode == 'implementacion' %}
-      <p class="sst-op-eyebrow">SG-SST - Fase 2 - Implementacion</p>
-      <h1>Tablero de Implementacion SG-SST</h1>
-      <p class="sst-calendar-heading-copy">Vista temporal reutilizada sobre el centro operativo para ordenar acciones activas sin duplicar datos ni crear una tabla nueva en esta etapa.</p>
-      {% else %}
-      <p class="sst-op-eyebrow">SG-SST - Inicio</p>
-      <h1>Centro Operativo SG-SST</h1>
-      <p class="sst-calendar-heading-copy">Vista integrada de diagnostico, implementacion, vencimientos, controles y acciones por sede.</p>
-      {% endif %}
-    </div>
-  </header>
-
-  <form class="sst-calendar-toolbar sst-calendar-toolbar-inline" method="get" action="{{ url_for('sst_calendario_operativo') }}">
-    {% if view_mode != 'general' %}
-    <input type="hidden" name="vista" value="{{ view_mode }}">
-    {% endif %}
-    <div class="sst-calendar-toolbar-label">Filtros</div>
-    <div class="sst-calendar-toolbar-main">
-      <label>
-        <span>Año</span>
-        <select name="year">
-          {% for year_item in year_options %}
-          <option value="{{ year_item }}" {% if selected_year == year_item %}selected{% endif %}>{{ year_item }}</option>
-          {% endfor %}
-        </select>
-      </label>
-      <label>
-        <span>Mes</span>
-        <select name="month">
-          <option value="">Todo el año</option>
-          {% for month in month_options %}
-          <option value="{{ month.value }}" {% if selected_month == month.value %}selected{% endif %}>{{ month.label }}</option>
-          {% endfor %}
-        </select>
-      </label>
-      <label>
-        <span>Región</span>
-        <select name="region">
-          <option value="">Todas</option>
-          {% for region in region_options %}
-          <option value="{{ region }}" {% if filters.region == region %}selected{% endif %}>{{ region }}</option>
-          {% endfor %}
-        </select>
-      </label>
-      <label>
-        <span>Sede</span>
-        <select name="sede">
-          <option value="">Todas</option>
-          {% for sede in sedes %}
-          <option value="{{ sede.codigo }}" {% if filters.sede == sede.codigo %}selected{% endif %}>{{ sede.codigo }} - {{ sede.nombre }}</option>
-          {% endfor %}
-        </select>
-      </label>
-      <label>
-        <span>Tipo</span>
-        <select name="tipo">
-          <option value="">Todos</option>
-          {% for type_item in type_options %}
-          <option value="{{ type_item.value }}" {% if filters.tipo == type_item.value %}selected{% endif %}>{{ type_item.icon }} {{ type_item.label }}</option>
-          {% endfor %}
-        </select>
-      </label>
-      <label>
-        <span>Estado</span>
-        <select name="estado">
-          <option value="">Todos</option>
-          {% for state_item in state_options %}
-          <option value="{{ state_item.value }}" {% if filters.estado == state_item.value %}selected{% endif %}>{{ state_item.icon }} {{ state_item.label }}</option>
-          {% endfor %}
-        </select>
-      </label>
-      <label>
-        <span>Responsable</span>
-        <select name="responsable">
-          <option value="">Todos</option>
-          {% for responsible in responsable_options %}
-          <option value="{{ responsible }}" {% if filters.responsable == responsible %}selected{% endif %}>{{ responsible }}</option>
-          {% endfor %}
-        </select>
-      </label>
-    </div>
-    <div class="sst-calendar-toolbar-actions">
-      <button class="sst-op-btn" type="submit">Aplicar</button>
-      <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo', vista=(view_mode if view_mode != 'general' else None), year=today_year, month=today_month) }}">Hoy</a>
-      <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo', vista=(view_mode if view_mode != 'general' else None)) }}">Limpiar filtros</a>
-    </div>
-  </form>
-
-  <div class="sst-calendar-legend-board sst-calendar-legend-strip">
-    <div class="sst-calendar-legend-row">
-      <span class="sst-calendar-legend-title">Modulos</span>
-      <div class="sst-calendar-type-legend">
-        {% for type_item in type_options %}
-        <span class="sst-calendar-type-token"><b>{{ type_item.icon }}</b><small>{{ type_item.label }}</small></span>
-        {% endfor %}
-      </div>
-    </div>
-    <div class="sst-calendar-legend-row">
-      <span class="sst-calendar-legend-title">Estados</span>
-      <div class="sst-calendar-legend sst-calendar-legend-chips">
-        {% for state_item in state_options %}
-        <span class="sst-calendar-legend-item is-{{ state_item.class }}">{{ state_item.icon }} {{ state_item.label }}</span>
-        {% endfor %}
-      </div>
-    </div>
-  </div>
-
-  {% if matafuegos_next and matafuegos_next.year != selected_year %}
-  <div class="sst-calendar-horizon-note">
-    <div>
-      <strong>🧯 Matafuegos fuera del año visible</strong>
-      <span>Proximo vencimiento: {{ matafuegos_next.month_label }} {{ matafuegos_next.year }} · {{ matafuegos_next.sedes_count }} sedes · {{ matafuegos_next.count }} equipos</span>
-    </div>
-    <a class="sst-op-btn" href="{{ url_for('matafuegos_home', sede=filters.sede or None, vencimiento='proximos') }}">Ver Matafuegos</a>
-  </div>
-  {% endif %}
 
   <section class="sst-calendar-matrix-shell">
     <div class="sst-calendar-matrix-titlebar">
@@ -234,6 +115,130 @@
       {% endfor %}
     </div>
   </section>
+
+  <div class="sst-calendar-control-stack">
+    <article class="sst-op-card sst-op-section-card sst-calendar-toggle-card">
+      <details class="sst-op-section-details sst-calendar-persist" data-sst-persist="filters">
+        <summary>
+          <span class="sst-calendar-toggle-text" data-closed="Mostrar filtros" data-open="Ocultar filtros"></span>
+        </summary>
+        <div class="sst-op-section-body">
+          <form class="sst-calendar-toolbar sst-calendar-toolbar-inline sst-calendar-toolbar-panel" method="get" action="{{ url_for('sst_calendario_operativo') }}">
+            {% if view_mode != 'general' %}
+            <input type="hidden" name="vista" value="{{ view_mode }}">
+            {% endif %}
+            <div class="sst-calendar-toolbar-main">
+              <label>
+                <span>Año</span>
+                <select name="year">
+                  {% for year_item in year_options %}
+                  <option value="{{ year_item }}" {% if selected_year == year_item %}selected{% endif %}>{{ year_item }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label>
+                <span>Mes</span>
+                <select name="month">
+                  <option value="">Todo el año</option>
+                  {% for month in month_options %}
+                  <option value="{{ month.value }}" {% if selected_month == month.value %}selected{% endif %}>{{ month.label }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label>
+                <span>Región</span>
+                <select name="region">
+                  <option value="">Todas</option>
+                  {% for region in region_options %}
+                  <option value="{{ region }}" {% if filters.region == region %}selected{% endif %}>{{ region }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label>
+                <span>Sede</span>
+                <select name="sede">
+                  <option value="">Todas</option>
+                  {% for sede in sedes %}
+                  <option value="{{ sede.codigo }}" {% if filters.sede == sede.codigo %}selected{% endif %}>{{ sede.codigo }} - {{ sede.nombre }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label>
+                <span>Tipo</span>
+                <select name="tipo">
+                  <option value="">Todos</option>
+                  {% for type_item in type_options %}
+                  <option value="{{ type_item.value }}" {% if filters.tipo == type_item.value %}selected{% endif %}>{{ type_item.icon }} {{ type_item.label }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label>
+                <span>Estado</span>
+                <select name="estado">
+                  <option value="">Todos</option>
+                  {% for state_item in state_options %}
+                  <option value="{{ state_item.value }}" {% if filters.estado == state_item.value %}selected{% endif %}>{{ state_item.icon }} {{ state_item.label }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+              <label>
+                <span>Responsable</span>
+                <select name="responsable">
+                  <option value="">Todos</option>
+                  {% for responsible in responsable_options %}
+                  <option value="{{ responsible }}" {% if filters.responsable == responsible %}selected{% endif %}>{{ responsible }}</option>
+                  {% endfor %}
+                </select>
+              </label>
+            </div>
+            <div class="sst-calendar-toolbar-actions">
+              <button class="sst-op-btn" type="submit">Aplicar</button>
+              <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo', vista=(view_mode if view_mode != 'general' else None), year=today_year, month=today_month) }}">Hoy</a>
+              <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo', vista=(view_mode if view_mode != 'general' else None)) }}">Limpiar filtros</a>
+            </div>
+          </form>
+        </div>
+      </details>
+    </article>
+
+    <article class="sst-op-card sst-op-section-card sst-calendar-toggle-card">
+      <details class="sst-op-section-details sst-calendar-persist" data-sst-persist="references">
+        <summary>
+          <span class="sst-calendar-ref-summary">Referencias</span>
+        </summary>
+        <div class="sst-op-section-body">
+          <div class="sst-calendar-legend-board sst-calendar-legend-strip sst-calendar-legend-panel">
+            <div class="sst-calendar-legend-row">
+              <span class="sst-calendar-legend-title">Modulos</span>
+              <div class="sst-calendar-type-legend">
+                {% for type_item in type_options %}
+                <span class="sst-calendar-type-token"><b>{{ type_item.icon }}</b><small>{{ type_item.label }}</small></span>
+                {% endfor %}
+              </div>
+            </div>
+            <div class="sst-calendar-legend-row">
+              <span class="sst-calendar-legend-title">Estados</span>
+              <div class="sst-calendar-legend sst-calendar-legend-chips">
+                {% for state_item in state_options %}
+                <span class="sst-calendar-legend-item is-{{ state_item.class }}">{{ state_item.icon }} {{ state_item.label }}</span>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </details>
+    </article>
+
+    {% if matafuegos_next and matafuegos_next.year != selected_year %}
+    <div class="sst-calendar-horizon-note sst-calendar-horizon-note-secondary">
+      <div>
+        <strong>🧯 Matafuegos fuera del año visible</strong>
+        <span>Proximo vencimiento: {{ matafuegos_next.month_label }} {{ matafuegos_next.year }} · {{ matafuegos_next.sedes_count }} sedes · {{ matafuegos_next.count }} equipos</span>
+      </div>
+      <a class="sst-op-btn" href="{{ url_for('matafuegos_home', sede=filters.sede or None, vencimiento='proximos') }}">Ver Matafuegos</a>
+    </div>
+    {% endif %}
+  </div>
 </section>
 
 <div class="sst-calendar-tooltip" id="sstCalendarTooltip" hidden></div>
@@ -261,5 +266,5 @@
   </div>
 </div>
 <script id="sstCalendarPayload" type="application/json">{{ matrix_payload|tojson }}</script>
-<script src="{{ url_for('static', filename='sst/sst_calendario_operativo.js', v='2026-07-13-01') }}"></script>
+<script src="{{ url_for('static', filename='sst/sst_calendario_operativo.js', v='2026-07-14-01') }}"></script>
 {% endblock %}

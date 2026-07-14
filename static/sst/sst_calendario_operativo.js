@@ -19,6 +19,25 @@
   const launcherOpen = document.getElementById('sstCalendarLaunchOpen');
   const launcherInputs = Array.from(document.querySelectorAll('input[name="sstCalendarLaunchType"]'));
   const launcherCloseButtons = Array.from(document.querySelectorAll('.js-sst-calendar-launcher-close'));
+  const persistedDetails = Array.from(document.querySelectorAll('.sst-calendar-persist[data-sst-persist]'));
+
+  persistedDetails.forEach((detail) => {
+    const key = `sstCalendar:${detail.dataset.sstPersist || ''}`;
+    try {
+      const saved = sessionStorage.getItem(key);
+      if (saved === 'open') detail.open = true;
+      if (saved === 'closed') detail.open = false;
+    } catch (error) {
+      // Session storage can be unavailable; keep default collapsed state.
+    }
+    detail.addEventListener('toggle', () => {
+      try {
+        sessionStorage.setItem(key, detail.open ? 'open' : 'closed');
+      } catch (error) {
+        // Ignore persistence errors and preserve runtime behavior.
+      }
+    });
+  });
 
   function escapeHtml(value) {
     return String(value || '')
