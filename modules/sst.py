@@ -12777,8 +12777,10 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             for row in rows:
                 responsable = (_row_value(row, "responsable", "") or "").strip() or (_row_value(row, "empresa", "") or "").strip()
                 modalidad = _sst_desinf_normalize_modalidad(_row_value(row, "modalidad", ""), responsable)
-                fecha_realizada = (_row_value(row, "fecha_realizada", "") or "").strip() or (_row_value(row, "fecha", "") or "").strip()
                 fecha_programada = (_row_value(row, "fecha_programada", "") or "").strip()
+                fecha_realizada = (_row_value(row, "fecha_realizada", "") or "").strip()
+                if not fecha_realizada and not fecha_programada:
+                    fecha_realizada = (_row_value(row, "fecha", "") or "").strip()
                 manual_state = _sst_desinf_normalize_state(_row_value(row, "estado", ""))
                 state_code = manual_state or _sst_desinf_auto_state({
                     "fecha": _row_value(row, "fecha", ""),
@@ -13180,7 +13182,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                             FROM desinfecciones_sede
                             WHERE id = ?
                         """, (edit_id,)).fetchone()
-                    alias_fecha = fecha_realizada or fecha_programada or None
+                    alias_fecha = fecha_realizada or None
                     if edit_id:
                         con.execute("""
                             UPDATE desinfecciones_sede
