@@ -1,12 +1,13 @@
 {% extends "base.html" %}
 
 {% block extra_head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-14-02') }}">
 {% endblock %}
 
 {% block content %}
 {% set current_open_sede = selected_summary.sede_codigo if selected_summary else (f_sede or '') %}
-<section class="sst-operativo sst-shell">
+<section class="sst-operativo sst-ui sst-shell">
   {% include '_sst_operational_nav.html' %}
   <header class="sst-op-header">
     <div>
