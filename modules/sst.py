@@ -11026,11 +11026,15 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         sedes = []
         sedes_map = {}
         for row in sedes_rows:
+            fuero_raw = (_row_value(row, "fuero", "") or "").strip()
+            fuero_class, fuero_color = _sst_fuero_style(fuero_raw)
             sede_item = {
                 "codigo": (_row_value(row, "codigo", "") or "").strip().upper(),
                 "nombre": (_row_value(row, "nombre", "") or "").strip(),
                 "region": (_row_value(row, "region", "") or "").strip(),
-                "fuero": (_row_value(row, "fuero", "") or "").strip(),
+                "fuero": fuero_raw,
+                "fuero_class": fuero_class,
+                "fuero_color": fuero_color,
             }
             if not sede_item["codigo"]:
                 continue
@@ -11846,6 +11850,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 "cell_key": cell_key,
                 "sede_codigo": sede["codigo"],
                 "sede_nombre": sede["nombre"],
+                "sede_fuero_class": sede.get("fuero_class", ""),
+                "sede_fuero_color": sede.get("fuero_color", ""),
                 "groups": info.get("groups", []),
                 "count": len(info.get("events", [])),
             })

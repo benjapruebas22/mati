@@ -4,7 +4,7 @@
 
 {% block extra_head %}
   <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-14-10') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-14-11') }}">
 {% endblock %}
 
 {% block content %}
@@ -40,7 +40,7 @@
           {% for row in matrix_rows %}
           <tr>
             <th>
-              <a class="sst-calendar-sede-link" href="{{ url_for('sede_ficha', codigo=row.sede.codigo) }}" title="Abrir ficha de {{ row.sede.codigo }}">
+              <a class="sst-calendar-sede-link sst-calendar-sede-link-{{ row.sede.fuero_class or 'otro' }}" href="{{ url_for('sede_ficha', codigo=row.sede.codigo) }}" title="Abrir ficha de {{ row.sede.codigo }}" style="--sst-sede-fuero: {{ row.sede.fuero_color or '#111827' }};">
                 <div class="sst-calendar-sede-code">{{ row.sede.codigo }}</div>
                 <div class="sst-calendar-sede-name">{{ row.sede.nombre }}</div>
               </a>
@@ -94,8 +94,8 @@
       {% for row in mobile_rows %}
       <div class="sst-calendar-mobile-item">
         <div>
-          <a class="sst-calendar-sede-link sst-calendar-sede-link-mobile" href="{{ url_for('sede_ficha', codigo=row.sede_codigo) }}" title="Abrir ficha de {{ row.sede_codigo }}">
-            <strong>{{ row.sede_codigo }} - {{ row.sede_nombre }}</strong>
+          <a class="sst-calendar-sede-link sst-calendar-sede-link-mobile sst-calendar-sede-link-{{ row.sede_fuero_class or 'otro' }}" href="{{ url_for('sede_ficha', codigo=row.sede_codigo) }}" title="Abrir ficha de {{ row.sede_codigo }}" style="--sst-sede-fuero: {{ row.sede_fuero_color or '#111827' }};">
+            <strong><span class="sst-calendar-sede-code">{{ row.sede_codigo }}</span><span class="sst-calendar-sede-sep"> - </span><span class="sst-calendar-sede-name-inline">{{ row.sede_nombre }}</span></strong>
           </a>
           <div class="sst-cal-cell-stack sst-cal-cell-stack-inline">
             {% for group in row.groups %}

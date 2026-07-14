@@ -882,8 +882,10 @@
   background: #fff;
 }
 .sst-calendar-matrix tbody td.is-current-month { background: #fafbfd; }
-.sst-calendar-sede-code { color: #111827; font-size: 11px; font-weight: 900; }
+.sst-calendar-sede-code { color: var(--sst-sede-fuero, #111827); font-size: 11px; font-weight: 900; }
 .sst-calendar-sede-name { margin-top: 2px; color: var(--sst-muted); font-size: 10px; font-weight: 600; line-height: 1.25; }
+.sst-calendar-sede-name-inline { color: #111827; }
+.sst-calendar-sede-sep { color: #98a2b3; }
 .sst-calendar-sede-link {
   display: block;
   color: inherit;
@@ -891,10 +893,12 @@
 }
 .sst-calendar-sede-link:hover .sst-calendar-sede-code,
 .sst-calendar-sede-link:focus-visible .sst-calendar-sede-code {
-  color: #4f46b8;
+  color: var(--sst-sede-fuero, #4f46b8);
 }
 .sst-calendar-sede-link:hover .sst-calendar-sede-name,
-.sst-calendar-sede-link:focus-visible .sst-calendar-sede-name {
+.sst-calendar-sede-link:focus-visible .sst-calendar-sede-name,
+.sst-calendar-sede-link:hover .sst-calendar-sede-name-inline,
+.sst-calendar-sede-link:focus-visible .sst-calendar-sede-name-inline {
   color: #465166;
 }
 .sst-calendar-sede-link:focus-visible {
