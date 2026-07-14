@@ -1414,19 +1414,29 @@
 }
 
 .sst-calendar-page-ops .sst-calendar-matrix thead th {
-  padding: 6px 3px;
-  background: #f8fafc;
-  color: #516074;
+  padding: 8px 4px 9px;
+  border-bottom: 1px solid #dbe4ef;
+  background: #f9fbfd;
+  color: #46546a;
   font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .04em;
 }
 
 .sst-calendar-page-ops .sst-calendar-matrix thead th.is-current-month {
   background: #eef4fb;
+  color: #36516f;
 }
 
 .sst-calendar-page-ops .sst-calendar-matrix tbody th,
 .sst-calendar-page-ops .sst-calendar-matrix tbody td {
   padding: 5px 2px;
+  transition: background .16s ease, box-shadow .16s ease;
+}
+
+.sst-calendar-page-ops .sst-calendar-matrix tbody tr + tr th,
+.sst-calendar-page-ops .sst-calendar-matrix tbody tr + tr td {
+  box-shadow: inset 0 1px 0 rgba(226, 232, 240, .82);
 }
 
 .sst-calendar-page-ops .sst-calendar-matrix tbody th {
@@ -1435,7 +1445,7 @@
 }
 
 .sst-calendar-page-ops .sst-calendar-matrix tbody td {
-  min-width: 62px;
+  min-width: 64px;
 }
 
 .sst-calendar-page-ops .sst-calendar-matrix tbody td.has-events {
@@ -1444,6 +1454,22 @@
 
 .sst-calendar-page-ops .sst-calendar-matrix tbody td.is-current-month {
   background: #f2f6fb;
+}
+
+.sst-calendar-page-ops .sst-calendar-matrix tbody tr:hover th {
+  background: #f8fbff;
+}
+
+.sst-calendar-page-ops .sst-calendar-matrix tbody td:hover {
+  background: #f6f9fd;
+}
+
+.sst-calendar-page-ops .sst-calendar-matrix tbody td.has-events:hover {
+  background: #eef4fb;
+}
+
+.sst-calendar-page-ops .sst-calendar-matrix tbody td.is-current-month:hover {
+  background: #eaf1f9;
 }
 
 .sst-calendar-page-ops .sst-calendar-sede-code {
@@ -1462,63 +1488,97 @@
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
-  gap: 4px;
-  min-height: 20px;
+  gap: 5px;
+  min-height: 24px;
 }
 
 .sst-cal-group-link-glyph {
   display: inline-flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  gap: 1px;
-  min-width: 16px;
-  min-height: 16px;
-  padding: 0 1px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
+  gap: 4px;
+  min-width: 28px;
+  min-height: 20px;
+  padding: 2px 6px;
+  border: 1px solid rgba(148, 163, 184, .16);
+  border-radius: 999px;
+  background: #f8fafc;
   text-decoration: none;
-  transition: background .16s ease, color .16s ease, transform .16s ease;
+  font-variant-numeric: tabular-nums;
+  transition: background .16s ease, color .16s ease, border-color .16s ease;
 }
 
 .sst-cal-group-link-glyph:hover,
 .sst-cal-group-link-glyph:focus-visible {
-  background: #eef3f8;
+  background: #f1f5f9;
+  border-color: rgba(100, 116, 139, .24);
   outline: 0;
 }
 
 .sst-cal-group-link-glyph.is-active {
+  border-color: rgba(37, 86, 168, .24);
   background: #e8eef7;
   box-shadow: none;
 }
 
 .sst-cal-group-link-glyph .sst-cal-group-icon {
-  font-size: 15px;
+  font-size: 18px;
   line-height: 1;
 }
 
 .sst-cal-group-count {
   position: static;
-  min-width: 0;
-  height: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 15px;
+  height: 15px;
   margin-left: 1px;
-  padding: 0;
-  border-radius: 0;
-  background: transparent;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .88);
   color: currentColor;
-  font-size: 9px;
+  font-size: 9.5px;
   font-weight: 900;
   line-height: 1;
-  transform: translateY(-.38em);
+  transform: none;
 }
 
-.sst-cal-group-link-glyph.is-ok { color: #157347; }
-.sst-cal-group-link-glyph.is-info { color: #2556a8; }
-.sst-cal-group-link-glyph.is-warn { color: #a15d00; }
-.sst-cal-group-link-glyph.is-pending { color: #c25400; }
-.sst-cal-group-link-glyph.is-danger { color: #b42318; }
-.sst-cal-group-link-glyph.is-follow { color: #6a40c2; }
-.sst-cal-group-link-glyph.is-muted { color: #667085; }
+.sst-cal-group-link-glyph.is-ok {
+  border-color: rgba(21, 115, 71, .14);
+  background: #eaf8f0;
+  color: #157347;
+}
+.sst-cal-group-link-glyph.is-info {
+  border-color: rgba(37, 86, 168, .14);
+  background: #eef4ff;
+  color: #2556a8;
+}
+.sst-cal-group-link-glyph.is-warn {
+  border-color: rgba(154, 100, 0, .14);
+  background: #fff6df;
+  color: #a15d00;
+}
+.sst-cal-group-link-glyph.is-pending {
+  border-color: rgba(194, 84, 0, .14);
+  background: #fff1e6;
+  color: #c25400;
+}
+.sst-cal-group-link-glyph.is-danger {
+  border-color: rgba(180, 35, 24, .14);
+  background: #fff0f0;
+  color: #b42318;
+}
+.sst-cal-group-link-glyph.is-follow {
+  border-color: rgba(106, 64, 194, .14);
+  background: #f5efff;
+  color: #6a40c2;
+}
+.sst-cal-group-link-glyph.is-muted {
+  border-color: rgba(102, 112, 133, .14);
+  background: #eef1f5;
+  color: #667085;
+}
 
 .sst-calendar-page-ops .sst-cal-empty {
   width: 5px;
