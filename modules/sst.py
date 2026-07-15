@@ -8254,7 +8254,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             if not sede:
                 continue
             sede_codigo = (_row_value(sede, "codigo", "") or "").strip().upper()
-            row = dict(summary_map.get(sede_codigo) or _sst_luces_empty_summary(sede, seed_map.get(sede_codigo)))
+            row = dict(summary_map.get(sede_codigo) or _sst_luces_empty_summary(sede))
             row["sede_codigo"] = sede_codigo
             row["sede_nombre"] = (_row_value(sede, "nombre", "") or "").strip()
             row["aplica_label"] = ("Si" if _sst_bool_flag(row.get("aplica", 1)) else "No")
