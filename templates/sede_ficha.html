@@ -4523,6 +4523,347 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  .mob-plan-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .mob-plan-canvas {
+    position: absolute;
+    inset: 0;
+  }
+  .plan-img.mob-plan-drop-active {
+    border-color: #a4b5d6;
+    box-shadow: inset 0 0 0 1px rgba(71, 85, 105, 0.16), 0 18px 34px rgba(71, 85, 105, 0.12);
+  }
+  .mob-plan-toolbox {
+    margin-top: 12px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    display: grid;
+    gap: 10px;
+  }
+  .mob-plan-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .mob-plan-title {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 900;
+    color: #1f2937;
+  }
+  .mob-plan-sub {
+    margin: 3px 0 0;
+    font-size: 11px;
+    line-height: 1.45;
+    color: #64748b;
+  }
+  .mob-plan-sub strong {
+    color: #334155;
+  }
+  .mob-plan-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .mob-plan-save,
+  .mob-plan-reset {
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .mob-plan-save {
+    border: 1px solid #1d4ed8;
+    background: #2563eb;
+    color: #fff;
+    box-shadow: 0 8px 16px rgba(37, 99, 235, 0.16);
+  }
+  .mob-plan-save[disabled] {
+    opacity: .72;
+    cursor: wait;
+  }
+  .mob-plan-reset {
+    border: 1px solid #d7deea;
+    background: #fff;
+    color: #334155;
+  }
+  .mob-plan-status {
+    min-height: 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #2563eb;
+  }
+  .mob-plan-status.is-error {
+    color: #b42318;
+  }
+  .mob-plan-summary {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .mob-plan-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    border: 1px solid #d7deea;
+    background: rgba(255, 255, 255, 0.92);
+    color: #475467;
+    font-size: 10px;
+    font-weight: 800;
+  }
+  .mob-plan-pill strong {
+    color: #111827;
+  }
+  .mob-plan-tray {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+    gap: 8px;
+    min-height: 72px;
+  }
+  .mob-plan-tray.is-drop-active {
+    outline: 1px dashed #a4b5d6;
+    outline-offset: 2px;
+    border-radius: 12px;
+  }
+  .mob-plan-empty {
+    grid-column: 1 / -1;
+    padding: 10px 12px;
+    border: 1px dashed #d7deea;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #64748b;
+    font-size: 11px;
+    line-height: 1.4;
+  }
+  .mob-plan-piece {
+    border: none;
+    background: transparent;
+    padding: 0;
+    color: #334155;
+    user-select: none;
+    touch-action: manipulation;
+  }
+  .mob-plan-piece.is-tray {
+    min-height: 84px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    padding: 8px 6px;
+    border-radius: 12px;
+    border: 1px solid #d7deea;
+    background: #fff;
+    cursor: grab;
+    pointer-events: auto;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.04);
+  }
+  .mob-plan-piece.is-placed {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: grab;
+    pointer-events: auto;
+  }
+  .mob-plan-piece:active {
+    cursor: grabbing;
+  }
+  .mob-plan-piece.is-dim {
+    opacity: .32;
+  }
+  .mob-plan-piece.is-focus .mob-plan-piece-badge {
+    box-shadow: 0 12px 20px rgba(37, 99, 235, 0.16);
+  }
+  .mob-plan-piece-body {
+    position: relative;
+    display: block;
+    background: #cda477;
+    border: 1px solid rgba(98, 71, 37, 0.18);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 5px 10px rgba(73, 54, 25, 0.12);
+  }
+  .mob-plan-piece.kind-escritorio_prof .mob-plan-piece-body {
+    width: 40px;
+    height: 18px;
+    border-radius: 4px;
+  }
+  .mob-plan-piece.kind-escritorio_prof .mob-plan-piece-body::after {
+    content: "";
+    position: absolute;
+    left: 7px;
+    right: 7px;
+    bottom: -4px;
+    height: 4px;
+    border-radius: 999px;
+    background: #b78859;
+  }
+  .mob-plan-piece.kind-mesa_pc .mob-plan-piece-body {
+    width: 30px;
+    height: 16px;
+    border-radius: 4px;
+  }
+  .mob-plan-piece.kind-mesa_pc .mob-plan-piece-body::after {
+    content: "";
+    position: absolute;
+    left: 5px;
+    right: 5px;
+    bottom: -4px;
+    height: 4px;
+    border-radius: 999px;
+    background: #b78859;
+  }
+  .mob-plan-piece.kind-armario_alto .mob-plan-piece-body {
+    width: 18px;
+    height: 30px;
+    border-radius: 5px;
+  }
+  .mob-plan-piece.kind-armario_alto .mob-plan-piece-body::after {
+    content: "";
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    left: 50%;
+    width: 1px;
+    transform: translateX(-50%);
+    background: rgba(98, 71, 37, 0.22);
+  }
+  .mob-plan-piece.kind-biblioteca_baja .mob-plan-piece-body {
+    width: 28px;
+    height: 18px;
+    border-radius: 4px;
+  }
+  .mob-plan-piece.kind-biblioteca_baja .mob-plan-piece-body::before,
+  .mob-plan-piece.kind-biblioteca_baja .mob-plan-piece-body::after {
+    content: "";
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    height: 1px;
+    background: rgba(98, 71, 37, 0.22);
+  }
+  .mob-plan-piece.kind-biblioteca_baja .mob-plan-piece-body::before {
+    top: 6px;
+  }
+  .mob-plan-piece.kind-biblioteca_baja .mob-plan-piece-body::after {
+    bottom: 6px;
+  }
+  .mob-plan-piece.kind-silla_giratoria .mob-plan-piece-body {
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    background: #6b7280;
+    border-color: rgba(51, 65, 85, 0.18);
+  }
+  .mob-plan-piece.kind-silla_giratoria .mob-plan-piece-body::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -6px;
+    width: 12px;
+    height: 6px;
+    transform: translateX(-50%);
+    border-radius: 999px;
+    background: #94a3b8;
+  }
+  .mob-plan-piece.kind-silla_fija .mob-plan-piece-body {
+    width: 18px;
+    height: 18px;
+    border-radius: 8px 8px 5px 5px;
+    background: #4b5563;
+    border-color: rgba(51, 65, 85, 0.2);
+  }
+  .mob-plan-piece.kind-silla_fija .mob-plan-piece-body::after {
+    content: "";
+    position: absolute;
+    left: 3px;
+    right: 3px;
+    bottom: -4px;
+    height: 4px;
+    border-radius: 999px;
+    background: #9ca3af;
+  }
+  .mob-plan-piece.kind-otros .mob-plan-piece-body {
+    width: 26px;
+    height: 14px;
+    border-radius: 999px;
+    background: repeating-linear-gradient(90deg, #e2e8f0 0, #e2e8f0 4px, #cbd5e1 4px, #cbd5e1 8px);
+    border-color: rgba(148, 163, 184, 0.28);
+  }
+  .mob-plan-piece-badge {
+    min-width: 48px;
+    padding: 3px 6px 4px;
+    border-radius: 10px;
+    border: 1px solid #d7deea;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+  }
+  .mob-plan-piece-code {
+    font-size: 9px;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: .03em;
+    color: #334155;
+  }
+  .mob-plan-piece-local {
+    font-size: 8px;
+    font-weight: 800;
+    line-height: 1;
+    color: #64748b;
+    letter-spacing: .04em;
+  }
+  .mob-plan-piece-name {
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1.15;
+    color: #475467;
+    text-align: center;
+  }
+  .mob-plan-piece-note {
+    max-width: 96px;
+    font-size: 9px;
+    line-height: 1.2;
+    color: #94a3b8;
+    text-align: center;
+  }
+  .mob-plan-piece.is-placed .mob-plan-piece-name,
+  .mob-plan-piece.is-placed .mob-plan-piece-note {
+    display: none;
+  }
+  @media (max-width: 760px) {
+    .mob-plan-head {
+      align-items: stretch;
+    }
+    .mob-plan-actions {
+      width: 100%;
+      justify-content: stretch;
+    }
+    .mob-plan-save,
+    .mob-plan-reset {
+      flex: 1 1 0;
+    }
+    .mob-plan-tray {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
   .sst-le-layer {
     position: absolute;
     inset: 0;
@@ -8964,6 +9305,11 @@
           </div>
           {% endif %}
           <img src="{{ plano_url }}" alt="Plano {{ sede.codigo }} {{ piso }}">
+          {% if tab == 'mobiliario' %}
+          <div class="mob-plan-layer" data-mob-plan-layer data-local="{{ local or '' }}" data-api-url="{{ url_for('mobiliario_plano_api', sede_codigo=sede.codigo, piso=piso) }}">
+            <div class="mob-plan-canvas" data-mob-plan-canvas></div>
+          </div>
+          {% endif %}
           {% if tab == 'sst_carteleria' %}
           <div class="sst-ct-layer" data-sst-ct-layer data-sede="{{ sede.codigo }}" data-piso="{{ piso }}" data-local="{{ local or '' }}" data-api-url="{{ url_for('sst_carteleria_plano_api', sede_codigo=sede.codigo, piso=piso) }}">
             <div class="sst-ct-canvas" data-sst-ct-canvas></div>
@@ -9083,6 +9429,31 @@
               <span class="sst-le-tool-label">No aplica</span>
             </button>
           </div>
+        </div>
+        {% endif %}
+        {% if tab == 'mobiliario' %}
+        <div class="mob-plan-toolbox" data-mob-plan-toolbar>
+          <div class="mob-plan-head">
+            <div>
+              <p class="mob-plan-title">Distribucion visual del mobiliario</p>
+              <p class="mob-plan-sub">
+                La carga actual del inventario <strong>no se modifica</strong>.
+                Aca solo ordenas en el plano limpio el mobiliario ya definido para este piso.
+                {% if local %}
+                El local <strong>{{ local }}</strong> queda resaltado y el resto se aten&uacute;a.
+                {% else %}
+                Si filtras un local, el resto del piso queda atenuado para trabajar mas rapido.
+                {% endif %}
+              </p>
+            </div>
+            <div class="mob-plan-actions">
+              <button type="button" class="mob-plan-save" data-mob-plan-save>Guardar plano</button>
+              <button type="button" class="mob-plan-reset" data-mob-plan-reset>Enviar todo a bandeja</button>
+            </div>
+          </div>
+          <div class="mob-plan-status" data-mob-plan-status aria-live="polite"></div>
+          <div class="mob-plan-summary" data-mob-plan-summary></div>
+          <div class="mob-plan-tray" data-mob-plan-tray aria-label="Bandeja de mobiliario"></div>
         </div>
         {% endif %}
 
@@ -11580,6 +11951,399 @@
     const saved = sessionStorage.getItem(storageKey);
     if (saved && !input.value) input.value = saved;
     applyGlobalFilter();
+  })();
+</script>
+<script>
+  (function () {
+    const layer = document.querySelector("[data-mob-plan-layer]");
+    const toolbar = document.querySelector("[data-mob-plan-toolbar]");
+    if (!layer || !toolbar) return;
+
+    const canvas = layer.querySelector("[data-mob-plan-canvas]");
+    const tray = toolbar.querySelector("[data-mob-plan-tray]");
+    const summaryEl = toolbar.querySelector("[data-mob-plan-summary]");
+    const resetBtn = toolbar.querySelector("[data-mob-plan-reset]");
+    const saveBtn = toolbar.querySelector("[data-mob-plan-save]");
+    const statusEl = toolbar.querySelector("[data-mob-plan-status]");
+    const plan = layer.closest(".plan-img");
+    if (!canvas || !tray || !plan) return;
+
+    const apiUrl = String(layer.dataset.apiUrl || "").trim();
+    const activeLocal = String(layer.dataset.local || "").toUpperCase();
+    const kindOrder = [
+      "escritorio_prof",
+      "mesa_pc",
+      "armario_alto",
+      "biblioteca_baja",
+      "silla_giratoria",
+      "silla_fija",
+      "otros"
+    ];
+    const kindMeta = {
+      escritorio_prof: { label: "Escritorio profesional", code: "EPR" },
+      mesa_pc: { label: "Mesa de PC", code: "MPC" },
+      armario_alto: { label: "Armario alto", code: "ARM" },
+      biblioteca_baja: { label: "Biblioteca baja", code: "BIB" },
+      silla_giratoria: { label: "Silla giratoria", code: "SGI" },
+      silla_fija: { label: "Silla fija", code: "SFI" },
+      otros: { label: "Otros", code: "OTR" }
+    };
+
+    let items = [];
+    let planDragDepth = 0;
+    let trayDragDepth = 0;
+
+    function clamp01(value) {
+      const number = Number(value);
+      if (!Number.isFinite(number)) return 0.5;
+      return Math.max(0.03, Math.min(0.97, number));
+    }
+
+    function setStatus(message, isError) {
+      if (!statusEl) return;
+      statusEl.textContent = String(message || "");
+      statusEl.classList.toggle("is-error", !!isError);
+    }
+
+    function setSaving(isSaving) {
+      if (!saveBtn) return;
+      saveBtn.disabled = !!isSaving;
+      saveBtn.textContent = isSaving ? "Guardando..." : "Guardar plano";
+    }
+
+    function markDirty(message) {
+      setStatus(message || "Cambios sin guardar.", false);
+    }
+
+    function normalizeItem(item) {
+      const raw = item || {};
+      const kind = kindMeta[raw.kind] ? raw.kind : "otros";
+      return {
+        id: String(raw.id || ""),
+        kind: kind,
+        code: String(raw.code || kindMeta[kind].code),
+        name: String(raw.name || kindMeta[kind].label),
+        local: String(raw.local || "").toUpperCase(),
+        description: String(raw.description || ""),
+        note: String(raw.note || ""),
+        placed: !!raw.placed,
+        x: raw.placed ? clamp01(raw.x) : null,
+        y: raw.placed ? clamp01(raw.y) : null
+      };
+    }
+
+    function getItem(itemId) {
+      return items.find((item) => item.id === itemId) || null;
+    }
+
+    function compareItems(a, b) {
+      const localA = String(a.local || "");
+      const localB = String(b.local || "");
+      if (localA !== localB) {
+        return localA.localeCompare(localB, "es", { numeric: true });
+      }
+      const kindDelta = kindOrder.indexOf(a.kind) - kindOrder.indexOf(b.kind);
+      if (kindDelta) return kindDelta;
+      return String(a.code || "").localeCompare(String(b.code || ""), "es", { numeric: true });
+    }
+
+    function buildTitle(item) {
+      const parts = [item.name, item.code];
+      if (item.local) parts.push(item.local);
+      if (item.description) parts.push(item.description);
+      if (item.note) parts.push(item.note);
+      return parts.filter(Boolean).join(" - ");
+    }
+
+    function createSpan(className, text) {
+      const span = document.createElement("span");
+      span.className = className;
+      span.textContent = text;
+      return span;
+    }
+
+    function renderSummary() {
+      if (!summaryEl) return;
+      summaryEl.innerHTML = "";
+
+      const total = items.length;
+      const placed = items.filter((item) => item.placed).length;
+      const trayCount = total - placed;
+      const pills = [
+        { label: "Total", value: total },
+        { label: "En plano", value: placed },
+        { label: "Bandeja", value: trayCount }
+      ];
+
+      if (activeLocal) {
+        const localItems = items.filter((item) => item.local === activeLocal);
+        const localPlaced = localItems.filter((item) => item.placed).length;
+        pills.push({ label: activeLocal, value: localPlaced + "/" + localItems.length });
+      }
+
+      pills.forEach((pill) => {
+        const chip = document.createElement("span");
+        chip.className = "mob-plan-pill";
+        chip.appendChild(createSpan("", pill.label));
+        const strong = document.createElement("strong");
+        strong.textContent = String(pill.value);
+        chip.appendChild(strong);
+        summaryEl.appendChild(chip);
+      });
+    }
+
+    function sendToTray(item) {
+      item.placed = false;
+      item.x = null;
+      item.y = null;
+    }
+
+    function placeItem(item, point) {
+      item.placed = true;
+      item.x = clamp01(point.x);
+      item.y = clamp01(point.y);
+    }
+
+    function pointFromEvent(ev) {
+      const rect = plan.getBoundingClientRect();
+      const x = rect.width ? (ev.clientX - rect.left) / rect.width : 0.5;
+      const y = rect.height ? (ev.clientY - rect.top) / rect.height : 0.5;
+      return { x: clamp01(x), y: clamp01(y) };
+    }
+
+    function buildPiece(item) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "mob-plan-piece kind-" + item.kind + (item.placed ? " is-placed" : " is-tray");
+      if (activeLocal && item.local) {
+        button.classList.add(item.local === activeLocal ? "is-focus" : "is-dim");
+      }
+      button.draggable = true;
+      button.dataset.itemId = item.id;
+      button.title = buildTitle(item);
+
+      if (item.placed) {
+        button.style.left = (item.x * 100).toFixed(2) + "%";
+        button.style.top = (item.y * 100).toFixed(2) + "%";
+      }
+
+      const body = document.createElement("span");
+      body.className = "mob-plan-piece-body";
+      button.appendChild(body);
+
+      const badge = document.createElement("span");
+      badge.className = "mob-plan-piece-badge";
+      badge.appendChild(createSpan("mob-plan-piece-code", item.code));
+      if (item.local) {
+        badge.appendChild(createSpan("mob-plan-piece-local", item.local));
+      }
+      button.appendChild(badge);
+
+      if (!item.placed) {
+        button.appendChild(createSpan("mob-plan-piece-name", item.name));
+        if (item.note) {
+          button.appendChild(createSpan("mob-plan-piece-note", item.note));
+        }
+      }
+
+      button.addEventListener("dragstart", function (ev) {
+        ev.dataTransfer.setData("text/mob-plan-item", item.id);
+        ev.dataTransfer.effectAllowed = "move";
+      });
+
+      button.addEventListener("dblclick", function () {
+        sendToTray(item);
+        render();
+        markDirty();
+      });
+
+      if (!item.placed) {
+        button.addEventListener("click", function () {
+          placeItem(item, { x: 0.5, y: 0.5 });
+          render();
+          markDirty();
+        });
+      }
+
+      return button;
+    }
+
+    function render() {
+      canvas.innerHTML = "";
+      tray.innerHTML = "";
+
+      items.slice().sort(compareItems).forEach((item) => {
+        const piece = buildPiece(item);
+        if (item.placed) {
+          canvas.appendChild(piece);
+        } else {
+          tray.appendChild(piece);
+        }
+      });
+
+      if (!tray.children.length) {
+        const empty = document.createElement("div");
+        empty.className = "mob-plan-empty";
+        empty.textContent = items.length
+          ? "Todo el mobiliario de este piso ya esta ubicado en el plano."
+          : "No hay mobiliario cargado para este piso.";
+        tray.appendChild(empty);
+      }
+
+      renderSummary();
+    }
+
+    async function loadItems() {
+      if (!apiUrl) {
+        setStatus("No se encontro la ruta de guardado.", true);
+        return;
+      }
+      setStatus("Cargando mobiliario del plano...", false);
+      try {
+        const response = await fetch(apiUrl, {
+          headers: { "Accept": "application/json" },
+          credentials: "same-origin"
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.message || "No se pudo cargar el mobiliario.");
+        }
+        items = Array.isArray(payload.items) ? payload.items.map(normalizeItem) : [];
+        render();
+        if (!items.length) {
+          setStatus("Sin mobiliario cargado para este piso.", false);
+        } else if (items.some((item) => item.placed)) {
+          setStatus("Distribucion cargada desde el plano guardado.", false);
+        } else {
+          setStatus("Mobiliario listo para ordenar sobre el plano.", false);
+        }
+      } catch (err) {
+        setStatus((err && err.message) || "No se pudo cargar el mobiliario.", true);
+      }
+    }
+
+    async function persist() {
+      if (!apiUrl) {
+        setStatus("No se encontro la ruta de guardado.", true);
+        return;
+      }
+      setSaving(true);
+      setStatus("Guardando distribucion del plano...", false);
+      try {
+        const response = await fetch(apiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          credentials: "same-origin",
+          body: JSON.stringify({
+            items: items.map((item) => ({
+              id: item.id,
+              placed: item.placed,
+              x: item.placed ? item.x : null,
+              y: item.placed ? item.y : null
+            }))
+          })
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.message || "No se pudo guardar la distribucion.");
+        }
+        items = Array.isArray(payload.items) ? payload.items.map(normalizeItem) : [];
+        render();
+        setStatus(payload.message || "Distribucion guardada.", false);
+      } catch (err) {
+        setStatus((err && err.message) || "No se pudo guardar la distribucion.", true);
+      } finally {
+        setSaving(false);
+      }
+    }
+
+    plan.addEventListener("dragenter", function (ev) {
+      const types = ev.dataTransfer ? Array.from(ev.dataTransfer.types || []) : [];
+      if (!types.includes("text/mob-plan-item")) return;
+      planDragDepth += 1;
+      plan.classList.add("mob-plan-drop-active");
+    });
+
+    plan.addEventListener("dragover", function (ev) {
+      const types = ev.dataTransfer ? Array.from(ev.dataTransfer.types || []) : [];
+      if (!types.includes("text/mob-plan-item")) return;
+      ev.preventDefault();
+      plan.classList.add("mob-plan-drop-active");
+      ev.dataTransfer.dropEffect = "move";
+    });
+
+    plan.addEventListener("dragleave", function () {
+      planDragDepth = Math.max(0, planDragDepth - 1);
+      if (!planDragDepth) plan.classList.remove("mob-plan-drop-active");
+    });
+
+    plan.addEventListener("drop", function (ev) {
+      ev.preventDefault();
+      planDragDepth = 0;
+      plan.classList.remove("mob-plan-drop-active");
+      const item = getItem(ev.dataTransfer.getData("text/mob-plan-item"));
+      if (!item) return;
+      placeItem(item, pointFromEvent(ev));
+      render();
+      markDirty();
+    });
+
+    tray.addEventListener("dragenter", function (ev) {
+      const types = ev.dataTransfer ? Array.from(ev.dataTransfer.types || []) : [];
+      if (!types.includes("text/mob-plan-item")) return;
+      trayDragDepth += 1;
+      tray.classList.add("is-drop-active");
+    });
+
+    tray.addEventListener("dragover", function (ev) {
+      const types = ev.dataTransfer ? Array.from(ev.dataTransfer.types || []) : [];
+      if (!types.includes("text/mob-plan-item")) return;
+      ev.preventDefault();
+      tray.classList.add("is-drop-active");
+      ev.dataTransfer.dropEffect = "move";
+    });
+
+    tray.addEventListener("dragleave", function () {
+      trayDragDepth = Math.max(0, trayDragDepth - 1);
+      if (!trayDragDepth) tray.classList.remove("is-drop-active");
+    });
+
+    tray.addEventListener("drop", function (ev) {
+      ev.preventDefault();
+      trayDragDepth = 0;
+      tray.classList.remove("is-drop-active");
+      const item = getItem(ev.dataTransfer.getData("text/mob-plan-item"));
+      if (!item) return;
+      sendToTray(item);
+      render();
+      markDirty();
+    });
+
+    document.addEventListener("dragend", function () {
+      planDragDepth = 0;
+      trayDragDepth = 0;
+      plan.classList.remove("mob-plan-drop-active");
+      tray.classList.remove("is-drop-active");
+    });
+
+    if (resetBtn) {
+      resetBtn.addEventListener("click", function () {
+        items.forEach(sendToTray);
+        render();
+        markDirty("Distribucion reiniciada. Falta guardar.");
+      });
+    }
+
+    if (saveBtn) {
+      saveBtn.addEventListener("click", function () {
+        persist();
+      });
+    }
+
+    loadItems();
   })();
 </script>
 <script>

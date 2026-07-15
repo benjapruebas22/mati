@@ -3,7 +3,7 @@ from datetime import date, datetime, timedelta
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from collections import defaultdict
-import sqlite3, os, calendar, csv, io, re, unicodedata
+import sqlite3, os, calendar, csv, io, re, unicodedata, json
 from functools import wraps
 from flask import redirect, url_for
 import os
@@ -1518,6 +1518,9 @@ FOTOS_DRIVE_URL = "https://drive.google.com/drive/folders/1rQfUwlcFmLJ-AnRj8GC2l
 # --------- CARPETA PARA PLANOS (PDF/IMÁGENES) ----------
 PLANOS_DIR = os.path.join(BASE_DIR, "static", "planos_sedes")
 os.makedirs(PLANOS_DIR, exist_ok=True)
+
+MOBILIARIO_PLANOS_DIR = os.path.join(BASE_DIR, "uploads", "mobiliario_planos")
+os.makedirs(MOBILIARIO_PLANOS_DIR, exist_ok=True)
 
 ALLOWED_EXTENSIONS_PLANOS = {"pdf", "jpg", "jpeg", "png"}
 
@@ -11290,6 +11293,251 @@ def sedes_resumen_mpd():
 @app.route("/sedes/contexto-historico-mpd", methods=["GET"], endpoint="sedes_contexto_historico_mpd")
 def sedes_contexto_historico_mpd():
     return render_template("sedes_contexto_historico_mpd.html")
+
+# ============================================================
+# MOBILIARIO: PLANO VISUAL
+# ============================================================
+MOBILIARIO_PLANO_META = {
+    "escritorio_prof": {"code": "EPR", "label": "Escritorio profesional"},
+    "mesa_pc": {"code": "MPC", "label": "Mesa de PC"},
+    "silla_giratoria": {"code": "SGI", "label": "Silla giratoria"},
+    "silla_fija": {"code": "SFI", "label": "Silla fija"},
+    "armario_alto": {"code": "ARM", "label": "Armario alto"},
+    "biblioteca_baja": {"code": "BIB", "label": "Biblioteca baja"},
+    "otros": {"code": "OTR", "label": "Otros"},
+}
+
+
+def _mobiliario_plano_normalize_piso(piso_value):
+    piso = (piso_value or "PB").strip().upper()
+    if piso == "P00":
+        return "PB"
+    if piso == "1P":
+        return "P1"
+    if piso == "2P":
+        return "P2"
+    return piso or "PB"
+
+
+def _mobiliario_plano_normalize_local(code):
+    local = (code or "").upper().strip()
+    if "-" in local:
+        tail = local.split("-")[-1]
+        if tail.startswith("D") and len(tail) == 3 and tail[1:].isdigit():
+            return tail
+    return local or "SEDE"
+
+
+def _mobiliario_plano_local_sort_key(code):
+    local = _mobiliario_plano_normalize_local(code)
+    if local.startswith("D") and local[1:].isdigit():
+        return (0, int(local[1:]))
+    return (1, local)
+
+
+def _mobiliario_plano_clamp01(value):
+    try:
+        number = float(value)
+    except Exception:
+        number = 0.5
+    return max(0.03, min(0.97, number))
+
+
+def _mobiliario_plano_storage_path(sede_codigo, piso):
+    sede_safe = re.sub(r"[^A-Z0-9_-]", "", (sede_codigo or "").upper().strip()) or "SEDE"
+    piso_safe = re.sub(r"[^A-Z0-9_-]", "", _mobiliario_plano_normalize_piso(piso)) or "PB"
+    sede_dir = os.path.join(MOBILIARIO_PLANOS_DIR, sede_safe)
+    os.makedirs(sede_dir, exist_ok=True)
+    return os.path.join(sede_dir, f"{piso_safe}.json")
+
+
+def _mobiliario_plano_load_saved_state(sede_codigo, piso):
+    path = _mobiliario_plano_storage_path(sede_codigo, piso)
+    if not os.path.exists(path):
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            payload = json.load(fh)
+    except Exception:
+        return {}
+    raw_items = payload.get("items") if isinstance(payload, dict) else []
+    saved = {}
+    if not isinstance(raw_items, list):
+        return saved
+    for raw in raw_items:
+        if not isinstance(raw, dict):
+            continue
+        item_id = str(raw.get("id") or "").strip()
+        if not item_id:
+            continue
+        placed = bool(raw.get("placed"))
+        item = {"placed": placed}
+        if placed:
+            item["x"] = _mobiliario_plano_clamp01(raw.get("x"))
+            item["y"] = _mobiliario_plano_clamp01(raw.get("y"))
+        saved[item_id] = item
+    return saved
+
+
+def _mobiliario_plano_save_state(sede_codigo, piso, items):
+    path = _mobiliario_plano_storage_path(sede_codigo, piso)
+    payload = {
+        "version": 1,
+        "saved_at": datetime.now().isoformat(timespec="seconds"),
+        "items": items,
+    }
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump(payload, fh, ensure_ascii=False, indent=2)
+
+
+def _mobiliario_plano_seed_items(con, sede_codigo, piso):
+    cols = {
+        (r["name"] if isinstance(r, sqlite3.Row) else r[1])
+        for r in con.execute("PRAGMA table_info(mobiliario_sede)").fetchall()
+    }
+    if not cols:
+        return []
+
+    def num_expr(col):
+        return f"COALESCE({col},0) AS {col}" if col in cols else f"0 AS {col}"
+
+    def text_expr(col):
+        return f"COALESCE({col},'') AS {col}" if col in cols else f"'' AS {col}"
+
+    where = ["UPPER(COALESCE(codigo_sede,'')) = ?"]
+    params = [(sede_codigo or "").upper().strip()]
+    if "piso" in cols:
+        where.append("COALESCE(piso,'PB') = ?")
+        params.append(_mobiliario_plano_normalize_piso(piso))
+    if "activo" in cols:
+        where.append("COALESCE(activo,1) = 1")
+
+    rows = con.execute(f"""
+        SELECT
+            {text_expr('codigo_local')},
+            {text_expr('descripcion')},
+            {num_expr('escritorio_prof')},
+            {num_expr('mesa_pc')},
+            {num_expr('silla_giratoria')},
+            {num_expr('silla_fija')},
+            {num_expr('armario_alto')},
+            {num_expr('biblioteca_baja')},
+            {num_expr('otros')},
+            {text_expr('otros_detalle')}
+        FROM mobiliario_sede
+        WHERE {" AND ".join(where)}
+        ORDER BY codigo_local, descripcion, id
+    """, params).fetchall()
+
+    aggregated = {}
+    for row in rows:
+        local = _mobiliario_plano_normalize_local(row["codigo_local"])
+        slot = aggregated.setdefault(local, {
+            "descripcion": "",
+            "otros_detalle": "",
+            "counts": {kind: 0 for kind in MOBILIARIO_PLANO_META},
+        })
+        descripcion = str(row["descripcion"] or "").strip()
+        if descripcion and not slot["descripcion"]:
+            slot["descripcion"] = descripcion
+        otros_detalle = str(row["otros_detalle"] or "").strip()
+        if otros_detalle and not slot["otros_detalle"]:
+            slot["otros_detalle"] = otros_detalle
+        for kind in MOBILIARIO_PLANO_META:
+            try:
+                slot["counts"][kind] += max(0, int(row[kind] or 0))
+            except Exception:
+                continue
+
+    items = []
+    for local in sorted(aggregated.keys(), key=_mobiliario_plano_local_sort_key):
+        info = aggregated[local]
+        for kind, meta in MOBILIARIO_PLANO_META.items():
+            total = int(info["counts"].get(kind, 0) or 0)
+            for index in range(1, total + 1):
+                items.append({
+                    "id": f"{local}:{kind}:{index:02d}",
+                    "kind": kind,
+                    "code": f"{meta['code']} {index:02d}",
+                    "name": meta["label"],
+                    "local": local,
+                    "description": info["descripcion"],
+                    "note": info["otros_detalle"] if kind == "otros" else "",
+                })
+    return items
+
+
+def _mobiliario_plano_merge_items(seed_items, saved_state):
+    merged = []
+    for item in seed_items:
+        saved = saved_state.get(item["id"], {})
+        placed = bool(saved.get("placed"))
+        merged.append({
+            **item,
+            "placed": placed,
+            "x": saved.get("x") if placed else None,
+            "y": saved.get("y") if placed else None,
+        })
+    return merged
+
+
+def _mobiliario_plano_summary(items):
+    total = len(items)
+    placed = sum(1 for item in items if item.get("placed"))
+    return {
+        "total": total,
+        "placed": placed,
+        "tray": max(0, total - placed),
+    }
+
+
+@app.route("/mobiliario/plano/<sede_codigo>/<piso>", methods=["GET", "POST"], endpoint="mobiliario_plano_api")
+def mobiliario_plano_api(sede_codigo, piso):
+    sede = (sede_codigo or "").upper().strip()
+    piso_norm = _mobiliario_plano_normalize_piso(piso)
+    con = get_db()
+    try:
+        seed_items = _mobiliario_plano_seed_items(con, sede, piso_norm)
+    finally:
+        con.close()
+
+    if request.method == "GET":
+        items = _mobiliario_plano_merge_items(seed_items, _mobiliario_plano_load_saved_state(sede, piso_norm))
+        return jsonify({
+            "ok": True,
+            "items": items,
+            "summary": _mobiliario_plano_summary(items),
+        })
+
+    payload = request.get_json(silent=True) or {}
+    raw_items = payload.get("items")
+    if not isinstance(raw_items, list):
+        return jsonify({"ok": False, "message": "Formato invalido."}), 400
+
+    allowed_ids = {item["id"] for item in seed_items}
+    clean_items = []
+    for raw in raw_items:
+        if not isinstance(raw, dict):
+            continue
+        item_id = str(raw.get("id") or "").strip()
+        if not item_id or item_id not in allowed_ids:
+            continue
+        placed = bool(raw.get("placed"))
+        item = {"id": item_id, "placed": placed}
+        if placed:
+            item["x"] = _mobiliario_plano_clamp01(raw.get("x"))
+            item["y"] = _mobiliario_plano_clamp01(raw.get("y"))
+        clean_items.append(item)
+
+    _mobiliario_plano_save_state(sede, piso_norm, clean_items)
+    items = _mobiliario_plano_merge_items(seed_items, _mobiliario_plano_load_saved_state(sede, piso_norm))
+    return jsonify({
+        "ok": True,
+        "message": "Distribucion guardada.",
+        "items": items,
+        "summary": _mobiliario_plano_summary(items),
+    })
+
 
 # ============================================================
 # MOBILIARIO: NUEVO
