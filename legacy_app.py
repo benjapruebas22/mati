@@ -1521,6 +1521,8 @@ os.makedirs(PLANOS_DIR, exist_ok=True)
 
 MOBILIARIO_PLANOS_DIR = os.path.join(BASE_DIR, "uploads", "mobiliario_planos")
 os.makedirs(MOBILIARIO_PLANOS_DIR, exist_ok=True)
+LUMINARIAS_PLANOS_DIR = os.path.join(BASE_DIR, "uploads", "luminarias_planos")
+os.makedirs(LUMINARIAS_PLANOS_DIR, exist_ok=True)
 AIRES_PLANOS_DIR = os.path.join(BASE_DIR, "uploads", "aires_planos")
 os.makedirs(AIRES_PLANOS_DIR, exist_ok=True)
 MATAFUEGOS_PLANOS_DIR = os.path.join(BASE_DIR, "uploads", "matafuegos_planos")
@@ -5767,9 +5769,8 @@ def sede_ficha(codigo):
 
     plano_base = piso
     if tab == "luminarias":
-        c = f"{piso}_iluminacion"
-        if _pick_plan_file(codigo, c):
-            plano_base = c
+        # Luminarias ahora tambien se trabajan sobre el plano base limpio.
+        plano_base = piso
     elif tab == "sst_luces":
         # Luces de emergencia se trabajan sobre el plano base limpio.
         plano_base = piso
@@ -11621,6 +11622,68 @@ def _aires_plan_kind(estado_raw):
     return "aire_otro"
 
 
+def _luminarias_plan_seed_items(con, sede_codigo, piso):
+    rows = con.execute("""
+        SELECT
+            id,
+            COALESCE(codigo_local,'') AS codigo_local,
+            COALESCE(tubo_led_fria,0) AS tubo_led_fria,
+            COALESCE(tubo_led_calido,0) AS tubo_led_calido,
+            COALESCE(foco_comun,0) AS foco_comun,
+            COALESCE(panel_led,0) AS panel_led,
+            COALESCE(puestos_trabajo,0) AS puestos_trabajo,
+            COALESCE(otros_detalle,'') AS otros_detalle,
+            COALESCE(observaciones,'') AS observaciones
+        FROM luminarias_sede
+        WHERE UPPER(COALESCE(codigo_sede,'')) = ?
+          AND COALESCE(piso,'PB') = ?
+        ORDER BY COALESCE(codigo_local,''), id
+    """, ((sede_codigo or "").upper().strip(), _mobiliario_plano_normalize_piso(piso))).fetchall()
+
+    def _safe_int(value):
+        try:
+            return max(0, int(value or 0))
+        except Exception:
+            return 0
+
+    specs = [
+        ("tubo_led_fria", "Tubo LED fria", "TF"),
+        ("tubo_led_calido", "Tubo LED calida", "TC"),
+        ("foco_comun", "Foco", "FO"),
+        ("panel_led", "Panel LED", "PN"),
+        ("puestos_trabajo", "Puesto de trabajo", "PT"),
+    ]
+
+    counters = {kind: 0 for kind, _, _ in specs}
+    items = []
+    for row in rows:
+        local = _mobiliario_plano_normalize_local(row["codigo_local"])
+        if local == "SEDE":
+            local = ""
+
+        shared_note_parts = []
+        if row["observaciones"]:
+            shared_note_parts.append(str(row["observaciones"]).strip())
+        if row["otros_detalle"]:
+            shared_note_parts.append(str(row["otros_detalle"]).strip())
+        shared_note = " · ".join(part for part in shared_note_parts if part)
+
+        for kind, label, code_prefix in specs:
+            total = _safe_int(row[kind])
+            for ordinal in range(1, total + 1):
+                counters[kind] += 1
+                items.append({
+                    "id": f"lum:{int(row['id'])}:{kind}:{ordinal}",
+                    "kind": kind,
+                    "code": f"{code_prefix} {counters[kind]:02d}",
+                    "name": label,
+                    "local": local,
+                    "description": label,
+                    "note": shared_note if ordinal == 1 else "",
+                })
+    return items
+
+
 def _aires_plan_seed_items(con, sede_codigo, piso):
     ensure_aires_mpd_columns()
     rows = con.execute(f"""
@@ -11908,6 +11971,45 @@ def aires_plano_api(sede_codigo, piso):
     _visual_plan_save_state(AIRES_PLANOS_DIR, sede, piso_norm, clean_items)
     resp = _visual_plan_payload_response(seed_items, _visual_plan_load_saved_state(AIRES_PLANOS_DIR, sede, piso_norm))
     resp["message"] = "Distribucion de aires guardada."
+    return jsonify(resp)
+
+
+@app.route("/luminarias/plano/<sede_codigo>/<piso>", methods=["GET", "POST"], endpoint="luminarias_plano_api")
+def luminarias_plano_api(sede_codigo, piso):
+    sede = (sede_codigo or "").upper().strip()
+    piso_norm = _mobiliario_plano_normalize_piso(piso)
+    con = get_db()
+    try:
+        seed_items = _luminarias_plan_seed_items(con, sede, piso_norm)
+    finally:
+        con.close()
+
+    if request.method == "GET":
+        return jsonify(_visual_plan_payload_response(seed_items, _visual_plan_load_saved_state(LUMINARIAS_PLANOS_DIR, sede, piso_norm)))
+
+    payload = request.get_json(silent=True) or {}
+    raw_items = payload.get("items")
+    if not isinstance(raw_items, list):
+        return jsonify({"ok": False, "message": "Formato invalido."}), 400
+
+    allowed_ids = {item["id"] for item in seed_items}
+    clean_items = []
+    for raw in raw_items:
+        if not isinstance(raw, dict):
+            continue
+        item_id = str(raw.get("id") or "").strip()
+        if not item_id or item_id not in allowed_ids:
+            continue
+        placed = bool(raw.get("placed"))
+        item = {"id": item_id, "placed": placed}
+        if placed:
+            item["x"] = _mobiliario_plano_clamp01(raw.get("x"))
+            item["y"] = _mobiliario_plano_clamp01(raw.get("y"))
+        clean_items.append(item)
+
+    _visual_plan_save_state(LUMINARIAS_PLANOS_DIR, sede, piso_norm, clean_items)
+    resp = _visual_plan_payload_response(seed_items, _visual_plan_load_saved_state(LUMINARIAS_PLANOS_DIR, sede, piso_norm))
+    resp["message"] = "Distribucion de luminarias guardada."
     return jsonify(resp)
 
 
