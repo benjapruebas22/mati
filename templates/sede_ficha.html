@@ -3207,7 +3207,7 @@
 
 
 
-    grid-template-columns: minmax(0, 1.2fr) minmax(0, .9fr);
+    grid-template-columns: minmax(0, 1fr) clamp(340px, 29vw, 460px);
 
 
 
@@ -3218,10 +3218,12 @@
   }
 
   /* Modo Planos: ampliar plano y ocultar panel derecho */
-  .grid.grid-planos {
+  .grid.grid-planos,
+  .grid.panel-hidden {
     grid-template-columns: 1fr;
   }
-  .grid.grid-planos .panel-card {
+  .grid.grid-planos .panel-card,
+  .grid .panel-card.is-collapsed {
     display: none;
   }
 
@@ -3610,7 +3612,7 @@
 
 
 
-    padding: 12px 14px;
+    padding: 10px 12px 12px;
 
 
 
@@ -3712,7 +3714,7 @@
 
 
 
-    padding: 0 14px 14px 14px;
+    padding: 0 12px 12px 12px;
 
 
 
@@ -9551,7 +9553,7 @@
 
 
 
-  <div class="grid{% if tab in ['mobiliario','aires','luminarias','matafuegos','evacuacion'] %} grid-stack{% endif %}" id="sedeOperativoGrid">
+  <div class="grid{% if tab == 'planos' %} grid-planos{% elif tab in ['mobiliario','aires','luminarias','matafuegos','evacuacion','sst_carteleria','sst_luces'] %} grid-stack{% endif %}" id="sedeOperativoGrid">
 
     <!-- PANEL BOTONES (ARRIBA DEL PLANO) -->
 
