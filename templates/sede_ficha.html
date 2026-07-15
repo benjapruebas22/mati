@@ -4958,6 +4958,10 @@
     height: 40px;
     flex: 0 0 auto;
   }
+  .mob-plan-piece.is-placed .mob-plan-piece-visual {
+    transform: scale(var(--mob-piece-scale, 1));
+    transform-origin: center center;
+  }
   .mob-plan-piece-body {
     position: relative;
     display: block;
@@ -9755,22 +9759,22 @@
           {% endif %}
           <img src="{{ plano_url }}" alt="Plano {{ sede.codigo }} {{ piso }}">
           {% if tab == 'mobiliario' %}
-          <div class="mob-plan-layer" data-mob-plan-layer data-mob-plan-module="mobiliario" data-local="{{ local or '' }}" data-api-url="{{ url_for('mobiliario_plano_api', sede_codigo=sede.codigo, piso=piso) }}">
+          <div class="mob-plan-layer" data-mob-plan-layer data-mob-plan-module="mobiliario" data-sede="{{ sede.codigo }}" data-piso="{{ piso }}" data-local="{{ local or '' }}" data-api-url="{{ url_for('mobiliario_plano_api', sede_codigo=sede.codigo, piso=piso) }}">
             <div class="mob-plan-canvas" data-mob-plan-canvas></div>
           </div>
           {% endif %}
           {% if tab == 'aires' %}
-          <div class="mob-plan-layer" data-mob-plan-layer data-mob-plan-module="aires" data-local="{{ local or '' }}" data-api-url="{{ url_for('aires_plano_api', sede_codigo=sede.codigo, piso=piso) }}">
+          <div class="mob-plan-layer" data-mob-plan-layer data-mob-plan-module="aires" data-sede="{{ sede.codigo }}" data-piso="{{ piso }}" data-local="{{ local or '' }}" data-api-url="{{ url_for('aires_plano_api', sede_codigo=sede.codigo, piso=piso) }}">
             <div class="mob-plan-canvas" data-mob-plan-canvas></div>
           </div>
           {% endif %}
           {% if tab == 'luminarias' %}
-          <div class="mob-plan-layer" data-mob-plan-layer data-mob-plan-module="luminarias" data-local="{{ local or '' }}" data-api-url="{{ url_for('luminarias_plano_api', sede_codigo=sede.codigo, piso=piso) }}">
+          <div class="mob-plan-layer" data-mob-plan-layer data-mob-plan-module="luminarias" data-sede="{{ sede.codigo }}" data-piso="{{ piso }}" data-local="{{ local or '' }}" data-api-url="{{ url_for('luminarias_plano_api', sede_codigo=sede.codigo, piso=piso) }}">
             <div class="mob-plan-canvas" data-mob-plan-canvas></div>
           </div>
           {% endif %}
           {% if tab == 'matafuegos' %}
-          <div class="mob-plan-layer" data-mob-plan-layer data-mob-plan-module="matafuegos" data-local="{{ local or '' }}" data-api-url="{{ url_for('matafuegos_plano_api', sede_codigo=sede.codigo, piso=piso) }}">
+          <div class="mob-plan-layer" data-mob-plan-layer data-mob-plan-module="matafuegos" data-sede="{{ sede.codigo }}" data-piso="{{ piso }}" data-local="{{ local or '' }}" data-api-url="{{ url_for('matafuegos_plano_api', sede_codigo=sede.codigo, piso=piso) }}">
             <div class="mob-plan-canvas" data-mob-plan-canvas></div>
           </div>
           {% endif %}
@@ -12836,6 +12840,8 @@
     if (!canvas || !tray || !plan) return;
 
     const apiUrl = String(layer.dataset.apiUrl || "").trim();
+    const sedeCode = String(layer.dataset.sede || "").toUpperCase();
+    const pisoCode = String(layer.dataset.piso || "").toUpperCase();
     const activeLocal = String(layer.dataset.local || "").toUpperCase();
     const moduleKey = String(layer.dataset.mobPlanModule || toolbar.dataset.mobPlanModule || "mobiliario").trim().toLowerCase();
     const moduleConfigs = {
@@ -12940,6 +12946,15 @@
     const kindOrder = moduleConfig.kindOrder;
     const kindMeta = moduleConfig.kindMeta;
     const rotatableKinds = Array.isArray(moduleConfig.rotatableKinds) ? moduleConfig.rotatableKinds : [];
+    const planScaleOverrides = {
+      mobiliario: {
+        "S04|PB": 0.9
+      }
+    };
+    const planScaleKey = sedeCode && pisoCode ? (sedeCode + "|" + pisoCode) : "";
+    const moduleScaleMap = planScaleOverrides[moduleKey] || {};
+    const resolvedScale = Number(moduleScaleMap[planScaleKey] || 1);
+    layer.style.setProperty("--mob-piece-scale", Number.isFinite(resolvedScale) && resolvedScale > 0 ? String(resolvedScale) : "1");
 
     let items = [];
     let planDragDepth = 0;
