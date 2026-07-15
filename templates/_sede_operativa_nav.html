@@ -1,0 +1,47 @@
+{% set operativa_modules = [
+  {'key': 'personal', 'label': 'Personal', 'tone': 'tone-personal'},
+  {'key': 'depositos', 'label': 'Dep&oacute;sitos', 'tone': 'tone-dep'},
+  {'key': 'planos', 'label': 'Planos', 'tone': 'tone-planos'},
+  {'key': 'aires', 'label': 'Aires', 'tone': 'tone-aires'},
+  {'key': 'luminarias', 'label': 'Luminarias', 'tone': 'tone-lum'},
+  {'key': 'mobiliario', 'label': 'Inventario operativo', 'tone': 'tone-mob'},
+  {'key': 'matafuegos', 'label': 'Matafuegos', 'tone': 'tone-mata'},
+  {'key': 'evacuacion', 'label': 'Evacuaci&oacute;n', 'tone': 'tone-eva'},
+  {'key': 'sst_carteleria', 'label': 'SG-SST Carteler&iacute;a', 'tone': 'tone-planos'},
+  {'key': 'sst_luces', 'label': 'SG-SST Luces', 'tone': 'tone-lum'}
+] %}
+<div class="card sede-operativa-nav-card">
+  <div class="sede-operativa-nav">
+    <div class="sede-operativa-nav-title">Navegaci&oacute;n operativa</div>
+
+    <div class="sede-operativa-nav-bar">
+      <div class="sede-operativa-nav-label">Sedes</div>
+      <nav class="sede-nav" aria-label="Navegacion por sedes">
+        {% for nav_sede in sedes_nav %}
+        <a
+          class="{% if nav_sede.codigo == sede.codigo %}active{% endif %}"
+          data-code="{{ nav_sede.codigo }}"
+          {% if nav_sede.codigo == sede.codigo %}aria-current="page"{% endif %}
+          href="{{ url_for('sede_ficha', codigo=nav_sede.codigo, piso=piso, local=local or None, tab=tab, view=view, home=home_arg) }}{% if tab == 'planos' %}#planos{% endif %}"
+          title="{{ nav_sede.codigo }}{% if nav_sede.nombre %} &middot; {{ nav_sede.nombre }}{% endif %}">
+          {{ nav_sede.codigo }}
+        </a>
+        {% endfor %}
+      </nav>
+    </div>
+
+    <div class="sede-operativa-nav-bar">
+      <div class="sede-operativa-nav-label">M&oacute;dulos</div>
+      <nav class="sede-operativa-nav-modules" aria-label="Navegacion por modulos">
+        {% for item in operativa_modules %}
+        <a
+          class="ptab {{ item.tone }} {% if tab == item.key %}active{% endif %}"
+          {% if tab == item.key %}aria-current="page"{% endif %}
+          href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local or None, tab=item.key, view=view, home=home_arg) }}{% if item.key == 'planos' %}#planos{% endif %}">
+          {{ item.label|safe }}
+        </a>
+        {% endfor %}
+      </nav>
+    </div>
+  </div>
+</div>
