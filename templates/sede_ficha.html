@@ -4523,6 +4523,211 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  .ev-plan-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .ev-plan-canvas {
+    position: absolute;
+    inset: 0;
+  }
+  .plan-img.ev-plan-drop-active {
+    border-color: #94b8a2;
+    box-shadow: inset 0 0 0 1px rgba(22, 163, 74, 0.16), 0 18px 34px rgba(22, 163, 74, 0.12);
+  }
+  .ev-plan-demo {
+    margin-top: 12px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: linear-gradient(180deg, #ffffff 0%, #f7fbf8 100%);
+    display: grid;
+    gap: 10px;
+  }
+  .ev-plan-demo-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .ev-plan-demo-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .ev-plan-demo-title {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 900;
+    color: #1f2937;
+  }
+  .ev-plan-demo-sub {
+    margin: 3px 0 0;
+    font-size: 11px;
+    line-height: 1.45;
+    color: #64748b;
+  }
+  .ev-plan-demo-sub strong {
+    color: #334155;
+  }
+  .ev-plan-demo-save,
+  .ev-plan-demo-reset {
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .ev-plan-demo-save {
+    border: 1px solid #15803d;
+    background: #16a34a;
+    color: #fff;
+    box-shadow: 0 8px 16px rgba(22, 163, 74, 0.16);
+  }
+  .ev-plan-demo-save[disabled] {
+    opacity: .72;
+    cursor: wait;
+  }
+  .ev-plan-demo-reset {
+    border: 1px solid #d7deea;
+    background: #fff;
+    color: #334155;
+  }
+  .ev-plan-demo-status {
+    min-height: 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #15803d;
+  }
+  .ev-plan-demo-status.is-error {
+    color: #b42318;
+  }
+  .ev-plan-palette {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+    gap: 8px;
+  }
+  .ev-plan-tool {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    border: 1px solid #d7deea;
+    background: #fff;
+    color: #334155;
+    font-size: 10px;
+    font-weight: 800;
+    cursor: grab;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.04);
+    text-align: center;
+    line-height: 1.15;
+  }
+  .ev-plan-tool:active {
+    cursor: grabbing;
+  }
+  .ev-plan-tool-code,
+  .ev-plan-marker-code {
+    font-size: 12px;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: .02em;
+  }
+  .ev-plan-tool-label {
+    color: #475467;
+  }
+  .ev-plan-tool.type-ruta_arriba .ev-plan-tool-code,
+  .ev-plan-tool.type-ruta_derecha .ev-plan-tool-code,
+  .ev-plan-tool.type-ruta_abajo .ev-plan-tool-code,
+  .ev-plan-tool.type-ruta_izquierda .ev-plan-tool-code,
+  .ev-plan-marker.type-ruta_arriba .ev-plan-marker-code,
+  .ev-plan-marker.type-ruta_derecha .ev-plan-marker-code,
+  .ev-plan-marker.type-ruta_abajo .ev-plan-marker-code,
+  .ev-plan-marker.type-ruta_izquierda .ev-plan-marker-code {
+    color: #16a34a;
+    font-size: 16px;
+  }
+  .ev-plan-tool.type-salida .ev-plan-tool-code,
+  .ev-plan-marker.type-salida .ev-plan-marker-code {
+    color: #2563eb;
+  }
+  .ev-plan-tool.type-punto_encuentro .ev-plan-tool-code,
+  .ev-plan-marker.type-punto_encuentro .ev-plan-marker-code {
+    color: #d97706;
+  }
+  .ev-plan-tool.type-usted_esta_aqui .ev-plan-tool-code,
+  .ev-plan-marker.type-usted_esta_aqui .ev-plan-marker-code {
+    color: #0f766e;
+  }
+  .ev-plan-tool.type-escalera .ev-plan-tool-code,
+  .ev-plan-marker.type-escalera .ev-plan-marker-code {
+    color: #475569;
+  }
+  .ev-plan-tool.type-matafuego .ev-plan-tool-code,
+  .ev-plan-marker.type-matafuego .ev-plan-marker-code {
+    color: #dc2626;
+  }
+  .ev-plan-marker {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    border: none;
+    background: transparent;
+    padding: 0;
+    cursor: grab;
+    pointer-events: auto;
+    user-select: none;
+    touch-action: none;
+  }
+  .ev-plan-marker:active {
+    cursor: grabbing;
+  }
+  .ev-plan-marker.is-dim {
+    opacity: .32;
+  }
+  .ev-plan-marker.is-focus .ev-plan-marker-chip {
+    box-shadow: 0 12px 20px rgba(22, 163, 74, 0.16);
+  }
+  .ev-plan-marker-chip {
+    min-width: 42px;
+    padding: 5px 6px 4px;
+    border-radius: 10px;
+    border: 1px solid #d7deea;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .ev-plan-marker-local {
+    font-size: 8px;
+    font-weight: 800;
+    line-height: 1;
+    color: #64748b;
+    letter-spacing: .04em;
+  }
+  @media (max-width: 760px) {
+    .ev-plan-demo-head {
+      align-items: stretch;
+    }
+    .ev-plan-demo-actions {
+      width: 100%;
+      justify-content: stretch;
+    }
+    .ev-plan-demo-save,
+    .ev-plan-demo-reset {
+      flex: 1 1 0;
+    }
+    .ev-plan-palette {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
   .mob-plan-layer {
     position: absolute;
     inset: 0;
@@ -9172,7 +9377,7 @@
 
 
 
-  <div class="grid{% if tab in ['mobiliario','aires','luminarias','matafuegos'] %} grid-stack{% endif %}" id="sedeOperativoGrid">
+  <div class="grid{% if tab in ['mobiliario','aires','luminarias','matafuegos','evacuacion'] %} grid-stack{% endif %}" id="sedeOperativoGrid">
 
     <!-- PANEL BOTONES (ARRIBA DEL PLANO) -->
 
@@ -9404,6 +9609,11 @@
             <div class="mob-plan-canvas" data-mob-plan-canvas></div>
           </div>
           {% endif %}
+          {% if tab == 'evacuacion' %}
+          <div class="ev-plan-layer" data-ev-plan-layer data-local="{{ local or '' }}" data-api-url="{{ url_for('evacuacion_plano_api', sede_codigo=sede.codigo, piso=piso) }}">
+            <div class="ev-plan-canvas" data-ev-plan-canvas></div>
+          </div>
+          {% endif %}
           {% if tab == 'sst_carteleria' %}
           <div class="sst-ct-layer" data-sst-ct-layer data-sede="{{ sede.codigo }}" data-piso="{{ piso }}" data-local="{{ local or '' }}" data-api-url="{{ url_for('sst_carteleria_plano_api', sede_codigo=sede.codigo, piso=piso) }}">
             <div class="sst-ct-canvas" data-sst-ct-canvas></div>
@@ -9596,6 +9806,67 @@
           <div class="mob-plan-status" data-mob-plan-status aria-live="polite"></div>
           <div class="mob-plan-summary" data-mob-plan-summary></div>
           <div class="mob-plan-tray" data-mob-plan-tray aria-label="Bandeja de matafuegos"></div>
+        </div>
+        {% endif %}
+        {% if tab == 'evacuacion' %}
+        <div class="ev-plan-demo" data-ev-plan-toolbar>
+          <div class="ev-plan-demo-head">
+            <div>
+              <p class="ev-plan-demo-title">Capa visual PBAE</p>
+              <p class="ev-plan-demo-sub">
+                Arrastra flechas y referencias del plano de evacuacion sobre el plano base limpio.
+                {% if local %}
+                Los nuevos elementos quedan marcados para <strong>{{ local }}</strong>.
+                {% else %}
+                Si filtras un local antes de ubicarlo, el elemento queda asociado a ese local.
+                {% endif %}
+                Doble click sobre un elemento para quitarlo y luego usa <strong>Guardar plano</strong>.
+              </p>
+            </div>
+            <div class="ev-plan-demo-actions">
+              <button type="button" class="ev-plan-demo-save" data-ev-plan-save>Guardar plano</button>
+              <button type="button" class="ev-plan-demo-reset" data-ev-plan-reset>Limpiar PBAE</button>
+            </div>
+          </div>
+          <div class="ev-plan-demo-status" data-ev-plan-status aria-live="polite"></div>
+          <div class="ev-plan-palette" aria-label="Elementos del plano de evacuacion">
+            <button type="button" class="ev-plan-tool type-ruta_arriba" draggable="true" data-ev-plan-new="ruta_arriba" title="Arrastrar ruta arriba">
+              <span class="ev-plan-tool-code">↑</span>
+              <span class="ev-plan-tool-label">Ruta arriba</span>
+            </button>
+            <button type="button" class="ev-plan-tool type-ruta_derecha" draggable="true" data-ev-plan-new="ruta_derecha" title="Arrastrar ruta derecha">
+              <span class="ev-plan-tool-code">→</span>
+              <span class="ev-plan-tool-label">Ruta derecha</span>
+            </button>
+            <button type="button" class="ev-plan-tool type-ruta_abajo" draggable="true" data-ev-plan-new="ruta_abajo" title="Arrastrar ruta abajo">
+              <span class="ev-plan-tool-code">↓</span>
+              <span class="ev-plan-tool-label">Ruta abajo</span>
+            </button>
+            <button type="button" class="ev-plan-tool type-ruta_izquierda" draggable="true" data-ev-plan-new="ruta_izquierda" title="Arrastrar ruta izquierda">
+              <span class="ev-plan-tool-code">←</span>
+              <span class="ev-plan-tool-label">Ruta izquierda</span>
+            </button>
+            <button type="button" class="ev-plan-tool type-salida" draggable="true" data-ev-plan-new="salida" title="Arrastrar salida">
+              <span class="ev-plan-tool-code">SAL</span>
+              <span class="ev-plan-tool-label">Salida</span>
+            </button>
+            <button type="button" class="ev-plan-tool type-punto_encuentro" draggable="true" data-ev-plan-new="punto_encuentro" title="Arrastrar punto de encuentro">
+              <span class="ev-plan-tool-code">PE</span>
+              <span class="ev-plan-tool-label">Punto encuentro</span>
+            </button>
+            <button type="button" class="ev-plan-tool type-usted_esta_aqui" draggable="true" data-ev-plan-new="usted_esta_aqui" title="Arrastrar usted esta aqui">
+              <span class="ev-plan-tool-code">UA</span>
+              <span class="ev-plan-tool-label">Usted esta aqui</span>
+            </button>
+            <button type="button" class="ev-plan-tool type-escalera" draggable="true" data-ev-plan-new="escalera" title="Arrastrar escalera">
+              <span class="ev-plan-tool-code">ESC</span>
+              <span class="ev-plan-tool-label">Escalera</span>
+            </button>
+            <button type="button" class="ev-plan-tool type-matafuego" draggable="true" data-ev-plan-new="matafuego" title="Arrastrar matafuego">
+              <span class="ev-plan-tool-code">MF</span>
+              <span class="ev-plan-tool-label">Matafuego</span>
+            </button>
+          </div>
         </div>
         {% endif %}
 
@@ -10668,9 +10939,7 @@
 
             <div class="panel-section-sub" style="line-height:1.35;">
 
-
-
-              Plan operativo resumido por piso + punto de encuentro. (Plano {{ piso }})
+              Plano base limpio + capa PBAE por piso. Punto de encuentro y responsables se mantienen abajo. (Plano {{ piso }})
 
 
 
@@ -12093,6 +12362,271 @@
     const saved = sessionStorage.getItem(storageKey);
     if (saved && !input.value) input.value = saved;
     applyGlobalFilter();
+  })();
+</script>
+<script>
+  (function () {
+    const layer = document.querySelector("[data-ev-plan-layer]");
+    const toolbar = document.querySelector("[data-ev-plan-toolbar]");
+    if (!layer || !toolbar) return;
+
+    const canvas = layer.querySelector("[data-ev-plan-canvas]");
+    const plan = layer.closest(".plan-img");
+    const resetBtn = toolbar.querySelector("[data-ev-plan-reset]");
+    const saveBtn = toolbar.querySelector("[data-ev-plan-save]");
+    const statusEl = toolbar.querySelector("[data-ev-plan-status]");
+    if (!canvas || !plan) return;
+
+    const apiUrl = String(layer.dataset.apiUrl || "").trim();
+    const activeLocal = String(layer.dataset.local || "").toUpperCase();
+    const typeMeta = {
+      ruta_arriba: { label: "Ruta arriba", short: "↑", className: "type-ruta_arriba" },
+      ruta_derecha: { label: "Ruta derecha", short: "→", className: "type-ruta_derecha" },
+      ruta_abajo: { label: "Ruta abajo", short: "↓", className: "type-ruta_abajo" },
+      ruta_izquierda: { label: "Ruta izquierda", short: "←", className: "type-ruta_izquierda" },
+      salida: { label: "Salida", short: "SAL", className: "type-salida" },
+      punto_encuentro: { label: "Punto de encuentro", short: "PE", className: "type-punto_encuentro" },
+      usted_esta_aqui: { label: "Usted esta aqui", short: "UA", className: "type-usted_esta_aqui" },
+      escalera: { label: "Escalera", short: "ESC", className: "type-escalera" },
+      matafuego: { label: "Matafuego", short: "MF", className: "type-matafuego" }
+    };
+
+    let markers = [];
+    let dragDepth = 0;
+
+    function clamp01(value) {
+      return Math.max(0.03, Math.min(0.97, Number(value || 0)));
+    }
+
+    function setStatus(message, isError) {
+      if (!statusEl) return;
+      statusEl.textContent = String(message || "");
+      statusEl.classList.toggle("is-error", !!isError);
+    }
+
+    function markDirty() {
+      setStatus("Cambios sin guardar.", false);
+    }
+
+    function setSaving(isSaving) {
+      if (!saveBtn) return;
+      saveBtn.disabled = !!isSaving;
+      saveBtn.textContent = isSaving ? "Guardando..." : "Guardar plano";
+    }
+
+    function normalizeMarker(item) {
+      const marker = item || {};
+      const type = typeMeta[marker.type] ? marker.type : "salida";
+      return {
+        id: String(marker.id || ("eva-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7))),
+        type: type,
+        x: clamp01(marker.x),
+        y: clamp01(marker.y),
+        local: String(marker.local || "").toUpperCase()
+      };
+    }
+
+    async function loadMarkers() {
+      if (!apiUrl) {
+        setStatus("No se encontro la ruta de guardado.", true);
+        return;
+      }
+      setStatus("Cargando PBAE guardado...", false);
+      try {
+        const response = await fetch(apiUrl, {
+          headers: { "Accept": "application/json" },
+          credentials: "same-origin"
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.message || "No se pudo cargar el plano de evacuacion.");
+        }
+        markers = Array.isArray(payload.markers) ? payload.markers.map(normalizeMarker) : [];
+        render();
+        setStatus(markers.length ? "Plano de evacuacion cargado." : "Sin elementos guardados para este piso.", false);
+      } catch (err) {
+        setStatus((err && err.message) || "No se pudo cargar el plano de evacuacion.", true);
+      }
+    }
+
+    async function persist() {
+      if (!apiUrl) {
+        setStatus("No se encontro la ruta de guardado.", true);
+        return;
+      }
+      setSaving(true);
+      setStatus("Guardando plano de evacuacion...", false);
+      try {
+        const response = await fetch(apiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          credentials: "same-origin",
+          body: JSON.stringify({
+            markers: markers.map((marker) => ({
+              id: marker.id,
+              type: marker.type,
+              local: marker.local,
+              x: marker.x,
+              y: marker.y
+            }))
+          })
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.message || "No se pudo guardar el plano de evacuacion.");
+        }
+        markers = Array.isArray(payload.markers) ? payload.markers.map(normalizeMarker) : [];
+        render();
+        setStatus(payload.message || "Plano de evacuacion guardado.", false);
+      } catch (err) {
+        setStatus((err && err.message) || "No se pudo guardar el plano de evacuacion.", true);
+      } finally {
+        setSaving(false);
+      }
+    }
+
+    function pointFromEvent(ev) {
+      const rect = plan.getBoundingClientRect();
+      const x = rect.width ? (ev.clientX - rect.left) / rect.width : 0.5;
+      const y = rect.height ? (ev.clientY - rect.top) / rect.height : 0.5;
+      return { x: clamp01(x), y: clamp01(y) };
+    }
+
+    function addMarker(type, point) {
+      const safeType = typeMeta[type] ? type : "salida";
+      markers.push({
+        id: "eva-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7),
+        type: safeType,
+        x: point.x,
+        y: point.y,
+        local: activeLocal
+      });
+      render();
+      markDirty();
+    }
+
+    function render() {
+      canvas.innerHTML = "";
+      markers.forEach((marker) => {
+        const meta = typeMeta[marker.type] || typeMeta.salida;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "ev-plan-marker " + meta.className;
+        if (activeLocal && marker.local) {
+          btn.classList.add(marker.local === activeLocal ? "is-focus" : "is-dim");
+        }
+        btn.draggable = true;
+        btn.dataset.markerId = marker.id;
+        btn.style.left = (marker.x * 100).toFixed(2) + "%";
+        btn.style.top = (marker.y * 100).toFixed(2) + "%";
+        btn.title = meta.label + (marker.local ? " - " + marker.local : "");
+
+        const chip = document.createElement("span");
+        chip.className = "ev-plan-marker-chip";
+
+        const code = document.createElement("span");
+        code.className = "ev-plan-marker-code";
+        code.textContent = meta.short;
+        chip.appendChild(code);
+
+        if (marker.local) {
+          const localEl = document.createElement("span");
+          localEl.className = "ev-plan-marker-local";
+          localEl.textContent = marker.local;
+          chip.appendChild(localEl);
+        }
+
+        btn.appendChild(chip);
+
+        btn.addEventListener("dragstart", function (ev) {
+          ev.dataTransfer.setData("text/ev-plan-existing", marker.id);
+          ev.dataTransfer.effectAllowed = "move";
+        });
+
+        btn.addEventListener("dblclick", function () {
+          markers = markers.filter((item) => item.id !== marker.id);
+          render();
+          markDirty();
+        });
+
+        canvas.appendChild(btn);
+      });
+    }
+
+    toolbar.querySelectorAll("[data-ev-plan-new]").forEach((item) => {
+      const type = String(item.getAttribute("data-ev-plan-new") || "");
+      item.addEventListener("dragstart", function (ev) {
+        ev.dataTransfer.setData("text/ev-plan-new", type);
+        ev.dataTransfer.effectAllowed = "copy";
+      });
+      item.addEventListener("click", function () {
+        addMarker(type, { x: 0.5, y: 0.5 });
+      });
+    });
+
+    plan.addEventListener("dragenter", function (ev) {
+      const types = ev.dataTransfer ? Array.from(ev.dataTransfer.types || []) : [];
+      if (!types.includes("text/ev-plan-new") && !types.includes("text/ev-plan-existing")) return;
+      dragDepth += 1;
+      plan.classList.add("ev-plan-drop-active");
+    });
+
+    plan.addEventListener("dragover", function (ev) {
+      const types = ev.dataTransfer ? Array.from(ev.dataTransfer.types || []) : [];
+      if (!types.includes("text/ev-plan-new") && !types.includes("text/ev-plan-existing")) return;
+      ev.preventDefault();
+      plan.classList.add("ev-plan-drop-active");
+      ev.dataTransfer.dropEffect = types.includes("text/ev-plan-existing") ? "move" : "copy";
+    });
+
+    plan.addEventListener("dragleave", function () {
+      dragDepth = Math.max(0, dragDepth - 1);
+      if (!dragDepth) plan.classList.remove("ev-plan-drop-active");
+    });
+
+    plan.addEventListener("drop", function (ev) {
+      ev.preventDefault();
+      dragDepth = 0;
+      plan.classList.remove("ev-plan-drop-active");
+      const point = pointFromEvent(ev);
+      const existingId = ev.dataTransfer.getData("text/ev-plan-existing");
+      const newType = ev.dataTransfer.getData("text/ev-plan-new");
+
+      if (existingId) {
+        markers = markers.map((item) => item.id === existingId ? Object.assign({}, item, point) : item);
+        render();
+        markDirty();
+        return;
+      }
+
+      if (newType) {
+        addMarker(newType, point);
+      }
+    });
+
+    document.addEventListener("dragend", function () {
+      dragDepth = 0;
+      plan.classList.remove("ev-plan-drop-active");
+    });
+
+    if (resetBtn) {
+      resetBtn.addEventListener("click", function () {
+        markers = [];
+        render();
+        markDirty();
+      });
+    }
+
+    if (saveBtn) {
+      saveBtn.addEventListener("click", function () {
+        persist();
+      });
+    }
+
+    loadMarkers();
   })();
 </script>
 <script>

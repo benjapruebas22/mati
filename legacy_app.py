@@ -1525,6 +1525,8 @@ AIRES_PLANOS_DIR = os.path.join(BASE_DIR, "uploads", "aires_planos")
 os.makedirs(AIRES_PLANOS_DIR, exist_ok=True)
 MATAFUEGOS_PLANOS_DIR = os.path.join(BASE_DIR, "uploads", "matafuegos_planos")
 os.makedirs(MATAFUEGOS_PLANOS_DIR, exist_ok=True)
+EVACUACION_PLANOS_DIR = os.path.join(BASE_DIR, "uploads", "evacuacion_planos")
+os.makedirs(EVACUACION_PLANOS_DIR, exist_ok=True)
 
 ALLOWED_EXTENSIONS_PLANOS = {"pdf", "jpg", "jpeg", "png"}
 
@@ -5775,9 +5777,8 @@ def sede_ficha(codigo):
         # Matafuegos tambien se trabajan sobre el plano base limpio.
         plano_base = piso
     elif tab == "evacuacion":
-        c = f"{piso}_eva"
-        if _pick_plan_file(codigo, c):
-            plano_base = c
+        # Evacuacion tambien se trabaja sobre el plano base limpio.
+        plano_base = piso
     elif tab == "sst_carteleria":
         # Carteleria tambien se trabaja sobre el plano base limpio.
         plano_base = piso
@@ -11759,6 +11760,70 @@ def _matafuegos_plan_seed_items(con, sede_codigo, piso):
     return items
 
 
+EVACUACION_PLANO_META = {
+    "ruta_arriba": {"label": "Ruta arriba", "short": "↑"},
+    "ruta_derecha": {"label": "Ruta derecha", "short": "→"},
+    "ruta_abajo": {"label": "Ruta abajo", "short": "↓"},
+    "ruta_izquierda": {"label": "Ruta izquierda", "short": "←"},
+    "salida": {"label": "Salida", "short": "SAL"},
+    "punto_encuentro": {"label": "Punto de encuentro", "short": "PE"},
+    "usted_esta_aqui": {"label": "Usted esta aqui", "short": "UA"},
+    "escalera": {"label": "Escalera", "short": "ESC"},
+    "matafuego": {"label": "Matafuego", "short": "MF"},
+}
+
+
+def _evacuacion_plano_storage_path(sede_codigo, piso):
+    return _visual_plan_storage_path(EVACUACION_PLANOS_DIR, sede_codigo, piso)
+
+
+def _evacuacion_plano_normalize_marker(raw):
+    if not isinstance(raw, dict):
+        return None
+    marker_type = str(raw.get("type") or "").strip()
+    if marker_type not in EVACUACION_PLANO_META:
+        return None
+    marker_id = str(raw.get("id") or ("eva-" + str(int(datetime.now().timestamp() * 1000)))).strip()
+    return {
+        "id": marker_id,
+        "type": marker_type,
+        "x": _mobiliario_plano_clamp01(raw.get("x")),
+        "y": _mobiliario_plano_clamp01(raw.get("y")),
+        "local": _mobiliario_plano_normalize_local(raw.get("local") or "") if raw.get("local") else "",
+    }
+
+
+def _evacuacion_plano_load_markers(sede_codigo, piso):
+    path = _evacuacion_plano_storage_path(sede_codigo, piso)
+    if not os.path.exists(path):
+        return []
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            payload = json.load(fh)
+    except Exception:
+        return []
+    raw_markers = payload.get("markers") if isinstance(payload, dict) else []
+    if not isinstance(raw_markers, list):
+        return []
+    markers = []
+    for raw in raw_markers:
+        marker = _evacuacion_plano_normalize_marker(raw)
+        if marker:
+            markers.append(marker)
+    return markers
+
+
+def _evacuacion_plano_save_markers(sede_codigo, piso, markers):
+    path = _evacuacion_plano_storage_path(sede_codigo, piso)
+    payload = {
+        "version": 1,
+        "saved_at": datetime.now().isoformat(timespec="seconds"),
+        "markers": markers,
+    }
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump(payload, fh, ensure_ascii=False, indent=2)
+
+
 @app.route("/mobiliario/plano/<sede_codigo>/<piso>", methods=["GET", "POST"], endpoint="mobiliario_plano_api")
 def mobiliario_plano_api(sede_codigo, piso):
     sede = (sede_codigo or "").upper().strip()
@@ -11883,6 +11948,36 @@ def matafuegos_plano_api(sede_codigo, piso):
     resp = _visual_plan_payload_response(seed_items, _visual_plan_load_saved_state(MATAFUEGOS_PLANOS_DIR, sede, piso_norm))
     resp["message"] = "Distribucion de matafuegos guardada."
     return jsonify(resp)
+
+
+@app.route("/evacuacion/plano/<sede_codigo>/<piso>", methods=["GET", "POST"], endpoint="evacuacion_plano_api")
+def evacuacion_plano_api(sede_codigo, piso):
+    sede = (sede_codigo or "").upper().strip()
+    piso_norm = _mobiliario_plano_normalize_piso(piso)
+
+    if request.method == "GET":
+        return jsonify({
+            "ok": True,
+            "markers": _evacuacion_plano_load_markers(sede, piso_norm),
+        })
+
+    payload = request.get_json(silent=True) or {}
+    raw_markers = payload.get("markers")
+    if not isinstance(raw_markers, list):
+        return jsonify({"ok": False, "message": "Formato invalido."}), 400
+
+    markers = []
+    for raw in raw_markers:
+        marker = _evacuacion_plano_normalize_marker(raw)
+        if marker:
+            markers.append(marker)
+
+    _evacuacion_plano_save_markers(sede, piso_norm, markers)
+    return jsonify({
+        "ok": True,
+        "message": "Plano de evacuacion guardado.",
+        "markers": markers,
+    })
 
 
 # ============================================================
