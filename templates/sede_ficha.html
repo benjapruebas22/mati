@@ -2401,7 +2401,7 @@
 
   .sede-jump {
     width: 100%;
-    margin-top: 8px;
+    margin-top: 0;
   }
 
   .sede-jump > summary {
@@ -8125,24 +8125,10 @@
     </div>
 
     <div class="sede-topbar" style="padding:0 16px 12px 16px;">
-      <div class="sede-topbar-row">
-        <a class="view-tab {% if view=='resumen' and sub!='info' %}active{% endif %}"
-          href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab=tab, view='resumen', home=home_arg) }}">Resumen</a>
-
-        <a class="view-tab {% if view!='resumen' and tab!='planos' %}active{% endif %}"
-          href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab=(tab if tab!='planos' else 'personal'), view='operativo', home=home_arg) }}">Operativo</a>
-
-        <a class="view-tab {% if view!='resumen' and tab=='planos' %}active{% endif %}"
-          href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='planos', view='operativo', home=home_arg) }}#planos">Planos</a>
-
-        <a class="view-tab {% if view=='resumen' and sub=='info' %}active{% endif %}"
-          href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab=tab, view='resumen', home=home_arg, sub='info') }}#info-sede">Información de sede</a>
-      </div>
-
       <details class="sede-jump">
         <summary class="sede-jump-trigger" aria-label="Abrir navegación rápida por sedes y módulos">
-          <span class="sede-jump-title">Navegar por sedes y módulos</span>
-          <span class="sede-jump-state">{{ sedes_nav|length }} sedes · atajos directos</span>
+          <span class="sede-jump-title">Navegar por sede</span>
+          <span class="sede-jump-state">{{ sedes_nav|length }} sedes · accesos directos</span>
         </summary>
         <div class="sede-jump-panel">
           <p class="sede-jump-hint">Tocá el código para abrir la sede y las siglas para entrar directo al módulo.</p>
