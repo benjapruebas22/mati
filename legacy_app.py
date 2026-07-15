@@ -11347,6 +11347,15 @@ def _mobiliario_plano_clamp01(value):
     return max(0.03, min(0.97, number))
 
 
+def _mobiliario_plano_normalize_rotation(value):
+    try:
+        number = int(round(float(value or 0)))
+    except Exception:
+        number = 0
+    number = number % 180
+    return 90 if number >= 45 else 0
+
+
 def _mobiliario_plano_storage_path(sede_codigo, piso):
     sede_safe = re.sub(r"[^A-Z0-9_-]", "", (sede_codigo or "").upper().strip()) or "SEDE"
     piso_safe = re.sub(r"[^A-Z0-9_-]", "", _mobiliario_plano_normalize_piso(piso)) or "PB"
@@ -11379,6 +11388,7 @@ def _mobiliario_plano_load_saved_state(sede_codigo, piso):
         if placed:
             item["x"] = _mobiliario_plano_clamp01(raw.get("x"))
             item["y"] = _mobiliario_plano_clamp01(raw.get("y"))
+        item["rotation"] = _mobiliario_plano_normalize_rotation(raw.get("rotation"))
         saved[item_id] = item
     return saved
 
@@ -11481,6 +11491,7 @@ def _mobiliario_plano_merge_items(seed_items, saved_state):
             "placed": placed,
             "x": saved.get("x") if placed else None,
             "y": saved.get("y") if placed else None,
+            "rotation": saved.get("rotation", 0),
         })
     return merged
 
@@ -11923,6 +11934,7 @@ def mobiliario_plano_api(sede_codigo, piso):
         if placed:
             item["x"] = _mobiliario_plano_clamp01(raw.get("x"))
             item["y"] = _mobiliario_plano_clamp01(raw.get("y"))
+        item["rotation"] = _mobiliario_plano_normalize_rotation(raw.get("rotation"))
         clean_items.append(item)
 
     _mobiliario_plano_save_state(sede, piso_norm, clean_items)
