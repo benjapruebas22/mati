@@ -5450,7 +5450,7 @@ def sede_ficha(codigo):
         protocolo_limpieza_url = None
 
     sedes_nav = db.execute("""
-        SELECT codigo
+        SELECT codigo, nombre
         FROM sedes_mpd
         ORDER BY codigo
     """).fetchall()

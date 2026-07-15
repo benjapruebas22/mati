@@ -2399,8 +2399,150 @@
     font-weight: 700;
   }
 
+  .sede-jump {
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  .sede-jump > summary {
+    list-style: none;
+    cursor: pointer;
+  }
+
+  .sede-jump > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .sede-jump-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 12px;
+    border: 1px solid #d7e2f3;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    color: #0f172a;
+    box-shadow: 0 1px 0 rgba(30, 58, 95, .04);
+  }
+
+  .sede-jump[open] .sede-jump-trigger {
+    border-color: rgba(var(--fuero-accent-rgb), 0.34);
+    background: linear-gradient(180deg, #ffffff 0%, rgba(var(--fuero-accent-rgb), 0.05) 100%);
+  }
+
+  .sede-jump-title {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .01em;
+  }
+
+  .sede-jump-state {
+    font-size: 11px;
+    color: #64748b;
+    white-space: nowrap;
+  }
+
+  .sede-jump-panel {
+    margin-top: 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    padding: 10px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  }
+
+  .sede-jump-hint {
+    margin: 0 0 8px;
+    font-size: 10px;
+    color: #64748b;
+  }
+
+  .sede-jump-scroll {
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
+  }
+
+  .sede-jump-table {
+    width: max-content;
+    min-width: 100%;
+    border-collapse: separate;
+    border-spacing: 6px;
+  }
+
+  .sede-jump-table th,
+  .sede-jump-table td {
+    padding: 0;
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  .sede-jump-corner,
+  .sede-jump-label {
+    min-width: 54px;
+    text-align: left !important;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: #64748b;
+    white-space: nowrap;
+  }
+
+  .sede-jump-sede,
+  .sede-jump-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 56px;
+    padding: 5px 8px;
+    border-radius: 10px;
+    border: 1px solid #d7e2f3;
+    background: #fff;
+    color: #1f2937;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .sede-jump-sede {
+    color: #1d4ed8;
+  }
+
+  .sede-jump-link {
+    color: #475569;
+    border-color: #e2e8f0;
+    font-size: 9px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+
+  .sede-jump-sede:hover,
+  .sede-jump-link:hover {
+    border-color: #cbd5e1;
+    background: #f8fafc;
+  }
+
+  .sede-jump-sede.is-current,
+  .sede-jump-link.is-active {
+    border-color: var(--fuero-accent);
+    background: var(--fuero-soft);
+    color: #0f172a;
+    box-shadow: inset 0 0 0 1px rgba(var(--fuero-accent-rgb), 0.18);
+  }
+
   @media (max-width: 720px) {
     .sede-topbar-more { width: 100%; }
+    .sede-jump-trigger {
+      width: 100%;
+    }
+    .sede-jump-state {
+      white-space: normal;
+      text-align: right;
+    }
   }
 
 
@@ -7971,6 +8113,96 @@
         <a class="view-tab {% if view=='resumen' and sub=='info' %}active{% endif %}"
           href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab=tab, view='resumen', home=home_arg, sub='info') }}#info-sede">Información de sede</a>
       </div>
+
+      <details class="sede-jump">
+        <summary class="sede-jump-trigger" aria-label="Abrir navegación rápida por sedes y módulos">
+          <span class="sede-jump-title">Navegar por sedes y módulos</span>
+          <span class="sede-jump-state">{{ sedes_nav|length }} sedes · atajos directos</span>
+        </summary>
+        <div class="sede-jump-panel">
+          <p class="sede-jump-hint">Tocá el código para abrir la sede y las siglas para entrar directo al módulo.</p>
+          <div class="sede-jump-scroll">
+            <table class="sede-jump-table" aria-label="Navegación rápida de sedes">
+              <thead>
+                <tr>
+                  <th class="sede-jump-corner">Sede</th>
+                  {% for nav_sede in sedes_nav %}
+                  <th scope="col">
+                    <a class="sede-jump-sede {% if nav_sede.codigo == sede.codigo %}is-current{% endif %}"
+                      href="{{ url_for('sede_ficha', codigo=nav_sede.codigo, piso=piso, tab='personal', view='operativo', home=home_arg) }}"
+                      title="{{ nav_sede.codigo }}{% if nav_sede.nombre %} · {{ nav_sede.nombre }}{% endif %}">
+                      {{ nav_sede.codigo }}
+                    </a>
+                  </th>
+                  {% endfor %}
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row" class="sede-jump-label">Aire</th>
+                  {% for nav_sede in sedes_nav %}
+                  <td>
+                    <a class="sede-jump-link {% if nav_sede.codigo == sede.codigo and view != 'resumen' and tab == 'aires' %}is-active{% endif %}"
+                      href="{{ url_for('sede_ficha', codigo=nav_sede.codigo, piso=piso, tab='aires', view='operativo', home=home_arg) }}"
+                      title="{{ nav_sede.codigo }} · Aires">AIRE</a>
+                  </td>
+                  {% endfor %}
+                </tr>
+                <tr>
+                  <th scope="row" class="sede-jump-label">Lum</th>
+                  {% for nav_sede in sedes_nav %}
+                  <td>
+                    <a class="sede-jump-link {% if nav_sede.codigo == sede.codigo and view != 'resumen' and tab == 'luminarias' %}is-active{% endif %}"
+                      href="{{ url_for('sede_ficha', codigo=nav_sede.codigo, piso=piso, tab='luminarias', view='operativo', home=home_arg) }}"
+                      title="{{ nav_sede.codigo }} · Luminarias">LUM</a>
+                  </td>
+                  {% endfor %}
+                </tr>
+                <tr>
+                  <th scope="row" class="sede-jump-label">Inv</th>
+                  {% for nav_sede in sedes_nav %}
+                  <td>
+                    <a class="sede-jump-link {% if nav_sede.codigo == sede.codigo and view != 'resumen' and tab == 'mobiliario' %}is-active{% endif %}"
+                      href="{{ url_for('sede_ficha', codigo=nav_sede.codigo, piso=piso, tab='mobiliario', view='operativo', home=home_arg) }}"
+                      title="{{ nav_sede.codigo }} · Inventario operativo">INV</a>
+                  </td>
+                  {% endfor %}
+                </tr>
+                <tr>
+                  <th scope="row" class="sede-jump-label">Mat</th>
+                  {% for nav_sede in sedes_nav %}
+                  <td>
+                    <a class="sede-jump-link {% if nav_sede.codigo == sede.codigo and view != 'resumen' and tab == 'matafuegos' %}is-active{% endif %}"
+                      href="{{ url_for('sede_ficha', codigo=nav_sede.codigo, piso=piso, tab='matafuegos', view='operativo', home=home_arg) }}"
+                      title="{{ nav_sede.codigo }} · Matafuegos">MAT</a>
+                  </td>
+                  {% endfor %}
+                </tr>
+                <tr>
+                  <th scope="row" class="sede-jump-label">Cart</th>
+                  {% for nav_sede in sedes_nav %}
+                  <td>
+                    <a class="sede-jump-link {% if nav_sede.codigo == sede.codigo and view != 'resumen' and tab == 'sst_carteleria' %}is-active{% endif %}"
+                      href="{{ url_for('sede_ficha', codigo=nav_sede.codigo, piso=piso, tab='sst_carteleria', view='operativo', home=home_arg) }}"
+                      title="{{ nav_sede.codigo }} · SG-SST cartelería">CART</a>
+                  </td>
+                  {% endfor %}
+                </tr>
+                <tr>
+                  <th scope="row" class="sede-jump-label">L.E.</th>
+                  {% for nav_sede in sedes_nav %}
+                  <td>
+                    <a class="sede-jump-link {% if nav_sede.codigo == sede.codigo and view != 'resumen' and tab == 'sst_luces' %}is-active{% endif %}"
+                      href="{{ url_for('sede_ficha', codigo=nav_sede.codigo, piso=piso, tab='sst_luces', view='operativo', home=home_arg) }}"
+                      title="{{ nav_sede.codigo }} · Luces de emergencia">L.E.</a>
+                  </td>
+                  {% endfor %}
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </details>
     </div>
 
 
