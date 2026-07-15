@@ -4038,6 +4038,14 @@ def sedes_mapa_general():
         plan_abs = os.path.join(app.root_path, "static", plan_rel.replace("/", os.sep))
         if not os.path.exists(plan_abs):
             plan_rel = "planos/placeholder.png"
+            plan_abs = os.path.join(app.root_path, "static", plan_rel.replace("/", os.sep))
+
+        plan_ver = None
+        try:
+            if os.path.exists(plan_abs):
+                plan_ver = int(os.path.getmtime(plan_abs))
+        except Exception:
+            plan_ver = None
 
         fuero_key = fuero_por_codigo.get(codigo, "administracion")
         map_x, map_y = map_positions.get(codigo, (55.0, 75.0))
@@ -4053,7 +4061,7 @@ def sedes_mapa_general():
             "url_maps": row["url_maps"] or "",
             "map_x": map_x,
             "map_y": map_y,
-            "plano_url": url_for("static", filename=plan_rel),
+            "plano_url": url_for("static", filename=plan_rel, v=plan_ver) if plan_ver else url_for("static", filename=plan_rel),
             "depositos": depositos,
             "depositos_total": len(depositos),
             "personal": personal,
