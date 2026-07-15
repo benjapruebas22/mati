@@ -31,3 +31,5 @@ static/remitos/
 .idea/
 *.swp
 .DS_Store
+
+mpd_backup_*.db
