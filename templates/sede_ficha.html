@@ -3697,6 +3697,16 @@
     object-position: center 33%;
 
   }
+  .plan-img.plan-fit-s04pb {
+    max-width: 78%;
+    margin: 0 auto;
+    background: #fff;
+  }
+  @media (max-width: 900px) {
+    .plan-img.plan-fit-s04pb {
+      max-width: 92%;
+    }
+  }
 
   .locals {
 
@@ -9749,7 +9759,7 @@
 
 
 
-        <div class="plan-img{% if sede.codigo == 'S13' and piso == 'PB' %} plan-fit-s13pb{% endif %}{% if local %} selected{% endif %}">
+        <div class="plan-img{% if sede.codigo == 'S13' and piso == 'PB' %} plan-fit-s13pb{% endif %}{% if sede.codigo == 'S04' and piso == 'PB' %} plan-fit-s04pb{% endif %}{% if local %} selected{% endif %}">
           {% if local %}
           {% set _ldesc = (locales_desc.get(local) if locales_desc is defined else '') %}
           <div class="plan-selected" {% if _ldesc %}title="{{ _ldesc }}"{% endif %}>
@@ -12947,9 +12957,7 @@
     const kindMeta = moduleConfig.kindMeta;
     const rotatableKinds = Array.isArray(moduleConfig.rotatableKinds) ? moduleConfig.rotatableKinds : [];
     const planScaleOverrides = {
-      mobiliario: {
-        "S04|PB": 0.9
-      }
+      mobiliario: {}
     };
     const planScaleKey = sedeCode && pisoCode ? (sedeCode + "|" + pisoCode) : "";
     const moduleScaleMap = planScaleOverrides[moduleKey] || {};
