@@ -4634,6 +4634,13 @@
     gap: 10px;
     flex-wrap: wrap;
   }
+  .sst-le-demo-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
   .sst-le-demo-title {
     margin: 0;
     font-size: 12px;
@@ -4658,6 +4665,30 @@
     font-size: 11px;
     font-weight: 800;
     cursor: pointer;
+  }
+  .sst-le-demo-save {
+    border: 1px solid #1d4ed8;
+    background: #2563eb;
+    color: #fff;
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 8px 16px rgba(37, 99, 235, 0.16);
+  }
+  .sst-le-demo-save[disabled] {
+    opacity: .72;
+    cursor: wait;
+  }
+  .sst-le-demo-status {
+    min-height: 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #2563eb;
+  }
+  .sst-le-demo-status.is-error {
+    color: #b42318;
   }
   .sst-le-palette {
     display: flex;
@@ -4691,8 +4722,13 @@
     .sst-le-demo-head {
       align-items: stretch;
     }
-    .sst-le-demo-reset {
+    .sst-le-demo-actions {
       width: 100%;
+      justify-content: stretch;
+    }
+    .sst-le-demo-save,
+    .sst-le-demo-reset {
+      flex: 1 1 0;
     }
     .sst-le-palette {
       display: grid;
@@ -8934,7 +8970,7 @@
           </div>
           {% endif %}
           {% if tab == 'sst_luces' %}
-          <div class="sst-le-layer" data-sst-le-layer data-sede="{{ sede.codigo }}" data-piso="{{ piso }}" data-local="{{ local or '' }}">
+          <div class="sst-le-layer" data-sst-le-layer data-sede="{{ sede.codigo }}" data-piso="{{ piso }}" data-local="{{ local or '' }}" data-api-url="{{ url_for('sst_luces_plano_api', sede_codigo=sede.codigo, piso=piso) }}">
             <div class="sst-le-canvas" data-sst-le-canvas></div>
           </div>
           {% endif %}
@@ -9016,11 +9052,15 @@
                 {% else %}
                 Si filtras un local antes de ubicarla, la luz queda etiquetada con ese deposito.
                 {% endif %}
-                Doble click sobre una luz para quitarla.
+                Doble click sobre una luz para quitarla y luego usa <strong>Guardar plano</strong>.
               </p>
             </div>
-            <button type="button" class="sst-le-demo-reset" data-sst-le-reset>Limpiar demo</button>
+            <div class="sst-le-demo-actions">
+              <button type="button" class="sst-le-demo-save" data-sst-le-save>Guardar plano</button>
+              <button type="button" class="sst-le-demo-reset" data-sst-le-reset>Limpiar demo</button>
+            </div>
           </div>
+          <div class="sst-le-demo-status" data-sst-le-status aria-live="polite"></div>
           <div class="sst-le-palette" aria-label="Estados de luces de emergencia">
             <button type="button" class="sst-le-tool state-prevista" draggable="true" data-sst-le-new="prevista" title="Arrastrar luz prevista">
               <svg class="sst-le-tool-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a6 6 0 0 0-3.9 10.56c.5.43.9 1.08 1.08 1.79L9.32 15h5.36l.14-.65c.17-.72.57-1.36 1.08-1.8A6 6 0 0 0 12 2Zm-2.18 15 .3 1.4a1 1 0 0 0 .98.8h1.8a1 1 0 0 0 .98-.8l.3-1.4Zm.63 3 .12.55A1.8 1.8 0 0 0 12.32 22h-.64a1.8 1.8 0 0 0 1.75-1.45l.12-.55Z"/></svg>
@@ -9819,7 +9859,7 @@
           <div>
             <div class="panel-section-title">SG-SST Carteleria</div>
             <div class="panel-section-sub">
-              Plano base del piso con una capa visual liviana para ubicar carteleria. La gestion y carga formal siguen en el modulo SG-SST.
+              Plano base del piso para ubicar y guardar carteleria. El modulo SG-SST mantiene el resumen operativo.
             </div>
           </div>
 
@@ -9847,7 +9887,7 @@
           <div>
             <div class="panel-section-title">SG-SST Luces de emergencia</div>
             <div class="panel-section-sub">
-              Plano base del piso con una capa visual liviana para ubicar luces de emergencia. La gestion y carga formal siguen en el modulo SG-SST.
+              Plano base del piso para ubicar y guardar luces de emergencia. El modulo SG-SST mantiene el resumen operativo.
             </div>
           </div>
 
@@ -11832,10 +11872,12 @@
 
     const canvas = layer.querySelector("[data-sst-le-canvas]");
     const plan = layer.closest(".plan-img");
+    const apiUrl = String(layer.dataset.apiUrl || "").trim();
     const resetBtn = toolbar.querySelector("[data-sst-le-reset]");
+    const saveBtn = toolbar.querySelector("[data-sst-le-save]");
+    const statusEl = toolbar.querySelector("[data-sst-le-status]");
     if (!canvas || !plan) return;
 
-    const storageKey = ["sgi", "sst-luces-demo", layer.dataset.sede || "", layer.dataset.piso || ""].join(":");
     const activeLocal = String(layer.dataset.local || "").toUpperCase();
     const bulbSvg = '<svg class="sst-le-marker-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a6 6 0 0 0-3.9 10.56c.5.43.9 1.08 1.08 1.79L9.32 15h5.36l.14-.65c.17-.72.57-1.36 1.08-1.8A6 6 0 0 0 12 2Zm-2.18 15 .3 1.4a1 1 0 0 0 .98.8h1.8a1 1 0 0 0 .98-.8l.3-1.4Zm.63 3 .12.55A1.8 1.8 0 0 0 12.32 22h-.64a1.8 1.8 0 0 0 1.75-1.45l.12-.55Z"/></svg>';
     const stateMeta = {
@@ -11849,21 +11891,10 @@
       return Math.max(0.03, Math.min(0.97, Number(value || 0)));
     }
 
-    function safeRead() {
-      try {
-        const parsed = JSON.parse(localStorage.getItem(storageKey) || "[]");
-        return Array.isArray(parsed) ? parsed : [];
-      } catch (err) {
-        return [];
-      }
-    }
-
-    function save() {
-      try {
-        localStorage.setItem(storageKey, JSON.stringify(markers));
-      } catch (err) {
-        // Ignore local storage failures.
-      }
+    function setStatus(message, isError) {
+      if (!statusEl) return;
+      statusEl.textContent = String(message || "");
+      statusEl.classList.toggle("is-error", !!isError);
     }
 
     function normalizeMarker(item) {
@@ -11878,7 +11909,80 @@
       };
     }
 
-    let markers = safeRead().map(normalizeMarker);
+    function markDirty() {
+      setStatus("Cambios sin guardar.", false);
+    }
+
+    function setSaving(isSaving) {
+      if (!saveBtn) return;
+      saveBtn.disabled = !!isSaving;
+      saveBtn.textContent = isSaving ? "Guardando..." : "Guardar plano";
+    }
+
+    async function loadMarkers() {
+      if (!apiUrl) {
+        setStatus("No se encontro la ruta de guardado.", true);
+        return;
+      }
+      setStatus("Cargando luces guardadas...", false);
+      try {
+        const response = await fetch(apiUrl, {
+          headers: { "Accept": "application/json" },
+          credentials: "same-origin"
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.message || "No se pudieron cargar las luces.");
+        }
+        markers = Array.isArray(payload.markers) ? payload.markers.map(normalizeMarker) : [];
+        render();
+        setStatus(markers.length ? "Luces cargadas desde el plano guardado." : "Sin luces guardadas para este piso.", false);
+      } catch (err) {
+        setStatus((err && err.message) || "No se pudieron cargar las luces.", true);
+      }
+    }
+
+    async function persist() {
+      if (!apiUrl) {
+        setStatus("No se encontro la ruta de guardado.", true);
+        return;
+      }
+      setSaving(true);
+      setStatus("Guardando luces del plano...", false);
+      try {
+        const response = await fetch(apiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          credentials: "same-origin",
+          body: JSON.stringify({
+            markers: markers.map((marker) => ({
+              id: marker.id,
+              state: marker.state,
+              label: marker.label,
+              local: marker.local,
+              x: marker.x,
+              y: marker.y
+            }))
+          })
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.message || "No se pudieron guardar las luces.");
+        }
+        markers = Array.isArray(payload.markers) ? payload.markers.map(normalizeMarker) : [];
+        render();
+        setStatus(payload.message || "Luces guardadas.", false);
+      } catch (err) {
+        setStatus((err && err.message) || "No se pudieron guardar las luces.", true);
+      } finally {
+        setSaving(false);
+      }
+    }
+
+    let markers = [];
 
     function nextLabel() {
       let max = 0;
@@ -11905,8 +12009,8 @@
         label: nextLabel(),
         local: activeLocal
       });
-      save();
       render();
+      markDirty();
     }
 
     function render() {
@@ -11953,8 +12057,8 @@
 
         btn.addEventListener("dblclick", function () {
           markers = markers.filter((item) => item.id !== marker.id);
-          save();
           render();
+          markDirty();
         });
 
         canvas.appendChild(btn);
@@ -12004,8 +12108,8 @@
 
       if (existingId) {
         markers = markers.map((item) => item.id === existingId ? Object.assign({}, item, point) : item);
-        save();
         render();
+        markDirty();
         return;
       }
 
@@ -12022,12 +12126,18 @@
     if (resetBtn) {
       resetBtn.addEventListener("click", function () {
         markers = [];
-        save();
         render();
+        markDirty();
       });
     }
 
-    render();
+    if (saveBtn) {
+      saveBtn.addEventListener("click", function () {
+        persist();
+      });
+    }
+
+    loadMarkers();
   })();
 </script>
 <script>

@@ -321,6 +321,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
     SST_CARTELERIA_PLAN_PREFIX = "[[SGSST_CARTELERIA_PLANO_V1]]"
     SST_LUCES_PLACEHOLDER_PISO = "SEDE"
     SST_LUCES_PLACEHOLDER_DEPOSITO = "SEDE"
+    SST_LUCES_PLAN_PREFIX = "[[SGSST_LUCES_PLANO_V1]]"
     SST_LUCES_INITIAL_LOAD = [
         {"sede_codigo": "S01", "aplica": 1, "cantidad_requerida": 8, "motivo_no_aplica": ""},
         {"sede_codigo": "S02", "aplica": 0, "cantidad_requerida": 0, "motivo_no_aplica": "Dentro del Poder Judicial"},
@@ -7277,6 +7278,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         return normalized if normalized in SST_LUCES_STATE_LABELS else ""
 
     def _sst_luces_has_relevamiento(record):
+        if record.get("plan_markers"):
+            return True
         for field in (
             "fecha_solicitud_compra",
             "fecha_entrega",
@@ -7370,6 +7373,83 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
     def _sst_luces_has_pending_action(record):
         state_code = _sst_clean_upper(record.get("state_code") or _sst_luces_state_code(record))
         return state_code in SST_LUCES_PENDING_STATES
+
+    def _sst_luces_canonical_plan_state(value):
+        raw_state = _sst_clean_upper(value).replace("-", "_").replace(" ", "_")
+        state_map = {
+            "PREVISTA": "prevista",
+            "INSTALADA": "instalada",
+            "OPERATIVA": "instalada",
+            "FUERA_SERVICIO": "fuera_servicio",
+            "FUERA_DE_SERVICIO": "fuera_servicio",
+            "MANTENIMIENTO": "fuera_servicio",
+            "NO_APLICA": "no_aplica",
+        }
+        return state_map.get(raw_state, "")
+
+    def _sst_luces_unpack_observaciones(raw_value):
+        raw_text = str(raw_value or "").strip()
+        if not raw_text:
+            return "", []
+        if not raw_text.startswith(SST_LUCES_PLAN_PREFIX):
+            return raw_text, []
+        try:
+            payload = json.loads(raw_text[len(SST_LUCES_PLAN_PREFIX):].strip() or "{}")
+        except Exception:
+            return raw_text, []
+        note = str((payload or {}).get("note") or "").strip()
+        markers = []
+        for item in ((payload or {}).get("markers") or []):
+            if not isinstance(item, dict):
+                continue
+            state_code = _sst_luces_canonical_plan_state(item.get("state"))
+            if not state_code:
+                continue
+            try:
+                x_val = float(item.get("x", 0.5))
+            except Exception:
+                x_val = 0.5
+            try:
+                y_val = float(item.get("y", 0.5))
+            except Exception:
+                y_val = 0.5
+            markers.append({
+                "state": state_code,
+                "label": str(item.get("label") or "").strip(),
+                "local": (_sst_clean_upper(item.get("local")) or "").strip().upper(),
+                "x": max(0.03, min(0.97, x_val)),
+                "y": max(0.03, min(0.97, y_val)),
+            })
+        return note, markers
+
+    def _sst_luces_pack_observaciones(markers=None, note=""):
+        safe_markers = []
+        for item in (markers or []):
+            if not isinstance(item, dict):
+                continue
+            state_code = _sst_luces_canonical_plan_state(item.get("state"))
+            if not state_code:
+                continue
+            try:
+                x_val = float(item.get("x", 0.5))
+            except Exception:
+                x_val = 0.5
+            try:
+                y_val = float(item.get("y", 0.5))
+            except Exception:
+                y_val = 0.5
+            safe_markers.append({
+                "state": state_code,
+                "label": str(item.get("label") or "").strip(),
+                "local": (_sst_clean_upper(item.get("local")) or "").strip().upper(),
+                "x": max(0.03, min(0.97, x_val)),
+                "y": max(0.03, min(0.97, y_val)),
+            })
+        payload = {
+            "note": str(note or "").strip(),
+            "markers": safe_markers,
+        }
+        return SST_LUCES_PLAN_PREFIX + json.dumps(payload, ensure_ascii=True, separators=(",", ":"))
 
     def _sst_carteleria_unpack_observaciones(raw_value):
         raw_text = str(raw_value or "").strip()
@@ -7760,6 +7840,10 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             item["faltantes"] = item["cantidad_faltante"]
             item["fecha_instalacion"] = item["fecha_colocacion"] or item["fecha_programada_colocacion"]
             item["estado"] = _sst_luces_normalize_manual_state(_row_value(row, "estado", "")) or (_row_value(row, "estado", "") or "").strip().upper()
+            obs_note, plan_markers = _sst_luces_unpack_observaciones(_row_value(row, "observaciones", ""))
+            item["observaciones_raw"] = (_row_value(row, "observaciones", "") or "").strip()
+            item["observaciones"] = obs_note
+            item["plan_markers"] = plan_markers
             item["state_code"] = _sst_luces_state_code(item)
             item["state_meta"] = _sst_state_badge(item["state_code"], SST_LUCES_STATE_LABELS)
             item["action_label"] = _sst_luces_action_text(item)
@@ -7809,34 +7893,46 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 ),
                 reverse=True,
             )
-            primary = ordered_records[0]
+            placeholder_records = [
+                item for item in ordered_records
+                if item.get("piso") == SST_LUCES_PLACEHOLDER_PISO and item.get("deposito_codigo") == SST_LUCES_PLACEHOLDER_DEPOSITO
+            ]
+            plan_records = [
+                item for item in ordered_records
+                if not (
+                    item.get("piso") == SST_LUCES_PLACEHOLDER_PISO
+                    and item.get("deposito_codigo") == SST_LUCES_PLACEHOLDER_DEPOSITO
+                )
+            ]
+            effective_records = plan_records or placeholder_records or ordered_records
+            primary = effective_records[0]
             manual_state = next(
-                (_sst_luces_normalize_manual_state(item.get("estado")) for item in ordered_records if _sst_luces_normalize_manual_state(item.get("estado")) in SST_MANUAL_LUCES_STATES),
+                (_sst_luces_normalize_manual_state(item.get("estado")) for item in effective_records if _sst_luces_normalize_manual_state(item.get("estado")) in SST_MANUAL_LUCES_STATES),
                 "",
             )
-            applies = 1 if any(_sst_bool_flag(item.get("aplica", 1)) for item in ordered_records) else 0
+            applies = 1 if any(_sst_bool_flag(item.get("aplica", 1)) for item in effective_records) else 0
             summary = dict(primary)
             summary.update({
                 "id": int(primary.get("id") or 0),
                 "primary_record_id": int(primary.get("id") or 0),
-                "record_count": len(ordered_records),
-                "record_ids": [int(item.get("id") or 0) for item in ordered_records],
+                "record_count": len(effective_records),
+                "record_ids": [int(item.get("id") or 0) for item in effective_records],
                 "aplica": applies,
-                "motivo_no_aplica": next((str(item.get("motivo_no_aplica") or "").strip() for item in ordered_records if str(item.get("motivo_no_aplica") or "").strip()), ""),
-                "cantidad_requerida": (sum(_sst_int_nonneg(item.get("cantidad_requerida")) for item in ordered_records) if applies else 0),
-                "cantidad_instalada": (sum(_sst_int_nonneg(item.get("cantidad_instalada")) for item in ordered_records) if applies else 0),
-                "cantidad_operativa": (sum(_sst_int_nonneg(item.get("cantidad_operativa")) for item in ordered_records) if applies else 0),
-                "fecha_solicitud_compra": max((str(item.get("fecha_solicitud_compra") or "").strip() for item in ordered_records if str(item.get("fecha_solicitud_compra") or "").strip()), default=""),
-                "referencia_pedido": next((str(item.get("referencia_pedido") or "").strip() for item in ordered_records if str(item.get("referencia_pedido") or "").strip()), ""),
-                "fecha_entrega": max((str(item.get("fecha_entrega") or "").strip() for item in ordered_records if str(item.get("fecha_entrega") or "").strip()), default=""),
-                "fecha_programada_colocacion": max((str(item.get("fecha_programada_colocacion") or "").strip() for item in ordered_records if str(item.get("fecha_programada_colocacion") or "").strip()), default=""),
-                "fecha_colocacion": max((str(item.get("fecha_colocacion") or "").strip() for item in ordered_records if str(item.get("fecha_colocacion") or "").strip()), default=""),
-                "fecha_mantenimiento": max((str(item.get("fecha_mantenimiento") or "").strip() for item in ordered_records if str(item.get("fecha_mantenimiento") or "").strip()), default=""),
-                "seguimiento_id": next((int(item.get("seguimiento_id") or 0) for item in ordered_records if int(item.get("seguimiento_id") or 0) > 0), 0),
-                "observaciones": next((str(item.get("observaciones") or "").strip() for item in ordered_records if str(item.get("observaciones") or "").strip()), ""),
+                "motivo_no_aplica": next((str(item.get("motivo_no_aplica") or "").strip() for item in effective_records if str(item.get("motivo_no_aplica") or "").strip()), ""),
+                "cantidad_requerida": (sum(_sst_int_nonneg(item.get("cantidad_requerida")) for item in effective_records) if applies else 0),
+                "cantidad_instalada": (sum(_sst_int_nonneg(item.get("cantidad_instalada")) for item in effective_records) if applies else 0),
+                "cantidad_operativa": (sum(_sst_int_nonneg(item.get("cantidad_operativa")) for item in effective_records) if applies else 0),
+                "fecha_solicitud_compra": max((str(item.get("fecha_solicitud_compra") or "").strip() for item in effective_records if str(item.get("fecha_solicitud_compra") or "").strip()), default=""),
+                "referencia_pedido": next((str(item.get("referencia_pedido") or "").strip() for item in effective_records if str(item.get("referencia_pedido") or "").strip()), ""),
+                "fecha_entrega": max((str(item.get("fecha_entrega") or "").strip() for item in effective_records if str(item.get("fecha_entrega") or "").strip()), default=""),
+                "fecha_programada_colocacion": max((str(item.get("fecha_programada_colocacion") or "").strip() for item in effective_records if str(item.get("fecha_programada_colocacion") or "").strip()), default=""),
+                "fecha_colocacion": max((str(item.get("fecha_colocacion") or "").strip() for item in effective_records if str(item.get("fecha_colocacion") or "").strip()), default=""),
+                "fecha_mantenimiento": max((str(item.get("fecha_mantenimiento") or "").strip() for item in effective_records if str(item.get("fecha_mantenimiento") or "").strip()), default=""),
+                "seguimiento_id": next((int(item.get("seguimiento_id") or 0) for item in effective_records if int(item.get("seguimiento_id") or 0) > 0), 0),
+                "observaciones": next((str(item.get("observaciones") or "").strip() for item in effective_records if str(item.get("observaciones") or "").strip()), ""),
                 "estado": manual_state,
-                "pruebas_total": sum(int(item.get("pruebas_total") or 0) for item in ordered_records),
-                "ultima_actualizacion": max((str(item.get("ultima_actualizacion") or "").strip() for item in ordered_records if str(item.get("ultima_actualizacion") or "").strip()), default=""),
+                "pruebas_total": sum(int(item.get("pruebas_total") or 0) for item in effective_records),
+                "ultima_actualizacion": max((str(item.get("ultima_actualizacion") or "").strip() for item in effective_records if str(item.get("ultima_actualizacion") or "").strip()), default=""),
             })
             if not applies:
                 summary["cantidad_requerida"] = 0
@@ -8636,6 +8732,153 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         context = _sst_luces_context(con)
         con.close()
         return render_template("sst_luces_home.html", **context)
+
+    @app.route("/sst/luces/plano/<sede_codigo>/<piso>", methods=["GET", "POST"], endpoint="sst_luces_plano_api")
+    def sst_luces_plano_api(sede_codigo, piso):
+        con = get_db()
+        ensure_sst_luces_tables(con)
+        ensure_sst_operativo_historial_tables(con)
+        sede_codigo = (_sst_clean_upper(sede_codigo) or "").strip().upper()
+        piso = (_sst_clean_upper(piso) or "PB").strip().upper()
+        if piso == "1P":
+            piso = "P1"
+        elif piso == "2P":
+            piso = "P2"
+
+        if not sede_codigo:
+            con.close()
+            return jsonify({"ok": False, "message": "Sede invalida."}), 400
+
+        if request.method == "GET":
+            markers = []
+            for record in _sst_fetch_luces_records(con):
+                if record.get("sede_codigo") != sede_codigo or record.get("piso") != piso:
+                    continue
+                if not record.get("plan_markers"):
+                    continue
+                for marker in (record.get("plan_markers") or []):
+                    try:
+                        x_val = float(marker.get("x", 0.5))
+                    except Exception:
+                        x_val = 0.5
+                    try:
+                        y_val = float(marker.get("y", 0.5))
+                    except Exception:
+                        y_val = 0.5
+                    markers.append({
+                        "id": f"le-{uuid.uuid4().hex[:8]}",
+                        "state": _sst_luces_canonical_plan_state(marker.get("state")),
+                        "label": str(marker.get("label") or "").strip(),
+                        "local": (_sst_clean_upper(marker.get("local")) or "").strip().upper(),
+                        "x": max(0.03, min(0.97, x_val)),
+                        "y": max(0.03, min(0.97, y_val)),
+                    })
+            con.close()
+            return jsonify({"ok": True, "markers": markers})
+
+        payload = request.get_json(silent=True) or {}
+        raw_markers = payload.get("markers")
+        if not isinstance(raw_markers, list):
+            con.close()
+            return jsonify({"ok": False, "message": "No se recibieron marcadores validos."}), 400
+
+        user_name = _sst_current_user()
+        normalized_markers = []
+        for idx, marker in enumerate(raw_markers, start=1):
+            if not isinstance(marker, dict):
+                continue
+            state_code = _sst_luces_canonical_plan_state(marker.get("state"))
+            if not state_code:
+                continue
+            try:
+                x_val = float(marker.get("x", 0.5))
+            except Exception:
+                x_val = 0.5
+            try:
+                y_val = float(marker.get("y", 0.5))
+            except Exception:
+                y_val = 0.5
+            normalized_markers.append({
+                "state": state_code,
+                "label": str(marker.get("label") or "").strip() or f"LE {idx:02d}",
+                "local": (_sst_clean_upper(marker.get("local")) or "").strip().upper(),
+                "x": max(0.03, min(0.97, x_val)),
+                "y": max(0.03, min(0.97, y_val)),
+            })
+
+        now_ts = _sst_now_ts()
+        con.execute("""
+            UPDATE sst_luces_registros
+            SET activo = 0, actualizado_por = ?, fecha_actualizacion = ?
+            WHERE COALESCE(activo, 1) = 1
+              AND UPPER(COALESCE(sede_codigo, '')) = ?
+              AND UPPER(COALESCE(piso, 'PB')) = ?
+              AND NOT (
+                UPPER(COALESCE(piso, 'SEDE')) = ?
+                AND UPPER(COALESCE(deposito_codigo, 'SEDE')) = ?
+              )
+        """, (user_name, now_ts, sede_codigo, piso, SST_LUCES_PLACEHOLDER_PISO, SST_LUCES_PLACEHOLDER_DEPOSITO))
+
+        con.execute("""
+            UPDATE sst_luces_registros
+            SET activo = 0, actualizado_por = ?, fecha_actualizacion = ?
+            WHERE COALESCE(activo, 1) = 1
+              AND UPPER(COALESCE(sede_codigo, '')) = ?
+              AND UPPER(COALESCE(piso, 'SEDE')) = ?
+              AND UPPER(COALESCE(deposito_codigo, 'SEDE')) = ?
+        """, (user_name, now_ts, sede_codigo, SST_LUCES_PLACEHOLDER_PISO, SST_LUCES_PLACEHOLDER_DEPOSITO))
+
+        registro_id = 0
+        if normalized_markers:
+            required_count = sum(1 for marker in normalized_markers if marker["state"] != "no_aplica")
+            installed_count = sum(1 for marker in normalized_markers if marker["state"] in {"instalada", "fuera_servicio"})
+            operative_count = sum(1 for marker in normalized_markers if marker["state"] == "instalada")
+            out_of_service_count = sum(1 for marker in normalized_markers if marker["state"] == "fuera_servicio")
+            applies = 1 if required_count > 0 else 0
+            estado = "MANTENIMIENTO" if out_of_service_count > 0 else None
+            motivo_no_aplica = "Marcado como no aplica en el plano." if not applies else None
+            observaciones = _sst_luces_pack_observaciones(normalized_markers)
+            con.execute("""
+                INSERT INTO sst_luces_registros(
+                    sede_codigo, piso, deposito_codigo, aplica, motivo_no_aplica,
+                    cantidad_requerida, cantidad_instalada, cantidad_operativa, cantidad_fuera_servicio,
+                    estado, fecha_relevamiento, fecha_mantenimiento, observaciones,
+                    creado_por, actualizado_por, fecha_creacion, fecha_actualizacion
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                sede_codigo,
+                piso,
+                SST_LUCES_PLACEHOLDER_DEPOSITO,
+                applies,
+                motivo_no_aplica,
+                required_count if applies else 0,
+                installed_count if applies else 0,
+                operative_count if applies else 0,
+                out_of_service_count if applies else 0,
+                estado,
+                date.today().isoformat(),
+                date.today().isoformat() if out_of_service_count > 0 else None,
+                observaciones,
+                user_name,
+                user_name,
+                now_ts,
+                now_ts,
+            ))
+            registro_id = int(con.execute("SELECT last_insert_rowid()").fetchone()[0])
+
+        _sst_historial_log(
+            con,
+            "luces",
+            "actualizacion",
+            registro_id,
+            sede_codigo,
+            piso,
+            f"Plano de luces actualizado desde sede ({piso}). Marcadores: {len(normalized_markers)}.",
+        )
+        con.commit()
+        con.close()
+        return jsonify({"ok": True, "message": "Luces guardadas.", "markers": normalized_markers})
 
     @app.route("/sst/carteleria", methods=["GET", "POST"], endpoint="sst_carteleria_home")
     def sst_carteleria_home():
