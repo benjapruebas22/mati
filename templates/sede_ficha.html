@@ -3699,6 +3699,17 @@
     object-position: center 33%;
 
   }
+  .plan-img.plan-fit-s08pb {
+    background: #fff;
+  }
+  .plan-img.plan-fit-s08pb > img,
+  .plan-img.plan-fit-s08pb > .mob-plan-layer,
+  .plan-img.plan-fit-s08pb > .ev-plan-layer,
+  .plan-img.plan-fit-s08pb > .sst-ct-layer,
+  .plan-img.plan-fit-s08pb > .sst-le-layer {
+    transform: scale(1.16);
+    transform-origin: 50% 38%;
+  }
   .plan-img.plan-fit-s04pb {
     max-width: 78%;
     margin: 0 auto;
@@ -9761,7 +9772,7 @@
 
 
 
-        <div class="plan-img{% if sede.codigo == 'S13' and piso == 'PB' %} plan-fit-s13pb{% endif %}{% if sede.codigo == 'S04' and piso == 'PB' %} plan-fit-s04pb{% endif %}{% if local %} selected{% endif %}">
+        <div class="plan-img{% if sede.codigo == 'S13' and piso == 'PB' %} plan-fit-s13pb{% endif %}{% if sede.codigo == 'S08' and piso == 'PB' %} plan-fit-s08pb{% endif %}{% if sede.codigo == 'S04' and piso == 'PB' %} plan-fit-s04pb{% endif %}{% if local %} selected{% endif %}">
           {% if local %}
           {% set _ldesc = (locales_desc.get(local) if locales_desc is defined else '') %}
           <div class="plan-selected" {% if _ldesc %}title="{{ _ldesc }}"{% endif %}>
