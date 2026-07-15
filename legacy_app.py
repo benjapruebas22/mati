@@ -13012,7 +13012,6 @@ def _matafuegos_home_impl():
             month=(f_month or None),
             q=f_q or None,
             open_sede=sede_codigo,
-            registro=(summary["primary_record_id"] or None),
         )
         haystack_parts = [
             sede_codigo,
