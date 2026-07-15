@@ -5762,13 +5762,8 @@ def sede_ficha(codigo):
         if _pick_plan_file(codigo, c):
             plano_base = c
     elif tab == "sst_luces":
-        c = f"{piso}_luces"
-        if _pick_plan_file(codigo, c):
-            plano_base = c
-        else:
-            c = f"{piso}_iluminacion"
-            if _pick_plan_file(codigo, c):
-                plano_base = c
+        # Luces de emergencia se trabajan sobre el plano base limpio.
+        plano_base = piso
     elif tab == "matafuegos":
         c = f"{piso}_seg"
         if _pick_plan_file(codigo, c):

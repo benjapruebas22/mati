@@ -4523,6 +4523,185 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+  .sst-le-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .sst-le-canvas {
+    position: absolute;
+    inset: 0;
+  }
+  .plan-img.sst-le-drop-active {
+    border-color: #86a9f5;
+    box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.18), 0 18px 34px rgba(37, 99, 235, 0.14);
+  }
+  .sst-le-marker {
+    position: absolute;
+    transform: translate(-50%, -100%);
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    border: none;
+    background: transparent;
+    padding: 0;
+    cursor: grab;
+    pointer-events: auto;
+    user-select: none;
+    touch-action: none;
+  }
+  .sst-le-marker:active {
+    cursor: grabbing;
+  }
+  .sst-le-marker.is-dim {
+    opacity: .32;
+  }
+  .sst-le-marker.is-focus .sst-le-marker-chip {
+    box-shadow: 0 12px 20px rgba(30, 64, 175, 0.18);
+  }
+  .sst-le-marker-chip {
+    min-width: 44px;
+    padding: 4px 6px 3px;
+    border-radius: 10px;
+    border: 1px solid #d7deea;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .sst-le-marker-icon,
+  .sst-le-tool-icon {
+    width: 14px;
+    height: 14px;
+    display: block;
+    color: #d39a00;
+    flex: 0 0 auto;
+  }
+  .sst-le-marker-code {
+    font-size: 9px;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: .03em;
+    color: #334155;
+  }
+  .sst-le-marker-local {
+    font-size: 8px;
+    font-weight: 800;
+    line-height: 1;
+    color: #64748b;
+    letter-spacing: .04em;
+  }
+  .sst-le-marker-bar,
+  .sst-le-tool-bar {
+    width: 22px;
+    height: 4px;
+    border-radius: 999px;
+    background: #fbbf24;
+  }
+  .sst-le-marker.state-prevista .sst-le-marker-bar,
+  .sst-le-tool.state-prevista .sst-le-tool-bar {
+    background: #fbbf24;
+  }
+  .sst-le-marker.state-instalada .sst-le-marker-bar,
+  .sst-le-tool.state-instalada .sst-le-tool-bar {
+    background: #16a34a;
+  }
+  .sst-le-marker.state-fuera_servicio .sst-le-marker-bar,
+  .sst-le-tool.state-fuera_servicio .sst-le-tool-bar {
+    background: #dc2626;
+  }
+  .sst-le-marker.state-no_aplica .sst-le-marker-bar,
+  .sst-le-tool.state-no_aplica .sst-le-tool-bar {
+    background: #94a3b8;
+  }
+  .sst-le-demo {
+    margin-top: 12px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    display: grid;
+    gap: 10px;
+  }
+  .sst-le-demo-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .sst-le-demo-title {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 900;
+    color: #1f2937;
+  }
+  .sst-le-demo-sub {
+    margin: 3px 0 0;
+    font-size: 11px;
+    line-height: 1.45;
+    color: #64748b;
+  }
+  .sst-le-demo-sub strong {
+    color: #334155;
+  }
+  .sst-le-demo-reset {
+    border: 1px solid #d7deea;
+    background: #fff;
+    color: #334155;
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .sst-le-palette {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .sst-le-tool {
+    min-width: 88px;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    border: 1px solid #d7deea;
+    background: #fff;
+    color: #334155;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: grab;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.04);
+  }
+  .sst-le-tool:active {
+    cursor: grabbing;
+  }
+  .sst-le-tool-label {
+    line-height: 1.1;
+    text-align: center;
+  }
+  @media (max-width: 760px) {
+    .sst-le-demo-head {
+      align-items: stretch;
+    }
+    .sst-le-demo-reset {
+      width: 100%;
+    }
+    .sst-le-palette {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .sst-le-tool {
+      min-width: 0;
+    }
+  }
 
   /* Modal: Checklist Control Limpieza */
   .cll-modal {
@@ -8530,7 +8709,53 @@
           </div>
           {% endif %}
           <img src="{{ plano_url }}" alt="Plano {{ sede.codigo }} {{ piso }}">
+          {% if tab == 'sst_luces' %}
+          <div class="sst-le-layer" data-sst-le-layer data-sede="{{ sede.codigo }}" data-piso="{{ piso }}" data-local="{{ local or '' }}">
+            <div class="sst-le-canvas" data-sst-le-canvas></div>
+          </div>
+          {% endif %}
         </div>
+        {% if tab == 'sst_luces' %}
+        <div class="sst-le-demo" data-sst-le-toolbar>
+          <div class="sst-le-demo-head">
+            <div>
+              <p class="sst-le-demo-title">Capa visual de luces de emergencia</p>
+              <p class="sst-le-demo-sub">
+                Arrastra una <strong>L.E.</strong> al plano base limpio.
+                {% if local %}
+                Las nuevas luces quedan marcadas para <strong>{{ local }}</strong>.
+                {% else %}
+                Si filtras un local antes de ubicarla, la luz queda etiquetada con ese deposito.
+                {% endif %}
+                Doble click sobre una luz para quitarla.
+              </p>
+            </div>
+            <button type="button" class="sst-le-demo-reset" data-sst-le-reset>Limpiar demo</button>
+          </div>
+          <div class="sst-le-palette" aria-label="Estados de luces de emergencia">
+            <button type="button" class="sst-le-tool state-prevista" draggable="true" data-sst-le-new="prevista" title="Arrastrar luz prevista">
+              <svg class="sst-le-tool-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a6 6 0 0 0-3.9 10.56c.5.43.9 1.08 1.08 1.79L9.32 15h5.36l.14-.65c.17-.72.57-1.36 1.08-1.8A6 6 0 0 0 12 2Zm-2.18 15 .3 1.4a1 1 0 0 0 .98.8h1.8a1 1 0 0 0 .98-.8l.3-1.4Zm.63 3 .12.55A1.8 1.8 0 0 0 12.32 22h-.64a1.8 1.8 0 0 0 1.75-1.45l.12-.55Z"/></svg>
+              <span class="sst-le-tool-bar"></span>
+              <span class="sst-le-tool-label">Prevista</span>
+            </button>
+            <button type="button" class="sst-le-tool state-instalada" draggable="true" data-sst-le-new="instalada" title="Arrastrar luz instalada">
+              <svg class="sst-le-tool-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a6 6 0 0 0-3.9 10.56c.5.43.9 1.08 1.08 1.79L9.32 15h5.36l.14-.65c.17-.72.57-1.36 1.08-1.8A6 6 0 0 0 12 2Zm-2.18 15 .3 1.4a1 1 0 0 0 .98.8h1.8a1 1 0 0 0 .98-.8l.3-1.4Zm.63 3 .12.55A1.8 1.8 0 0 0 12.32 22h-.64a1.8 1.8 0 0 0 1.75-1.45l.12-.55Z"/></svg>
+              <span class="sst-le-tool-bar"></span>
+              <span class="sst-le-tool-label">Instalada</span>
+            </button>
+            <button type="button" class="sst-le-tool state-fuera_servicio" draggable="true" data-sst-le-new="fuera_servicio" title="Arrastrar luz fuera de servicio">
+              <svg class="sst-le-tool-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a6 6 0 0 0-3.9 10.56c.5.43.9 1.08 1.08 1.79L9.32 15h5.36l.14-.65c.17-.72.57-1.36 1.08-1.8A6 6 0 0 0 12 2Zm-2.18 15 .3 1.4a1 1 0 0 0 .98.8h1.8a1 1 0 0 0 .98-.8l.3-1.4Zm.63 3 .12.55A1.8 1.8 0 0 0 12.32 22h-.64a1.8 1.8 0 0 0 1.75-1.45l.12-.55Z"/></svg>
+              <span class="sst-le-tool-bar"></span>
+              <span class="sst-le-tool-label">Fuera de servicio</span>
+            </button>
+            <button type="button" class="sst-le-tool state-no_aplica" draggable="true" data-sst-le-new="no_aplica" title="Arrastrar luz no aplica">
+              <svg class="sst-le-tool-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a6 6 0 0 0-3.9 10.56c.5.43.9 1.08 1.08 1.79L9.32 15h5.36l.14-.65c.17-.72.57-1.36 1.08-1.8A6 6 0 0 0 12 2Zm-2.18 15 .3 1.4a1 1 0 0 0 .98.8h1.8a1 1 0 0 0 .98-.8l.3-1.4Zm.63 3 .12.55A1.8 1.8 0 0 0 12.32 22h-.64a1.8 1.8 0 0 0 1.75-1.45l.12-.55Z"/></svg>
+              <span class="sst-le-tool-bar"></span>
+              <span class="sst-le-tool-label">No aplica</span>
+            </button>
+          </div>
+        </div>
+        {% endif %}
 
       </div>
 
@@ -9333,7 +9558,7 @@
           <div>
             <div class="panel-section-title">SG-SST Luces de emergencia</div>
             <div class="panel-section-sub">
-              Plano operativo del piso con la capa de luces de emergencia. La gestion y carga siguen en el modulo SG-SST.
+              Plano base del piso con una capa visual liviana para ubicar luces de emergencia. La gestion y carga formal siguen en el modulo SG-SST.
             </div>
           </div>
 
@@ -9346,7 +9571,7 @@
         <div class="card" style="box-shadow:none;border:1px solid var(--border);padding:12px;">
           <div style="font-size:12px;font-weight:800;margin-bottom:6px;">Plano cargado</div>
           <div style="font-size:12px;color:#475467;line-height:1.45;">
-            Se muestra el plano de luces de emergencia para <strong>{{ sede.codigo }}</strong>, piso <strong>{{ piso }}</strong>.
+            Se muestra el plano base para <strong>{{ sede.codigo }}</strong>, piso <strong>{{ piso }}</strong>, con una capa visual de luces de emergencia sobre la imagen.
             {% if local %}El filtro actual mantiene resaltado el local <strong>{{ local }}</strong>.{% endif %}
           </div>
         </div>
@@ -11026,6 +11251,212 @@
     const saved = sessionStorage.getItem(storageKey);
     if (saved && !input.value) input.value = saved;
     applyGlobalFilter();
+  })();
+</script>
+<script>
+  (function () {
+    const layer = document.querySelector("[data-sst-le-layer]");
+    const toolbar = document.querySelector("[data-sst-le-toolbar]");
+    if (!layer || !toolbar) return;
+
+    const canvas = layer.querySelector("[data-sst-le-canvas]");
+    const plan = layer.closest(".plan-img");
+    const resetBtn = toolbar.querySelector("[data-sst-le-reset]");
+    if (!canvas || !plan) return;
+
+    const storageKey = ["sgi", "sst-luces-demo", layer.dataset.sede || "", layer.dataset.piso || ""].join(":");
+    const activeLocal = String(layer.dataset.local || "").toUpperCase();
+    const bulbSvg = '<svg class="sst-le-marker-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a6 6 0 0 0-3.9 10.56c.5.43.9 1.08 1.08 1.79L9.32 15h5.36l.14-.65c.17-.72.57-1.36 1.08-1.8A6 6 0 0 0 12 2Zm-2.18 15 .3 1.4a1 1 0 0 0 .98.8h1.8a1 1 0 0 0 .98-.8l.3-1.4Zm.63 3 .12.55A1.8 1.8 0 0 0 12.32 22h-.64a1.8 1.8 0 0 0 1.75-1.45l.12-.55Z"/></svg>';
+    const stateMeta = {
+      prevista: { label: "Prevista", className: "state-prevista" },
+      instalada: { label: "Instalada", className: "state-instalada" },
+      fuera_servicio: { label: "Fuera de servicio", className: "state-fuera_servicio" },
+      no_aplica: { label: "No aplica", className: "state-no_aplica" }
+    };
+
+    function clamp01(value) {
+      return Math.max(0.03, Math.min(0.97, Number(value || 0)));
+    }
+
+    function safeRead() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(storageKey) || "[]");
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (err) {
+        return [];
+      }
+    }
+
+    function save() {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(markers));
+      } catch (err) {
+        // Ignore local storage failures.
+      }
+    }
+
+    function normalizeMarker(item) {
+      const marker = item || {};
+      return {
+        id: String(marker.id || ("le-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7))),
+        state: stateMeta[marker.state] ? marker.state : "prevista",
+        x: clamp01(marker.x),
+        y: clamp01(marker.y),
+        label: String(marker.label || ""),
+        local: String(marker.local || "").toUpperCase()
+      };
+    }
+
+    let markers = safeRead().map(normalizeMarker);
+
+    function nextLabel() {
+      let max = 0;
+      markers.forEach((marker) => {
+        const match = String(marker.label || "").match(/(\d+)/);
+        if (match) max = Math.max(max, Number(match[1] || 0));
+      });
+      return "LE " + String(max + 1).padStart(2, "0");
+    }
+
+    function pointFromEvent(ev) {
+      const rect = plan.getBoundingClientRect();
+      const x = rect.width ? (ev.clientX - rect.left) / rect.width : 0.5;
+      const y = rect.height ? (ev.clientY - rect.top) / rect.height : 0.5;
+      return { x: clamp01(x), y: clamp01(y) };
+    }
+
+    function addMarker(state, point) {
+      markers.push({
+        id: "le-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7),
+        state: stateMeta[state] ? state : "prevista",
+        x: point.x,
+        y: point.y,
+        label: nextLabel(),
+        local: activeLocal
+      });
+      save();
+      render();
+    }
+
+    function render() {
+      canvas.innerHTML = "";
+      markers.forEach((marker) => {
+        const meta = stateMeta[marker.state] || stateMeta.prevista;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "sst-le-marker " + meta.className;
+        if (activeLocal && marker.local) {
+          btn.classList.add(marker.local === activeLocal ? "is-focus" : "is-dim");
+        }
+        btn.draggable = true;
+        btn.dataset.markerId = marker.id;
+        btn.style.left = (marker.x * 100).toFixed(2) + "%";
+        btn.style.top = (marker.y * 100).toFixed(2) + "%";
+        btn.title = marker.label + " - " + meta.label + (marker.local ? " - " + marker.local : "");
+
+        const chip = document.createElement("span");
+        chip.className = "sst-le-marker-chip";
+        chip.insertAdjacentHTML("beforeend", bulbSvg);
+
+        const code = document.createElement("span");
+        code.className = "sst-le-marker-code";
+        code.textContent = marker.label;
+        chip.appendChild(code);
+
+        if (marker.local) {
+          const localEl = document.createElement("span");
+          localEl.className = "sst-le-marker-local";
+          localEl.textContent = marker.local;
+          chip.appendChild(localEl);
+        }
+
+        const bar = document.createElement("span");
+        bar.className = "sst-le-marker-bar";
+        chip.appendChild(bar);
+        btn.appendChild(chip);
+
+        btn.addEventListener("dragstart", function (ev) {
+          ev.dataTransfer.setData("text/sst-le-existing", marker.id);
+          ev.dataTransfer.effectAllowed = "move";
+        });
+
+        btn.addEventListener("dblclick", function () {
+          markers = markers.filter((item) => item.id !== marker.id);
+          save();
+          render();
+        });
+
+        canvas.appendChild(btn);
+      });
+    }
+
+    toolbar.querySelectorAll("[data-sst-le-new]").forEach((item) => {
+      const state = String(item.getAttribute("data-sst-le-new") || "");
+      item.addEventListener("dragstart", function (ev) {
+        ev.dataTransfer.setData("text/sst-le-new", state);
+        ev.dataTransfer.effectAllowed = "copy";
+      });
+      item.addEventListener("click", function () {
+        addMarker(state, { x: 0.5, y: 0.5 });
+      });
+    });
+
+    let dragDepth = 0;
+
+    plan.addEventListener("dragenter", function (ev) {
+      const types = ev.dataTransfer ? Array.from(ev.dataTransfer.types || []) : [];
+      if (!types.includes("text/sst-le-new") && !types.includes("text/sst-le-existing")) return;
+      dragDepth += 1;
+      plan.classList.add("sst-le-drop-active");
+    });
+
+    plan.addEventListener("dragover", function (ev) {
+      const types = ev.dataTransfer ? Array.from(ev.dataTransfer.types || []) : [];
+      if (!types.includes("text/sst-le-new") && !types.includes("text/sst-le-existing")) return;
+      ev.preventDefault();
+      plan.classList.add("sst-le-drop-active");
+      ev.dataTransfer.dropEffect = types.includes("text/sst-le-existing") ? "move" : "copy";
+    });
+
+    plan.addEventListener("dragleave", function () {
+      dragDepth = Math.max(0, dragDepth - 1);
+      if (!dragDepth) plan.classList.remove("sst-le-drop-active");
+    });
+
+    plan.addEventListener("drop", function (ev) {
+      ev.preventDefault();
+      dragDepth = 0;
+      plan.classList.remove("sst-le-drop-active");
+      const point = pointFromEvent(ev);
+      const existingId = ev.dataTransfer.getData("text/sst-le-existing");
+      const newState = ev.dataTransfer.getData("text/sst-le-new");
+
+      if (existingId) {
+        markers = markers.map((item) => item.id === existingId ? Object.assign({}, item, point) : item);
+        save();
+        render();
+        return;
+      }
+
+      if (newState) {
+        addMarker(newState, point);
+      }
+    });
+
+    document.addEventListener("dragend", function () {
+      dragDepth = 0;
+      plan.classList.remove("sst-le-drop-active");
+    });
+
+    if (resetBtn) {
+      resetBtn.addEventListener("click", function () {
+        markers = [];
+        save();
+        render();
+      });
+    }
+
+    render();
   })();
 </script>
 <script>
