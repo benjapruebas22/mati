@@ -44,7 +44,12 @@
         <tbody>
           {% for row in state_by_sede %}
           <tr>
-            <td><strong>{{ row.sede_codigo }}</strong><br><small>{{ row.sede_nombre }}</small></td>
+            <td>
+              <a class="sst-calendar-sede-link" href="{{ url_for('sede_ficha', codigo=row.sede_codigo) }}" title="Abrir detalle de {{ row.sede_codigo }}">
+                <div class="sst-calendar-sede-code">{{ row.sede_codigo }}</div>
+                <div class="sst-calendar-sede-name">{{ row.sede_nombre }}</div>
+              </a>
+            </td>
             <td>{{ fmt_fecha(row.ultima_desinfeccion) if row.ultima_desinfeccion else '-' }}</td>
             <td>{{ row.modalidad_label }}</td>
             <td>{{ fmt_fecha(row.proxima_prevista) if row.proxima_prevista else '-' }}</td>
