@@ -4757,6 +4757,38 @@
     position: absolute;
     inset: 0;
   }
+  .mob-plan-local-zone {
+    position: absolute;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(203, 213, 225, 0.55);
+    box-shadow: 0 8px 18px rgba(148, 163, 184, 0.1);
+    pointer-events: none;
+  }
+  .mob-plan-local-zone-badge {
+    position: absolute;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(148, 163, 184, 0.45);
+    color: #475467;
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: .04em;
+    line-height: 1;
+    box-shadow: 0 6px 12px rgba(148, 163, 184, 0.12);
+    pointer-events: none;
+  }
+  .mob-plan-local-zone-badge.is-left {
+    transform: translate(0, -100%);
+  }
+  .mob-plan-local-zone-badge.is-right {
+    transform: translate(-100%, -100%);
+  }
   .plan-img.mob-plan-drop-active {
     border-color: #a4b5d6;
     box-shadow: inset 0 0 0 1px rgba(71, 85, 105, 0.16), 0 18px 34px rgba(71, 85, 105, 0.12);
@@ -13017,6 +13049,41 @@
       });
     }
 
+    function buildActiveLocalZone() {
+      if (!activeLocal) return null;
+      const placed = items.filter((item) => item.placed && item.local === activeLocal);
+      if (!placed.length) return null;
+
+      const xs = placed.map((item) => item.x);
+      const ys = placed.map((item) => item.y);
+      const minX = Math.min.apply(null, xs);
+      const maxX = Math.max.apply(null, xs);
+      const minY = Math.min.apply(null, ys);
+      const maxY = Math.max.apply(null, ys);
+
+      const padX = 0.055;
+      const padY = 0.075;
+      const left = clamp01(minX - padX);
+      const right = clamp01(maxX + padX);
+      const top = clamp01(minY - padY);
+      const bottom = clamp01(maxY + padY);
+
+      const useLeft = left > 0.1;
+      const badgeX = useLeft ? left : right;
+      const badgeY = top;
+
+      return {
+        left: left,
+        top: top,
+        width: Math.max(0.1, right - left),
+        height: Math.max(0.08, bottom - top),
+        badgeX: badgeX,
+        badgeY: badgeY,
+        badgeClass: useLeft ? "is-left" : "is-right",
+        local: activeLocal
+      };
+    }
+
     function sendToTray(item) {
       item.placed = false;
       item.x = null;
@@ -13126,6 +13193,24 @@
     function render() {
       canvas.innerHTML = "";
       tray.innerHTML = "";
+
+      const activeLocalZone = buildActiveLocalZone();
+      if (activeLocalZone) {
+        const zone = document.createElement("span");
+        zone.className = "mob-plan-local-zone";
+        zone.style.left = (activeLocalZone.left * 100).toFixed(2) + "%";
+        zone.style.top = (activeLocalZone.top * 100).toFixed(2) + "%";
+        zone.style.width = (activeLocalZone.width * 100).toFixed(2) + "%";
+        zone.style.height = (activeLocalZone.height * 100).toFixed(2) + "%";
+        canvas.appendChild(zone);
+
+        const badge = document.createElement("span");
+        badge.className = "mob-plan-local-zone-badge " + activeLocalZone.badgeClass;
+        badge.style.left = (activeLocalZone.badgeX * 100).toFixed(2) + "%";
+        badge.style.top = (activeLocalZone.badgeY * 100).toFixed(2) + "%";
+        badge.textContent = activeLocalZone.local;
+        canvas.appendChild(badge);
+      }
 
       items.slice().sort(compareItems).forEach((item) => {
         const piece = buildPiece(item);
