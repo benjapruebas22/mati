@@ -318,6 +318,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
     SST_LUCES_FORM_STATE_LABELS = {key: value for key, value in SST_LUCES_STATE_LABELS.items()}
     SST_CARTELERIA_PLACEHOLDER_PISO = "SEDE"
     SST_CARTELERIA_PLACEHOLDER_DEPOSITO = "SEDE"
+    SST_CARTELERIA_PLAN_PREFIX = "[[SGSST_CARTELERIA_PLANO_V1]]"
     SST_LUCES_PLACEHOLDER_PISO = "SEDE"
     SST_LUCES_PLACEHOLDER_DEPOSITO = "SEDE"
     SST_LUCES_INITIAL_LOAD = [
@@ -7370,6 +7371,72 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         state_code = _sst_clean_upper(record.get("state_code") or _sst_luces_state_code(record))
         return state_code in SST_LUCES_PENDING_STATES
 
+    def _sst_carteleria_unpack_observaciones(raw_value):
+        raw_text = str(raw_value or "").strip()
+        if not raw_text:
+            return "", []
+        if not raw_text.startswith(SST_CARTELERIA_PLAN_PREFIX):
+            return raw_text, []
+        try:
+            payload = json.loads(raw_text[len(SST_CARTELERIA_PLAN_PREFIX):].strip() or "{}")
+        except Exception:
+            return raw_text, []
+        note = str((payload or {}).get("note") or "").strip()
+        markers = []
+        for item in ((payload or {}).get("markers") or []):
+            if not isinstance(item, dict):
+                continue
+            tipo_code = _sst_carteleria_canonical_tipo_code(item.get("type"))
+            if not tipo_code:
+                continue
+            try:
+                x_val = float(item.get("x", 0.5))
+            except Exception:
+                x_val = 0.5
+            try:
+                y_val = float(item.get("y", 0.5))
+            except Exception:
+                y_val = 0.5
+            x_val = max(0.03, min(0.97, x_val))
+            y_val = max(0.03, min(0.97, y_val))
+            markers.append({
+                "type": tipo_code,
+                "label": str(item.get("label") or "").strip(),
+                "local": (_sst_clean_upper(item.get("local")) or "").strip().upper(),
+                "x": x_val,
+                "y": y_val,
+            })
+        return note, markers
+
+    def _sst_carteleria_pack_observaciones(markers=None, note=""):
+        safe_markers = []
+        for item in (markers or []):
+            if not isinstance(item, dict):
+                continue
+            tipo_code = _sst_carteleria_canonical_tipo_code(item.get("type"))
+            if not tipo_code:
+                continue
+            try:
+                x_val = float(item.get("x", 0.5))
+            except Exception:
+                x_val = 0.5
+            try:
+                y_val = float(item.get("y", 0.5))
+            except Exception:
+                y_val = 0.5
+            safe_markers.append({
+                "type": tipo_code,
+                "label": str(item.get("label") or "").strip(),
+                "local": (_sst_clean_upper(item.get("local")) or "").strip().upper(),
+                "x": max(0.03, min(0.97, x_val)),
+                "y": max(0.03, min(0.97, y_val)),
+            })
+        payload = {
+            "note": str(note or "").strip(),
+            "markers": safe_markers,
+        }
+        return SST_CARTELERIA_PLAN_PREFIX + json.dumps(payload, ensure_ascii=True, separators=(",", ":"))
+
     def _sst_fetch_carteleria_records(con):
         ensure_sst_carteleria_tables(con)
         depositos_map, _ = _sst_fetch_depositos_map(con)
@@ -7422,6 +7489,10 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 or (_row_value(row, "fecha_programada_colocacion", "") or "").strip()
             )
             item["estado"] = _sst_carteleria_normalize_manual_state(_row_value(row, "estado", "")) or (_row_value(row, "estado", "") or "").strip().upper()
+            obs_note, plan_markers = _sst_carteleria_unpack_observaciones(_row_value(row, "observaciones", ""))
+            item["observaciones_raw"] = (_row_value(row, "observaciones", "") or "").strip()
+            item["observaciones"] = obs_note
+            item["plan_markers"] = plan_markers
             item["aplica_label"] = SST_CARTELERIA_APLICA_LABELS.get(item["aplica"], "No relevado")
             item["state_code"] = _sst_carteleria_state_code(item)
             item["state_meta"] = _sst_state_badge(item["state_code"], SST_CARTELERIA_STATE_LABELS)
@@ -7483,7 +7554,14 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     item for item in tipo_records
                     if item.get("piso") == SST_CARTELERIA_PLACEHOLDER_PISO and item.get("deposito_codigo") == SST_CARTELERIA_PLACEHOLDER_DEPOSITO
                 ]
-                effective_records = placeholder_records or tipo_records
+                plan_records = [
+                    item for item in tipo_records
+                    if not (
+                        item.get("piso") == SST_CARTELERIA_PLACEHOLDER_PISO
+                        and item.get("deposito_codigo") == SST_CARTELERIA_PLACEHOLDER_DEPOSITO
+                    )
+                ]
+                effective_records = plan_records or placeholder_records or tipo_records
                 detail = _sst_carteleria_type_detail(effective_records)
                 primary_record = detail["primary_record"]
                 if primary_record:
@@ -8780,6 +8858,183 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         context = _sst_carteleria_context(con)
         con.close()
         return render_template("sst_carteleria_home.html", **context)
+
+    @app.route("/sst/carteleria/plano/<sede_codigo>/<piso>", methods=["GET", "POST"], endpoint="sst_carteleria_plano_api")
+    def sst_carteleria_plano_api(sede_codigo, piso):
+        con = get_db()
+        ensure_sst_carteleria_tables(con)
+        ensure_sst_operativo_historial_tables(con)
+        sede_codigo = (_sst_clean_upper(sede_codigo) or "").strip().upper()
+        piso = (_sst_clean_upper(piso) or "PB").strip().upper()
+        if piso == "1P":
+            piso = "P1"
+        elif piso == "2P":
+            piso = "P2"
+
+        if not sede_codigo:
+            con.close()
+            return jsonify({"ok": False, "message": "Sede invalida."}), 400
+
+        if request.method == "GET":
+            markers = []
+            for record in _sst_fetch_carteleria_records(con):
+                if record.get("sede_codigo") != sede_codigo or record.get("piso") != piso:
+                    continue
+                if not record.get("plan_markers"):
+                    continue
+                default_local = "" if record.get("deposito_codigo") == SST_CARTELERIA_PLACEHOLDER_DEPOSITO else (record.get("deposito_codigo") or "")
+                default_type = record.get("canonical_tipo_codigo") or record.get("tipo_codigo") or ""
+                for marker in (record.get("plan_markers") or []):
+                    try:
+                        x_val = float(marker.get("x", 0.5))
+                    except Exception:
+                        x_val = 0.5
+                    try:
+                        y_val = float(marker.get("y", 0.5))
+                    except Exception:
+                        y_val = 0.5
+                    markers.append({
+                        "id": f"ct-{uuid.uuid4().hex[:8]}",
+                        "type": _sst_carteleria_canonical_tipo_code(marker.get("type") or default_type),
+                        "label": str(marker.get("label") or "").strip(),
+                        "local": (_sst_clean_upper(marker.get("local") or default_local) or "").strip().upper(),
+                        "x": max(0.03, min(0.97, x_val)),
+                        "y": max(0.03, min(0.97, y_val)),
+                    })
+            con.close()
+            return jsonify({"ok": True, "markers": markers})
+
+        payload = request.get_json(silent=True) or {}
+        raw_markers = payload.get("markers")
+        if not isinstance(raw_markers, list):
+            con.close()
+            return jsonify({"ok": False, "message": "No se recibieron marcadores validos."}), 400
+
+        user_name = _sst_current_user()
+        type_rows = con.execute("""
+            SELECT id, codigo
+            FROM sst_carteleria_tipos
+            WHERE COALESCE(activo, 1) = 1
+        """).fetchall()
+        type_id_by_code = {
+            (_row_value(row, "codigo", "") or "").strip().upper(): int(_row_value(row, "id", 0) or 0)
+            for row in type_rows
+        }
+
+        grouped = defaultdict(list)
+        payload_type_codes = set()
+        for idx, marker in enumerate(raw_markers, start=1):
+            if not isinstance(marker, dict):
+                continue
+            type_code = _sst_carteleria_canonical_tipo_code(marker.get("type"))
+            if not type_code or int(type_id_by_code.get(type_code) or 0) <= 0:
+                continue
+            try:
+                x_val = float(marker.get("x", 0.5))
+            except Exception:
+                x_val = 0.5
+            try:
+                y_val = float(marker.get("y", 0.5))
+            except Exception:
+                y_val = 0.5
+            local_label = (_sst_clean_upper(marker.get("local")) or "").strip().upper()
+            storage_local = local_label or SST_CARTELERIA_PLACEHOLDER_DEPOSITO
+            label = str(marker.get("label") or "").strip() or f"{type_code} {idx:02d}"
+            grouped[(storage_local, type_code)].append({
+                "type": type_code,
+                "label": label,
+                "local": local_label,
+                "x": max(0.03, min(0.97, x_val)),
+                "y": max(0.03, min(0.97, y_val)),
+            })
+            payload_type_codes.add(type_code)
+
+        now_ts = _sst_now_ts()
+        con.execute("""
+            UPDATE sst_carteleria_registros
+            SET activo = 0, actualizado_por = ?, fecha_actualizacion = ?
+            WHERE COALESCE(activo, 1) = 1
+              AND UPPER(COALESCE(sede_codigo, '')) = ?
+              AND UPPER(COALESCE(piso, 'PB')) = ?
+              AND NOT (
+                UPPER(COALESCE(piso, 'SEDE')) = ?
+                AND UPPER(COALESCE(deposito_codigo, 'SEDE')) = ?
+              )
+        """, (user_name, now_ts, sede_codigo, piso, SST_CARTELERIA_PLACEHOLDER_PISO, SST_CARTELERIA_PLACEHOLDER_DEPOSITO))
+
+        if payload_type_codes:
+            placeholders = con.execute(f"""
+                SELECT r.id
+                FROM sst_carteleria_registros r
+                JOIN sst_carteleria_tipos t ON t.id = r.tipo_id
+                WHERE COALESCE(r.activo, 1) = 1
+                  AND UPPER(COALESCE(r.sede_codigo, '')) = ?
+                  AND UPPER(COALESCE(r.piso, 'SEDE')) = ?
+                  AND UPPER(COALESCE(r.deposito_codigo, 'SEDE')) = ?
+                  AND UPPER(COALESCE(t.codigo, '')) IN ({",".join(["?"] * len(payload_type_codes))})
+            """, (sede_codigo, SST_CARTELERIA_PLACEHOLDER_PISO, SST_CARTELERIA_PLACEHOLDER_DEPOSITO, *sorted(payload_type_codes))).fetchall()
+            placeholder_ids = [int(_row_value(row, "id", 0) or 0) for row in placeholders if int(_row_value(row, "id", 0) or 0) > 0]
+            if placeholder_ids:
+                con.execute(f"""
+                    UPDATE sst_carteleria_registros
+                    SET activo = 0, actualizado_por = ?, fecha_actualizacion = ?
+                    WHERE id IN ({",".join(["?"] * len(placeholder_ids))})
+                """, (user_name, now_ts, *placeholder_ids))
+
+        registro_id = 0
+        saved_markers = []
+        for (storage_local, type_code), markers_for_row in grouped.items():
+            tipo_id = int(type_id_by_code.get(type_code) or 0)
+            if not tipo_id:
+                continue
+            count = len(markers_for_row)
+            observaciones = _sst_carteleria_pack_observaciones(markers_for_row)
+            con.execute("""
+                INSERT INTO sst_carteleria_registros(
+                    sede_codigo, piso, deposito_codigo, tipo_id, aplica, cantidad_requerida, cantidad_instalada, estado,
+                    fecha_relevamiento, responsable_relevamiento, fecha_pedido, numero_pedido, fecha_disponibilidad,
+                    fecha_programada_colocacion, fecha_colocacion, fecha_verificacion, observaciones,
+                    creado_por, actualizado_por, fecha_creacion, fecha_actualizacion
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                sede_codigo,
+                piso,
+                storage_local,
+                tipo_id,
+                "SI",
+                count,
+                count,
+                None,
+                date.today().isoformat(),
+                user_name,
+                None,
+                None,
+                None,
+                None,
+                date.today().isoformat(),
+                None,
+                observaciones,
+                user_name,
+                user_name,
+                now_ts,
+                now_ts,
+            ))
+            registro_id = registro_id or int(con.execute("SELECT last_insert_rowid()").fetchone()[0])
+            saved_markers.extend(markers_for_row)
+
+        _sst_historial_log(
+            con,
+            "carteleria",
+            "actualizacion",
+            registro_id,
+            sede_codigo,
+            piso,
+            f"Plano de carteleria actualizado desde sede ({piso}). Marcadores: {len(saved_markers)}.",
+        )
+        con.commit()
+        con.close()
+        return jsonify({"ok": True, "message": "Carteleria guardada.", "markers": saved_markers})
 
     @app.route("/sst", methods=["GET", "POST"], endpoint="sst_general")
     def sst_general():

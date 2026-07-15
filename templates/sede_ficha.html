@@ -4813,6 +4813,13 @@
     gap: 10px;
     flex-wrap: wrap;
   }
+  .sst-ct-demo-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
   .sst-ct-demo-title {
     margin: 0;
     font-size: 12px;
@@ -4837,6 +4844,30 @@
     font-size: 11px;
     font-weight: 800;
     cursor: pointer;
+  }
+  .sst-ct-demo-save {
+    border: 1px solid #1d4ed8;
+    background: #2563eb;
+    color: #fff;
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 8px 16px rgba(37, 99, 235, 0.16);
+  }
+  .sst-ct-demo-save[disabled] {
+    opacity: .72;
+    cursor: wait;
+  }
+  .sst-ct-demo-status {
+    min-height: 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #2563eb;
+  }
+  .sst-ct-demo-status.is-error {
+    color: #b42318;
   }
   .sst-ct-palette {
     display: grid;
@@ -4876,8 +4907,15 @@
     .sst-ct-demo-head {
       align-items: stretch;
     }
-    .sst-ct-demo-reset {
+    .sst-ct-demo-actions {
       width: 100%;
+      justify-content: stretch;
+    }
+    .sst-ct-demo-reset {
+      flex: 1 1 0;
+    }
+    .sst-ct-demo-save {
+      flex: 1 1 0;
     }
     .sst-ct-palette {
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -8891,7 +8929,7 @@
           {% endif %}
           <img src="{{ plano_url }}" alt="Plano {{ sede.codigo }} {{ piso }}">
           {% if tab == 'sst_carteleria' %}
-          <div class="sst-ct-layer" data-sst-ct-layer data-sede="{{ sede.codigo }}" data-piso="{{ piso }}" data-local="{{ local or '' }}">
+          <div class="sst-ct-layer" data-sst-ct-layer data-sede="{{ sede.codigo }}" data-piso="{{ piso }}" data-local="{{ local or '' }}" data-api-url="{{ url_for('sst_carteleria_plano_api', sede_codigo=sede.codigo, piso=piso) }}">
             <div class="sst-ct-canvas" data-sst-ct-canvas></div>
           </div>
           {% endif %}
@@ -8913,11 +8951,15 @@
                 {% else %}
                 Si filtras un local antes de ubicarla, la senal queda etiquetada con ese deposito.
                 {% endif %}
-                Doble click sobre una senal para quitarla.
+                Doble click sobre una senal para quitarla y luego usa <strong>Guardar plano</strong>.
               </p>
             </div>
-            <button type="button" class="sst-ct-demo-reset" data-sst-ct-reset>Limpiar demo</button>
+            <div class="sst-ct-demo-actions">
+              <button type="button" class="sst-ct-demo-save" data-sst-ct-save>Guardar plano</button>
+              <button type="button" class="sst-ct-demo-reset" data-sst-ct-reset>Limpiar demo</button>
+            </div>
           </div>
+          <div class="sst-ct-demo-status" data-sst-ct-status aria-live="polite"></div>
           <div class="sst-ct-palette" aria-label="Tipos de carteleria">
             <button type="button" class="sst-ct-tool type-matafuegos" draggable="true" data-sst-ct-new="matafuegos" title="Arrastrar cartel de matafuegos">
               <span class="sst-ct-tool-code">MTF</span>
@@ -11509,9 +11551,11 @@
     const canvas = layer.querySelector("[data-sst-ct-canvas]");
     const plan = layer.closest(".plan-img");
     const resetBtn = toolbar.querySelector("[data-sst-ct-reset]");
+    const saveBtn = toolbar.querySelector("[data-sst-ct-save]");
+    const statusEl = toolbar.querySelector("[data-sst-ct-status]");
     if (!canvas || !plan) return;
 
-    const storageKey = ["sgi", "sst-carteleria-demo", layer.dataset.sede || "", layer.dataset.piso || ""].join(":");
+    const apiUrl = String(layer.dataset.apiUrl || "").trim();
     const activeLocal = String(layer.dataset.local || "").toUpperCase();
     const typeMeta = {
       matafuegos: { label: "Matafuegos", short: "MTF", className: "type-matafuegos" },
@@ -11528,21 +11572,20 @@
       return Math.max(0.03, Math.min(0.97, Number(value || 0)));
     }
 
-    function safeRead() {
-      try {
-        const parsed = JSON.parse(localStorage.getItem(storageKey) || "[]");
-        return Array.isArray(parsed) ? parsed : [];
-      } catch (err) {
-        return [];
-      }
+    function setStatus(message, isError) {
+      if (!statusEl) return;
+      statusEl.textContent = message || "";
+      statusEl.classList.toggle("is-error", !!isError);
     }
 
-    function save() {
-      try {
-        localStorage.setItem(storageKey, JSON.stringify(markers));
-      } catch (err) {
-        // Ignore local storage failures.
-      }
+    function markDirty() {
+      setStatus("Cambios sin guardar.", false);
+    }
+
+    function setSaving(isSaving) {
+      if (!saveBtn) return;
+      saveBtn.disabled = !!isSaving;
+      saveBtn.textContent = isSaving ? "Guardando..." : "Guardar plano";
     }
 
     function normalizeMarker(item) {
@@ -11558,7 +11601,70 @@
       };
     }
 
-    let markers = safeRead().map(normalizeMarker);
+    async function loadMarkers() {
+      if (!apiUrl) {
+        setStatus("No se encontro la ruta de guardado.", true);
+        return;
+      }
+      setStatus("Cargando carteleria guardada...", false);
+      try {
+        const response = await fetch(apiUrl, {
+          headers: { "Accept": "application/json" },
+          credentials: "same-origin"
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.message || "No se pudo cargar la carteleria.");
+        }
+        markers = Array.isArray(payload.markers) ? payload.markers.map(normalizeMarker) : [];
+        render();
+        setStatus(markers.length ? "Carteleria cargada desde el plano guardado." : "Sin carteleria guardada para este piso.", false);
+      } catch (err) {
+        setStatus((err && err.message) || "No se pudo cargar la carteleria.", true);
+      }
+    }
+
+    async function persist() {
+      if (!apiUrl) {
+        setStatus("No se encontro la ruta de guardado.", true);
+        return;
+      }
+      setSaving(true);
+      setStatus("Guardando carteleria del plano...", false);
+      try {
+        const response = await fetch(apiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          credentials: "same-origin",
+          body: JSON.stringify({
+            markers: markers.map((marker) => ({
+              id: marker.id,
+              type: marker.type,
+              label: marker.label,
+              local: marker.local,
+              x: marker.x,
+              y: marker.y
+            }))
+          })
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.message || "No se pudo guardar la carteleria.");
+        }
+        markers = Array.isArray(payload.markers) ? payload.markers.map(normalizeMarker) : [];
+        render();
+        setStatus(payload.message || "Carteleria guardada.", false);
+      } catch (err) {
+        setStatus((err && err.message) || "No se pudo guardar la carteleria.", true);
+      } finally {
+        setSaving(false);
+      }
+    }
+
+    let markers = [];
 
     function nextLabel(type) {
       let max = 0;
@@ -11587,8 +11693,8 @@
         label: nextLabel(safeType),
         local: activeLocal
       });
-      save();
       render();
+      markDirty();
     }
 
     function render() {
@@ -11635,8 +11741,8 @@
 
         btn.addEventListener("dblclick", function () {
           markers = markers.filter((item) => item.id !== marker.id);
-          save();
           render();
+          markDirty();
         });
 
         canvas.appendChild(btn);
@@ -11686,8 +11792,8 @@
 
       if (existingId) {
         markers = markers.map((item) => item.id === existingId ? Object.assign({}, item, point) : item);
-        save();
         render();
+        markDirty();
         return;
       }
 
@@ -11704,12 +11810,18 @@
     if (resetBtn) {
       resetBtn.addEventListener("click", function () {
         markers = [];
-        save();
         render();
+        markDirty();
       });
     }
 
-    render();
+    if (saveBtn) {
+      saveBtn.addEventListener("click", function () {
+        persist();
+      });
+    }
+
+    loadMarkers();
   })();
 </script>
 <script>
