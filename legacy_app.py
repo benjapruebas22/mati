@@ -1521,6 +1521,10 @@ os.makedirs(PLANOS_DIR, exist_ok=True)
 
 MOBILIARIO_PLANOS_DIR = os.path.join(BASE_DIR, "uploads", "mobiliario_planos")
 os.makedirs(MOBILIARIO_PLANOS_DIR, exist_ok=True)
+AIRES_PLANOS_DIR = os.path.join(BASE_DIR, "uploads", "aires_planos")
+os.makedirs(AIRES_PLANOS_DIR, exist_ok=True)
+MATAFUEGOS_PLANOS_DIR = os.path.join(BASE_DIR, "uploads", "matafuegos_planos")
+os.makedirs(MATAFUEGOS_PLANOS_DIR, exist_ok=True)
 
 ALLOWED_EXTENSIONS_PLANOS = {"pdf", "jpg", "jpeg", "png"}
 
@@ -5768,9 +5772,8 @@ def sede_ficha(codigo):
         # Luces de emergencia se trabajan sobre el plano base limpio.
         plano_base = piso
     elif tab == "matafuegos":
-        c = f"{piso}_seg"
-        if _pick_plan_file(codigo, c):
-            plano_base = c
+        # Matafuegos tambien se trabajan sobre el plano base limpio.
+        plano_base = piso
     elif tab == "evacuacion":
         c = f"{piso}_eva"
         if _pick_plan_file(codigo, c):
@@ -5779,9 +5782,8 @@ def sede_ficha(codigo):
         # Carteleria tambien se trabaja sobre el plano base limpio.
         plano_base = piso
     elif tab == "aires":
-        c = f"{piso}_aires"
-        if _pick_plan_file(codigo, c):
-            plano_base = c
+        # Aires tambien se trabajan sobre el plano base limpio.
+        plano_base = piso
 
     plano_rel = _pick_plan_file(codigo, plano_base) or "planos/placeholder.png"
     plano_abs = os.path.join(app.root_path, "static", plano_rel.replace("/", os.sep))
@@ -11491,6 +11493,272 @@ def _mobiliario_plano_summary(items):
     }
 
 
+def _visual_plan_storage_path(base_dir, sede_codigo, piso):
+    sede_safe = re.sub(r"[^A-Z0-9_-]", "", (sede_codigo or "").upper().strip()) or "SEDE"
+    piso_safe = re.sub(r"[^A-Z0-9_-]", "", _mobiliario_plano_normalize_piso(piso)) or "PB"
+    sede_dir = os.path.join(base_dir, sede_safe)
+    os.makedirs(sede_dir, exist_ok=True)
+    return os.path.join(sede_dir, f"{piso_safe}.json")
+
+
+def _visual_plan_load_saved_state(base_dir, sede_codigo, piso):
+    path = _visual_plan_storage_path(base_dir, sede_codigo, piso)
+    if not os.path.exists(path):
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            payload = json.load(fh)
+    except Exception:
+        return {}
+    raw_items = payload.get("items") if isinstance(payload, dict) else []
+    saved = {}
+    if not isinstance(raw_items, list):
+        return saved
+    for raw in raw_items:
+        if not isinstance(raw, dict):
+            continue
+        item_id = str(raw.get("id") or "").strip()
+        if not item_id:
+            continue
+        placed = bool(raw.get("placed"))
+        item = {"placed": placed}
+        if placed:
+            item["x"] = _mobiliario_plano_clamp01(raw.get("x"))
+            item["y"] = _mobiliario_plano_clamp01(raw.get("y"))
+        saved[item_id] = item
+    return saved
+
+
+def _visual_plan_save_state(base_dir, sede_codigo, piso, items):
+    path = _visual_plan_storage_path(base_dir, sede_codigo, piso)
+    payload = {
+        "version": 1,
+        "saved_at": datetime.now().isoformat(timespec="seconds"),
+        "items": items,
+    }
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump(payload, fh, ensure_ascii=False, indent=2)
+
+
+def _visual_plan_merge_items(seed_items, saved_state):
+    merged = []
+    for item in seed_items:
+        saved = saved_state.get(item["id"], {})
+        placed = bool(saved.get("placed"))
+        merged.append({
+            **item,
+            "placed": placed,
+            "x": saved.get("x") if placed else None,
+            "y": saved.get("y") if placed else None,
+        })
+    return merged
+
+
+def _visual_plan_payload_response(seed_items, saved_state):
+    items = _visual_plan_merge_items(seed_items, saved_state)
+    return {
+        "ok": True,
+        "items": items,
+        "summary": _mobiliario_plano_summary(items),
+    }
+
+
+def _visual_plan_norm_text(raw):
+    txt = unicodedata.normalize("NFKD", str(raw or "")).encode("ascii", "ignore").decode("ascii").lower()
+    for ch in (".", ",", ";", ":", "-", "_", "/", "\\", "(", ")"):
+        txt = txt.replace(ch, " ")
+    return " ".join(txt.split())
+
+
+VISUAL_PLAN_LOCAL_RANGES = {
+    "S01": {"PB": (1, 10), "P1": (11, 20), "P2": (21, 31)},
+    "S11": {"PB": (1, 25), "P1": (26, 47), "P2": (48, 61)},
+    "S20": {"PB": (1, 10), "P1": (11, 17)},
+    "S22": {"PB": (1, 10), "P1": (11, 20), "P2": (21, 31)},
+}
+
+
+def _visual_plan_local_matches_piso(sede_codigo, piso, local_code):
+    cfg = VISUAL_PLAN_LOCAL_RANGES.get((sede_codigo or "").upper().strip(), {})
+    piso_norm = _mobiliario_plano_normalize_piso(piso)
+    local = _mobiliario_plano_normalize_local(local_code)
+    if not cfg:
+        return True
+    if local.startswith("D") and local[1:].isdigit():
+        number = int(local[1:])
+        for piso_code, bounds in cfg.items():
+            low, high = bounds
+            if low <= number <= high:
+                return piso_code == piso_norm
+        return piso_norm == "PB"
+    return piso_norm == "PB"
+
+
+def _aires_plan_valid_where(alias):
+    estado_norm = f"LOWER(TRIM(COALESCE({alias}.estado,'')))"
+    obs_norm = f"LOWER(TRIM(COALESCE({alias}.observaciones,'')))"
+    return (
+        f"({estado_norm} NOT IN ('no va a ir','no va ir','sin aire','n/a','no aplica') "
+        f"AND {obs_norm} NOT LIKE '%central%' "
+        f"AND ((NULLIF(TRIM({alias}.marca),'') IS NOT NULL "
+        f"AND UPPER(TRIM({alias}.marca)) NOT IN ('-','PENDIENTE')) "
+        f"OR (NULLIF(TRIM({alias}.estado),'') IS NOT NULL) "
+        f"OR {alias}.fecha_ultima_limpieza IS NOT NULL "
+        f"OR {alias}.fecha_ultimo_service IS NOT NULL "
+        f"OR {alias}.observaciones IS NOT NULL))"
+    )
+
+
+def _aires_plan_kind(estado_raw):
+    estado = str(estado_raw or "").strip().lower()
+    if estado in ("operativo", "ok", "en servicio"):
+        return "aire_operativo"
+    if estado.startswith("fuera") or "servicio" in estado:
+        return "aire_fuera_servicio"
+    if "pend" in estado or "manten" in estado or "revision" in estado:
+        return "aire_pendiente"
+    return "aire_otro"
+
+
+def _aires_plan_seed_items(con, sede_codigo, piso):
+    ensure_aires_mpd_columns()
+    rows = con.execute(f"""
+        SELECT
+            a.id,
+            COALESCE(a.codigo_local,'') AS codigo_local,
+            COALESCE(a.ambiente,'') AS ambiente,
+            COALESCE(a.marca,'') AS marca,
+            COALESCE(a.gas,'') AS gas,
+            COALESCE(a.frigorias,'') AS frigorias,
+            COALESCE(a.estado,'') AS estado,
+            COALESCE(a.fecha_ultima_limpieza,'') AS fecha_limpieza,
+            COALESCE(a.fecha_ultimo_service,'') AS fecha_ultimo_service,
+            COALESCE(a.observaciones,'') AS observaciones
+        FROM aires_mpd a
+        WHERE UPPER(COALESCE(a.sede_codigo,'')) = ?
+          AND {_aires_plan_valid_where('a')}
+        ORDER BY COALESCE(a.ambiente,''), COALESCE(a.marca,''), a.id
+    """, ((sede_codigo or "").upper().strip(),)).fetchall()
+
+    dep_rows = con.execute("""
+        SELECT codigo_local, COALESCE(descripcion,'') AS descripcion
+        FROM sedes_depositos
+        WHERE codigo_sede = ?
+        ORDER BY codigo_local
+    """, ((sede_codigo or "").upper().strip(),)).fetchall()
+
+    dep_codes_by_desc = {}
+    for dep_row in dep_rows:
+        dep_key = _visual_plan_norm_text(dep_row["descripcion"])
+        if not dep_key:
+            continue
+        dep_codes_by_desc.setdefault(dep_key, set()).add(
+            _mobiliario_plano_normalize_local(dep_row["codigo_local"])
+        )
+
+    sequence = 0
+    items = []
+    for row in rows:
+        local = _mobiliario_plano_normalize_local(row["codigo_local"])
+        if not row["codigo_local"]:
+            dep_codes = sorted(dep_codes_by_desc.get(_visual_plan_norm_text(row["ambiente"])) or [])
+            if len(dep_codes) == 1:
+                local = dep_codes[0]
+            elif len(dep_codes) > 1:
+                local = dep_codes[0]
+            else:
+                local = ""
+
+        if local and not _visual_plan_local_matches_piso(sede_codigo, piso, local):
+            continue
+        if not local and _mobiliario_plano_normalize_piso(piso) != "PB":
+            continue
+
+        sequence += 1
+        ambient = str(row["ambiente"] or "").strip() or "Aire acondicionado"
+        detail_bits = []
+        if row["marca"]:
+            detail_bits.append(str(row["marca"]).strip())
+        if row["frigorias"]:
+            detail_bits.append(str(row["frigorias"]).strip())
+        if row["estado"]:
+            detail_bits.append(str(row["estado"]).strip())
+        note = " · ".join(bit for bit in detail_bits if bit)
+        items.append({
+            "id": f"air:{int(row['id'])}",
+            "kind": _aires_plan_kind(row["estado"]),
+            "code": f"AC {sequence:02d}",
+            "name": ambient,
+            "local": local,
+            "description": ambient,
+            "note": note or str(row["observaciones"] or "").strip(),
+        })
+    return items
+
+
+def _matafuegos_plan_kind(row):
+    estado = str(row["estado"] or "").strip().lower()
+    fecha = str(row["fecha_vencimiento"] or "").strip()
+    try:
+        venc = datetime.strptime(fecha, "%Y-%m-%d").date() if fecha else None
+    except Exception:
+        venc = None
+    today = date.today()
+    if venc and venc < today:
+        return "matafuego_vencido"
+    if venc and venc <= today + timedelta(days=45):
+        return "matafuego_pronto"
+    if "baja" in estado or "fuera" in estado or "venc" in estado:
+        return "matafuego_vencido"
+    if "pend" in estado or "revision" in estado:
+        return "matafuego_otro"
+    return "matafuego_vigente"
+
+
+def _matafuegos_plan_seed_items(con, sede_codigo, piso):
+    rows = con.execute("""
+        SELECT
+            id,
+            COALESCE(local,'') AS local,
+            COALESCE(ubicacion,'') AS ubicacion,
+            COALESCE(numero_serie,'') AS numero_serie,
+            COALESCE(tipo,'') AS tipo,
+            COALESCE(capacidad_kg,'') AS capacidad_kg,
+            COALESCE(estado,'') AS estado,
+            COALESCE(fecha_vencimiento,'') AS fecha_vencimiento,
+            COALESCE(observaciones,'') AS observaciones
+        FROM matafuegos
+        WHERE UPPER(COALESCE(sede,'')) = ?
+          AND COALESCE(activo,1) = 1
+          AND COALESCE(piso,'PB') = ?
+        ORDER BY COALESCE(local,''), COALESCE(ubicacion,''), COALESCE(numero_serie,'')
+    """, ((sede_codigo or "").upper().strip(), _mobiliario_plano_normalize_piso(piso))).fetchall()
+
+    items = []
+    for index, row in enumerate(rows, start=1):
+        local = _mobiliario_plano_normalize_local(row["local"])
+        tipo = str(row["tipo"] or "").strip() or "Matafuegos"
+        capacidad = str(row["capacidad_kg"] or "").strip()
+        name = tipo + (f" {capacidad}kg" if capacidad else "")
+        note_parts = []
+        if row["ubicacion"]:
+            note_parts.append(str(row["ubicacion"]).strip())
+        if row["numero_serie"]:
+            note_parts.append(f"Serie {str(row['numero_serie']).strip()}")
+        if row["fecha_vencimiento"]:
+            note_parts.append(f"Vence {str(row['fecha_vencimiento']).strip()}")
+        items.append({
+            "id": f"mf:{int(row['id'])}",
+            "kind": _matafuegos_plan_kind(row),
+            "code": f"MF {index:02d}",
+            "name": name,
+            "local": local if local != "SEDE" else "",
+            "description": name,
+            "note": " · ".join(part for part in note_parts if part) or str(row["observaciones"] or "").strip(),
+        })
+    return items
+
+
 @app.route("/mobiliario/plano/<sede_codigo>/<piso>", methods=["GET", "POST"], endpoint="mobiliario_plano_api")
 def mobiliario_plano_api(sede_codigo, piso):
     sede = (sede_codigo or "").upper().strip()
@@ -11537,6 +11805,84 @@ def mobiliario_plano_api(sede_codigo, piso):
         "items": items,
         "summary": _mobiliario_plano_summary(items),
     })
+
+
+@app.route("/aires/plano/<sede_codigo>/<piso>", methods=["GET", "POST"], endpoint="aires_plano_api")
+def aires_plano_api(sede_codigo, piso):
+    sede = (sede_codigo or "").upper().strip()
+    piso_norm = _mobiliario_plano_normalize_piso(piso)
+    con = get_db()
+    try:
+        seed_items = _aires_plan_seed_items(con, sede, piso_norm)
+    finally:
+        con.close()
+
+    if request.method == "GET":
+        return jsonify(_visual_plan_payload_response(seed_items, _visual_plan_load_saved_state(AIRES_PLANOS_DIR, sede, piso_norm)))
+
+    payload = request.get_json(silent=True) or {}
+    raw_items = payload.get("items")
+    if not isinstance(raw_items, list):
+        return jsonify({"ok": False, "message": "Formato invalido."}), 400
+
+    allowed_ids = {item["id"] for item in seed_items}
+    clean_items = []
+    for raw in raw_items:
+        if not isinstance(raw, dict):
+            continue
+        item_id = str(raw.get("id") or "").strip()
+        if not item_id or item_id not in allowed_ids:
+            continue
+        placed = bool(raw.get("placed"))
+        item = {"id": item_id, "placed": placed}
+        if placed:
+            item["x"] = _mobiliario_plano_clamp01(raw.get("x"))
+            item["y"] = _mobiliario_plano_clamp01(raw.get("y"))
+        clean_items.append(item)
+
+    _visual_plan_save_state(AIRES_PLANOS_DIR, sede, piso_norm, clean_items)
+    resp = _visual_plan_payload_response(seed_items, _visual_plan_load_saved_state(AIRES_PLANOS_DIR, sede, piso_norm))
+    resp["message"] = "Distribucion de aires guardada."
+    return jsonify(resp)
+
+
+@app.route("/matafuegos/plano/<sede_codigo>/<piso>", methods=["GET", "POST"], endpoint="matafuegos_plano_api")
+def matafuegos_plano_api(sede_codigo, piso):
+    sede = (sede_codigo or "").upper().strip()
+    piso_norm = _mobiliario_plano_normalize_piso(piso)
+    con = get_db()
+    try:
+        seed_items = _matafuegos_plan_seed_items(con, sede, piso_norm)
+    finally:
+        con.close()
+
+    if request.method == "GET":
+        return jsonify(_visual_plan_payload_response(seed_items, _visual_plan_load_saved_state(MATAFUEGOS_PLANOS_DIR, sede, piso_norm)))
+
+    payload = request.get_json(silent=True) or {}
+    raw_items = payload.get("items")
+    if not isinstance(raw_items, list):
+        return jsonify({"ok": False, "message": "Formato invalido."}), 400
+
+    allowed_ids = {item["id"] for item in seed_items}
+    clean_items = []
+    for raw in raw_items:
+        if not isinstance(raw, dict):
+            continue
+        item_id = str(raw.get("id") or "").strip()
+        if not item_id or item_id not in allowed_ids:
+            continue
+        placed = bool(raw.get("placed"))
+        item = {"id": item_id, "placed": placed}
+        if placed:
+            item["x"] = _mobiliario_plano_clamp01(raw.get("x"))
+            item["y"] = _mobiliario_plano_clamp01(raw.get("y"))
+        clean_items.append(item)
+
+    _visual_plan_save_state(MATAFUEGOS_PLANOS_DIR, sede, piso_norm, clean_items)
+    resp = _visual_plan_payload_response(seed_items, _visual_plan_load_saved_state(MATAFUEGOS_PLANOS_DIR, sede, piso_norm))
+    resp["message"] = "Distribucion de matafuegos guardada."
+    return jsonify(resp)
 
 
 # ============================================================
