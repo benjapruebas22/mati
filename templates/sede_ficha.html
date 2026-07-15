@@ -4914,6 +4914,9 @@
   .mob-plan-piece.is-focus .mob-plan-piece-badge {
     box-shadow: 0 12px 20px rgba(37, 99, 235, 0.16);
   }
+  .mob-plan-piece.is-placed.is-focus .mob-plan-piece-body {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 0 0 2px rgba(37, 99, 235, 0.16), 0 5px 10px rgba(73, 54, 25, 0.12);
+  }
   .mob-plan-piece-visual {
     position: relative;
     display: inline-flex;
@@ -5258,8 +5261,7 @@
   .mob-plan-piece.is-placed:hover .mob-plan-piece-badge,
   .mob-plan-piece.is-placed:focus .mob-plan-piece-badge,
   .mob-plan-piece.is-placed:focus-visible .mob-plan-piece-badge,
-  .mob-plan-piece.is-placed:active .mob-plan-piece-badge,
-  .mob-plan-piece.is-placed.is-focus .mob-plan-piece-badge {
+  .mob-plan-piece.is-placed:active .mob-plan-piece-badge {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
