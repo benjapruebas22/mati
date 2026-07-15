@@ -11780,6 +11780,41 @@ def _matafuegos_home_impl():
     prefill_fecha_vencimiento = (request.args.get("fecha_vencimiento") or "").strip()
     prefill_fecha_recarga = (request.args.get("fecha_recarga") or "").strip()
 
+    def _sst_fuero_style_local(fuero_raw):
+        fu = str(fuero_raw or "").strip().lower()
+        if not fu:
+            return ("otro", "#64748b")
+        if "administr" in fu or "violencia" in fu:
+            return ("administracion", "#f58a5e")
+        if "menor" in fu or "incap" in fu:
+            return ("menores_incapaces", "#65BFF4")
+        if "jurid" in fu or "social" in fu or "civil" in fu:
+            return ("juridico_social", "#F14B94")
+        if "penal" in fu:
+            return ("penal", "#6666cc")
+        if "equipo" in fu or "interdiscip" in fu:
+            return ("equipo_interdisciplinario", "#4D4D4D")
+        return ("otro", "#64748b")
+
+    def _sst_sede_fuero_style_local(sede_codigo, fuero_raw):
+        code = str(sede_codigo or "").strip().upper()
+        code_overrides = {
+            "S08": ("administracion", "#f58a5e"),
+            "S11": ("juridico_social", "#F14B94"),
+            "S12": ("administracion", "#f58a5e"),
+            "S13": ("menores_incapaces", "#65BFF4"),
+            "S14": ("juridico_social", "#F14B94"),
+            "S15": ("juridico_social", "#F14B94"),
+            "S16": ("juridico_social", "#F14B94"),
+            "S17": ("juridico_social", "#F14B94"),
+            "S18": ("juridico_social", "#F14B94"),
+            "S19": ("juridico_social", "#F14B94"),
+            "S20": ("juridico_social", "#F14B94"),
+        }
+        if code in code_overrides:
+            return code_overrides[code]
+        return _sst_fuero_style_local(fuero_raw)
+
     try:
         f_registro = int((request.args.get("registro") or request.args.get("edit") or 0) or 0)
     except Exception:
@@ -12037,9 +12072,10 @@ def _matafuegos_home_impl():
         {
             "codigo": str(row["codigo"] or "").strip().upper(),
             "nombre": str(row["nombre"] or "").strip(),
+            "fuero": str(row["fuero"] or "").strip(),
         }
         for row in db.execute("""
-            SELECT UPPER(COALESCE(codigo, '')) AS codigo, COALESCE(nombre, '') AS nombre
+            SELECT UPPER(COALESCE(codigo, '')) AS codigo, COALESCE(nombre, '') AS nombre, COALESCE(fuero, '') AS fuero
             FROM sedes_mpd
             WHERE TRIM(COALESCE(codigo, '')) <> ''
             ORDER BY codigo
@@ -12160,6 +12196,10 @@ def _matafuegos_home_impl():
             "primary_record_id": int(representative["id"]) if representative else 0,
             "updated_at": str((representative or {}).get("updated_at") or (representative or {}).get("created_at") or "").strip(),
         }
+        summary["sede_fuero_class"], summary["sede_fuero_color"] = _sst_sede_fuero_style_local(
+            sede_codigo,
+            sede_item.get("fuero"),
+        )
         summary["url"] = url_for(
             "matafuegos_home",
             sede=f_sede or None,

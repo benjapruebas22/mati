@@ -47,7 +47,7 @@
           {% for row in state_by_sede %}
           <tr>
             <td>
-              <a class="sst-calendar-sede-link" href="{{ url_for('sede_ficha', codigo=row.sede_codigo) }}" title="Abrir detalle de {{ row.sede_codigo }}">
+              <a class="sst-calendar-sede-link sst-calendar-sede-link-{{ row.sede_fuero_class or 'otro' }}" href="{{ url_for('sede_ficha', codigo=row.sede_codigo) }}" title="Abrir detalle de {{ row.sede_codigo }}" style="--sst-sede-fuero: {{ row.sede_fuero_color or '#111827' }};">
                 <div class="sst-calendar-sede-code">{{ row.sede_codigo }}</div>
                 <div class="sst-calendar-sede-name">{{ row.sede_nombre }}</div>
               </a>

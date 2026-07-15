@@ -7005,6 +7005,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             SELECT
                 UPPER(COALESCE(codigo, '')) AS codigo,
                 COALESCE(nombre, '') AS nombre,
+                COALESCE(fuero, '') AS fuero,
                 COALESCE(ciudad, '') AS ciudad,
                 COALESCE(direccion, '') AS direccion
             FROM sedes_mpd
@@ -8030,9 +8031,12 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             if not sede:
                 continue
             sede_codigo = (_row_value(sede, "codigo", "") or "").strip().upper()
+            sede_fuero_class, sede_fuero_color = _sst_sede_fuero_style(sede_codigo, _row_value(sede, "fuero", ""))
             row = dict(summary_map.get(sede_codigo) or _sst_carteleria_empty_summary(sede))
             row["sede_codigo"] = sede_codigo
             row["sede_nombre"] = (_row_value(sede, "nombre", "") or "").strip()
+            row["sede_fuero_class"] = sede_fuero_class
+            row["sede_fuero_color"] = sede_fuero_color
             row["url"] = url_for(
                 "sst_carteleria_home",
                 sede=f_sede or None,
@@ -8254,9 +8258,12 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             if not sede:
                 continue
             sede_codigo = (_row_value(sede, "codigo", "") or "").strip().upper()
+            sede_fuero_class, sede_fuero_color = _sst_sede_fuero_style(sede_codigo, _row_value(sede, "fuero", ""))
             row = dict(summary_map.get(sede_codigo) or _sst_luces_empty_summary(sede))
             row["sede_codigo"] = sede_codigo
             row["sede_nombre"] = (_row_value(sede, "nombre", "") or "").strip()
+            row["sede_fuero_class"] = sede_fuero_class
+            row["sede_fuero_color"] = sede_fuero_color
             row["aplica_label"] = ("Si" if _sst_bool_flag(row.get("aplica", 1)) else "No")
             row["record_exists"] = bool(int(row.get("primary_record_id") or 0))
             row["legacy_multiple"] = int(row.get("record_count") or 0) > 1
@@ -12498,6 +12505,10 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             "seguimiento_id": int(_row_value(record, "seguimiento_id", 0) or 0) if record else 0,
             "observaciones": str(_row_value(record, "observaciones", "") or "").strip() if record else "",
         }
+        summary["sede_fuero_class"], summary["sede_fuero_color"] = _sst_sede_fuero_style(
+            sede_codigo,
+            sede_info.get("fuero"),
+        )
         summary["doc_overall_meta"] = _sst_state_badge(summary["doc_overall_code"], SST_VISITA_ART_DOC_FILTER_LABELS)
         summary["next_action"] = _sst_visitas_art_next_action(summary)
         summary["anchor_year"] = _sst_visitas_art_anchor_year(summary)
@@ -12624,7 +12635,11 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         selected_record_id = int(request.args.get("registro") or 0) if str(request.args.get("registro") or "").isdigit() else 0
         prefill_sede = (request.args.get("prefill_sede") or f_open_sede or f_sede).strip().upper()
 
-        sedes = [{"codigo": row["codigo"], "nombre": row["nombre"]} for row in _sst_fetch_sedes_base(con)]
+        sedes = [{
+            "codigo": row["codigo"],
+            "nombre": row["nombre"],
+            "fuero": row["fuero"],
+        } for row in _sst_fetch_sedes_base(con)]
         sedes_map = {item["codigo"]: item for item in sedes}
 
         visit_rows = con.execute("""
@@ -13588,9 +13603,12 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         base_rows = []
         for sede_info in visible_sedes:
             sede_codigo = (_row_value(sede_info, "codigo", "") or "").strip().upper()
+            sede_fuero_class, sede_fuero_color = _sst_sede_fuero_style(sede_codigo, _row_value(sede_info, "fuero", ""))
             row = dict(summary_map.get(sede_codigo) or _sst_desinf_empty_summary(sede_info))
             row["sede_codigo"] = sede_codigo
             row["sede_nombre"] = (_row_value(sede_info, "nombre", "") or "").strip()
+            row["sede_fuero_class"] = sede_fuero_class
+            row["sede_fuero_color"] = sede_fuero_color
             row["url"] = url_for(
                 "sst_desinfecciones_home",
                 sede=f_sede or None,
