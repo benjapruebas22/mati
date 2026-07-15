@@ -4702,6 +4702,187 @@
       min-width: 0;
     }
   }
+  .sst-ct-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .sst-ct-canvas {
+    position: absolute;
+    inset: 0;
+  }
+  .plan-img.sst-ct-drop-active {
+    border-color: #8fa8e8;
+    box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.16), 0 18px 34px rgba(59, 130, 246, 0.12);
+  }
+  .sst-ct-marker {
+    position: absolute;
+    transform: translate(-50%, -100%);
+    border: none;
+    background: transparent;
+    padding: 0;
+    cursor: grab;
+    pointer-events: auto;
+    user-select: none;
+    touch-action: none;
+  }
+  .sst-ct-marker:active {
+    cursor: grabbing;
+  }
+  .sst-ct-marker.is-dim {
+    opacity: .32;
+  }
+  .sst-ct-marker.is-focus .sst-ct-marker-chip {
+    box-shadow: 0 12px 20px rgba(37, 99, 235, 0.16);
+  }
+  .sst-ct-marker-chip {
+    min-width: 52px;
+    padding: 4px 6px;
+    border-radius: 10px;
+    border: 1px solid #d7deea;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  .sst-ct-marker-code {
+    font-size: 9px;
+    font-weight: 900;
+    line-height: 1;
+    color: #334155;
+    letter-spacing: .03em;
+  }
+  .sst-ct-marker-local {
+    font-size: 8px;
+    font-weight: 800;
+    line-height: 1;
+    color: #64748b;
+    letter-spacing: .04em;
+  }
+  .sst-ct-marker-swatch,
+  .sst-ct-tool-swatch {
+    width: 24px;
+    height: 5px;
+    border-radius: 999px;
+    background: #cbd5e1;
+  }
+  .sst-ct-marker.type-matafuegos .sst-ct-marker-swatch,
+  .sst-ct-tool.type-matafuegos .sst-ct-tool-swatch {
+    background: #dc2626;
+  }
+  .sst-ct-marker.type-salida .sst-ct-marker-swatch,
+  .sst-ct-marker.type-salida_izquierda .sst-ct-marker-swatch,
+  .sst-ct-marker.type-salida_derecha .sst-ct-marker-swatch,
+  .sst-ct-tool.type-salida .sst-ct-tool-swatch,
+  .sst-ct-tool.type-salida_izquierda .sst-ct-tool-swatch,
+  .sst-ct-tool.type-salida_derecha .sst-ct-tool-swatch {
+    background: #16a34a;
+  }
+  .sst-ct-marker.type-choque_electrico .sst-ct-marker-swatch,
+  .sst-ct-tool.type-choque_electrico .sst-ct-tool-swatch {
+    background: #d97706;
+  }
+  .sst-ct-marker.type-prohibido_fumar .sst-ct-marker-swatch,
+  .sst-ct-tool.type-prohibido_fumar .sst-ct-tool-swatch {
+    background: #b91c1c;
+  }
+  .sst-ct-marker.type-plano_evacuacion .sst-ct-marker-swatch,
+  .sst-ct-tool.type-plano_evacuacion .sst-ct-tool-swatch {
+    background: #2563eb;
+  }
+  .sst-ct-marker.type-cartel_identificatorio_sede .sst-ct-marker-swatch,
+  .sst-ct-tool.type-cartel_identificatorio_sede .sst-ct-tool-swatch {
+    background: #7c3aed;
+  }
+  .sst-ct-demo {
+    margin-top: 12px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    display: grid;
+    gap: 10px;
+  }
+  .sst-ct-demo-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .sst-ct-demo-title {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 900;
+    color: #1f2937;
+  }
+  .sst-ct-demo-sub {
+    margin: 3px 0 0;
+    font-size: 11px;
+    line-height: 1.45;
+    color: #64748b;
+  }
+  .sst-ct-demo-sub strong {
+    color: #334155;
+  }
+  .sst-ct-demo-reset {
+    border: 1px solid #d7deea;
+    background: #fff;
+    color: #334155;
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .sst-ct-palette {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+    gap: 8px;
+  }
+  .sst-ct-tool {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 10px;
+    border-radius: 12px;
+    border: 1px solid #d7deea;
+    background: #fff;
+    color: #334155;
+    font-size: 10px;
+    font-weight: 800;
+    cursor: grab;
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.04);
+    text-align: center;
+    line-height: 1.15;
+  }
+  .sst-ct-tool:active {
+    cursor: grabbing;
+  }
+  .sst-ct-tool-code {
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: .04em;
+    color: #334155;
+  }
+  .sst-ct-tool-label {
+    color: #475467;
+  }
+  @media (max-width: 760px) {
+    .sst-ct-demo-head {
+      align-items: stretch;
+    }
+    .sst-ct-demo-reset {
+      width: 100%;
+    }
+    .sst-ct-palette {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
 
   /* Modal: Checklist Control Limpieza */
   .cll-modal {
@@ -8709,12 +8890,78 @@
           </div>
           {% endif %}
           <img src="{{ plano_url }}" alt="Plano {{ sede.codigo }} {{ piso }}">
+          {% if tab == 'sst_carteleria' %}
+          <div class="sst-ct-layer" data-sst-ct-layer data-sede="{{ sede.codigo }}" data-piso="{{ piso }}" data-local="{{ local or '' }}">
+            <div class="sst-ct-canvas" data-sst-ct-canvas></div>
+          </div>
+          {% endif %}
           {% if tab == 'sst_luces' %}
           <div class="sst-le-layer" data-sst-le-layer data-sede="{{ sede.codigo }}" data-piso="{{ piso }}" data-local="{{ local or '' }}">
             <div class="sst-le-canvas" data-sst-le-canvas></div>
           </div>
           {% endif %}
         </div>
+        {% if tab == 'sst_carteleria' %}
+        <div class="sst-ct-demo" data-sst-ct-toolbar>
+          <div class="sst-ct-demo-head">
+            <div>
+              <p class="sst-ct-demo-title">Capa visual de carteleria</p>
+              <p class="sst-ct-demo-sub">
+                Arrastra una senal al plano base limpio.
+                {% if local %}
+                La nueva carteleria queda marcada para <strong>{{ local }}</strong>.
+                {% else %}
+                Si filtras un local antes de ubicarla, la senal queda etiquetada con ese deposito.
+                {% endif %}
+                Doble click sobre una senal para quitarla.
+              </p>
+            </div>
+            <button type="button" class="sst-ct-demo-reset" data-sst-ct-reset>Limpiar demo</button>
+          </div>
+          <div class="sst-ct-palette" aria-label="Tipos de carteleria">
+            <button type="button" class="sst-ct-tool type-matafuegos" draggable="true" data-sst-ct-new="matafuegos" title="Arrastrar cartel de matafuegos">
+              <span class="sst-ct-tool-code">MTF</span>
+              <span class="sst-ct-tool-swatch"></span>
+              <span class="sst-ct-tool-label">Matafuegos</span>
+            </button>
+            <button type="button" class="sst-ct-tool type-salida" draggable="true" data-sst-ct-new="salida" title="Arrastrar cartel de salida">
+              <span class="sst-ct-tool-code">SAL</span>
+              <span class="sst-ct-tool-swatch"></span>
+              <span class="sst-ct-tool-label">Salida</span>
+            </button>
+            <button type="button" class="sst-ct-tool type-salida_izquierda" draggable="true" data-sst-ct-new="salida_izquierda" title="Arrastrar cartel de salida izquierda">
+              <span class="sst-ct-tool-code">SIZ</span>
+              <span class="sst-ct-tool-swatch"></span>
+              <span class="sst-ct-tool-label">Salida izquierda</span>
+            </button>
+            <button type="button" class="sst-ct-tool type-salida_derecha" draggable="true" data-sst-ct-new="salida_derecha" title="Arrastrar cartel de salida derecha">
+              <span class="sst-ct-tool-code">SDR</span>
+              <span class="sst-ct-tool-swatch"></span>
+              <span class="sst-ct-tool-label">Salida derecha</span>
+            </button>
+            <button type="button" class="sst-ct-tool type-choque_electrico" draggable="true" data-sst-ct-new="choque_electrico" title="Arrastrar cartel de choque electrico">
+              <span class="sst-ct-tool-code">ELE</span>
+              <span class="sst-ct-tool-swatch"></span>
+              <span class="sst-ct-tool-label">Choque electrico</span>
+            </button>
+            <button type="button" class="sst-ct-tool type-prohibido_fumar" draggable="true" data-sst-ct-new="prohibido_fumar" title="Arrastrar cartel de prohibido fumar">
+              <span class="sst-ct-tool-code">NF</span>
+              <span class="sst-ct-tool-swatch"></span>
+              <span class="sst-ct-tool-label">Prohibido fumar</span>
+            </button>
+            <button type="button" class="sst-ct-tool type-plano_evacuacion" draggable="true" data-sst-ct-new="plano_evacuacion" title="Arrastrar plano de evacuacion">
+              <span class="sst-ct-tool-code">PEV</span>
+              <span class="sst-ct-tool-swatch"></span>
+              <span class="sst-ct-tool-label">Plano evacuacion</span>
+            </button>
+            <button type="button" class="sst-ct-tool type-cartel_identificatorio_sede" draggable="true" data-sst-ct-new="cartel_identificatorio_sede" title="Arrastrar cartel identificatorio">
+              <span class="sst-ct-tool-code">IDS</span>
+              <span class="sst-ct-tool-swatch"></span>
+              <span class="sst-ct-tool-label">Cartel sede</span>
+            </button>
+          </div>
+        </div>
+        {% endif %}
         {% if tab == 'sst_luces' %}
         <div class="sst-le-demo" data-sst-le-toolbar>
           <div class="sst-le-demo-head">
@@ -9530,7 +9777,7 @@
           <div>
             <div class="panel-section-title">SG-SST Carteleria</div>
             <div class="panel-section-sub">
-              Plano operativo del piso con la capa de carteleria. La gestion y carga siguen en el modulo SG-SST.
+              Plano base del piso con una capa visual liviana para ubicar carteleria. La gestion y carga formal siguen en el modulo SG-SST.
             </div>
           </div>
 
@@ -9543,7 +9790,7 @@
         <div class="card" style="box-shadow:none;border:1px solid var(--border);padding:12px;">
           <div style="font-size:12px;font-weight:800;margin-bottom:6px;">Plano cargado</div>
           <div style="font-size:12px;color:#475467;line-height:1.45;">
-            Se muestra el plano de carteleria para <strong>{{ sede.codigo }}</strong>, piso <strong>{{ piso }}</strong>.
+            Se muestra el plano base para <strong>{{ sede.codigo }}</strong>, piso <strong>{{ piso }}</strong>, con una capa visual de carteleria sobre la imagen.
             {% if local %}El filtro actual mantiene resaltado el local <strong>{{ local }}</strong>.{% endif %}
           </div>
         </div>
@@ -11251,6 +11498,218 @@
     const saved = sessionStorage.getItem(storageKey);
     if (saved && !input.value) input.value = saved;
     applyGlobalFilter();
+  })();
+</script>
+<script>
+  (function () {
+    const layer = document.querySelector("[data-sst-ct-layer]");
+    const toolbar = document.querySelector("[data-sst-ct-toolbar]");
+    if (!layer || !toolbar) return;
+
+    const canvas = layer.querySelector("[data-sst-ct-canvas]");
+    const plan = layer.closest(".plan-img");
+    const resetBtn = toolbar.querySelector("[data-sst-ct-reset]");
+    if (!canvas || !plan) return;
+
+    const storageKey = ["sgi", "sst-carteleria-demo", layer.dataset.sede || "", layer.dataset.piso || ""].join(":");
+    const activeLocal = String(layer.dataset.local || "").toUpperCase();
+    const typeMeta = {
+      matafuegos: { label: "Matafuegos", short: "MTF", className: "type-matafuegos" },
+      salida: { label: "Salida", short: "SAL", className: "type-salida" },
+      salida_izquierda: { label: "Salida izquierda", short: "SIZ", className: "type-salida_izquierda" },
+      salida_derecha: { label: "Salida derecha", short: "SDR", className: "type-salida_derecha" },
+      choque_electrico: { label: "Choque electrico", short: "ELE", className: "type-choque_electrico" },
+      prohibido_fumar: { label: "Prohibido fumar", short: "NF", className: "type-prohibido_fumar" },
+      plano_evacuacion: { label: "Plano evacuacion", short: "PEV", className: "type-plano_evacuacion" },
+      cartel_identificatorio_sede: { label: "Cartel sede", short: "IDS", className: "type-cartel_identificatorio_sede" }
+    };
+
+    function clamp01(value) {
+      return Math.max(0.03, Math.min(0.97, Number(value || 0)));
+    }
+
+    function safeRead() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(storageKey) || "[]");
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (err) {
+        return [];
+      }
+    }
+
+    function save() {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(markers));
+      } catch (err) {
+        // Ignore local storage failures.
+      }
+    }
+
+    function normalizeMarker(item) {
+      const marker = item || {};
+      const type = typeMeta[marker.type] ? marker.type : "salida";
+      return {
+        id: String(marker.id || ("ct-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7))),
+        type: type,
+        x: clamp01(marker.x),
+        y: clamp01(marker.y),
+        label: String(marker.label || (typeMeta[type].short + " 01")),
+        local: String(marker.local || "").toUpperCase()
+      };
+    }
+
+    let markers = safeRead().map(normalizeMarker);
+
+    function nextLabel(type) {
+      let max = 0;
+      markers.forEach((marker) => {
+        if (marker.type !== type) return;
+        const match = String(marker.label || "").match(/(\d+)$/);
+        if (match) max = Math.max(max, Number(match[1] || 0));
+      });
+      return typeMeta[type].short + " " + String(max + 1).padStart(2, "0");
+    }
+
+    function pointFromEvent(ev) {
+      const rect = plan.getBoundingClientRect();
+      const x = rect.width ? (ev.clientX - rect.left) / rect.width : 0.5;
+      const y = rect.height ? (ev.clientY - rect.top) / rect.height : 0.5;
+      return { x: clamp01(x), y: clamp01(y) };
+    }
+
+    function addMarker(type, point) {
+      const safeType = typeMeta[type] ? type : "salida";
+      markers.push({
+        id: "ct-" + Date.now() + "-" + Math.random().toString(36).slice(2, 7),
+        type: safeType,
+        x: point.x,
+        y: point.y,
+        label: nextLabel(safeType),
+        local: activeLocal
+      });
+      save();
+      render();
+    }
+
+    function render() {
+      canvas.innerHTML = "";
+      markers.forEach((marker) => {
+        const meta = typeMeta[marker.type] || typeMeta.salida;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "sst-ct-marker " + meta.className;
+        if (activeLocal && marker.local) {
+          btn.classList.add(marker.local === activeLocal ? "is-focus" : "is-dim");
+        }
+        btn.draggable = true;
+        btn.dataset.markerId = marker.id;
+        btn.style.left = (marker.x * 100).toFixed(2) + "%";
+        btn.style.top = (marker.y * 100).toFixed(2) + "%";
+        btn.title = marker.label + " - " + meta.label + (marker.local ? " - " + marker.local : "");
+
+        const chip = document.createElement("span");
+        chip.className = "sst-ct-marker-chip";
+
+        const code = document.createElement("span");
+        code.className = "sst-ct-marker-code";
+        code.textContent = marker.label;
+        chip.appendChild(code);
+
+        const swatch = document.createElement("span");
+        swatch.className = "sst-ct-marker-swatch";
+        chip.appendChild(swatch);
+
+        if (marker.local) {
+          const localEl = document.createElement("span");
+          localEl.className = "sst-ct-marker-local";
+          localEl.textContent = marker.local;
+          chip.appendChild(localEl);
+        }
+
+        btn.appendChild(chip);
+
+        btn.addEventListener("dragstart", function (ev) {
+          ev.dataTransfer.setData("text/sst-ct-existing", marker.id);
+          ev.dataTransfer.effectAllowed = "move";
+        });
+
+        btn.addEventListener("dblclick", function () {
+          markers = markers.filter((item) => item.id !== marker.id);
+          save();
+          render();
+        });
+
+        canvas.appendChild(btn);
+      });
+    }
+
+    toolbar.querySelectorAll("[data-sst-ct-new]").forEach((item) => {
+      const type = String(item.getAttribute("data-sst-ct-new") || "");
+      item.addEventListener("dragstart", function (ev) {
+        ev.dataTransfer.setData("text/sst-ct-new", type);
+        ev.dataTransfer.effectAllowed = "copy";
+      });
+      item.addEventListener("click", function () {
+        addMarker(type, { x: 0.5, y: 0.5 });
+      });
+    });
+
+    let dragDepth = 0;
+
+    plan.addEventListener("dragenter", function (ev) {
+      const types = ev.dataTransfer ? Array.from(ev.dataTransfer.types || []) : [];
+      if (!types.includes("text/sst-ct-new") && !types.includes("text/sst-ct-existing")) return;
+      dragDepth += 1;
+      plan.classList.add("sst-ct-drop-active");
+    });
+
+    plan.addEventListener("dragover", function (ev) {
+      const types = ev.dataTransfer ? Array.from(ev.dataTransfer.types || []) : [];
+      if (!types.includes("text/sst-ct-new") && !types.includes("text/sst-ct-existing")) return;
+      ev.preventDefault();
+      plan.classList.add("sst-ct-drop-active");
+      ev.dataTransfer.dropEffect = types.includes("text/sst-ct-existing") ? "move" : "copy";
+    });
+
+    plan.addEventListener("dragleave", function () {
+      dragDepth = Math.max(0, dragDepth - 1);
+      if (!dragDepth) plan.classList.remove("sst-ct-drop-active");
+    });
+
+    plan.addEventListener("drop", function (ev) {
+      ev.preventDefault();
+      dragDepth = 0;
+      plan.classList.remove("sst-ct-drop-active");
+      const point = pointFromEvent(ev);
+      const existingId = ev.dataTransfer.getData("text/sst-ct-existing");
+      const newType = ev.dataTransfer.getData("text/sst-ct-new");
+
+      if (existingId) {
+        markers = markers.map((item) => item.id === existingId ? Object.assign({}, item, point) : item);
+        save();
+        render();
+        return;
+      }
+
+      if (newType) {
+        addMarker(newType, point);
+      }
+    });
+
+    document.addEventListener("dragend", function () {
+      dragDepth = 0;
+      plan.classList.remove("sst-ct-drop-active");
+    });
+
+    if (resetBtn) {
+      resetBtn.addEventListener("click", function () {
+        markers = [];
+        save();
+        render();
+      });
+    }
+
+    render();
   })();
 </script>
 <script>

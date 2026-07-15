@@ -5773,9 +5773,8 @@ def sede_ficha(codigo):
         if _pick_plan_file(codigo, c):
             plano_base = c
     elif tab == "sst_carteleria":
-        c = f"{piso}_carteles"
-        if _pick_plan_file(codigo, c):
-            plano_base = c
+        # Carteleria tambien se trabaja sobre el plano base limpio.
+        plano_base = piso
     elif tab == "aires":
         c = f"{piso}_aires"
         if _pick_plan_file(codigo, c):
