@@ -4769,7 +4769,7 @@
     background: transparent;
     color: #64748b;
     font-size: 11px;
-    font-weight: 400;
+    font-weight: 400 !important;
     box-shadow: none;
   }
   .sgi-sedes .loc:hover {
@@ -4779,12 +4779,10 @@
   .sgi-sedes .loc.active {
     background: transparent;
     color: #1e3a8a;
-    font-weight: 400;
+    font-weight: 400 !important;
     box-shadow: none;
     transform: none;
-    text-decoration: underline;
-    text-decoration-color: rgba(37, 99, 235, 0.55);
-    text-underline-offset: 3px;
+    text-decoration: none;
   }
   .sgi-sedes .loc.active::before {
     content: none;
@@ -4802,8 +4800,7 @@
     padding: 0;
     border: 0;
     background: transparent;
-    color: currentColor;
-    font-weight: inherit;
+    font-weight: 400 !important;
   }
   .sgi-sedes .loc.search-hit {
     box-shadow: none;
@@ -4814,15 +4811,31 @@
   .sgi-sedes .dep-local-badge-social,
   .sgi-sedes .dep-local-badge-menores,
   .sgi-sedes .dep-local-badge-admin {
-    display: inline-flex;
+    display: inline !important;
     align-items: center;
-    padding: 0;
-    border: 0;
-    background: transparent;
-    border-radius: 0;
-    font-weight: 400;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    border-radius: 0 !important;
+    font-weight: 400 !important;
     line-height: 1.2;
-    box-shadow: none;
+    box-shadow: none !important;
+  }
+  .sgi-sedes .locals .dep-local-badge-penal,
+  .sgi-sedes td .dep-local-badge-penal {
+    color: #6666cc !important;
+  }
+  .sgi-sedes .locals .dep-local-badge-social,
+  .sgi-sedes td .dep-local-badge-social {
+    color: #f14b94 !important;
+  }
+  .sgi-sedes .locals .dep-local-badge-menores,
+  .sgi-sedes td .dep-local-badge-menores {
+    color: #65bfe4 !important;
+  }
+  .sgi-sedes .locals .dep-local-badge-admin,
+  .sgi-sedes td .dep-local-badge-admin {
+    color: #f58a5e !important;
   }
   .sgi-sedes .dep-local-badge-penal {
     color: #6666cc;
