@@ -4300,8 +4300,8 @@
     flex-direction: column;
   }
   .compact-view .head {
-    padding: 10px 12px;
-    gap: 6px;
+    padding: 8px 10px;
+    gap: 4px;
   }
   .compact-view .sede-breadcrumb {
     display: none;
@@ -4316,12 +4316,12 @@
     gap: 10px;
   }
   .compact-view .h-title {
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 800;
   }
   .compact-view .h-sub {
-    margin-top: 2px;
-    font-size: 11px;
+    margin-top: 1px;
+    font-size: 10px;
   }
   .compact-view .h-actions {
     margin-left: auto;
@@ -4442,7 +4442,7 @@
   }
 
   .compact-view .grid {
-    grid-template-columns: minmax(0, 1.2fr) minmax(0, .95fr);
+    grid-template-columns: minmax(0, 1fr) clamp(320px, 28vw, 400px);
     gap: 10px;
   }
   .compact-view .plan-head,
@@ -4475,7 +4475,7 @@
     display: none;
   }
   .compact-view #sedeOperativoGrid.panel-hidden {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr) clamp(320px, 28vw, 400px);
   }
 
   @media (max-width:1100px) {
@@ -4604,58 +4604,68 @@
   }
 
   /* Limpieza visual operativa de Sedes */
+  .sgi-sedes .sede-operativa-nav-card {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
   .sgi-sedes .sede-operativa-nav {
-    padding: 8px 10px;
-    gap: 8px;
+    padding: 2px 0 0;
+    gap: 6px;
   }
   .sgi-sedes .sede-operativa-nav-title {
-    font-size: 10px;
-    font-weight: 800;
-    color: #475569;
-    letter-spacing: .08em;
+    display: none;
   }
   .sgi-sedes .sede-operativa-nav-bar {
-    grid-template-columns: 56px minmax(0, 1fr);
-    gap: 6px 8px;
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 4px 10px;
   }
   .sgi-sedes .sede-operativa-nav-label {
-    padding-top: 4px;
-    font-size: 10px;
+    padding-top: 1px;
+    font-size: 9px;
     font-weight: 700;
     color: #64748b;
+    letter-spacing: .08em;
+    text-transform: uppercase;
   }
   .sgi-sedes .sede-operativa-nav .sede-nav {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(0, 1fr);
-    gap: 6px;
-    overflow: visible;
-    padding-bottom: 0;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
   }
   .sgi-sedes .sede-operativa-nav .sede-nav a {
     display: inline-grid;
+    flex: 0 0 auto;
     grid-template-rows: auto auto;
     align-items: start;
     justify-items: start;
     gap: 2px;
-    min-width: 0;
-    max-width: none;
-    padding: 2px 2px 3px;
+    min-width: 68px;
+    max-width: 94px;
+    padding: 0 0 6px;
     border: 0;
+    border-bottom: 1px solid transparent;
     border-radius: 0;
     background: transparent;
     box-shadow: none;
     line-height: 1.05;
     font-size: 11px;
     font-weight: 800;
-    white-space: nowrap;
+    white-space: normal;
+    opacity: 0.82;
   }
   .sgi-sedes .sede-operativa-nav .sede-nav a:hover {
     background: transparent;
     box-shadow: none;
+    opacity: 1;
   }
   .sgi-sedes .sede-operativa-nav .sede-nav a.active {
     background: transparent;
+    border-bottom-color: currentColor;
     box-shadow: none;
     opacity: 1;
   }
@@ -4674,7 +4684,7 @@
     white-space: normal;
     font-size: 9px;
     font-weight: 400;
-    line-height: 1.1;
+    line-height: 1.15;
     color: #64748b;
     opacity: 1;
   }
@@ -4708,8 +4718,8 @@
   }
   .sgi-sedes.has-operativo-nav {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) clamp(240px, 24vw, 320px);
-    gap: 8px 10px;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    gap: 6px 12px;
     align-items: start;
   }
   .sgi-sedes.has-operativo-nav > .card.sede-active-card {
@@ -4726,63 +4736,64 @@
     grid-column: 1;
     grid-row: 3;
     margin: 0;
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: center;
-    column-gap: 10px;
-    row-gap: 2px;
-  }
-  .sgi-sedes.has-operativo-nav > .card.sede-global-search .sede-global-search-title {
-    white-space: nowrap;
-    color: #64748b;
-    letter-spacing: .08em;
+    width: clamp(280px, 32vw, 380px);
+    max-width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    display: block;
   }
   .sgi-sedes.has-operativo-nav > .card.sede-global-search .sede-global-search-field {
     min-width: 0;
   }
   .sgi-sedes.has-operativo-nav > .card.sede-global-search .sede-global-search-status {
-    grid-column: 2;
     min-height: 0;
-    font-size: 9px;
+    margin-top: 4px;
+    font-size: 10px;
   }
   .sgi-sedes.has-operativo-nav > .sede-metricas-toggle {
     grid-column: 2;
     grid-row: 3;
     margin: 0;
     align-self: start;
-    border: 1px solid #e2e8f0;
-    background: #fff;
+    justify-self: end;
+    width: fit-content;
+    border: 0;
+    background: transparent;
     box-shadow: none;
+  }
+  .sgi-sedes.has-operativo-nav > .sede-metricas-toggle[open] {
+    width: min(320px, calc(100vw - 32px));
   }
   .sgi-sedes.has-operativo-nav > .sede-metricas-toggle > summary {
     list-style: none;
-    display: grid;
-    gap: 2px;
-    justify-items: start;
-    padding: 6px 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0;
+    padding: 6px 0;
+    border-bottom: 1px solid transparent;
+    cursor: pointer;
   }
   .sgi-sedes.has-operativo-nav > .sede-metricas-toggle > summary::-webkit-details-marker {
     display: none;
   }
-  .sgi-sedes.has-operativo-nav > .sede-metricas-toggle .sede-metricas-toggle-label {
-    font-size: 9px;
-    font-weight: 700;
-    color: #64748b;
-    letter-spacing: .08em;
-    text-transform: uppercase;
+  .sgi-sedes.has-operativo-nav > .sede-metricas-toggle[open] > summary {
+    border-bottom-color: rgba(var(--fuero-accent-rgb), 0.35);
   }
-  .sgi-sedes.has-operativo-nav > .sede-metricas-toggle .sede-metricas-inline {
-    font-size: 10px;
+  .sgi-sedes.has-operativo-nav > .sede-metricas-toggle .sede-metricas-toggle-label {
+    font-size: 11px;
+    font-weight: 600;
     color: #475569;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    letter-spacing: .02em;
+    text-transform: none;
   }
   .sgi-sedes.has-operativo-nav > .sede-metricas-toggle .sede-analisis {
-    margin: 0;
-    border: 0;
-    border-radius: 0;
+    margin: 6px 0 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
     padding: 10px;
+    background: #fff;
     box-shadow: none;
   }
   .sgi-sedes.has-operativo-nav > #sedeOperativoGrid {
@@ -4822,41 +4833,84 @@
     color: #0f172a;
     box-shadow: inset 0 0 0 1px rgba(var(--fuero-accent-rgb), 0.14);
   }
+  .sgi-sedes .sede-operativa-nav-modules {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .sgi-sedes .sede-operativa-nav-modules .ptab {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border-color: #dde5ef;
+    color: #475569;
+    font-size: 11px;
+  }
+  .sgi-sedes .sede-operativa-nav-modules .ptab.active {
+    border-color: rgba(var(--fuero-accent-rgb), 0.35);
+    background: transparent;
+    box-shadow: inset 0 -1px 0 var(--fuero-accent);
+  }
   .sgi-sedes .sede-global-search {
-    margin: 6px 0 2px;
-    padding: 6px 8px;
+    margin: 4px 0 2px;
     gap: 4px;
   }
-  .sgi-sedes .sede-global-search-title {
-    font-size: 10px;
-    font-weight: 700;
+  .sgi-sedes .sede-global-search-field {
+    position: relative;
+    width: 100%;
   }
   .sgi-sedes .sede-global-search-input {
-    padding: 6px 28px 6px 9px;
-    border-radius: 9px;
+    width: 100%;
+    min-height: 34px;
+    padding: 7px 30px 7px 31px;
+    border-radius: 10px;
+    border-color: #d7e0ea;
+    background: #fff;
     font-size: 12px;
   }
+  .sgi-sedes .sede-global-search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    pointer-events: none;
+  }
+  .sgi-sedes .sede-global-search-icon svg {
+    width: 14px;
+    height: 14px;
+    display: block;
+  }
   .sgi-sedes .sede-global-search-clear {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
     width: 18px;
     height: 18px;
     border: 0;
     background: transparent;
   }
   .sgi-sedes .sede-global-search-status {
-    min-height: 14px;
+    min-height: 12px;
   }
   .sgi-sedes .sede-metricas-toggle {
-    margin: 0 12px 6px;
+    margin: 0;
     box-shadow: none;
   }
   .sgi-sedes .sede-metricas-toggle > summary {
-    padding: 5px 9px;
+    padding: 6px 0;
   }
   .sgi-sedes.compact-view .grid,
   .sgi-sedes.compact-view #sedeOperativoGrid.grid-stack,
   .sgi-sedes.compact-view #sedeOperativoGrid.grid-planos,
   .sgi-sedes.compact-view #sedeOperativoGrid.panel-hidden {
-    grid-template-columns: minmax(0, 1fr) clamp(340px, 29vw, 460px);
+    grid-template-columns: minmax(0, 1fr) clamp(320px, 28vw, 400px);
     gap: 10px;
   }
   .sgi-sedes.compact-view #sedeOperativoGrid.grid-stack .panel-card {
@@ -4868,14 +4922,20 @@
   }
   .sgi-sedes .locals {
     padding: 0 10px 8px;
-    gap: 5px;
+    gap: 8px 10px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    white-space: nowrap;
   }
   .sgi-sedes .loc {
-    padding: 2px 3px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 0 4px;
     border: 0;
+    border-bottom: 1px solid transparent;
     background: transparent;
     color: #64748b;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 400 !important;
     box-shadow: none;
   }
@@ -4885,19 +4945,22 @@
   }
   .sgi-sedes .loc.active {
     background: transparent;
-    color: #1e3a8a;
+    color: #475569;
     font-weight: 400 !important;
     box-shadow: none;
     transform: none;
     text-decoration: none;
+    border-bottom-color: rgba(var(--fuero-accent-rgb), 0.75);
   }
   .sgi-sedes .loc.active::before {
     content: none;
   }
   .sgi-sedes .loc.clear {
     background: transparent;
-    color: #9a3412;
+    color: #64748b;
     font-weight: 400;
+    text-decoration: underline;
+    border-bottom: 0;
   }
   .sgi-sedes .locals .dep-local-badge,
   .sgi-sedes .locals .dep-local-badge-penal,
@@ -4911,7 +4974,8 @@
   }
   .sgi-sedes .loc.search-hit {
     box-shadow: none;
-    color: #1e3a8a;
+    color: #475569;
+    border-bottom-color: rgba(var(--fuero-accent-rgb), 0.45);
   }
   .sgi-sedes .dep-local-badge,
   .sgi-sedes .dep-local-badge-penal,
@@ -4977,10 +5041,7 @@
       grid-row: auto;
     }
     .sgi-sedes.has-operativo-nav > .card.sede-global-search {
-      grid-template-columns: 1fr;
-    }
-    .sgi-sedes.has-operativo-nav > .card.sede-global-search .sede-global-search-status {
-      grid-column: 1;
+      width: 100%;
     }
     .sgi-sedes.compact-view .grid,
     .sgi-sedes.compact-view #sedeOperativoGrid.grid-stack,
@@ -4989,9 +5050,8 @@
       grid-template-columns: 1fr;
     }
     .sgi-sedes .sede-operativa-nav .sede-nav {
-      display: flex;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 8px 12px;
     }
   }
   .ev-plan-layer {
@@ -8509,14 +8569,8 @@
 
         {% set ro = resumen_operativo if resumen_operativo is defined else {} %}
     <details class="sede-metricas-toggle card" id="sedeMetricasToggle">
-      <summary>
-        <span class="sede-metricas-toggle-label">Ver m&eacute;tricas de sede</span>
-        <span class="sede-metricas-inline">
-          Personas {{ ro.personas if ro.personas is not none else 'S/D' }}
-          &middot; Dep&oacute;sitos {{ ro.depositos if ro.depositos is not none else 'S/D' }}
-          &middot; m2 {{ ro.m2_totales if ro.m2_totales is not none else 'S/D' }}
-          &middot; Aires {{ ro.aires if ro.aires is not none else 'S/D' }}
-        </span>
+      <summary aria-label="Mostrar m&eacute;tricas de sede">
+        <span class="sede-metricas-toggle-label">M&eacute;tricas</span>
       </summary>
     <div class="sede-analisis sede-analisis-main">
       <div class="sede-analisis-head">
@@ -8585,15 +8639,21 @@
     {% if view != 'resumen' %}
     {% include "_sede_operativa_nav.html" %}
     <div class="card sede-global-search">
-      <div class="sede-global-search-title">BUSCADOR GENERAL DE SEDE</div>
       <div class="sede-global-search-field">
+        <span class="sede-global-search-icon" aria-hidden="true">
+          <svg viewBox="0 0 20 20" fill="none">
+            <circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.5"></circle>
+            <path d="M12.5 12.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+          </svg>
+        </span>
         <input
           type="search"
           id="sedeGlobalSearchInput"
-          placeholder="Buscar persona, depósito, dependencia o ambiente..."
+          placeholder="Buscar persona, depósito o ambiente..."
+          aria-label="Buscar persona, depósito o ambiente"
           autocomplete="off"
           class="sede-global-search-input">
-        <button type="button" id="sedeGlobalSearchClear" class="sede-global-search-clear" aria-label="Limpiar búsqueda">×</button>
+        <button type="button" id="sedeGlobalSearchClear" class="sede-global-search-clear" aria-label="Limpiar búsqueda">&times;</button>
       </div>
       <div id="sedeGlobalSearchStatus" class="sede-global-search-status" aria-live="polite"></div>
       <script id="sedeSearchIndexData" type="application/json">{{ {'personal': sede_search_personal, 'depositos': sede_search_depositos}|tojson }}</script>
