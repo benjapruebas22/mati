@@ -20,7 +20,6 @@ from modules.inventario_checklist import register_inventario_checklist
 from modules.inventario_general import register_inventario_general
 from modules.sst import register_sst
 from modules.asignaciones_simple import register_asignaciones_simple
-from werkzeug.utils import secure_filename
 
 # =========================
 # REMITOS - CONFIG
