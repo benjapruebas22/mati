@@ -6,9 +6,6 @@ from collections import defaultdict
 import sqlite3, os, calendar, csv, io, re, unicodedata, json
 from functools import wraps
 from flask import redirect, url_for
-import os
-from flask import request, render_template, redirect, url_for, flash
-import os
 from datetime import date
 from flask import request, render_template, redirect, url_for, flash, send_from_directory
 from modules.auditorias import register_auditorias
@@ -1979,7 +1976,6 @@ def checklist_seguridad_form(codigo):
     con.close()
     return render_template("checklist_seguridad_form.html", sede=sede)
 
-from datetime import date  # arriba ya lo tenés, si está no lo repitas
 
 
 @app.route("/checklist/luminarias", methods=["GET", "POST"], endpoint="checklist_luminarias")
@@ -3904,7 +3900,6 @@ def puntos_mapa_nuevo():
     con.close()
     return jsonify(ok=True)
 
-from flask import jsonify  # si no lo tenés ya
 
 @app.get("/api/sedes_mpd")
 def api_sedes_mpd():
@@ -5341,7 +5336,6 @@ def personal_eliminar(id):
         return redirect(url_for("personal_home", sede=r["codigo_sede"], piso=r["piso"]))
     return redirect(url_for("personal_home"))
 
-from flask import request, render_template, redirect, url_for, flash
 
 @app.route("/sedes/<codigo>", endpoint="sede_ficha")
 def sede_ficha(codigo):
