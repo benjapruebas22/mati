@@ -4602,6 +4602,231 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+
+  /* Limpieza visual operativa de Sedes */
+  .sgi-sedes .sede-operativa-nav {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+  .sgi-sedes .sede-operativa-nav-title {
+    font-size: 10px;
+    font-weight: 800;
+    color: #475569;
+    letter-spacing: .08em;
+  }
+  .sgi-sedes .sede-operativa-nav-bar {
+    grid-template-columns: 56px minmax(0, 1fr);
+    gap: 6px 8px;
+  }
+  .sgi-sedes .sede-operativa-nav-label {
+    padding-top: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+  }
+  .sgi-sedes .sede-operativa-nav .sede-nav {
+    gap: 8px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
+  }
+  .sgi-sedes .sede-operativa-nav .sede-nav a {
+    display: inline-grid;
+    grid-template-rows: auto auto;
+    align-items: start;
+    justify-items: start;
+    gap: 2px;
+    min-width: 50px;
+    padding: 2px 4px 5px;
+    border: 0;
+    border-bottom: 1px solid transparent;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    line-height: 1.05;
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+  .sgi-sedes .sede-operativa-nav .sede-nav a:hover {
+    background: transparent;
+    box-shadow: none;
+    border-bottom-color: rgba(148, 163, 184, 0.55);
+  }
+  .sgi-sedes .sede-operativa-nav .sede-nav a.active {
+    background: transparent;
+    box-shadow: none;
+    border-bottom-color: currentColor;
+  }
+  .sgi-sedes .sede-operativa-nav .sede-nav a .sede-nav-code {
+    display: block;
+    letter-spacing: .02em;
+  }
+  .sgi-sedes .sede-operativa-nav .sede-nav a .sede-nav-name {
+    display: none;
+    max-width: 74px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 9px;
+    font-weight: 400;
+    line-height: 1.1;
+    color: currentColor;
+    opacity: .72;
+  }
+  .sgi-sedes .sede-operativa-nav .sede-nav a.active .sede-nav-name,
+  .sgi-sedes .sede-operativa-nav .sede-nav a:hover .sede-nav-name {
+    display: block;
+  }
+  .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S01"],
+  .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S02"],
+  .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S03"],
+  .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S04"],
+  .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S05"],
+  .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S06"],
+  .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S07"],
+  .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S09"],
+  .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S10"] {
+    color: #6666cc;
+  }
+  .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S08"],
+  .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S12"] {
+    color: #f58a5e;
+  }
+  .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S13"] {
+    color: #65bfe4;
+  }
+  .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S11"],
+  .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S14"],
+  .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S15"],
+  .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S16"],
+  .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S17"],
+  .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S18"],
+  .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S19"],
+  .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S20"] {
+    color: #f14b94;
+  }
+  .sgi-sedes .ptab {
+    background: transparent;
+    font-weight: 500;
+  }
+  .sgi-sedes .ptab.active {
+    background: transparent;
+    color: #0f172a;
+    box-shadow: inset 0 0 0 1px rgba(var(--fuero-accent-rgb), 0.14);
+  }
+  .sgi-sedes .sede-global-search {
+    margin: 8px 0 2px;
+    padding: 8px 10px;
+    gap: 6px;
+  }
+  .sgi-sedes .sede-global-search-title {
+    font-size: 10px;
+    font-weight: 800;
+  }
+  .sgi-sedes .sede-global-search-input {
+    padding: 7px 30px 7px 10px;
+    border-radius: 9px;
+    font-size: 12px;
+  }
+  .sgi-sedes .sede-global-search-clear {
+    width: 18px;
+    height: 18px;
+    border: 0;
+    background: transparent;
+  }
+  .sgi-sedes .sede-global-search-status {
+    min-height: 14px;
+  }
+  .sgi-sedes .sede-metricas-toggle {
+    margin: 0 12px 8px;
+    box-shadow: none;
+  }
+  .sgi-sedes .sede-metricas-toggle > summary {
+    padding: 6px 10px;
+  }
+  .sgi-sedes.compact-view .grid,
+  .sgi-sedes.compact-view #sedeOperativoGrid.grid-stack,
+  .sgi-sedes.compact-view #sedeOperativoGrid.grid-planos,
+  .sgi-sedes.compact-view #sedeOperativoGrid.panel-hidden {
+    grid-template-columns: minmax(0, 1fr) clamp(340px, 29vw, 460px);
+    gap: 10px;
+  }
+  .sgi-sedes.compact-view #sedeOperativoGrid.grid-stack .panel-card {
+    grid-column: auto;
+  }
+  .sgi-sedes.compact-view #sedeOperativoGrid.grid-stack .panel-body.scrollable {
+    max-height: 60vh;
+    overflow: auto;
+  }
+  .sgi-sedes .locals {
+    padding: 0 10px 8px;
+    gap: 5px;
+  }
+  .sgi-sedes .loc {
+    padding: 4px 8px;
+    border: 1px solid #d9e2ec;
+    background: transparent;
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 400;
+  }
+  .sgi-sedes .loc:hover {
+    background: transparent;
+    border-color: #c7d2fe;
+    color: #334155;
+  }
+  .sgi-sedes .loc.active {
+    background: transparent;
+    border-color: #2563eb;
+    color: #1e3a8a;
+    font-weight: 500;
+    box-shadow: none;
+    transform: none;
+  }
+  .sgi-sedes .loc.active::before {
+    content: none;
+  }
+  .sgi-sedes .loc.clear {
+    background: transparent;
+    border-color: #fed7aa;
+    color: #9a3412;
+    font-weight: 500;
+  }
+  .sgi-sedes .locals .dep-local-badge,
+  .sgi-sedes .locals .dep-local-badge-penal,
+  .sgi-sedes .locals .dep-local-badge-social,
+  .sgi-sedes .locals .dep-local-badge-menores,
+  .sgi-sedes .locals .dep-local-badge-admin {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: currentColor;
+    font-weight: inherit;
+  }
+  .sgi-sedes .loc.search-hit {
+    box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.18);
+  }
+  .sgi-sedes .plan-img.selected {
+    border-color: #dbe5ef;
+    box-shadow: none;
+  }
+  .sgi-sedes .plan-img .plan-selected {
+    padding: 4px 8px;
+    border: 1px solid #dbe5ef;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  @media (max-width: 1100px) {
+    .sgi-sedes.compact-view .grid,
+    .sgi-sedes.compact-view #sedeOperativoGrid.grid-stack,
+    .sgi-sedes.compact-view #sedeOperativoGrid.grid-planos,
+    .sgi-sedes.compact-view #sedeOperativoGrid.panel-hidden {
+      grid-template-columns: 1fr;
+    }
+  }
   .ev-plan-layer {
     position: absolute;
     inset: 0;
