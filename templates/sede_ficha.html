@@ -5054,6 +5054,238 @@
       gap: 8px 12px;
     }
   }
+
+  /* Ajuste fino pedido: mantener sedes/depositos como estaban y solo simplificar header */
+  .compact-view .head-top {
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .compact-view .h-left {
+    align-items: flex-start;
+    gap: 10px;
+    flex: 1 1 auto;
+  }
+  .compact-view .h-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    width: clamp(280px, 32vw, 360px);
+    flex: 0 0 auto;
+  }
+  .compact-view .h-right .h-actions {
+    margin-left: 0;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    overflow: visible;
+    width: 100%;
+  }
+  .compact-view .sede-global-search.sede-global-search-header {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .compact-view .sede-global-search.sede-global-search-header .sede-global-search-field {
+    position: relative;
+    width: 100%;
+  }
+  .compact-view .sede-global-search.sede-global-search-header .sede-global-search-input {
+    width: 100%;
+    min-height: 32px;
+    padding: 6px 28px 6px 30px;
+    border-radius: 10px;
+    font-size: 11px;
+    background: #fff;
+  }
+  .compact-view .sede-global-search.sede-global-search-header .sede-global-search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    color: #94a3b8;
+    pointer-events: none;
+  }
+  .compact-view .sede-global-search.sede-global-search-header .sede-global-search-icon svg {
+    width: 13px;
+    height: 13px;
+    display: block;
+  }
+  .compact-view .sede-global-search.sede-global-search-header .sede-global-search-clear {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  .compact-view .sede-global-search.sede-global-search-header .sede-global-search-status {
+    min-height: 0;
+    margin-top: 3px;
+    font-size: 9px;
+    text-align: right;
+  }
+  .compact-view .sede-metricas-compact {
+    margin-top: 4px;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
+  .compact-view .sede-metricas-compact > summary {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0;
+    cursor: pointer;
+  }
+  .compact-view .sede-metricas-compact > summary::-webkit-details-marker {
+    display: none;
+  }
+  .compact-view .sede-metricas-compact .sede-metricas-toggle-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #334155;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .compact-view .sede-metricas-compact .sede-metricas-inline {
+    font-size: 10px;
+    color: #64748b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .compact-view .sede-metricas-compact .sede-analisis {
+    margin: 6px 0 0;
+    border: 1px solid #dbe4ef;
+    border-radius: 10px;
+    padding: 10px;
+    background: #fff;
+    box-shadow: none;
+  }
+  .sgi-sedes.has-operativo-nav {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .sgi-sedes.has-operativo-nav > .card.sede-operativa-nav-card,
+  .sgi-sedes.has-operativo-nav > #sedeOperativoGrid {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .sgi-sedes .sede-operativa-nav-card {
+    border: 1px solid var(--border);
+    background: var(--card);
+    box-shadow: var(--shadow);
+  }
+  .sgi-sedes .sede-operativa-nav {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+  .sgi-sedes .sede-operativa-nav-title {
+    display: block;
+    font-size: 10px;
+    font-weight: 800;
+    color: #475569;
+    letter-spacing: .08em;
+  }
+  .sgi-sedes .sede-operativa-nav-bar {
+    grid-template-columns: 56px minmax(0, 1fr);
+    gap: 6px 8px;
+  }
+  .sgi-sedes .sede-operativa-nav-label {
+    padding-top: 4px;
+    font-size: 10px;
+    color: #64748b;
+    letter-spacing: normal;
+    text-transform: none;
+  }
+  .sgi-sedes .sede-operativa-nav .sede-nav {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 6px;
+    overflow: visible;
+    padding-bottom: 0;
+    scrollbar-width: auto;
+  }
+  .sgi-sedes .sede-operativa-nav .sede-nav a {
+    flex: none;
+    min-width: 0;
+    max-width: none;
+    padding: 2px 2px 3px;
+    border: 0;
+    border-bottom: 0;
+    white-space: nowrap;
+    opacity: 1;
+  }
+  .sgi-sedes .sede-operativa-nav .sede-nav a:hover,
+  .sgi-sedes .sede-operativa-nav .sede-nav a.active {
+    border-bottom: 0;
+    opacity: 1;
+  }
+  .sgi-sedes .sede-operativa-nav .sede-nav a .sede-nav-name {
+    line-height: 1.1;
+  }
+  .sgi-sedes .locals {
+    gap: 5px;
+    flex-wrap: wrap;
+    overflow-x: visible;
+    white-space: normal;
+  }
+  .sgi-sedes .loc {
+    display: inline-block;
+    padding: 2px 3px;
+    border: 0;
+    background: transparent;
+    font-size: 11px;
+  }
+  .sgi-sedes .loc.active {
+    color: #1e3a8a;
+    border-bottom: 0;
+  }
+  .sgi-sedes .loc.clear {
+    color: #9a3412;
+    text-decoration: none;
+  }
+  .sgi-sedes .loc.search-hit {
+    color: #1e3a8a;
+    border-bottom: 0;
+  }
+  .compact-view .grid {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, .95fr);
+  }
+  .compact-view #sedeOperativoGrid.panel-hidden,
+  .sgi-sedes.compact-view #sedeOperativoGrid.grid-stack,
+  .sgi-sedes.compact-view #sedeOperativoGrid.grid-planos,
+  .sgi-sedes.compact-view #sedeOperativoGrid.panel-hidden {
+    grid-template-columns: 1fr;
+  }
+  .sgi-sedes.compact-view #sedeOperativoGrid.grid-stack .panel-card {
+    grid-column: 1 / -1;
+  }
+  @media (max-width: 1100px) {
+    .compact-view .head-top {
+      flex-direction: column;
+    }
+    .compact-view .h-right {
+      width: 100%;
+      align-items: stretch;
+    }
+    .compact-view .h-right .h-actions {
+      justify-content: flex-start;
+    }
+    .compact-view .sede-global-search.sede-global-search-header .sede-global-search-status {
+      text-align: left;
+    }
+    .compact-view .sede-metricas-compact .sede-metricas-inline {
+      white-space: normal;
+      overflow: visible;
+    }
+  }
   .ev-plan-layer {
     position: absolute;
     inset: 0;
@@ -8363,6 +8595,7 @@
         <span>/</span>
         <span class="current">{{ render_sede_badge(sede.codigo) }} {{ sede.nombre }}</span>
       </div>
+      {% set ro = resumen_operativo if resumen_operativo is defined else {} %}
       <div class="head-top">
 
         <div class="h-left">
@@ -8392,58 +8625,149 @@
 
           </div>
 
+          <details class="sede-metricas-toggle sede-metricas-compact" id="sedeMetricasToggle">
+            <summary aria-label="Mostrar m&eacute;tricas de sede">
+              <span class="sede-metricas-toggle-label">M&eacute;tricas</span>
+              <span class="sede-metricas-inline">
+                Personas {{ ro.personas if ro.personas is not none else 'S/D' }}
+                &middot; Dep&oacute;sitos {{ ro.depositos if ro.depositos is not none else 'S/D' }}
+                &middot; m2 {{ ro.m2_totales if ro.m2_totales is not none else 'S/D' }}
+                &middot; Aires {{ ro.aires if ro.aires is not none else 'S/D' }}
+              </span>
+            </summary>
+            <div class="sede-analisis sede-analisis-main">
+              <div class="sede-analisis-head">
+                <h4>RESUMEN OPERATIVO DE SEDE</h4>
+                <div class="sede-analisis-tools">
+                  <div class="sede-analisis-actions">
+                    <a class="btn btn-metricas-sm" href="{{ url_for('sede_metricas_edit', codigo=sede.codigo) }}">Editar metricas</a>
+                  </div>
+                  <span class="sede-analisis-ref">Datos orientativos para gestion interna. No certifica cumplimiento legal.</span>
+                </div>
+              </div>
 
+              <div class="sede-analisis-grid">
+                <article class="sede-analisis-card">
+                  <div class="t">Personas</div>
+                  <div class="v">{{ ro.personas if ro.personas is not none else 'S/D' }}</div>
+                </article>
+
+                <article class="sede-analisis-card">
+                  <div class="t">Dep&oacute;sitos</div>
+                  <div class="v">{{ ro.depositos if ro.depositos is not none else 'S/D' }}</div>
+                </article>
+
+                <article class="sede-analisis-card">
+                  <div class="t">m2 totales</div>
+                  <div class="v">{% if ro.m2_totales is not none %}{{ ro.m2_totales }} m2{% else %}S/D{% endif %}</div>
+                </article>
+
+                <article class="sede-analisis-card">
+                  <div class="t">m2 por persona</div>
+                  <div class="v">{% if ro.m2_por_persona is not none %}{{ ro.m2_por_persona }} m2/p{% else %}S/D{% endif %}</div>
+                </article>
+
+                <article class="sede-analisis-card">
+                  <div class="t">Dep&oacute;sitos ocupados</div>
+                  <div class="v">{{ ro.depositos_ocupados if ro.depositos_ocupados is not none else 'S/D' }}</div>
+                </article>
+
+                <article class="sede-analisis-card">
+                  <div class="t">Dep&oacute;sitos libres</div>
+                  <div class="v">{{ ro.depositos_libres if ro.depositos_libres is not none else 'S/D' }}</div>
+                </article>
+
+                <article class="sede-analisis-card">
+                  <div class="t">Sanitarios</div>
+                  <div class="v">{{ ro.sanitarios if ro.sanitarios is not none else 'S/D' }}</div>
+                </article>
+
+                <article class="sede-analisis-card">
+                  <div class="t">Aires</div>
+                  <div class="v">{{ ro.aires if ro.aires is not none else 'S/D' }}</div>
+                </article>
+
+                <article class="sede-analisis-card">
+                  <div class="t">Personas por sanitario</div>
+                  <div class="v">{% if ro.personas_por_sanitario is not none %}{{ ro.personas_por_sanitario }} pers/sanit.{% else %}S/D{% endif %}</div>
+                </article>
+              </div>
+
+              <div class="sede-analisis-foot">
+                Datos orientativos para gestion interna. No certifica cumplimiento legal.
+              </div>
+            </div>
+          </details>
 
         </div>
 
 
       </div>
 
+        <div class="h-right">
+          {% if view != 'resumen' %}
+          <div class="card sede-global-search sede-global-search-header">
+            <div class="sede-global-search-field">
+              <span class="sede-global-search-icon" aria-hidden="true">
+                <svg viewBox="0 0 20 20" fill="none">
+                  <circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.5"></circle>
+                  <path d="M12.5 12.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+                </svg>
+              </span>
+              <input
+                type="search"
+                id="sedeGlobalSearchInput"
+                placeholder="Buscar persona, depósito o ambiente..."
+                aria-label="Buscar persona, depósito o ambiente"
+                autocomplete="off"
+                class="sede-global-search-input">
+              <button type="button" id="sedeGlobalSearchClear" class="sede-global-search-clear" aria-label="Limpiar búsqueda">&times;</button>
+            </div>
+            <div id="sedeGlobalSearchStatus" class="sede-global-search-status" aria-live="polite"></div>
+            <script id="sedeSearchIndexData" type="application/json">{{ {'personal': sede_search_personal, 'depositos': sede_search_depositos}|tojson }}</script>
+          </div>
+          {% endif %}
 
+          <div class="h-actions">
+            <a class="btn btn-volver" href="{{ url_for('sedes_resumen_mpd') }}">Volver a Sedes</a>
+            <button type="button" class="btn btn-checklist-limpieza" id="btnChecklistLimpieza" data-sede="{{ sede.codigo }}">Checklist Control Limpieza</button>
 
+            <details class="h-actions-more">
+              <summary class="btn btn-calendario" aria-label="Más acciones">Acciones</summary>
+              <div class="h-actions-menu" role="menu">
+                {% if home_mode %}
+                  <button type="button" class="btn btn-calendario" id="toggleCalendar">Calendario</button>
+                {% else %}
+                  <a class="btn btn-calendario"
+                     href="{{ url_for('sede_ficha', codigo=sede.codigo, home=1, piso=piso, tab=tab, view=view) }}">Calendario</a>
+                {% endif %}
 
+                <a class="btn btn-checklist-limpieza" href="{{ url_for('sedes_control_limpieza_historial', sede=sede.codigo) }}">Historial Control Limpieza</a>
+                <a class="btn btn-resumen-sedes" href="{{ url_for('sedes_resumen_mpd') }}">Resumen sedes</a>
+                <a class="btn btn-metricas-sm" href="{{ url_for('sede_metricas_edit', codigo=sede.codigo) }}">Editar metricas</a>
 
-
-
-      </div>
-
-      <div class="h-actions">
-        <a class="btn btn-volver" href="{{ url_for('sedes_resumen_mpd') }}">Volver a Sedes</a>
-        <button type="button" class="btn btn-checklist-limpieza" id="btnChecklistLimpieza" data-sede="{{ sede.codigo }}">Checklist Control Limpieza</button>
-
-        <details class="h-actions-more">
-          <summary class="btn btn-calendario" aria-label="Más acciones">Acciones</summary>
-          <div class="h-actions-menu" role="menu">
-            {% if home_mode %}
-              <button type="button" class="btn btn-calendario" id="toggleCalendar">Calendario</button>
-            {% else %}
-              <a class="btn btn-calendario"
-                 href="{{ url_for('sede_ficha', codigo=sede.codigo, home=1, piso=piso, tab=tab, view=view) }}">Calendario</a>
-            {% endif %}
-
-            <a class="btn btn-checklist-limpieza" href="{{ url_for('sedes_control_limpieza_historial', sede=sede.codigo) }}">Historial Control Limpieza</a>
-            <a class="btn btn-resumen-sedes" href="{{ url_for('sedes_resumen_mpd') }}">Resumen sedes</a>
-            <a class="btn btn-metricas-sm" href="{{ url_for('sede_metricas_edit', codigo=sede.codigo) }}">Editar metricas</a>
-
-            <details class="fuero-legend">
-              <summary class="panel-control-title">Leyenda de fueros</summary>
-              <div class="fuero-legend-grid" role="list">
-                <div class="fuero-legend-item fuero-penal" role="listitem">
-                  <span class="fuero-dot"></span><span>Penal</span>
-                </div>
-                <div class="fuero-legend-item fuero-social" role="listitem">
-                  <span class="fuero-dot"></span><span>Jurídico Social</span>
-                </div>
-                <div class="fuero-legend-item fuero-menores" role="listitem">
-                  <span class="fuero-dot"></span><span>Menores e Incapaces</span>
-                </div>
-                <div class="fuero-legend-item fuero-admin" role="listitem">
-                  <span class="fuero-dot"></span><span>Administración / Violencia Institucional</span>
-                </div>
+                <details class="fuero-legend">
+                  <summary class="panel-control-title">Leyenda de fueros</summary>
+                  <div class="fuero-legend-grid" role="list">
+                    <div class="fuero-legend-item fuero-penal" role="listitem">
+                      <span class="fuero-dot"></span><span>Penal</span>
+                    </div>
+                    <div class="fuero-legend-item fuero-social" role="listitem">
+                      <span class="fuero-dot"></span><span>Jurídico Social</span>
+                    </div>
+                    <div class="fuero-legend-item fuero-menores" role="listitem">
+                      <span class="fuero-dot"></span><span>Menores e Incapaces</span>
+                    </div>
+                    <div class="fuero-legend-item fuero-admin" role="listitem">
+                      <span class="fuero-dot"></span><span>Administración / Violencia Institucional</span>
+                    </div>
+                  </div>
+                </details>
               </div>
             </details>
           </div>
-        </details>
+        </div>
+
       </div>
     </div>
 
@@ -8567,97 +8891,8 @@
       </a>
     </div>
 
-        {% set ro = resumen_operativo if resumen_operativo is defined else {} %}
-    <details class="sede-metricas-toggle card" id="sedeMetricasToggle">
-      <summary aria-label="Mostrar m&eacute;tricas de sede">
-        <span class="sede-metricas-toggle-label">M&eacute;tricas</span>
-      </summary>
-    <div class="sede-analisis sede-analisis-main">
-      <div class="sede-analisis-head">
-        <h4>RESUMEN OPERATIVO DE SEDE</h4>
-        <div class="sede-analisis-tools">
-          <div class="sede-analisis-actions">
-            <a class="btn btn-metricas-sm" href="{{ url_for('sede_metricas_edit', codigo=sede.codigo) }}">Editar metricas</a>
-          </div>
-          <span class="sede-analisis-ref">Datos orientativos para gestion interna. No certifica cumplimiento legal.</span>
-        </div>
-      </div>
-
-      <div class="sede-analisis-grid">
-        <article class="sede-analisis-card">
-          <div class="t">Personas</div>
-          <div class="v">{{ ro.personas if ro.personas is not none else 'S/D' }}</div>
-        </article>
-
-        <article class="sede-analisis-card">
-          <div class="t">Dep&oacute;sitos</div>
-          <div class="v">{{ ro.depositos if ro.depositos is not none else 'S/D' }}</div>
-        </article>
-
-        <article class="sede-analisis-card">
-          <div class="t">m2 totales</div>
-          <div class="v">{% if ro.m2_totales is not none %}{{ ro.m2_totales }} m2{% else %}S/D{% endif %}</div>
-        </article>
-
-        <article class="sede-analisis-card">
-          <div class="t">m2 por persona</div>
-          <div class="v">{% if ro.m2_por_persona is not none %}{{ ro.m2_por_persona }} m2/p{% else %}S/D{% endif %}</div>
-        </article>
-
-        <article class="sede-analisis-card">
-          <div class="t">Dep&oacute;sitos ocupados</div>
-          <div class="v">{{ ro.depositos_ocupados if ro.depositos_ocupados is not none else 'S/D' }}</div>
-        </article>
-
-        <article class="sede-analisis-card">
-          <div class="t">Dep&oacute;sitos libres</div>
-          <div class="v">{{ ro.depositos_libres if ro.depositos_libres is not none else 'S/D' }}</div>
-        </article>
-
-        <article class="sede-analisis-card">
-          <div class="t">Sanitarios</div>
-          <div class="v">{{ ro.sanitarios if ro.sanitarios is not none else 'S/D' }}</div>
-        </article>
-
-        <article class="sede-analisis-card">
-          <div class="t">Aires</div>
-          <div class="v">{{ ro.aires if ro.aires is not none else 'S/D' }}</div>
-        </article>
-
-        <article class="sede-analisis-card">
-          <div class="t">Personas por sanitario</div>
-          <div class="v">{% if ro.personas_por_sanitario is not none %}{{ ro.personas_por_sanitario }} pers/sanit.{% else %}S/D{% endif %}</div>
-        </article>
-      </div>
-
-      <div class="sede-analisis-foot">
-        Datos orientativos para gestion interna. No certifica cumplimiento legal.
-      </div>
-    </div>
-    </details>
-
     {% if view != 'resumen' %}
     {% include "_sede_operativa_nav.html" %}
-    <div class="card sede-global-search">
-      <div class="sede-global-search-field">
-        <span class="sede-global-search-icon" aria-hidden="true">
-          <svg viewBox="0 0 20 20" fill="none">
-            <circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.5"></circle>
-            <path d="M12.5 12.5L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
-          </svg>
-        </span>
-        <input
-          type="search"
-          id="sedeGlobalSearchInput"
-          placeholder="Buscar persona, depósito o ambiente..."
-          aria-label="Buscar persona, depósito o ambiente"
-          autocomplete="off"
-          class="sede-global-search-input">
-        <button type="button" id="sedeGlobalSearchClear" class="sede-global-search-clear" aria-label="Limpiar búsqueda">&times;</button>
-      </div>
-      <div id="sedeGlobalSearchStatus" class="sede-global-search-status" aria-live="polite"></div>
-      <script id="sedeSearchIndexData" type="application/json">{{ {'personal': sede_search_personal, 'depositos': sede_search_depositos}|tojson }}</script>
-    </div>
     {% endif %}
 
   </div>
