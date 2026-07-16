@@ -1018,7 +1018,7 @@
 }
 
 .sgi-sedes .sede-operativa-nav .sede-nav a .sede-nav-name {
-  display: block;
+  display: none;
   max-width: 100%;
   overflow: visible;
   text-overflow: clip;
@@ -1037,6 +1037,7 @@
 }
 
 .sgi-sedes .sede-operativa-nav .sede-nav a:hover .sede-nav-name {
+  display: block;
   opacity: 0.86;
 }
 
@@ -1050,6 +1051,7 @@
 }
 
 .sgi-sedes .sede-operativa-nav .sede-nav a.active .sede-nav-name {
+  display: block;
   color: inherit !important;
   opacity: 0.86;
 }
