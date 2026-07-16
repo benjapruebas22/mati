@@ -84,6 +84,20 @@
     document.querySelectorAll('.quick-site').forEach((node) => {
       node.classList.toggle('is-selected', node.dataset.siteCode === code);
     });
+    document.querySelectorAll('.operativa-nav-shell .sede-nav [data-code]').forEach((node) => {
+      const selected = node.dataset.code === code;
+      node.classList.toggle('active', selected);
+      if (selected) {
+        node.setAttribute('aria-current', 'page');
+      } else {
+        node.removeAttribute('aria-current');
+      }
+    });
+    document.querySelectorAll('.operativa-nav-shell [data-href-template]').forEach((node) => {
+      const template = String(node.dataset.hrefTemplate || '').trim();
+      if (!template) return;
+      node.setAttribute('href', template.replace(/__SEDE__/g, code));
+    });
 
     elements.code.textContent = sede.codigo;
     elements.name.textContent = sede.nombre;
@@ -150,6 +164,10 @@
     }
 
     root.dataset.selectedCode = code;
+    const operativaNav = document.querySelector('.operativa-nav-shell');
+    if (operativaNav) {
+      operativaNav.style.setProperty('--operativa-accent', FUERO_COLORS[normalize(sede.fuero_label)] || '#6666CC');
+    }
     if (locationPickerOptions) {
       locationPickerOptions.querySelectorAll('button').forEach((button) => {
         button.classList.toggle('is-selected', button.dataset.siteCode === code);

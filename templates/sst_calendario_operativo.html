@@ -5,6 +5,7 @@
 {% block extra_head %}
   <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-14-12') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sgi/operativa_nav.css', v='2026-07-16-01') }}">
 {% endblock %}
 
 {% block content %}
@@ -19,6 +20,7 @@
   data-launch-carteleria="{{ url_for('sst_carteleria_home') }}?sede=__SEDE__&prefill_sede=__SEDE__&prefill_fecha_programada=__DATE__&prefill_estado=PROGRAMADO&mostrar_form=1"
 >
   {% include '_sst_operational_nav.html' %}
+  {% include '_sede_operativa_nav.html' %}
 
   <section class="sst-calendar-matrix-shell">
     <div class="sst-calendar-matrix-titlebar">

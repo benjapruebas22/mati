@@ -3,6 +3,7 @@
 {% block extra_head %}
   <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-14-11') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sgi/operativa_nav.css', v='2026-07-16-01') }}">
 {% endblock %}
 
 {% block content %}
@@ -23,6 +24,7 @@
       {% if selected_sede %}<a class="sst-op-btn" href="{{ url_for('sst_sede_ficha', codigo=selected_sede.codigo) }}">Estado de sede</a>{% endif %}
     </div>
   </header>
+  {% include '_sede_operativa_nav.html' %}
 
   <article class="sst-op-card wide sst-luces-table-card">
     <div class="sst-op-card-head">

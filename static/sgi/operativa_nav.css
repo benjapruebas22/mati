@@ -1,0 +1,163 @@
+.operativa-nav-shell {
+  --operativa-accent: #6666cc;
+  margin: 0 0 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
+}
+
+.operativa-nav-shell .sede-operativa-nav {
+  padding: 8px 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.operativa-nav-shell .sede-operativa-nav-title {
+  display: block;
+  font-size: 10px;
+  font-weight: 800;
+  color: #475569;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.operativa-nav-shell .sede-operativa-nav-bar {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 6px 8px;
+  align-items: start;
+}
+
+.operativa-nav-shell .sede-operativa-nav-label {
+  padding-top: 4px;
+  font-size: 10px;
+  color: #64748b;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.operativa-nav-shell .sede-nav {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 6px;
+  overflow: visible;
+  padding: 0;
+  margin: 0;
+}
+
+.operativa-nav-shell .sede-nav a {
+  display: block;
+  min-width: 0;
+  padding: 2px 2px 3px;
+  border: 0;
+  background: transparent;
+  color: #0f172a;
+  text-decoration: none;
+  white-space: nowrap;
+  opacity: 1;
+}
+
+.operativa-nav-shell .sede-nav a:hover,
+.operativa-nav-shell .sede-nav a.active {
+  opacity: 1;
+}
+
+.operativa-nav-shell .sede-nav a.active .sede-nav-code {
+  font-weight: 900;
+}
+
+.operativa-nav-shell .sede-nav a .sede-nav-code {
+  display: block;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.operativa-nav-shell .sede-nav a .sede-nav-name {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+  font-size: 9px;
+  font-weight: 400;
+  line-height: 1.15;
+  color: #64748b;
+  opacity: 1;
+}
+
+.operativa-nav-shell .sede-nav a[data-code="S01"],
+.operativa-nav-shell .sede-nav a[data-code="S02"],
+.operativa-nav-shell .sede-nav a[data-code="S03"],
+.operativa-nav-shell .sede-nav a[data-code="S04"],
+.operativa-nav-shell .sede-nav a[data-code="S05"],
+.operativa-nav-shell .sede-nav a[data-code="S06"],
+.operativa-nav-shell .sede-nav a[data-code="S07"],
+.operativa-nav-shell .sede-nav a[data-code="S09"],
+.operativa-nav-shell .sede-nav a[data-code="S10"] {
+  color: #6666cc;
+}
+
+.operativa-nav-shell .sede-nav a[data-code="S08"],
+.operativa-nav-shell .sede-nav a[data-code="S12"] {
+  color: #f58a5e;
+}
+
+.operativa-nav-shell .sede-nav a[data-code="S13"] {
+  color: #65bfe4;
+}
+
+.operativa-nav-shell .sede-nav a[data-code="S11"],
+.operativa-nav-shell .sede-nav a[data-code="S14"],
+.operativa-nav-shell .sede-nav a[data-code="S15"],
+.operativa-nav-shell .sede-nav a[data-code="S16"],
+.operativa-nav-shell .sede-nav a[data-code="S17"],
+.operativa-nav-shell .sede-nav a[data-code="S18"],
+.operativa-nav-shell .sede-nav a[data-code="S19"],
+.operativa-nav-shell .sede-nav a[data-code="S20"] {
+  color: #f14b94;
+}
+
+.operativa-nav-shell .sede-operativa-nav-modules {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.operativa-nav-shell .ptab {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid #dde5ef;
+  background: transparent;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.operativa-nav-shell .ptab.active {
+  color: #0f172a;
+  border-color: rgba(100, 116, 139, 0.35);
+  background: transparent;
+  box-shadow: inset 0 -1px 0 var(--operativa-accent);
+}
+
+@media (max-width: 980px) {
+  .operativa-nav-shell .sede-operativa-nav-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .operativa-nav-shell .sede-operativa-nav-label {
+    padding-top: 0;
+  }
+
+  .operativa-nav-shell .sede-nav {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(auto-fit, minmax(54px, 1fr));
+  }
+}

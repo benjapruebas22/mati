@@ -12,6 +12,7 @@ from modules.auditorias import register_auditorias
 from modules.obras import register_obras
 from modules.agentes import register_agentes
 from modules.mapa import register_mapa
+from modules.sede_navigation import build_operativa_nav_context
 from modules.vehiculos import register_vehiculos
 from modules.inventario_checklist import register_inventario_checklist
 from modules.inventario_general import register_inventario_general
@@ -4111,6 +4112,12 @@ def sedes_mapa_general():
     selected_code = str(request.args.get("sede") or "S01").strip().upper()
     if selected_code not in {item["codigo"] for item in sedes} and sedes:
         selected_code = sedes[0]["codigo"]
+    operativa_nav = build_operativa_nav_context(
+        sedes,
+        selected_code,
+        "",
+        dynamic_sede_token="__SEDE__",
+    )
 
     return render_template(
         "sedes_mapa_general.html",
@@ -4119,6 +4126,7 @@ def sedes_mapa_general():
         totals=totals,
         map_locations=map_locations,
         selected_code=selected_code,
+        operativa_nav=operativa_nav,
     )
 
 import sqlite3
@@ -5861,6 +5869,8 @@ def sede_ficha(codigo):
 
     # Para sedes específicas con planta PB/P1/P2, filtramos la lista de locales según el piso seleccionado.
     locales = _filtrar_locales_por_piso(codigo, piso, _locales_all)
+    if local and local not in set(locales):
+        local = locales[0] if locales else ""
 
     # -------------------------
     # PANEL: defaults (SIEMPRE)
@@ -6456,10 +6466,21 @@ def sede_ficha(codigo):
         pass
 
 
+    operativa_nav = build_operativa_nav_context(
+        sedes_nav,
+        codigo,
+        tab,
+        piso=piso,
+        local=local,
+        view=(request.args.get("view") or "").strip(),
+        home=home_mode,
+    )
+
     return render_template(
         "sede_ficha.html",
         sede=sede,
         sedes_nav=sedes_nav,
+        operativa_nav=operativa_nav,
         infra=infra,
         obras_kpi=obras_kpi if "obras_kpi" in locals() else {},
         inv_kpi=inv_kpi if "inv_kpi" in locals() else {},
@@ -13100,6 +13121,18 @@ def _matafuegos_home_impl():
         "matafuegos_home.html",
         sst_section="matafuegos",
         sedes=sorted(sedes_map.values(), key=lambda item: item["codigo"]),
+        operativa_nav=build_operativa_nav_context(
+            sorted(sedes_map.values(), key=lambda item: item["codigo"]),
+            (selected_summary["sede_codigo"] if selected_summary else (detail_sede or f_sede or (state_by_sede[0]["sede_codigo"] if state_by_sede else ""))),
+            "matafuegos",
+            filters={
+                "estado": f_estado,
+                "lote": f_lote,
+                "year": f_year,
+                "month": f_month,
+                "q": f_q,
+            },
+        ),
         state_by_sede=state_by_sede,
         selected_summary=selected_summary,
         selected_record=selected_record,

@@ -10,6 +10,7 @@ import uuid
 from flask import render_template, request, redirect, url_for, flash, Response, jsonify, session, send_from_directory
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+from modules.sede_navigation import build_operativa_nav_context
 
 
 def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, ensure_auth_tables, default_redirect_for_role=None):
@@ -6971,6 +6972,20 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         return render_template(
             "sst_calendario_operativo.html",
             sst_section="implementacion" if view_mode == "implementacion" else "inicio",
+            operativa_nav=build_operativa_nav_context(
+                context_raw["sedes"],
+                filters["sede"] or (selected_sede["codigo"] if selected_sede else (context_raw["sedes"][0]["codigo"] if context_raw["sedes"] else "")),
+                "sst_calendario",
+                filters={
+                    "vista": (view_mode if view_mode != "general" else ""),
+                    "year": selected_year,
+                    "month": selected_month,
+                    "region": filters["region"],
+                    "tipo": filters["tipo"],
+                    "estado": filters["estado"],
+                    "responsable": filters["responsable"],
+                },
+            ),
             selected_year=selected_year,
             selected_month=selected_month,
             focus_month=focus_month,
@@ -8200,6 +8215,16 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         return {
             "sst_section": "carteleria",
             "sedes": sedes,
+            "operativa_nav": build_operativa_nav_context(
+                sedes,
+                detail_sede or f_open_sede or f_sede or (state_by_sede[0]["sede_codigo"] if state_by_sede else ""),
+                "sst_carteleria",
+                filters={
+                    "estado": f_estado,
+                    "month": f_month,
+                    "q": f_q,
+                },
+            ),
             "selected_sede": next((item for item in sedes if item["codigo"] == (detail_sede or f_sede)), None),
             "records": all_records,
             "state_by_sede": state_by_sede,
@@ -8402,6 +8427,16 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         return {
             "sst_section": "luces",
             "sedes": sedes,
+            "operativa_nav": build_operativa_nav_context(
+                sedes,
+                detail_sede or f_open_sede or f_sede or (state_by_sede[0]["sede_codigo"] if state_by_sede else ""),
+                "sst_luces",
+                filters={
+                    "estado": f_estado,
+                    "month": f_month,
+                    "q": f_q,
+                },
+            ),
             "selected_sede": selected_context_sede,
             "selected_summary": selected_summary,
             "records": filtered_rows,
@@ -13722,6 +13757,18 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         return {
             "sst_section": "desinfecciones",
             "sedes": sedes,
+            "operativa_nav": build_operativa_nav_context(
+                sedes,
+                detail_sede or f_open_sede or f_sede or (state_by_sede[0]["sede_codigo"] if state_by_sede else ""),
+                "sst_desinfecciones",
+                filters={
+                    "estado": f_estado,
+                    "modalidad": f_modalidad,
+                    "year": f_year,
+                    "month": f_month,
+                    "q": f_q,
+                },
+            ),
             "state_by_sede": state_by_sede,
             "selected_summary": selected_summary,
             "selected_record": selected_record,
