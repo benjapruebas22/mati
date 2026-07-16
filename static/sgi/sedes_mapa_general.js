@@ -94,7 +94,6 @@
     elements.fuero.style.color = fueroColor;
     elements.plan.src = sede.plano_url;
     elements.plan.alt = `Plano de ${sede.codigo}, ${sede.nombre}`;
-    elements.planLink.href = `${sede.detalle_url}?tab=depositos`;
     elements.depositCount.textContent = `${sede.depositos_total} depositos`;
     elements.detail.href = sede.detalle_url;
 
@@ -114,8 +113,8 @@
 
     elements.deposits.replaceChildren();
     sede.depositos.slice(0, 12).forEach((deposito) => {
-      const link = document.createElement('a');
-      link.href = `${sede.detalle_url}?tab=depositos&local=${encodeURIComponent(deposito.codigo_local)}`;
+      const link = document.createElement('div');
+      link.className = 'deposit-item';
       const codeNode = document.createElement('strong');
       codeNode.textContent = deposito.codigo_local;
       const description = document.createElement('span');
@@ -124,9 +123,9 @@
       elements.deposits.appendChild(link);
     });
     if (sede.depositos.length > 12) {
-      const more = document.createElement('a');
-      more.href = `${sede.detalle_url}?tab=depositos`;
-      more.innerHTML = `<strong>+${sede.depositos.length - 12}</strong><span>Ver depositos restantes</span>`;
+      const more = document.createElement('div');
+      more.className = 'deposit-item';
+      more.innerHTML = `<strong>+${sede.depositos.length - 12}</strong><span>Depositos adicionales</span>`;
       elements.deposits.appendChild(more);
     }
 
@@ -140,10 +139,7 @@
       if (Number(sede.novedades_total || 0) > 3) {
         const historyItem = document.createElement('li');
         historyItem.className = 'news-history';
-        const historyLink = document.createElement('a');
-        historyLink.href = sede.detalle_url;
-        historyLink.textContent = 'Ver historial →';
-        historyItem.appendChild(historyLink);
+        historyItem.textContent = `+${Number(sede.novedades_total || 0) - sede.novedades.length} novedades anteriores`;
         elements.news.appendChild(historyItem);
       }
     } else {
@@ -386,7 +382,6 @@
       button.addEventListener('click', () => {
         selectSite(sede.codigo, { focusPanel: true });
         searchResults.hidden = true;
-        if (deposito) window.location.href = `${sede.detalle_url}?tab=depositos&local=${encodeURIComponent(deposito.codigo_local)}`;
       });
       searchResults.appendChild(button);
     });

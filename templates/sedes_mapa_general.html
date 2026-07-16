@@ -13,13 +13,9 @@
     <nav class="mpd-map-nav" aria-label="Vistas y modulos relacionados">
       <a class="is-active" href="{{ url_for('sedes_mapa_general') }}" aria-current="page"><span class="nav-icon">⌾</span>Vista global</a>
       <a href="{{ url_for('sedes_resumen_mpd') }}"><span class="nav-icon">▤</span>Resumen operativo</a>
-      <a href="{{ url_for('sedes_resumen_mpd') }}#mapa-operativo-territorial"><span class="nav-icon">⌖</span>Sedes</a>
       <a href="{{ url_for('depositos_home') }}"><span class="nav-icon">▣</span>Depositos</a>
       <a href="{{ url_for('personal_sede_home') }}"><span class="nav-icon">♙</span>Personal</a>
-      <a href="{{ url_for('sst_calendario_operativo') }}"><span class="nav-icon">◇</span>SG-SST</a>
-      <a href="{{ url_for('sgi_documentacion') }}"><span class="nav-icon">□</span>Documentacion</a>
       <a href="{{ url_for('sgi_documentacion_informes') }}"><span class="nav-icon">≡</span>Informes</a>
-      <a href="{{ url_for('recorridos_operativos_lista') }}"><span class="nav-icon">↝</span>Recorridos Operativos</a>
     </nav>
 
     <section class="mpd-map-general-summary" aria-labelledby="summary-title">
@@ -50,7 +46,6 @@
           <input id="mapSearch" type="search" placeholder="Buscar S01, Humahuaca o D07..." autocomplete="off">
           <span aria-hidden="true">⌕</span>
         </label>
-        <a class="secondary-link" href="{{ url_for('sedes_resumen_mpd') }}">Ver resumen tecnico</a>
       </div>
     </header>
 
@@ -251,10 +246,10 @@
             <span id="panelDepositCount"></span>
           </div>
           <div class="plan-preview-grid">
-            <a class="plan-image-link" id="panelPlanLink" href="#">
+            <div class="plan-image-link" id="panelPlanLink">
               <img id="panelPlan" src="" alt="">
-              <span>Ampliar en ficha operativa</span>
-            </a>
+              <span>Vista previa del plano</span>
+            </div>
             <div class="deposit-list" id="panelDeposits"></div>
           </div>
         </section>
