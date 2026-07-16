@@ -5341,7 +5341,6 @@ def personal_eliminar(id):
         return redirect(url_for("personal_home", sede=r["codigo_sede"], piso=r["piso"]))
     return redirect(url_for("personal_home"))
 
-import os
 from flask import request, render_template, redirect, url_for, flash
 
 @app.route("/sedes/<codigo>", endpoint="sede_ficha")
