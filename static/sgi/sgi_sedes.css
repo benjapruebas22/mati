@@ -940,94 +940,25 @@
 /* -----------------------------------
    Limpieza operativa de ficha Sedes
 ------------------------------------ */
-.sgi-sedes {
-  --sede-panel-width: clamp(340px, 29vw, 460px);
-}
-
-.sgi-sedes .sede-active-card {
-  box-shadow: none !important;
-}
-
-.sgi-sedes .sede-active-card::before {
-  height: 2px !important;
-  opacity: 0.72;
-}
-
-.sgi-sedes .sede-active-card .sede-badge-historic {
-  padding: 0 !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-.sgi-sedes .sede-operativa-nav-card {
-  margin: 0 0 8px !important;
-}
-
-.sgi-sedes .sede-operativa-nav {
-  padding: 8px 10px !important;
-  gap: 8px !important;
-}
-
-.sgi-sedes .sede-operativa-nav-title {
-  font-size: 10px !important;
-  font-weight: 700 !important;
-  color: var(--sedes-muted) !important;
-}
-
-.sgi-sedes .sede-operativa-nav-bar {
-  grid-template-columns: 52px minmax(0, 1fr) !important;
-  gap: 6px 8px !important;
-}
-
-.sgi-sedes .sede-operativa-nav-label {
-  padding-top: 5px !important;
-  font-size: 10px !important;
-  font-weight: 700 !important;
-  color: var(--sedes-muted) !important;
-}
-
 .sgi-sedes .sede-operativa-nav .sede-nav {
-  gap: 8px 12px !important;
+  gap: 10px !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  padding-bottom: 3px !important;
+  scrollbar-width: thin;
 }
 
 .sgi-sedes .sede-operativa-nav .sede-nav a {
-  display: inline-grid !important;
-  grid-template-rows: auto auto;
-  align-items: start;
-  justify-items: start;
-  gap: 2px;
-  min-width: 60px;
-  max-width: 82px;
-  min-height: auto;
+  flex: 0 0 auto;
   padding: 0 0 4px !important;
   border: 0 !important;
   border-bottom: 1px solid transparent !important;
   border-radius: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
-  line-height: 1.05;
-}
-
-.sgi-sedes .sede-operativa-nav .sede-nav a .sede-nav-code {
-  display: block;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.03em;
-}
-
-.sgi-sedes .sede-operativa-nav .sede-nav a .sede-nav-name {
-  display: none;
-  max-width: 100%;
-  overflow: visible;
-  text-overflow: clip;
-  white-space: normal;
-  font-size: 9px;
-  font-weight: 400;
-  color: inherit !important;
-  opacity: 0.72;
-  line-height: 1.15;
+  font-weight: 800 !important;
+  white-space: nowrap !important;
 }
 
 .sgi-sedes .sede-operativa-nav .sede-nav a:hover {
@@ -1036,24 +967,9 @@
   box-shadow: none !important;
 }
 
-.sgi-sedes .sede-operativa-nav .sede-nav a:hover .sede-nav-name {
-  display: none;
-  opacity: 0.86;
-}
-
 .sgi-sedes .sede-operativa-nav .sede-nav a.active {
   border-bottom-color: currentColor !important;
   background: transparent !important;
-}
-
-.sgi-sedes .sede-operativa-nav .sede-nav a.active .sede-nav-code {
-  font-weight: 900;
-}
-
-.sgi-sedes .sede-operativa-nav .sede-nav a.active .sede-nav-name {
-  display: none;
-  color: inherit !important;
-  opacity: 0.86;
 }
 
 .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S01"],
@@ -1065,16 +981,16 @@
 .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S07"],
 .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S09"],
 .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S10"] {
-  color: #3f2f7a !important;
+  color: #6666cc !important;
 }
 
 .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S08"],
 .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S12"] {
-  color: #6b3c1f !important;
+  color: #f58a5e !important;
 }
 
 .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S13"] {
-  color: #1c4c77 !important;
+  color: #65bfe4 !important;
 }
 
 .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S11"],
@@ -1085,241 +1001,5 @@
 .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S18"],
 .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S19"],
 .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S20"] {
-  color: #7a2a4b !important;
-}
-
-.sgi-sedes .sede-operativa-nav-modules {
-  gap: 6px !important;
-}
-
-.sgi-sedes .sede-operativa-nav-modules .ptab {
-  padding: 5px 9px !important;
-  border-radius: 10px !important;
-  background: #ffffff !important;
-  border: 1px solid var(--sedes-border) !important;
-  color: var(--sedes-ink) !important;
-}
-
-.sgi-sedes .sede-operativa-nav-modules .ptab.active {
-  background: #ffffff !important;
-  border-color: var(--sedes-primary) !important;
-  color: var(--sedes-primary) !important;
-}
-
-.sgi-sedes .sede-global-search {
-  margin: 6px 0 0 !important;
-  padding: 8px 10px !important;
-  display: flex !important;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px 10px;
-}
-
-.sgi-sedes .sede-global-search-title {
-  font-size: 10px !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.08em !important;
-  color: var(--sedes-muted) !important;
-}
-
-.sgi-sedes .sede-global-search-field {
-  flex: 1 1 360px;
-  min-width: 220px;
-}
-
-.sgi-sedes .sede-global-search-input {
-  min-height: 32px;
-  padding: 7px 30px 7px 10px !important;
-  font-size: 12px !important;
-  border-radius: 9px !important;
-}
-
-.sgi-sedes .sede-global-search-clear {
-  width: 20px !important;
-  height: 20px !important;
-}
-
-.sgi-sedes .sede-global-search-status {
-  flex: 1 0 100%;
-  min-height: 0 !important;
-  font-size: 10px !important;
-}
-
-.sgi-sedes .sede-global-search-status:empty {
-  display: none;
-}
-
-.sgi-sedes .sede-metricas-toggle {
-  margin: 0 12px 8px !important;
-  border-radius: 10px !important;
-}
-
-.sgi-sedes .sede-metricas-toggle > summary {
-  padding: 6px 10px !important;
-}
-
-.sgi-sedes .sede-metricas-toggle-label {
-  font-size: 10px !important;
-  font-weight: 700 !important;
-}
-
-.sgi-sedes .sede-metricas-inline {
-  font-size: 10px !important;
-}
-
-.sgi-sedes .sede-analisis {
-  padding: 8px 10px !important;
-  gap: 8px !important;
-}
-
-.sgi-sedes .sede-analisis-head {
-  margin-bottom: 6px !important;
-}
-
-.sgi-sedes .sede-analisis-head h4 {
-  font-size: 11px !important;
-  font-weight: 700 !important;
-}
-
-.sgi-sedes .sede-analisis-grid {
-  gap: 8px !important;
-}
-
-.sgi-sedes .sede-analisis-card {
-  padding: 8px !important;
-}
-
-.sgi-sedes .sede-analisis-card .t {
-  font-size: 10px !important;
-}
-
-.sgi-sedes .sede-analisis-card .v {
-  font-size: 16px !important;
-}
-
-.sgi-sedes.compact-view #sedeOperativoGrid,
-.sgi-sedes.compact-view #sedeOperativoGrid.grid-stack,
-.sgi-sedes.compact-view #sedeOperativoGrid.grid-planos,
-.sgi-sedes.compact-view #sedeOperativoGrid.panel-hidden {
-  grid-template-columns: minmax(0, 1fr) var(--sede-panel-width) !important;
-  gap: 10px !important;
-}
-
-.sgi-sedes.compact-view #sedeOperativoGrid.grid-stack .panel-card {
-  grid-column: auto !important;
-}
-
-.sgi-sedes.compact-view #sedeOperativoGrid.grid-stack .panel-body.scrollable {
-  max-height: 60vh !important;
-  overflow: auto !important;
-}
-
-.sgi-sedes.compact-view #sedeOperativoGrid .panel-card {
-  width: 100%;
-  min-width: 0;
-}
-
-.sgi-sedes.compact-view #sedeOperativoGrid.panel-hidden .panel-card.is-collapsed {
-  display: none !important;
-}
-
-.sgi-sedes .plan-head,
-.sgi-sedes .panel-head {
-  padding: 8px 10px !important;
-}
-
-.sgi-sedes .plan-title,
-.sgi-sedes .panel-title {
-  font-weight: 700 !important;
-}
-
-.sgi-sedes .plan-body,
-.sgi-sedes .panel-body {
-  padding: 10px !important;
-}
-
-.sgi-sedes .panel-head-tools {
-  gap: 6px !important;
-}
-
-.sgi-sedes .plan-img.selected {
-  border-color: var(--sedes-border) !important;
-  box-shadow: none !important;
-}
-
-.sgi-sedes .plan-img .plan-selected {
-  padding: 4px 8px !important;
-  border: 1px solid var(--sedes-border) !important;
-  background: rgba(255, 255, 255, 0.92) !important;
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  box-shadow: none !important;
-}
-
-.sgi-sedes .locals {
-  padding: 8px 10px 10px !important;
-  gap: 6px !important;
-  border-top: 1px solid var(--sedes-border);
-}
-
-.sgi-sedes .locals .loc {
-  padding: 4px 8px !important;
-  border-radius: 10px !important;
-  border: 1px solid var(--sedes-border) !important;
-  background: transparent !important;
-  color: var(--sedes-muted) !important;
-  font-size: 11px !important;
-  font-weight: 400 !important;
-}
-
-.sgi-sedes .locals .loc:hover {
-  background: transparent !important;
-  border-color: #cbd5e1 !important;
-  color: var(--sedes-ink) !important;
-}
-
-.sgi-sedes .locals .loc.active,
-.sgi-sedes .locals .loc.active:hover {
-  background: transparent !important;
-  border-color: var(--sedes-primary) !important;
-  color: var(--sedes-ink) !important;
-  font-weight: 400 !important;
-  box-shadow: none !important;
-}
-
-.sgi-sedes .locals .loc.active::before {
-  content: none !important;
-}
-
-.sgi-sedes .locals .loc.search-hit {
-  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.14) !important;
-}
-
-.sgi-sedes .locals .dep-local-badge,
-.sgi-sedes .locals .dep-local-badge-penal,
-.sgi-sedes .locals .dep-local-badge-social,
-.sgi-sedes .locals .dep-local-badge-menores,
-.sgi-sedes .locals .dep-local-badge-admin {
-  padding: 0 !important;
-  border: 0 !important;
-  background: transparent !important;
-  color: currentColor !important;
-  font-weight: inherit !important;
-}
-
-@media (max-width: 1100px) {
-  .sgi-sedes.compact-view #sedeOperativoGrid,
-  .sgi-sedes.compact-view #sedeOperativoGrid.grid-stack,
-  .sgi-sedes.compact-view #sedeOperativoGrid.grid-planos,
-  .sgi-sedes.compact-view #sedeOperativoGrid.panel-hidden {
-    grid-template-columns: 1fr !important;
-  }
-
-  .sgi-sedes .sede-operativa-nav-bar {
-    grid-template-columns: 1fr !important;
-  }
-
-  .sgi-sedes .sede-operativa-nav-label {
-    padding-top: 0 !important;
-  }
+  color: #f14b94 !important;
 }

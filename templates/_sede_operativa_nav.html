@@ -24,10 +24,7 @@
           {% if nav_sede.codigo == sede.codigo %}aria-current="page"{% endif %}
           href="{{ url_for('sede_ficha', codigo=nav_sede.codigo, piso=piso, local=local or None, tab=tab, view=view, home=home_arg) }}{% if tab == 'planos' %}#planos{% endif %}"
           title="{{ nav_sede.codigo }}{% if nav_sede.nombre %} &middot; {{ nav_sede.nombre }}{% endif %}">
-          <span class="sede-nav-code">{{ nav_sede.codigo }}</span>
-          {% if nav_sede.nombre %}
-          <span class="sede-nav-name">{{ nav_sede.nombre }}</span>
-          {% endif %}
+          {{ nav_sede.codigo }}
         </a>
         {% endfor %}
       </nav>
