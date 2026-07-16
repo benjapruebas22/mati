@@ -1,6 +1,5 @@
 from datetime import date
 import sqlite3
-from datetime import date
 import re
 import unicodedata
 
