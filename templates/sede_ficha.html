@@ -4706,6 +4706,113 @@
   .sgi-sedes .sede-operativa-nav .sede-nav a[data-code="S20"] {
     color: #f14b94 !important;
   }
+  .sgi-sedes.has-operativo-nav {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(300px, 28vw, 360px);
+    gap: 8px 10px;
+    align-items: start;
+  }
+  .sgi-sedes.has-operativo-nav > .card.sede-active-card {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    margin-bottom: 0;
+  }
+  .sgi-sedes.has-operativo-nav > .card.sede-operativa-nav-card {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    margin: 0;
+  }
+  .sgi-sedes.has-operativo-nav > .card.sede-global-search {
+    grid-column: 1;
+    grid-row: 3;
+    margin: 0;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    column-gap: 10px;
+    row-gap: 2px;
+  }
+  .sgi-sedes.has-operativo-nav > .card.sede-global-search .sede-global-search-title {
+    white-space: nowrap;
+    color: #64748b;
+    letter-spacing: .08em;
+  }
+  .sgi-sedes.has-operativo-nav > .card.sede-global-search .sede-global-search-field {
+    min-width: 0;
+  }
+  .sgi-sedes.has-operativo-nav > .card.sede-global-search .sede-global-search-status {
+    grid-column: 2;
+    min-height: 0;
+    font-size: 9px;
+  }
+  .sgi-sedes.has-operativo-nav > .sede-metricas-toggle {
+    grid-column: 2;
+    grid-row: 3;
+    margin: 0;
+    align-self: start;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    box-shadow: none;
+  }
+  .sgi-sedes.has-operativo-nav > .sede-metricas-toggle > summary {
+    list-style: none;
+    display: grid;
+    gap: 2px;
+    justify-items: start;
+    padding: 6px 10px;
+  }
+  .sgi-sedes.has-operativo-nav > .sede-metricas-toggle > summary::-webkit-details-marker {
+    display: none;
+  }
+  .sgi-sedes.has-operativo-nav > .sede-metricas-toggle .sede-metricas-toggle-label {
+    font-size: 9px;
+    font-weight: 700;
+    color: #64748b;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .sgi-sedes.has-operativo-nav > .sede-metricas-toggle .sede-metricas-inline {
+    font-size: 10px;
+    color: #475569;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .sgi-sedes.has-operativo-nav > .sede-metricas-toggle .sede-analisis {
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    padding: 10px;
+    box-shadow: none;
+  }
+  .sgi-sedes.has-operativo-nav > #sedeOperativoGrid {
+    grid-column: 1 / -1;
+    grid-row: 4;
+  }
+  .sgi-sedes .sede-analisis-actions {
+    display: none;
+  }
+  .sgi-sedes .h-actions {
+    gap: 5px;
+    padding-bottom: 0;
+  }
+  .sgi-sedes .h-actions .btn,
+  .sgi-sedes .h-actions-more > summary {
+    padding: 4px 8px;
+    font-size: 10px;
+    font-weight: 600;
+    border-color: #dde4ee;
+    background: #fff;
+    color: #475569;
+    box-shadow: none;
+  }
+  .sgi-sedes .h-actions-menu .btn.btn-metricas-sm {
+    width: 100%;
+    justify-content: flex-start;
+    font-size: 10px;
+    padding: 6px 8px;
+    border-radius: 8px;
+  }
   .sgi-sedes .ptab {
     background: transparent;
     font-weight: 500;
@@ -4860,6 +4967,21 @@
     font-weight: 700;
   }
   @media (max-width: 1100px) {
+    .sgi-sedes.has-operativo-nav {
+      grid-template-columns: 1fr;
+    }
+    .sgi-sedes.has-operativo-nav > .card.sede-global-search,
+    .sgi-sedes.has-operativo-nav > .sede-metricas-toggle,
+    .sgi-sedes.has-operativo-nav > #sedeOperativoGrid {
+      grid-column: 1;
+      grid-row: auto;
+    }
+    .sgi-sedes.has-operativo-nav > .card.sede-global-search {
+      grid-template-columns: 1fr;
+    }
+    .sgi-sedes.has-operativo-nav > .card.sede-global-search .sede-global-search-status {
+      grid-column: 1;
+    }
     .sgi-sedes.compact-view .grid,
     .sgi-sedes.compact-view #sedeOperativoGrid.grid-stack,
     .sgi-sedes.compact-view #sedeOperativoGrid.grid-planos,
@@ -8159,7 +8281,7 @@
   'S08':'fuero-admin','S12':'fuero-admin'
 } %}
 {% set sede_fuero_cls = fuero_map.get(sede.codigo, 'fuero-neutral') %}
-<div class="wrap sgi-sedes {{ sede_fuero_cls }} compact-view">
+<div class="wrap sgi-sedes {{ sede_fuero_cls }} compact-view{% if view != 'resumen' %} has-operativo-nav{% endif %}">
 
 
 
@@ -8241,6 +8363,7 @@
 
             <a class="btn btn-checklist-limpieza" href="{{ url_for('sedes_control_limpieza_historial', sede=sede.codigo) }}">Historial Control Limpieza</a>
             <a class="btn btn-resumen-sedes" href="{{ url_for('sedes_resumen_mpd') }}">Resumen sedes</a>
+            <a class="btn btn-metricas-sm" href="{{ url_for('sede_metricas_edit', codigo=sede.codigo) }}">Editar metricas</a>
 
             <details class="fuero-legend">
               <summary class="panel-control-title">Leyenda de fueros</summary>
