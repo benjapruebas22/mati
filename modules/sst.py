@@ -6466,7 +6466,6 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
 
 
     # --- AIRE ACONDICIONADO POR SEDE -----------------------------------------
-    import sqlite3
     from flask import render_template, request, redirect, url_for, abort
 
     def _ensure_aires_mpd_schema(con):
