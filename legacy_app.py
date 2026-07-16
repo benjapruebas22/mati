@@ -1496,8 +1496,6 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR, "mpd.db")
 
 PROTOCOLOS_DIR = os.path.join(BASE_DIR, "static", "protocolos_limpieza")
