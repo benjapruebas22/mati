@@ -241,7 +241,7 @@ def build_operativa_nav_context(
             "codigo": sede_code,
             "nombre": sede_name,
             "href": build_context_url(
-                active_module,
+                "sede",
                 sede_code,
                 piso=piso,
                 local=local,
