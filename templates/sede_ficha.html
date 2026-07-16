@@ -4625,12 +4625,12 @@
     color: #64748b;
   }
   .sgi-sedes .sede-operativa-nav .sede-nav {
-    gap: 8px;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding-bottom: 2px;
-    scrollbar-width: thin;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 6px;
+    overflow: visible;
+    padding-bottom: 0;
   }
   .sgi-sedes .sede-operativa-nav .sede-nav a {
     display: inline-grid;
@@ -4638,8 +4638,8 @@
     align-items: start;
     justify-items: start;
     gap: 2px;
-    min-width: 54px;
-    max-width: 88px;
+    min-width: 0;
+    max-width: none;
     padding: 2px 2px 3px;
     border: 0;
     border-radius: 0;
@@ -4657,6 +4657,10 @@
   .sgi-sedes .sede-operativa-nav .sede-nav a.active {
     background: transparent;
     box-shadow: none;
+    opacity: 1;
+  }
+  .sgi-sedes .sede-operativa-nav .sede-nav a.active .sede-nav-code {
+    font-weight: 900;
   }
   .sgi-sedes .sede-operativa-nav .sede-nav a .sede-nav-code {
     display: block;
@@ -4664,7 +4668,7 @@
   }
   .sgi-sedes .sede-operativa-nav .sede-nav a .sede-nav-name {
     display: block;
-    max-width: 88px;
+    max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: normal;
@@ -4805,6 +4809,33 @@
     box-shadow: none;
     color: #1e3a8a;
   }
+  .sgi-sedes .dep-local-badge,
+  .sgi-sedes .dep-local-badge-penal,
+  .sgi-sedes .dep-local-badge-social,
+  .sgi-sedes .dep-local-badge-menores,
+  .sgi-sedes .dep-local-badge-admin {
+    display: inline-flex;
+    align-items: center;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    border-radius: 0;
+    font-weight: 400;
+    line-height: 1.2;
+    box-shadow: none;
+  }
+  .sgi-sedes .dep-local-badge-penal {
+    color: #6666cc;
+  }
+  .sgi-sedes .dep-local-badge-social {
+    color: #f14b94;
+  }
+  .sgi-sedes .dep-local-badge-menores {
+    color: #65bfe4;
+  }
+  .sgi-sedes .dep-local-badge-admin {
+    color: #f58a5e;
+  }
   .sgi-sedes .plan-img.selected {
     border-color: #dbe5ef;
     box-shadow: none;
@@ -4821,6 +4852,11 @@
     .sgi-sedes.compact-view #sedeOperativoGrid.grid-planos,
     .sgi-sedes.compact-view #sedeOperativoGrid.panel-hidden {
       grid-template-columns: 1fr;
+    }
+    .sgi-sedes .sede-operativa-nav .sede-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
     }
   }
   .ev-plan-layer {
