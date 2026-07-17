@@ -6474,6 +6474,7 @@ def sede_ficha(codigo):
         local=local,
         view=(request.args.get("view") or "").strip(),
         home=home_mode,
+        use_internal_sede_tabs=True,
     )
 
     return render_template(
@@ -9642,6 +9643,100 @@ def sedes_resumen_mpd():
         "general": "General",
     }
     sedes_region_meta = {r["key"]: r for r in sedes_region_defs}
+
+    if request.endpoint != "infra_analisis":
+        mobiliario_por_sede = {}
+        try:
+            mobiliario_rows = db.execute("""
+                SELECT
+                    UPPER(COALESCE(codigo_sede,'')) AS sede_codigo,
+                    COALESCE(SUM(COALESCE(escritorio_prof,0)),0) AS escritorio_prof,
+                    COALESCE(SUM(COALESCE(mesa_pc,0)),0) AS mesa_pc,
+                    COALESCE(SUM(COALESCE(silla_giratoria,0)),0) AS silla_giratoria,
+                    COALESCE(SUM(COALESCE(silla_fija,0)),0) AS silla_fija,
+                    COALESCE(SUM(COALESCE(armario_alto,0)),0) AS armario_alto,
+                    COALESCE(SUM(COALESCE(biblioteca_baja,0)),0) AS biblioteca_baja,
+                    COALESCE(SUM(COALESCE(otros,0)),0) AS otros
+                FROM mobiliario_sede
+                WHERE COALESCE(activo,1)=1
+                GROUP BY UPPER(COALESCE(codigo_sede,''))
+            """).fetchall()
+        except Exception:
+            mobiliario_rows = []
+        for mr in mobiliario_rows:
+            sede_codigo = str(mr["sede_codigo"] or "").strip().upper()
+            if not sede_codigo:
+                continue
+            mobiliario_por_sede[sede_codigo] = {
+                "escritorio_prof": int(round(float(mr["escritorio_prof"] or 0))),
+                "mesa_pc": int(round(float(mr["mesa_pc"] or 0))),
+                "silla_giratoria": int(round(float(mr["silla_giratoria"] or 0))),
+                "silla_fija": int(round(float(mr["silla_fija"] or 0))),
+                "armario_alto": int(round(float(mr["armario_alto"] or 0))),
+                "biblioteca_baja": int(round(float(mr["biblioteca_baja"] or 0))),
+                "otros": int(round(float(mr["otros"] or 0))),
+            }
+
+        aires_por_sede = {}
+        try:
+            aires_rows = db.execute(f"""
+                SELECT
+                    UPPER(COALESCE(sede_codigo,'')) AS sede_codigo,
+                    COUNT(*) AS total
+                FROM aires_mpd
+                WHERE {aires_valid_where('aires_mpd')}
+                GROUP BY UPPER(COALESCE(sede_codigo,''))
+            """).fetchall()
+        except Exception:
+            aires_rows = []
+        for ar in aires_rows:
+            sede_codigo = str(ar["sede_codigo"] or "").strip().upper()
+            if not sede_codigo:
+                continue
+            aires_por_sede[sede_codigo] = int(ar["total"] or 0)
+
+        resumen_inventario_rows = []
+        for sede_row in sedes_rows:
+            sede_codigo = str(sede_row["codigo"] or "").strip().upper()
+            region_key = str(sedes_region_map.get(sede_codigo, "") or "").strip()
+            region_meta = sedes_region_meta.get(region_key) or {}
+            inventario = mobiliario_por_sede.get(sede_codigo, {})
+            resumen_inventario_rows.append({
+                "codigo": sede_codigo,
+                "nombre": str(sede_row["nombre"] or "").strip(),
+                "region_key": region_key,
+                "region_label": str(region_meta.get("label") or ""),
+                "region_title": str(region_meta.get("title") or ""),
+                "aires_total": int(aires_por_sede.get(sede_codigo, 0) or 0),
+                "escritorio_prof": int(inventario.get("escritorio_prof", 0) or 0),
+                "mesa_pc": int(inventario.get("mesa_pc", 0) or 0),
+                "silla_giratoria": int(inventario.get("silla_giratoria", 0) or 0),
+                "silla_fija": int(inventario.get("silla_fija", 0) or 0),
+                "armario_alto": int(inventario.get("armario_alto", 0) or 0),
+                "biblioteca_baja": int(inventario.get("biblioteca_baja", 0) or 0),
+                "ventiladores": 0,
+                "otros": int(inventario.get("otros", 0) or 0),
+            })
+
+        resumen_categoria_options = [
+            {"value": "", "label": "Todas"},
+            {"value": "aires_total", "label": "Aires acond."},
+            {"value": "escritorio_prof", "label": "Escritorios profesionales"},
+            {"value": "mesa_pc", "label": "Mesas PC"},
+            {"value": "silla_giratoria", "label": "Sillas giratorias"},
+            {"value": "silla_fija", "label": "Sillas fijas"},
+            {"value": "armario_alto", "label": "Armarios altos"},
+            {"value": "biblioteca_baja", "label": "Bibliotecas bajas"},
+            {"value": "ventiladores", "label": "Ventiladores"},
+            {"value": "otros", "label": "Otros"},
+        ]
+
+        return render_template(
+            "sedes_resumen_inventario.html",
+            rows=resumen_inventario_rows,
+            sedes_region_defs=sedes_region_defs,
+            resumen_categoria_options=resumen_categoria_options,
+        )
 
     dep_catalog = {}
     dep_filter_map = {}

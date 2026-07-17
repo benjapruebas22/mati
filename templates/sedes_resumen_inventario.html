@@ -1,0 +1,375 @@
+{% extends "base.html" %}
+{% from "_sedes_badges.html" import render_sede_badge %}
+{% block content %}
+<style>
+  .inventory-summary-page {
+    padding: 10px 0 18px;
+  }
+
+  .inventory-summary-shell {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+    overflow: hidden;
+  }
+
+  .inventory-summary-head {
+    padding: 18px 20px 12px;
+    border-bottom: 1px solid #e2e8f0;
+    background:
+      linear-gradient(180deg, rgba(248, 250, 252, 0.96), rgba(255, 255, 255, 0.98));
+  }
+
+  .inventory-summary-kicker {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #64748b;
+  }
+
+  .inventory-summary-head h1 {
+    margin: 4px 0 0;
+    font-size: 28px;
+    line-height: 1.05;
+    color: #0f172a;
+  }
+
+  .inventory-summary-filters {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+  }
+
+  .inventory-summary-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .inventory-summary-field label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #64748b;
+  }
+
+  .inventory-summary-field select,
+  .inventory-summary-field input {
+    width: 100%;
+    min-height: 42px;
+    padding: 0 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    background: #ffffff;
+    color: #0f172a;
+    font-size: 14px;
+    outline: none;
+  }
+
+  .inventory-summary-field select:focus,
+  .inventory-summary-field input:focus {
+    border-color: #94a3b8;
+    box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.18);
+  }
+
+  .inventory-summary-table-wrap {
+    overflow: auto;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98));
+  }
+
+  .inventory-summary-table {
+    width: 100%;
+    min-width: 1120px;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  .inventory-summary-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 12px 10px;
+    border-bottom: 1px solid #cbd5e1;
+    background: #f8fafc;
+    color: #334155;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .inventory-summary-table thead th:first-child {
+    text-align: left;
+    width: 260px;
+  }
+
+  .inventory-summary-row {
+    cursor: pointer;
+    transition: background-color 160ms ease;
+  }
+
+  .inventory-summary-row:hover {
+    background: #f8fafc;
+  }
+
+  .inventory-summary-row:focus-visible {
+    outline: 3px solid rgba(102, 102, 204, 0.18);
+    outline-offset: -3px;
+    background: #eff6ff;
+  }
+
+  .inventory-summary-row td {
+    padding: 11px 10px;
+    border-bottom: 1px solid #e2e8f0;
+    color: #0f172a;
+    font-size: 14px;
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  .inventory-summary-row:last-child td {
+    border-bottom: none;
+  }
+
+  .inventory-summary-row td:first-child {
+    text-align: left;
+  }
+
+  .inventory-summary-sede {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .inventory-summary-sede-name {
+    min-width: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+    line-height: 1.25;
+  }
+
+  .inventory-summary-empty {
+    padding: 18px 20px;
+    color: #64748b;
+    font-size: 14px;
+    border-top: 1px solid #e2e8f0;
+    background: #ffffff;
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+
+  @media (max-width: 980px) {
+    .inventory-summary-filters {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .inventory-summary-head h1 {
+      font-size: 24px;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .inventory-summary-filters {
+      grid-template-columns: 1fr;
+      padding: 14px;
+    }
+
+    .inventory-summary-head {
+      padding: 16px 14px 12px;
+    }
+
+    .inventory-summary-head h1 {
+      font-size: 22px;
+    }
+
+    .inventory-summary-table thead th:first-child {
+      width: 220px;
+    }
+  }
+</style>
+
+<section class="inventory-summary-page">
+  <div class="inventory-summary-shell">
+    <header class="inventory-summary-head">
+      <div class="inventory-summary-kicker">Sedes</div>
+      <h1>Resumen de inventario</h1>
+    </header>
+
+    <div class="inventory-summary-filters">
+      <div class="inventory-summary-field">
+        <label for="inventoryFilterSede">Sede</label>
+        <select id="inventoryFilterSede">
+          <option value="">Todas</option>
+          {% for row in rows %}
+          <option value="{{ row.codigo }}">{{ row.codigo }} - {{ row.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="inventory-summary-field">
+        <label for="inventoryFilterRegion">Region</label>
+        <select id="inventoryFilterRegion">
+          <option value="">Todas</option>
+          {% for region in sedes_region_defs %}
+          <option value="{{ region.key }}">{{ region.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="inventory-summary-field">
+        <label for="inventoryFilterCategory">Familia / Categoria</label>
+        <select id="inventoryFilterCategory">
+          {% for option in resumen_categoria_options %}
+          <option value="{{ option.value }}">{{ option.label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="inventory-summary-field">
+        <label for="inventoryFilterSearch">Buscador</label>
+        <input id="inventoryFilterSearch" type="text" placeholder="Buscar sede..." autocomplete="off">
+      </div>
+    </div>
+
+    <div class="inventory-summary-table-wrap">
+      <table class="inventory-summary-table" aria-label="Resumen de inventario por sede">
+        <thead>
+          <tr>
+            <th>Sede</th>
+            <th>Aires acond.</th>
+            <th>Escritorios profesionales</th>
+            <th>Mesas PC</th>
+            <th>Sillas giratorias</th>
+            <th>Sillas fijas</th>
+            <th>Armarios altos</th>
+            <th>Bibliotecas bajas</th>
+            <th>Ventiladores</th>
+            <th>Otros</th>
+          </tr>
+        </thead>
+        <tbody id="inventorySummaryBody">
+          {% for row in rows %}
+          <tr
+            class="inventory-summary-row"
+            data-href="{{ url_for('sede_ficha', codigo=row.codigo) }}"
+            data-sede="{{ row.codigo }}"
+            data-region="{{ row.region_key }}"
+            data-search="{{ ((row.codigo or '') ~ ' ' ~ (row.nombre or '') ~ ' ' ~ (row.region_label or '') ~ ' ' ~ (row.region_title or ''))|lower }}"
+            data-aires_total="{{ row.aires_total or 0 }}"
+            data-escritorio_prof="{{ row.escritorio_prof or 0 }}"
+            data-mesa_pc="{{ row.mesa_pc or 0 }}"
+            data-silla_giratoria="{{ row.silla_giratoria or 0 }}"
+            data-silla_fija="{{ row.silla_fija or 0 }}"
+            data-armario_alto="{{ row.armario_alto or 0 }}"
+            data-biblioteca_baja="{{ row.biblioteca_baja or 0 }}"
+            data-ventiladores="{{ row.ventiladores or 0 }}"
+            data-otros="{{ row.otros or 0 }}"
+            tabindex="0"
+            role="link"
+            aria-label="Abrir {{ row.codigo }} {{ row.nombre }}">
+            <td>
+              <div class="inventory-summary-sede">
+                {{ render_sede_badge(row.codigo) }}
+                <span class="inventory-summary-sede-name">{{ row.nombre }}</span>
+              </div>
+            </td>
+            <td>{{ row.aires_total }}</td>
+            <td>{{ row.escritorio_prof }}</td>
+            <td>{{ row.mesa_pc }}</td>
+            <td>{{ row.silla_giratoria }}</td>
+            <td>{{ row.silla_fija }}</td>
+            <td>{{ row.armario_alto }}</td>
+            <td>{{ row.biblioteca_baja }}</td>
+            <td>{{ row.ventiladores }}</td>
+            <td>{{ row.otros }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div id="inventorySummaryEmpty" class="inventory-summary-empty" hidden>
+        No hay sedes para los filtros actuales.
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  (function () {
+    const sedeFilter = document.getElementById('inventoryFilterSede');
+    const regionFilter = document.getElementById('inventoryFilterRegion');
+    const categoryFilter = document.getElementById('inventoryFilterCategory');
+    const searchFilter = document.getElementById('inventoryFilterSearch');
+    const rows = Array.from(document.querySelectorAll('.inventory-summary-row'));
+    const emptyState = document.getElementById('inventorySummaryEmpty');
+
+    function openRow(row) {
+      const href = row.dataset.href;
+      if (href) {
+        window.location.href = href;
+      }
+    }
+
+    function matchesCategory(row, category) {
+      if (!category) {
+        return true;
+      }
+      return Number(row.dataset[category] || 0) > 0;
+    }
+
+    function applyFilters() {
+      const sedeValue = String(sedeFilter.value || '').trim().toUpperCase();
+      const regionValue = String(regionFilter.value || '').trim();
+      const categoryValue = String(categoryFilter.value || '').trim();
+      const searchValue = String(searchFilter.value || '').trim().toLowerCase();
+      let visibleCount = 0;
+
+      rows.forEach((row) => {
+        const matchesSede = !sedeValue || row.dataset.sede === sedeValue;
+        const matchesRegion = !regionValue || row.dataset.region === regionValue;
+        const matchesSearch = !searchValue || String(row.dataset.search || '').includes(searchValue);
+        const matchesFamily = matchesCategory(row, categoryValue);
+        const visible = matchesSede && matchesRegion && matchesSearch && matchesFamily;
+        row.hidden = !visible;
+        if (visible) {
+          visibleCount += 1;
+        }
+      });
+
+      emptyState.hidden = visibleCount > 0;
+    }
+
+    rows.forEach((row) => {
+      row.addEventListener('click', function (event) {
+        if (event.target.closest('a, button, input, select, textarea, label')) {
+          return;
+        }
+        openRow(row);
+      });
+
+      row.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          openRow(row);
+        }
+      });
+    });
+
+    [sedeFilter, regionFilter, categoryFilter].forEach((field) => {
+      field.addEventListener('change', applyFilters);
+    });
+    searchFilter.addEventListener('input', applyFilters);
+    applyFilters();
+  })();
+</script>
+{% endblock %}

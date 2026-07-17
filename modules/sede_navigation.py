@@ -74,6 +74,12 @@ MODULE_ROUTE_MAP = {
     },
 }
 
+SEDE_INTERNAL_MODULE_ROUTE_MAP = {
+    "matafuegos": {"endpoint": "sede_ficha", "kind": "sede_ficha", "tab": "matafuegos"},
+    "sst_carteleria": {"endpoint": "sede_ficha", "kind": "sede_ficha", "tab": "sst_carteleria"},
+    "sst_luces": {"endpoint": "sede_ficha", "kind": "sede_ficha", "tab": "sst_luces"},
+}
+
 SEDE_ACCENT_BY_CODE = {
     "S08": "#f58a5e",
     "S11": "#F14B94",
@@ -171,6 +177,14 @@ def _pick_filters(filters, keys):
     return out
 
 
+def _route_config_for(module_key, use_internal_sede_tabs=False):
+    if use_internal_sede_tabs:
+        internal_config = SEDE_INTERNAL_MODULE_ROUTE_MAP.get(module_key)
+        if internal_config:
+            return internal_config
+    return MODULE_ROUTE_MAP.get(module_key) or MODULE_ROUTE_MAP["sede"]
+
+
 def build_context_url(
     module_key,
     target_sede,
@@ -181,9 +195,10 @@ def build_context_url(
     home=False,
     filters=None,
     calendar_type="",
+    use_internal_sede_tabs=False,
 ):
     resolved_key = resolve_sede_module_key(module_key, calendar_type=calendar_type)
-    config = MODULE_ROUTE_MAP.get(resolved_key) or MODULE_ROUTE_MAP["sede"]
+    config = _route_config_for(resolved_key, use_internal_sede_tabs=use_internal_sede_tabs)
     target_code = _clean_upper(target_sede)
 
     if config["kind"] == "sede_ficha":
@@ -225,6 +240,7 @@ def build_operativa_nav_context(
     home=False,
     filters=None,
     dynamic_sede_token="",
+    use_internal_sede_tabs=False,
 ):
     active_code = _clean_upper(current_sede)
     calendar_type = _clean_str((filters or {}).get("tipo")).lower()
@@ -265,6 +281,7 @@ def build_operativa_nav_context(
             view=view,
             home=home,
             filters=filters,
+            use_internal_sede_tabs=use_internal_sede_tabs,
         )
         href_template = ""
         if dynamic_sede_token:
@@ -276,6 +293,7 @@ def build_operativa_nav_context(
                 view=view,
                 home=home,
                 filters=filters,
+                use_internal_sede_tabs=use_internal_sede_tabs,
             )
         nav_modules.append({
             "key": module_key,
