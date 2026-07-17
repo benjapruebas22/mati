@@ -1,6 +1,26 @@
 {% extends "base.html" %}
-{% from "_sedes_badges.html" import render_sede_badge %}
 {% block content %}
+{% set sede_color_map = {
+  'S01': '#6666CC',
+  'S02': '#6666CC',
+  'S03': '#6666CC',
+  'S04': '#6666CC',
+  'S05': '#6666CC',
+  'S06': '#6666CC',
+  'S07': '#6666CC',
+  'S08': '#F58A5E',
+  'S10': '#6666CC',
+  'S11': '#F14B94',
+  'S12': '#F58A5E',
+  'S13': '#65BFE4',
+  'S14': '#F14B94',
+  'S15': '#F14B94',
+  'S16': '#F14B94',
+  'S17': '#F14B94',
+  'S18': '#F14B94',
+  'S19': '#F14B94',
+  'S20': '#F14B94'
+} %}
 <style>
   .inventory-summary-page {
     padding: 10px 0 18px;
@@ -144,16 +164,24 @@
 
   .inventory-summary-sede {
     display: flex;
-    align-items: center;
-    gap: 12px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
     min-width: 0;
+  }
+
+  .inventory-summary-sede-code {
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.01em;
   }
 
   .inventory-summary-sede-name {
     min-width: 0;
-    font-size: 14px;
-    font-weight: 600;
-    color: #0f172a;
+    font-size: 12px;
+    font-weight: 500;
+    color: #475569;
     line-height: 1.25;
   }
 
@@ -280,7 +308,7 @@
             aria-label="Abrir {{ row.codigo }} {{ row.nombre }}">
             <td>
               <div class="inventory-summary-sede">
-                {{ render_sede_badge(row.codigo) }}
+                <span class="inventory-summary-sede-code" style="color: {{ sede_color_map.get(row.codigo, '#4D4D4D') }};">{{ row.codigo }}</span>
                 <span class="inventory-summary-sede-name">{{ row.nombre }}</span>
               </div>
             </td>
