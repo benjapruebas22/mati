@@ -2,24 +2,34 @@ from flask import url_for
 
 
 OPERATIVA_MODULES = [
-    {"key": "personal", "label": "Personal", "tone": "tone-personal"},
-    {"key": "depositos", "label": "Depositos", "tone": "tone-dep"},
-    {"key": "planos", "label": "Planos", "tone": "tone-planos"},
-    {"key": "aires", "label": "Aires", "tone": "tone-aires"},
-    {"key": "luminarias", "label": "Luminarias", "tone": "tone-lum"},
-    {"key": "mobiliario", "label": "Inventario operativo", "tone": "tone-mob"},
-    {"key": "matafuegos", "label": "Matafuegos", "tone": "tone-mata"},
-    {"key": "evacuacion", "label": "Evacuacion", "tone": "tone-eva"},
-    {"key": "sst_carteleria", "label": "SG-SST Carteleria", "tone": "tone-planos"},
-    {"key": "sst_luces", "label": "SG-SST Luces", "tone": "tone-lum"},
+    {"key": "personal", "label": "Personal", "tone": "tone-personal", "group": "informacion"},
+    {"key": "depositos", "label": "Depositos", "tone": "tone-dep", "group": "informacion"},
+    {"key": "planos", "label": "Planos", "tone": "tone-planos", "group": "informacion"},
+    {"key": "mobiliario", "label": "Inventario operativo", "tone": "tone-mob", "group": "operativo"},
+    {"key": "aires", "label": "Aires", "tone": "tone-aires", "group": "operativo"},
+    {"key": "luminarias", "label": "Luminarias", "tone": "tone-lum", "group": "operativo"},
+    {"key": "matafuegos", "label": "Matafuegos", "tone": "tone-mata", "group": "seguridad"},
+    {"key": "evacuacion", "label": "Evacuacion", "tone": "tone-eva", "group": "seguridad"},
+    {"key": "sst_carteleria", "label": "SG-SST Carteleria", "tone": "tone-planos", "group": "seguridad"},
+    {"key": "sst_luces", "label": "SG-SST Luces", "tone": "tone-lum", "group": "seguridad"},
+    {"key": "sst_desinfecciones", "label": "Desinfecciones", "tone": "tone-mata", "group": "seguridad"},
+    {"key": "sst_visitas", "label": "Visitas ART", "tone": "tone-personal", "group": "seguridad"},
+]
+
+MODULE_GROUPS = [
+    {"key": "informacion", "label": "Informacion", "detail": "Personal, depositos y planos"},
+    {"key": "operativo", "label": "Operativo", "detail": "Inventario, aires y luminarias"},
+    {"key": "seguridad", "label": "Seguridad", "detail": "SG-SST, ART y desinfeccion"},
 ]
 
 CALENDAR_TYPE_TO_MODULE = {
     "carteleria": "sst_carteleria",
     "desinfeccion": "sst_desinfecciones",
+    "desinfecciones": "sst_desinfecciones",
     "luces": "sst_luces",
     "matafuegos": "matafuegos",
     "visita": "sst_visitas",
+    "visitas": "sst_visitas",
 }
 
 MODULE_ROUTE_MAP = {
@@ -70,7 +80,7 @@ MODULE_ROUTE_MAP = {
         "kind": "external",
         "sede_param": "sede",
         "open_param": "open_sede",
-        "preserve": ("estado", "month", "q"),
+        "preserve": ("estado_visita", "estado_doc", "observaciones_art", "responsable", "year", "q"),
     },
 }
 
@@ -117,12 +127,16 @@ def _get_value(item, key):
 def normalize_module_key(module_key):
     key = _clean_str(module_key).lower()
     aliases = {
+        "art": "sst_visitas",
         "carteleria": "sst_carteleria",
         "desinfeccion": "sst_desinfecciones",
+        "desinf": "sst_desinfecciones",
         "desinfecciones": "sst_desinfecciones",
         "inventario": "mobiliario",
         "inventario_operativo": "mobiliario",
         "luces": "sst_luces",
+        "visitas": "sst_visitas",
+        "visitas_art": "sst_visitas",
     }
     return aliases.get(key, key)
 
@@ -299,13 +313,46 @@ def build_operativa_nav_context(
             "key": module_key,
             "label": item["label"],
             "tone": item["tone"],
+            "group": item.get("group", ""),
             "href": href,
             "href_template": href_template,
             "active": highlight_module_key == module_key,
         })
 
+    module_groups = []
+    grouped_items = {}
+    for group in MODULE_GROUPS:
+        group_entry = {
+            "key": group["key"],
+            "label": group["label"],
+            "detail": group.get("detail", ""),
+            "modules": [],
+        }
+        module_groups.append(group_entry)
+        grouped_items[group["key"]] = group_entry
+
+    extras_group = None
+    for item in nav_modules:
+        group_key = item.get("group", "")
+        target_group = grouped_items.get(group_key)
+        if target_group is None:
+            if extras_group is None:
+                extras_group = {
+                    "key": "otros",
+                    "label": "Otros",
+                    "detail": "Accesos adicionales",
+                    "modules": [],
+                }
+            target_group = extras_group
+        target_group["modules"].append(item)
+
+    module_groups = [group for group in module_groups if group["modules"]]
+    if extras_group and extras_group["modules"]:
+        module_groups.append(extras_group)
+
     return {
         "accent_color": sede_accent_color(active_code),
         "sedes": nav_sedes,
         "modules": nav_modules,
+        "module_groups": module_groups,
     }

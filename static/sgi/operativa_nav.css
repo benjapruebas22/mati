@@ -38,6 +38,77 @@
   white-space: nowrap;
 }
 
+.operativa-nav-shell .sede-operativa-nav-groups {
+  display: grid;
+  gap: 8px;
+}
+
+.operativa-nav-shell .sede-operativa-module-group {
+  --module-group-accent: var(--operativa-accent);
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  border: 1px solid #dbe4f0;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f8fafc 0%, #ffffff 78%);
+}
+
+.operativa-nav-shell .sede-operativa-module-group[data-module-group="informacion"] {
+  --module-group-accent: #2563eb;
+  border-color: #bfdbfe;
+  background: linear-gradient(180deg, #eff6ff 0%, #ffffff 72%);
+}
+
+.operativa-nav-shell .sede-operativa-module-group[data-module-group="operativo"] {
+  --module-group-accent: #0f766e;
+  border-color: #99f6e4;
+  background: linear-gradient(180deg, #ecfeff 0%, #ffffff 72%);
+}
+
+.operativa-nav-shell .sede-operativa-module-group[data-module-group="seguridad"] {
+  --module-group-accent: #ea580c;
+  border-color: #fed7aa;
+  background: linear-gradient(180deg, #fff7ed 0%, #ffffff 72%);
+}
+
+.operativa-nav-shell .sede-operativa-module-group[data-module-group="otros"] {
+  --module-group-accent: #64748b;
+}
+
+.operativa-nav-shell .sede-operativa-module-group-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px 10px;
+  flex-wrap: wrap;
+}
+
+.operativa-nav-shell .sede-operativa-module-group-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #0f172a;
+}
+
+.operativa-nav-shell .sede-operativa-module-group-title::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--module-group-accent);
+  flex: 0 0 10px;
+}
+
+.operativa-nav-shell .sede-operativa-module-group-detail {
+  font-size: 11px;
+  font-weight: 600;
+  color: #475569;
+}
+
 .operativa-nav-shell .sede-nav {
   display: grid;
   grid-auto-flow: column;
@@ -123,28 +194,49 @@
 .operativa-nav-shell .sede-operativa-nav-modules {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
 }
 
 .operativa-nav-shell .ptab {
   display: inline-flex;
   align-items: center;
-  min-height: 30px;
-  padding: 4px 10px;
+  min-height: 32px;
+  padding: 5px 11px;
   border-radius: 999px;
-  border: 1px solid #dde5ef;
-  background: transparent;
-  color: #475569;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(255, 255, 255, 0.88);
+  color: #334155;
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   text-decoration: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.operativa-nav-shell .ptab:hover {
+  color: #0f172a;
+  border-color: var(--module-group-accent, var(--operativa-accent));
+  background: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
 }
 
 .operativa-nav-shell .ptab.active {
   color: #0f172a;
-  border-color: rgba(100, 116, 139, 0.35);
-  background: transparent;
-  box-shadow: inset 0 -1px 0 var(--operativa-accent);
+  font-weight: 700;
+  border-color: var(--module-group-accent, var(--operativa-accent));
+  background: #ffffff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .operativa-nav-shell .ptab {
+    transition: none;
+  }
+
+  .operativa-nav-shell .ptab:hover {
+    transform: none;
+  }
 }
 
 @media (max-width: 980px) {
