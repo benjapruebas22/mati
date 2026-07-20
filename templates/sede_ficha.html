@@ -2374,9 +2374,9 @@
   }
 
   .sede-operativa-nav {
-    padding: 10px 12px;
+    padding: 8px 12px;
     display: grid;
-    gap: 10px;
+    gap: 0;
   }
 
   .sede-operativa-nav-title {
@@ -2385,22 +2385,26 @@
     letter-spacing: .08em;
     text-transform: uppercase;
     color: #334155;
+    padding: 0 0 6px;
   }
 
   .sede-operativa-nav-bar {
     display: grid;
-    grid-template-columns: 68px minmax(0, 1fr);
-    gap: 8px;
+    grid-template-columns: 140px minmax(0, 1fr);
+    gap: 12px;
     align-items: start;
+    padding: 8px 0;
   }
 
   .sede-operativa-nav-label {
-    padding-top: 6px;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: #64748b;
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    text-transform: none;
+    color: #475569;
     white-space: nowrap;
   }
 
@@ -2423,116 +2427,114 @@
     gap: 8px;
   }
 
+  .sede-operativa-nav-bar + .sede-operativa-nav-groups {
+    border-top: 1px solid #e5e7eb;
+  }
+
   .sede-operativa-nav-groups {
     display: grid;
-    gap: 8px;
+    gap: 0;
   }
 
   .sede-operativa-module-group {
     --module-group-accent: var(--fuero-accent);
     display: grid;
-    gap: 8px;
-    padding: 10px 12px 12px;
-    border: 1px solid #dbe4f0;
-    border-radius: 14px;
-    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 78%);
+    grid-template-columns: 140px minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+    padding: 8px 0;
   }
 
   .sede-operativa-module-group[data-module-group="informacion"] {
     --module-group-accent: #2563eb;
-    border-color: #bfdbfe;
-    background: linear-gradient(180deg, #eff6ff 0%, #ffffff 72%);
   }
 
   .sede-operativa-module-group[data-module-group="operativo"] {
     --module-group-accent: #0f766e;
-    border-color: #99f6e4;
-    background: linear-gradient(180deg, #ecfeff 0%, #ffffff 72%);
   }
 
   .sede-operativa-module-group[data-module-group="seguridad"] {
     --module-group-accent: #ea580c;
-    border-color: #fed7aa;
-    background: linear-gradient(180deg, #fff7ed 0%, #ffffff 72%);
   }
 
   .sede-operativa-module-group[data-module-group="otros"] {
     --module-group-accent: #64748b;
   }
 
-  .sede-operativa-module-group-head {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 6px 10px;
-    flex-wrap: wrap;
+  .sede-operativa-module-group + .sede-operativa-module-group {
+    border-top: 1px solid #e5e7eb;
   }
 
   .sede-operativa-module-group-title {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: .1em;
-    text-transform: uppercase;
+    gap: 10px;
+    min-height: 28px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    text-transform: none;
     color: #0f172a;
+    white-space: nowrap;
   }
 
   .sede-operativa-module-group-title::before {
     content: "";
-    width: 10px;
-    height: 10px;
+    width: 8px;
+    height: 8px;
     border-radius: 999px;
     background: var(--module-group-accent);
-    flex: 0 0 10px;
-  }
-
-  .sede-operativa-module-group-detail {
-    font-size: 11px;
-    font-weight: 600;
-    color: #475569;
+    flex: 0 0 8px;
   }
 
   .sede-operativa-nav-modules .ptab {
     display: inline-flex;
     align-items: center;
-    min-height: 32px;
-    padding: 5px 11px;
+    min-height: 28px;
+    padding: 4px 10px;
     border-radius: 999px;
-    border: 1px solid rgba(148, 163, 184, 0.28);
-    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid #d7dee7;
+    background: #fff;
     color: #334155;
     font-size: 11px;
     line-height: 1.1;
     font-weight: 600;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
-    transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease, color 180ms ease, transform 180ms ease;
+    box-shadow: none;
+    transition: border-color 180ms ease, background 180ms ease, color 180ms ease;
   }
 
   .sede-operativa-nav-modules .ptab:hover {
     color: #0f172a;
-    border-color: var(--module-group-accent, var(--fuero-accent));
-    background: #fff;
-    transform: translateY(-1px);
-    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+    border-color: #c5d0dc;
+    background: #f8fafc;
   }
 
   .sede-operativa-nav-modules .ptab.active {
     color: #0f172a;
     font-weight: 700;
-    border-color: var(--module-group-accent, var(--fuero-accent));
-    background: #fff;
-    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+    border-color: #cbd5e1;
+    background: #f8fafc;
+    box-shadow: none;
+  }
+
+  .sede-operativa-module-group[data-module-group="informacion"] .ptab.active {
+    border-color: #bfdbfe;
+    background: #f8fbff;
+  }
+
+  .sede-operativa-module-group[data-module-group="operativo"] .ptab.active {
+    border-color: #99f6e4;
+    background: #f4fffd;
+  }
+
+  .sede-operativa-module-group[data-module-group="seguridad"] .ptab.active {
+    border-color: #fed7aa;
+    background: #fffaf5;
   }
 
   @media (prefers-reduced-motion: reduce) {
     .sede-operativa-nav-modules .ptab {
       transition: none;
-    }
-
-    .sede-operativa-nav-modules .ptab:hover {
-      transform: none;
     }
   }
 
@@ -2542,8 +2544,14 @@
       gap: 6px;
     }
 
-    .sede-operativa-nav-label {
-      padding-top: 0;
+    .sede-operativa-module-group {
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+
+    .sede-operativa-nav-label,
+    .sede-operativa-module-group-title {
+      min-height: 0;
     }
   }
 
@@ -4941,43 +4949,36 @@
     box-shadow: inset 0 0 0 1px rgba(var(--fuero-accent-rgb), 0.14);
   }
   .sgi-sedes .sede-operativa-nav-modules {
-    gap: 6px;
+    gap: 8px;
   }
   .sgi-sedes .sede-operativa-nav-groups {
     display: grid;
-    gap: 6px;
+    gap: 0;
   }
   .sgi-sedes .sede-operativa-module-group {
-    padding: 8px 10px 10px;
-    border-radius: 13px;
-  }
-  .sgi-sedes .sede-operativa-module-group-head {
-    gap: 4px 8px;
+    grid-template-columns: 132px minmax(0, 1fr);
+    gap: 10px;
+    padding: 7px 0;
   }
   .sgi-sedes .sede-operativa-module-group-title {
-    font-size: 9px;
-    letter-spacing: .1em;
-  }
-  .sgi-sedes .sede-operativa-module-group-detail {
+    min-height: 26px;
     font-size: 10px;
+    letter-spacing: .02em;
   }
   .sgi-sedes .sede-operativa-nav-modules .ptab {
     display: inline-flex;
     align-items: center;
-    min-height: 30px;
-    padding: 4px 10px;
+    min-height: 26px;
+    padding: 3px 9px;
     border-radius: 999px;
-    border-color: rgba(148, 163, 184, 0.28);
-    background: rgba(255, 255, 255, 0.9);
+    border-color: #d7dee7;
+    background: #fff;
     color: #334155;
     font-size: 11px;
     font-weight: 600;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
   }
   .sgi-sedes .sede-operativa-nav-modules .ptab.active {
-    border-color: var(--module-group-accent, var(--fuero-accent));
-    background: #fff;
-    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+    box-shadow: none;
   }
   .sgi-sedes .sede-global-search {
     margin: 4px 0 2px;

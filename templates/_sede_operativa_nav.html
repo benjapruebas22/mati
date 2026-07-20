@@ -25,47 +25,44 @@
       </nav>
     </div>
 
-    <div class="sede-operativa-nav-bar">
-      <div class="sede-operativa-nav-label">M&oacute;dulos</div>
-      {% if nav_module_groups %}
-      <div class="sede-operativa-nav-groups" aria-label="Navegacion por modulos">
-        {% for group in nav_module_groups %}
-        <section class="sede-operativa-module-group" data-module-group="{{ group.key }}" aria-label="{{ group.label }}">
-          <div class="sede-operativa-module-group-head">
-            <span class="sede-operativa-module-group-title">{{ group.label }}</span>
-            {% if group.detail %}
-            <span class="sede-operativa-module-group-detail">{{ group.detail }}</span>
-            {% endif %}
-          </div>
-          <div class="sede-operativa-nav-modules">
-            {% for item in group.modules %}
-            <a
-              class="ptab {{ item.tone }} {% if item.active %}active{% endif %}"
-              data-nav-module-key="{{ item.key }}"
-              data-href-template="{{ item.href_template or '' }}"
-              {% if item.active %}aria-current="page"{% endif %}
-              href="{{ item.href }}">
-              {{ item.label|safe }}
-            </a>
-            {% endfor %}
-          </div>
-        </section>
-        {% endfor %}
-      </div>
-      {% else %}
-      <nav class="sede-operativa-nav-modules" aria-label="Navegacion por modulos">
-        {% for item in nav_modules %}
-        <a
-          class="ptab {{ item.tone }} {% if item.active %}active{% endif %}"
-          data-nav-module-key="{{ item.key }}"
-          data-href-template="{{ item.href_template or '' }}"
-          {% if item.active %}aria-current="page"{% endif %}
-          href="{{ item.href }}">
-          {{ item.label|safe }}
-        </a>
-        {% endfor %}
-      </nav>
-      {% endif %}
+    {% if nav_module_groups %}
+    <div class="sede-operativa-nav-groups" aria-label="Navegacion por modulos">
+      {% for group in nav_module_groups %}
+      <section class="sede-operativa-module-group" data-module-group="{{ group.key }}" aria-label="{{ group.label }}">
+        <div class="sede-operativa-module-group-title">{{ group.label }}</div>
+        <div class="sede-operativa-nav-modules">
+          {% for item in group.modules %}
+          <a
+            class="ptab {{ item.tone }} {% if item.active %}active{% endif %}"
+            data-nav-module-key="{{ item.key }}"
+            data-href-template="{{ item.href_template or '' }}"
+            {% if item.active %}aria-current="page"{% endif %}
+            href="{{ item.href }}">
+            {{ item.label|safe }}
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endfor %}
     </div>
+    {% elif nav_modules %}
+    <div class="sede-operativa-nav-groups" aria-label="Navegacion por modulos">
+      <section class="sede-operativa-module-group" data-module-group="otros" aria-label="Modulos">
+        <div class="sede-operativa-module-group-title">Modulos</div>
+        <div class="sede-operativa-nav-modules">
+          {% for item in nav_modules %}
+          <a
+            class="ptab {{ item.tone }} {% if item.active %}active{% endif %}"
+            data-nav-module-key="{{ item.key }}"
+            data-href-template="{{ item.href_template or '' }}"
+            {% if item.active %}aria-current="page"{% endif %}
+            href="{{ item.href }}">
+            {{ item.label|safe }}
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+    </div>
+    {% endif %}
   </div>
 </div>
