@@ -2,7 +2,7 @@
 {% set nav_sedes = nav_state.get('sedes', []) %}
 {% set nav_modules = nav_state.get('modules', []) %}
 {% set nav_module_groups = nav_state.get('module_groups', []) %}
-<div class="card sede-operativa-nav-card operativa-nav-shell" style="--operativa-accent: {{ nav_state.get('accent_color', '#6666cc') }};">
+<div class="card sede-operativa-nav-card operativa-nav-shell" data-selected-code="{{ nav_state.get('selected_code', '') }}" style="--operativa-accent: {{ nav_state.get('accent_color', '#6666cc') }};">
   <div class="sede-operativa-nav">
     <div class="sede-operativa-nav-title">Navegaci&oacute;n operativa</div>
 
@@ -66,3 +66,4 @@
     {% endif %}
   </div>
 </div>
+<script src="{{ url_for('static', filename='sgi/operativa_nav.js', v='2026-07-22-01') }}"></script>

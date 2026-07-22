@@ -257,6 +257,7 @@ def build_operativa_nav_context(
     use_internal_sede_tabs=False,
 ):
     active_code = _clean_upper(current_sede)
+    token_for_templates = _clean_upper(dynamic_sede_token) or "__SEDE__"
     calendar_type = _clean_str((filters or {}).get("tipo")).lower()
     current_module_key = normalize_module_key(active_module)
     highlight_module_key = resolve_sede_module_key(current_module_key, calendar_type=calendar_type)
@@ -297,18 +298,16 @@ def build_operativa_nav_context(
             filters=filters,
             use_internal_sede_tabs=use_internal_sede_tabs,
         )
-        href_template = ""
-        if dynamic_sede_token:
-            href_template = build_context_url(
-                module_key,
-                dynamic_sede_token,
-                piso=piso,
-                local=local,
-                view=view,
-                home=home,
-                filters=filters,
-                use_internal_sede_tabs=use_internal_sede_tabs,
-            )
+        href_template = build_context_url(
+            module_key,
+            token_for_templates,
+            piso=piso,
+            local=local,
+            view=view,
+            home=home,
+            filters=filters,
+            use_internal_sede_tabs=use_internal_sede_tabs,
+        )
         nav_modules.append({
             "key": module_key,
             "label": item["label"],
@@ -352,6 +351,7 @@ def build_operativa_nav_context(
 
     return {
         "accent_color": sede_accent_color(active_code),
+        "selected_code": active_code,
         "sedes": nav_sedes,
         "modules": nav_modules,
         "module_groups": module_groups,

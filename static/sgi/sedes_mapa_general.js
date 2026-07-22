@@ -179,6 +179,13 @@
     }
   }
 
+  document.addEventListener('operativa-nav:select', (event) => {
+    const code = String((event.detail || {}).code || '').trim().toUpperCase();
+    if (!code) return;
+    if (!root.contains((event.detail || {}).shell || null) && !document.querySelector('.operativa-nav-shell')) return;
+    selectSite(code);
+  });
+
   function openLocation(node) {
     const codes = (node.dataset.siteCodes || '').split(',').filter(Boolean);
     if (!codes.length) return;
