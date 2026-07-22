@@ -5823,6 +5823,15 @@
     background: transparent;
     pointer-events: none;
     z-index: 9999;
+    opacity: .96;
+  }
+  .mob-plan-piece.is-source-dragging {
+    opacity: .16;
+  }
+  body.mob-plan-dragging,
+  body.mob-plan-dragging * {
+    user-select: none !important;
+    cursor: grabbing !important;
   }
   .mob-plan-piece:active {
     cursor: grabbing;
@@ -13926,10 +13935,9 @@
     layer.style.setProperty("--mob-piece-scale", Number.isFinite(resolvedScale) && resolvedScale > 0 ? String(resolvedScale) : "1");
 
     let items = [];
-    let planDragDepth = 0;
-    let trayDragDepth = 0;
-    let activeDragMeta = null;
-    let activeDragPreview = null;
+    let pointerDrag = null;
+    let suppressedClickItemId = "";
+    let suppressedClickUntil = 0;
 
     function clamp01(value) {
       const number = Number(value);
@@ -14088,22 +14096,47 @@
       return true;
     }
 
-    function cleanupDragPreview() {
-      if (activeDragPreview && activeDragPreview.parentNode) {
-        activeDragPreview.parentNode.removeChild(activeDragPreview);
-      }
-      activeDragPreview = null;
-    }
-
-    function pointFromEvent(ev, itemId) {
+    function pointFromPointer(clientX, clientY, dragMeta) {
       const rect = plan.getBoundingClientRect();
-      let x = rect.width ? (ev.clientX - rect.left) / rect.width : 0.5;
-      let y = rect.height ? (ev.clientY - rect.top) / rect.height : 0.5;
-      if (activeDragMeta && activeDragMeta.itemId === itemId && activeDragMeta.anchorMode === "preserve" && rect.width && rect.height) {
-        x -= activeDragMeta.offsetXPx / rect.width;
-        y -= activeDragMeta.offsetYPx / rect.height;
+      let x = rect.width ? (clientX - rect.left) / rect.width : 0.5;
+      let y = rect.height ? (clientY - rect.top) / rect.height : 0.5;
+      if (dragMeta && dragMeta.originPlaced && rect.width && rect.height) {
+        x -= dragMeta.offsetXPx / rect.width;
+        y -= dragMeta.offsetYPx / rect.height;
       }
       return { x: clamp01(x), y: clamp01(y) };
+    }
+
+    function consumeSuppressedClick(itemId) {
+      if (suppressedClickItemId !== itemId) return false;
+      if (Date.now() > suppressedClickUntil) {
+        suppressedClickItemId = "";
+        suppressedClickUntil = 0;
+        return false;
+      }
+      suppressedClickItemId = "";
+      suppressedClickUntil = 0;
+      return true;
+    }
+
+    function isPointInsideRect(rect, clientX, clientY) {
+      return clientX >= rect.left
+        && clientX <= rect.right
+        && clientY >= rect.top
+        && clientY <= rect.bottom;
+    }
+
+    function clearPointerTargets() {
+      plan.classList.remove("mob-plan-drop-active");
+      tray.classList.remove("is-drop-active");
+    }
+
+    function updatePointerTargets(clientX, clientY) {
+      const overPlan = isPointInsideRect(plan.getBoundingClientRect(), clientX, clientY);
+      const overTray = isPointInsideRect(tray.getBoundingClientRect(), clientX, clientY);
+      plan.classList.toggle("mob-plan-drop-active", overPlan);
+      tray.classList.toggle("is-drop-active", overTray);
+      return { overPlan: overPlan, overTray: overTray };
     }
 
     function buildDragPreview(item) {
@@ -14139,7 +14172,7 @@
       if (item.canRotate) {
         button.classList.add("is-rotatable");
       }
-      button.draggable = true;
+      button.draggable = false;
       button.dataset.itemId = item.id;
       button.title = buildTitle(item) + (item.placed && item.canRotate ? " - Click derecho o tecla R para girar" : "");
 
@@ -14173,31 +14206,11 @@
       }
 
       button.addEventListener("dragstart", function (ev) {
-        ev.dataTransfer.setData("text/mob-plan-item", item.id);
-        ev.dataTransfer.effectAllowed = "move";
-        const rect = button.getBoundingClientRect();
-        const pointerX = Number.isFinite(ev.clientX) ? ev.clientX : (rect.left + (rect.width / 2));
-        const pointerY = Number.isFinite(ev.clientY) ? ev.clientY : (rect.top + (rect.height / 2));
-        activeDragMeta = {
-          itemId: item.id,
-          anchorMode: item.placed ? "preserve" : "center",
-          offsetXPx: item.placed ? (pointerX - (rect.left + (rect.width / 2))) : 0,
-          offsetYPx: item.placed ? (pointerY - (rect.top + (rect.height / 2))) : 0
-        };
-        cleanupDragPreview();
-        if (ev.dataTransfer && typeof ev.dataTransfer.setDragImage === "function") {
-          activeDragPreview = buildDragPreview(item);
-          document.body.appendChild(activeDragPreview);
-          const previewRect = activeDragPreview.getBoundingClientRect();
-          ev.dataTransfer.setDragImage(
-            activeDragPreview,
-            Math.round(previewRect.width / 2),
-            Math.round(previewRect.height / 2)
-          );
-        }
+        ev.preventDefault();
       });
 
       button.addEventListener("dblclick", function () {
+        if (consumeSuppressedClick(item.id)) return;
         sendToTray(item);
         render();
         markDirty();
@@ -14219,8 +14232,42 @@
         });
       }
 
+      button.addEventListener("pointerdown", function (ev) {
+        if (ev.button !== 0 || ev.isPrimary === false) return;
+        if (pointerDrag) return;
+        const rect = button.getBoundingClientRect();
+        const centerX = rect.left + (rect.width / 2);
+        const centerY = rect.top + (rect.height / 2);
+        pointerDrag = {
+          pointerId: ev.pointerId,
+          itemId: item.id,
+          item: item,
+          sourceEl: button,
+          startX: ev.clientX,
+          startY: ev.clientY,
+          lastX: ev.clientX,
+          lastY: ev.clientY,
+          originPlaced: !!item.placed,
+          originX: item.placed ? item.x : null,
+          originY: item.placed ? item.y : null,
+          offsetXPx: item.placed ? (ev.clientX - centerX) : 0,
+          offsetYPx: item.placed ? (ev.clientY - centerY) : 0,
+          active: false,
+          ghost: null,
+          ghostWidth: 0,
+          ghostHeight: 0
+        };
+        if (typeof button.setPointerCapture === "function") {
+          try {
+            button.setPointerCapture(ev.pointerId);
+          } catch (err) {
+          }
+        }
+      });
+
       if (!item.placed) {
         button.addEventListener("click", function () {
+          if (consumeSuppressedClick(item.id)) return;
           placeItem(item, { x: 0.5, y: 0.5 });
           render();
           markDirty();
@@ -14341,75 +14388,127 @@
       }
     }
 
-    plan.addEventListener("dragenter", function (ev) {
-      const types = ev.dataTransfer ? Array.from(ev.dataTransfer.types || []) : [];
-      if (!types.includes("text/mob-plan-item")) return;
-      planDragDepth += 1;
-      plan.classList.add("mob-plan-drop-active");
-    });
+    function activatePointerDrag(drag) {
+      if (!drag || drag.active) return;
+      drag.active = true;
+      document.body.classList.add("mob-plan-dragging");
+      clearPointerTargets();
+      if (drag.sourceEl) {
+        drag.sourceEl.classList.add("is-source-dragging");
+      }
+      drag.ghost = buildDragPreview(drag.item);
+      document.body.appendChild(drag.ghost);
+      const ghostRect = drag.ghost.getBoundingClientRect();
+      drag.ghostWidth = ghostRect.width || 44;
+      drag.ghostHeight = ghostRect.height || 40;
+    }
 
-    plan.addEventListener("dragover", function (ev) {
-      const types = ev.dataTransfer ? Array.from(ev.dataTransfer.types || []) : [];
-      if (!types.includes("text/mob-plan-item")) return;
-      ev.preventDefault();
-      plan.classList.add("mob-plan-drop-active");
-      ev.dataTransfer.dropEffect = "move";
-    });
+    function updatePointerGhost(drag, clientX, clientY) {
+      if (!drag || !drag.ghost) return;
+      const centerX = clientX - drag.offsetXPx;
+      const centerY = clientY - drag.offsetYPx;
+      drag.ghost.style.left = (centerX - (drag.ghostWidth / 2)).toFixed(2) + "px";
+      drag.ghost.style.top = (centerY - (drag.ghostHeight / 2)).toFixed(2) + "px";
+    }
 
-    plan.addEventListener("dragleave", function () {
-      planDragDepth = Math.max(0, planDragDepth - 1);
-      if (!planDragDepth) plan.classList.remove("mob-plan-drop-active");
-    });
+    function cleanupPointerDrag(drag) {
+      const activeDrag = drag || pointerDrag;
+      if (!activeDrag) return;
+      clearPointerTargets();
+      document.body.classList.remove("mob-plan-dragging");
+      if (activeDrag.sourceEl) {
+        activeDrag.sourceEl.classList.remove("is-source-dragging");
+        if (typeof activeDrag.sourceEl.releasePointerCapture === "function") {
+          try {
+            if (!activeDrag.sourceEl.hasPointerCapture || activeDrag.sourceEl.hasPointerCapture(activeDrag.pointerId)) {
+              activeDrag.sourceEl.releasePointerCapture(activeDrag.pointerId);
+            }
+          } catch (err) {
+          }
+        }
+      }
+      if (activeDrag.ghost && activeDrag.ghost.parentNode) {
+        activeDrag.ghost.parentNode.removeChild(activeDrag.ghost);
+      }
+      if (pointerDrag === activeDrag) {
+        pointerDrag = null;
+      }
+    }
 
-    plan.addEventListener("drop", function (ev) {
-      ev.preventDefault();
-      planDragDepth = 0;
-      plan.classList.remove("mob-plan-drop-active");
-      const item = getItem(ev.dataTransfer.getData("text/mob-plan-item"));
-      if (!item) return;
-      placeItem(item, pointFromEvent(ev, item.id));
+    function finishPointerDrag(ev, isCancel) {
+      if (!pointerDrag) return;
+      if (ev && ev.pointerId !== pointerDrag.pointerId) return;
+
+      const drag = pointerDrag;
+      const lastX = ev && Number.isFinite(ev.clientX) ? ev.clientX : drag.lastX;
+      const lastY = ev && Number.isFinite(ev.clientY) ? ev.clientY : drag.lastY;
+      const wasActive = !!drag.active;
+
+      if (wasActive) {
+        suppressedClickItemId = drag.itemId;
+        suppressedClickUntil = Date.now() + 450;
+      }
+
+      cleanupPointerDrag(drag);
+      if (!wasActive || isCancel) return;
+
+      const overTray = isPointInsideRect(tray.getBoundingClientRect(), lastX, lastY);
+      const overPlan = isPointInsideRect(plan.getBoundingClientRect(), lastX, lastY);
+
+      if (overTray) {
+        if (!drag.originPlaced) return;
+        sendToTray(drag.item);
+        render();
+        markDirty();
+        return;
+      }
+
+      if (!overPlan) return;
+
+      const point = pointFromPointer(lastX, lastY, drag);
+      const movedEnough = !drag.originPlaced
+        || Math.abs((drag.originX || 0) - point.x) > 0.0005
+        || Math.abs((drag.originY || 0) - point.y) > 0.0005;
+
+      if (!movedEnough) return;
+      placeItem(drag.item, point);
       render();
       markDirty();
-    });
+    }
 
-    tray.addEventListener("dragenter", function (ev) {
-      const types = ev.dataTransfer ? Array.from(ev.dataTransfer.types || []) : [];
-      if (!types.includes("text/mob-plan-item")) return;
-      trayDragDepth += 1;
-      tray.classList.add("is-drop-active");
-    });
+    document.addEventListener("pointermove", function (ev) {
+      if (!pointerDrag || ev.pointerId !== pointerDrag.pointerId) return;
+      pointerDrag.lastX = ev.clientX;
+      pointerDrag.lastY = ev.clientY;
 
-    tray.addEventListener("dragover", function (ev) {
-      const types = ev.dataTransfer ? Array.from(ev.dataTransfer.types || []) : [];
-      if (!types.includes("text/mob-plan-item")) return;
+      const dx = ev.clientX - pointerDrag.startX;
+      const dy = ev.clientY - pointerDrag.startY;
+      if (!pointerDrag.active) {
+        if ((dx * dx) + (dy * dy) < 16) return;
+        activatePointerDrag(pointerDrag);
+      }
+
       ev.preventDefault();
-      tray.classList.add("is-drop-active");
-      ev.dataTransfer.dropEffect = "move";
+      updatePointerGhost(pointerDrag, ev.clientX, ev.clientY);
+      updatePointerTargets(ev.clientX, ev.clientY);
     });
 
-    tray.addEventListener("dragleave", function () {
-      trayDragDepth = Math.max(0, trayDragDepth - 1);
-      if (!trayDragDepth) tray.classList.remove("is-drop-active");
+    document.addEventListener("pointerup", function (ev) {
+      if (!pointerDrag || ev.pointerId !== pointerDrag.pointerId) return;
+      if (pointerDrag.active) {
+        ev.preventDefault();
+      }
+      finishPointerDrag(ev, false);
     });
 
-    tray.addEventListener("drop", function (ev) {
-      ev.preventDefault();
-      trayDragDepth = 0;
-      tray.classList.remove("is-drop-active");
-      const item = getItem(ev.dataTransfer.getData("text/mob-plan-item"));
-      if (!item) return;
-      sendToTray(item);
-      render();
-      markDirty();
+    document.addEventListener("pointercancel", function (ev) {
+      if (!pointerDrag || ev.pointerId !== pointerDrag.pointerId) return;
+      finishPointerDrag(ev, true);
     });
 
-    document.addEventListener("dragend", function () {
-      planDragDepth = 0;
-      trayDragDepth = 0;
-      plan.classList.remove("mob-plan-drop-active");
-      tray.classList.remove("is-drop-active");
-      activeDragMeta = null;
-      cleanupDragPreview();
+    window.addEventListener("blur", function () {
+      if (!pointerDrag) return;
+      finishPointerDrag(null, true);
     });
 
     if (resetBtn) {
