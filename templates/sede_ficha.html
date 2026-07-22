@@ -5828,6 +5828,10 @@
   .mob-plan-piece.is-source-dragging {
     opacity: .16;
   }
+  .mob-plan-piece.is-armed .mob-plan-piece-badge,
+  .mob-plan-piece.is-tray.is-armed {
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18), 0 10px 18px rgba(37, 99, 235, 0.12);
+  }
   body.mob-plan-dragging,
   body.mob-plan-dragging * {
     user-select: none !important;
@@ -13938,6 +13942,7 @@
     let pointerDrag = null;
     let suppressedClickItemId = "";
     let suppressedClickUntil = 0;
+    let armedItemId = "";
 
     function clamp01(value) {
       const number = Number(value);
@@ -14082,6 +14087,9 @@
       item.placed = false;
       item.x = null;
       item.y = null;
+      if (armedItemId === item.id) {
+        armedItemId = "";
+      }
     }
 
     function placeItem(item, point) {
@@ -14096,14 +14104,21 @@
       return true;
     }
 
-    function pointFromPointer(clientX, clientY, dragMeta) {
+    function clearArmedItem() {
+      armedItemId = "";
+    }
+
+    function armItem(item) {
+      if (!item) return;
+      armedItemId = item.id;
+      const action = item.placed ? "reubicar" : "ubicar";
+      setStatus("Hace click en el plano para " + action + " " + item.code + ".", false);
+    }
+
+    function pointFromPointer(clientX, clientY) {
       const rect = plan.getBoundingClientRect();
       let x = rect.width ? (clientX - rect.left) / rect.width : 0.5;
       let y = rect.height ? (clientY - rect.top) / rect.height : 0.5;
-      if (dragMeta && dragMeta.originPlaced && rect.width && rect.height) {
-        x -= dragMeta.offsetXPx / rect.width;
-        y -= dragMeta.offsetYPx / rect.height;
-      }
       return { x: clamp01(x), y: clamp01(y) };
     }
 
@@ -14166,6 +14181,9 @@
       const button = document.createElement("button");
       button.type = "button";
       button.className = "mob-plan-piece kind-" + item.kind + (item.placed ? " is-placed" : " is-tray");
+      if (armedItemId === item.id) {
+        button.classList.add("is-armed");
+      }
       if (activeLocal && item.local) {
         button.classList.add(item.local === activeLocal ? "is-focus" : "is-dim");
       }
@@ -14250,8 +14268,8 @@
           originPlaced: !!item.placed,
           originX: item.placed ? item.x : null,
           originY: item.placed ? item.y : null,
-          offsetXPx: item.placed ? (ev.clientX - centerX) : 0,
-          offsetYPx: item.placed ? (ev.clientY - centerY) : 0,
+          offsetXPx: 0,
+          offsetYPx: 0,
           active: false,
           ghost: null,
           ghostWidth: 0,
@@ -14265,14 +14283,12 @@
         }
       });
 
-      if (!item.placed) {
-        button.addEventListener("click", function () {
-          if (consumeSuppressedClick(item.id)) return;
-          placeItem(item, { x: 0.5, y: 0.5 });
-          render();
-          markDirty();
-        });
-      }
+      button.addEventListener("click", function (ev) {
+        if (consumeSuppressedClick(item.id)) return;
+        ev.stopPropagation();
+        armItem(item);
+        render();
+      });
 
       return button;
     }
@@ -14405,8 +14421,8 @@
 
     function updatePointerGhost(drag, clientX, clientY) {
       if (!drag || !drag.ghost) return;
-      const centerX = clientX - drag.offsetXPx;
-      const centerY = clientY - drag.offsetYPx;
+      const centerX = clientX;
+      const centerY = clientY;
       drag.ghost.style.left = (centerX - (drag.ghostWidth / 2)).toFixed(2) + "px";
       drag.ghost.style.top = (centerY - (drag.ghostHeight / 2)).toFixed(2) + "px";
     }
@@ -14465,12 +14481,13 @@
 
       if (!overPlan) return;
 
-      const point = pointFromPointer(lastX, lastY, drag);
+      const point = pointFromPointer(lastX, lastY);
       const movedEnough = !drag.originPlaced
         || Math.abs((drag.originX || 0) - point.x) > 0.0005
         || Math.abs((drag.originY || 0) - point.y) > 0.0005;
 
       if (!movedEnough) return;
+      clearArmedItem();
       placeItem(drag.item, point);
       render();
       markDirty();
@@ -14509,6 +14526,27 @@
     window.addEventListener("blur", function () {
       if (!pointerDrag) return;
       finishPointerDrag(null, true);
+    });
+
+    plan.addEventListener("click", function (ev) {
+      if (!armedItemId) return;
+      const item = getItem(armedItemId);
+      if (!item) {
+        clearArmedItem();
+        render();
+        return;
+      }
+      placeItem(item, pointFromPointer(ev.clientX, ev.clientY));
+      clearArmedItem();
+      render();
+      markDirty("Ubicacion actualizada. Falta guardar.");
+    });
+
+    document.addEventListener("keydown", function (ev) {
+      if (ev.key !== "Escape" || !armedItemId) return;
+      clearArmedItem();
+      render();
+      setStatus(moduleConfig.readyText, false);
     });
 
     if (resetBtn) {
