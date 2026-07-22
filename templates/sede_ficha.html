@@ -5808,6 +5808,21 @@
     cursor: grab;
     pointer-events: auto;
   }
+  .mob-plan-drag-ghost.mob-plan-piece.is-placed {
+    position: fixed;
+    left: -1000px;
+    top: -1000px;
+    transform: none;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    pointer-events: none;
+    z-index: 9999;
+  }
   .mob-plan-piece:active {
     cursor: grabbing;
   }
@@ -13909,6 +13924,8 @@
     let items = [];
     let planDragDepth = 0;
     let trayDragDepth = 0;
+    let activeDragMeta = null;
+    let activeDragPreview = null;
 
     function clamp01(value) {
       const number = Number(value);
@@ -14067,11 +14084,45 @@
       return true;
     }
 
-    function pointFromEvent(ev) {
+    function cleanupDragPreview() {
+      if (activeDragPreview && activeDragPreview.parentNode) {
+        activeDragPreview.parentNode.removeChild(activeDragPreview);
+      }
+      activeDragPreview = null;
+    }
+
+    function pointFromEvent(ev, itemId) {
       const rect = plan.getBoundingClientRect();
-      const x = rect.width ? (ev.clientX - rect.left) / rect.width : 0.5;
-      const y = rect.height ? (ev.clientY - rect.top) / rect.height : 0.5;
+      let x = rect.width ? (ev.clientX - rect.left) / rect.width : 0.5;
+      let y = rect.height ? (ev.clientY - rect.top) / rect.height : 0.5;
+      if (activeDragMeta && activeDragMeta.itemId === itemId && activeDragMeta.anchorMode === "preserve" && rect.width && rect.height) {
+        x -= activeDragMeta.offsetXPx / rect.width;
+        y -= activeDragMeta.offsetYPx / rect.height;
+      }
       return { x: clamp01(x), y: clamp01(y) };
+    }
+
+    function buildDragPreview(item) {
+      const ghost = document.createElement("div");
+      ghost.className = "mob-plan-drag-ghost mob-plan-piece is-placed kind-" + item.kind;
+
+      const visual = document.createElement("span");
+      visual.className = "mob-plan-piece-visual";
+
+      const body = document.createElement("span");
+      body.className = "mob-plan-piece-body";
+      body.style.setProperty("--mob-piece-rotation", item.rotation === 90 ? "90deg" : "0deg");
+      visual.appendChild(body);
+      ghost.appendChild(visual);
+
+      const badge = document.createElement("span");
+      badge.className = "mob-plan-piece-badge";
+      badge.appendChild(createSpan("mob-plan-piece-code", item.code));
+      if (item.local) {
+        badge.appendChild(createSpan("mob-plan-piece-local", item.local));
+      }
+      ghost.appendChild(badge);
+      return ghost;
     }
 
     function buildPiece(item) {
@@ -14120,6 +14171,26 @@
       button.addEventListener("dragstart", function (ev) {
         ev.dataTransfer.setData("text/mob-plan-item", item.id);
         ev.dataTransfer.effectAllowed = "move";
+        const rect = button.getBoundingClientRect();
+        const pointerX = Number.isFinite(ev.clientX) ? ev.clientX : (rect.left + (rect.width / 2));
+        const pointerY = Number.isFinite(ev.clientY) ? ev.clientY : (rect.top + (rect.height / 2));
+        activeDragMeta = {
+          itemId: item.id,
+          anchorMode: item.placed ? "preserve" : "center",
+          offsetXPx: item.placed ? (pointerX - (rect.left + (rect.width / 2))) : 0,
+          offsetYPx: item.placed ? (pointerY - (rect.top + (rect.height / 2))) : 0
+        };
+        cleanupDragPreview();
+        if (ev.dataTransfer && typeof ev.dataTransfer.setDragImage === "function") {
+          activeDragPreview = buildDragPreview(item);
+          document.body.appendChild(activeDragPreview);
+          const previewRect = activeDragPreview.getBoundingClientRect();
+          ev.dataTransfer.setDragImage(
+            activeDragPreview,
+            Math.round(previewRect.width / 2),
+            Math.round(previewRect.height / 2)
+          );
+        }
       });
 
       button.addEventListener("dblclick", function () {
@@ -14292,7 +14363,7 @@
       plan.classList.remove("mob-plan-drop-active");
       const item = getItem(ev.dataTransfer.getData("text/mob-plan-item"));
       if (!item) return;
-      placeItem(item, pointFromEvent(ev));
+      placeItem(item, pointFromEvent(ev, item.id));
       render();
       markDirty();
     });
@@ -14333,6 +14404,8 @@
       trayDragDepth = 0;
       plan.classList.remove("mob-plan-drop-active");
       tray.classList.remove("is-drop-active");
+      activeDragMeta = null;
+      cleanupDragPreview();
     });
 
     if (resetBtn) {
