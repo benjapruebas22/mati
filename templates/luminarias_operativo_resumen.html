@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Resumen operativo de luminarias</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --surface: #ffffff;
+      --surface-soft: #f8fafc;
+      --text: #0f172a;
+      --muted: #64748b;
+      --line: #d7deea;
+      --primary: #1d4ed8;
+      --primary-soft: #eff6ff;
+      --success-soft: #ecfdf3;
+      --success: #15803d;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .page {
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 28px 20px 40px;
+    }
+    .topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+    .eyebrow {
+      margin: 0 0 6px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    h1 {
+      margin: 0;
+      font-size: 30px;
+      line-height: 1.04;
+    }
+    .sub {
+      margin: 8px 0 0;
+      max-width: 840px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .actions,
+    .filters-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 0 14px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 800;
+      text-decoration: none;
+    }
+    .btn.primary {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: #fff;
+    }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--surface);
+      padding: 16px;
+      box-shadow: 0 10px 26px rgba(15, 23, 42, 0.04);
+    }
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      align-items: end;
+      margin-bottom: 16px;
+    }
+    .field label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--muted);
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    .field input,
+    .field select {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 0 12px;
+      font-size: 13px;
+      background: var(--surface);
+      color: var(--text);
+    }
+    .kpis {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .kpi {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--surface);
+      padding: 14px;
+    }
+    .kpi-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .kpi-value {
+      display: block;
+      margin-top: 6px;
+      font-size: 24px;
+      font-weight: 900;
+      line-height: 1;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr);
+      gap: 16px;
+    }
+    .stack {
+      display: grid;
+      gap: 16px;
+    }
+    .section-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .section-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 900;
+    }
+    .section-sub {
+      margin: 5px 0 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th,
+    td {
+      padding: 10px 8px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .tone {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-size: 11px;
+      font-weight: 900;
+    }
+    .tone.success {
+      background: var(--success-soft);
+      color: var(--success);
+    }
+    .empty {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    @media (max-width: 1100px) {
+      .filters,
+      .kpis,
+      .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+    @media (max-width: 760px) {
+      .topbar,
+      .filters,
+      .kpis,
+      .grid {
+        grid-template-columns: 1fr;
+        display: grid;
+      }
+      .actions {
+        width: 100%;
+      }
+      .card {
+        overflow-x: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="topbar">
+      <div>
+        <p class="eyebrow">Luminarias operativas</p>
+        <h1>Resumen MPD</h1>
+        <p class="sub">
+          Vista global de puntos activos, marcas con casos cerrados y sedes con mayor carga de recambios.
+          El filtro por fuero reemplaza al criterio de región porque la base actual no tiene ese campo.
+        </p>
+      </div>
+      <div class="actions">
+        {% if sede_filtro %}
+        <a class="btn primary" href="{{ url_for('sede_ficha', codigo=sede_filtro, tab='luminarias', view='operativo') }}">Volver a {{ sede_filtro }}</a>
+        {% endif %}
+        <a class="btn" href="{{ url_for('dashboard') }}">Dashboard</a>
+      </div>
+    </div>
+
+    <form class="card" method="get">
+      <div class="filters">
+        <div class="field">
+          <label>Sede</label>
+          <select name="sede">
+            <option value="">Todas</option>
+            {% for row in sedes_rows %}
+            <option value="{{ row.codigo }}" {% if sede_filtro == row.codigo %}selected{% endif %}>{{ row.codigo }} · {{ row.nombre }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label>Fuero</label>
+          <select name="fuero">
+            <option value="">Todos</option>
+            {% for fuero in fueros %}
+            <option value="{{ fuero }}" {% if fuero_filtro == fuero|lower %}selected{% endif %}>{{ fuero }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label>Tipo</label>
+          <select name="tipo">
+            <option value="">Todos</option>
+            <option value="TL" {% if tipo_filtro == 'TL' %}selected{% endif %}>TL · Tubo LED</option>
+            <option value="FO" {% if tipo_filtro == 'FO' %}selected{% endif %}>FO · Foco</option>
+            <option value="PN" {% if tipo_filtro == 'PN' %}selected{% endif %}>PN · Panel LED</option>
+            <option value="PT" {% if tipo_filtro == 'PT' %}selected{% endif %}>PT · Puesto de trabajo</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Marca</label>
+          <input type="text" name="marca" value="{{ marca_filtro }}" placeholder="Philips, MacroLED, Osram...">
+        </div>
+        <div class="filters-actions">
+          <button class="btn primary" type="submit">Filtrar</button>
+          <a class="btn" href="{{ url_for('luminarias_operativo_resumen') }}">Limpiar</a>
+        </div>
+      </div>
+    </form>
+
+    <div class="kpis">
+      <div class="kpi">
+        <span class="kpi-label">TL activos</span>
+        <span class="kpi-value">{{ totals.tl or 0 }}</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">FO activos</span>
+        <span class="kpi-value">{{ totals.fo or 0 }}</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">PN activos</span>
+        <span class="kpi-value">{{ totals.pn or 0 }}</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">PT activos</span>
+        <span class="kpi-value">{{ totals.pt or 0 }}</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">En servicio</span>
+        <span class="kpi-value">{{ totals.en_servicio or 0 }}</span>
+      </div>
+      <div class="kpi">
+        <span class="kpi-label">Sin registrar</span>
+        <span class="kpi-value">{{ totals.sin_registro or 0 }}</span>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="stack">
+        <section class="card">
+          <div class="section-head">
+            <div>
+              <h2 class="section-title">Duracion por marca</h2>
+              <p class="section-sub">Solo se calculan instalaciones cerradas.</p>
+            </div>
+            <span class="tone">{{ brand_rows|length }} filas</span>
+          </div>
+          {% if brand_rows %}
+          <table>
+            <thead>
+              <tr>
+                <th>Marca</th>
+                <th>Tipo</th>
+                <th>Casos cerrados</th>
+                <th>Promedio</th>
+                <th>Mejor</th>
+                <th>Peor</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in brand_rows %}
+              <tr>
+                <td>{{ row.marca }}</td>
+                <td>{{ row.tipo }}</td>
+                <td>{{ row.casos_cerrados }}</td>
+                <td>{{ row.duracion_promedio or '—' }}</td>
+                <td>{{ row.mejor_duracion or '—' }}</td>
+                <td>{{ row.peor_duracion or '—' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <p class="empty">No hay casos cerrados para el filtro actual.</p>
+          {% endif %}
+        </section>
+
+        <section class="card">
+          <div class="section-head">
+            <div>
+              <h2 class="section-title">Puntos con mas recambios</h2>
+              <p class="section-sub">Sirve para detectar fallas repetitivas o sectores exigidos.</p>
+            </div>
+            <span class="tone success">{{ top_points|length }} puntos</span>
+          </div>
+          {% if top_points %}
+          <table>
+            <thead>
+              <tr>
+                <th>Codigo</th>
+                <th>Sede</th>
+                <th>Tipo</th>
+                <th>Recambios cerrados</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in top_points %}
+              <tr>
+                <td>{{ row.codigo_completo }}</td>
+                <td>{{ row.sede_codigo }}</td>
+                <td>{{ row.tipo }}</td>
+                <td>{{ row.recambios_cerrados }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <p class="empty">No hay puntos con recambios cerrados para este filtro.</p>
+          {% endif %}
+        </section>
+      </div>
+
+      <section class="card">
+        <div class="section-head">
+          <div>
+            <h2 class="section-title">Carga por sede</h2>
+            <p class="section-sub">Puntos activos y sedes que ya tienen historial operativo.</p>
+          </div>
+        </div>
+        {% if sede_stats %}
+        <table>
+          <thead>
+            <tr>
+              <th>Sede</th>
+              <th>Fuero</th>
+              <th>TL</th>
+              <th>FO</th>
+              <th>PN</th>
+              <th>PT</th>
+              <th>Con historial</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in sede_stats %}
+            <tr>
+              <td>
+                <strong>{{ row.sede_codigo }}</strong><br>
+                <span style="color:#64748b;">{{ row.sede_nombre }}</span>
+              </td>
+              <td>{{ row.fuero or '—' }}</td>
+              <td>{{ row.tl or 0 }}</td>
+              <td>{{ row.fo or 0 }}</td>
+              <td>{{ row.pn or 0 }}</td>
+              <td>{{ row.pt or 0 }}</td>
+              <td>{{ row.puntos_con_historial or 0 }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="empty">No hay sedes para mostrar con el filtro actual.</p>
+        {% endif %}
+      </section>
+    </div>
+  </main>
+</body>
+</html>

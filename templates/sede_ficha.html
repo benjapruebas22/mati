@@ -6062,6 +6062,7 @@
     background: #64748b;
     border-color: rgba(71, 85, 105, 0.22);
   }
+  .mob-plan-piece.kind-tubo_led .mob-plan-piece-body,
   .mob-plan-piece.kind-tubo_led_fria .mob-plan-piece-body,
   .mob-plan-piece.kind-tubo_led_calido .mob-plan-piece-body {
     width: 38px;
@@ -6071,6 +6072,7 @@
     border-color: rgba(148, 163, 184, 0.3);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 4px 8px rgba(148, 163, 184, 0.12);
   }
+  .mob-plan-piece.kind-tubo_led .mob-plan-piece-body::after,
   .mob-plan-piece.kind-tubo_led_fria .mob-plan-piece-body::after,
   .mob-plan-piece.kind-tubo_led_calido .mob-plan-piece-body::after {
     content: "";
@@ -6078,6 +6080,7 @@
     inset: 2px 5px;
     border-radius: 999px;
   }
+  .mob-plan-piece.kind-tubo_led .mob-plan-piece-body::after,
   .mob-plan-piece.kind-tubo_led_fria .mob-plan-piece-body::after {
     background: #93c5fd;
   }
@@ -6203,6 +6206,289 @@
   .mob-plan-piece.is-placed:active .mob-plan-piece-badge {
     opacity: 1;
     transform: translate(-50%, 0) scale(1);
+  }
+  .mob-plan-piece.is-selected .mob-plan-piece-badge,
+  .mob-plan-piece.is-selected.is-tray {
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.22), 0 14px 28px rgba(37, 99, 235, 0.16);
+  }
+  .mob-plan-piece.is-selected.is-placed .mob-plan-piece-body {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 0 0 2px rgba(37, 99, 235, 0.24), 0 8px 16px rgba(37, 99, 235, 0.12);
+  }
+  .mob-plan-piece.is-selected.is-placed .mob-plan-piece-badge {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  .lum-op-shell {
+    display: grid;
+    gap: 14px;
+  }
+  .lum-op-kpis {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .lum-op-kpi {
+    border: 1px solid #d7deea;
+    border-radius: 12px;
+    background: #fff;
+    padding: 10px 12px;
+  }
+  .lum-op-kpi-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 800;
+    color: #64748b;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+  }
+  .lum-op-kpi-value {
+    display: block;
+    margin-top: 4px;
+    font-size: 20px;
+    font-weight: 900;
+    color: #0f172a;
+  }
+  .lum-op-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr);
+    gap: 14px;
+    align-items: start;
+  }
+  .lum-op-stack {
+    display: grid;
+    gap: 14px;
+  }
+  .lum-op-card {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: #fff;
+    padding: 14px;
+  }
+  .lum-op-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .lum-op-card-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 900;
+    color: #0f172a;
+  }
+  .lum-op-card-sub {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: #64748b;
+  }
+  .lum-op-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .lum-op-table th,
+  .lum-op-table td {
+    padding: 9px 8px;
+    border-bottom: 1px solid #e5e7eb;
+    vertical-align: top;
+  }
+  .lum-op-table th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 900;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+  }
+  .lum-op-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .lum-op-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 28px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    border: 1px solid #d7deea;
+    background: #fff;
+    color: #334155;
+    font-size: 11px;
+    font-weight: 800;
+    text-decoration: none;
+  }
+  .lum-op-chip:hover {
+    border-color: #93c5fd;
+    color: #1d4ed8;
+  }
+  .lum-op-chip.is-selected {
+    border-color: #93c5fd;
+    background: #eff6ff;
+    color: #1d4ed8;
+  }
+  .lum-op-empty {
+    color: #94a3b8;
+    font-size: 12px;
+  }
+  .lum-op-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .lum-op-field.full {
+    grid-column: 1 / -1;
+  }
+  .lum-op-field label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #334155;
+  }
+  .lum-op-field input,
+  .lum-op-field select,
+  .lum-op-field textarea {
+    width: 100%;
+    border: 1px solid #d7deea;
+    border-radius: 10px;
+    padding: 9px 10px;
+    font-size: 12px;
+    color: #0f172a;
+    background: #fff;
+  }
+  .lum-op-field textarea {
+    min-height: 78px;
+    resize: vertical;
+  }
+  .lum-op-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .lum-op-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 28px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+  }
+  .lum-op-status.success {
+    background: #ecfdf3;
+    color: #15803d;
+  }
+  .lum-op-status.muted {
+    background: #f8fafc;
+    color: #64748b;
+  }
+  .lum-op-status.danger {
+    background: #fef2f2;
+    color: #b91c1c;
+  }
+  .lum-op-detail-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .lum-op-detail-code {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 900;
+    color: #0f172a;
+    line-height: 1.05;
+  }
+  .lum-op-detail-sub {
+    margin: 6px 0 0;
+    font-size: 12px;
+    color: #64748b;
+  }
+  .lum-op-meta {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .lum-op-meta-item,
+  .lum-op-stat {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #f8fafc;
+    padding: 10px 12px;
+  }
+  .lum-op-meta-label,
+  .lum-op-stat-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+  }
+  .lum-op-meta-value,
+  .lum-op-stat-value {
+    display: block;
+    margin-top: 4px;
+    font-size: 13px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+  .lum-op-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .lum-op-section {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid #e5e7eb;
+  }
+  .lum-op-section:first-of-type {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+  }
+  .lum-op-section-title {
+    margin: 0 0 10px;
+    font-size: 13px;
+    font-weight: 900;
+    color: #0f172a;
+  }
+  .lum-op-note {
+    margin: 0;
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.45;
+  }
+  @media (max-width: 1100px) {
+    .lum-op-kpis {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .lum-op-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (max-width: 760px) {
+    .lum-op-kpis,
+    .lum-op-form-grid,
+    .lum-op-meta,
+    .lum-op-stats {
+      grid-template-columns: 1fr;
+    }
+    .lum-op-table {
+      display: block;
+      overflow-x: auto;
+    }
   }
   @media (max-width: 760px) {
     .mob-plan-head {
@@ -10753,7 +11039,7 @@
           </div>
           {% endif %}
           {% if tab == 'luminarias' %}
-          <div class="mob-plan-layer" data-mob-plan-layer data-mob-plan-module="luminarias" data-sede="{{ sede.codigo }}" data-piso="{{ piso }}" data-local="{{ local or '' }}" data-api-url="{{ url_for('luminarias_plano_api', sede_codigo=sede.codigo, piso=piso) }}">
+          <div class="mob-plan-layer" data-mob-plan-layer data-mob-plan-module="luminarias" data-sede="{{ sede.codigo }}" data-piso="{{ piso }}" data-local="{{ local or '' }}" data-api-url="{{ url_for('luminarias_plano_api', sede_codigo=sede.codigo, piso=piso) }}" data-selected-point-id="{{ luminarias_selected.plan_item_id if luminarias_selected else '' }}">
             <div class="mob-plan-canvas" data-mob-plan-canvas></div>
           </div>
           {% endif %}
@@ -10944,8 +11230,8 @@
             <div>
               <p class="mob-plan-title">Distribucion visual de luminarias</p>
               <p class="mob-plan-sub">
-                La carga actual de <strong>Luminarias</strong> no se modifica.
-                Aca solo ordenas sobre el plano limpio los tubos, focos, paneles y puestos ya definidos para este piso.
+                Arrastra para ubicar o reordenar los puntos ya definidos para este piso.
+                Hace click sobre un codigo para abrir la ficha operativa del punto seleccionado.
                 {% if local %}
                 El local <strong>{{ local }}</strong> queda resaltado y el resto se aten&uacute;a.
                 {% else %}
@@ -11625,190 +11911,354 @@
 
         <div class="panel-section-head">
           <div>
-            <div class="panel-section-title">Luminarias</div>
+            <div class="panel-section-title">Luminarias operativas</div>
             <div class="panel-section-sub">
-              Totales (filtro actual): Fria <strong>{{ luminarias_kpi.tubo_fria }}</strong> ·
-              Calida <strong>{{ luminarias_kpi.tubo_calido }}</strong> ·
-              Foco <strong>{{ luminarias_kpi.foco }}</strong> ·
-              Panel <strong>{{ luminarias_kpi.panel }}</strong> ·
-              Puestos <strong>{{ luminarias_kpi.puestos_trabajo }}</strong>
+              Totales activos del filtro: TL <strong>{{ luminarias_operativo_totals.tl }}</strong> ·
+              FO <strong>{{ luminarias_operativo_totals.fo }}</strong> ·
+              PN <strong>{{ luminarias_operativo_totals.pn }}</strong> ·
+              PT <strong>{{ luminarias_operativo_totals.pt }}</strong>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <a class="btn outline-slate" href="{{ url_for('luminarias_operativo_resumen', sede=sede.codigo) }}">Resumen MPD</a>
+            {% if local %}
+            <a class="btn outline-slate" href="{{ url_for('checklist_luminarias', sede_filtro=sede.codigo, ambiente=local) }}">Checklist legacy</a>
+            {% endif %}
+          </div>
+        </div>
+
+
+
+
+
+
+
+        <div class="lum-op-shell">
+          <div class="lum-op-kpis">
+            <div class="lum-op-kpi">
+              <span class="lum-op-kpi-label">Puntos activos</span>
+              <span class="lum-op-kpi-value">{{ luminarias_operativo_totals.total }}</span>
+            </div>
+            <div class="lum-op-kpi">
+              <span class="lum-op-kpi-label">Tubos LED</span>
+              <span class="lum-op-kpi-value">{{ luminarias_operativo_totals.tl }}</span>
+            </div>
+            <div class="lum-op-kpi">
+              <span class="lum-op-kpi-label">Focos</span>
+              <span class="lum-op-kpi-value">{{ luminarias_operativo_totals.fo }}</span>
+            </div>
+            <div class="lum-op-kpi">
+              <span class="lum-op-kpi-label">Paneles</span>
+              <span class="lum-op-kpi-value">{{ luminarias_operativo_totals.pn }}</span>
+            </div>
+            <div class="lum-op-kpi">
+              <span class="lum-op-kpi-label">Puestos</span>
+              <span class="lum-op-kpi-value">{{ luminarias_operativo_totals.pt }}</span>
+            </div>
+            <div class="lum-op-kpi">
+              <span class="lum-op-kpi-label">Sin registrar</span>
+              <span class="lum-op-kpi-value">{{ luminarias_operativo_totals.sin_registro }}</span>
             </div>
           </div>
 
-          <a class="btn primary"
-            href="{{ url_for('luminarias_nuevo') }}?codigo_sede={{ sede.codigo }}&piso={{ piso }}{% if local %}&codigo_local={{ local }}{% endif %}">
-            + Agregar
-          </a>
-        </div>
-
-
-
-
-
-
-
-        {% if luminarias_rows and luminarias_rows|length > 0 %}
-
-
-
-        <div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;">
-
-
-
-          <table style="width:100%;border-collapse:collapse;font-size:12px;background:#fff;">
-
-
-
-            <thead style="background:#f3f4f6;">
-
-
-
-              <tr>
-
-
-
-                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);width:70px;">Local</th>
-
-
-
-                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:80px;">Tubo fría
-
-
-
-                </th>
-
-
-
-                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:90px;">Tubo cálida
-
-
-
-                </th>
-
-
-
-                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:70px;">Foco</th>
-
-
-
-                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:70px;">Panel</th>
-
-
-
-                <th style="text-align:center;padding:8px;border-bottom:1px solid var(--border);width:140px;">Puesto de trabajo</th>
-
-
-
-                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);">Otros</th>
-
-
-
-                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);width:160px;">Acciones</th>
-
-
-
-              </tr>
-
-
-
-            </thead>
-
-
-
-            <tbody>
-
-
-
-              {% for l in luminarias_rows %}
-
-
-
-              <tr>
-
-
-
-                <td class="cell-code" style="padding:8px;border-bottom:1px solid var(--border);">{{ render_local_badge(sede.codigo, l.codigo_local, l.codigo_local)|safe }}</td>
-
-
-
-                <td style="padding:8px;border-bottom:1px solid var(--border);text-align:center;">{{ l.tubo_led_fria }}
-
-
-
-                </td>
-
-
-
-                <td style="padding:8px;border-bottom:1px solid var(--border);text-align:center;">{{ l.tubo_led_calido }}
-
-
-
-                </td>
-
-
-
-                <td style="padding:8px;border-bottom:1px solid var(--border);text-align:center;">{{ l.foco_comun }}</td>
-
-
-
-                <td style="padding:8px;border-bottom:1px solid var(--border);text-align:center;">{{ l.panel_led }}</td>
-
-
-
-                <td style="padding:8px;border-bottom:1px solid var(--border);text-align:center;">{{ l.puestos_trabajo }}</td>
-
-
-
-                <td style="padding:8px;border-bottom:1px solid var(--border);">{{ l.otros_detalle or "" }}</td>
-
-                <td style="padding:8px;border-bottom:1px solid var(--border);white-space:normal;">{{ l.observaciones or "" }}</td>
-
-
-
-                <td style="padding:8px;border-bottom:1px solid var(--border);">
-                  <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-                    <a class="btn xs outline-slate"
-                       href="{{ url_for('checklist_luminarias', sede_filtro=sede.codigo, ambiente=l.codigo_local) }}">
-                      Registrar cambio
-                    </a>
-                    <a class="btn xs outline-slate" href="{{ url_for('luminarias_editar', id=l.id) }}">Editar</a>
-                    <form method="post" action="{{ url_for('luminarias_eliminar', id=l.id) }}" style="display:inline;">
-                      <button class="btn xs danger" type="submit">Eliminar</button>
-                    </form>
+          <div class="lum-op-card">
+            <div class="lum-op-card-head">
+              <div>
+                <h3 class="lum-op-card-title">Resumen por ambiente</h3>
+                <p class="lum-op-card-sub">Se muestran solo los puntos activos del piso actual.</p>
+              </div>
+            </div>
+            {% if luminarias_operativo_rows and luminarias_operativo_rows|length > 0 %}
+            <table class="lum-op-table">
+              <thead>
+                <tr>
+                  <th>Ambiente</th>
+                  <th>TL</th>
+                  <th>FO</th>
+                  <th>PN</th>
+                  <th>PT</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for row in luminarias_operativo_rows %}
+                <tr>
+                  <td>{{ render_local_badge(sede.codigo, row.ambiente_codigo, row.ambiente_codigo)|safe }}</td>
+                  {% for type_code in ['TL', 'FO', 'PN', 'PT'] %}
+                  <td>
+                    {% if row.points_by_type[type_code] and row.points_by_type[type_code]|length > 0 %}
+                    <div class="lum-op-chip-row">
+                      {% for point in row.points_by_type[type_code] %}
+                      <a class="lum-op-chip {% if luminarias_selected and luminarias_selected.id == point.id %}is-selected{% endif %}"
+                         href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=row.ambiente_codigo, tab='luminarias', view='operativo', lpoint=point.id) }}"
+                         title="{{ point.codigo_completo }}{% if point.placed %} · Ubicado en plano{% endif %}">
+                        {{ point.codigo_corto }}
+                      </a>
+                      {% endfor %}
+                    </div>
+                    {% else %}
+                    <span class="lum-op-empty">—</span>
+                    {% endif %}
+                  </td>
+                  {% endfor %}
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% else %}
+            <div class="lum-op-empty">No hay puntos activos para este piso o filtro.</div>
+            {% endif %}
+          </div>
+
+          <div class="lum-op-grid">
+            <div class="lum-op-stack">
+              <div class="lum-op-card">
+                <div class="lum-op-card-head">
+                  <div>
+                    <h3 class="lum-op-card-title">Alta manual de punto</h3>
+                    <p class="lum-op-card-sub">Crea el siguiente codigo disponible de la sede y luego lo ubicas en el plano.</p>
                   </div>
-                </td>
+                </div>
+                <form method="post" action="{{ url_for('luminarias_punto_alta') }}">
+                  <input type="hidden" name="sede_codigo" value="{{ sede.codigo }}">
+                  <input type="hidden" name="piso_codigo" value="{{ piso }}">
+                  <div class="lum-op-form-grid">
+                    <div class="lum-op-field">
+                      <label>Ambiente</label>
+                      <input type="text" name="ambiente_codigo" value="{{ local or (luminarias_selected.ambiente_codigo if luminarias_selected else '') }}" placeholder="D01" required>
+                    </div>
+                    <div class="lum-op-field">
+                      <label>Tipo</label>
+                      <select name="tipo" required>
+                        <option value="TL">TL · Tubo LED</option>
+                        <option value="FO">FO · Foco</option>
+                        <option value="PN">PN · Panel LED</option>
+                        <option value="PT">PT · Puesto de trabajo</option>
+                      </select>
+                    </div>
+                    <div class="lum-op-field full">
+                      <label>Fecha de alta</label>
+                      <input type="date" name="fecha_creacion" value="{{ fecha_dia }}">
+                    </div>
+                  </div>
+                  <div class="lum-op-actions">
+                    <button type="submit" class="btn primary">Crear punto</button>
+                    <a class="btn outline-slate" href="{{ url_for('luminarias_nuevo') }}?codigo_sede={{ sede.codigo }}&piso={{ piso }}{% if local %}&codigo_local={{ local }}{% endif %}">Carga agregada legacy</a>
+                  </div>
+                </form>
+              </div>
 
+              <div class="lum-op-card">
+                <div class="lum-op-card-head">
+                  <div>
+                    <h3 class="lum-op-card-title">Compatibilidad actual</h3>
+                    <p class="lum-op-card-sub">El resumen legado se mantiene sincronizado desde estos puntos operativos.</p>
+                  </div>
+                </div>
+                <p class="lum-op-note">
+                  TL concentra todos los tubos LED sin separar fria y calida. PT solo conserva identidad fisica y ubicacion en plano.
+                </p>
+              </div>
+            </div>
 
+            <div class="lum-op-card">
+              {% if luminarias_selected %}
+              <div class="lum-op-detail-head">
+                <div>
+                  <h3 class="lum-op-detail-code">{{ luminarias_selected.codigo_corto }}</h3>
+                  <p class="lum-op-detail-sub">{{ luminarias_selected.codigo_completo }}</p>
+                </div>
+                <span class="lum-op-status {{ luminarias_selected.estado_tone }}">{{ luminarias_selected.estado }}</span>
+              </div>
 
-              </tr>
+              <div class="lum-op-meta">
+                <div class="lum-op-meta-item">
+                  <span class="lum-op-meta-label">Tipo</span>
+                  <span class="lum-op-meta-value">{{ luminarias_selected.tipo_label }}</span>
+                </div>
+                <div class="lum-op-meta-item">
+                  <span class="lum-op-meta-label">Ambiente</span>
+                  <span class="lum-op-meta-value">{{ luminarias_selected.ambiente_codigo }}</span>
+                </div>
+                <div class="lum-op-meta-item">
+                  <span class="lum-op-meta-label">Marca actual</span>
+                  <span class="lum-op-meta-value">{{ luminarias_selected.marca_actual or 'Sin registrar' }}</span>
+                </div>
+                <div class="lum-op-meta-item">
+                  <span class="lum-op-meta-label">Fecha actual</span>
+                  <span class="lum-op-meta-value">{{ luminarias_selected.fecha_colocacion_actual or 'Sin registrar' }}</span>
+                </div>
+                {% if luminarias_selected.codigo_origen %}
+                <div class="lum-op-meta-item" style="grid-column:1 / -1;">
+                  <span class="lum-op-meta-label">Origen</span>
+                  <span class="lum-op-meta-value">{{ luminarias_selected.codigo_origen }}</span>
+                </div>
+                {% endif %}
+              </div>
 
+              <div class="lum-op-stats">
+                <div class="lum-op-stat">
+                  <span class="lum-op-stat-label">Instalaciones</span>
+                  <span class="lum-op-stat-value">{{ luminarias_selected.instalaciones_registradas }}</span>
+                </div>
+                <div class="lum-op-stat">
+                  <span class="lum-op-stat-label">Recambios</span>
+                  <span class="lum-op-stat-value">{{ luminarias_selected.recambios_completados }}</span>
+                </div>
+                <div class="lum-op-stat">
+                  <span class="lum-op-stat-label">Promedio</span>
+                  <span class="lum-op-stat-value">{{ luminarias_selected.duracion_promedio if luminarias_selected.duracion_promedio is not none else 'Sin datos' }}</span>
+                </div>
+                <div class="lum-op-stat">
+                  <span class="lum-op-stat-label">Ultima duracion</span>
+                  <span class="lum-op-stat-value">{{ luminarias_selected.ultima_duracion if luminarias_selected.ultima_duracion is not none else 'Sin datos' }}</span>
+                </div>
+                <div class="lum-op-stat">
+                  <span class="lum-op-stat-label">Mejor</span>
+                  <span class="lum-op-stat-value">{{ luminarias_selected.mejor_duracion if luminarias_selected.mejor_duracion is not none else 'Sin datos' }}</span>
+                </div>
+                <div class="lum-op-stat">
+                  <span class="lum-op-stat-label">Peor</span>
+                  <span class="lum-op-stat-value">{{ luminarias_selected.peor_duracion if luminarias_selected.peor_duracion is not none else 'Sin datos' }}</span>
+                </div>
+              </div>
 
+              {% if luminarias_selected.activo and luminarias_selected.supports_replacements %}
+              <div class="lum-op-section">
+                <h4 class="lum-op-section-title">Registrar recambio</h4>
+                <form method="post" action="{{ url_for('luminarias_punto_recambio', point_id=luminarias_selected.id) }}">
+                  <div class="lum-op-form-grid">
+                    <div class="lum-op-field">
+                      <label>Fecha</label>
+                      <input type="date" name="fecha" value="{{ fecha_dia }}" required>
+                    </div>
+                    <div class="lum-op-field">
+                      <label>Marca</label>
+                      <select name="marca" required>
+                        <option value="Philips">Philips</option>
+                        <option value="MacroLED">MacroLED</option>
+                        <option value="Osram">Osram</option>
+                        <option value="Sica">Sica</option>
+                        <option value="Otra">Otra</option>
+                      </select>
+                    </div>
+                    <div class="lum-op-field full">
+                      <label>Marca si es Otra</label>
+                      <input type="text" name="marca_otro" placeholder="Ej. Generica 18W">
+                    </div>
+                    <div class="lum-op-field full">
+                      <label>Observacion</label>
+                      <textarea name="observacion" placeholder="Opcional"></textarea>
+                    </div>
+                  </div>
+                  <div class="lum-op-actions">
+                    <button type="submit" class="btn primary">Registrar recambio</button>
+                    <a class="btn outline-slate" href="{{ url_for('checklist_luminarias', sede_filtro=sede.codigo, ambiente=luminarias_selected.ambiente_codigo) }}">Checklist legacy</a>
+                  </div>
+                </form>
+              </div>
+              {% elif not luminarias_selected.supports_replacements %}
+              <div class="lum-op-section">
+                <h4 class="lum-op-section-title">Recambios</h4>
+                <p class="lum-op-note">Los puestos de trabajo no registran marca, duracion ni recambios.</p>
+              </div>
+              {% endif %}
 
-              {% endfor %}
+              {% if luminarias_selected.activo %}
+              <div class="lum-op-section">
+                <h4 class="lum-op-section-title">Baja del punto</h4>
+                <form method="post" action="{{ url_for('luminarias_punto_baja', point_id=luminarias_selected.id) }}">
+                  <div class="lum-op-form-grid">
+                    <div class="lum-op-field">
+                      <label>Fecha real</label>
+                      <input type="date" name="fecha_baja" value="{{ fecha_dia }}" required>
+                    </div>
+                    <div class="lum-op-field full">
+                      <label>Motivo</label>
+                      <input type="text" name="motivo_baja" placeholder="Ej. reemplazado por tubos LED">
+                    </div>
+                  </div>
+                  <div class="lum-op-actions">
+                    <button type="submit" class="btn danger">Dar de baja</button>
+                  </div>
+                </form>
+              </div>
 
+              <div class="lum-op-section">
+                <h4 class="lum-op-section-title">Transformacion</h4>
+                <form method="post" action="{{ url_for('luminarias_punto_transformar', point_id=luminarias_selected.id) }}">
+                  <div class="lum-op-form-grid">
+                    <div class="lum-op-field">
+                      <label>Nuevo tipo</label>
+                      <select name="nuevo_tipo" required>
+                        <option value="TL">TL · Tubo LED</option>
+                        <option value="FO">FO · Foco</option>
+                        <option value="PN">PN · Panel LED</option>
+                        <option value="PT">PT · Puesto de trabajo</option>
+                      </select>
+                    </div>
+                    <div class="lum-op-field">
+                      <label>Cantidad nueva</label>
+                      <input type="number" name="cantidad_nueva" value="1" min="1" max="20" required>
+                    </div>
+                    <div class="lum-op-field">
+                      <label>Fecha</label>
+                      <input type="date" name="fecha_transformacion" value="{{ fecha_dia }}" required>
+                    </div>
+                    <div class="lum-op-field full">
+                      <label>Observacion</label>
+                      <input type="text" name="motivo_transformacion" placeholder="Ej. reemplazado por dos tubos LED">
+                    </div>
+                  </div>
+                  <div class="lum-op-actions">
+                    <button type="submit" class="btn primary">Transformar punto</button>
+                  </div>
+                </form>
+              </div>
+              {% endif %}
 
-
-            </tbody>
-
-
-
-          </table>
-
-
-
+              <div class="lum-op-section">
+                <h4 class="lum-op-section-title">Historial</h4>
+                {% if luminarias_selected.history_rows and luminarias_selected.history_rows|length > 0 %}
+                <table class="lum-op-table">
+                  <thead>
+                    <tr>
+                      <th>Marca</th>
+                      <th>Colocacion</th>
+                      <th>Recambio</th>
+                      <th>Duracion</th>
+                      <th>Observacion</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for h in luminarias_selected.history_rows %}
+                    <tr>
+                      <td>{{ h.marca or 'Sin marca' }}</td>
+                      <td>{{ h.fecha_colocacion or '—' }}</td>
+                      <td>{{ h.fecha_recambio or 'En servicio' }}</td>
+                      <td>{{ (h.duracion_dias ~ ' dias') if h.duracion_dias is not none else '—' }}</td>
+                      <td>{{ h.observacion or '—' }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+                {% else %}
+                <p class="lum-op-note">Todavia no hay instalaciones registradas para este punto.</p>
+                {% endif %}
+              </div>
+              {% else %}
+              <div class="lum-op-card-head">
+                <div>
+                  <h3 class="lum-op-card-title">Ficha del punto</h3>
+                  <p class="lum-op-card-sub">Selecciona un codigo desde el plano o desde la tabla por ambiente.</p>
+                </div>
+              </div>
+              <p class="lum-op-note">
+                Cuando eliges un punto, aqui se muestra su codigo completo, el estado actual y el historial de recambios.
+              </p>
+              {% endif %}
+            </div>
+          </div>
         </div>
-
-
-
-        {% else %}
-
-
-
-        <div style="color:var(--muted);font-size:12px;">No hay luminarias cargadas para este filtro.</div>
-
-
-
-        {% endif %}
 
 
 
@@ -13880,11 +14330,10 @@
       },
       luminarias: {
         defaultKind: "panel_led",
-        kindOrder: ["tubo_led_fria", "tubo_led_calido", "foco_comun", "panel_led", "puestos_trabajo"],
+        kindOrder: ["tubo_led", "foco_comun", "panel_led", "puestos_trabajo"],
         rotatableKinds: [],
         kindMeta: {
-          tubo_led_fria: { label: "Tubo LED fria", code: "TF" },
-          tubo_led_calido: { label: "Tubo LED calida", code: "TC" },
+          tubo_led: { label: "Tubo LED", code: "TL" },
           foco_comun: { label: "Foco", code: "FO" },
           panel_led: { label: "Panel LED", code: "PN" },
           puestos_trabajo: { label: "Puesto de trabajo", code: "PT" }
@@ -13943,6 +14392,7 @@
     let suppressedClickItemId = "";
     let suppressedClickUntil = 0;
     let armedItemId = "";
+    const selectedPointId = String(layer.dataset.selectedPointId || "").trim();
 
     function clamp01(value) {
       const number = Number(value);
@@ -13982,7 +14432,11 @@
         x: raw.placed ? clamp01(raw.x) : null,
         y: raw.placed ? clamp01(raw.y) : null,
         rotation: canRotate && Number(raw.rotation) === 90 ? 90 : 0,
-        canRotate: canRotate
+        canRotate: canRotate,
+        pointId: Number(raw.point_id || raw.pointId || 0) || 0,
+        typeCode: String(raw.type_code || raw.typeCode || ""),
+        fullCode: String(raw.full_code || raw.fullCode || ""),
+        detailUrl: String(raw.detail_url || raw.detailUrl || "")
       };
     }
 
@@ -14005,6 +14459,7 @@
 
     function buildTitle(item) {
       const parts = [item.name, item.code];
+      if (item.fullCode) parts.push(item.fullCode);
       if (item.local) parts.push(item.local);
       if (item.description) parts.push(item.description);
       if (item.note) parts.push(item.note);
@@ -14190,6 +14645,9 @@
       if (item.canRotate) {
         button.classList.add("is-rotatable");
       }
+      if (selectedPointId && item.id === selectedPointId) {
+        button.classList.add("is-selected");
+      }
       button.draggable = false;
       button.dataset.itemId = item.id;
       button.title = buildTitle(item) + (item.placed && item.canRotate ? " - Click derecho o tecla R para girar" : "");
@@ -14229,6 +14687,7 @@
 
       button.addEventListener("dblclick", function () {
         if (consumeSuppressedClick(item.id)) return;
+        if (moduleKey === "luminarias") return;
         sendToTray(item);
         render();
         markDirty();
@@ -14286,6 +14745,10 @@
       button.addEventListener("click", function (ev) {
         if (consumeSuppressedClick(item.id)) return;
         ev.stopPropagation();
+        if (moduleKey === "luminarias" && item.detailUrl) {
+          window.location.href = item.detailUrl;
+          return;
+        }
         armItem(item);
         render();
       });
@@ -14529,6 +14992,7 @@
     });
 
     plan.addEventListener("click", function (ev) {
+      if (moduleKey === "luminarias") return;
       if (!armedItemId) return;
       const item = getItem(armedItemId);
       if (!item) {
