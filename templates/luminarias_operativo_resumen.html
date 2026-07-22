@@ -16,6 +16,18 @@
       --primary-soft: #eff6ff;
       --success-soft: #ecfdf3;
       --success: #15803d;
+      --lum-tl-text: #aa465d;
+      --lum-tl-border: #efc8d2;
+      --lum-tl-soft: #fcf2f5;
+      --lum-fo-text: #ab671d;
+      --lum-fo-border: #f0d5b7;
+      --lum-fo-soft: #fff7ed;
+      --lum-pn-text: #3e69af;
+      --lum-pn-border: #ccdaf4;
+      --lum-pn-soft: #f1f6fe;
+      --lum-pt-text: #2f7b58;
+      --lum-pt-border: #cde5d8;
+      --lum-pt-soft: #f1faf5;
     }
     * { box-sizing: border-box; }
     body {
@@ -187,6 +199,51 @@
       text-transform: uppercase;
       color: var(--muted);
     }
+    .lum-type-tl {
+      --lum-accent: var(--lum-tl-text);
+      --lum-accent-border: var(--lum-tl-border);
+      --lum-accent-soft: var(--lum-tl-soft);
+    }
+    .lum-type-fo {
+      --lum-accent: var(--lum-fo-text);
+      --lum-accent-border: var(--lum-fo-border);
+      --lum-accent-soft: var(--lum-fo-soft);
+    }
+    .lum-type-pn {
+      --lum-accent: var(--lum-pn-text);
+      --lum-accent-border: var(--lum-pn-border);
+      --lum-accent-soft: var(--lum-pn-soft);
+    }
+    .lum-type-pt {
+      --lum-accent: var(--lum-pt-text);
+      --lum-accent-border: var(--lum-pt-border);
+      --lum-accent-soft: var(--lum-pt-soft);
+    }
+    .lum-type-text {
+      color: var(--lum-accent, var(--text));
+    }
+    .lum-type-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 24px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      border: 1px solid var(--lum-accent-border, var(--line));
+      background: var(--lum-accent-soft, var(--surface));
+      color: var(--lum-accent, var(--text));
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .03em;
+      line-height: 1;
+    }
+    .lum-type-th {
+      color: var(--lum-accent, var(--muted));
+    }
+    .lum-type-count {
+      color: var(--lum-accent, var(--text));
+      font-weight: 800;
+    }
     .tone {
       display: inline-flex;
       align-items: center;
@@ -292,21 +349,21 @@
     </form>
 
     <div class="kpis">
-      <div class="kpi">
+      <div class="kpi lum-type-tl">
         <span class="kpi-label">TL activos</span>
-        <span class="kpi-value">{{ totals.tl or 0 }}</span>
+        <span class="kpi-value lum-type-text">{{ totals.tl or 0 }}</span>
       </div>
-      <div class="kpi">
+      <div class="kpi lum-type-fo">
         <span class="kpi-label">FO activos</span>
-        <span class="kpi-value">{{ totals.fo or 0 }}</span>
+        <span class="kpi-value lum-type-text">{{ totals.fo or 0 }}</span>
       </div>
-      <div class="kpi">
+      <div class="kpi lum-type-pn">
         <span class="kpi-label">PN activos</span>
-        <span class="kpi-value">{{ totals.pn or 0 }}</span>
+        <span class="kpi-value lum-type-text">{{ totals.pn or 0 }}</span>
       </div>
-      <div class="kpi">
+      <div class="kpi lum-type-pt">
         <span class="kpi-label">PT activos</span>
-        <span class="kpi-value">{{ totals.pt or 0 }}</span>
+        <span class="kpi-value lum-type-text">{{ totals.pt or 0 }}</span>
       </div>
       <div class="kpi">
         <span class="kpi-label">En servicio</span>
@@ -344,7 +401,7 @@
               {% for row in brand_rows %}
               <tr>
                 <td>{{ row.marca }}</td>
-                <td>{{ row.tipo }}</td>
+                <td><span class="lum-type-pill lum-type-{{ row.tipo|lower }}">{{ row.tipo }}</span></td>
                 <td>{{ row.casos_cerrados }}</td>
                 <td>{{ row.duracion_promedio or '—' }}</td>
                 <td>{{ row.mejor_duracion or '—' }}</td>
@@ -379,9 +436,9 @@
             <tbody>
               {% for row in top_points %}
               <tr>
-                <td>{{ row.codigo_completo }}</td>
+                <td><span class="lum-type-text lum-type-{{ row.tipo|lower }}">{{ row.codigo_completo }}</span></td>
                 <td>{{ row.sede_codigo }}</td>
-                <td>{{ row.tipo }}</td>
+                <td><span class="lum-type-pill lum-type-{{ row.tipo|lower }}">{{ row.tipo }}</span></td>
                 <td>{{ row.recambios_cerrados }}</td>
               </tr>
               {% endfor %}
@@ -406,10 +463,10 @@
             <tr>
               <th>Sede</th>
               <th>Fuero</th>
-              <th>TL</th>
-              <th>FO</th>
-              <th>PN</th>
-              <th>PT</th>
+              <th class="lum-type-th lum-type-tl">TL</th>
+              <th class="lum-type-th lum-type-fo">FO</th>
+              <th class="lum-type-th lum-type-pn">PN</th>
+              <th class="lum-type-th lum-type-pt">PT</th>
               <th>Con historial</th>
             </tr>
           </thead>
@@ -421,10 +478,10 @@
                 <span style="color:#64748b;">{{ row.sede_nombre }}</span>
               </td>
               <td>{{ row.fuero or '—' }}</td>
-              <td>{{ row.tl or 0 }}</td>
-              <td>{{ row.fo or 0 }}</td>
-              <td>{{ row.pn or 0 }}</td>
-              <td>{{ row.pt or 0 }}</td>
+              <td><span class="lum-type-count lum-type-tl">{{ row.tl or 0 }}</span></td>
+              <td><span class="lum-type-count lum-type-fo">{{ row.fo or 0 }}</span></td>
+              <td><span class="lum-type-count lum-type-pn">{{ row.pn or 0 }}</span></td>
+              <td><span class="lum-type-count lum-type-pt">{{ row.pt or 0 }}</span></td>
               <td>{{ row.puntos_con_historial or 0 }}</td>
             </tr>
             {% endfor %}

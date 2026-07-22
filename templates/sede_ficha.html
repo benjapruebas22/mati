@@ -6068,9 +6068,9 @@
     width: 38px;
     height: 8px;
     border-radius: 999px;
-    background: linear-gradient(180deg, #ffffff 0%, #e2e8f0 100%);
-    border-color: rgba(148, 163, 184, 0.3);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 4px 8px rgba(148, 163, 184, 0.12);
+    background: linear-gradient(180deg, #ffffff 0%, #fcf0f4 100%);
+    border-color: rgba(170, 70, 93, 0.22);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75), 0 4px 8px rgba(170, 70, 93, 0.10);
   }
   .mob-plan-piece.kind-tubo_led .mob-plan-piece-body::after,
   .mob-plan-piece.kind-tubo_led_fria .mob-plan-piece-body::after,
@@ -6081,18 +6081,16 @@
     border-radius: 999px;
   }
   .mob-plan-piece.kind-tubo_led .mob-plan-piece-body::after,
-  .mob-plan-piece.kind-tubo_led_fria .mob-plan-piece-body::after {
-    background: #93c5fd;
-  }
+  .mob-plan-piece.kind-tubo_led_fria .mob-plan-piece-body::after,
   .mob-plan-piece.kind-tubo_led_calido .mob-plan-piece-body::after {
-    background: #fbbf24;
+    background: #dc9aaa;
   }
   .mob-plan-piece.kind-foco_comun .mob-plan-piece-body {
     width: 18px;
     height: 18px;
     border-radius: 999px 999px 999px 999px;
-    background: #fff7d6;
-    border-color: rgba(217, 119, 6, 0.22);
+    background: #fff4e8;
+    border-color: rgba(171, 103, 29, 0.22);
   }
   .mob-plan-piece.kind-foco_comun .mob-plan-piece-body::after {
     content: "";
@@ -6103,28 +6101,28 @@
     height: 4px;
     transform: translateX(-50%);
     border-radius: 999px;
-    background: #d97706;
+    background: #d19a63;
   }
   .mob-plan-piece.kind-panel_led .mob-plan-piece-body {
     width: 24px;
     height: 24px;
     border-radius: 6px;
-    background: linear-gradient(180deg, #ffffff 0%, #eef2ff 100%);
-    border-color: rgba(99, 102, 241, 0.26);
+    background: linear-gradient(180deg, #ffffff 0%, #eef5ff 100%);
+    border-color: rgba(62, 105, 175, 0.22);
   }
   .mob-plan-piece.kind-panel_led .mob-plan-piece-body::after {
     content: "";
     position: absolute;
     inset: 4px;
     border-radius: 4px;
-    border: 1px solid rgba(99, 102, 241, 0.18);
+    border: 1px solid rgba(62, 105, 175, 0.18);
   }
   .mob-plan-piece.kind-puestos_trabajo .mob-plan-piece-body {
     width: 28px;
     height: 16px;
     border-radius: 5px;
-    background: #dbeafe;
-    border-color: rgba(37, 99, 235, 0.22);
+    background: #eef8f2;
+    border-color: rgba(47, 123, 88, 0.22);
   }
   .mob-plan-piece.kind-puestos_trabajo .mob-plan-piece-body::before {
     content: "";
@@ -6134,8 +6132,8 @@
     top: -8px;
     height: 8px;
     border-radius: 4px 4px 2px 2px;
-    background: #eff6ff;
-    border: 1px solid rgba(37, 99, 235, 0.16);
+    background: #f7fcf8;
+    border: 1px solid rgba(47, 123, 88, 0.16);
   }
   .mob-plan-piece.kind-puestos_trabajo .mob-plan-piece-body::after {
     content: "";
@@ -6146,13 +6144,13 @@
     height: 4px;
     transform: translateX(-50%);
     border-radius: 999px;
-    background: #2563eb;
+    background: #6bb28f;
   }
   .mob-plan-piece-badge {
     min-width: 48px;
     padding: 3px 6px 4px;
     border-radius: 10px;
-    border: 1px solid #d7deea;
+    border: 1px solid var(--lum-accent-border, #d7deea);
     background: rgba(255, 255, 255, 0.96);
     box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
     display: inline-flex;
@@ -6166,7 +6164,7 @@
     font-weight: 900;
     line-height: 1;
     letter-spacing: .03em;
-    color: #334155;
+    color: var(--lum-accent, #334155);
   }
   .mob-plan-piece-local {
     font-size: 8px;
@@ -6179,7 +6177,7 @@
     font-size: 10px;
     font-weight: 800;
     line-height: 1.15;
-    color: #475467;
+    color: var(--lum-accent, #475467);
     text-align: center;
   }
   .mob-plan-piece-note {
@@ -6301,6 +6299,57 @@
     text-transform: uppercase;
     letter-spacing: .03em;
   }
+  .lum-type-tl,
+  .mob-plan-piece.kind-tubo_led,
+  .mob-plan-piece.kind-tubo_led_fria,
+  .mob-plan-piece.kind-tubo_led_calido {
+    --lum-accent: #aa465d;
+    --lum-accent-border: #efc8d2;
+    --lum-accent-soft: #fcf2f5;
+  }
+  .lum-type-fo,
+  .mob-plan-piece.kind-foco_comun {
+    --lum-accent: #ab671d;
+    --lum-accent-border: #f0d5b7;
+    --lum-accent-soft: #fff7ed;
+  }
+  .lum-type-pn,
+  .mob-plan-piece.kind-panel_led {
+    --lum-accent: #3e69af;
+    --lum-accent-border: #ccdaf4;
+    --lum-accent-soft: #f1f6fe;
+  }
+  .lum-type-pt,
+  .mob-plan-piece.kind-puestos_trabajo {
+    --lum-accent: #2f7b58;
+    --lum-accent-border: #cde5d8;
+    --lum-accent-soft: #f1faf5;
+  }
+  .lum-type-text {
+    color: var(--lum-accent, #0f172a);
+  }
+  .lum-type-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 24px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    border: 1px solid var(--lum-accent-border, #d7deea);
+    background: var(--lum-accent-soft, #fff);
+    color: var(--lum-accent, #334155);
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: .03em;
+    line-height: 1;
+  }
+  .lum-type-th {
+    color: var(--lum-accent, #64748b);
+  }
+  .lum-type-count {
+    color: var(--lum-accent, #0f172a);
+    font-weight: 800;
+  }
   .lum-op-chip-row {
     display: flex;
     flex-wrap: wrap;
@@ -6324,10 +6373,17 @@
     border-color: #93c5fd;
     color: #1d4ed8;
   }
+  .lum-op-chip.lum-type-chip:hover {
+    border-color: var(--lum-accent-border, #93c5fd);
+    color: var(--lum-accent, #1d4ed8);
+  }
   .lum-op-chip.is-selected {
     border-color: #93c5fd;
     background: #eff6ff;
     color: #1d4ed8;
+  }
+  .lum-op-chip.lum-type-chip.is-selected {
+    color: var(--lum-accent, #1d4ed8);
   }
   .lum-op-empty {
     color: #94a3b8;
@@ -11989,10 +12045,10 @@
               <thead>
                 <tr>
                   <th>Ambiente</th>
-                  <th>TL</th>
-                  <th>FO</th>
-                  <th>PN</th>
-                  <th>PT</th>
+                  <th class="lum-type-th lum-type-tl">TL</th>
+                  <th class="lum-type-th lum-type-fo">FO</th>
+                  <th class="lum-type-th lum-type-pn">PN</th>
+                  <th class="lum-type-th lum-type-pt">PT</th>
                 </tr>
               </thead>
               <tbody>
@@ -12004,7 +12060,7 @@
                     {% if row.points_by_type[type_code] and row.points_by_type[type_code]|length > 0 %}
                     <div class="lum-op-chip-row">
                       {% for point in row.points_by_type[type_code] %}
-                      <a class="lum-op-chip {% if luminarias_selected and luminarias_selected.id == point.id %}is-selected{% endif %}"
+                      <a class="lum-op-chip lum-type-chip lum-type-{{ type_code|lower }} {% if luminarias_selected and luminarias_selected.id == point.id %}is-selected{% endif %}"
                          href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=row.ambiente_codigo, tab='luminarias', view='operativo', lpoint=point.id) }}"
                          title="{{ point.codigo_completo }}{% if point.placed %} · Ubicado en plano{% endif %}">
                         {{ point.codigo_corto }}
@@ -12067,7 +12123,7 @@
               {% if luminarias_selected %}
               <div class="lum-op-detail-head">
                 <div>
-                  <h3 class="lum-op-detail-code">{{ luminarias_selected.codigo_corto }}</h3>
+                  <h3 class="lum-op-detail-code lum-type-text lum-type-{{ luminarias_selected.tipo|lower }}">{{ luminarias_selected.codigo_corto }}</h3>
                 </div>
                 <span class="lum-op-status {{ luminarias_selected.estado_tone }}">{{ luminarias_selected.estado }}</span>
               </div>
@@ -12160,7 +12216,7 @@
                   <input type="hidden" name="fecha_baja" value="{{ fecha_dia }}">
                   <input type="hidden" name="motivo_baja" value="Baja confirmada desde la ficha simplificada">
                   <div class="lum-op-confirm" id="lum-baja-confirm" hidden>
-                    <p><strong>¿Confirmás la baja de {{ luminarias_selected.codigo_corto }}?</strong></p>
+                    <p><strong class="lum-type-text lum-type-{{ luminarias_selected.tipo|lower }}">¿Confirmás la baja de {{ luminarias_selected.codigo_corto }}?</strong></p>
                     <p>Esta accion debe utilizarse unicamente cuando el punto de iluminacion dejo de existir fisicamente. El historial sera conservado.</p>
                     <div class="lum-op-actions">
                       <button type="button" class="btn outline-slate" data-lum-baja-cancel>Cancelar</button>
@@ -12172,7 +12228,7 @@
               {% endif %}
 
               <div class="lum-op-section" id="lum-historial">
-                <h4 class="lum-op-section-title">Historial de {{ luminarias_selected.codigo_corto }}</h4>
+                <h4 class="lum-op-section-title">Historial de <span class="lum-type-text lum-type-{{ luminarias_selected.tipo|lower }}">{{ luminarias_selected.codigo_corto }}</span></h4>
                 {% if luminarias_selected.history_rows and luminarias_selected.history_rows|length > 0 %}
                 <table class="lum-op-table">
                   <thead>
