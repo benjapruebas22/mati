@@ -11891,6 +11891,41 @@ def _luminaria_parse_date(value):
     return None
 
 
+def _luminaria_format_date(value):
+    parsed = _luminaria_parse_date(value)
+    return parsed.strftime("%d/%m/%Y") if parsed else ""
+
+
+def _luminaria_duration_human(start_value, end_value):
+    start = _luminaria_parse_date(start_value)
+    end = _luminaria_parse_date(end_value)
+    if not start or not end or end < start:
+        return ""
+
+    years = end.year - start.year
+    months = end.month - start.month
+    days = end.day - start.day
+
+    if days < 0:
+        months -= 1
+        prev_month_last_day = (date(end.year, end.month, 1) - timedelta(days=1)).day
+        days += prev_month_last_day
+    if months < 0:
+        years -= 1
+        months += 12
+
+    parts = []
+    if years:
+        parts.append(f"{years} año" + ("s" if years != 1 else ""))
+    if months:
+        parts.append(f"{months} mes" + ("es" if months != 1 else ""))
+    if days and not parts:
+        parts.append(f"{days} día" + ("s" if days != 1 else ""))
+    if not parts:
+        parts.append("0 días")
+    return " y ".join(parts[:2])
+
+
 def _luminaria_piso_sort_key(piso_value):
     piso = _mobiliario_plano_normalize_piso(piso_value)
     if piso == "PB":
@@ -12390,11 +12425,16 @@ def _luminaria_history_rows(con, point_id):
             "marca": _luminaria_brand_display(row),
             "fecha_colocacion": str(row["fecha_colocacion"] or "").strip(),
             "fecha_recambio": str(row["fecha_recambio"] or "").strip(),
+            "fecha_instalacion_display": _luminaria_format_date(row["fecha_colocacion"]),
+            "fecha_recambio_display": _luminaria_format_date(row["fecha_recambio"]),
             "duracion_dias": row["duracion_dias"],
+            "duracion_humana": _luminaria_duration_human(row["fecha_colocacion"], row["fecha_recambio"]),
             "observacion": str(row["observacion"] or "").strip(),
-            "en_servicio": not str(row["fecha_recambio"] or "").strip(),
+            "actual": not str(row["fecha_recambio"] or "").strip(),
         })
-    return history
+    for item in history:
+        item["resultado"] = "Actual" if item["actual"] else (f"Duró {item['duracion_humana']}" if item["duracion_humana"] else "Finalizado")
+    return list(reversed(history))
 
 
 def _luminaria_point_detail(con, point_id):
@@ -12406,11 +12446,11 @@ def _luminaria_point_detail(con, point_id):
     if not row:
         return None
     history = _luminaria_history_rows(con, int(row["id"]))
-    closed_rows = [item for item in history if not item["en_servicio"] and item["duracion_dias"] is not None]
-    open_row = next((item for item in reversed(history) if item["en_servicio"]), None)
+    closed_rows = [item for item in history if not item["actual"] and item["duracion_dias"] is not None]
+    open_row = next((item for item in history if item["actual"]), None)
     durations = [int(item["duracion_dias"]) for item in closed_rows if item["duracion_dias"] is not None]
     avg_duration = round(sum(durations) / len(durations)) if durations else None
-    last_duration = int(closed_rows[-1]["duracion_dias"]) if closed_rows else None
+    last_duration = int(closed_rows[0]["duracion_dias"]) if closed_rows else None
     point = {
         "id": int(row["id"]),
         "plan_item_id": f"lumpt:{int(row['id'])}",
@@ -12432,8 +12472,11 @@ def _luminaria_point_detail(con, point_id):
         "peor_duracion": min(durations) if durations else None,
         "marca_actual": open_row["marca"] if open_row else "",
         "fecha_colocacion_actual": open_row["fecha_colocacion"] if open_row else "",
+        "fecha_colocacion_actual_display": open_row["fecha_instalacion_display"] if open_row else _luminaria_format_date(row["fecha_creacion"]),
         "fecha_creacion": str(row["fecha_creacion"] or "").strip(),
+        "fecha_creacion_display": _luminaria_format_date(row["fecha_creacion"]),
         "fecha_baja": str(row["fecha_baja"] or "").strip(),
+        "fecha_baja_display": _luminaria_format_date(row["fecha_baja"]),
         "motivo_baja": str(row["motivo_baja"] or "").strip(),
         "punto_origen_id": row["punto_origen_id"],
         "x": row["x"],
@@ -12443,12 +12486,9 @@ def _luminaria_point_detail(con, point_id):
     if not point["activo"]:
         point["estado"] = "Baja"
         point["estado_tone"] = "danger"
-    elif open_row:
-        point["estado"] = "En servicio"
-        point["estado_tone"] = "success"
     else:
-        point["estado"] = "Sin registrar"
-        point["estado_tone"] = "muted"
+        point["estado"] = "Activo"
+        point["estado_tone"] = "success"
     if point["punto_origen_id"]:
         origin = con.execute("SELECT codigo_completo FROM luminaria_punto WHERE id = ?", (int(point["punto_origen_id"]),)).fetchone()
         point["codigo_origen"] = str(origin["codigo_completo"] or "").strip() if origin else ""

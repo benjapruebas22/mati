@@ -6470,6 +6470,48 @@
     color: #64748b;
     line-height: 1.45;
   }
+  .lum-op-detail-list {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .lum-op-detail-line {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    border-bottom: 1px solid #eef2f7;
+    padding-bottom: 7px;
+  }
+  .lum-op-detail-line:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  .lum-op-detail-label {
+    min-width: 120px;
+    font-size: 12px;
+    font-weight: 800;
+    color: #64748b;
+  }
+  .lum-op-detail-text {
+    font-size: 13px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+  .lum-op-anchor-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .lum-op-confirm {
+    border: 1px solid #fecaca;
+    border-radius: 12px;
+    background: #fff7f7;
+    padding: 12px;
+  }
+  .lum-op-confirm[hidden] {
+    display: none !important;
+  }
   @media (max-width: 1100px) {
     .lum-op-kpis {
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -6484,6 +6526,13 @@
     .lum-op-meta,
     .lum-op-stats {
       grid-template-columns: 1fr;
+    }
+    .lum-op-detail-line {
+      flex-direction: column;
+      gap: 3px;
+    }
+    .lum-op-detail-label {
+      min-width: 0;
     }
     .lum-op-table {
       display: block;
@@ -11911,19 +11960,13 @@
 
         <div class="panel-section-head">
           <div>
-            <div class="panel-section-title">Luminarias operativas</div>
+            <div class="panel-section-title">Luminarias</div>
             <div class="panel-section-sub">
               Totales activos del filtro: TL <strong>{{ luminarias_operativo_totals.tl }}</strong> ·
               FO <strong>{{ luminarias_operativo_totals.fo }}</strong> ·
               PN <strong>{{ luminarias_operativo_totals.pn }}</strong> ·
               PT <strong>{{ luminarias_operativo_totals.pt }}</strong>
             </div>
-          </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <a class="btn outline-slate" href="{{ url_for('luminarias_operativo_resumen', sede=sede.codigo) }}">Resumen MPD</a>
-            {% if local %}
-            <a class="btn outline-slate" href="{{ url_for('checklist_luminarias', sede_filtro=sede.codigo, ambiente=local) }}">Checklist legacy</a>
-            {% endif %}
           </div>
         </div>
 
@@ -11934,33 +11977,6 @@
 
 
         <div class="lum-op-shell">
-          <div class="lum-op-kpis">
-            <div class="lum-op-kpi">
-              <span class="lum-op-kpi-label">Puntos activos</span>
-              <span class="lum-op-kpi-value">{{ luminarias_operativo_totals.total }}</span>
-            </div>
-            <div class="lum-op-kpi">
-              <span class="lum-op-kpi-label">Tubos LED</span>
-              <span class="lum-op-kpi-value">{{ luminarias_operativo_totals.tl }}</span>
-            </div>
-            <div class="lum-op-kpi">
-              <span class="lum-op-kpi-label">Focos</span>
-              <span class="lum-op-kpi-value">{{ luminarias_operativo_totals.fo }}</span>
-            </div>
-            <div class="lum-op-kpi">
-              <span class="lum-op-kpi-label">Paneles</span>
-              <span class="lum-op-kpi-value">{{ luminarias_operativo_totals.pn }}</span>
-            </div>
-            <div class="lum-op-kpi">
-              <span class="lum-op-kpi-label">Puestos</span>
-              <span class="lum-op-kpi-value">{{ luminarias_operativo_totals.pt }}</span>
-            </div>
-            <div class="lum-op-kpi">
-              <span class="lum-op-kpi-label">Sin registrar</span>
-              <span class="lum-op-kpi-value">{{ luminarias_operativo_totals.sin_registro }}</span>
-            </div>
-          </div>
-
           <div class="lum-op-card">
             <div class="lum-op-card-head">
               <div>
@@ -12014,8 +12030,8 @@
               <div class="lum-op-card">
                 <div class="lum-op-card-head">
                   <div>
-                    <h3 class="lum-op-card-title">Alta manual de punto</h3>
-                    <p class="lum-op-card-sub">Crea el siguiente codigo disponible de la sede y luego lo ubicas en el plano.</p>
+                    <h3 class="lum-op-card-title">Agregar luminaria</h3>
+                    <p class="lum-op-card-sub">Se crea el siguiente codigo disponible del tipo elegido y despues la ubicas en el plano.</p>
                   </div>
                 </div>
                 <form method="post" action="{{ url_for('luminarias_punto_alta') }}">
@@ -12029,10 +12045,10 @@
                     <div class="lum-op-field">
                       <label>Tipo</label>
                       <select name="tipo" required>
-                        <option value="TL">TL · Tubo LED</option>
-                        <option value="FO">FO · Foco</option>
-                        <option value="PN">PN · Panel LED</option>
-                        <option value="PT">PT · Puesto de trabajo</option>
+                        <option value="TL">TL - Tubo LED</option>
+                        <option value="FO">FO - Foco</option>
+                        <option value="PN">PN - Panel</option>
+                        <option value="PT">PT - Puesto de trabajo</option>
                       </select>
                     </div>
                     <div class="lum-op-field full">
@@ -12041,22 +12057,9 @@
                     </div>
                   </div>
                   <div class="lum-op-actions">
-                    <button type="submit" class="btn primary">Crear punto</button>
-                    <a class="btn outline-slate" href="{{ url_for('luminarias_nuevo') }}?codigo_sede={{ sede.codigo }}&piso={{ piso }}{% if local %}&codigo_local={{ local }}{% endif %}">Carga agregada legacy</a>
+                    <button type="submit" class="btn primary">Agregar</button>
                   </div>
                 </form>
-              </div>
-
-              <div class="lum-op-card">
-                <div class="lum-op-card-head">
-                  <div>
-                    <h3 class="lum-op-card-title">Compatibilidad actual</h3>
-                    <p class="lum-op-card-sub">El resumen legado se mantiene sincronizado desde estos puntos operativos.</p>
-                  </div>
-                </div>
-                <p class="lum-op-note">
-                  TL concentra todos los tubos LED sin separar fria y calida. PT solo conserva identidad fisica y ubicacion en plano.
-                </p>
               </div>
             </div>
 
@@ -12065,66 +12068,54 @@
               <div class="lum-op-detail-head">
                 <div>
                   <h3 class="lum-op-detail-code">{{ luminarias_selected.codigo_corto }}</h3>
-                  <p class="lum-op-detail-sub">{{ luminarias_selected.codigo_completo }}</p>
                 </div>
                 <span class="lum-op-status {{ luminarias_selected.estado_tone }}">{{ luminarias_selected.estado }}</span>
               </div>
 
-              <div class="lum-op-meta">
-                <div class="lum-op-meta-item">
-                  <span class="lum-op-meta-label">Tipo</span>
-                  <span class="lum-op-meta-value">{{ luminarias_selected.tipo_label }}</span>
+              <div class="lum-op-detail-list">
+                <div class="lum-op-detail-line">
+                  <span class="lum-op-detail-label">Sede</span>
+                  <span class="lum-op-detail-text">{{ luminarias_selected.sede_codigo }}</span>
                 </div>
-                <div class="lum-op-meta-item">
-                  <span class="lum-op-meta-label">Ambiente</span>
-                  <span class="lum-op-meta-value">{{ luminarias_selected.ambiente_codigo }}</span>
+                <div class="lum-op-detail-line">
+                  <span class="lum-op-detail-label">Ambiente</span>
+                  <span class="lum-op-detail-text">{{ luminarias_selected.ambiente_codigo }}</span>
                 </div>
-                <div class="lum-op-meta-item">
-                  <span class="lum-op-meta-label">Marca actual</span>
-                  <span class="lum-op-meta-value">{{ luminarias_selected.marca_actual or 'Sin registrar' }}</span>
+                <div class="lum-op-detail-line">
+                  <span class="lum-op-detail-label">Tipo</span>
+                  <span class="lum-op-detail-text">{{ luminarias_selected.tipo_label }}</span>
                 </div>
-                <div class="lum-op-meta-item">
-                  <span class="lum-op-meta-label">Fecha actual</span>
-                  <span class="lum-op-meta-value">{{ luminarias_selected.fecha_colocacion_actual or 'Sin registrar' }}</span>
+                <div class="lum-op-detail-line">
+                  <span class="lum-op-detail-label">Estado</span>
+                  <span class="lum-op-detail-text">{{ luminarias_selected.estado }}</span>
                 </div>
-                {% if luminarias_selected.codigo_origen %}
-                <div class="lum-op-meta-item" style="grid-column:1 / -1;">
-                  <span class="lum-op-meta-label">Origen</span>
-                  <span class="lum-op-meta-value">{{ luminarias_selected.codigo_origen }}</span>
+                <div class="lum-op-detail-line">
+                  <span class="lum-op-detail-label">Marca actual</span>
+                  <span class="lum-op-detail-text">{{ luminarias_selected.marca_actual or 'Sin registrar' }}</span>
                 </div>
+                <div class="lum-op-detail-line">
+                  <span class="lum-op-detail-label">Instalada</span>
+                  <span class="lum-op-detail-text">{{ luminarias_selected.fecha_colocacion_actual_display or luminarias_selected.fecha_creacion_display or 'Sin registrar' }}</span>
+                </div>
+                <div class="lum-op-detail-line">
+                  <span class="lum-op-detail-label">Recambios registrados</span>
+                  <span class="lum-op-detail-text">{{ luminarias_selected.recambios_completados }}</span>
+                </div>
+              </div>
+
+              <div class="lum-op-anchor-actions">
+                {% if luminarias_selected.activo and luminarias_selected.supports_replacements %}
+                <a class="btn primary" href="#lum-recambio">Registrar recambio</a>
+                {% endif %}
+                <a class="btn outline-slate" href="#lum-historial">Ver historial</a>
+                {% if luminarias_selected.activo %}
+                <button type="button" class="btn danger" data-lum-baja-open>Dar de baja</button>
                 {% endif %}
               </div>
 
-              <div class="lum-op-stats">
-                <div class="lum-op-stat">
-                  <span class="lum-op-stat-label">Instalaciones</span>
-                  <span class="lum-op-stat-value">{{ luminarias_selected.instalaciones_registradas }}</span>
-                </div>
-                <div class="lum-op-stat">
-                  <span class="lum-op-stat-label">Recambios</span>
-                  <span class="lum-op-stat-value">{{ luminarias_selected.recambios_completados }}</span>
-                </div>
-                <div class="lum-op-stat">
-                  <span class="lum-op-stat-label">Promedio</span>
-                  <span class="lum-op-stat-value">{{ luminarias_selected.duracion_promedio if luminarias_selected.duracion_promedio is not none else 'Sin datos' }}</span>
-                </div>
-                <div class="lum-op-stat">
-                  <span class="lum-op-stat-label">Ultima duracion</span>
-                  <span class="lum-op-stat-value">{{ luminarias_selected.ultima_duracion if luminarias_selected.ultima_duracion is not none else 'Sin datos' }}</span>
-                </div>
-                <div class="lum-op-stat">
-                  <span class="lum-op-stat-label">Mejor</span>
-                  <span class="lum-op-stat-value">{{ luminarias_selected.mejor_duracion if luminarias_selected.mejor_duracion is not none else 'Sin datos' }}</span>
-                </div>
-                <div class="lum-op-stat">
-                  <span class="lum-op-stat-label">Peor</span>
-                  <span class="lum-op-stat-value">{{ luminarias_selected.peor_duracion if luminarias_selected.peor_duracion is not none else 'Sin datos' }}</span>
-                </div>
-              </div>
-
               {% if luminarias_selected.activo and luminarias_selected.supports_replacements %}
-              <div class="lum-op-section">
-                <h4 class="lum-op-section-title">Registrar recambio</h4>
+              <div class="lum-op-section" id="lum-recambio">
+                <h4 class="lum-op-section-title">Recambio</h4>
                 <form method="post" action="{{ url_for('luminarias_punto_recambio', point_id=luminarias_selected.id) }}">
                   <div class="lum-op-form-grid">
                     <div class="lum-op-field">
@@ -12133,7 +12124,7 @@
                     </div>
                     <div class="lum-op-field">
                       <label>Marca</label>
-                      <select name="marca" required>
+                      <select name="marca" required data-lum-brand-select>
                         <option value="Philips">Philips</option>
                         <option value="MacroLED">MacroLED</option>
                         <option value="Osram">Osram</option>
@@ -12141,119 +12132,79 @@
                         <option value="Otra">Otra</option>
                       </select>
                     </div>
-                    <div class="lum-op-field full">
-                      <label>Marca si es Otra</label>
+                    <div class="lum-op-field full" data-lum-brand-other hidden>
+                      <label>Otra marca</label>
                       <input type="text" name="marca_otro" placeholder="Ej. Generica 18W">
                     </div>
                     <div class="lum-op-field full">
-                      <label>Observacion</label>
+                      <label>Observacion opcional</label>
                       <textarea name="observacion" placeholder="Opcional"></textarea>
                     </div>
                   </div>
                   <div class="lum-op-actions">
                     <button type="submit" class="btn primary">Registrar recambio</button>
-                    <a class="btn outline-slate" href="{{ url_for('checklist_luminarias', sede_filtro=sede.codigo, ambiente=luminarias_selected.ambiente_codigo) }}">Checklist legacy</a>
                   </div>
                 </form>
               </div>
               {% elif not luminarias_selected.supports_replacements %}
               <div class="lum-op-section">
-                <h4 class="lum-op-section-title">Recambios</h4>
-                <p class="lum-op-note">Los puestos de trabajo no registran marca, duracion ni recambios.</p>
+                <h4 class="lum-op-section-title">Recambio</h4>
+                <p class="lum-op-note">Los puestos de trabajo no registran recambios.</p>
               </div>
               {% endif %}
 
               {% if luminarias_selected.activo %}
               <div class="lum-op-section">
-                <h4 class="lum-op-section-title">Baja del punto</h4>
+                <h4 class="lum-op-section-title">Dar de baja</h4>
                 <form method="post" action="{{ url_for('luminarias_punto_baja', point_id=luminarias_selected.id) }}">
-                  <div class="lum-op-form-grid">
-                    <div class="lum-op-field">
-                      <label>Fecha real</label>
-                      <input type="date" name="fecha_baja" value="{{ fecha_dia }}" required>
+                  <input type="hidden" name="fecha_baja" value="{{ fecha_dia }}">
+                  <input type="hidden" name="motivo_baja" value="Baja confirmada desde la ficha simplificada">
+                  <div class="lum-op-confirm" id="lum-baja-confirm" hidden>
+                    <p><strong>¿Confirmás la baja de {{ luminarias_selected.codigo_corto }}?</strong></p>
+                    <p>Esta accion debe utilizarse unicamente cuando el punto de iluminacion dejo de existir fisicamente. El historial sera conservado.</p>
+                    <div class="lum-op-actions">
+                      <button type="button" class="btn outline-slate" data-lum-baja-cancel>Cancelar</button>
+                      <button type="submit" class="btn danger">Confirmar baja</button>
                     </div>
-                    <div class="lum-op-field full">
-                      <label>Motivo</label>
-                      <input type="text" name="motivo_baja" placeholder="Ej. reemplazado por tubos LED">
-                    </div>
-                  </div>
-                  <div class="lum-op-actions">
-                    <button type="submit" class="btn danger">Dar de baja</button>
-                  </div>
-                </form>
-              </div>
-
-              <div class="lum-op-section">
-                <h4 class="lum-op-section-title">Transformacion</h4>
-                <form method="post" action="{{ url_for('luminarias_punto_transformar', point_id=luminarias_selected.id) }}">
-                  <div class="lum-op-form-grid">
-                    <div class="lum-op-field">
-                      <label>Nuevo tipo</label>
-                      <select name="nuevo_tipo" required>
-                        <option value="TL">TL · Tubo LED</option>
-                        <option value="FO">FO · Foco</option>
-                        <option value="PN">PN · Panel LED</option>
-                        <option value="PT">PT · Puesto de trabajo</option>
-                      </select>
-                    </div>
-                    <div class="lum-op-field">
-                      <label>Cantidad nueva</label>
-                      <input type="number" name="cantidad_nueva" value="1" min="1" max="20" required>
-                    </div>
-                    <div class="lum-op-field">
-                      <label>Fecha</label>
-                      <input type="date" name="fecha_transformacion" value="{{ fecha_dia }}" required>
-                    </div>
-                    <div class="lum-op-field full">
-                      <label>Observacion</label>
-                      <input type="text" name="motivo_transformacion" placeholder="Ej. reemplazado por dos tubos LED">
-                    </div>
-                  </div>
-                  <div class="lum-op-actions">
-                    <button type="submit" class="btn primary">Transformar punto</button>
                   </div>
                 </form>
               </div>
               {% endif %}
 
-              <div class="lum-op-section">
-                <h4 class="lum-op-section-title">Historial</h4>
+              <div class="lum-op-section" id="lum-historial">
+                <h4 class="lum-op-section-title">Historial de {{ luminarias_selected.codigo_corto }}</h4>
                 {% if luminarias_selected.history_rows and luminarias_selected.history_rows|length > 0 %}
                 <table class="lum-op-table">
                   <thead>
                     <tr>
+                      <th>Fecha de instalacion</th>
                       <th>Marca</th>
-                      <th>Colocacion</th>
-                      <th>Recambio</th>
-                      <th>Duracion</th>
-                      <th>Observacion</th>
+                      <th>Resultado</th>
                     </tr>
                   </thead>
                   <tbody>
                     {% for h in luminarias_selected.history_rows %}
                     <tr>
+                      <td>{{ h.fecha_instalacion_display or '—' }}</td>
                       <td>{{ h.marca or 'Sin marca' }}</td>
-                      <td>{{ h.fecha_colocacion or '—' }}</td>
-                      <td>{{ h.fecha_recambio or 'En servicio' }}</td>
-                      <td>{{ (h.duracion_dias ~ ' dias') if h.duracion_dias is not none else '—' }}</td>
-                      <td>{{ h.observacion or '—' }}</td>
+                      <td>{{ h.resultado }}</td>
                     </tr>
                     {% endfor %}
                   </tbody>
                 </table>
                 {% else %}
-                <p class="lum-op-note">Todavia no hay instalaciones registradas para este punto.</p>
+                <p class="lum-op-note">Todavia no hay historial registrado para esta luminaria.</p>
                 {% endif %}
               </div>
               {% else %}
               <div class="lum-op-card-head">
                 <div>
-                  <h3 class="lum-op-card-title">Ficha del punto</h3>
+                  <h3 class="lum-op-card-title">Ficha simplificada</h3>
                   <p class="lum-op-card-sub">Selecciona un codigo desde el plano o desde la tabla por ambiente.</p>
                 </div>
               </div>
               <p class="lum-op-note">
-                Cuando eliges un punto, aqui se muestra su codigo completo, el estado actual y el historial de recambios.
+                Al seleccionar una luminaria vas a poder registrar recambio, ver historial y darla de baja si dejo de existir fisicamente.
               </p>
               {% endif %}
             </div>
@@ -15650,6 +15601,44 @@
         setVisible(!visibleNow);
       });
     });
+  })();
+</script>
+<script>
+  (function () {
+    document.querySelectorAll("[data-lum-brand-select]").forEach(function (select) {
+      const form = select.closest("form");
+      const otherField = form ? form.querySelector("[data-lum-brand-other]") : null;
+      if (!otherField) return;
+
+      function syncBrandField() {
+        const isOther = String(select.value || "") === "Otra";
+        otherField.hidden = !isOther;
+        const input = otherField.querySelector("input");
+        if (input) {
+          input.disabled = !isOther;
+          if (!isOther) input.value = "";
+        }
+      }
+
+      syncBrandField();
+      select.addEventListener("change", syncBrandField);
+    });
+
+    const openBtn = document.querySelector("[data-lum-baja-open]");
+    const cancelBtn = document.querySelector("[data-lum-baja-cancel]");
+    const confirmBox = document.getElementById("lum-baja-confirm");
+    if (!openBtn || !confirmBox) return;
+
+    openBtn.addEventListener("click", function () {
+      confirmBox.hidden = false;
+      confirmBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+
+    if (cancelBtn) {
+      cancelBtn.addEventListener("click", function () {
+        confirmBox.hidden = true;
+      });
+    }
   })();
 </script>
 {% endblock %}
