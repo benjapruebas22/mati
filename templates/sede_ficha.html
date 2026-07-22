@@ -5804,7 +5804,8 @@
     display: inline-flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px;
+    justify-content: center;
+    gap: 0;
     cursor: grab;
     pointer-events: auto;
   }
@@ -6177,15 +6178,18 @@
     display: none;
   }
   .mob-plan-piece.is-placed .mob-plan-piece-badge {
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 4px);
     opacity: 0;
-    transform: translateY(-4px) scale(.96);
+    transform: translate(-50%, -4px) scale(.96);
   }
   .mob-plan-piece.is-placed:hover .mob-plan-piece-badge,
   .mob-plan-piece.is-placed:focus .mob-plan-piece-badge,
   .mob-plan-piece.is-placed:focus-visible .mob-plan-piece-badge,
   .mob-plan-piece.is-placed:active .mob-plan-piece-badge {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translate(-50%, 0) scale(1);
   }
   @media (max-width: 760px) {
     .mob-plan-head {
