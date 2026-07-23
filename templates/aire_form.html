@@ -1,178 +1,281 @@
 {% extends "base.html" %}
 {% block content %}
 
-<section class="grid-main">
+{% set _local_sel = ((aire.codigo_local if aire and aire.codigo_local is defined else return_local) or '')|upper %}
+{% set _fecha_limpieza = aire.fecha_ultima_limpieza if aire and aire.fecha_ultima_limpieza else '' %}
+{% set _fecha_service = aire.fecha_ultimo_service if aire and aire.fecha_ultimo_service else '' %}
+{% set _ultimo_mantenimiento = _fecha_service if _fecha_service and (_fecha_service >= _fecha_limpieza or not _fecha_limpieza) else _fecha_limpieza %}
+{% set _return_piso = return_piso or 'PB' %}
+{% set _back_url = url_for('sede_ficha', codigo=sede.codigo, piso=_return_piso, local=_local_sel if _local_sel else None, tab='aires', view='operativo', aid=aire.id if aire else None) %}
 
-  <!-- COLUMNA IZQUIERDA: sede -->
-  <div class="left-panel">
-    <div class="map-card">
-      <h3>Aire acondicionado – {{ 'Nuevo equipo' if not aire else 'Editar equipo' }}</h3>
+<style>
+  .air-form-page {
+    display: grid;
+    gap: 14px;
+  }
+  .air-form-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
+  }
+  .air-form-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 18px;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .air-form-title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 900;
+    color: #0f172a;
+  }
+  .air-form-sub {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: #64748b;
+  }
+  .air-form-body {
+    display: grid;
+    gap: 14px;
+    padding: 18px;
+  }
+  .air-form-summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .air-form-summary-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    background: #f8fafc;
+    padding: 12px 14px;
+  }
+  .air-form-summary-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 800;
+    color: #64748b;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+  }
+  .air-form-summary-value {
+    display: block;
+    margin-top: 6px;
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
+  }
+  .air-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .air-form-field {
+    display: grid;
+    gap: 6px;
+  }
+  .air-form-field.span-2 {
+    grid-column: 1 / -1;
+  }
+  .air-form-field label {
+    font-size: 11px;
+    font-weight: 800;
+    color: #334155;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+  }
+  .air-form-input,
+  .air-form-textarea,
+  .air-form-select {
+    width: 100%;
+    border: 1px solid #d7deea;
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 13px;
+    color: #0f172a;
+    background: #fff;
+  }
+  .air-form-textarea {
+    min-height: 92px;
+    resize: vertical;
+  }
+  .air-form-collapse {
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    background: #fff;
+    overflow: hidden;
+  }
+  .air-form-collapse > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 14px 16px;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+    font-size: 13px;
+    font-weight: 900;
+    color: #0f172a;
+  }
+  .air-form-collapse > summary::-webkit-details-marker {
+    display: none;
+  }
+  .air-form-collapse > summary::after {
+    content: "+";
+    font-size: 18px;
+    line-height: 1;
+    color: #64748b;
+  }
+  .air-form-collapse[open] > summary {
+    border-bottom: 1px solid #e5e7eb;
+    background: #fbfdff;
+  }
+  .air-form-collapse[open] > summary::after {
+    content: "–";
+  }
+  .air-form-collapse-body {
+    display: grid;
+    gap: 12px;
+    padding: 16px;
+  }
+  .air-form-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 0 18px 18px;
+  }
+  @media (max-width: 760px) {
+    .air-form-summary,
+    .air-form-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
 
-      <div style="display:flex;gap:12px;align-items:flex-start;">
-        <div style="
-            min-width:70px;
-            padding:10px;
-            border-radius:14px;
-            background:#e0f2fe;
-            text-align:center;">
-          <div style="font-size:11px;color:#0369a1;">Código</div>
-          <div style="font-weight:700;font-size:16px;">
-            {{ sede.codigo }}
-          </div>
-        </div>
-
-        <div>
-          <h4 style="margin:0 0 4px 0;">{{ sede.nombre }}</h4>
-          <div style="font-size:13px;color:#64748b;">
-            {{ sede.ciudad }} · {{ sede.departamento }}
-          </div>
-          <div style="font-size:12px;color:#94a3b8;margin-top:4px;">
-            Dirección: {{ sede.direccion or "s/d" }}
-          </div>
-        </div>
+<section class="air-form-page">
+  <div class="air-form-card">
+    <div class="air-form-head">
+      <div>
+        <h1 class="air-form-title">{{ 'Agregar equipo de aire' if not aire else 'Editar equipo de aire' }}</h1>
+        <p class="air-form-sub">Primero se cargan los datos operativos. Los datos secundarios quedan plegados para no recargar la pantalla.</p>
       </div>
-
-      <div style="margin-top:16px;">
-        <a href="{{ url_for('sede_aires', codigo=sede.codigo) }}"
-           class="btn xs outline-slate">
-          ⬅ Volver a aire acondicionado
-        </a>
-      </div>
+      <a class="btn outline-slate" href="{{ _back_url }}">Volver al modulo</a>
     </div>
-  </div>
 
-  <!-- COLUMNA DERECHA: formulario -->
-  <div class="right-panel">
-
-    <h3 style="margin-top:0;margin-bottom:12px;">
-      {{ 'Nuevo equipo de aire' if not aire else 'Editar equipo de aire' }}
-    </h3>
-
-    <form method="post" style="max-width:520px;display:flex;flex-direction:column;gap:12px;">
-
-      <div>
-        <label>Depósito / local</label>
-        <select name="codigo_local"
-                style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;">
-          <option value="">-- Sin depósito específico --</option>
-          {% set local_sel = ((aire.codigo_local if aire and aire.codigo_local is defined else '') or '')|upper %}
-          {% for loc in (locales_opts or []) %}
-            {% set c = (loc.codigo_local or '')|upper %}
-            <option value="{{ c }}" {% if c == local_sel %}selected{% endif %}>
-              {{ c }}{% if loc.descripcion %} · {{ loc.descripcion }}{% endif %}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <div>
-        <label>Ambiente</label>
-        <input type="text" name="ambiente" required
-               value="{{ aire.ambiente if aire else '' }}"
-               style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;">
-      </div>
-
-      <div style="display:flex;gap:12px;flex-wrap:wrap;">
-        <div style="flex:1;min-width:160px;">
-          <label>Marca</label>
-          <input type="text" name="marca"
-                 value="{{ aire.marca if aire else '' }}"
-                 style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;">
-        </div>
-        <div style="flex:1;min-width:140px;">
-          <label>Gas</label>
-          <input type="text" name="gas"
-                 placeholder="Ej: R410"
-                 value="{{ aire.gas if aire else '' }}"
-                 style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;">
-        </div>
-        <div style="flex:1;min-width:140px;">
-          <label>Frigorías</label>
-          <input type="text" name="frigorias"
-                 value="{{ aire.frigorias if aire else '' }}"
-                 style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;">
-        </div>
-      </div>
-
-      <div>
-        <label>Estado</label>
-        <select name="estado"
-                style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;">
-          {% set est = (aire.estado if aire else '') or '' %}
-          <option value="" {{ 'selected' if not est }}>--</option>
-          <option value="operativo" {{ 'selected' if est=='operativo' }}>Operativo</option>
-          <option value="pendiente instalación" {{ 'selected' if est=='pendiente instalación' }}>Pendiente instalación</option>
-          <option value="no va a ir" {{ 'selected' if est=='no va a ir' }}>No va a ir aire</option>
-          <option value="fuera de servicio" {{ 'selected' if est=='fuera de servicio' }}>Fuera de servicio</option>
-        </select>
-      </div>
-
-      <div style="display:flex;gap:12px;flex-wrap:wrap;">
-        <div style="flex:1;min-width:180px;">
-          <label>Última limpieza</label>
-          <input type="date" name="fecha_ultima_limpieza"
-                 value="{{ aire.fecha_ultima_limpieza if aire and aire.fecha_ultima_limpieza else '' }}"
-                 style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;">
-        </div>
-        <div style="flex:1;min-width:180px;">
-          <label>Último service</label>
-          <input type="date" name="fecha_ultimo_service"
-                 value="{{ aire.fecha_ultimo_service if aire and aire.fecha_ultimo_service else '' }}"
-                 style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;">
-        </div>
-        <div style="flex:1;min-width:180px;">
-          <label>Frecuencia (meses)</label>
-          <input type="number" min="0" name="frecuencia_meses"
-                 value="{{ aire.frecuencia_meses if aire and aire.frecuencia_meses else '' }}"
-                 style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;">
-        </div>
-      </div>
-
-      <details style="border:1px solid #e5e7eb;border-radius:12px;padding:10px 12px;background:#ffffff;">
-        <summary style="cursor:pointer;font-weight:600;color:#334155;">Datos opcionales</summary>
-        <div style="margin-top:10px;display:flex;gap:12px;flex-wrap:wrap;">
-          <div style="flex:1;min-width:180px;">
-            <label>Modelo</label>
-            <input type="text" name="modelo"
-                   value="{{ aire.modelo if aire else '' }}"
-                   style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;">
+    <form method="post">
+      <input type="hidden" name="return_piso" value="{{ _return_piso }}">
+      <input type="hidden" name="return_local" value="{{ return_local or '' }}">
+      <div class="air-form-body">
+        <div class="air-form-summary">
+          <div class="air-form-summary-card">
+            <span class="air-form-summary-label">Sede</span>
+            <span class="air-form-summary-value">{{ sede.codigo }} - {{ sede.nombre }}</span>
           </div>
-          <div style="flex:1;min-width:180px;">
+          <div class="air-form-summary-card">
+            <span class="air-form-summary-label">Ultimo mantenimiento visible</span>
+            <span class="air-form-summary-value">{{ _ultimo_mantenimiento or 'Sin registrar' }}</span>
+          </div>
+        </div>
+
+        <div class="air-form-grid">
+          <div class="air-form-field">
+            <label>Deposito / local</label>
+            <select class="air-form-select" name="codigo_local">
+              <option value="">Sin deposito especifico</option>
+              {% for loc in (locales_opts or []) %}
+                {% set c = (loc.codigo_local or '')|upper %}
+                <option value="{{ c }}" {% if c == _local_sel %}selected{% endif %}>{{ c }}{% if loc.descripcion %} - {{ loc.descripcion }}{% endif %}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="air-form-field">
+            <label>Ambiente</label>
+            <input class="air-form-input" type="text" name="ambiente" required value="{{ aire.ambiente if aire else '' }}">
+          </div>
+          <div class="air-form-field">
+            <label>Marca</label>
+            <input class="air-form-input" type="text" name="marca" value="{{ aire.marca if aire else '' }}">
+          </div>
+          <div class="air-form-field">
+            <label>Gas</label>
+            <input class="air-form-input" type="text" name="gas" value="{{ aire.gas if aire else '' }}" placeholder="Ej. R410">
+          </div>
+          <div class="air-form-field">
+            <label>Frigorias</label>
+            <input class="air-form-input" type="text" name="frigorias" value="{{ aire.frigorias if aire else '' }}">
+          </div>
+          <div class="air-form-field">
             <label>Tipo</label>
-            <input type="text" name="tipo"
-                   placeholder="Split, ventana, central..."
-                   value="{{ aire.tipo if aire else '' }}"
-                   style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;">
+            <input class="air-form-input" type="text" name="tipo" value="{{ aire.tipo if aire else '' }}" placeholder="Split, inverter, ventana, cassette">
           </div>
-          <div style="flex:1;min-width:180px;">
-            <label>Fecha instalación</label>
-            <input type="date" name="fecha_instalacion"
-                   value="{{ aire.fecha_instalacion if aire and aire.fecha_instalacion else '' }}"
-                   style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;">
+          <div class="air-form-field span-2">
+            <label>Observaciones</label>
+            <textarea class="air-form-textarea" name="observaciones">{{ aire.observaciones if aire else '' }}</textarea>
           </div>
         </div>
-      </details>
 
-      <div>
-        <label>Observaciones</label>
-        <textarea name="observaciones" rows="3"
-                  style="width:100%;padding:6px 8px;border-radius:8px;border:1px solid #cbd5e1;resize:vertical;">{{ aire.observaciones if aire else '' }}</textarea>
+        <details class="air-form-collapse" id="air-datos-opcionales">
+          <summary>Datos opcionales</summary>
+          <div class="air-form-collapse-body">
+            <div class="air-form-grid">
+              <div class="air-form-field">
+                <label>Estado</label>
+                {% set est = (aire.estado if aire else '') or '' %}
+                <select class="air-form-select" name="estado">
+                  <option value="" {{ 'selected' if not est }}>Sin estado especial</option>
+                  <option value="operativo" {{ 'selected' if est == 'operativo' }}>Operativo</option>
+                  <option value="en reparacion" {{ 'selected' if est == 'en reparacion' }}>En reparacion</option>
+                  <option value="fuera de servicio" {{ 'selected' if est == 'fuera de servicio' }}>Fuera de servicio</option>
+                  <option value="pendiente instalacion" {{ 'selected' if est == 'pendiente instalacion' }}>Pendiente instalacion</option>
+                  <option value="no va a ir" {{ 'selected' if est == 'no va a ir' }}>No va a ir</option>
+                </select>
+              </div>
+              <div class="air-form-field">
+                <label>Modelo</label>
+                <input class="air-form-input" type="text" name="modelo" value="{{ aire.modelo if aire else '' }}">
+              </div>
+              <div class="air-form-field">
+                <label>Fecha de instalacion</label>
+                <input class="air-form-input" type="date" name="fecha_instalacion" value="{{ aire.fecha_instalacion if aire and aire.fecha_instalacion else '' }}">
+              </div>
+              <div class="air-form-field">
+                <label>Ultima limpieza</label>
+                <input class="air-form-input" type="date" name="fecha_ultima_limpieza" value="{{ _fecha_limpieza }}">
+              </div>
+              <div class="air-form-field">
+                <label>Ultimo service</label>
+                <input class="air-form-input" type="date" name="fecha_ultimo_service" value="{{ _fecha_service }}">
+              </div>
+              <div class="air-form-field">
+                <label>Frecuencia (meses)</label>
+                <input class="air-form-input" type="number" min="0" name="frecuencia_meses" value="{{ aire.frecuencia_meses if aire and aire.frecuencia_meses else '' }}">
+              </div>
+            </div>
+          </div>
+        </details>
       </div>
 
-      <div style="display:flex;gap:10px;margin-top:8px;">
-        <button type="submit" class="btn solid-blue">
-          💾 Guardar
-        </button>
-        <a href="{{ url_for('sede_aires', codigo=sede.codigo) }}"
-           class="btn ghost">
-          Cancelar
-        </a>
+      <div class="air-form-actions">
+        <button type="submit" class="btn primary">Guardar</button>
+        <a class="btn outline-slate" href="{{ _back_url }}">Cancelar</a>
       </div>
-
     </form>
-
   </div>
-
 </section>
+
+<script>
+  (function () {
+    var hash = String(window.location.hash || '').toLowerCase();
+    if (hash !== '#air-datos-opcionales' && hash !== '#mantenimiento') return;
+    var box = document.getElementById('air-datos-opcionales');
+    if (!box) return;
+    box.open = true;
+  })();
+</script>
 
 {% endblock %}

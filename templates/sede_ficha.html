@@ -5979,11 +5979,12 @@
     border-color: rgba(148, 163, 184, 0.28);
   }
   .mob-plan-piece[class*="kind-aire_"] .mob-plan-piece-body {
-    width: 34px;
-    height: 14px;
+    width: 38px;
+    height: 16px;
     border-radius: 999px 999px 6px 6px;
-    background: #f8fafc;
-    border-color: rgba(148, 163, 184, 0.26);
+    background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+    border-color: rgba(100, 116, 139, 0.28);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.88), 0 4px 10px rgba(100, 116, 139, 0.12);
   }
   .mob-plan-piece[class*="kind-aire_"] .mob-plan-piece-body::before {
     content: "";
@@ -5991,9 +5992,9 @@
     left: 5px;
     right: 5px;
     top: 4px;
-    height: 2px;
+    height: 3px;
     border-radius: 999px;
-    background: rgba(148, 163, 184, 0.6);
+    background: rgba(148, 163, 184, 0.64);
   }
   .mob-plan-piece[class*="kind-aire_"] .mob-plan-piece-body::after {
     content: "";
@@ -11338,7 +11339,7 @@
           </div>
           {% endif %}
           {% if tab == 'aires' %}
-          <div class="mob-plan-layer" data-mob-plan-layer data-mob-plan-module="aires" data-sede="{{ sede.codigo }}" data-piso="{{ piso }}" data-local="{{ local or '' }}" data-api-url="{{ url_for('aires_plano_api', sede_codigo=sede.codigo, piso=piso) }}">
+          <div class="mob-plan-layer" data-mob-plan-layer data-mob-plan-module="aires" data-sede="{{ sede.codigo }}" data-piso="{{ piso }}" data-local="{{ local or '' }}" data-api-url="{{ url_for('aires_plano_api', sede_codigo=sede.codigo, piso=piso) }}" data-selected-point-id="{{ aires_selected.plan_item_id if aires_selected else '' }}">
             <div class="mob-plan-canvas" data-mob-plan-canvas></div>
           </div>
           {% endif %}
@@ -11747,7 +11748,7 @@
 
 
 
-<div class="panel-body{% if view != 'resumen' and tab != 'luminarias' %} scrollable{% endif %}">
+<div class="panel-body{% if view != 'resumen' and tab not in ('luminarias', 'aires') %} scrollable{% endif %}">
 
 
 
@@ -13185,232 +13186,212 @@
 
         {% elif tab == 'aires' %}
 
-
-
         <div class="panel-section-head">
-          <div class="panel-section-title">Aires acondicionados</div>
-          <a class="btn primary" href="{{ url_for('sede_aires', codigo=sede.codigo) }}">+ Agregar / Editar</a>
+          <div>
+            <div class="panel-section-title">Aires acondicionados</div>
+            <div class="panel-section-sub">Vista operativa del modulo. La tabla se simplifica y la ficha tecnica aparece debajo del equipo seleccionado.</div>
+          </div>
+          <div class="lum-op-card-tools">
+            <a class="btn outline-slate" href="{{ url_for('sede_aires', codigo=sede.codigo) }}">Abrir modulo</a>
+            <a class="btn primary" href="{{ url_for('aire_nuevo', codigo=sede.codigo, return_piso=piso, return_local=local if local else None) }}">Agregar equipo</a>
+          </div>
         </div>
 
+        <div class="panel-kpi-row">
+          <div class="panel-kpi-card">
+            <div class="k">Total</div>
+            <div class="v">{{ aires_kpi.total or 0 }}</div>
+          </div>
+          <div class="panel-kpi-card">
+            <div class="k">Operativos</div>
+            <div class="v">{{ aires_kpi.operativos or 0 }}</div>
+          </div>
+          <div class="panel-kpi-card">
+            <div class="k">Fuera de servicio</div>
+            <div class="v">{{ aires_kpi.fuera_servicio or 0 }}</div>
+          </div>
+        </div>
 
-
-
-
-
-
-          <div class="panel-kpi-row">
-            <div class="panel-kpi-card">
-              <div class="k">Total</div>
-              <div class="v">{{ aires_kpi.total or 0 }}</div>
-            </div>
-            <div class="panel-kpi-card">
-              <div class="k">Operativos</div>
-              <div class="v">{{ aires_kpi.operativos or 0 }}</div>
-            </div>
-            <div class="panel-kpi-card">
-              <div class="k">Fuera de servicio</div>
-              <div class="v">{{ aires_kpi.fuera_servicio or 0 }}</div>
-            </div>
-            <div class="panel-kpi-card">
-              <div class="k">Operativos por fuero</div>
-              <div class="v" style="font-size:15px;line-height:1.25;">
-                <span style="display:inline-flex;gap:6px;align-items:center;">
-                  <span style="display:inline-block;width:8px;height:8px;border-radius:999px;background:#6666CC;"></span>
-                  Penal: {{ aires_fuero_kpi.operativos_penal or 0 }}
-                </span>
-                <span style="display:inline-flex;gap:6px;align-items:center;margin-left:10px;">
-                  <span style="display:inline-block;width:8px;height:8px;border-radius:999px;background:#F14B94;"></span>
-                  JS: {{ aires_fuero_kpi.operativos_social or 0 }}
-                </span>
-                <span style="display:inline-flex;gap:6px;align-items:center;margin-left:10px;">
-                  <span style="display:inline-block;width:8px;height:8px;border-radius:999px;background:#65BFE4;"></span>
-                  Menores: {{ aires_fuero_kpi.operativos_menores or 0 }}
-                </span>
-                <span style="display:inline-flex;gap:6px;align-items:center;margin-left:10px;">
-                  <span style="display:inline-block;width:8px;height:8px;border-radius:999px;background:#F58A5E;"></span>
-                  Adm: {{ aires_fuero_kpi.operativos_administracion or 0 }}
-                </span>
+        <div class="lum-op-shell lum-op-shell--stack">
+          <div class="lum-op-card lum-op-full">
+            <div class="lum-op-card-head">
+              <div>
+                <h3 class="lum-op-card-title">Tabla principal</h3>
+                <p class="lum-op-card-sub">Se muestran solo los datos operativos para leer rapido cada equipo y abrir su ficha.</p>
               </div>
+              {% if local %}
+              <span class="lum-op-current-badge">Plano resaltado {{ local }}</span>
+              {% endif %}
             </div>
+            {% if aires_rows and aires_rows|length > 0 %}
+            <table class="lum-op-table">
+              <thead>
+                <tr>
+                  <th>Ambiente</th>
+                  <th>Deposito</th>
+                  <th>Marca</th>
+                  <th>Gas</th>
+                  <th>Frigorias</th>
+                  <th>Ultimo mantenimiento</th>
+                  <th>Observacion</th>
+                  <th>Accion</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for a in aires_rows %}
+                {% set dep = a.deposito_codigo or '' %}
+                <tr class="{% if aires_selected and aires_selected.id == a.id %}is-selected{% endif %}">
+                  <td><a class="lum-op-action-link" href="{{ a.detail_url }}#air-ficha"><strong>{{ a.ambiente_desc or a.ambiente or '-' }}</strong></a></td>
+                  <td>
+                    {% if dep and dep not in ['-'] and '/' not in dep and '+' not in dep %}
+                    {{ render_local_badge(sede.codigo, dep, dep)|safe }}
+                    {% else %}
+                    {{ dep or '-' }}
+                    {% endif %}
+                  </td>
+                  <td>{{ a.marca or '-' }}</td>
+                  <td>{{ a.gas or '-' }}</td>
+                  <td>{{ a.frigorias or '-' }}</td>
+                  <td>{{ a.ultimo_mantenimiento or '-' }}</td>
+                  <td style="white-space:normal;">
+                    {{ a.observaciones or '-' }}
+                    {% if a.estado_especial %}
+                    <div style="margin-top:6px;">
+                      <span class="lum-op-status {{ a.estado_tone }}">{{ a.estado_visible }}</span>
+                    </div>
+                    {% endif %}
+                  </td>
+                  <td><a class="lum-op-action-link" href="{{ a.detail_url }}#air-ficha">Ver</a></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% else %}
+            <div class="lum-op-empty">No hay equipos cargados para esta sede.</div>
+            {% endif %}
           </div>
 
-
-
-
-
-
-
-        <div style="overflow:auto;border:1px solid #e5e7eb;border-radius:14px;background:#fff;">
-
-
-
-          <table style="width:100%;border-collapse:collapse;font-size:12px;">
-
-
-
-            <thead style="background:#f3f4f6;">
-
-
-
-              <tr style="text-align:left;color:#64748b;">
-
-
-
-                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:190px;">Ambiente</th>
-
-                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:90px;">DepÃ³sito</th>
-
-
-
-                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:130px;">Marca</th>
-
-                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:90px;">Gas</th>
-
-                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:90px;">FrigorÃ­as</th>
-
-
-
-                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:150px;">Estado</th>
-
-
-
-                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:96px;">Ãšltima limpieza</th>
-
-
-
-                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:96px;">Ãšltimo service</th>
-
-                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:96px;">Frec.</th>
-
-                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:240px;">Observaciones</th>
-
-                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:110px;text-align:right;">AcciÃ³n</th>
-
-
-
-
-
-
-
-              </tr>
-
-
-
-            </thead>
-
-
-
-            <tbody>
-
-
-
-              {% for a in aires_rows %}
-
-
-
-              {% set _estado = (a.estado or '')|lower %}
-
-
-
-              {% set _cls = 'ok' if _estado in ['operativo','ok'] else ('warn' if 'pend' in _estado else ('bad' if 'fuera' in _estado else 'neutral')) %}
-
-
-
-              <tr>
-
-
-
-                <td style="padding:8px;border-bottom:1px solid #f1f5f9;font-weight:600;">{{ a.ambiente_desc or a.ambiente_codigo or '-' }}</td>
-
-                <td style="padding:8px;border-bottom:1px solid #f1f5f9;">{% if a.deposito_codigo %}{{ render_local_badge(sede.codigo, a.deposito_codigo, a.deposito_codigo)|safe }}{% else %}-{% endif %}</td>
-
-
-
-                <td style="padding:8px;border-bottom:1px solid #f1f5f9;">{{ a.marca or '-' }}</td>
-
-                <td style="padding:8px;border-bottom:1px solid #f1f5f9;">{{ a.gas or '-' }}</td>
-
-                <td style="padding:8px;border-bottom:1px solid #f1f5f9;">{{ a.frigorias or '-' }}</td>
-
-
-
-                <td style="padding:8px;border-bottom:1px solid #f1f5f9;">
-
-
-
-                  <span class="status-pill {{ _cls }}">{{ a.estado or '-' }}</span>
-
-
-
-                </td>
-
-
-
-                <td style="padding:8px;border-bottom:1px solid #f1f5f9;">{{ a.fecha_limpieza or '-' }}</td>
-
-
-
-                <td style="padding:8px;border-bottom:1px solid #f1f5f9;">{{ a.fecha_ultimo_service or '-' }}</td>
-
-                <td style="padding:8px;border-bottom:1px solid #f1f5f9;">{{ a.frecuencia_meses or '-' }}</td>
-
-                <td style="padding:8px;border-bottom:1px solid #f1f5f9;white-space:normal;">{{ a.observaciones or '' }}</td>
-
-                <td style="padding:8px;border-bottom:1px solid #f1f5f9;text-align:right;white-space:nowrap;">
-                  <a class="btn xs outline-slate" href="{{ url_for('aire_editar', codigo=sede.codigo, aid=a.id) }}">Editar</a>
-                  <form method="post"
-                        action="{{ url_for('aire_borrar', codigo=sede.codigo, aid=a.id) }}"
-                        style="display:inline;"
-                        onsubmit="return confirm('Â¿Eliminar este equipo de aire?');">
-                    <button class="btn xs danger" type="submit">Eliminar</button>
-                  </form>
-                </td>
-
-
-
-
-
-
-
-              </tr>
-
-
-
-              {% else %}
-
-
-
-              <tr>
-
-
-
-                <td colspan="11" style="padding:12px;color:#64748b;">No hay equipos cargados para esta sede.
-
-
-
-                </td>
-
-
-
-              </tr>
-
-
-
-              {% endfor %}
-
-
-
-            </tbody>
-
-
-
-          </table>
-
-
-
+          {% if aires_selected %}
+          <div class="lum-op-card lum-op-full" id="air-ficha">
+            <div class="lum-op-card-head">
+              <div>
+                <h3 class="lum-op-card-title">Ficha del equipo</h3>
+                <p class="lum-op-card-sub">La ficha concentra la informacion principal y deja la trazabilidad abajo.</p>
+              </div>
+              <span class="lum-op-status {{ aires_selected.estado_tone }}">{{ aires_selected.estado_visible }}</span>
+            </div>
+
+            <div class="lum-op-detail-list">
+              <div class="lum-op-detail-line">
+                <span class="lum-op-detail-label">Ambiente</span>
+                <span class="lum-op-detail-text">{{ aires_selected.ambiente_desc or aires_selected.ambiente or '-' }}</span>
+              </div>
+              <div class="lum-op-detail-line">
+                <span class="lum-op-detail-label">Deposito</span>
+                <span class="lum-op-detail-text">
+                  {% set dep = aires_selected.deposito_codigo or '' %}
+                  {% if dep and dep not in ['-'] and '/' not in dep and '+' not in dep %}
+                  {{ render_local_badge(sede.codigo, dep, dep)|safe }}
+                  {% else %}
+                  {{ dep or '-' }}
+                  {% endif %}
+                </span>
+              </div>
+              <div class="lum-op-detail-line">
+                <span class="lum-op-detail-label">Marca</span>
+                <span class="lum-op-detail-text">{{ aires_selected.marca or '-' }}</span>
+              </div>
+              <div class="lum-op-detail-line">
+                <span class="lum-op-detail-label">Gas</span>
+                <span class="lum-op-detail-text">{{ aires_selected.gas or '-' }}</span>
+              </div>
+              <div class="lum-op-detail-line">
+                <span class="lum-op-detail-label">Frigorias</span>
+                <span class="lum-op-detail-text">{{ aires_selected.frigorias or '-' }}</span>
+              </div>
+              <div class="lum-op-detail-line">
+                <span class="lum-op-detail-label">Tipo</span>
+                <span class="lum-op-detail-text">{{ aires_selected.tipo or '-' }}</span>
+              </div>
+              <div class="lum-op-detail-line">
+                <span class="lum-op-detail-label">Ultimo mantenimiento</span>
+                <span class="lum-op-detail-text">{{ aires_selected.ultimo_mantenimiento or '-' }}</span>
+              </div>
+              <div class="lum-op-detail-line">
+                <span class="lum-op-detail-label">Observaciones</span>
+                <span class="lum-op-detail-text">{{ aires_selected.observaciones or '-' }}</span>
+              </div>
+            </div>
+
+            <div class="lum-op-anchor-actions">
+              <a class="btn outline-slate" href="{{ aires_selected.edit_url }}">Editar</a>
+              <a class="btn primary" href="{{ aires_selected.edit_url }}#air-datos-opcionales">Registrar mantenimiento</a>
+              <a class="btn outline-slate" href="#air-historial">Ver historial</a>
+              <a class="btn danger" href="#air-baja">Eliminar</a>
+            </div>
+
+            <div class="lum-op-section" id="air-historial">
+              <h4 class="lum-op-section-title">Historial</h4>
+              <p class="lum-op-section-sub">Se muestran los hitos actualmente disponibles en el modulo: instalacion, limpieza, service y cualquier estado especial vigente.</p>
+              <table class="lum-op-table">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th>Movimiento</th>
+                    <th>Detalle</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% set ns = namespace(rows=0) %}
+                  {% for item in aires_selected.history_rows %}
+                    {% if item.fecha or item.detalle %}
+                    {% set ns.rows = ns.rows + 1 %}
+                    <tr>
+                      <td>{{ item.fecha or '-' }}</td>
+                      <td>{{ item.label }}</td>
+                      <td>{{ item.detalle or '-' }}</td>
+                    </tr>
+                    {% endif %}
+                  {% endfor %}
+                  {% if aires_selected.estado_especial %}
+                  {% set ns.rows = ns.rows + 1 %}
+                  <tr>
+                    <td>-</td>
+                    <td>Estado actual</td>
+                    <td>{{ aires_selected.estado_visible }}</td>
+                  </tr>
+                  {% endif %}
+                  {% if ns.rows == 0 %}
+                  <tr>
+                    <td colspan="3">Todavia no hay hitos tecnicos cargados para este equipo.</td>
+                  </tr>
+                  {% endif %}
+                </tbody>
+              </table>
+            </div>
+
+            <div class="lum-op-section" id="air-baja">
+              <h4 class="lum-op-section-title">Eliminar</h4>
+              <p class="lum-op-section-sub">Usa esta accion solo si el registro no debe seguir activo en la sede.</p>
+              <form method="post" action="{{ aires_selected.delete_url }}" onsubmit="return confirm('¿Eliminar este equipo de aire?');">
+                <div class="lum-op-actions">
+                  <button type="submit" class="btn danger">Eliminar equipo</button>
+                </div>
+              </form>
+            </div>
+          </div>
+          {% else %}
+          <div class="lum-op-card lum-op-full" id="air-ficha">
+            <div class="lum-op-card-head">
+              <div>
+                <h3 class="lum-op-card-title">Ficha del equipo</h3>
+                <p class="lum-op-card-sub">Selecciona un equipo desde la tabla o desde el plano para ver aqui su informacion tecnica principal.</p>
+              </div>
+            </div>
+            <p class="lum-op-note">La ficha queda debajo de la tabla, sin panel lateral, para operar rapido sobre el equipo seleccionado.</p>
+          </div>
+          {% endif %}
         </div>
-
-
 
         {% endif %}
 
@@ -15184,7 +15165,7 @@
       button.addEventListener("click", function (ev) {
         if (consumeSuppressedClick(item.id)) return;
         ev.stopPropagation();
-        if (moduleKey === "luminarias" && item.detailUrl) {
+        if ((moduleKey === "luminarias" || moduleKey === "aires") && item.detailUrl) {
           window.location.href = item.detailUrl;
           return;
         }

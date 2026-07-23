@@ -6635,6 +6635,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
     def aire_nuevo(codigo):
         con, cur, sede = obtener_sede(codigo)
         locales_opts = _locales_sede(cur, codigo)
+        return_piso = (request.values.get("return_piso") or "PB").strip().upper() or "PB"
+        return_local = _norm_local_code(request.values.get("return_local", ""))
 
         if request.method == "POST":
             codigo_local = _norm_local_code(request.form.get("codigo_local", ""))
@@ -6664,17 +6666,35 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 fecha_ultimo_service, frecuencia_meses, observaciones
             ))
             con.commit()
-            return redirect(url_for("sede_aires", codigo=codigo))
+            new_id = cur.lastrowid
+            return redirect(url_for(
+                "sede_ficha",
+                codigo=codigo,
+                piso=return_piso,
+                local=(codigo_local or return_local or None),
+                tab="aires",
+                view="operativo",
+                aid=new_id,
+            ))
 
             # si algo falla, vuelve a mostrar el formulario
 
-        return render_template("aire_form.html", sede=sede, aire=None, locales_opts=locales_opts)
+        return render_template(
+            "aire_form.html",
+            sede=sede,
+            aire=None,
+            locales_opts=locales_opts,
+            return_piso=return_piso,
+            return_local=return_local,
+        )
 
 
     @app.route("/sedes/<codigo>/aires/<int:aid>/editar", methods=["GET", "POST"])
     def aire_editar(codigo, aid):
         con, cur, sede = obtener_sede(codigo)
         locales_opts = _locales_sede(cur, codigo)
+        return_piso = (request.values.get("return_piso") or "PB").strip().upper() or "PB"
+        return_local = _norm_local_code(request.values.get("return_local", ""))
 
         cur.execute("""
             SELECT *
@@ -6723,21 +6743,50 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 aid, codigo
             ))
             con.commit()
-            return redirect(url_for("sede_aires", codigo=codigo))
+            return redirect(url_for(
+                "sede_ficha",
+                codigo=codigo,
+                piso=return_piso,
+                local=(codigo_local or return_local or None),
+                tab="aires",
+                view="operativo",
+                aid=aid,
+            ))
 
-        return render_template("aire_form.html", sede=sede, aire=aire, locales_opts=locales_opts)
+        return render_template(
+            "aire_form.html",
+            sede=sede,
+            aire=aire,
+            locales_opts=locales_opts,
+            return_piso=return_piso,
+            return_local=return_local,
+        )
 
 
     @app.route("/sedes/<codigo>/aires/<int:aid>/borrar", methods=["POST"])
     def aire_borrar(codigo, aid):
+        return_piso = (request.values.get("return_piso") or "PB").strip().upper() or "PB"
+        return_local = _norm_local_code(request.values.get("return_local", ""))
         con = get_db()
         cur = con.cursor()
+        row = cur.execute("""
+            SELECT COALESCE(codigo_local,'') AS codigo_local
+            FROM aires_mpd
+            WHERE id = ? AND sede_codigo = ?
+        """, (aid, codigo)).fetchone()
         cur.execute("""
             DELETE FROM aires_mpd
             WHERE id = ? AND sede_codigo = ?
         """, (aid, codigo))
         con.commit()
-        return redirect(url_for("sede_aires", codigo=codigo))
+        return redirect(url_for(
+            "sede_ficha",
+            codigo=codigo,
+            piso=return_piso,
+            local=(_norm_local_code(row["codigo_local"]) if row and row["codigo_local"] else (return_local or None)),
+            tab="aires",
+            view="operativo",
+        ))
 
     def rebuild_eventos_sst():
         # Placeholder para mantener compatibilidad si se llama desde SST.

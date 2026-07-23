@@ -5906,6 +5906,7 @@ def sede_ficha(codigo):
     matafuegos_kpi = {"total": 0, "vencen_pronto": 0}
 
     aires_rows = []
+    aires_selected = None
     aires_kpi = {"total": 0, "operativos": 0, "fuera_servicio": 0}
     aires_fuero_kpi = {
         "operativos_penal": 0,
@@ -6292,8 +6293,11 @@ def sede_ficha(codigo):
                 COALESCE(NULLIF(TRIM(a.ambiente),''), '-') AS ambiente,
                 a.marca,
                 a.gas,
+                a.modelo,
+                a.tipo,
                 a.frigorias,
                 a.estado,
+                a.fecha_instalacion,
                 a.fecha_ultima_limpieza AS fecha_limpieza,
                 a.fecha_ultimo_service,
                 a.frecuencia_meses,
@@ -6349,7 +6353,76 @@ def sede_ficha(codigo):
                     item["deposito_codigo"] = "/".join(dep_codes[:2]) + ("+" if len(dep_codes) > 2 else "")
                 else:
                     item["deposito_codigo"] = "-"
+            fecha_limpieza = str(item.get("fecha_limpieza") or "").strip()
+            fecha_service = str(item.get("fecha_ultimo_service") or "").strip()
+            fecha_instalacion = str(item.get("fecha_instalacion") or "").strip()
+            if fecha_limpieza and (not fecha_service or fecha_limpieza >= fecha_service):
+                item["ultimo_mantenimiento"] = fecha_limpieza
+                item["ultimo_mantenimiento_tipo"] = "Limpieza"
+            elif fecha_service:
+                item["ultimo_mantenimiento"] = fecha_service
+                item["ultimo_mantenimiento_tipo"] = "Service"
+            else:
+                item["ultimo_mantenimiento"] = ""
+                item["ultimo_mantenimiento_tipo"] = ""
+            estado_norm = str(item.get("estado") or "").strip().lower()
+            if estado_norm in ("", "operativo", "ok", "en servicio"):
+                item["estado_visible"] = "Operativo"
+                item["estado_tone"] = "success"
+                item["estado_especial"] = False
+            elif "repar" in estado_norm or "manten" in estado_norm or "revision" in estado_norm:
+                item["estado_visible"] = item.get("estado") or "En reparacion"
+                item["estado_tone"] = "muted"
+                item["estado_especial"] = True
+            elif "fuera" in estado_norm or "baja" in estado_norm or "no funciona" in estado_norm:
+                item["estado_visible"] = item.get("estado") or "Fuera de servicio"
+                item["estado_tone"] = "danger"
+                item["estado_especial"] = True
+            else:
+                item["estado_visible"] = item.get("estado") or "Estado especial"
+                item["estado_tone"] = "muted"
+                item["estado_especial"] = bool(item.get("estado"))
+            detail_local = dep_direct
+            item["detail_url"] = url_for(
+                "sede_ficha",
+                codigo=codigo,
+                piso=piso,
+                local=detail_local if detail_local else None,
+                tab="aires",
+                view="operativo",
+                aid=int(item["id"]),
+            )
+            item["edit_url"] = url_for(
+                "aire_editar",
+                codigo=codigo,
+                aid=int(item["id"]),
+                return_piso=piso,
+                return_local=detail_local if detail_local else "",
+            )
+            item["delete_url"] = url_for(
+                "aire_borrar",
+                codigo=codigo,
+                aid=int(item["id"]),
+                return_piso=piso,
+                return_local=detail_local if detail_local else "",
+            )
+            item["plan_item_id"] = f"air:{int(item['id'])}"
+            item["history_rows"] = [
+                {"label": "Instalacion", "fecha": fecha_instalacion, "detalle": str(item.get("tipo") or "").strip()},
+                {"label": "Limpieza", "fecha": fecha_limpieza, "detalle": ""},
+                {"label": "Service", "fecha": fecha_service, "detalle": ""},
+            ]
             aires_rows.append(item)
+
+        try:
+            selected_air_id = int((request.args.get("aid") or 0) or 0)
+        except Exception:
+            selected_air_id = 0
+        if selected_air_id:
+            for item in aires_rows:
+                if int(item.get("id") or 0) == selected_air_id:
+                    aires_selected = item
+                    break
 
         def _estado_norm(v):
             return str(v or "").strip().lower()
@@ -6634,6 +6707,7 @@ def sede_ficha(codigo):
         matafuegos_rows=matafuegos_rows,
         matafuegos_kpi=matafuegos_kpi,
         aires_rows=aires_rows,
+        aires_selected=aires_selected,
         aires_kpi=aires_kpi,
         aires_fuero_kpi=aires_fuero_kpi,
         resumen_sedes_rows=resumen_sedes_rows,
@@ -13143,6 +13217,15 @@ def _aires_plan_seed_items(con, sede_codigo, piso):
             "local": local,
             "description": ambient,
             "note": note or str(row["observaciones"] or "").strip(),
+            "detail_url": url_for(
+                "sede_ficha",
+                codigo=sede_codigo,
+                piso=piso,
+                local=local if local else None,
+                tab="aires",
+                view="operativo",
+                aid=int(row["id"]),
+            ),
         })
     return items
 
