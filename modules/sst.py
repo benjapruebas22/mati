@@ -7292,6 +7292,290 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 item["context_url"] = _calendar_page_url(sede=sede_codigo) + "#sstCalendarContext"
 
         all_events = list(context_raw["events"]) + _sst_calendar_build_plan_events(plan_context, selected_year, context_raw["today"])
+        sedes_dashboard = list(plan_context.get("sedes_dashboard") or [])
+        if filters["sede"]:
+            sedes_scope = [item for item in sedes_dashboard if item["codigo"] == filters["sede"]]
+        else:
+            sedes_scope = list(sedes_dashboard)
+        hallazgos_scope = [
+            item for item in (plan_context.get("hallazgos") or [])
+            if not filters["sede"] or str(item.get("sede_codigo") or "").strip().upper() == filters["sede"]
+        ]
+        actions_scope = [
+            item for item in (plan_context.get("acciones") or [])
+            if not filters["sede"] or str(item.get("sede_codigo") or "").strip().upper() == filters["sede"]
+        ]
+        suggestions_scope = [
+            item for item in (plan_context.get("suggestions") or [])
+            if not filters["sede"] or str(item.get("sede_codigo") or "").strip().upper() == filters["sede"]
+        ]
+        event_scope = [
+            item for item in all_events
+            if not filters["sede"] or str(item.get("sede_codigo") or "").strip().upper() == filters["sede"]
+        ]
+
+        def _project_text_match(value, keywords):
+            text = str(value or "").strip().lower()
+            return any(keyword in text for keyword in keywords)
+
+        def _project_module_complete(project_key, module_row):
+            state_label = str(module_row.get("state_label") or "").strip().lower()
+            result_text = str(module_row.get("result") or "").strip().lower()
+            if project_key == "visitas":
+                return "sin visita" not in result_text and state_label not in {"pendiente", "sin datos"}
+            if project_key == "carteleria":
+                return state_label not in {"sin relevar", "sin datos"} and "sin base operativa" not in result_text
+            if project_key == "luces":
+                return state_label not in {"sin relevar", "sin datos"} and "sin base operativa" not in result_text
+            if project_key == "matafuegos":
+                return "sin equipos activos" not in result_text and state_label != "sin datos"
+            if project_key == "desinfeccion":
+                return "sin intervencion" not in result_text and state_label != "sin datos"
+            return False
+
+        def _project_responsable(project_actions, project_events, fallback):
+            buckets = {}
+            for action in project_actions:
+                for candidate in (
+                    action.get("responsable"),
+                    action.get("area_responsable"),
+                ):
+                    txt = str(candidate or "").strip()
+                    if not txt:
+                        continue
+                    buckets[txt] = buckets.get(txt, 0) + 1
+            for event in project_events:
+                txt = str(event.get("responsible") or "").strip()
+                if not txt:
+                    continue
+                buckets[txt] = buckets.get(txt, 0) + 1
+            if not buckets:
+                return fallback
+            return sorted(buckets.items(), key=lambda item: (-item[1], item[0]))[0][0]
+
+        project_catalog = [
+            {
+                "key": "carteleria",
+                "label": "Carteleria",
+                "icon": "🚪",
+                "module_names": {"Carteleria"},
+                "type_keys": {"carteleria"},
+                "timeline_type": "carteleria",
+                "keywords": ("carteleria",),
+                "fallback_responsible": "Intendencia",
+                "base_url": url_for("sst_carteleria_home"),
+            },
+            {
+                "key": "luces",
+                "label": "Luces de emergencia",
+                "icon": "💡",
+                "module_names": {"Luces de emergencia"},
+                "type_keys": {"luces"},
+                "timeline_type": "luces",
+                "keywords": ("luces", "emergencia"),
+                "fallback_responsible": "Intendencia",
+                "base_url": url_for("sst_luces_home"),
+            },
+            {
+                "key": "matafuegos",
+                "label": "Matafuegos",
+                "icon": "🧯",
+                "module_names": {"Matafuegos"},
+                "type_keys": {"matafuegos"},
+                "timeline_type": "matafuegos",
+                "keywords": ("matafuegos",),
+                "fallback_responsible": "Intendencia",
+                "base_url": url_for("matafuegos_home"),
+            },
+            {
+                "key": "desinfeccion",
+                "label": "Desinfeccion",
+                "icon": "🧼",
+                "module_names": {"Desinfeccion"},
+                "type_keys": {"desinfeccion"},
+                "timeline_type": "desinfeccion",
+                "keywords": ("desinfeccion", "desinfecciones"),
+                "fallback_responsible": "Intendencia",
+                "base_url": url_for("sst_desinfecciones_home"),
+            },
+            {
+                "key": "visitas",
+                "label": "Visitas ART",
+                "icon": "📋",
+                "module_names": {"Visitas ART"},
+                "type_keys": {"visita", "documentacion", "planos"},
+                "timeline_type": "visita",
+                "keywords": ("visitas art", "visita art", "art"),
+                "fallback_responsible": "Responsable SG-SST",
+                "base_url": url_for("sst_visitas"),
+            },
+        ]
+        project_tree_rows = []
+        total_scope_sedes = len(sedes_scope)
+        for project in project_catalog:
+            module_rows = []
+            completed_sedes = []
+            pending_sedes = []
+            for sede_row in sedes_scope:
+                match = next((row for row in (sede_row.get("module_rows") or []) if row.get("module") in project["module_names"]), None)
+                if not match:
+                    continue
+                module_rows.append({
+                    "sede_codigo": sede_row["codigo"],
+                    "sede_nombre": sede_row["nombre"],
+                    "state_label": match.get("state_label") or "",
+                    "state_tone": match.get("state_tone") or "muted",
+                    "result": match.get("result") or "",
+                    "pending": match.get("pending") or "",
+                    "next_action": match.get("next_action") or "",
+                    "url": match.get("url") or project["base_url"],
+                })
+                if _project_module_complete(project["key"], match):
+                    completed_sedes.append(sede_row["codigo"])
+                else:
+                    pending_sedes.append(sede_row["codigo"])
+            if not module_rows:
+                continue
+            planning_pct = _sgsst_plan_percent(len(completed_sedes), total_scope_sedes) if total_scope_sedes else 0
+            project_actions = []
+            project_hallazgos = []
+            project_suggestions = []
+            project_events = []
+            for item in actions_scope:
+                ref_text = " ".join([
+                    str(item.get("modulo_origen") or ""),
+                    str(item.get("titulo") or ""),
+                    str(item.get("accion_requerida") or ""),
+                ])
+                if _project_text_match(ref_text, project["keywords"]):
+                    project_actions.append(item)
+            for item in hallazgos_scope:
+                ref_text = " ".join([
+                    str(item.get("modulo_origen") or ""),
+                    str(item.get("titulo") or ""),
+                    str(item.get("descripcion") or ""),
+                    str(item.get("categoria") or ""),
+                ])
+                if _project_text_match(ref_text, project["keywords"]):
+                    project_hallazgos.append(item)
+            for item in suggestions_scope:
+                if _project_text_match(item.get("module"), project["keywords"]):
+                    project_suggestions.append(item)
+            for item in event_scope:
+                if str(item.get("type_key") or "").strip().lower() in project["type_keys"]:
+                    project_events.append(item)
+            project_events.sort(key=lambda item: (item.get("fecha_evento") or "9999-12-31", item.get("title") or ""))
+            open_actions = [item for item in project_actions if not _sgsst_plan_is_action_closed(item.get("state_label"))]
+            overdue_actions = [item for item in open_actions if item.get("overdue")]
+            planning_events = [item for item in project_events if str(item.get("phase_key") or "").strip().lower() == "diagnostico"]
+            operation_events = [item for item in project_events if str(item.get("phase_key") or "").strip().lower() == "operacion"]
+            completed_controls = [item for item in operation_events if str(item.get("state_key") or "").strip().lower() == "cumplido"]
+            open_controls = [item for item in operation_events if str(item.get("state_key") or "").strip().lower() != "cumplido"]
+            overdue_controls = [item for item in open_controls if str(item.get("state_key") or "").strip().lower() == "vencido"]
+            next_control = next(
+                (
+                    item for item in open_controls
+                    if str(item.get("fecha_evento") or "").strip()
+                ),
+                None,
+            )
+            last_control = completed_controls[-1] if completed_controls else None
+            if planning_pct < 100:
+                stage_label = "📋 Planificacion"
+                health_label = "Sin iniciar" if planning_pct == 0 else "En desarrollo"
+                health_class = "muted" if planning_pct == 0 else "warn"
+                next_step = (f"Relevar {pending_sedes[0]}" if pending_sedes else "Completar relevamientos")
+                implementation_status = "Bloqueada"
+                implementation_note = "Esperando completar el diagnostico."
+            elif open_actions or project_suggestions:
+                stage_label = "🔧 Implementacion"
+                health_label = "Detenido" if (overdue_actions or overdue_controls) else "En desarrollo"
+                health_class = "risk" if (overdue_actions or overdue_controls) else "warn"
+                next_step = (
+                    str((overdue_actions[0] if overdue_actions else open_actions[0]).get("titulo") or "").strip()
+                    if open_actions else
+                    (f"Revisar {project_suggestions[0]['sede_codigo']}" if project_suggestions else "Continuar implementacion")
+                )
+                implementation_status = "En curso"
+                implementation_note = (
+                    f"{len(open_actions)} accion(es) abierta(s)"
+                    if open_actions else
+                    f"{len(project_suggestions)} sugerencia(s) pendiente(s)"
+                )
+            else:
+                stage_label = "✅ Operacion"
+                health_label = "Operativo" if not overdue_controls else "Detenido"
+                health_class = "ok" if not overdue_controls else "risk"
+                if next_control and next_control.get("fecha_evento"):
+                    next_step = f"Control { _sst_calendar_short_date(next_control.get('fecha_evento')) }"
+                else:
+                    next_step = "Seguimiento normal"
+                implementation_status = "Finalizada"
+                implementation_note = "Sin acciones abiertas."
+            project_tree_rows.append({
+                "key": project["key"],
+                "label": project["label"],
+                "icon": project["icon"],
+                "responsable": _project_responsable(project_actions, project_events, project["fallback_responsible"]),
+                "progress_text": f"{len(completed_sedes)}/{total_scope_sedes} ({planning_pct}%)" if total_scope_sedes else "0/0",
+                "planning_pct": planning_pct,
+                "stage_label": stage_label,
+                "health_label": health_label,
+                "health_class": health_class,
+                "next_step": next_step,
+                "hallazgos_count": len(project_hallazgos),
+                "actions_count": len(open_actions),
+                "open_url": (module_rows[0]["url"] if filters["sede"] and module_rows else project["base_url"]),
+                "actions_url": url_for("sst_plan_implementacion", vista="acciones", sede=(filters["sede"] or None), prefill_modulo=project["label"]),
+                "timeline_url": _calendar_page_url(tipo=project["timeline_type"], fase="", quick=""),
+                "should_open": (filters["tipo"] in project["type_keys"]),
+                "planning": {
+                    "completed_count": len(completed_sedes),
+                    "pending_count": max(total_scope_sedes - len(completed_sedes), 0),
+                    "completed_preview": completed_sedes[:8],
+                    "pending_preview": pending_sedes[:8],
+                    "record_count": len(planning_events),
+                    "copy": f"{len(completed_sedes)} de {total_scope_sedes} sede(s) completas" if total_scope_sedes else "Sin sedes en alcance",
+                },
+                "implementation": {
+                    "status": implementation_status,
+                    "note": implementation_note,
+                    "actions_open": len(open_actions),
+                    "actions_overdue": len(overdue_actions),
+                    "suggestions_count": len(project_suggestions),
+                    "next_items": [
+                        {
+                            "title": str(item.get("titulo") or item.get("accion_requerida") or "Accion SG-SST").strip(),
+                            "meta": str(item.get("fecha_objetivo_label") or item.get("state_label") or "").strip(),
+                            "url": item.get("detail_url") or url_for("sst_plan_implementacion", vista="acciones"),
+                        }
+                        for item in open_actions[:3]
+                    ],
+                    "suggestions": [
+                        {
+                            "title": f"{item.get('sede_codigo') or ''} · {item.get('reason') or ''}".strip(" ·"),
+                            "url": item.get("action_url") or item.get("origin_url") or item.get("context_url") or project["base_url"],
+                        }
+                        for item in project_suggestions[:3]
+                    ],
+                },
+                "operation": {
+                    "status": ("Operativa" if planning_pct == 100 and not open_actions else "No iniciada"),
+                    "last_control": _sst_calendar_short_date(last_control.get("fecha_evento")) if last_control else "-",
+                    "next_control": _sst_calendar_short_date(next_control.get("fecha_evento")) if next_control else "-",
+                    "overdue_controls": len(overdue_controls),
+                    "open_controls": len(open_controls),
+                    "copy": (
+                        f"{len(open_controls)} control(es) activo(s)"
+                        if open_controls else
+                        ("Sin alertas operativas" if planning_pct == 100 else "Se habilita al terminar la implementacion")
+                    ),
+                },
+            })
+        project_tree_rows.sort(key=lambda item: (
+            0 if item["health_class"] == "risk" else (1 if item["health_class"] == "warn" else (2 if item["health_class"] == "ok" else 3)),
+            item["label"],
+        ))
         filtered_events = _sst_calendar_filter_events(all_events, filters)
         visible_events = _sst_calendar_visible_events(filtered_events)
         focus_month = selected_month or (context_raw["today"].month if selected_year == context_raw["today"].year else 1)
@@ -7475,6 +7759,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             mobile_rows=mobile_rows,
             quick_phase_filters=quick_phase_filters,
             quick_state_filters=quick_state_filters,
+            project_tree_rows=project_tree_rows,
+            project_scope_total=total_scope_sedes,
             source_counts=source_counts,
             matafuegos_overview=matafuegos_overview,
             matafuegos_visible=matafuegos_visible,
