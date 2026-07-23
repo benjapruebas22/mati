@@ -11601,19 +11601,19 @@
           <div class="ev-plan-demo-status" data-ev-plan-status aria-live="polite"></div>
           <div class="ev-plan-palette" aria-label="Elementos del plano de evacuacion">
             <button type="button" class="ev-plan-tool type-ruta_arriba" draggable="true" data-ev-plan-new="ruta_arriba" title="Arrastrar ruta arriba">
-              <span class="ev-plan-tool-code">â†‘</span>
+              <span class="ev-plan-tool-code">&uarr;</span>
               <span class="ev-plan-tool-label">Ruta arriba</span>
             </button>
             <button type="button" class="ev-plan-tool type-ruta_derecha" draggable="true" data-ev-plan-new="ruta_derecha" title="Arrastrar ruta derecha">
-              <span class="ev-plan-tool-code">â†’</span>
+              <span class="ev-plan-tool-code">&rarr;</span>
               <span class="ev-plan-tool-label">Ruta derecha</span>
             </button>
             <button type="button" class="ev-plan-tool type-ruta_abajo" draggable="true" data-ev-plan-new="ruta_abajo" title="Arrastrar ruta abajo">
-              <span class="ev-plan-tool-code">â†“</span>
+              <span class="ev-plan-tool-code">&darr;</span>
               <span class="ev-plan-tool-label">Ruta abajo</span>
             </button>
             <button type="button" class="ev-plan-tool type-ruta_izquierda" draggable="true" data-ev-plan-new="ruta_izquierda" title="Arrastrar ruta izquierda">
-              <span class="ev-plan-tool-code">â†</span>
+              <span class="ev-plan-tool-code">&larr;</span>
               <span class="ev-plan-tool-label">Ruta izquierda</span>
             </button>
             <button type="button" class="ev-plan-tool type-salida" draggable="true" data-ev-plan-new="salida" title="Arrastrar salida">
@@ -14429,10 +14429,10 @@
     const apiUrl = String(layer.dataset.apiUrl || "").trim();
     const activeLocal = String(layer.dataset.local || "").toUpperCase();
     const typeMeta = {
-      ruta_arriba: { label: "Ruta arriba", short: "â†‘", className: "type-ruta_arriba" },
-      ruta_derecha: { label: "Ruta derecha", short: "â†’", className: "type-ruta_derecha" },
-      ruta_abajo: { label: "Ruta abajo", short: "â†“", className: "type-ruta_abajo" },
-      ruta_izquierda: { label: "Ruta izquierda", short: "â†", className: "type-ruta_izquierda" },
+      ruta_arriba: { label: "Ruta arriba", short: "\u2191", className: "type-ruta_arriba" },
+      ruta_derecha: { label: "Ruta derecha", short: "\u2192", className: "type-ruta_derecha" },
+      ruta_abajo: { label: "Ruta abajo", short: "\u2193", className: "type-ruta_abajo" },
+      ruta_izquierda: { label: "Ruta izquierda", short: "\u2190", className: "type-ruta_izquierda" },
       salida: { label: "Salida", short: "SAL", className: "type-salida" },
       punto_encuentro: { label: "Punto de encuentro", short: "PE", className: "type-punto_encuentro" },
       usted_esta_aqui: { label: "Usted esta aqui", short: "UA", className: "type-usted_esta_aqui" },
