@@ -6197,7 +6197,6 @@ def sede_ficha(codigo):
                 "puestos_trabajo": luminarias_operativo_totals["pt"],
             }
 
-        luminarias_operativo_rows_data = _luminarias_operativo_rows(db, codigo, piso, local)
         luminarias_operativo_table_data = _luminarias_operativo_table_rows(db, codigo, piso, local)
         luminarias_history_rows = _luminarias_history_feed(
             db,
@@ -6621,7 +6620,6 @@ def sede_ficha(codigo):
         depositos_rows=depositos_rows,
         luminarias_rows=luminarias_rows,
         luminarias_kpi=luminarias_kpi,
-        luminarias_operativo_rows=luminarias_operativo_rows_data,
         luminarias_operativo_table_rows=luminarias_operativo_table_data,
         luminarias_selected=luminarias_selected,
         luminarias_ambiente_options=luminarias_ambiente_options,
@@ -12615,77 +12613,6 @@ def _luminaria_point_detail(con, point_id):
     else:
         point["codigo_origen"] = ""
     return point
-
-
-def _luminarias_operativo_rows(con, sede_codigo, piso, local_filter=""):
-    sede = (sede_codigo or "").upper().strip()
-    piso_norm = _mobiliario_plano_normalize_piso(piso)
-    where = [
-        "UPPER(COALESCE(p.sede_codigo,'')) = ?",
-        "p.piso_codigo = ?",
-        "COALESCE(p.activo,1) = 1",
-    ]
-    params = [sede, piso_norm]
-    local_norm = _mobiliario_plano_normalize_local(local_filter) if local_filter else ""
-    if local_norm:
-        where.append("p.ambiente_codigo = ?")
-        params.append(local_norm)
-    rows = con.execute(f"""
-        SELECT
-            p.id,
-            p.sede_codigo,
-            p.piso_codigo,
-            p.ambiente_codigo,
-            p.tipo,
-            p.numero,
-            p.codigo_corto,
-            p.codigo_completo,
-            p.placed,
-            EXISTS(
-                SELECT 1
-                FROM luminaria_recambio r
-                WHERE r.luminaria_punto_id = p.id
-            ) AS has_history,
-            EXISTS(
-                SELECT 1
-                FROM luminaria_recambio r
-                WHERE r.luminaria_punto_id = p.id
-                  AND r.fecha_recambio IS NULL
-            ) AS has_open_recambio
-        FROM luminaria_punto p
-        WHERE {" AND ".join(where)}
-        ORDER BY p.ambiente_codigo, p.tipo, p.numero, p.id
-    """, params).fetchall()
-    grouped = {}
-    for row in rows:
-        ambiente = str(row["ambiente_codigo"] or "").strip()
-        bucket = grouped.setdefault(ambiente, {
-            "ambiente_codigo": ambiente,
-            "piso_codigo": str(row["piso_codigo"] or "").strip(),
-            "counts": {type_code: 0 for type_code in LUMINARIA_POINT_TYPE_ORDER},
-            "points_by_type": {type_code: [] for type_code in LUMINARIA_POINT_TYPE_ORDER},
-            "total": 0,
-        })
-        type_code = _luminaria_norm_type(row["tipo"])
-        if not type_code:
-            continue
-        bucket["counts"][type_code] += 1
-        bucket["total"] += 1
-        bucket["points_by_type"][type_code].append({
-            "id": int(row["id"]),
-            "plan_item_id": f"lumpt:{int(row['id'])}",
-            "codigo_corto": str(row["codigo_corto"] or "").strip(),
-            "codigo_completo": str(row["codigo_completo"] or "").strip(),
-            "tipo": type_code,
-            "tipo_label": _luminaria_label(type_code),
-            "placed": bool(row["placed"]),
-            "has_history": bool(row["has_history"]),
-            "has_open_recambio": bool(row["has_open_recambio"]),
-        })
-    ordered_rows = []
-    for ambiente in sorted(grouped.keys(), key=_mobiliario_plano_local_sort_key):
-        ordered_rows.append(grouped[ambiente])
-    return ordered_rows
 
 
 def _luminarias_operativo_table_rows(con, sede_codigo, piso, local_filter=""):

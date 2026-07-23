@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 
 
@@ -2050,11 +2050,11 @@
 
 
 
-  .sede-nav a[data-fuero="Administración"] { background: #fde8dd; border-color: #f5b089; color: #6b3c1f; }
+  .sede-nav a[data-fuero="AdministraciÃ³n"] { background: #fde8dd; border-color: #f5b089; color: #6b3c1f; }
 
 
 
-  .sede-nav a[data-fuero="Administración / Violencia Inst."] { background: #fde8dd; border-color: #f5b089; color: #6b3c1f; }
+  .sede-nav a[data-fuero="AdministraciÃ³n / Violencia Inst."] { background: #fde8dd; border-color: #f5b089; color: #6b3c1f; }
 
 
 
@@ -4088,12 +4088,12 @@
   }
   .panel-control summary::-webkit-details-marker { display: none; }
   .panel-control summary::after {
-    content: "▾";
+    content: "â–¾";
     font-size: 10px;
     opacity: 0.7;
     margin-left: 2px;
   }
-  .panel-control[open] summary::after { content: "▴"; }
+  .panel-control[open] summary::after { content: "â–´"; }
 
   .panel-control-menu {
     position: absolute;
@@ -7352,7 +7352,7 @@
     cursor: pointer;
     user-select: none;
   }
-  /* Estado del chip (Dxx) según resultado del depósito (UI) */
+  /* Estado del chip (Dxx) segÃºn resultado del depÃ³sito (UI) */
   .cll-chip.none{
     border-color: #d7e2f3;
     background: #f8fafc;
@@ -7411,7 +7411,7 @@
     padding: 10px 10px 12px;
     box-shadow: 0 10px 18px rgba(15, 23, 42, .04);
   }
-  /* Estado de tarjeta según resultado (UI) */
+  /* Estado de tarjeta segÃºn resultado (UI) */
   .cll-card.none { border-color: #dbe5f4; background: #fff; }
   .cll-card.ok { border-color: #bbf7d0; background: #f0fdf4; }
   .cll-card.obs { border-color: #fed7aa; background: #fff7ed; }
@@ -7563,7 +7563,7 @@
   }
   .cll-obs.hidden { display: none; }
 
-  /* Bloque inferior (informe + chat): colapsable para ganar espacio en móvil */
+  /* Bloque inferior (informe + chat): colapsable para ganar espacio en mÃ³vil */
   .cll-extra{
     border-top: 1px dashed #e2e8f0;
     background: #fff;
@@ -7774,7 +7774,7 @@
     cursor: not-allowed;
   }
 
-  /* En móvil: botón Finalizar bien grande + orden claro */
+  /* En mÃ³vil: botÃ³n Finalizar bien grande + orden claro */
   @media (max-width: 720px){
     .cll-footer{ gap: 8px; }
     .cll-msg{ width: 100%; order: 0; }
@@ -7787,12 +7787,12 @@
     .cll-actions { grid-template-columns: 1fr; }
   }
 
-  /* UX móvil: pantalla completa + controles grandes (Francisco en sede) */
+  /* UX mÃ³vil: pantalla completa + controles grandes (Francisco en sede) */
   @media (max-width: 720px) {
     .cll-dialog {
       width: 100vw;
       height: 100vh;    /* fallback */
-      height: 100svh;   /* mejor en móvil (barra navegador) */
+      height: 100svh;   /* mejor en mÃ³vil (barra navegador) */
       max-height: 100vh;
       max-height: 100svh;
       margin: 0;
@@ -7845,7 +7845,7 @@
     .cll-badge { padding: 6px 10px; font-size: 12px; }
     .cll-item { padding: 6px 10px; font-size: 13px; }
 
-    /* Botones grandes y táctiles */
+    /* Botones grandes y tÃ¡ctiles */
     .cll-actions { grid-template-columns: 1fr 1fr; gap: 10px; }
     .cll-btn {
       padding: 14px 12px;
@@ -7866,8 +7866,8 @@
   }
 
   /* --------------------------------------------------
-     SGI (nuevo estándar) — Checklist Control Limpieza
-     Solo UI/UX visual: jerarquía, espaciado, tipografía.
+     SGI (nuevo estÃ¡ndar) â€” Checklist Control Limpieza
+     Solo UI/UX visual: jerarquÃ­a, espaciado, tipografÃ­a.
      -------------------------------------------------- */
 
   .cll-head {
@@ -8401,7 +8401,7 @@
 
 
 
-           href="{{ url_for('sede_ficha', codigo=sede.codigo, home=1, piso=piso, tab=tab, local=local, mes=mes, fecha=fecha_dia, q_cal='viaje', view=view) }}">Vehículos</a>
+           href="{{ url_for('sede_ficha', codigo=sede.codigo, home=1, piso=piso, tab=tab, local=local, mes=mes, fecha=fecha_dia, q_cal='viaje', view=view) }}">VehÃ­culos</a>
 
 
 
@@ -8598,7 +8598,7 @@
 
 
 
-                {% set _ = ns.lines.append(item.label ~ ': ' ~ (item.titles|join(' · '))) %}
+                {% set _ = ns.lines.append(item.label ~ ': ' ~ (item.titles|join(' Â· '))) %}
 
 
 
@@ -8672,7 +8672,7 @@
 
 
 
-                    title="{{ item.label }}{% if item.titles %}: {{ item.titles|join(' · ') }}{% endif %}"></span>
+                    title="{{ item.label }}{% if item.titles %}: {{ item.titles|join(' Â· ') }}{% endif %}"></span>
 
 
 
@@ -9257,8 +9257,8 @@
 
 
             {% if sede.direccion %}{{ sede.direccion }}{% else %}S/D{% endif %}
-            {% if sede.ciudad %} · {{ sede.ciudad }}{% endif %}
-            {% if sede.fuero %} · <span class="h-fuero">{{ sede.fuero|replace('_',' ')|capitalize }}</span>{% endif %}
+            {% if sede.ciudad %} Â· {{ sede.ciudad }}{% endif %}
+            {% if sede.fuero %} Â· <span class="h-fuero">{{ sede.fuero|replace('_',' ')|capitalize }}</span>{% endif %}
 
 
 
@@ -9356,11 +9356,11 @@
               <input
                 type="search"
                 id="sedeGlobalSearchInput"
-                placeholder="Buscar persona, depósito o ambiente..."
-                aria-label="Buscar persona, depósito o ambiente"
+                placeholder="Buscar persona, depÃ³sito o ambiente..."
+                aria-label="Buscar persona, depÃ³sito o ambiente"
                 autocomplete="off"
                 class="sede-global-search-input">
-              <button type="button" id="sedeGlobalSearchClear" class="sede-global-search-clear" aria-label="Limpiar búsqueda">&times;</button>
+              <button type="button" id="sedeGlobalSearchClear" class="sede-global-search-clear" aria-label="Limpiar bÃºsqueda">&times;</button>
             </div>
             <div id="sedeGlobalSearchStatus" class="sede-global-search-status" aria-live="polite"></div>
             <script id="sedeSearchIndexData" type="application/json">{{ {'personal': sede_search_personal, 'depositos': sede_search_depositos}|tojson }}</script>
@@ -9372,7 +9372,7 @@
             <button type="button" class="btn btn-checklist-limpieza" id="btnChecklistLimpieza" data-sede="{{ sede.codigo }}">Checklist Control Limpieza</button>
 
             <details class="h-actions-more">
-              <summary class="btn btn-calendario" aria-label="Más acciones">Acciones</summary>
+              <summary class="btn btn-calendario" aria-label="MÃ¡s acciones">Acciones</summary>
               <div class="h-actions-menu" role="menu">
                 {% if home_mode %}
                   <button type="button" class="btn btn-calendario" id="toggleCalendar">Calendario</button>
@@ -9392,13 +9392,13 @@
                       <span class="fuero-dot"></span><span>Penal</span>
                     </div>
                     <div class="fuero-legend-item fuero-social" role="listitem">
-                      <span class="fuero-dot"></span><span>Jurídico Social</span>
+                      <span class="fuero-dot"></span><span>JurÃ­dico Social</span>
                     </div>
                     <div class="fuero-legend-item fuero-menores" role="listitem">
                       <span class="fuero-dot"></span><span>Menores e Incapaces</span>
                     </div>
                     <div class="fuero-legend-item fuero-admin" role="listitem">
-                      <span class="fuero-dot"></span><span>Administración / Violencia Institucional</span>
+                      <span class="fuero-dot"></span><span>AdministraciÃ³n / Violencia Institucional</span>
                     </div>
                   </div>
                 </details>
@@ -9412,14 +9412,14 @@
 
     
     {#
-        <summary class="sede-jump-trigger" aria-label="Abrir navegación rápida por sedes y módulos">
+        <summary class="sede-jump-trigger" aria-label="Abrir navegaciÃ³n rÃ¡pida por sedes y mÃ³dulos">
           <span class="sede-jump-title">Navegar por sede</span>
-          <span class="sede-jump-state">{{ sedes_nav|length }} sedes · accesos directos</span>
+          <span class="sede-jump-state">{{ sedes_nav|length }} sedes Â· accesos directos</span>
         </summary>
         <div class="sede-jump-panel">
-          <p class="sede-jump-hint">Tocá el código para abrir la sede y las siglas para entrar directo al módulo.</p>
+          <p class="sede-jump-hint">TocÃ¡ el cÃ³digo para abrir la sede y las siglas para entrar directo al mÃ³dulo.</p>
           <div class="sede-jump-scroll">
-            <table class="sede-jump-table" aria-label="Navegación rápida de sedes">
+            <table class="sede-jump-table" aria-label="NavegaciÃ³n rÃ¡pida de sedes">
               <thead>
                 <tr>
                   <th class="sede-jump-corner">Sede</th>
@@ -9427,7 +9427,7 @@
                   <th scope="col">
                     <a class="sede-jump-sede {% if nav_sede.codigo == sede.codigo %}is-current{% endif %}"
                       href="{{ url_for('sede_ficha', codigo=nav_sede.codigo, piso=piso, tab='personal', view='operativo', home=home_arg) }}"
-                      title="{{ nav_sede.codigo }}{% if nav_sede.nombre %} · {{ nav_sede.nombre }}{% endif %}">
+                      title="{{ nav_sede.codigo }}{% if nav_sede.nombre %} Â· {{ nav_sede.nombre }}{% endif %}">
                       {{ nav_sede.codigo }}
                     </a>
                   </th>
@@ -9441,7 +9441,7 @@
                   <td>
                     <a class="sede-jump-link {% if nav_sede.codigo == sede.codigo and view != 'resumen' and tab == 'aires' %}is-active{% endif %}"
                       href="{{ url_for('sede_ficha', codigo=nav_sede.codigo, piso=piso, tab='aires', view='operativo', home=home_arg) }}"
-                      title="{{ nav_sede.codigo }} · Aires">AIRE</a>
+                      title="{{ nav_sede.codigo }} Â· Aires">AIRE</a>
                   </td>
                   {% endfor %}
                 </tr>
@@ -9451,7 +9451,7 @@
                   <td>
                     <a class="sede-jump-link {% if nav_sede.codigo == sede.codigo and view != 'resumen' and tab == 'luminarias' %}is-active{% endif %}"
                       href="{{ url_for('sede_ficha', codigo=nav_sede.codigo, piso=piso, tab='luminarias', view='operativo', home=home_arg) }}"
-                      title="{{ nav_sede.codigo }} · Luminarias">LUM</a>
+                      title="{{ nav_sede.codigo }} Â· Luminarias">LUM</a>
                   </td>
                   {% endfor %}
                 </tr>
@@ -9461,7 +9461,7 @@
                   <td>
                     <a class="sede-jump-link {% if nav_sede.codigo == sede.codigo and view != 'resumen' and tab == 'mobiliario' %}is-active{% endif %}"
                       href="{{ url_for('sede_ficha', codigo=nav_sede.codigo, piso=piso, tab='mobiliario', view='operativo', home=home_arg) }}"
-                      title="{{ nav_sede.codigo }} · Inventario operativo">INV</a>
+                      title="{{ nav_sede.codigo }} Â· Inventario operativo">INV</a>
                   </td>
                   {% endfor %}
                 </tr>
@@ -9471,7 +9471,7 @@
                   <td>
                     <a class="sede-jump-link {% if nav_sede.codigo == sede.codigo and view != 'resumen' and tab == 'matafuegos' %}is-active{% endif %}"
                       href="{{ url_for('sede_ficha', codigo=nav_sede.codigo, piso=piso, tab='matafuegos', view='operativo', home=home_arg) }}"
-                      title="{{ nav_sede.codigo }} · Matafuegos">MAT</a>
+                      title="{{ nav_sede.codigo }} Â· Matafuegos">MAT</a>
                   </td>
                   {% endfor %}
                 </tr>
@@ -9481,7 +9481,7 @@
                   <td>
                     <a class="sede-jump-link {% if nav_sede.codigo == sede.codigo and view != 'resumen' and tab == 'sst_carteleria' %}is-active{% endif %}"
                       href="{{ url_for('sede_ficha', codigo=nav_sede.codigo, piso=piso, tab='sst_carteleria', view='operativo', home=home_arg) }}"
-                      title="{{ nav_sede.codigo }} · SG-SST cartelería">CART</a>
+                      title="{{ nav_sede.codigo }} Â· SG-SST cartelerÃ­a">CART</a>
                   </td>
                   {% endfor %}
                 </tr>
@@ -9491,7 +9491,7 @@
                   <td>
                     <a class="sede-jump-link {% if nav_sede.codigo == sede.codigo and view != 'resumen' and tab == 'sst_luces' %}is-active{% endif %}"
                       href="{{ url_for('sede_ficha', codigo=nav_sede.codigo, piso=piso, tab='sst_luces', view='operativo', home=home_arg) }}"
-                      title="{{ nav_sede.codigo }} · Luces de emergencia">L.E.</a>
+                      title="{{ nav_sede.codigo }} Â· Luces de emergencia">L.E.</a>
                   </td>
                   {% endfor %}
                 </tr>
@@ -9515,15 +9515,15 @@
     <div class="kpis{% if view=='resumen' %} kpis-hidden-resumen{% endif %}" style="display:none">
       <a class="kpi kpi-desinfeccion" href="{{ url_for('sede_seguridad', codigo=sede.codigo) }}" style="text-decoration:none;color:inherit;">
         <div>
-          <div class="l">Desinfección ({{ desinf_kpi.schedule_label }})</div>
+          <div class="l">DesinfecciÃ³n ({{ desinf_kpi.schedule_label }})</div>
           <div class="v">{{ desinf_kpi.next_due_label }}</div>
         </div>
-        <div class="tag">Desinfección</div>
+        <div class="tag">DesinfecciÃ³n</div>
       </a>
 
       <a class="kpi kpi-matafuegos" href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='matafuegos', view=view) }}" style="text-decoration:none;color:inherit;">
         <div>
-          <div class="l">Matafuegos · vencen (45d)</div>
+          <div class="l">Matafuegos Â· vencen (45d)</div>
           <div class="v">{{ seg_vencen.vencen_pronto }}</div>
         </div>
         <div class="tag">Seguridad</div>
@@ -9976,7 +9976,7 @@
 
 
 
-      content: "•";
+      content: "â€¢";
 
 
 
@@ -10521,7 +10521,7 @@
 
 
 
-              <label>N° servicio EJESA</label>
+              <label>NÂ° servicio EJESA</label>
 
 
 
@@ -10537,7 +10537,7 @@
 
 
 
-              <label>N° servicio Gasnor</label>
+              <label>NÂ° servicio Gasnor</label>
 
 
 
@@ -10888,7 +10888,7 @@
       <span class="sedes-docs-title">Documentos vinculados (SGI)</span>
       <span class="sedes-docs-badge">
         {{ render_sede_badge(sede.codigo) }}
-        <span>Documentación</span>
+        <span>DocumentaciÃ³n</span>
       </span>
     </summary>
 
@@ -10906,8 +10906,8 @@
             </div>
             <div class="sedes-doc-meta">
               {% if d.fecha %}<span><b>Fecha:</b> {{ d.fecha }}</span>{% endif %}
-              {% if d.estado %} · <span><b>Estado:</b> {{ d.estado }}</span>{% endif %}
-              {% if d.tags_txt %} · <span><b>Tags:</b> {{ d.tags_txt }}</span>{% endif %}
+              {% if d.estado %} Â· <span><b>Estado:</b> {{ d.estado }}</span>{% endif %}
+              {% if d.tags_txt %} Â· <span><b>Tags:</b> {{ d.tags_txt }}</span>{% endif %}
             </div>
             {% if d.archivo_url %}
               <div class="sedes-doc-link">
@@ -11121,7 +11121,7 @@
 
           {% set _pname = _piso_names.get(p, "") %}
           {% set _prange = (_piso_ranges.get(sede.codigo, {})).get(p, "") %}
-          {% set _ptitle = (_pname ~ (" · " ~ _prange if _prange else "") if _pname else (_prange if _prange else p)) %}
+          {% set _ptitle = (_pname ~ (" Â· " ~ _prange if _prange else "") if _pname else (_prange if _prange else p)) %}
 
 
 
@@ -11218,7 +11218,7 @@
           {% set _ldesc = (locales_desc.get(local) if locales_desc is defined else '') %}
           <div class="plan-selected" {% if _ldesc %}title="{{ _ldesc }}"{% endif %}>
             Local <strong>{{ render_local_badge(sede.codigo, local, local)|safe }}</strong>
-            {% if _ldesc %}<span class="desc">— {{ _ldesc }}</span>{% endif %}
+            {% if _ldesc %}<span class="desc">â€” {{ _ldesc }}</span>{% endif %}
           </div>
           {% endif %}
           <img src="{{ plano_url }}" alt="Plano {{ sede.codigo }} {{ piso }}">
@@ -11490,19 +11490,19 @@
           <div class="ev-plan-demo-status" data-ev-plan-status aria-live="polite"></div>
           <div class="ev-plan-palette" aria-label="Elementos del plano de evacuacion">
             <button type="button" class="ev-plan-tool type-ruta_arriba" draggable="true" data-ev-plan-new="ruta_arriba" title="Arrastrar ruta arriba">
-              <span class="ev-plan-tool-code">↑</span>
+              <span class="ev-plan-tool-code">â†‘</span>
               <span class="ev-plan-tool-label">Ruta arriba</span>
             </button>
             <button type="button" class="ev-plan-tool type-ruta_derecha" draggable="true" data-ev-plan-new="ruta_derecha" title="Arrastrar ruta derecha">
-              <span class="ev-plan-tool-code">→</span>
+              <span class="ev-plan-tool-code">â†’</span>
               <span class="ev-plan-tool-label">Ruta derecha</span>
             </button>
             <button type="button" class="ev-plan-tool type-ruta_abajo" draggable="true" data-ev-plan-new="ruta_abajo" title="Arrastrar ruta abajo">
-              <span class="ev-plan-tool-code">↓</span>
+              <span class="ev-plan-tool-code">â†“</span>
               <span class="ev-plan-tool-label">Ruta abajo</span>
             </button>
             <button type="button" class="ev-plan-tool type-ruta_izquierda" draggable="true" data-ev-plan-new="ruta_izquierda" title="Arrastrar ruta izquierda">
-              <span class="ev-plan-tool-code">←</span>
+              <span class="ev-plan-tool-code">â†</span>
               <span class="ev-plan-tool-label">Ruta izquierda</span>
             </button>
             <button type="button" class="ev-plan-tool type-salida" draggable="true" data-ev-plan-new="salida" title="Arrastrar salida">
@@ -11599,13 +11599,13 @@
 
     {% set panel_module_map = {
       'personal':'Personal',
-      'depositos':'Depósitos',
+      'depositos':'DepÃ³sitos',
       'planos':'Planos',
       'aires':'Aires',
       'luminarias':'Luminarias',
       'mobiliario':'Inventario operativo',
       'matafuegos':'Matafuegos',
-      'evacuacion':'Evacuación',
+      'evacuacion':'EvacuaciÃ³n',
       'sst_carteleria':'SG-SST Carteleria',
       'sst_luces':'SG-SST Luces',
       'resumen':'Resumen'
@@ -11772,7 +11772,7 @@
 
 
 
-                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);">Descripción</th>
+                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);">DescripciÃ³n</th>
 
 
 
@@ -11958,7 +11958,7 @@
 
 
 
-          <strong>{{ sede.codigo }}</strong> · <strong>{{ piso }}</strong>{% if local %} · <strong>{{ local
+          <strong>{{ sede.codigo }}</strong> Â· <strong>{{ piso }}</strong>{% if local %} Â· <strong>{{ local
 
 
 
@@ -11983,7 +11983,7 @@
 
 
         <div class="panel-section-head">
-          <div class="panel-section-title">Depósitos</div>
+          <div class="panel-section-title">DepÃ³sitos</div>
           <div class="panel-section-actions">
             <a class="btn" href="{{ url_for('movimientos_home', sede_origen=sede.codigo) }}">Mover mobiliario</a>
             <a class="btn primary" href="{{ url_for('sede_depositos_edit', codigo=sede.codigo) }}">Editar</a>
@@ -12020,7 +12020,7 @@
 
 
 
-                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);">Descripción</th>
+                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);">DescripciÃ³n</th>
 
 
 
@@ -12083,7 +12083,7 @@
 
 
 
-          No hay depósitos cargados para esta sede.
+          No hay depÃ³sitos cargados para esta sede.
 
 
 
@@ -12100,12 +12100,11 @@
 
 
         {% elif tab == 'luminarias' %}
-        {% if true %}
         <div class="panel-section-head">
           <div>
             <div class="panel-section-title">Luminarias</div>
             <div class="panel-section-sub">
-              {{ luminarias_operativo_totals.total }} puntos activos en {{ piso }}{% if local %} · filtro {{ local }}{% endif %}.
+              {{ luminarias_operativo_totals.total }} puntos activos en {{ piso }}{% if local %} Â· filtro {{ local }}{% endif %}.
             </div>
           </div>
         </div>
@@ -12182,7 +12181,7 @@
               <tbody>
                 {% for item in luminarias_history_rows %}
                 <tr>
-                  <td>{{ item.fecha_display or '—' }}</td>
+                  <td>{{ item.fecha_display or 'â€”' }}</td>
                   <td>{{ item.movimiento }}</td>
                   <td><a class="lum-op-table-code lum-type-text lum-type-{{ item.tipo|lower }}" href="{{ item.point_url }}">{{ item.codigo_corto }}</a></td>
                   <td>{{ item.detalle }}</td>
@@ -12223,13 +12222,13 @@
                     <td>
                       <div class="lum-op-table-actions">
                         <a class="lum-op-action-link" href="{{ row.detail_url }}#lum-edit">Editar</a>
-                        <span class="lum-op-action-sep">·</span>
+                        <span class="lum-op-action-sep">Â·</span>
                         {% if row.supports_replacements %}
                         <a class="lum-op-action-link" href="{{ row.detail_url }}#lum-recambio">Recambio</a>
                         {% else %}
                         <span class="lum-op-action-link is-muted">Recambio</span>
                         {% endif %}
-                        <span class="lum-op-action-sep">·</span>
+                        <span class="lum-op-action-sep">Â·</span>
                         <a class="lum-op-action-link" href="{{ row.detail_url }}#lum-baja">Baja</a>
                       </div>
                     </td>
@@ -12419,7 +12418,7 @@
                   <form method="post" action="{{ url_for('luminarias_punto_baja', point_id=luminarias_selected.id) }}">
                     <input type="hidden" name="fecha_baja" value="{{ fecha_dia }}">
                     <div class="lum-op-confirm" id="lum-baja-confirm" hidden>
-                      <p><strong class="lum-type-text lum-type-{{ luminarias_selected.tipo|lower }}">¿Confirmás la baja de {{ luminarias_selected.codigo_corto }}?</strong></p>
+                      <p><strong class="lum-type-text lum-type-{{ luminarias_selected.tipo|lower }}">Â¿ConfirmÃ¡s la baja de {{ luminarias_selected.codigo_corto }}?</strong></p>
                       <p>Esta accion debe utilizarse unicamente cuando el punto de iluminacion dejo de existir fisicamente. El historial sera conservado.</p>
                       <div class="lum-op-actions">
                         <button type="button" class="btn outline-slate" data-lum-baja-cancel>Cancelar</button>
@@ -12443,275 +12442,6 @@
           </div>
           {% endif %}
         </div>
-        {% else %}
-
-
-
-        <div class="panel-section-head">
-          <div>
-            <div class="panel-section-title">Luminarias</div>
-            <div class="panel-section-sub">
-              Totales activos del filtro:
-              <span class="lum-type-text lum-type-tl">TL <strong>{{ luminarias_operativo_totals.tl }}</strong></span> ·
-              <span class="lum-type-text lum-type-fo">FO <strong>{{ luminarias_operativo_totals.fo }}</strong></span> ·
-              <span class="lum-type-text lum-type-pn">PN <strong>{{ luminarias_operativo_totals.pn }}</strong></span> ·
-              <span class="lum-type-text lum-type-pt">PT <strong>{{ luminarias_operativo_totals.pt }}</strong></span>
-            </div>
-          </div>
-        </div>
-
-
-
-
-
-
-
-        <div class="lum-op-shell">
-          <div class="lum-op-card">
-            <div class="lum-op-card-head">
-              <div>
-                <h3 class="lum-op-card-title">Resumen por ambiente</h3>
-                <p class="lum-op-card-sub">Se muestran solo los puntos activos del piso actual.</p>
-              </div>
-            </div>
-            {% if luminarias_operativo_rows and luminarias_operativo_rows|length > 0 %}
-            <table class="lum-op-table">
-              <thead>
-                <tr>
-                  <th>Ambiente</th>
-                  <th class="lum-type-th lum-type-tl">TL</th>
-                  <th class="lum-type-th lum-type-fo">FO</th>
-                  <th class="lum-type-th lum-type-pn">PN</th>
-                  <th class="lum-type-th lum-type-pt">PT</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for row in luminarias_operativo_rows %}
-                <tr>
-                  <td>{{ render_local_badge(sede.codigo, row.ambiente_codigo, row.ambiente_codigo)|safe }}</td>
-                  {% for type_code in ['TL', 'FO', 'PN', 'PT'] %}
-                  <td>
-                    {% if row.points_by_type[type_code] and row.points_by_type[type_code]|length > 0 %}
-                    <div class="lum-op-chip-row">
-                      {% for point in row.points_by_type[type_code] %}
-                      <a class="lum-op-chip lum-type-chip lum-type-{{ type_code|lower }} {% if luminarias_selected and luminarias_selected.id == point.id %}is-selected{% endif %}"
-                         href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=row.ambiente_codigo, tab='luminarias', view='operativo', lpoint=point.id) }}"
-                         title="{{ point.codigo_completo }}{% if point.placed %} · Ubicado en plano{% endif %}">
-                        {{ point.codigo_corto }}
-                      </a>
-                      {% endfor %}
-                    </div>
-                    {% else %}
-                    <span class="lum-op-empty">—</span>
-                    {% endif %}
-                  </td>
-                  {% endfor %}
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-            {% else %}
-            <div class="lum-op-empty">No hay puntos activos para este piso o filtro.</div>
-            {% endif %}
-          </div>
-
-          <div class="lum-op-grid">
-            <div class="lum-op-stack">
-              <div class="lum-op-card">
-                <div class="lum-op-card-head">
-                  <div>
-                    <h3 class="lum-op-card-title">Agregar luminaria</h3>
-                    <p class="lum-op-card-sub">Se crea el siguiente codigo disponible del tipo elegido y despues la ubicas en el plano.</p>
-                  </div>
-                </div>
-                {% set default_ambiente = local or (luminarias_selected.ambiente_codigo if luminarias_selected else '') %}
-                <form method="post" action="{{ url_for('luminarias_punto_alta') }}">
-                  <input type="hidden" name="sede_codigo" value="{{ sede.codigo }}">
-                  <input type="hidden" name="piso_codigo" value="{{ piso }}">
-                  <div class="lum-op-form-grid">
-                    <div class="lum-op-field">
-                      <label>Ambiente</label>
-                      <select name="ambiente_codigo" required {% if not luminarias_ambiente_options %}disabled{% endif %}>
-                        <option value="">{% if luminarias_ambiente_options %}Seleccionar ambiente{% else %}Sin ambientes cargados{% endif %}</option>
-                        {% for ambiente in luminarias_ambiente_options %}
-                        <option value="{{ ambiente.codigo }}" {% if default_ambiente == ambiente.codigo %}selected{% endif %}>{{ ambiente.label }}</option>
-                        {% endfor %}
-                      </select>
-                    </div>
-                    <div class="lum-op-field">
-                      <label>Tipo</label>
-                      <select name="tipo" required>
-                        <option value="TL">TL - Tubo LED</option>
-                        <option value="FO">FO - Foco</option>
-                        <option value="PN">PN - Panel</option>
-                        <option value="PT">PT - Puesto de trabajo</option>
-                      </select>
-                    </div>
-                    <div class="lum-op-field full">
-                      <label>Fecha de alta</label>
-                      <input type="date" name="fecha_creacion" value="{{ fecha_dia }}">
-                    </div>
-                  </div>
-                  {% if not luminarias_ambiente_options %}
-                  <p class="lum-op-note">No hay ambientes cargados para este piso. El sistema solo permite elegir ambientes existentes.</p>
-                  {% endif %}
-                  <div class="lum-op-actions">
-                    <button type="submit" class="btn primary" {% if not luminarias_ambiente_options %}disabled{% endif %}>Agregar</button>
-                  </div>
-                </form>
-              </div>
-            </div>
-
-            <div class="lum-op-card">
-              {% if luminarias_selected %}
-              <div class="lum-op-detail-head">
-                <div>
-                  <h3 class="lum-op-detail-code lum-type-text lum-type-{{ luminarias_selected.tipo|lower }}">{{ luminarias_selected.codigo_corto }}</h3>
-                </div>
-                <span class="lum-op-status {{ luminarias_selected.estado_tone }}">{{ luminarias_selected.estado }}</span>
-              </div>
-
-              <div class="lum-op-detail-list">
-                <div class="lum-op-detail-line">
-                  <span class="lum-op-detail-label">Sede</span>
-                  <span class="lum-op-detail-text">{{ luminarias_selected.sede_codigo }}</span>
-                </div>
-                <div class="lum-op-detail-line">
-                  <span class="lum-op-detail-label">Ambiente</span>
-                  <span class="lum-op-detail-text">{{ luminarias_selected.ambiente_codigo }}</span>
-                </div>
-                <div class="lum-op-detail-line">
-                  <span class="lum-op-detail-label">Tipo</span>
-                  <span class="lum-op-detail-text">{{ luminarias_selected.tipo_label }}</span>
-                </div>
-                <div class="lum-op-detail-line">
-                  <span class="lum-op-detail-label">Estado</span>
-                  <span class="lum-op-detail-text">{{ luminarias_selected.estado }}</span>
-                </div>
-                <div class="lum-op-detail-line">
-                  <span class="lum-op-detail-label">Marca actual</span>
-                  <span class="lum-op-detail-text">{{ luminarias_selected.marca_actual or 'Sin registrar' }}</span>
-                </div>
-                <div class="lum-op-detail-line">
-                  <span class="lum-op-detail-label">Instalada</span>
-                  <span class="lum-op-detail-text">{{ luminarias_selected.fecha_colocacion_actual_display or luminarias_selected.fecha_creacion_display or 'Sin registrar' }}</span>
-                </div>
-                <div class="lum-op-detail-line">
-                  <span class="lum-op-detail-label">Recambios registrados</span>
-                  <span class="lum-op-detail-text">{{ luminarias_selected.recambios_completados }}</span>
-                </div>
-              </div>
-
-              <div class="lum-op-anchor-actions">
-                {% if luminarias_selected.activo and luminarias_selected.supports_replacements %}
-                <a class="btn primary" href="#lum-recambio">Registrar recambio</a>
-                {% endif %}
-                <a class="btn outline-slate" href="#lum-historial">Ver historial</a>
-                {% if luminarias_selected.activo %}
-                <button type="button" class="btn danger" data-lum-baja-open>Dar de baja</button>
-                {% endif %}
-              </div>
-
-              {% if luminarias_selected.activo and luminarias_selected.supports_replacements %}
-              <div class="lum-op-section" id="lum-recambio">
-                <h4 class="lum-op-section-title">Recambio</h4>
-                <form method="post" action="{{ url_for('luminarias_punto_recambio', point_id=luminarias_selected.id) }}">
-                  <div class="lum-op-form-grid">
-                    <div class="lum-op-field">
-                      <label>Fecha</label>
-                      <input type="date" name="fecha" value="{{ fecha_dia }}" required>
-                    </div>
-                    <div class="lum-op-field">
-                      <label>Marca</label>
-                      <select name="marca" required data-lum-brand-select>
-                        <option value="">Seleccionar marca</option>
-                        {% for brand in luminarias_brand_options %}
-                        <option value="{{ brand }}">{{ brand }}</option>
-                        {% endfor %}
-                      </select>
-                    </div>
-                    <div class="lum-op-field full" data-lum-brand-other hidden>
-                      <label>Nueva marca</label>
-                      <input type="text" name="marca_otro" placeholder="Ej. Interelec">
-                    </div>
-                    <div class="lum-op-field full">
-                      <label>Observacion opcional</label>
-                      <textarea name="observacion" placeholder="Opcional"></textarea>
-                    </div>
-                  </div>
-                  <div class="lum-op-actions">
-                    <button type="submit" class="btn primary">Registrar recambio</button>
-                  </div>
-                </form>
-              </div>
-              {% elif not luminarias_selected.supports_replacements %}
-              <div class="lum-op-section">
-                <h4 class="lum-op-section-title">Recambio</h4>
-                <p class="lum-op-note">Los puestos de trabajo no registran recambios.</p>
-              </div>
-              {% endif %}
-
-              {% if luminarias_selected.activo %}
-              <div class="lum-op-section">
-                <h4 class="lum-op-section-title">Dar de baja</h4>
-                <form method="post" action="{{ url_for('luminarias_punto_baja', point_id=luminarias_selected.id) }}">
-                  <input type="hidden" name="fecha_baja" value="{{ fecha_dia }}">
-                  <div class="lum-op-confirm" id="lum-baja-confirm" hidden>
-                    <p><strong class="lum-type-text lum-type-{{ luminarias_selected.tipo|lower }}">¿Confirmás la baja de {{ luminarias_selected.codigo_corto }}?</strong></p>
-                    <p>Esta accion debe utilizarse unicamente cuando el punto de iluminacion dejo de existir fisicamente. El historial sera conservado.</p>
-                    <div class="lum-op-actions">
-                      <button type="button" class="btn outline-slate" data-lum-baja-cancel>Cancelar</button>
-                      <button type="submit" class="btn danger">Confirmar baja</button>
-                    </div>
-                  </div>
-                </form>
-              </div>
-              {% endif %}
-
-              <div class="lum-op-section" id="lum-historial">
-                <h4 class="lum-op-section-title">Historial de <span class="lum-type-text lum-type-{{ luminarias_selected.tipo|lower }}">{{ luminarias_selected.codigo_corto }}</span></h4>
-                {% if luminarias_selected.history_rows and luminarias_selected.history_rows|length > 0 %}
-                <table class="lum-op-table">
-                  <thead>
-                    <tr>
-                      <th>Fecha de instalacion</th>
-                      <th>Marca</th>
-                      <th>Resultado</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {% for h in luminarias_selected.history_rows %}
-                    <tr>
-                      <td>{{ h.fecha_instalacion_display or '—' }}</td>
-                      <td>{{ h.marca or 'Sin marca' }}</td>
-                      <td>{{ h.resultado }}</td>
-                    </tr>
-                    {% endfor %}
-                  </tbody>
-                </table>
-                {% else %}
-                <p class="lum-op-note">Todavia no hay historial registrado para esta luminaria.</p>
-                {% endif %}
-              </div>
-              {% else %}
-              <div class="lum-op-card-head">
-                <div>
-                  <h3 class="lum-op-card-title">Ficha simplificada</h3>
-                  <p class="lum-op-card-sub">Selecciona un codigo desde el plano o desde la tabla por ambiente.</p>
-                </div>
-              </div>
-              <p class="lum-op-note">
-                Al seleccionar una luminaria vas a poder registrar recambio, ver historial y darla de baja si dejo de existir fisicamente.
-              </p>
-              {% endif %}
-            </div>
-          </div>
-        </div>
-
-
-
-
-        {% endif %}
         {% elif tab == 'sst_carteleria' %}
 
         <div class="panel-section-head panel-section-head-top">
@@ -12788,7 +12518,7 @@
 
 
 
-              Totales (filtro actual): <strong>{{ matafuegos_kpi.total }}</strong> ·
+              Totales (filtro actual): <strong>{{ matafuegos_kpi.total }}</strong> Â·
 
 
 
@@ -12852,7 +12582,7 @@
 
 
 
-                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);">Ubicación</th>
+                <th style="text-align:left;padding:8px;border-bottom:1px solid var(--border);">UbicaciÃ³n</th>
 
 
 
@@ -13008,7 +12738,7 @@
 
 
 
-            <div class="panel-section-title">Evacuación</div>
+            <div class="panel-section-title">EvacuaciÃ³n</div>
 
 
 
@@ -13114,7 +12844,7 @@
 
 
 
-            Vereda exterior – Palacio de Tribunales (referencia en plano).
+            Vereda exterior â€“ Palacio de Tribunales (referencia en plano).
 
 
 
@@ -13174,7 +12904,7 @@
 
 
 
-            Función: coordinar salida, verificar que no queden personas y reportar en el punto de encuentro.
+            FunciÃ³n: coordinar salida, verificar que no queden personas y reportar en el punto de encuentro.
 
 
 
@@ -13265,7 +12995,7 @@
 
                 <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:190px;">Ambiente</th>
 
-                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:90px;">Depósito</th>
+                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:90px;">DepÃ³sito</th>
 
 
 
@@ -13273,7 +13003,7 @@
 
                 <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:90px;">Gas</th>
 
-                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:90px;">Frigorías</th>
+                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:90px;">FrigorÃ­as</th>
 
 
 
@@ -13281,17 +13011,17 @@
 
 
 
-                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:96px;">Última limpieza</th>
+                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:96px;">Ãšltima limpieza</th>
 
 
 
-                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:96px;">Último service</th>
+                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:96px;">Ãšltimo service</th>
 
                 <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:96px;">Frec.</th>
 
                 <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:240px;">Observaciones</th>
 
-                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:110px;text-align:right;">Acción</th>
+                <th style="padding:8px;border-bottom:1px solid #e5e7eb;width:110px;text-align:right;">AcciÃ³n</th>
 
 
 
@@ -13368,7 +13098,7 @@
                   <form method="post"
                         action="{{ url_for('aire_borrar', codigo=sede.codigo, aid=a.id) }}"
                         style="display:inline;"
-                        onsubmit="return confirm('¿Eliminar este equipo de aire?');">
+                        onsubmit="return confirm('Â¿Eliminar este equipo de aire?');">
                     <button class="btn xs danger" type="submit">Eliminar</button>
                   </form>
                 </td>
@@ -13523,18 +13253,18 @@
     </div>
     <details class="cll-extra" id="cllExtra">
       <summary class="cll-extra-summary">
-        <span>📝 Informe + conversación</span>
+        <span>ðŸ“ Informe + conversaciÃ³n</span>
         <span class="hint">tocar para abrir</span>
       </summary>
       <div class="cll-extra-body">
-        <div class="cll-extra-title">📝 Informe general del agente</div>
-        <textarea class="cll-informe" id="cllInforme" placeholder="Informe general (opcional). Ej: faltó limpieza en baños, cocina observada, etc."></textarea>
+        <div class="cll-extra-title">ðŸ“ Informe general del agente</div>
+        <textarea class="cll-informe" id="cllInforme" placeholder="Informe general (opcional). Ej: faltÃ³ limpieza en baÃ±os, cocina observada, etc."></textarea>
         <div class="cll-extra-actions">
           <a class="cll-extra-link" id="cllDetalleLink" href="#" target="_blank" rel="noopener">Abrir detalle</a>
         </div>
         <details class="cll-chat-disclosure" id="cllChatDisclosure">
           <summary class="cll-chat-summary">
-            <span>💬 Conversación interna</span>
+            <span>ðŸ’¬ ConversaciÃ³n interna</span>
             <span class="hint">tocar para abrir</span>
           </summary>
           <div class="cll-chat-box" id="cllChatList">
@@ -13589,7 +13319,7 @@
     const sedeCodigo = String(btn.getAttribute("data-sede") || "").trim().toUpperCase();
     let DATA = null;
     let CONTROLES = {}; // { D01: {resultado, observacion} }
-    let REQUIRED = new Set(); // depósitos terminados (QR)
+    let REQUIRED = new Set(); // depÃ³sitos terminados (QR)
     let LOCKED = false;
     let IS_SUPERVISOR = false;
     let PREV_BODY_OVERFLOW = "";
@@ -13624,14 +13354,14 @@
     async function readJson(res, fallbackMsg) {
       if (res && res.redirected) {
         try { await res.text(); } catch (_e) { /* noop */ }
-        return { ok: false, error: "Sesión vencida. Recargá la página (F5) y volvé a ingresar." };
+        return { ok: false, error: "SesiÃ³n vencida. RecargÃ¡ la pÃ¡gina (F5) y volvÃ© a ingresar." };
       }
       // Intentamos JSON aunque el content-type no venga perfecto (evita errores tipo '<!doctype' en UI)
       try {
         return await res.json();
       } catch (_e) {
         try { await res.text(); } catch (_e2) { /* noop */ }
-        return { ok: false, error: String(fallbackMsg || "Error del servidor. Recargá la página e intentá de nuevo.") };
+        return { ok: false, error: String(fallbackMsg || "Error del servidor. RecargÃ¡ la pÃ¡gina e intentÃ¡ de nuevo.") };
       }
     }
 
@@ -13753,27 +13483,27 @@
       const cfg = {
         lunes: {
           title: "LUNES",
-          tasks: ["Vereda", "Baños", "Balcones (LIMPIEZA PROFUNDA)"],
+          tasks: ["Vereda", "BaÃ±os", "Balcones (LIMPIEZA PROFUNDA)"],
           important: "Debe notarse limpieza profunda en balcones (no solo barrido)",
         },
         martes: {
           title: "MARTES",
-          tasks: ["Vereda", "Baños", "Oficinas (estado general)"],
-          important: "Controlar que se mantenga la limpieza del día anterior",
+          tasks: ["Vereda", "BaÃ±os", "Oficinas (estado general)"],
+          important: "Controlar que se mantenga la limpieza del dÃ­a anterior",
         },
         miercoles: {
-          title: "MIÉRCOLES",
-          tasks: ["Vereda", "Baños", "Oficinas (LIMPIEZA PROFUNDA)", "Vidrios (LIMPIEZA PROFUNDA)"],
+          title: "MIÃ‰RCOLES",
+          tasks: ["Vereda", "BaÃ±os", "Oficinas (LIMPIEZA PROFUNDA)", "Vidrios (LIMPIEZA PROFUNDA)"],
           important: "Los vidrios deben estar impecables (sin marcas)",
         },
         jueves: {
           title: "JUEVES",
-          tasks: ["Vereda", "Baños", "Oficinas (estado general)"],
+          tasks: ["Vereda", "BaÃ±os", "Oficinas (estado general)"],
           important: "Control general de mantenimiento",
         },
         viernes: {
           title: "VIERNES",
-          tasks: ["Vereda", "Baños", "Oficinas (LIMPIEZA PROFUNDA)", "Terraza (LIMPIEZA PROFUNDA)"],
+          tasks: ["Vereda", "BaÃ±os", "Oficinas (LIMPIEZA PROFUNDA)", "Terraza (LIMPIEZA PROFUNDA)"],
           important: "Debe notarse limpieza profunda en terraza",
         },
       };
@@ -13781,16 +13511,16 @@
       const it = cfg[diaN] || null;
       const title = it ? it.title : String(diaSemana || "").trim().toUpperCase();
       const tasks = it ? it.tasks : [];
-      const important = it ? it.important : "Sin pauta particular configurada para este día.";
+      const important = it ? it.important : "Sin pauta particular configurada para este dÃ­a.";
 
       const tasksHtml = tasks.length
         ? ('<div class="cll-checklist">' + tasks.map((t) => '<span class="cll-item">' + escapeHtml(t) + "</span>").join("") + "</div>")
         : '<div style="font-weight:600;color:#92400e;">(Sin tareas configuradas)</div>';
 
       return (
-        '<div class="cll-cd-title">📋 Control del día — ' + escapeHtml(title) + "</div>" +
+        '<div class="cll-cd-title">ðŸ“‹ Control del dÃ­a â€” ' + escapeHtml(title) + "</div>" +
         '<div class="cll-cd-section">Tareas a verificar:' + tasksHtml + "</div>" +
-        '<div class="cll-cd-important">⚠️ Importante: <span>' + escapeHtml(important) + "</span></div>"
+        '<div class="cll-cd-important">âš ï¸ Importante: <span>' + escapeHtml(important) + "</span></div>"
       );
     }
 
@@ -13801,7 +13531,7 @@
         ? ('<div class="cll-checklist">' + items.map((t) => '<span class="cll-item">' + escapeHtml(t) + "</span>").join("") + "</div>")
         : '<div style="font-weight:600;color:#92400e;">(Sin tareas configuradas)</div>';
       return (
-        '<div class="cll-cd-title">📋 Control del día — ' + escapeHtml(title) + "</div>" +
+        '<div class="cll-cd-title">ðŸ“‹ Control del dÃ­a â€” ' + escapeHtml(title) + "</div>" +
         '<div class="cll-cd-section">Tareas a verificar:' + chips + "</div>"
       );
     }
@@ -13816,9 +13546,9 @@
       const ctrl = dep.control || {};
       const res = String(ctrl.resultado || "").toUpperCase();
       let cls = "none";
-      let icon = "•";
-      if (res === "APROBADO") { cls = "ok"; icon = "👍"; }
-      else if (res === "OBSERVADO") { cls = "obs"; icon = "👎"; }
+      let icon = "â€¢";
+      if (res === "APROBADO") { cls = "ok"; icon = "ðŸ‘"; }
+      else if (res === "OBSERVADO") { cls = "obs"; icon = "ðŸ‘Ž"; }
       return (
         '<button type="button" class="cll-chip ' + cls + '" data-cll-act="jump" data-dep="' + escapeHtml(code) + '">' +
           '<span aria-hidden="true">' + icon + "</span>" +
@@ -13835,9 +13565,9 @@
       const obs = String(ctrl.observacion || "");
       let stateCls = "none";
       let stateText = "No registrado";
-      let stateIcon = "•";
-      if (res === "APROBADO") { stateCls = "ok"; stateText = "Aprobado"; stateIcon = "👍"; }
-      else if (res === "OBSERVADO") { stateCls = "obs"; stateText = "Observado"; stateIcon = "👎"; }
+      let stateIcon = "â€¢";
+      if (res === "APROBADO") { stateCls = "ok"; stateText = "Aprobado"; stateIcon = "ðŸ‘"; }
+      else if (res === "OBSERVADO") { stateCls = "obs"; stateText = "Observado"; stateIcon = "ðŸ‘Ž"; }
       const statePill = '<span class="cll-state-pill ' + stateCls + '"><span aria-hidden="true">' + stateIcon + "</span>" + escapeHtml(stateText) + "</span>";
 
       const selOk = res === "APROBADO" ? " selected" : "";
@@ -13855,8 +13585,8 @@
             '<div class="cll-badges">' + statePill + "</div>" +
           "</div>" +
           '<div class="cll-actions">' +
-            '<button type="button" class="cll-btn good' + selOk + '" data-cll-act="set" data-dep="' + escapeHtml(code) + '" data-res="APROBADO">👍 Aprobado</button>' +
-            '<button type="button" class="cll-btn bad' + selObs + '" data-cll-act="set" data-dep="' + escapeHtml(code) + '" data-res="OBSERVADO">👎 Observado</button>' +
+            '<button type="button" class="cll-btn good' + selOk + '" data-cll-act="set" data-dep="' + escapeHtml(code) + '" data-res="APROBADO">ðŸ‘ Aprobado</button>' +
+            '<button type="button" class="cll-btn bad' + selObs + '" data-cll-act="set" data-dep="' + escapeHtml(code) + '" data-res="OBSERVADO">ðŸ‘Ž Observado</button>' +
           "</div>" +
           '<textarea class="cll-obs' + obsWarn + obsHidden + '" data-cll-dep="' + escapeHtml(code) + '" placeholder="Describir problema (suciedad, falta de limpieza, etc.)">' + escapeHtml(obs) + "</textarea>" +
         "</div>"
@@ -13900,12 +13630,12 @@
       const isS12 = String((DATA && DATA.sede && DATA.sede.codigo) ? DATA.sede.codigo : sedeCodigo).trim().toUpperCase() === "S12";
       const diaSem = String((DATA && DATA.dia_semana) ? DATA.dia_semana : "");
       const warnS12 = (isS12 && !s12HasTasks(diaSem))
-        ? "Advertencia: no hay tareas configuradas para este día (S12). Se puede finalizar igual. "
+        ? "Advertencia: no hay tareas configuradas para este dÃ­a (S12). Se puede finalizar igual. "
         : "";
 
-      let msg = "Sin registrar: " + none + " · Aprobados: " + ok + " · Observados: " + obs;
-      if (nonePreview.length) msg += " (Ej: " + nonePreview.join(", ") + (none > nonePreview.length ? "…" : "") + ")";
-      if (obsSinObs) msg += " · Observados sin observación: " + obsSinObs;
+      let msg = "Sin registrar: " + none + " Â· Aprobados: " + ok + " Â· Observados: " + obs;
+      if (nonePreview.length) msg += " (Ej: " + nonePreview.join(", ") + (none > nonePreview.length ? "â€¦" : "") + ")";
+      if (obsSinObs) msg += " Â· Observados sin observaciÃ³n: " + obsSinObs;
 
       setMsg(warnS12 + msg, false);
       setFinalizeDisabled(false);
@@ -13919,7 +13649,7 @@
       const fecha = String(DATA.fecha || "-");
       const dia = String(DATA.dia_semana || "-");
       const user = String(DATA.usuario || "-");
-      const sedeTxt = sede + (dir ? (" · " + dir) : "");
+      const sedeTxt = sede + (dir ? (" Â· " + dir) : "");
       const sedeCod = String((DATA.sede && DATA.sede.codigo) ? DATA.sede.codigo : sedeCodigo).trim().toUpperCase();
 
       subEl.textContent = sede;
@@ -13940,7 +13670,7 @@
       const deps = Array.isArray(DATA.depositos) ? DATA.depositos : [];
       const checklist = Array.isArray(DATA.checklist) ? DATA.checklist : [];
 
-      // Bloque superior: Control del día (compacto y visible)
+      // Bloque superior: Control del dÃ­a (compacto y visible)
       controlEl.classList.remove("hidden");
       controlEl.innerHTML = (sedeCod === "S12")
         ? controlDiaS12Html(dia)
@@ -13959,7 +13689,7 @@
       });
 
       chipsEl.innerHTML = deps.map(chipHtml).join("");
-      bodyEl.innerHTML = deps.map((d) => cardHtml(d, checklist)).join("") || '<div class="cll-empty">Sin depósitos cargados para la sede.</div>';
+      bodyEl.innerHTML = deps.map((d) => cardHtml(d, checklist)).join("") || '<div class="cll-empty">Sin depÃ³sitos cargados para la sede.</div>';
       updateCounters();
       loadChat();
     }
@@ -14022,7 +13752,7 @@
       if (pill) {
         pill.classList.remove("ok", "obs", "none");
         pill.classList.add(stateCls);
-        const icon = (stateCls === "ok") ? "👍" : ((stateCls === "obs") ? "👎" : "•");
+        const icon = (stateCls === "ok") ? "ðŸ‘" : ((stateCls === "obs") ? "ðŸ‘Ž" : "â€¢");
         const txt = (stateCls === "ok") ? "Aprobado" : ((stateCls === "obs") ? "Observado" : "No registrado");
         pill.innerHTML = '<span aria-hidden="true">' + icon + "</span>" + escapeHtml(txt);
       }
@@ -14031,7 +13761,7 @@
         chip.classList.remove("ok", "obs", "none");
         chip.classList.add(stateCls);
         const iconEl = chip.querySelector("span");
-        if (iconEl) iconEl.textContent = (stateCls === "ok") ? "👍" : ((stateCls === "obs") ? "👎" : "•");
+        if (iconEl) iconEl.textContent = (stateCls === "ok") ? "ðŸ‘" : ((stateCls === "obs") ? "ðŸ‘Ž" : "â€¢");
       }
 
       updateCounters();
@@ -14046,7 +13776,7 @@
         }
       });
       if (faltanObs.length) {
-        setMsg("Observación sugerida en: " + faltanObs.join(", "), false);
+        setMsg("ObservaciÃ³n sugerida en: " + faltanObs.join(", "), false);
       }
       return true;
     }
@@ -14081,7 +13811,7 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-        const data = await readJson(res, "No se pudo guardar. Recargá la página e intentá de nuevo.");
+        const data = await readJson(res, "No se pudo guardar. RecargÃ¡ la pÃ¡gina e intentÃ¡ de nuevo.");
         if (!res.ok || !data || !data.ok) throw new Error((data && data.error) ? data.error : "No se pudo guardar");
         let msg = "Guardado (" + String(data.saved || payload.controles.length) + ").";
         setMsg(msg, false);
@@ -14119,7 +13849,7 @@
             informe_agente: informe,
           }),
         });
-        const data = await readJson(res, "No se pudo finalizar. Recargá la página e intentá de nuevo.");
+        const data = await readJson(res, "No se pudo finalizar. RecargÃ¡ la pÃ¡gina e intentÃ¡ de nuevo.");
         if (!res.ok || !data || !data.ok) throw new Error((data && data.error) ? data.error : "No se pudo finalizar");
         let msg = "Control finalizado correctamente. Queda guardado como control oficial del dia y pendiente de revision de Intendencia.";
         setMsg(msg, false);
@@ -14194,7 +13924,7 @@
       try {
         s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       } catch (_e) {}
-      s = s.replace(/[º°]/g, "o");
+      s = s.replace(/[ÂºÂ°]/g, "o");
       s = s.replace(/[\.,;:\/\\\(\)\[\]\{\}\-_]+/g, " ");
       s = s.replace(/\b(nro|nro\.|numero|num)\b/g, " n ");
       s = s.replace(/\bn[o]?\b/g, " n ");
@@ -14409,7 +14139,7 @@
 
       const statusParts = [
         "Personal " + personalMatches.length,
-        "Depósitos " + depositosMatches.length
+        "DepÃ³sitos " + depositosMatches.length
       ];
       if (localCodes.size > 0) {
         statusParts.push("Locales " + Array.from(localCodes).slice(0, 6).join(", "));
@@ -14455,10 +14185,10 @@
     const apiUrl = String(layer.dataset.apiUrl || "").trim();
     const activeLocal = String(layer.dataset.local || "").toUpperCase();
     const typeMeta = {
-      ruta_arriba: { label: "Ruta arriba", short: "↑", className: "type-ruta_arriba" },
-      ruta_derecha: { label: "Ruta derecha", short: "→", className: "type-ruta_derecha" },
-      ruta_abajo: { label: "Ruta abajo", short: "↓", className: "type-ruta_abajo" },
-      ruta_izquierda: { label: "Ruta izquierda", short: "←", className: "type-ruta_izquierda" },
+      ruta_arriba: { label: "Ruta arriba", short: "â†‘", className: "type-ruta_arriba" },
+      ruta_derecha: { label: "Ruta derecha", short: "â†’", className: "type-ruta_derecha" },
+      ruta_abajo: { label: "Ruta abajo", short: "â†“", className: "type-ruta_abajo" },
+      ruta_izquierda: { label: "Ruta izquierda", short: "â†", className: "type-ruta_izquierda" },
       salida: { label: "Salida", short: "SAL", className: "type-salida" },
       punto_encuentro: { label: "Punto de encuentro", short: "PE", className: "type-punto_encuentro" },
       usted_esta_aqui: { label: "Usted esta aqui", short: "UA", className: "type-usted_esta_aqui" },
