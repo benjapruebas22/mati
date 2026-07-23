@@ -12099,13 +12099,19 @@
                     <p class="lum-op-card-sub">Se crea el siguiente codigo disponible del tipo elegido y despues la ubicas en el plano.</p>
                   </div>
                 </div>
+                {% set default_ambiente = local or (luminarias_selected.ambiente_codigo if luminarias_selected else '') %}
                 <form method="post" action="{{ url_for('luminarias_punto_alta') }}">
                   <input type="hidden" name="sede_codigo" value="{{ sede.codigo }}">
                   <input type="hidden" name="piso_codigo" value="{{ piso }}">
                   <div class="lum-op-form-grid">
                     <div class="lum-op-field">
                       <label>Ambiente</label>
-                      <input type="text" name="ambiente_codigo" value="{{ local or (luminarias_selected.ambiente_codigo if luminarias_selected else '') }}" placeholder="D01" required>
+                      <select name="ambiente_codigo" required {% if not luminarias_ambiente_options %}disabled{% endif %}>
+                        <option value="">{% if luminarias_ambiente_options %}Seleccionar ambiente{% else %}Sin ambientes cargados{% endif %}</option>
+                        {% for ambiente in luminarias_ambiente_options %}
+                        <option value="{{ ambiente.codigo }}" {% if default_ambiente == ambiente.codigo %}selected{% endif %}>{{ ambiente.label }}</option>
+                        {% endfor %}
+                      </select>
                     </div>
                     <div class="lum-op-field">
                       <label>Tipo</label>
@@ -12121,8 +12127,11 @@
                       <input type="date" name="fecha_creacion" value="{{ fecha_dia }}">
                     </div>
                   </div>
+                  {% if not luminarias_ambiente_options %}
+                  <p class="lum-op-note">No hay ambientes cargados para este piso. El sistema solo permite elegir ambientes existentes.</p>
+                  {% endif %}
                   <div class="lum-op-actions">
-                    <button type="submit" class="btn primary">Agregar</button>
+                    <button type="submit" class="btn primary" {% if not luminarias_ambiente_options %}disabled{% endif %}>Agregar</button>
                   </div>
                 </form>
               </div>
@@ -12190,16 +12199,15 @@
                     <div class="lum-op-field">
                       <label>Marca</label>
                       <select name="marca" required data-lum-brand-select>
-                        <option value="Philips">Philips</option>
-                        <option value="MacroLED">MacroLED</option>
-                        <option value="Osram">Osram</option>
-                        <option value="Sica">Sica</option>
-                        <option value="Otra">Otra</option>
+                        <option value="">Seleccionar marca</option>
+                        {% for brand in luminarias_brand_options %}
+                        <option value="{{ brand }}">{{ brand }}</option>
+                        {% endfor %}
                       </select>
                     </div>
                     <div class="lum-op-field full" data-lum-brand-other hidden>
-                      <label>Otra marca</label>
-                      <input type="text" name="marca_otro" placeholder="Ej. Generica 18W">
+                      <label>Nueva marca</label>
+                      <input type="text" name="marca_otro" placeholder="Ej. Interelec">
                     </div>
                     <div class="lum-op-field full">
                       <label>Observacion opcional</label>
@@ -12223,7 +12231,6 @@
                 <h4 class="lum-op-section-title">Dar de baja</h4>
                 <form method="post" action="{{ url_for('luminarias_punto_baja', point_id=luminarias_selected.id) }}">
                   <input type="hidden" name="fecha_baja" value="{{ fecha_dia }}">
-                  <input type="hidden" name="motivo_baja" value="Baja confirmada desde la ficha simplificada">
                   <div class="lum-op-confirm" id="lum-baja-confirm" hidden>
                     <p><strong class="lum-type-text lum-type-{{ luminarias_selected.tipo|lower }}">¿Confirmás la baja de {{ luminarias_selected.codigo_corto }}?</strong></p>
                     <p>Esta accion debe utilizarse unicamente cuando el punto de iluminacion dejo de existir fisicamente. El historial sera conservado.</p>
@@ -15681,6 +15688,7 @@
         const input = otherField.querySelector("input");
         if (input) {
           input.disabled = !isOther;
+          input.required = isOther;
           if (!isOther) input.value = "";
         }
       }

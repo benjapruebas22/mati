@@ -5885,6 +5885,8 @@ def sede_ficha(codigo):
     luminarias_kpi = {"tubo_fria": 0, "tubo_calido": 0, "foco": 0, "panel": 0, "puestos_trabajo": 0}
     luminarias_operativo_rows_data = []
     luminarias_selected = None
+    luminarias_ambiente_options = []
+    luminarias_brand_options = []
     luminarias_operativo_totals = {
         "total": 0,
         "tl": 0,
@@ -6076,6 +6078,8 @@ def sede_ficha(codigo):
     # -------------------------
     if tab == "luminarias":
         ensure_luminarias_operativo_ready(db)
+        luminarias_ambiente_options = _luminaria_environment_options(db, codigo, piso)
+        luminarias_brand_options = _luminaria_brand_options(db)
         where = ["l.codigo_sede = ?"]
         params = [codigo]
 
@@ -6595,6 +6599,8 @@ def sede_ficha(codigo):
         luminarias_kpi=luminarias_kpi,
         luminarias_operativo_rows=luminarias_operativo_rows_data,
         luminarias_selected=luminarias_selected,
+        luminarias_ambiente_options=luminarias_ambiente_options,
+        luminarias_brand_options=luminarias_brand_options,
         luminarias_operativo_totals=luminarias_operativo_totals,
         matafuegos_rows=matafuegos_rows,
         matafuegos_kpi=matafuegos_kpi,
@@ -11829,7 +11835,7 @@ LUMINARIA_POINT_TYPE_META = {
     "PN": {"label": "Panel LED", "kind": "panel_led"},
     "PT": {"label": "Puesto de trabajo", "kind": "puestos_trabajo"},
 }
-LUMINARIA_BRAND_OPTIONS = ("Philips", "MacroLED", "Osram", "Sica", "Otra")
+LUMINARIA_BRAND_OPTIONS = ("Philips", "MacroLED", "Osram", "Interelec", "Sica", "Otra")
 
 
 def _luminaria_safe_int(value):
@@ -11861,6 +11867,90 @@ def _luminaria_full_code(sede_codigo, ambiente_codigo, type_code, number):
     sede = (sede_codigo or "").upper().strip()
     ambiente = _mobiliario_plano_normalize_local(ambiente_codigo)
     return f"{sede}-{ambiente}-{_luminaria_short_code(type_code, number)}"
+
+
+def _luminaria_environment_options(con, sede_codigo, piso_codigo):
+    sede = (sede_codigo or "").upper().strip()
+    piso = _mobiliario_plano_normalize_piso(piso_codigo)
+    options_by_code = {}
+
+    try:
+        dep_rows = con.execute("""
+            SELECT codigo_local, COALESCE(descripcion,'') AS descripcion
+            FROM sedes_depositos
+            WHERE codigo_sede = ?
+            ORDER BY codigo_local
+        """, (sede,)).fetchall()
+    except Exception:
+        try:
+            dep_rows = con.execute("""
+                SELECT codigo_local, '' AS descripcion
+                FROM sedes_depositos
+                WHERE codigo_sede = ?
+                ORDER BY codigo_local
+            """, (sede,)).fetchall()
+        except Exception:
+            dep_rows = []
+
+    def add_option(local_code, descripcion=""):
+        code = _mobiliario_plano_normalize_local(local_code)
+        if not code or code == "SEDE":
+            return
+        if not _visual_plan_local_matches_piso(sede, piso, code):
+            return
+        slot = options_by_code.setdefault(code, {"codigo": code, "descripcion": ""})
+        desc = str(descripcion or "").strip()
+        if desc and not slot["descripcion"]:
+            slot["descripcion"] = desc
+
+    for row in dep_rows:
+        add_option(row["codigo_local"], row["descripcion"])
+
+    extra_rows = con.execute("""
+        SELECT ambiente_codigo AS codigo
+        FROM luminaria_punto
+        WHERE UPPER(COALESCE(sede_codigo,'')) = ?
+          AND piso_codigo = ?
+        UNION
+        SELECT COALESCE(codigo_local,'') AS codigo
+        FROM luminarias_sede
+        WHERE UPPER(COALESCE(codigo_sede,'')) = ?
+          AND COALESCE(piso,'PB') = ?
+    """, (sede, piso, sede, piso)).fetchall()
+    for row in extra_rows:
+        add_option(row["codigo"], "")
+
+    options = []
+    for code in sorted(options_by_code.keys(), key=_mobiliario_plano_local_sort_key):
+        desc = str(options_by_code[code]["descripcion"] or "").strip()
+        options.append({
+            "codigo": code,
+            "descripcion": desc,
+            "label": f"{code} - {desc}" if desc else code,
+        })
+    return options
+
+
+def _luminaria_brand_options(con):
+    defaults = [brand for brand in LUMINARIA_BRAND_OPTIONS if brand != "Otra"]
+    seen = {brand.strip().lower() for brand in defaults if brand.strip()}
+    extras = []
+    rows = con.execute("""
+        SELECT marca, COALESCE(marca_otro,'') AS marca_otro
+        FROM luminaria_recambio
+        ORDER BY fecha_registro DESC, id DESC
+    """).fetchall()
+    for row in rows:
+        brand = _luminaria_brand_display(row).strip()
+        if not brand or brand.lower() == "otra":
+            continue
+        key = brand.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        extras.append(brand)
+    extras.sort(key=lambda value: value.lower())
+    return defaults + extras + ["Otra"]
 
 
 def _luminaria_brand_display(row_or_brand, brand_other=None):
@@ -13466,18 +13556,35 @@ def luminarias_punto_alta():
     con = get_db()
     try:
         ensure_luminarias_operativo_ready(con)
+        ambiente_options = _luminaria_environment_options(con, sede_codigo, piso_codigo)
+        ambiente_codes = {item["codigo"] for item in ambiente_options}
         if not sede_codigo or not ambiente_codigo or not tipo:
             flash("Sede, ambiente y tipo son obligatorios.", "warning")
             return redirect(_luminaria_sede_return_url(sede_codigo, piso_codigo, ambiente_codigo))
-        point = _luminaria_create_point(
-            con,
-            sede_codigo,
-            piso_codigo,
-            ambiente_codigo,
-            tipo,
-            fecha_creacion=fecha_creacion or date.today().isoformat(),
-            sync_summary=True,
-        )
+        if not ambiente_codes:
+            flash("No hay ambientes disponibles en este piso para agregar luminarias.", "warning")
+            return redirect(_luminaria_sede_return_url(sede_codigo, piso_codigo, ambiente_codigo))
+        if ambiente_codigo not in ambiente_codes:
+            flash("Selecciona un ambiente valido del piso actual.", "warning")
+            return redirect(_luminaria_sede_return_url(sede_codigo, piso_codigo, ambiente_codigo))
+        fecha_alta = _luminaria_parse_date(fecha_creacion) if fecha_creacion else date.today()
+        if fecha_creacion and not fecha_alta:
+            flash("La fecha de alta no es valida.", "warning")
+            return redirect(_luminaria_sede_return_url(sede_codigo, piso_codigo, ambiente_codigo))
+        try:
+            point = _luminaria_create_point(
+                con,
+                sede_codigo,
+                piso_codigo,
+                ambiente_codigo,
+                tipo,
+                fecha_creacion=(fecha_alta or date.today()).isoformat(),
+                sync_summary=True,
+            )
+        except sqlite3.IntegrityError:
+            con.rollback()
+            flash("No se pudo crear la luminaria porque ese codigo ya existe.", "warning")
+            return redirect(_luminaria_sede_return_url(sede_codigo, piso_codigo, ambiente_codigo))
         con.commit()
         flash(f"Punto {point['codigo_completo']} creado.", "success")
         return redirect(_luminaria_sede_return_url(sede_codigo, piso_codigo, ambiente_codigo, point["id"]))
@@ -13506,8 +13613,15 @@ def luminarias_punto_recambio(point_id):
         marca = (request.form.get("marca") or "").strip()
         marca_otro = (request.form.get("marca_otro") or "").strip()
         observacion = (request.form.get("observacion") or "").strip()
-        if marca and marca not in LUMINARIA_BRAND_OPTIONS:
-            marca_otro = marca
+        brand_map = {
+            str(item or "").strip().lower(): str(item or "").strip()
+            for item in _luminaria_brand_options(con)
+            if str(item or "").strip() and str(item or "").strip().lower() != "otra"
+        }
+        if marca and marca.lower() in brand_map:
+            marca = brand_map[marca.lower()]
+        elif marca and marca != "Otra":
+            marca_otro = marca_otro or marca
             marca = "Otra"
         if not fecha_dt:
             flash("La fecha de recambio no es valida.", "warning")
@@ -13518,6 +13632,24 @@ def luminarias_punto_recambio(point_id):
         if marca == "Otra" and not marca_otro:
             flash("Debes especificar la marca cuando eliges Otra.", "warning")
             return redirect(_luminaria_sede_return_url(point["sede_codigo"], point["piso_codigo"], point["ambiente_codigo"], point_id))
+
+        last_row = con.execute("""
+            SELECT fecha_colocacion, COALESCE(fecha_recambio,'') AS fecha_recambio
+            FROM luminaria_recambio
+            WHERE luminaria_punto_id = ?
+            ORDER BY COALESCE(NULLIF(fecha_recambio,''), fecha_colocacion) DESC, id DESC
+            LIMIT 1
+        """, (int(point_id),)).fetchone()
+        if last_row:
+            previous_date = _luminaria_parse_date(last_row["fecha_recambio"] or last_row["fecha_colocacion"])
+            if previous_date and fecha_dt < previous_date:
+                flash("La fecha de recambio no puede ser anterior al registro previo.", "warning")
+                return redirect(_luminaria_sede_return_url(point["sede_codigo"], point["piso_codigo"], point["ambiente_codigo"], point_id))
+        else:
+            created_date = _luminaria_parse_date(point["fecha_creacion"])
+            if created_date and fecha_dt < created_date:
+                flash("La fecha de recambio no puede ser anterior a la fecha registrada del punto.", "warning")
+                return redirect(_luminaria_sede_return_url(point["sede_codigo"], point["piso_codigo"], point["ambiente_codigo"], point_id))
 
         open_row = con.execute("""
             SELECT fecha_colocacion
@@ -13573,8 +13705,12 @@ def luminarias_punto_baja(point_id):
         if not point:
             flash("Punto de luminaria inexistente.", "error")
             return redirect(url_for("dashboard"))
+        if not bool(point["activo"]):
+            flash("El punto seleccionado ya esta dado de baja.", "warning")
+            return redirect(_luminaria_sede_return_url(point["sede_codigo"], point["piso_codigo"], point["ambiente_codigo"], point_id))
         fecha_baja = (request.form.get("fecha_baja") or date.today().isoformat()).strip()
-        motivo_baja = (request.form.get("motivo_baja") or "").strip()
+        usuario = (session.get("full_name") or session.get("username") or "Sistema").strip() or "Sistema"
+        motivo_baja = (request.form.get("motivo_baja") or "").strip() or f"Baja confirmada por {usuario}"
         _luminaria_mark_point_inactive(con, int(point_id), fecha_baja=fecha_baja, motivo_baja=motivo_baja, sync_summary=True)
         con.commit()
         flash(f"{point['codigo_completo']} marcado como baja.", "success")
