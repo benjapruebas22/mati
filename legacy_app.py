@@ -11991,6 +11991,21 @@ def _luminaria_brand_display(row_or_brand, brand_other=None):
     return brand
 
 
+def _luminaria_normalize_brand_input(con, raw_brand, raw_brand_other=""):
+    marca = str(raw_brand or "").strip()
+    marca_otro = str(raw_brand_other or "").strip()
+    brand_map = {
+        str(item or "").strip().lower(): str(item or "").strip()
+        for item in _luminaria_brand_options(con)
+        if str(item or "").strip() and str(item or "").strip().lower() != "otra"
+    }
+    if marca and marca.lower() in brand_map:
+        return brand_map[marca.lower()], ""
+    if marca and marca != "Otra":
+        return "Otra", (marca_otro or marca).strip()
+    return marca, marca_otro
+
+
 def _luminaria_parse_date(value):
     if isinstance(value, date):
         return value
@@ -12194,6 +12209,51 @@ def _luminaria_close_open_recambio(con, point_id, fecha_cierre):
         WHERE id = ?
     """, (fecha.isoformat(), duracion, int(row["id"])))
     return int(row["id"])
+
+
+def _luminaria_cycle_payload(row):
+    fecha_colocacion = str(row["fecha_colocacion"] or "").strip()
+    fecha_recambio = str(row["fecha_recambio"] or "").strip()
+    actual = not fecha_recambio
+    duracion_humana = _luminaria_duration_human(fecha_colocacion, fecha_recambio)
+    if actual:
+        duracion_display = "—"
+    else:
+        duracion_display = duracion_humana or "No calculable"
+    return {
+        "id": int(row["id"]),
+        "marca": _luminaria_brand_display(row),
+        "fecha_colocacion": fecha_colocacion,
+        "fecha_recambio": fecha_recambio,
+        "desde_display": _luminaria_format_date(fecha_colocacion) or "Desconocido",
+        "hasta_display": "Activa" if actual else (_luminaria_format_date(fecha_recambio) or "Desconocido"),
+        "duracion_dias": row["duracion_dias"],
+        "duracion_humana": duracion_humana,
+        "duracion_display": duracion_display,
+        "observacion": str(row["observacion"] or "").strip(),
+        "motivo_display": str(row["observacion"] or "").strip() or "—",
+        "actual": actual,
+        "pending_capture": actual and not fecha_colocacion,
+    }
+
+
+def _luminaria_current_recambio_row(con, point_id):
+    row = con.execute("""
+        SELECT
+            id,
+            COALESCE(marca,'') AS marca,
+            COALESCE(marca_otro,'') AS marca_otro,
+            COALESCE(fecha_colocacion,'') AS fecha_colocacion,
+            COALESCE(fecha_recambio,'') AS fecha_recambio,
+            duracion_dias,
+            COALESCE(observacion,'') AS observacion
+        FROM luminaria_recambio
+        WHERE luminaria_punto_id = ?
+          AND fecha_recambio IS NULL
+        ORDER BY id DESC
+        LIMIT 1
+    """, (int(point_id),)).fetchone()
+    return _luminaria_cycle_payload(row) if row else None
 
 
 def _luminaria_sync_summary_for_ambiente(con, sede_codigo, piso_codigo, ambiente_codigo):
@@ -12532,25 +12592,19 @@ def _luminaria_history_rows(con, point_id):
             COALESCE(observacion,'') AS observacion
         FROM luminaria_recambio
         WHERE luminaria_punto_id = ?
-        ORDER BY COALESCE(fecha_colocacion,''), id
+        ORDER BY
+            CASE WHEN NULLIF(TRIM(COALESCE(fecha_colocacion,'')),'') IS NULL THEN 0 ELSE 1 END,
+            COALESCE(fecha_colocacion,''),
+            COALESCE(fecha_recambio,''),
+            id
     """, (int(point_id),)).fetchall()
     history = []
     for row in rows:
-        history.append({
-            "id": int(row["id"]),
-            "marca": _luminaria_brand_display(row),
-            "fecha_colocacion": str(row["fecha_colocacion"] or "").strip(),
-            "fecha_recambio": str(row["fecha_recambio"] or "").strip(),
-            "fecha_instalacion_display": _luminaria_format_date(row["fecha_colocacion"]),
-            "fecha_recambio_display": _luminaria_format_date(row["fecha_recambio"]),
-            "duracion_dias": row["duracion_dias"],
-            "duracion_humana": _luminaria_duration_human(row["fecha_colocacion"], row["fecha_recambio"]),
-            "observacion": str(row["observacion"] or "").strip(),
-            "actual": not str(row["fecha_recambio"] or "").strip(),
-        })
-    for item in history:
-        item["resultado"] = "Actual" if item["actual"] else (f"Duró {item['duracion_humana']}" if item["duracion_humana"] else "Finalizado")
-    return list(reversed(history))
+        item = _luminaria_cycle_payload(row)
+        if item["pending_capture"]:
+            continue
+        history.append(item)
+    return history
 
 
 def _luminaria_point_detail(con, point_id):
@@ -12562,11 +12616,15 @@ def _luminaria_point_detail(con, point_id):
     if not row:
         return None
     history = _luminaria_history_rows(con, int(row["id"]))
+    open_row = _luminaria_current_recambio_row(con, int(row["id"]))
     closed_rows = [item for item in history if not item["actual"] and item["duracion_dias"] is not None]
-    open_row = next((item for item in history if item["actual"]), None)
+    has_closed_cycles = any(not item["actual"] for item in history)
+    has_known_open_cycle = bool(open_row and open_row["fecha_colocacion"])
     durations = [int(item["duracion_dias"]) for item in closed_rows if item["duracion_dias"] is not None]
     avg_duration = round(sum(durations) / len(durations)) if durations else None
     last_duration = int(closed_rows[0]["duracion_dias"]) if closed_rows else None
+    supports_replacements = _luminaria_norm_type(row["tipo"]) != "PT"
+    has_current_brand = bool(open_row and open_row["marca"])
     point = {
         "id": int(row["id"]),
         "plan_item_id": f"lumpt:{int(row['id'])}",
@@ -12578,19 +12636,19 @@ def _luminaria_point_detail(con, point_id):
         "codigo_corto": str(row["codigo_corto"] or "").strip(),
         "codigo_completo": str(row["codigo_completo"] or "").strip(),
         "activo": bool(row["activo"]),
-        "supports_replacements": _luminaria_norm_type(row["tipo"]) != "PT",
+        "supports_replacements": supports_replacements,
         "history_rows": history,
         "has_history": bool(history),
         "can_edit_type": not bool(history),
         "instalaciones_registradas": len(history),
-        "recambios_completados": len(closed_rows),
+        "recambios_completados": len([item for item in history if not item["actual"]]),
         "duracion_promedio": avg_duration,
         "ultima_duracion": last_duration,
         "mejor_duracion": max(durations) if durations else None,
         "peor_duracion": min(durations) if durations else None,
         "marca_actual": open_row["marca"] if open_row else "",
         "fecha_colocacion_actual": open_row["fecha_colocacion"] if open_row else "",
-        "fecha_colocacion_actual_display": open_row["fecha_instalacion_display"] if open_row else _luminaria_format_date(row["fecha_creacion"]),
+        "fecha_colocacion_actual_display": open_row["desde_display"] if open_row and open_row["fecha_colocacion"] else "",
         "fecha_creacion": str(row["fecha_creacion"] or "").strip(),
         "fecha_creacion_display": _luminaria_format_date(row["fecha_creacion"]),
         "fecha_baja": str(row["fecha_baja"] or "").strip(),
@@ -12600,6 +12658,12 @@ def _luminaria_point_detail(con, point_id):
         "x": row["x"],
         "y": row["y"],
         "placed": bool(row["placed"]),
+        "observacion_actual": open_row["observacion"] if open_row else "",
+        "can_complete_data": bool(row["activo"]) and not has_closed_cycles and not has_known_open_cycle,
+        "current_data_pending": bool(open_row and open_row["pending_capture"]),
+        "has_current_brand": has_current_brand,
+        "can_change_lamp": bool(row["activo"]) and supports_replacements and has_current_brand,
+        "needs_current_data": bool(row["activo"]) and supports_replacements and not has_current_brand,
     }
     if not point["activo"]:
         point["estado"] = "Baja"
@@ -13773,6 +13837,98 @@ def luminarias_punto_alta():
         con.close()
 
 
+@app.route("/luminarias/puntos/<int:point_id>/completar-datos", methods=["POST"], endpoint="luminarias_punto_completar_datos")
+def luminarias_punto_completar_datos(point_id):
+    con = get_db()
+    try:
+        ensure_luminarias_operativo_ready(con)
+        point = con.execute("SELECT * FROM luminaria_punto WHERE id = ?", (int(point_id),)).fetchone()
+        if not point:
+            flash("Punto de luminaria inexistente.", "error")
+            return redirect(url_for("dashboard"))
+        if not bool(point["activo"]):
+            flash("El punto seleccionado ya esta dado de baja.", "warning")
+            return redirect(_luminaria_sede_return_url(point["sede_codigo"], point["piso_codigo"], point["ambiente_codigo"], point_id))
+
+        marca, marca_otro = _luminaria_normalize_brand_input(
+            con,
+            request.form.get("marca"),
+            request.form.get("marca_otro"),
+        )
+        observacion = (request.form.get("observacion") or "").strip()
+        if not marca:
+            flash("La marca actual es obligatoria.", "warning")
+            return redirect(_luminaria_sede_return_url(point["sede_codigo"], point["piso_codigo"], point["ambiente_codigo"], point_id))
+        if marca == "Otra" and not marca_otro:
+            flash("Debes especificar la marca cuando eliges Otra.", "warning")
+            return redirect(_luminaria_sede_return_url(point["sede_codigo"], point["piso_codigo"], point["ambiente_codigo"], point_id))
+
+        open_row = con.execute("""
+            SELECT id, COALESCE(fecha_colocacion,'') AS fecha_colocacion
+            FROM luminaria_recambio
+            WHERE luminaria_punto_id = ?
+              AND fecha_recambio IS NULL
+            ORDER BY id DESC
+            LIMIT 1
+        """, (int(point_id),)).fetchone()
+        closed_exists = con.execute("""
+            SELECT 1
+            FROM luminaria_recambio
+            WHERE luminaria_punto_id = ?
+              AND COALESCE(fecha_recambio,'') <> ''
+            LIMIT 1
+        """, (int(point_id),)).fetchone()
+        if closed_exists or (open_row and str(open_row["fecha_colocacion"] or "").strip()):
+            flash("Este punto ya tiene cambios registrados. Usa Cambiar lampara para continuar el historial.", "warning")
+            return redirect(_luminaria_sede_return_url(point["sede_codigo"], point["piso_codigo"], point["ambiente_codigo"], point_id))
+
+        usuario = (session.get("full_name") or session.get("username") or "").strip()
+        if open_row:
+            con.execute("""
+                UPDATE luminaria_recambio
+                SET marca = ?,
+                    marca_otro = ?,
+                    observacion = ?,
+                    fecha_registro = CURRENT_TIMESTAMP,
+                    creado_por = ?
+                WHERE id = ?
+            """, (
+                marca,
+                marca_otro or None,
+                observacion or None,
+                usuario or None,
+                int(open_row["id"]),
+            ))
+        else:
+            con.execute("""
+                INSERT INTO luminaria_recambio (
+                    luminaria_punto_id,
+                    marca,
+                    marca_otro,
+                    fecha_colocacion,
+                    fecha_recambio,
+                    duracion_dias,
+                    observacion,
+                    fecha_registro,
+                    creado_por
+                ) VALUES (?,?,?,?,?,?,?,CURRENT_TIMESTAMP,?)
+            """, (
+                int(point_id),
+                marca,
+                marca_otro or None,
+                "",
+                None,
+                None,
+                observacion or None,
+                usuario or None,
+            ))
+        con.commit()
+        flash("Datos actuales guardados.", "success")
+        return redirect(_luminaria_sede_return_url(point["sede_codigo"], point["piso_codigo"], point["ambiente_codigo"], point_id))
+    finally:
+        con.close()
+
+
 @app.route("/luminarias/puntos/<int:point_id>/editar", methods=["POST"], endpoint="luminarias_punto_editar")
 def luminarias_punto_editar(point_id):
     con = get_db()
@@ -13903,19 +14059,12 @@ def luminarias_punto_recambio(point_id):
 
         fecha = (request.form.get("fecha") or date.today().isoformat()).strip()
         fecha_dt = _luminaria_parse_date(fecha)
-        marca = (request.form.get("marca") or "").strip()
-        marca_otro = (request.form.get("marca_otro") or "").strip()
-        observacion = (request.form.get("observacion") or "").strip()
-        brand_map = {
-            str(item or "").strip().lower(): str(item or "").strip()
-            for item in _luminaria_brand_options(con)
-            if str(item or "").strip() and str(item or "").strip().lower() != "otra"
-        }
-        if marca and marca.lower() in brand_map:
-            marca = brand_map[marca.lower()]
-        elif marca and marca != "Otra":
-            marca_otro = marca_otro or marca
-            marca = "Otra"
+        marca, marca_otro = _luminaria_normalize_brand_input(
+            con,
+            request.form.get("marca"),
+            request.form.get("marca_otro"),
+        )
+        observacion = (request.form.get("motivo") or request.form.get("observacion") or "").strip()
         if not fecha_dt:
             flash("La fecha de recambio no es valida.", "warning")
             return redirect(_luminaria_sede_return_url(point["sede_codigo"], point["piso_codigo"], point["ambiente_codigo"], point_id))
@@ -13926,38 +14075,29 @@ def luminarias_punto_recambio(point_id):
             flash("Debes especificar la marca cuando eliges Otra.", "warning")
             return redirect(_luminaria_sede_return_url(point["sede_codigo"], point["piso_codigo"], point["ambiente_codigo"], point_id))
 
-        last_row = con.execute("""
-            SELECT fecha_colocacion, COALESCE(fecha_recambio,'') AS fecha_recambio
-            FROM luminaria_recambio
-            WHERE luminaria_punto_id = ?
-            ORDER BY COALESCE(NULLIF(fecha_recambio,''), fecha_colocacion) DESC, id DESC
-            LIMIT 1
-        """, (int(point_id),)).fetchone()
-        if last_row:
-            previous_date = _luminaria_parse_date(last_row["fecha_recambio"] or last_row["fecha_colocacion"])
-            if previous_date and fecha_dt < previous_date:
-                flash("La fecha de recambio no puede ser anterior al registro previo.", "warning")
-                return redirect(_luminaria_sede_return_url(point["sede_codigo"], point["piso_codigo"], point["ambiente_codigo"], point_id))
-        else:
-            created_date = _luminaria_parse_date(point["fecha_creacion"])
-            if created_date and fecha_dt < created_date:
-                flash("La fecha de recambio no puede ser anterior a la fecha registrada del punto.", "warning")
-                return redirect(_luminaria_sede_return_url(point["sede_codigo"], point["piso_codigo"], point["ambiente_codigo"], point_id))
-
         open_row = con.execute("""
-            SELECT fecha_colocacion
+            SELECT
+                id,
+                COALESCE(marca,'') AS marca,
+                COALESCE(marca_otro,'') AS marca_otro,
+                COALESCE(fecha_colocacion,'') AS fecha_colocacion
             FROM luminaria_recambio
             WHERE luminaria_punto_id = ?
               AND fecha_recambio IS NULL
             ORDER BY id DESC
             LIMIT 1
         """, (int(point_id),)).fetchone()
-        if open_row:
-            open_date = _luminaria_parse_date(open_row["fecha_colocacion"])
-            if open_date and fecha_dt < open_date:
-                flash("La fecha nueva no puede ser anterior a la instalacion activa.", "warning")
-                return redirect(_luminaria_sede_return_url(point["sede_codigo"], point["piso_codigo"], point["ambiente_codigo"], point_id))
-            _luminaria_close_open_recambio(con, int(point_id), fecha_dt.isoformat())
+        current_brand = _luminaria_brand_display(open_row) if open_row else ""
+        if not current_brand:
+            flash("Primero completa los datos actuales de la luminaria.", "warning")
+            return redirect(_luminaria_sede_return_url(point["sede_codigo"], point["piso_codigo"], point["ambiente_codigo"], point_id))
+
+        open_date = _luminaria_parse_date(open_row["fecha_colocacion"])
+        if open_date and fecha_dt < open_date:
+            flash("La fecha del cambio no puede ser anterior al inicio del ciclo activo.", "warning")
+            return redirect(_luminaria_sede_return_url(point["sede_codigo"], point["piso_codigo"], point["ambiente_codigo"], point_id))
+
+        _luminaria_close_open_recambio(con, int(point_id), fecha_dt.isoformat())
 
         creado_por = (session.get("full_name") or session.get("username") or "").strip()
         con.execute("""
@@ -13983,7 +14123,7 @@ def luminarias_punto_recambio(point_id):
             creado_por or None,
         ))
         con.commit()
-        flash("Recambio registrado.", "success")
+        flash("Cambio de lampara guardado.", "success")
         return redirect(_luminaria_sede_return_url(point["sede_codigo"], point["piso_codigo"], point["ambiente_codigo"], point_id))
     finally:
         con.close()
