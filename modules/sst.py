@@ -7333,6 +7333,19 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 return "sin intervencion" not in result_text and state_label != "sin datos"
             return False
 
+        def _project_module_missing(project_key, module_row):
+            state_label = str(module_row.get("state_label") or "").strip().lower()
+            result_text = str(module_row.get("result") or "").strip().lower()
+            if project_key == "visitas":
+                return "sin visita" in result_text or state_label in {"pendiente", "sin datos"}
+            if project_key in {"carteleria", "luces"}:
+                return state_label in {"sin relevar", "sin datos"} or "sin base operativa" in result_text
+            if project_key == "matafuegos":
+                return "sin equipos activos" in result_text or state_label == "sin datos"
+            if project_key == "desinfeccion":
+                return "sin intervencion" in result_text or state_label == "sin datos"
+            return False
+
         def _project_responsable(project_actions, project_events, fallback):
             buckets = {}
             for action in project_actions:
@@ -7416,6 +7429,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             module_rows = []
             completed_sedes = []
             pending_sedes = []
+            missing_sedes = []
             for sede_row in sedes_scope:
                 match = next((row for row in (sede_row.get("module_rows") or []) if row.get("module") in project["module_names"]), None)
                 if not match:
@@ -7432,6 +7446,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 })
                 if _project_module_complete(project["key"], match):
                     completed_sedes.append(sede_row["codigo"])
+                elif _project_module_missing(project["key"], match):
+                    missing_sedes.append(sede_row["codigo"])
                 else:
                     pending_sedes.append(sede_row["codigo"])
             if not module_rows:
@@ -7480,15 +7496,34 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 None,
             )
             last_control = completed_controls[-1] if completed_controls else None
+            planning_open = planning_pct < 100
+            implementation_open = not planning_open and bool(open_actions or project_suggestions)
+            active_stage = "plan" if planning_open else ("implementation" if implementation_open else "operation")
+            planning_state = "active" if active_stage == "plan" else ("done" if planning_pct == 100 else "ready")
+            implementation_state = "active" if active_stage == "implementation" else ("done" if active_stage == "operation" else "locked")
+            operation_state = "active" if active_stage == "operation" else "locked"
+            planning_summary = (f"{planning_pct}% relevado" if total_scope_sedes else "Sin sedes")
+            planning_caption = (
+                f"{len(completed_sedes)} completas, {len(pending_sedes)} pendientes, {len(missing_sedes)} sin registrar"
+                if total_scope_sedes else
+                "Sin sedes en alcance"
+            )
             if planning_pct < 100:
-                stage_label = "📋 Planificacion"
+                stage_label = "Planificacion"
                 health_label = "Sin iniciar" if planning_pct == 0 else "En desarrollo"
                 health_class = "muted" if planning_pct == 0 else "warn"
-                next_step = (f"Relevar {pending_sedes[0]}" if pending_sedes else "Completar relevamientos")
-                implementation_status = "Bloqueada"
-                implementation_note = "Esperando completar el diagnostico."
+                if missing_sedes:
+                    next_step = f"Cargar {missing_sedes[0]}"
+                elif pending_sedes:
+                    next_step = f"Relevar {pending_sedes[0]}"
+                else:
+                    next_step = "Cerrar relevamiento"
+                implementation_status = "Espera diagnostico"
+                implementation_note = "Se habilita al cerrar Planificacion"
+                operation_status = "Sin iniciar"
+                operation_summary = "Disponible al finalizar la implementacion."
             elif open_actions or project_suggestions:
-                stage_label = "🔧 Implementacion"
+                stage_label = "Implementacion"
                 health_label = "Detenido" if (overdue_actions or overdue_controls) else "En desarrollo"
                 health_class = "risk" if (overdue_actions or overdue_controls) else "warn"
                 next_step = (
@@ -7502,16 +7537,24 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     if open_actions else
                     f"{len(project_suggestions)} sugerencia(s) pendiente(s)"
                 )
+                operation_status = "Sin iniciar"
+                operation_summary = "Disponible al finalizar la implementacion."
             else:
-                stage_label = "✅ Operacion"
+                stage_label = "Operacion"
                 health_label = "Operativo" if not overdue_controls else "Detenido"
                 health_class = "ok" if not overdue_controls else "risk"
                 if next_control and next_control.get("fecha_evento"):
-                    next_step = f"Control { _sst_calendar_short_date(next_control.get('fecha_evento')) }"
+                    next_step = f"Control {_sst_calendar_short_date(next_control.get('fecha_evento'))}"
                 else:
                     next_step = "Seguimiento normal"
                 implementation_status = "Finalizada"
                 implementation_note = "Sin acciones abiertas."
+                operation_status = "Operativa" if not overdue_controls else "Con alertas"
+                operation_summary = (
+                    f"{len(open_controls)} control(es) activo(s)"
+                    if open_controls else
+                    "Sin alertas operativas"
+                )
             project_tree_rows.append({
                 "key": project["key"],
                 "label": project["label"],
@@ -7529,20 +7572,33 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 "actions_url": url_for("sst_plan_implementacion", vista="acciones", sede=(filters["sede"] or None), prefill_modulo=project["label"]),
                 "timeline_url": _calendar_page_url(tipo=project["timeline_type"], fase="", quick=""),
                 "should_open": (filters["tipo"] in project["type_keys"]),
+                "active_stage": active_stage,
+                "stage_track": [
+                    {"key": "plan", "label": "Planificacion", "state": ("current" if active_stage == "plan" else "done")},
+                    {"key": "implementation", "label": "Implementacion", "state": ("current" if active_stage == "implementation" else ("done" if active_stage == "operation" else "todo"))},
+                    {"key": "operation", "label": "Operacion", "state": ("current" if active_stage == "operation" else "todo")},
+                ],
                 "planning": {
+                    "card_state": planning_state,
                     "completed_count": len(completed_sedes),
-                    "pending_count": max(total_scope_sedes - len(completed_sedes), 0),
+                    "pending_count": len(pending_sedes),
+                    "missing_count": len(missing_sedes),
                     "completed_preview": completed_sedes[:8],
                     "pending_preview": pending_sedes[:8],
+                    "missing_preview": missing_sedes[:8],
                     "record_count": len(planning_events),
-                    "copy": f"{len(completed_sedes)} de {total_scope_sedes} sede(s) completas" if total_scope_sedes else "Sin sedes en alcance",
+                    "summary": planning_summary,
+                    "caption": planning_caption,
+                    "detail_available": bool(completed_sedes or pending_sedes or missing_sedes),
                 },
                 "implementation": {
+                    "card_state": implementation_state,
                     "status": implementation_status,
                     "note": implementation_note,
                     "actions_open": len(open_actions),
                     "actions_overdue": len(overdue_actions),
                     "suggestions_count": len(project_suggestions),
+                    "show_items": implementation_open,
                     "next_items": [
                         {
                             "title": str(item.get("titulo") or item.get("accion_requerida") or "Accion SG-SST").strip(),
@@ -7560,16 +7616,14 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     ],
                 },
                 "operation": {
-                    "status": ("Operativa" if planning_pct == 100 and not open_actions else "No iniciada"),
+                    "card_state": operation_state,
+                    "enabled": active_stage == "operation",
+                    "status": operation_status,
                     "last_control": _sst_calendar_short_date(last_control.get("fecha_evento")) if last_control else "-",
                     "next_control": _sst_calendar_short_date(next_control.get("fecha_evento")) if next_control else "-",
                     "overdue_controls": len(overdue_controls),
                     "open_controls": len(open_controls),
-                    "copy": (
-                        f"{len(open_controls)} control(es) activo(s)"
-                        if open_controls else
-                        ("Sin alertas operativas" if planning_pct == 100 else "Se habilita al terminar la implementacion")
-                    ),
+                    "summary": operation_summary,
                 },
             })
         project_tree_rows.sort(key=lambda item: (

@@ -4,7 +4,7 @@
 
 {% block extra_head %}
   <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-23-02') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-23-03') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='sgi/operativa_nav.css', v='2026-07-19-02') }}">
 {% endblock %}
 
@@ -201,70 +201,152 @@
         </summary>
 
         <div class="sst-master-tree-panel">
-          <div class="sst-master-tree-stages">
-            <article class="sst-master-stage-card stage-plan">
-              <small>📋 PLANIFICACION</small>
-              <strong>{{ project.planning.copy }}</strong>
-              <div class="sst-master-stage-stats">
-                <span>{{ project.planning.completed_count }} completa(s)</span>
-                <span>{{ project.planning.pending_count }} pendiente(s)</span>
-                <span>{{ project.planning.record_count }} registro(s)</span>
+          <div class="sst-master-stage-track is-{{ project.active_stage }}">
+            <div class="sst-master-stage-node is-plan">
+              <span class="sst-master-stage-dot"></span>
+              <span class="sst-master-stage-label">Planificacion</span>
+            </div>
+            <span class="sst-master-stage-line"></span>
+            <div class="sst-master-stage-node is-implementation">
+              <span class="sst-master-stage-dot"></span>
+              <span class="sst-master-stage-label">Implementacion</span>
+            </div>
+            <span class="sst-master-stage-line"></span>
+            <div class="sst-master-stage-node is-operation">
+              <span class="sst-master-stage-dot"></span>
+              <span class="sst-master-stage-label">Operacion</span>
+            </div>
+          </div>
+
+          <div class="sst-master-tree-stages is-{{ project.active_stage }}">
+            <article class="sst-master-stage-card stage-plan is-{{ project.planning.card_state }}">
+              <div class="sst-master-stage-head">
+                <small>Planificacion</small>
+                <span class="sst-master-stage-pill">{{ project.planning.summary }}</span>
               </div>
-              <div class="sst-master-stage-lists">
+              <strong>{{ project.planning.caption }}</strong>
+              <div class="sst-master-stage-matrix">
                 <div>
-                  <b>Completas</b>
-                  <div class="sst-master-code-list">
-                    {% for code in project.planning.completed_preview %}
-                    <span>{{ code }}</span>
-                    {% else %}
-                    <span>-</span>
-                    {% endfor %}
-                  </div>
+                  <b>{{ project.planning.completed_count }}</b>
+                  <span>Completadas</span>
                 </div>
                 <div>
-                  <b>Pendientes</b>
-                  <div class="sst-master-code-list is-pending">
-                    {% for code in project.planning.pending_preview %}
-                    <span>{{ code }}</span>
-                    {% else %}
-                    <span>-</span>
-                    {% endfor %}
-                  </div>
+                  <b>{{ project.planning.pending_count }}</b>
+                  <span>Pendientes</span>
+                </div>
+                <div>
+                  <b>{{ project.planning.missing_count }}</b>
+                  <span>Sin registrar</span>
+                </div>
+                <div>
+                  <b>{{ project.planning.record_count }}</b>
+                  <span>Registros</span>
                 </div>
               </div>
+              {% if project.planning.detail_available %}
+              <details class="sst-master-stage-details">
+                <summary>Ver detalle</summary>
+                <div class="sst-master-stage-details-body">
+                  <div class="sst-master-stage-detail-group">
+                    <b>Completas</b>
+                    <div class="sst-master-code-list">
+                      {% for code in project.planning.completed_preview %}
+                      <span>{{ code }}</span>
+                      {% else %}
+                      <span>-</span>
+                      {% endfor %}
+                    </div>
+                  </div>
+                  <div class="sst-master-stage-detail-group">
+                    <b>Pendientes</b>
+                    <div class="sst-master-code-list is-pending">
+                      {% for code in project.planning.pending_preview %}
+                      <span>{{ code }}</span>
+                      {% else %}
+                      <span>-</span>
+                      {% endfor %}
+                    </div>
+                  </div>
+                  <div class="sst-master-stage-detail-group">
+                    <b>Sin registrar</b>
+                    <div class="sst-master-code-list is-muted">
+                      {% for code in project.planning.missing_preview %}
+                      <span>{{ code }}</span>
+                      {% else %}
+                      <span>-</span>
+                      {% endfor %}
+                    </div>
+                  </div>
+                </div>
+              </details>
+              {% endif %}
             </article>
 
-            <article class="sst-master-stage-card stage-impl">
-              <small>🔧 IMPLEMENTACION</small>
-              <strong>{{ project.implementation.status }}</strong>
-              <p>{{ project.implementation.note }}</p>
-              <div class="sst-master-stage-stats">
-                <span>{{ project.implementation.actions_open }} abierta(s)</span>
-                <span>{{ project.implementation.actions_overdue }} vencida(s)</span>
-                <span>{{ project.implementation.suggestions_count }} sugerencia(s)</span>
+            <article class="sst-master-stage-card stage-impl is-{{ project.implementation.card_state }}">
+              <div class="sst-master-stage-head">
+                <small>Implementacion</small>
+                <span class="sst-master-stage-pill">{{ project.implementation.status }}</span>
+              </div>
+              <strong>{{ project.implementation.note }}</strong>
+              <div class="sst-master-stage-matrix">
+                <div>
+                  <b>{{ project.implementation.actions_open }}</b>
+                  <span>Abiertas</span>
+                </div>
+                <div>
+                  <b>{{ project.implementation.actions_overdue }}</b>
+                  <span>Vencidas</span>
+                </div>
+                <div>
+                  <b>{{ project.implementation.suggestions_count }}</b>
+                  <span>Sugerencias</span>
+                </div>
               </div>
               <div class="sst-master-stage-links">
-                {% for item in project.implementation.next_items %}
-                <a href="{{ item.url }}">{{ item.title }}{% if item.meta %} · {{ item.meta }}{% endif %}</a>
-                {% endfor %}
-                {% for item in project.implementation.suggestions %}
-                <a href="{{ item.url }}">{{ item.title }}</a>
-                {% endfor %}
-                {% if not project.implementation.next_items and not project.implementation.suggestions %}
-                <span>Sin pendientes de implementacion.</span>
+                {% if project.implementation.show_items %}
+                  {% for item in project.implementation.next_items %}
+                  <a href="{{ item.url }}">{{ item.title }}{% if item.meta %} · {{ item.meta }}{% endif %}</a>
+                  {% endfor %}
+                  {% for item in project.implementation.suggestions %}
+                  <a href="{{ item.url }}">{{ item.title }}</a>
+                  {% endfor %}
+                  {% if not project.implementation.next_items and not project.implementation.suggestions %}
+                  <span>Sin gestion inmediata.</span>
+                  {% endif %}
+                {% else %}
+                <span>{{ project.implementation.status }}</span>
                 {% endif %}
               </div>
             </article>
 
-            <article class="sst-master-stage-card stage-ops">
-              <small>✅ OPERACION</small>
-              <strong>{{ project.operation.status }}</strong>
-              <div class="sst-master-stage-stats">
-                <span>Ultimo control: {{ project.operation.last_control }}</span>
-                <span>Proximo control: {{ project.operation.next_control }}</span>
-                <span>{{ project.operation.overdue_controls }} vencido(s)</span>
+            <article class="sst-master-stage-card stage-ops is-{{ project.operation.card_state }}">
+              <div class="sst-master-stage-head">
+                <small>Operacion</small>
+                <span class="sst-master-stage-pill">{{ project.operation.status }}</span>
               </div>
-              <p>{{ project.operation.copy }}</p>
+              {% if project.operation.enabled %}
+              <div class="sst-master-stage-matrix">
+                <div>
+                  <b>{{ project.operation.last_control }}</b>
+                  <span>Ultimo control</span>
+                </div>
+                <div>
+                  <b>{{ project.operation.next_control }}</b>
+                  <span>Proximo control</span>
+                </div>
+                <div>
+                  <b>{{ project.operation.overdue_controls }}</b>
+                  <span>Vencimientos</span>
+                </div>
+                <div>
+                  <b>{{ project.operation.open_controls }}</b>
+                  <span>Activos</span>
+                </div>
+              </div>
+              <p>{{ project.operation.summary }}</p>
+              {% else %}
+              <strong>{{ project.operation.summary }}</strong>
+              {% endif %}
             </article>
           </div>
 
