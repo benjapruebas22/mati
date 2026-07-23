@@ -6147,12 +6147,12 @@
     background: #6bb28f;
   }
   .mob-plan-piece-badge {
-    min-width: 48px;
-    padding: 3px 6px 4px;
+    min-width: 0;
+    padding: 0;
     border-radius: 10px;
-    border: 1px solid var(--lum-accent-border, #d7deea);
-    background: rgba(255, 255, 255, 0.96);
-    box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+    border: none;
+    background: transparent;
+    box-shadow: none;
     display: inline-flex;
     flex-direction: column;
     align-items: center;
@@ -6160,11 +6160,12 @@
     transition: opacity .16s ease, transform .16s ease, box-shadow .16s ease;
   }
   .mob-plan-piece-code {
-    font-size: 9px;
+    font-size: 10px;
     font-weight: 900;
     line-height: 1;
     letter-spacing: .03em;
     color: var(--lum-accent, #334155);
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.96), 0 0 8px rgba(255, 255, 255, 0.88);
   }
   .mob-plan-piece-local {
     font-size: 8px;
@@ -6172,6 +6173,7 @@
     line-height: 1;
     color: #64748b;
     letter-spacing: .04em;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.96), 0 0 8px rgba(255, 255, 255, 0.88);
   }
   .mob-plan-piece-name {
     font-size: 10px;
@@ -6205,9 +6207,14 @@
     opacity: 1;
     transform: translate(-50%, 0) scale(1);
   }
-  .mob-plan-piece.is-selected .mob-plan-piece-badge,
-  .mob-plan-piece.is-selected.is-tray {
+  .mob-plan-piece.is-selected .mob-plan-piece-badge {
+    padding: 3px 6px 4px;
+    border: 1px solid rgba(147, 197, 253, 0.4);
+    background: rgba(255, 255, 255, 0.96);
     box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.22), 0 14px 28px rgba(37, 99, 235, 0.16);
+  }
+  .mob-plan-piece.is-selected.is-tray {
+    box-shadow: none;
   }
   .mob-plan-piece.is-selected.is-placed .mob-plan-piece-body {
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 0 0 2px rgba(37, 99, 235, 0.24), 0 8px 16px rgba(37, 99, 235, 0.12);
@@ -6329,19 +6336,15 @@
     color: var(--lum-accent, #0f172a);
   }
   .lum-type-pill {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 24px;
-    padding: 3px 9px;
-    border-radius: 999px;
-    border: 1px solid var(--lum-accent-border, #d7deea);
-    background: var(--lum-accent-soft, #fff);
+    display: inline;
+    padding: 0;
+    border: none;
+    background: transparent;
     color: var(--lum-accent, #334155);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 900;
     letter-spacing: .03em;
-    line-height: 1;
+    line-height: 1.2;
   }
   .lum-type-th {
     color: var(--lum-accent, #64748b);
@@ -6353,34 +6356,39 @@
   .lum-op-chip-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    align-items: center;
+    gap: 10px 12px;
   }
   .lum-op-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    min-height: 28px;
-    padding: 4px 9px;
-    border-radius: 999px;
-    border: 1px solid #d7deea;
-    background: #fff;
+    display: inline-block;
+    min-height: 0;
+    padding: 0;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
     color: #334155;
-    font-size: 11px;
-    font-weight: 800;
+    font-size: 12px;
+    font-weight: 900;
+    line-height: 1.25;
     text-decoration: none;
+    white-space: nowrap;
   }
   .lum-op-chip:hover {
-    border-color: #93c5fd;
-    color: #1d4ed8;
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
   }
   .lum-op-chip.lum-type-chip:hover {
-    border-color: var(--lum-accent-border, #93c5fd);
     color: var(--lum-accent, #1d4ed8);
   }
   .lum-op-chip.is-selected {
-    border-color: #93c5fd;
+    padding: 4px 9px;
+    border: 1px solid #93c5fd;
     background: #eff6ff;
     color: #1d4ed8;
+    text-decoration: none;
+    box-shadow: inset 0 0 0 1px rgba(147, 197, 253, 0.18);
   }
   .lum-op-chip.lum-type-chip.is-selected {
     color: var(--lum-accent, #1d4ed8);
@@ -12018,10 +12026,11 @@
           <div>
             <div class="panel-section-title">Luminarias</div>
             <div class="panel-section-sub">
-              Totales activos del filtro: TL <strong>{{ luminarias_operativo_totals.tl }}</strong> ·
-              FO <strong>{{ luminarias_operativo_totals.fo }}</strong> ·
-              PN <strong>{{ luminarias_operativo_totals.pn }}</strong> ·
-              PT <strong>{{ luminarias_operativo_totals.pt }}</strong>
+              Totales activos del filtro:
+              <span class="lum-type-text lum-type-tl">TL <strong>{{ luminarias_operativo_totals.tl }}</strong></span> ·
+              <span class="lum-type-text lum-type-fo">FO <strong>{{ luminarias_operativo_totals.fo }}</strong></span> ·
+              <span class="lum-type-text lum-type-pn">PN <strong>{{ luminarias_operativo_totals.pn }}</strong></span> ·
+              <span class="lum-type-text lum-type-pt">PT <strong>{{ luminarias_operativo_totals.pt }}</strong></span>
             </div>
           </div>
         </div>
