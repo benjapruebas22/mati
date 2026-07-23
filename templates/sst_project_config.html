@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block main_class %}container-wide{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-23-04') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sgi/operativa_nav.css', v='2026-07-19-02') }}">
+{% endblock %}
+
+{% block content %}
+<section class="sst-operativo sst-ui sst-command-config-page">
+  {% include '_sst_operational_nav.html' %}
+
+  <header class="sst-op-header">
+    <div>
+      <p class="sst-op-eyebrow">Configuracion de proyecto</p>
+      <h1>{{ project.icon }} {{ project.label }}</h1>
+      <p>Define responsable, frecuencia y el estado por sede. <strong>No aplica</strong> y <strong>Fuera de alcance temporal</strong> quedan excluidos del porcentaje.</p>
+    </div>
+    <div class="sst-op-actions">
+      <a class="sst-op-btn" href="{{ return_url }}">Volver al centro</a>
+    </div>
+  </header>
+
+  <form method="post" class="sst-command-config-stack">
+    {% for key, value in return_args.items() %}
+    <input type="hidden" name="{{ key }}" value="{{ value }}">
+    {% endfor %}
+
+    <article class="sst-op-card sst-command-config-meta">
+      <div class="sst-op-card-head">
+        <h2>Ajustes del proyecto</h2>
+      </div>
+      <div class="sst-command-config-body">
+        <div class="sst-op-form-grid sst-command-config-form">
+          <label class="sst-op-field">
+            <small>Responsable</small>
+            <input type="text" name="responsable" value="{{ project_meta.responsable or project.fallback_responsible }}">
+          </label>
+          <label class="sst-op-field">
+            <small>Frecuencia</small>
+            <input type="text" name="frecuencia" value="{{ project_meta.frecuencia or '' }}" placeholder="Mensual, trimestral, anual">
+          </label>
+          <label class="sst-op-field">
+            <small>Periodicidad</small>
+            <input type="text" name="periodicidad" value="{{ project_meta.periodicidad or '' }}" placeholder="Cada 30 dias, cada 6 meses">
+          </label>
+          <label class="sst-op-field sst-command-config-wide">
+            <small>Reglas particulares</small>
+            <textarea name="reglas" placeholder="Notas de alcance, exclusiones, reglas operativas.">{{ project_meta.reglas or '' }}</textarea>
+          </label>
+        </div>
+      </div>
+    </article>
+
+    <section class="sst-command-config-summary">
+      <article class="sst-op-card sst-command-config-kpi"><span>Universo real</span><strong>{{ scope_summary.applicable_total }}</strong><small>Sedes que cuentan para el porcentaje</small></article>
+      <article class="sst-op-card sst-command-config-kpi"><span>Completas</span><strong>{{ scope_summary.completed_sedes|length }}</strong><small>Incluidas en avance</small></article>
+      <article class="sst-op-card sst-command-config-kpi"><span>Pendientes</span><strong>{{ scope_summary.pending_sedes|length }}</strong><small>Requieren gestion</small></article>
+      <article class="sst-op-card sst-command-config-kpi"><span>Sin registrar</span><strong>{{ scope_summary.missing_sedes|length }}</strong><small>Sin base operativa</small></article>
+      <article class="sst-op-card sst-command-config-kpi"><span>No aplica</span><strong>{{ scope_summary.no_aplica_sedes|length }}</strong><small>Excluidas del calculo</small></article>
+      <article class="sst-op-card sst-command-config-kpi"><span>Fuera de alcance</span><strong>{{ scope_summary.out_scope_sedes|length }}</strong><small>Excluidas temporalmente</small></article>
+    </section>
+
+    <article class="sst-op-card">
+      <div class="sst-op-card-head">
+        <h2>Estados por sede</h2>
+        <div class="sst-op-actions">
+          <button class="sst-op-btn primary" type="submit">Guardar configuracion</button>
+        </div>
+      </div>
+      <div class="sst-command-config-body">
+        <div class="sst-command-config-help">
+          <span><strong>Segun modulo:</strong> usa el estado real detectado por el sistema.</span>
+          <span><strong>No aplica:</strong> la sede sale del universo.</span>
+          <span><strong>Fuera de alcance temporal:</strong> la sede queda pausada sin afectar el porcentaje.</span>
+        </div>
+
+        <div class="sst-command-config-table-wrap">
+          <table class="sst-command-config-table">
+            <thead>
+              <tr>
+                <th>Sede</th>
+                <th>Estado</th>
+                <th>Situacion actual</th>
+                <th>Observacion</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for row in scope_rows %}
+              <tr>
+                <td>
+                  <strong>{{ row.codigo }}</strong>
+                  <small>{{ row.nombre }}</small>
+                </td>
+                <td>
+                  <label class="sst-op-field">
+                    <select name="scope_state__{{ row.codigo }}">
+                      {% for option in scope_options %}
+                      <option value="{{ option.value }}" {% if row.scope_state == option.value %}selected{% endif %}>{{ option.label }}</option>
+                      {% endfor %}
+                    </select>
+                  </label>
+                </td>
+                <td>
+                  <strong>{{ row.effective_label }}</strong>
+                  <small>{{ row.module_result }}{% if row.module_pending %} · {{ row.module_pending }}{% endif %}</small>
+                </td>
+                <td>
+                  <label class="sst-op-field">
+                    <input type="text" name="scope_note__{{ row.codigo }}" value="{{ row.scope_note }}" placeholder="Motivo u observacion">
+                  </label>
+                </td>
+                <td>
+                  <a class="sst-op-btn" href="{{ row.module_url }}">Abrir</a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </article>
+  </form>
+</section>
+{% endblock %}

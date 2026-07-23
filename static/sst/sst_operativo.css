@@ -2015,6 +2015,11 @@
   gap: 8px;
 }
 
+.sst-master-stage-meta {
+  color: #6b7280;
+  font-size: 11px;
+}
+
 .sst-master-mobile-label {
   display: none;
   color: #64748b;
@@ -2022,6 +2027,108 @@
   font-weight: 900;
   letter-spacing: .06em;
   text-transform: uppercase;
+}
+
+.sst-command-config-stack {
+  display: grid;
+  gap: 14px;
+}
+
+.sst-command-config-summary {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.sst-command-config-kpi {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+}
+
+.sst-command-config-kpi span {
+  color: #667085;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.sst-command-config-kpi strong {
+  color: #172033;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.sst-command-config-kpi small {
+  color: #667085;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.sst-command-config-body {
+  display: grid;
+  gap: 14px;
+  padding: 14px 15px 15px;
+}
+
+.sst-command-config-form {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.sst-command-config-wide {
+  grid-column: 1 / -1;
+}
+
+.sst-command-config-help {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  color: #667085;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.sst-command-config-table-wrap {
+  overflow-x: auto;
+}
+
+.sst-command-config-table {
+  width: 100%;
+  min-width: 860px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.sst-command-config-table thead th {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e6ebf2;
+  color: #667085;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .07em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.sst-command-config-table tbody td {
+  padding: 12px;
+  border-bottom: 1px solid #eef2f7;
+  vertical-align: top;
+}
+
+.sst-command-config-table tbody td strong {
+  display: block;
+  color: #172033;
+  font-size: 13px;
+}
+
+.sst-command-config-table tbody td small {
+  display: block;
+  margin-top: 4px;
+  color: #667085;
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .sst-calendar-toolbar-panel {
@@ -2540,6 +2647,12 @@
   .sst-master-tree-head {
     flex-direction: column;
   }
+  .sst-command-config-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .sst-command-config-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
   .sst-master-tree-columns {
     display: none;
   }
@@ -2606,6 +2719,31 @@
 @media (max-width: 560px) {
   .sst-master-tree-shell {
     padding: 14px;
+  }
+  .sst-command-config-summary,
+  .sst-command-config-form {
+    grid-template-columns: 1fr;
+  }
+  .sst-command-config-table {
+    min-width: 0;
+  }
+  .sst-command-config-table thead {
+    display: none;
+  }
+  .sst-command-config-table,
+  .sst-command-config-table tbody,
+  .sst-command-config-table tr,
+  .sst-command-config-table td {
+    display: block;
+    width: 100%;
+  }
+  .sst-command-config-table tr {
+    padding: 12px 0;
+    border-bottom: 1px solid #eef2f7;
+  }
+  .sst-command-config-table tbody td {
+    padding: 6px 0;
+    border-bottom: 0;
   }
   .sst-master-tree-head h2 {
     font-size: 21px;

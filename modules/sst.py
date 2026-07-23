@@ -143,6 +143,120 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         {"grupo": "Apoyo y control", "rol": "Sistemas", "orden_visual": 160},
         {"grupo": "Apoyo y control", "rol": "Recursos Humanos", "orden_visual": 170},
     ]
+    SGSST_COMMAND_SCOPE_OPTIONS = [
+        {"value": "AUTO", "label": "Segun modulo"},
+        {"value": "COMPLETA", "label": "Completa"},
+        {"value": "PENDIENTE", "label": "Pendiente"},
+        {"value": "NO_APLICA", "label": "No aplica"},
+        {"value": "FUERA_ALCANCE", "label": "Fuera de alcance temporal"},
+    ]
+    SGSST_COMMAND_SCOPE_LABELS = {
+        "AUTO": "Segun modulo",
+        "COMPLETA": "Completa",
+        "PENDIENTE": "Pendiente",
+        "NO_APLICA": "No aplica",
+        "FUERA_ALCANCE": "Fuera de alcance temporal",
+    }
+    SGSST_COMMAND_PROJECT_SEED = [
+        {
+            "key": "carteleria",
+            "label": "Carteleria",
+            "icon": "🚪",
+            "module_names": {"Carteleria"},
+            "type_keys": {"carteleria"},
+            "timeline_type": "carteleria",
+            "keywords": ("carteleria",),
+            "fallback_responsible": "Intendencia",
+        },
+        {
+            "key": "luces",
+            "label": "Luces de emergencia",
+            "icon": "💡",
+            "module_names": {"Luces de emergencia"},
+            "type_keys": {"luces"},
+            "timeline_type": "luces",
+            "keywords": ("luces", "emergencia"),
+            "fallback_responsible": "Intendencia",
+        },
+        {
+            "key": "matafuegos",
+            "label": "Matafuegos",
+            "icon": "🧯",
+            "module_names": {"Matafuegos"},
+            "type_keys": {"matafuegos"},
+            "timeline_type": "matafuegos",
+            "keywords": ("matafuegos",),
+            "fallback_responsible": "Intendencia",
+        },
+        {
+            "key": "desinfeccion",
+            "label": "Desinfeccion",
+            "icon": "🧼",
+            "module_names": {"Desinfeccion"},
+            "type_keys": {"desinfeccion"},
+            "timeline_type": "desinfeccion",
+            "keywords": ("desinfeccion", "desinfecciones"),
+            "fallback_responsible": "Intendencia",
+        },
+        {
+            "key": "art",
+            "label": "ART",
+            "icon": "📋",
+            "module_names": {"ART"},
+            "type_keys": {"visita"},
+            "timeline_type": "visita",
+            "keywords": ("art", "visitas art", "visita art"),
+            "fallback_responsible": "Responsable SG-SST",
+        },
+        {
+            "key": "documentacion",
+            "label": "Documentacion",
+            "icon": "📄",
+            "module_names": {"Documentacion"},
+            "type_keys": {"documentacion"},
+            "timeline_type": "documentacion",
+            "keywords": ("documentacion", "rgrl", "351", "decreto 351"),
+            "fallback_responsible": "Responsable SG-SST",
+        },
+        {
+            "key": "evacuacion",
+            "label": "Evacuacion",
+            "icon": "🚨",
+            "module_names": {"Evacuacion"},
+            "type_keys": {"planos"},
+            "timeline_type": "planos",
+            "keywords": ("evacuacion", "plano", "planos"),
+            "fallback_responsible": "Intendencia",
+        },
+    ]
+
+    def _sgsst_command_project_catalog():
+        return [dict(item) for item in SGSST_COMMAND_PROJECT_SEED]
+
+    def _sgsst_command_project_map():
+        return {item["key"]: dict(item) for item in SGSST_COMMAND_PROJECT_SEED}
+
+    def _sgsst_command_scope_label(value):
+        key = str(value or "AUTO").strip().upper() or "AUTO"
+        return SGSST_COMMAND_SCOPE_LABELS.get(key, SGSST_COMMAND_SCOPE_LABELS["AUTO"])
+
+    def _sgsst_command_project_open_url(project_key, sede_code=""):
+        sede_key = str(sede_code or "").strip().upper()
+        if project_key == "carteleria":
+            return url_for("sst_carteleria_home", sede=sede_key or None, open_sede=sede_key or None)
+        if project_key == "luces":
+            return url_for("sst_luces_home", sede=sede_key or None, open_sede=sede_key or None)
+        if project_key == "matafuegos":
+            return url_for("matafuegos_home", sede=sede_key or None, open_sede=sede_key or None)
+        if project_key == "desinfeccion":
+            return url_for("sst_desinfecciones_home", sede=sede_key or None, open_sede=sede_key or None)
+        if project_key in {"art", "documentacion"}:
+            return url_for("sst_visitas", sede=sede_key or None, open_sede=sede_key or None)
+        if project_key == "evacuacion":
+            if sede_key:
+                return url_for("sede_ficha", codigo=sede_key, tab="evacuacion")
+            return url_for("sst_calendario_operativo", tipo="planos")
+        return url_for("sst_calendario_operativo")
 
     def ensure_sst_general_table(con):
         con.execute("""
@@ -970,10 +1084,54 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             ("created_at", "TEXT DEFAULT (datetime('now'))"),
             ("updated_at", "TEXT"),
         ])
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS sgsst_command_projects(
+                project_key TEXT PRIMARY KEY,
+                label TEXT NOT NULL,
+                responsable TEXT,
+                frecuencia TEXT,
+                periodicidad TEXT,
+                reglas TEXT,
+                activo INTEGER DEFAULT 1,
+                orden_visual INTEGER DEFAULT 0,
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT
+            )
+        """)
+        ensure_cols(con, "sgsst_command_projects", [
+            ("label", "TEXT"),
+            ("responsable", "TEXT"),
+            ("frecuencia", "TEXT"),
+            ("periodicidad", "TEXT"),
+            ("reglas", "TEXT"),
+            ("activo", "INTEGER DEFAULT 1"),
+            ("orden_visual", "INTEGER DEFAULT 0"),
+            ("created_at", "TEXT DEFAULT (datetime('now'))"),
+            ("updated_at", "TEXT"),
+        ])
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS sgsst_command_project_scope(
+                project_key TEXT NOT NULL,
+                sede_codigo TEXT NOT NULL,
+                scope_state TEXT DEFAULT 'AUTO',
+                note TEXT,
+                updated_at TEXT,
+                PRIMARY KEY(project_key, sede_codigo),
+                FOREIGN KEY(project_key) REFERENCES sgsst_command_projects(project_key)
+            )
+        """)
+        ensure_cols(con, "sgsst_command_project_scope", [
+            ("project_key", "TEXT"),
+            ("sede_codigo", "TEXT"),
+            ("scope_state", "TEXT DEFAULT 'AUTO'"),
+            ("note", "TEXT"),
+            ("updated_at", "TEXT"),
+        ])
         con.execute("CREATE INDEX IF NOT EXISTS idx_sgsst_plan_hallazgos_sede ON sgsst_plan_hallazgos(sede_codigo, estado)")
         con.execute("CREATE INDEX IF NOT EXISTS idx_sgsst_plan_acciones_sede ON sgsst_plan_acciones(sede_codigo, estado)")
         con.execute("CREATE INDEX IF NOT EXISTS idx_sgsst_plan_acciones_hallazgo ON sgsst_plan_acciones(hallazgo_id)")
         con.execute("CREATE INDEX IF NOT EXISTS idx_sgsst_plan_roles_grupo ON sgsst_plan_roles(grupo, activo)")
+        con.execute("CREATE INDEX IF NOT EXISTS idx_sgsst_command_scope_project ON sgsst_command_project_scope(project_key, scope_state)")
 
         row = con.execute("SELECT COUNT(1) AS n FROM sgsst_plan_marco").fetchone()
         if int((row["n"] if row else 0) or 0) == 0:
@@ -1010,6 +1168,23 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     seed["rol"],
                     "",
                     int(seed.get("orden_visual") or 0),
+                    now,
+                    now,
+                ))
+        row = con.execute("SELECT COUNT(1) AS n FROM sgsst_command_projects").fetchone()
+        if int((row["n"] if row else 0) or 0) == 0:
+            now = _sst_now_ts()
+            for idx, seed in enumerate(_sgsst_command_project_catalog(), start=1):
+                con.execute("""
+                    INSERT INTO sgsst_command_projects(
+                        project_key, label, responsable, frecuencia, periodicidad, reglas,
+                        activo, orden_visual, created_at, updated_at
+                    ) VALUES (?, ?, ?, '', '', '', 1, ?, ?, ?)
+                """, (
+                    seed["key"],
+                    seed["label"],
+                    seed["fallback_responsible"],
+                    idx * 10,
                     now,
                     now,
                 ))
@@ -7318,146 +7493,42 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             text = str(value or "").strip().lower()
             return any(keyword in text for keyword in keywords)
 
-        def _project_module_complete(project_key, module_row):
-            state_label = str(module_row.get("state_label") or "").strip().lower()
-            result_text = str(module_row.get("result") or "").strip().lower()
-            if project_key == "visitas":
-                return "sin visita" not in result_text and state_label not in {"pendiente", "sin datos"}
-            if project_key == "carteleria":
-                return state_label not in {"sin relevar", "sin datos"} and "sin base operativa" not in result_text
-            if project_key == "luces":
-                return state_label not in {"sin relevar", "sin datos"} and "sin base operativa" not in result_text
-            if project_key == "matafuegos":
-                return "sin equipos activos" not in result_text and state_label != "sin datos"
-            if project_key == "desinfeccion":
-                return "sin intervencion" not in result_text and state_label != "sin datos"
-            return False
-
-        def _project_module_missing(project_key, module_row):
-            state_label = str(module_row.get("state_label") or "").strip().lower()
-            result_text = str(module_row.get("result") or "").strip().lower()
-            if project_key == "visitas":
-                return "sin visita" in result_text or state_label in {"pendiente", "sin datos"}
-            if project_key in {"carteleria", "luces"}:
-                return state_label in {"sin relevar", "sin datos"} or "sin base operativa" in result_text
-            if project_key == "matafuegos":
-                return "sin equipos activos" in result_text or state_label == "sin datos"
-            if project_key == "desinfeccion":
-                return "sin intervencion" in result_text or state_label == "sin datos"
-            return False
-
-        def _project_responsable(project_actions, project_events, fallback):
-            buckets = {}
-            for action in project_actions:
-                for candidate in (
-                    action.get("responsable"),
-                    action.get("area_responsable"),
-                ):
-                    txt = str(candidate or "").strip()
-                    if not txt:
-                        continue
-                    buckets[txt] = buckets.get(txt, 0) + 1
-            for event in project_events:
-                txt = str(event.get("responsible") or "").strip()
-                if not txt:
-                    continue
-                buckets[txt] = buckets.get(txt, 0) + 1
-            if not buckets:
-                return fallback
-            return sorted(buckets.items(), key=lambda item: (-item[1], item[0]))[0][0]
-
-        project_catalog = [
-            {
-                "key": "carteleria",
-                "label": "Carteleria",
-                "icon": "🚪",
-                "module_names": {"Carteleria"},
-                "type_keys": {"carteleria"},
-                "timeline_type": "carteleria",
-                "keywords": ("carteleria",),
-                "fallback_responsible": "Intendencia",
-                "base_url": url_for("sst_carteleria_home"),
-            },
-            {
-                "key": "luces",
-                "label": "Luces de emergencia",
-                "icon": "💡",
-                "module_names": {"Luces de emergencia"},
-                "type_keys": {"luces"},
-                "timeline_type": "luces",
-                "keywords": ("luces", "emergencia"),
-                "fallback_responsible": "Intendencia",
-                "base_url": url_for("sst_luces_home"),
-            },
-            {
-                "key": "matafuegos",
-                "label": "Matafuegos",
-                "icon": "🧯",
-                "module_names": {"Matafuegos"},
-                "type_keys": {"matafuegos"},
-                "timeline_type": "matafuegos",
-                "keywords": ("matafuegos",),
-                "fallback_responsible": "Intendencia",
-                "base_url": url_for("matafuegos_home"),
-            },
-            {
-                "key": "desinfeccion",
-                "label": "Desinfeccion",
-                "icon": "🧼",
-                "module_names": {"Desinfeccion"},
-                "type_keys": {"desinfeccion"},
-                "timeline_type": "desinfeccion",
-                "keywords": ("desinfeccion", "desinfecciones"),
-                "fallback_responsible": "Intendencia",
-                "base_url": url_for("sst_desinfecciones_home"),
-            },
-            {
-                "key": "visitas",
-                "label": "Visitas ART",
-                "icon": "📋",
-                "module_names": {"Visitas ART"},
-                "type_keys": {"visita", "documentacion", "planos"},
-                "timeline_type": "visita",
-                "keywords": ("visitas art", "visita art", "art"),
-                "fallback_responsible": "Responsable SG-SST",
-                "base_url": url_for("sst_visitas"),
-            },
-        ]
+        project_catalog = _sgsst_command_project_catalog()
+        project_meta_by_key = dict(plan_context.get("command_project_meta") or {})
+        project_scope_by_key = dict(plan_context.get("command_project_scope") or {})
         project_tree_rows = []
         total_scope_sedes = len(sedes_scope)
         for project in project_catalog:
-            module_rows = []
-            completed_sedes = []
-            pending_sedes = []
-            missing_sedes = []
-            for sede_row in sedes_scope:
-                match = next((row for row in (sede_row.get("module_rows") or []) if row.get("module") in project["module_names"]), None)
-                if not match:
-                    continue
-                module_rows.append({
-                    "sede_codigo": sede_row["codigo"],
-                    "sede_nombre": sede_row["nombre"],
-                    "state_label": match.get("state_label") or "",
-                    "state_tone": match.get("state_tone") or "muted",
-                    "result": match.get("result") or "",
-                    "pending": match.get("pending") or "",
-                    "next_action": match.get("next_action") or "",
-                    "url": match.get("url") or project["base_url"],
-                })
-                if _project_module_complete(project["key"], match):
-                    completed_sedes.append(sede_row["codigo"])
-                elif _project_module_missing(project["key"], match):
-                    missing_sedes.append(sede_row["codigo"])
-                else:
-                    pending_sedes.append(sede_row["codigo"])
+            project_meta = project_meta_by_key.get(project["key"], {}) or {}
+            if int(project_meta.get("activo", 1) or 1) != 1:
+                continue
+            scope_summary = _sgsst_command_scope_summary(
+                project["key"],
+                sedes_scope,
+                project_scope_by_key.get(project["key"], {}),
+            )
+            module_rows = scope_summary["module_rows"]
+            completed_sedes = scope_summary["completed_sedes"]
+            pending_sedes = scope_summary["pending_sedes"]
+            missing_sedes = scope_summary["missing_sedes"]
+            no_aplica_sedes = scope_summary["no_aplica_sedes"]
+            out_scope_sedes = scope_summary["out_scope_sedes"]
+            applicable_total = scope_summary["applicable_total"]
+            applicable_codes = set(scope_summary["applicable_codes"])
+            excluded_codes = set(no_aplica_sedes) | set(out_scope_sedes)
             if not module_rows:
                 continue
-            planning_pct = _sgsst_plan_percent(len(completed_sedes), total_scope_sedes) if total_scope_sedes else 0
+            planning_pct = _sgsst_plan_percent(len(completed_sedes), applicable_total) if applicable_total else 0
             project_actions = []
             project_hallazgos = []
             project_suggestions = []
             project_events = []
             for item in actions_scope:
+                sede_codigo = str(item.get("sede_codigo") or "").strip().upper()
+                if sede_codigo and sede_codigo in excluded_codes:
+                    continue
+                if applicable_codes and sede_codigo and sede_codigo not in applicable_codes:
+                    continue
                 ref_text = " ".join([
                     str(item.get("modulo_origen") or ""),
                     str(item.get("titulo") or ""),
@@ -7466,6 +7537,11 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 if _project_text_match(ref_text, project["keywords"]):
                     project_actions.append(item)
             for item in hallazgos_scope:
+                sede_codigo = str(item.get("sede_codigo") or "").strip().upper()
+                if sede_codigo and sede_codigo in excluded_codes:
+                    continue
+                if applicable_codes and sede_codigo and sede_codigo not in applicable_codes:
+                    continue
                 ref_text = " ".join([
                     str(item.get("modulo_origen") or ""),
                     str(item.get("titulo") or ""),
@@ -7475,9 +7551,19 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 if _project_text_match(ref_text, project["keywords"]):
                     project_hallazgos.append(item)
             for item in suggestions_scope:
+                sede_codigo = str(item.get("sede_codigo") or "").strip().upper()
+                if sede_codigo and sede_codigo in excluded_codes:
+                    continue
+                if applicable_codes and sede_codigo and sede_codigo not in applicable_codes:
+                    continue
                 if _project_text_match(item.get("module"), project["keywords"]):
                     project_suggestions.append(item)
             for item in event_scope:
+                sede_codigo = str(item.get("sede_codigo") or "").strip().upper()
+                if sede_codigo and sede_codigo in excluded_codes:
+                    continue
+                if applicable_codes and sede_codigo and sede_codigo not in applicable_codes:
+                    continue
                 if str(item.get("type_key") or "").strip().lower() in project["type_keys"]:
                     project_events.append(item)
             project_events.sort(key=lambda item: (item.get("fecha_evento") or "9999-12-31", item.get("title") or ""))
@@ -7496,19 +7582,36 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 None,
             )
             last_control = completed_controls[-1] if completed_controls else None
-            planning_open = planning_pct < 100
-            implementation_open = not planning_open and bool(open_actions or project_suggestions)
+            planning_open = applicable_total > 0 and planning_pct < 100
+            implementation_open = applicable_total > 0 and (not planning_open) and bool(open_actions or project_suggestions)
             active_stage = "plan" if planning_open else ("implementation" if implementation_open else "operation")
-            planning_state = "active" if active_stage == "plan" else ("done" if planning_pct == 100 else "ready")
+            planning_state = "active" if active_stage == "plan" else ("done" if applicable_total > 0 and planning_pct == 100 else "ready")
             implementation_state = "active" if active_stage == "implementation" else ("done" if active_stage == "operation" else "locked")
             operation_state = "active" if active_stage == "operation" else "locked"
-            planning_summary = (f"{planning_pct}% relevado" if total_scope_sedes else "Sin sedes")
+            planning_summary = (f"{planning_pct}% relevado" if applicable_total else "Sin alcance")
             planning_caption = (
                 f"{len(completed_sedes)} completas, {len(pending_sedes)} pendientes, {len(missing_sedes)} sin registrar"
-                if total_scope_sedes else
+                if applicable_total else
                 "Sin sedes en alcance"
             )
-            if planning_pct < 100:
+            planning_scope_note = " - ".join(filter(None, [
+                f"{len(no_aplica_sedes)} no aplica" if no_aplica_sedes else "",
+                f"{len(out_scope_sedes)} fuera de alcance" if out_scope_sedes else "",
+            ]))
+            if applicable_total == 0:
+                stage_label = "Sin alcance"
+                health_label = "No aplica" if no_aplica_sedes else "Fuera de alcance"
+                health_class = "muted"
+                next_step = "Definir alcance"
+                implementation_status = "Sin alcance"
+                implementation_note = "No hay sedes activas en este proyecto."
+                operation_status = "Sin alcance"
+                operation_summary = "Se activa cuando exista una sede aplicable."
+                active_stage = "plan"
+                planning_state = "active"
+                implementation_state = "locked"
+                operation_state = "locked"
+            elif planning_pct < 100:
                 stage_label = "Planificacion"
                 health_label = "Sin iniciar" if planning_pct == 0 else "En desarrollo"
                 health_class = "muted" if planning_pct == 0 else "warn"
@@ -7559,8 +7662,12 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 "key": project["key"],
                 "label": project["label"],
                 "icon": project["icon"],
-                "responsable": _project_responsable(project_actions, project_events, project["fallback_responsible"]),
-                "progress_text": f"{len(completed_sedes)}/{total_scope_sedes} ({planning_pct}%)" if total_scope_sedes else "0/0",
+                "responsable": _sgsst_command_project_responsable(
+                    project_actions,
+                    project_events,
+                    str(project_meta.get("responsable") or "").strip() or project["fallback_responsible"],
+                ),
+                "progress_text": f"{len(completed_sedes)}/{applicable_total} ({planning_pct}%)" if applicable_total else "0/0",
                 "planning_pct": planning_pct,
                 "stage_label": stage_label,
                 "health_label": health_label,
@@ -7568,9 +7675,22 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 "next_step": next_step,
                 "hallazgos_count": len(project_hallazgos),
                 "actions_count": len(open_actions),
-                "open_url": (module_rows[0]["url"] if filters["sede"] and module_rows else project["base_url"]),
+                "open_url": (module_rows[0]["url"] if filters["sede"] and module_rows else _sgsst_command_project_open_url(project["key"], filters["sede"])),
                 "actions_url": url_for("sst_plan_implementacion", vista="acciones", sede=(filters["sede"] or None), prefill_modulo=project["label"]),
                 "timeline_url": _calendar_page_url(tipo=project["timeline_type"], fase="", quick=""),
+                "config_url": url_for(
+                    "sst_project_config",
+                    project_key=project["key"],
+                    year=selected_year,
+                    month=(selected_month or None),
+                    sede=(filters["sede"] or None),
+                    tipo=(filters["tipo"] or None),
+                    estado=(filters["estado"] or None),
+                    region=(filters["region"] or None),
+                    responsable=(filters["responsable"] or None),
+                    fase=(filters["fase"] or None),
+                    quick=(filters["quick"] or None),
+                ),
                 "should_open": (filters["tipo"] in project["type_keys"]),
                 "active_stage": active_stage,
                 "stage_track": [
@@ -7580,16 +7700,22 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 ],
                 "planning": {
                     "card_state": planning_state,
+                    "applicable_total": applicable_total,
+                    "no_aplica_count": len(no_aplica_sedes),
+                    "out_scope_count": len(out_scope_sedes),
                     "completed_count": len(completed_sedes),
                     "pending_count": len(pending_sedes),
                     "missing_count": len(missing_sedes),
                     "completed_preview": completed_sedes[:8],
                     "pending_preview": pending_sedes[:8],
                     "missing_preview": missing_sedes[:8],
+                    "no_aplica_preview": no_aplica_sedes[:8],
+                    "out_scope_preview": out_scope_sedes[:8],
                     "record_count": len(planning_events),
                     "summary": planning_summary,
                     "caption": planning_caption,
-                    "detail_available": bool(completed_sedes or pending_sedes or missing_sedes),
+                    "scope_note": planning_scope_note,
+                    "detail_available": bool(completed_sedes or pending_sedes or missing_sedes or no_aplica_sedes or out_scope_sedes),
                 },
                 "implementation": {
                     "card_state": implementation_state,
@@ -7609,8 +7735,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     ],
                     "suggestions": [
                         {
-                            "title": f"{item.get('sede_codigo') or ''} · {item.get('reason') or ''}".strip(" ·"),
-                            "url": item.get("action_url") or item.get("origin_url") or item.get("context_url") or project["base_url"],
+                            "title": f"{item.get('sede_codigo') or ''} - {item.get('reason') or ''}".strip(" -"),
+                            "url": item.get("action_url") or item.get("origin_url") or item.get("context_url") or _sgsst_command_project_open_url(project["key"], filters["sede"]),
                         }
                         for item in project_suggestions[:3]
                     ],
@@ -11649,6 +11775,168 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             return "Iniciado"
         return "Sin iniciar"
 
+    def _sgsst_command_module_complete(project_key, module_row):
+        state_label = str(module_row.get("state_label") or "").strip().lower()
+        result_text = str(module_row.get("result") or "").strip().lower()
+        if project_key == "art":
+            return "sin visita" not in result_text and state_label not in {"pendiente", "sin datos", "sin registrar"}
+        if project_key == "documentacion":
+            return state_label in {"completa", "cargada", "cargado"}
+        if project_key == "evacuacion":
+            return state_label in {"cargado", "completa", "completo"}
+        if project_key in {"carteleria", "luces"}:
+            return state_label not in {"sin relevar", "sin datos"} and "sin base operativa" not in result_text
+        if project_key == "matafuegos":
+            return "sin equipos activos" not in result_text and state_label != "sin datos"
+        if project_key == "desinfeccion":
+            return "sin intervencion" not in result_text and state_label != "sin datos"
+        return False
+
+    def _sgsst_command_module_missing(project_key, module_row):
+        state_label = str(module_row.get("state_label") or "").strip().lower()
+        result_text = str(module_row.get("result") or "").strip().lower()
+        if project_key == "art":
+            return "sin visita" in result_text or state_label in {"pendiente", "sin datos", "sin registrar"}
+        if project_key == "documentacion":
+            return state_label in {"sin registrar", "sin datos"}
+        if project_key == "evacuacion":
+            return state_label in {"sin relevar", "sin registrar", "sin datos"}
+        if project_key in {"carteleria", "luces"}:
+            return state_label in {"sin relevar", "sin datos"} or "sin base operativa" in result_text
+        if project_key == "matafuegos":
+            return "sin equipos activos" in result_text or state_label == "sin datos"
+        if project_key == "desinfeccion":
+            return "sin intervencion" in result_text or state_label == "sin datos"
+        return False
+
+    def _sgsst_command_project_responsable(project_actions, project_events, fallback):
+        buckets = {}
+        for action in project_actions:
+            for candidate in (
+                action.get("responsable"),
+                action.get("area_responsable"),
+            ):
+                txt = str(candidate or "").strip()
+                if not txt:
+                    continue
+                buckets[txt] = buckets.get(txt, 0) + 1
+        for event in project_events:
+            txt = str(event.get("responsible") or "").strip()
+            if not txt:
+                continue
+            buckets[txt] = buckets.get(txt, 0) + 1
+        if not buckets:
+            return fallback
+        return sorted(buckets.items(), key=lambda item: (-item[1], item[0]))[0][0]
+
+    def _sgsst_command_load_settings(con):
+        ensure_sgsst_implementation_tables(con)
+        project_meta = {}
+        scope_map = defaultdict(dict)
+        for row in con.execute("""
+            SELECT
+                project_key,
+                COALESCE(label, '') AS label,
+                COALESCE(responsable, '') AS responsable,
+                COALESCE(frecuencia, '') AS frecuencia,
+                COALESCE(periodicidad, '') AS periodicidad,
+                COALESCE(reglas, '') AS reglas,
+                COALESCE(activo, 1) AS activo,
+                COALESCE(orden_visual, 0) AS orden_visual
+            FROM sgsst_command_projects
+            ORDER BY orden_visual, label
+        """).fetchall():
+            key = str(row["project_key"] or "").strip()
+            if not key:
+                continue
+            project_meta[key] = dict(row)
+        for row in con.execute("""
+            SELECT
+                project_key,
+                UPPER(COALESCE(sede_codigo, '')) AS sede_codigo,
+                UPPER(COALESCE(scope_state, 'AUTO')) AS scope_state,
+                COALESCE(note, '') AS note
+            FROM sgsst_command_project_scope
+        """).fetchall():
+            project_key = str(row["project_key"] or "").strip()
+            sede_codigo = str(row["sede_codigo"] or "").strip().upper()
+            if not project_key or not sede_codigo:
+                continue
+            scope_map[project_key][sede_codigo] = {
+                "scope_state": str(row["scope_state"] or "AUTO").strip().upper() or "AUTO",
+                "note": str(row["note"] or "").strip(),
+            }
+        return project_meta, scope_map
+
+    def _sgsst_command_scope_summary(project_key, sedes_scope, scope_state_map):
+        project = _sgsst_command_project_map().get(project_key)
+        completed_sedes = []
+        pending_sedes = []
+        missing_sedes = []
+        no_aplica_sedes = []
+        out_scope_sedes = []
+        module_rows = []
+        applicable_codes = set()
+        if not project:
+            return {
+                "module_rows": [],
+                "completed_sedes": completed_sedes,
+                "pending_sedes": pending_sedes,
+                "missing_sedes": missing_sedes,
+                "no_aplica_sedes": no_aplica_sedes,
+                "out_scope_sedes": out_scope_sedes,
+                "applicable_total": 0,
+                "all_total": 0,
+                "applicable_codes": applicable_codes,
+            }
+        for sede_row in sedes_scope:
+            match = next((row for row in (sede_row.get("module_rows") or []) if row.get("module") in project["module_names"]), None)
+            if not match:
+                continue
+            sede_codigo = str(sede_row.get("codigo") or "").strip().upper()
+            module_rows.append({
+                "sede_codigo": sede_codigo,
+                "sede_nombre": sede_row.get("nombre") or sede_codigo,
+                "state_label": match.get("state_label") or "",
+                "state_tone": match.get("state_tone") or "muted",
+                "result": match.get("result") or "",
+                "pending": match.get("pending") or "",
+                "next_action": match.get("next_action") or "",
+                "url": match.get("url") or _sgsst_command_project_open_url(project_key, sede_codigo),
+            })
+            scope_state = str((scope_state_map.get(sede_codigo) or {}).get("scope_state") or "AUTO").strip().upper() or "AUTO"
+            if scope_state == "NO_APLICA":
+                no_aplica_sedes.append(sede_codigo)
+                continue
+            if scope_state == "FUERA_ALCANCE":
+                out_scope_sedes.append(sede_codigo)
+                continue
+            applicable_codes.add(sede_codigo)
+            if scope_state == "COMPLETA":
+                completed_sedes.append(sede_codigo)
+                continue
+            if scope_state == "PENDIENTE":
+                pending_sedes.append(sede_codigo)
+                continue
+            if _sgsst_command_module_complete(project_key, match):
+                completed_sedes.append(sede_codigo)
+            elif _sgsst_command_module_missing(project_key, match):
+                missing_sedes.append(sede_codigo)
+            else:
+                pending_sedes.append(sede_codigo)
+        applicable_total = max(len(module_rows) - len(no_aplica_sedes) - len(out_scope_sedes), 0)
+        return {
+            "module_rows": module_rows,
+            "completed_sedes": completed_sedes,
+            "pending_sedes": pending_sedes,
+            "missing_sedes": missing_sedes,
+            "no_aplica_sedes": no_aplica_sedes,
+            "out_scope_sedes": out_scope_sedes,
+            "applicable_total": applicable_total,
+            "all_total": len(module_rows),
+            "applicable_codes": applicable_codes,
+        }
+
     def build_sgsst_plan_implementation_context(view_mode="general", selected_sede="", open_form=""):
         con = get_db()
         ensure_sst_general_table(con)
@@ -11950,6 +12238,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
 
         docs_by_sede = defaultdict(list)
         docs_count_by_sede = defaultdict(int)
+        docs_status_by_sede = defaultdict(dict)
         for row in con.execute("""
             SELECT
                 UPPER(COALESCE(sede_codigo, '')) AS sede_codigo,
@@ -11964,6 +12253,26 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             if sede_codigo:
                 docs_by_sede[sede_codigo].append(dict(row))
                 docs_count_by_sede[sede_codigo] += 1
+                tipo = str(row["tipo"] or "").strip().upper()
+                if tipo and tipo not in docs_status_by_sede[sede_codigo]:
+                    docs_status_by_sede[sede_codigo][tipo] = str(row["estado_revision"] or "").strip().upper()
+
+        evac_by_sede = defaultdict(lambda: {"count": 0, "fecha": ""})
+        if _table_exists(con, "sedes_planos"):
+            for row in con.execute("""
+                SELECT
+                    UPPER(COALESCE(cod_sede, '')) AS sede_codigo,
+                    COALESCE(fecha_carga, '') AS fecha_carga
+                FROM sedes_planos
+                WHERE LOWER(COALESCE(tipo, '')) = 'evacuacion'
+            """).fetchall():
+                sede_codigo = (row["sede_codigo"] or "").strip().upper()
+                if not sede_codigo:
+                    continue
+                evac_by_sede[sede_codigo]["count"] += 1
+                fecha_carga = str(row["fecha_carga"] or "").strip()
+                if fecha_carga and fecha_carga > str(evac_by_sede[sede_codigo]["fecha"] or ""):
+                    evac_by_sede[sede_codigo]["fecha"] = fecha_carga
 
         matafuegos_rows = con.execute("""
             SELECT
@@ -12051,6 +12360,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 "detail_url": url_for("sgsst_documento_detalle", bloque=block_key),
             })
 
+        command_project_meta, command_project_scope = _sgsst_command_load_settings(con)
+
         sedes_dashboard = []
         diagnostic_pct_values = []
         suggestions = []
@@ -12060,6 +12371,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             codigo = sede["codigo"]
             visits = visitas_by_sede.get(codigo, [])
             docs = docs_by_sede.get(codigo, [])
+            docs_status = docs_status_by_sede.get(codigo, {})
+            evac = evac_by_sede.get(codigo, {"count": 0, "fecha": ""})
             cart = cart_summary.get(codigo)
             luces = luces_summary.get(codigo)
             mata = mata_by_sede.get(codigo, {"total": 0, "vencidos": 0, "proximos": 0, "fecha_proxima": ""})
@@ -12114,15 +12427,45 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 estado_general = "Sin iniciar"
                 estado_tone = "muted"
 
+            docs_ok = sum(1 for doc_type in SST_CALENDAR_REQUIRED_DOCS if docs_status.get(doc_type) in {"CARGADO", "NO_APLICA"})
+            docs_missing = max(len(SST_CALENDAR_REQUIRED_DOCS) - docs_ok, 0)
+            if docs_missing == 0 and docs:
+                docs_state_label = "Completa"
+                docs_state_tone = "ok"
+            elif docs:
+                docs_state_label = "Pendiente"
+                docs_state_tone = "warn"
+            else:
+                docs_state_label = "Sin registrar"
+                docs_state_tone = "muted"
+
             module_rows = []
             module_rows.append({
-                "module": "Visitas ART",
+                "module": "ART",
                 "state_label": ("Visitada" if visits else "Pendiente"),
                 "state_tone": ("ok" if visits else "muted"),
                 "result": (f"{len(visits)} visita(s)" if visits else "Sin visita registrada"),
                 "pending": (f"{sum(1 for d in docs if str(d.get('estado_revision') or '').strip().upper() == 'FALTANTE')} documento(s) pendiente(s)" if docs else "Sin documentacion asociada"),
                 "next_action": ("Cargar documentacion ART" if visits and any(str(d.get("estado_revision") or "").strip().upper() == "FALTANTE" for d in docs) else ("Registrar primera visita" if not visits else "Mantener seguimiento")),
                 "url": url_for("sst_visitas", sede=codigo, open_sede=codigo),
+            })
+            module_rows.append({
+                "module": "Documentacion",
+                "state_label": docs_state_label,
+                "state_tone": docs_state_tone,
+                "result": f"{docs_ok}/{len(SST_CALENDAR_REQUIRED_DOCS)} documento(s) obligatorio(s)",
+                "pending": (f"{docs_missing} faltante(s)" if docs_missing else "Sin faltantes"),
+                "next_action": ("Abrir documentacion" if docs else "Cargar documentacion"),
+                "url": url_for("sst_visitas", sede=codigo, open_sede=codigo),
+            })
+            module_rows.append({
+                "module": "Evacuacion",
+                "state_label": ("Cargado" if evac["count"] > 0 else "Sin relevar"),
+                "state_tone": ("ok" if evac["count"] > 0 else "muted"),
+                "result": ("Plano cargado" if evac["count"] > 0 else "Sin plano cargado"),
+                "pending": ("Verificar responsables y punto de encuentro" if evac["count"] > 0 else "Cargar plano de evacuacion"),
+                "next_action": "Abrir evacuacion",
+                "url": url_for("sede_ficha", codigo=codigo, tab="evacuacion"),
             })
             if cart:
                 module_rows.append({
@@ -12187,10 +12530,30 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 suggestions.append({
                     "sede_codigo": codigo,
                     "sede_nombre": sede.get("nombre") or codigo,
-                    "module": "Visitas ART",
+                    "module": "ART",
                     "reason": "Sin visita registrada en la sede.",
-                    "action_url": url_for("sst_plan_implementacion", vista="acciones", form="accion", prefill_sede=codigo, prefill_modulo="Visitas ART", prefill_titulo=f"Programar visita ART en {codigo}"),
+                    "action_url": url_for("sst_plan_implementacion", vista="acciones", form="accion", prefill_sede=codigo, prefill_modulo="ART", prefill_titulo=f"Programar visita ART en {codigo}"),
                     "origin_url": url_for("sst_visitas", sede=codigo, open_sede=codigo),
+                    "action_label": "Crear accion",
+                })
+            if docs_missing > 0:
+                suggestions.append({
+                    "sede_codigo": codigo,
+                    "sede_nombre": sede.get("nombre") or codigo,
+                    "module": "Documentacion",
+                    "reason": f"Faltan {docs_missing} documento(s) obligatorio(s).",
+                    "action_url": url_for("sst_plan_implementacion", vista="acciones", form="accion", prefill_sede=codigo, prefill_modulo="Documentacion", prefill_titulo=f"Completar documentacion ART en {codigo}"),
+                    "origin_url": url_for("sst_visitas", sede=codigo, open_sede=codigo),
+                    "action_label": "Crear accion",
+                })
+            if evac["count"] == 0:
+                suggestions.append({
+                    "sede_codigo": codigo,
+                    "sede_nombre": sede.get("nombre") or codigo,
+                    "module": "Evacuacion",
+                    "reason": "No hay plano de evacuacion cargado.",
+                    "action_url": url_for("sst_plan_implementacion", vista="acciones", form="accion", prefill_sede=codigo, prefill_modulo="Evacuacion", prefill_titulo=f"Cargar evacuacion en {codigo}"),
+                    "origin_url": url_for("sede_ficha", codigo=codigo, tab="evacuacion"),
                     "action_label": "Crear accion",
                 })
             if cart and int(cart.get("faltantes") or 0) > 0:
@@ -12495,16 +12858,21 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             "open_form": open_form,
             "prefill": prefill,
             "sedes": sedes,
+            "command_project_meta": command_project_meta,
+            "command_project_scope": command_project_scope,
+            "command_scope_options": list(SGSST_COMMAND_SCOPE_OPTIONS),
             "manual_hallazgos": manual_hallazgos,
             "hallazgo_states": SGSST_PLAN_HALLAZGO_STATES,
             "action_states": SGSST_PLAN_ACTION_STATES,
             "priority_options": SGSST_PLAN_PRIORITIES,
             "module_options": [
+                "ART",
+                "Documentacion",
+                "Evacuacion",
                 "Carteleria",
                 "Luces de emergencia",
                 "Matafuegos",
                 "Desinfecciones",
-                "Visitas ART",
                 "Biblioteca documental",
                 "General",
             ],
@@ -12654,6 +13022,150 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
 
         context = build_sgsst_plan_implementation_context(view_mode=view_mode, selected_sede=selected_sede, open_form=open_form)
         return render_template("sst_plan_implementacion.html", **context)
+
+    @app.route("/sst/proyectos/<project_key>/configuracion", methods=["GET", "POST"], endpoint="sst_project_config")
+    def sst_project_config(project_key):
+        project_key = (project_key or "").strip().lower()
+        project = _sgsst_command_project_map().get(project_key)
+        if not project:
+            flash("Proyecto SG-SST inexistente.", "warning")
+            return redirect(url_for("sst_calendario_operativo"))
+
+        return_args = {
+            "year": (request.values.get("year") or "").strip(),
+            "month": (request.values.get("month") or "").strip(),
+            "sede": (request.values.get("sede") or "").strip().upper(),
+            "tipo": (request.values.get("tipo") or "").strip().lower(),
+            "estado": (request.values.get("estado") or "").strip().lower(),
+            "region": (request.values.get("region") or "").strip(),
+            "responsable": (request.values.get("responsable") or "").strip(),
+            "fase": (request.values.get("fase") or "").strip().lower(),
+            "quick": (request.values.get("quick") or "").strip().lower(),
+        }
+        return_clean = {key: value for key, value in return_args.items() if value not in {"", None}}
+        return_url = url_for("sst_calendario_operativo", **return_clean) if return_clean else url_for("sst_calendario_operativo")
+
+        if request.method == "POST":
+            con = get_db()
+            ensure_sgsst_implementation_tables(con)
+            now = _sst_now_ts()
+            valid_sedes = {
+                str(row["codigo"] or "").strip().upper()
+                for row in con.execute("SELECT codigo FROM sedes_mpd WHERE TRIM(COALESCE(codigo, '')) <> ''").fetchall()
+            }
+            existing = con.execute("SELECT project_key FROM sgsst_command_projects WHERE project_key = ?", (project_key,)).fetchone()
+            if existing:
+                con.execute("""
+                    UPDATE sgsst_command_projects
+                    SET label = ?,
+                        responsable = ?,
+                        frecuencia = ?,
+                        periodicidad = ?,
+                        reglas = ?,
+                        activo = 1,
+                        updated_at = ?
+                    WHERE project_key = ?
+                """, (
+                    project["label"],
+                    (request.form.get("responsable") or "").strip() or project["fallback_responsible"],
+                    (request.form.get("frecuencia") or "").strip(),
+                    (request.form.get("periodicidad") or "").strip(),
+                    (request.form.get("reglas") or "").strip(),
+                    now,
+                    project_key,
+                ))
+            else:
+                con.execute("""
+                    INSERT INTO sgsst_command_projects(
+                        project_key, label, responsable, frecuencia, periodicidad, reglas,
+                        activo, orden_visual, created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, 1, 0, ?, ?)
+                """, (
+                    project_key,
+                    project["label"],
+                    (request.form.get("responsable") or "").strip() or project["fallback_responsible"],
+                    (request.form.get("frecuencia") or "").strip(),
+                    (request.form.get("periodicidad") or "").strip(),
+                    (request.form.get("reglas") or "").strip(),
+                    now,
+                    now,
+                ))
+
+            valid_states = {item["value"] for item in SGSST_COMMAND_SCOPE_OPTIONS}
+            for sede_codigo in sorted(valid_sedes):
+                scope_state = str(request.form.get(f"scope_state__{sede_codigo}") or "AUTO").strip().upper() or "AUTO"
+                if scope_state not in valid_states:
+                    scope_state = "AUTO"
+                note = (request.form.get(f"scope_note__{sede_codigo}") or "").strip()
+                if scope_state == "AUTO" and not note:
+                    con.execute("""
+                        DELETE FROM sgsst_command_project_scope
+                        WHERE project_key = ? AND sede_codigo = ?
+                    """, (project_key, sede_codigo))
+                    continue
+                con.execute("""
+                    INSERT INTO sgsst_command_project_scope(project_key, sede_codigo, scope_state, note, updated_at)
+                    VALUES (?, ?, ?, ?, ?)
+                    ON CONFLICT(project_key, sede_codigo) DO UPDATE SET
+                        scope_state = excluded.scope_state,
+                        note = excluded.note,
+                        updated_at = excluded.updated_at
+                """, (
+                    project_key,
+                    sede_codigo,
+                    scope_state,
+                    note,
+                    now,
+                ))
+            con.commit()
+            flash("Configuracion del proyecto actualizada.", "success")
+            return redirect(url_for("sst_project_config", project_key=project_key, **return_clean))
+
+        context = build_sgsst_plan_implementation_context(view_mode="general")
+        project_meta = dict(context.get("command_project_meta") or {}).get(project_key, {}) or {}
+        scope_map = dict(context.get("command_project_scope") or {}).get(project_key, {}) or {}
+        scope_summary = _sgsst_command_scope_summary(project_key, list(context.get("sedes_dashboard") or []), scope_map)
+        module_index = {row["sede_codigo"]: row for row in scope_summary["module_rows"]}
+        scope_rows = []
+        for sede_row in context.get("sedes_dashboard") or []:
+            sede_codigo = str(sede_row.get("codigo") or "").strip().upper()
+            module_row = module_index.get(sede_codigo)
+            if not module_row:
+                continue
+            saved_scope = scope_map.get(sede_codigo, {})
+            saved_state = str(saved_scope.get("scope_state") or "AUTO").strip().upper() or "AUTO"
+            if saved_state == "AUTO":
+                if _sgsst_command_module_complete(project_key, module_row):
+                    effective_label = "Completa"
+                elif _sgsst_command_module_missing(project_key, module_row):
+                    effective_label = "Sin registrar"
+                else:
+                    effective_label = "Pendiente"
+            else:
+                effective_label = _sgsst_command_scope_label(saved_state)
+            scope_rows.append({
+                "codigo": sede_codigo,
+                "nombre": sede_row.get("nombre") or sede_codigo,
+                "scope_state": saved_state,
+                "scope_note": str(saved_scope.get("note") or "").strip(),
+                "effective_label": effective_label,
+                "module_result": module_row.get("result") or "",
+                "module_pending": module_row.get("pending") or "",
+                "module_url": module_row.get("url") or _sgsst_command_project_open_url(project_key, sede_codigo),
+            })
+
+        return render_template(
+            "sst_project_config.html",
+            project=project,
+            project_meta=project_meta,
+            scope_rows=scope_rows,
+            scope_summary=scope_summary,
+            scope_options=list(SGSST_COMMAND_SCOPE_OPTIONS),
+            scope_label_map=dict(SGSST_COMMAND_SCOPE_LABELS),
+            return_url=return_url,
+            return_args=return_clean,
+            sst_section="calendario",
+        )
 
     def _sst_seguimiento_context():
         con = get_db()

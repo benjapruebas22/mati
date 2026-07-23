@@ -4,7 +4,7 @@
 
 {% block extra_head %}
   <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-23-03') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-23-04') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='sgi/operativa_nav.css', v='2026-07-19-02') }}">
 {% endblock %}
 
@@ -225,6 +225,9 @@
                 <span class="sst-master-stage-pill">{{ project.planning.summary }}</span>
               </div>
               <strong>{{ project.planning.caption }}</strong>
+              {% if project.planning.scope_note %}
+              <p class="sst-master-stage-meta">{{ project.planning.scope_note }}</p>
+              {% endif %}
               <div class="sst-master-stage-matrix">
                 <div>
                   <b>{{ project.planning.completed_count }}</b>
@@ -277,6 +280,30 @@
                       {% endfor %}
                     </div>
                   </div>
+                  {% if project.planning.no_aplica_count %}
+                  <div class="sst-master-stage-detail-group">
+                    <b>No aplica</b>
+                    <div class="sst-master-code-list is-muted">
+                      {% for code in project.planning.no_aplica_preview %}
+                      <span>{{ code }}</span>
+                      {% else %}
+                      <span>-</span>
+                      {% endfor %}
+                    </div>
+                  </div>
+                  {% endif %}
+                  {% if project.planning.out_scope_count %}
+                  <div class="sst-master-stage-detail-group">
+                    <b>Fuera de alcance</b>
+                    <div class="sst-master-code-list is-muted">
+                      {% for code in project.planning.out_scope_preview %}
+                      <span>{{ code }}</span>
+                      {% else %}
+                      <span>-</span>
+                      {% endfor %}
+                    </div>
+                  </div>
+                  {% endif %}
                 </div>
               </details>
               {% endif %}
@@ -354,6 +381,7 @@
             <a class="sst-op-btn" href="{{ project.open_url }}">Abrir modulo</a>
             <a class="sst-op-btn" href="{{ project.actions_url }}">Ver acciones</a>
             <a class="sst-op-btn" href="{{ project.timeline_url }}">Ver cronograma</a>
+            <a class="sst-op-btn" href="{{ project.config_url }}">Configuracion</a>
           </div>
         </div>
       </details>
