@@ -764,3 +764,321 @@
     margin: 0 auto;
   }
 }
+
+/* Alineacion visual SGI: misma logica, menos protagonismo visual. */
+.sp-shell {
+  --sp-bg: #f4f6fb;
+  --sp-border: #e4e8ef;
+  --sp-border-strong: #d6dee9;
+  --sp-muted: #667085;
+  --sp-title: #172033;
+  --sp-blue: #2556a8;
+  --sp-blue-soft: #f3f7fd;
+  --sp-amber: #9a6a21;
+  --sp-amber-soft: #fff8ea;
+  --sp-green: #23724c;
+  --sp-green-soft: #f3fbf6;
+  --sp-red: #a64545;
+  --sp-red-soft: #fff4f4;
+  --sp-slate-soft: #f7f9fc;
+  --sp-shadow: none;
+  gap: 12px;
+  padding-bottom: 22px;
+}
+
+.sp-hero,
+.sp-card,
+.sp-summary-card {
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.sp-hero {
+  gap: 14px;
+  padding: 16px 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #fafcff 100%);
+}
+
+.sp-eyebrow,
+.sp-kicker {
+  margin-bottom: 4px;
+  font-size: 10px;
+  letter-spacing: .06em;
+}
+
+.sp-hero h1 {
+  font-size: clamp(24px, 2.4vw, 31px);
+  line-height: 1.08;
+}
+
+.sp-section-head h2,
+.sp-card-head h2 {
+  font-size: 18px;
+}
+
+.sp-card h3,
+.sp-phase-card-head h3 {
+  font-size: 16px;
+}
+
+.sp-card h4 {
+  font-size: 14px;
+}
+
+.sp-subtitle,
+.sp-section-head p,
+.sp-card-head p,
+.sp-phase-text,
+.sp-module-card p,
+.sp-suggest-card p,
+.sp-timeline-copy p {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.sp-meta,
+.sp-hero-actions,
+.sp-sede-head-badges,
+.sp-list-meta,
+.sp-owner-stats {
+  gap: 6px;
+}
+
+.sp-top-grid,
+.sp-summary-grid,
+.sp-phase-grid,
+.sp-form-grid,
+.sp-responsable-grid,
+.sp-role-grid,
+.sp-module-grid,
+.sp-sede-panels,
+.sp-suggest-grid {
+  gap: 12px;
+}
+
+.sp-btn {
+  min-height: 32px;
+  padding: 0 11px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: none;
+}
+
+.sp-btn:hover,
+.sp-link:hover,
+.sp-mini-doc:hover,
+.sp-phase-row:hover,
+.sp-timeline-item:hover {
+  transform: none;
+}
+
+.sp-btn:hover {
+  border-color: #c6d4e5;
+  background: #f7faff;
+  color: #1f4f96;
+}
+
+.sp-link {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sp-link:hover {
+  color: #1f4f96;
+  text-decoration: underline;
+}
+
+.sp-chip {
+  min-height: 24px;
+  padding: 0 8px;
+  font-size: 11px;
+}
+
+.sp-summary-card {
+  padding: 12px 14px;
+}
+
+.sp-summary-card strong {
+  margin-top: 6px;
+  font-size: 22px;
+}
+
+.sp-card,
+.sp-section {
+  gap: 12px;
+}
+
+.sp-card {
+  padding: 14px;
+}
+
+.sp-card-head,
+.sp-section-head,
+.sp-phase-card-head,
+.sp-sede-head,
+.sp-subhead,
+.sp-module-top {
+  gap: 10px;
+}
+
+.sp-progress-layout {
+  grid-template-columns: 136px minmax(0, 1fr);
+  gap: 16px;
+}
+
+.sp-progress-ring {
+  width: 130px;
+  height: 130px;
+  background:
+    radial-gradient(circle at center, #ffffff 62%, transparent 63%),
+    conic-gradient(var(--sp-blue) calc(var(--sp-progress) * 1%), #e8eef5 0);
+}
+
+.sp-progress-ring strong {
+  font-size: 26px;
+}
+
+.sp-phase-stack,
+.sp-library-list,
+.sp-role-list,
+.sp-list,
+.sp-timeline {
+  gap: 8px;
+}
+
+.sp-phase-row {
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+.sp-inline-progress {
+  height: 8px;
+}
+
+.sp-mini-doc,
+.sp-list-row,
+.sp-timeline-item {
+  padding: 10px 12px;
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+.sp-mini-doc {
+  gap: 5px;
+}
+
+.sp-mini-doc-phase,
+.sp-phase-tag {
+  min-height: 20px;
+  padding: 0 8px;
+  font-size: 10px;
+}
+
+.sp-phase-badge {
+  font-size: 22px;
+}
+
+.sp-phase-stats {
+  gap: 8px;
+  padding: 10px 0;
+}
+
+.sp-phase-check {
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #f9fafc;
+}
+
+.sp-check-mark {
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  font-size: 10px;
+}
+
+.sp-table th,
+.sp-table td {
+  padding: 10px;
+}
+
+.sp-table th {
+  font-size: 11px;
+  letter-spacing: .05em;
+}
+
+.sp-table td,
+.sp-table small,
+.sp-list-row small,
+.sp-role-item small,
+.sp-empty,
+.sp-timeline-date small,
+.sp-mini-doc small {
+  font-size: 12px;
+}
+
+.sp-cell-progress {
+  gap: 4px;
+}
+
+.sp-module-card,
+.sp-suggest-card,
+.sp-role-item {
+  padding: 12px;
+  border-radius: 12px;
+}
+
+.sp-subhead {
+  padding-bottom: 6px;
+}
+
+.sp-empty {
+  padding: 12px;
+  border-radius: 10px;
+}
+
+.sp-form-body {
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.sp-form-body label {
+  gap: 5px;
+  font-size: 12px;
+}
+
+.sp-form-body input,
+.sp-form-body select,
+.sp-form-body textarea {
+  min-height: 36px;
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+
+.sp-form-body textarea {
+  min-height: 84px;
+}
+
+.sp-form-body .is-check {
+  min-height: 36px;
+  padding: 0 10px;
+  border-radius: 10px;
+}
+
+.sp-owner-stats span {
+  min-height: 24px;
+  padding: 0 8px;
+  font-size: 11px;
+}
+
+.sp-timeline-item {
+  grid-template-columns: 108px minmax(0, 1fr) 160px;
+  gap: 12px;
+}
+
+.sp-timeline-date strong {
+  font-size: 14px;
+}
