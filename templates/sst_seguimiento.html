@@ -16,7 +16,7 @@
     </div>
     <div class="sst-op-actions">
       <a class="sst-op-btn primary" href="{{ url_for('sst_general', modo='gestion', view='operativa', tipo='no_conformidad') }}">Agregar seguimiento</a>
-      <a class="sst-op-btn" href="{{ url_for('sst_plan', vista='gestion') }}">Gestión especializada</a>
+      <a class="sst-op-btn" href="{{ url_for('sst_plan_implementacion', vista='acciones') }}">Plan de implementacion</a>
     </div>
   </header>
 
@@ -30,7 +30,7 @@
 
   <form class="sst-op-card" method="get" action="{{ url_for('sst_plan') }}" style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;padding:12px;margin-bottom:12px;">
     <input type="hidden" name="estado" value="{{ f_estado }}">
-    <label style="flex:1;min-width:210px;"><small>Buscar</small><input name="q" value="{{ f_q }}" placeholder="Hallazgo, acción o responsable" style="width:100%;"></label>
+    <label style="flex:1;min-width:210px;"><small>Buscar</small><input name="q" value="{{ f_q }}" placeholder="Hallazgo, accion o responsable" style="width:100%;"></label>
     <label style="min-width:210px;"><small>Sede</small><select name="sede" style="width:100%;"><option value="">Todas</option>{% for sede in sedes %}<option value="{{ sede.codigo }}" {% if f_sede == sede.codigo %}selected{% endif %}>{{ sede.codigo }} · {{ sede.nombre }}</option>{% endfor %}</select></label>
     <button class="sst-op-btn" type="submit">Aplicar</button>
   </form>
@@ -39,7 +39,7 @@
     <div class="sst-op-card-head"><h2>Acciones</h2><span class="sst-op-count">{{ seguimientos|length }} registros</span></div>
     <div style="overflow-x:auto;">
       <table class="table">
-        <thead><tr><th>Hallazgo</th><th>Acción requerida</th><th>Sede</th><th>Responsable</th><th>Prioridad</th><th>Fecha objetivo</th><th>Evidencia</th><th>Estado</th><th></th></tr></thead>
+        <thead><tr><th>Hallazgo</th><th>Accion requerida</th><th>Sede</th><th>Responsable</th><th>Prioridad</th><th>Fecha objetivo</th><th>Evidencia</th><th>Estado</th><th></th></tr></thead>
         <tbody>
           {% for item in seguimientos %}
           <tr>

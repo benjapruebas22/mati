@@ -6,6 +6,8 @@
   {% set current_stage = 'diagnostico' %}
 {% elif current_section == 'implementacion' %}
   {% set current_stage = 'implementacion' %}
+{% elif current_section == 'plan' %}
+  {% set current_stage = 'plan' %}
 {% elif current_section in ['matafuegos', 'desinfecciones'] %}
   {% set current_stage = 'operacion' %}
 {% elif current_section in ['visitas', 'seguimiento', 'documentacion'] %}
@@ -39,6 +41,19 @@
       </summary>
       <div class="sst-op-stage-menu">
         <a class="{% if current_section == 'implementacion' %}is-active{% endif %}" href="{{ url_for('sst_implementacion_tablero') }}">Tablero de implementacion</a>
+      </div>
+    </details>
+
+    <details class="sst-op-stage {% if current_stage == 'plan' %}is-active{% endif %}">
+      <summary>
+        <span class="sst-op-stage-kicker">Programa</span>
+        <strong>Plan</strong>
+      </summary>
+      <div class="sst-op-stage-menu">
+        <a class="{% if current_section == 'plan' %}is-active{% endif %}" href="{{ url_for('sst_plan_implementacion') }}">Plan de implementacion</a>
+        <a href="{{ url_for('sst_plan_implementacion', vista='sedes') }}">Vista por sedes</a>
+        <a href="{{ url_for('sst_plan_implementacion', vista='acciones') }}">Acciones del plan</a>
+        <a href="{{ url_for('sst_plan_implementacion', vista='cronograma') }}">Cronograma</a>
       </div>
     </details>
 

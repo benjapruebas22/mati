@@ -1,0 +1,660 @@
+{% extends "base.html" %}
+
+{% block head_extra %}
+  {{ super() }}
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_plan_implementacion.css', v='2026-07-23-1') }}">
+{% endblock %}
+
+{% block content %}
+{% set sst_section = 'plan' %}
+<section class="sp-shell">
+  {% include '_sst_operational_nav.html' %}
+
+  <header class="sp-hero">
+    <div class="sp-hero-copy">
+      <p class="sp-eyebrow">SG-SST · Programa institucional</p>
+      <h1>{{ hero.title }}</h1>
+      <p class="sp-subtitle">{{ hero.subtitle }}</p>
+      <div class="sp-meta">
+        <span class="sp-chip">{{ hero.sedes_total }} sedes</span>
+        <span class="sp-chip">Actualizado {{ hero.last_updated }}</span>
+        <span class="sp-chip tone-{{ hero.overall_tone }}">{{ hero.overall_state }}</span>
+      </div>
+    </div>
+    <div class="sp-hero-actions">
+      <a class="sp-btn {% if view_mode == 'general' %}is-active{% endif %}" href="{{ url_for('sst_plan_implementacion') }}">Resumen general</a>
+      <a class="sp-btn {% if view_mode == 'fases' %}is-active{% endif %}" href="{{ url_for('sst_plan_implementacion', vista='fases') }}">Ver por fases</a>
+      <a class="sp-btn {% if view_mode == 'sedes' %}is-active{% endif %}" href="{{ url_for('sst_plan_implementacion', vista='sedes') }}">Ver por sedes</a>
+      <a class="sp-btn {% if view_mode == 'acciones' %}is-active{% endif %}" href="{{ url_for('sst_plan_implementacion', vista='acciones') }}">Ver acciones</a>
+      <a class="sp-btn {% if view_mode == 'responsables' %}is-active{% endif %}" href="{{ url_for('sst_plan_implementacion', vista='responsables') }}">Ver responsables</a>
+      <a class="sp-btn {% if view_mode == 'cronograma' %}is-active{% endif %}" href="{{ url_for('sst_plan_implementacion', vista='cronograma') }}">Ver cronograma</a>
+      <a class="sp-btn tone-ghost" href="{{ library_url }}">Biblioteca vinculada</a>
+    </div>
+  </header>
+
+  <section class="sp-top-grid">
+    <article class="sp-card sp-progress-card">
+      <div class="sp-card-head">
+        <div>
+          <p class="sp-kicker">Avance estimado</p>
+          <h2>Columna vertebral del plan</h2>
+        </div>
+        <a class="sp-link" href="{{ seguimiento_url }}">Abrir seguimiento operativo</a>
+      </div>
+      <div class="sp-progress-layout">
+        <div class="sp-progress-ring" style="--sp-progress: {{ hero.overall_pct }};">
+          <div>
+            <strong>{{ hero.overall_pct }}%</strong>
+            <span>{{ hero.overall_state }}</span>
+          </div>
+        </div>
+        <div class="sp-phase-stack">
+          {% for phase in phase_cards %}
+          <a class="sp-phase-row tone-{{ phase.class }}" href="{{ url_for('sst_plan_implementacion', vista='fases') }}#phase-{{ phase.key }}">
+            <div class="sp-phase-row-copy">
+              <span>{{ phase.short }}</span>
+              <strong>{{ phase.title }}</strong>
+              <small>{{ phase.description }}</small>
+            </div>
+            <div class="sp-inline-progress tone-{{ phase.class }}">
+              <span style="width: {{ phase.pct }}%;"></span>
+            </div>
+            <div class="sp-phase-value">{{ phase.pct }}%</div>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+    </article>
+
+    <article class="sp-card sp-library-card">
+      <div class="sp-card-head">
+        <div>
+          <p class="sp-kicker">Biblioteca vinculada</p>
+          <h2>Base documental conectada</h2>
+        </div>
+        <a class="sp-link" href="{{ library_url }}">Abrir biblioteca</a>
+      </div>
+      <div class="sp-library-list">
+        {% for doc in library_cards[:4] %}
+        <a class="sp-mini-doc" href="{{ doc.detail_url }}">
+          <span class="sp-mini-doc-phase">{{ doc.phase_key|replace('_',' ')|title }}</span>
+          <strong>{{ doc.title }}</strong>
+          <small>{{ doc.subtitle or 'Documento institucional SG-SST.' }}</small>
+          <span class="sp-mini-doc-status tone-{{ doc.status_tone }}">{{ doc.status_label }}</span>
+        </a>
+        {% endfor %}
+      </div>
+    </article>
+  </section>
+
+  <section class="sp-summary-grid">
+    {% for card in summary_cards %}
+    <article class="sp-summary-card tone-{{ card.tone }}">
+      <small>{{ card.label }}</small>
+      <strong>{{ card.value }}</strong>
+    </article>
+    {% endfor %}
+  </section>
+
+  {% if view_mode in ['general', 'fases'] %}
+  <section class="sp-section" id="sp-phases">
+    <div class="sp-section-head">
+      <div>
+        <p class="sp-kicker">Vista por fases</p>
+        <h2>Proceso completo de implementacion</h2>
+      </div>
+      <p>Lineamientos, diagnostico, acciones y control periodico leidos en una sola pantalla.</p>
+    </div>
+    <div class="sp-phase-grid">
+      {% for phase in phase_cards %}
+      <article class="sp-card sp-phase-card tone-{{ phase.class }}" id="phase-{{ phase.key }}">
+        <div class="sp-phase-card-head">
+          <div>
+            <span class="sp-phase-tag">{{ phase.short }}</span>
+            <h3>{{ phase.title }}</h3>
+          </div>
+          <div class="sp-phase-badge">{{ phase.pct }}%</div>
+        </div>
+        <p class="sp-phase-text">{{ phase.description }}</p>
+        <div class="sp-inline-progress tone-{{ phase.class }}">
+          <span style="width: {{ phase.pct }}%;"></span>
+        </div>
+        <div class="sp-phase-stats">
+          {% for stat in phase.stats %}
+          <div>
+            <small>{{ stat.label }}</small>
+            <strong>{{ stat.value }}</strong>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="sp-phase-checks">
+          {% for item in phase.items %}
+          <div class="sp-phase-check {% if item.done %}is-done{% endif %}">
+            <span class="sp-check-mark">{% if item.done %}OK{% else %}--{% endif %}</span>
+            <div>
+              <strong>{{ item.label }}</strong>
+              {% if item.value is defined %}<small>{{ item.value }}</small>{% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if view_mode in ['general', 'sedes'] %}
+  <section class="sp-section" id="sp-sedes">
+    <div class="sp-section-head">
+      <div>
+        <p class="sp-kicker">Vista por sede</p>
+        <h2>Resumen institucional por ambiente operativo</h2>
+      </div>
+      <p>Primero la sede, despues sus modulos, hallazgos, acciones y controles.</p>
+    </div>
+    <article class="sp-card">
+      <div class="sp-table-wrap">
+        <table class="sp-table">
+          <thead>
+            <tr>
+              <th>Sede</th>
+              <th>Diagnostico</th>
+              <th>Hallazgos</th>
+              <th>Acciones</th>
+              <th>Implementacion</th>
+              <th>Operacion</th>
+              <th>Estado general</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for sede in sedes_dashboard %}
+            <tr class="{% if selected_sede_row and sede.codigo == selected_sede_row.codigo %}is-selected{% endif %}">
+              <td>
+                <strong>{{ sede.codigo }}</strong>
+                <small>{{ sede.nombre }}</small>
+              </td>
+              <td>
+                <div class="sp-cell-progress">
+                  <span>{{ sede.diagnostico_text }}</span>
+                  <div class="sp-inline-progress tone-{{ 'ok' if sede.diagnostico_complete else ('warn' if sede.diagnostico_pct else 'muted') }}">
+                    <span style="width: {{ sede.diagnostico_pct }}%;"></span>
+                  </div>
+                </div>
+              </td>
+              <td>{{ sede.hallazgos_abiertos }} abierto(s) / {{ sede.hallazgos_totales }}</td>
+              <td>{{ sede.acciones_abiertas }} abierta(s) / {{ sede.acciones_totales }}</td>
+              <td>
+                <div class="sp-cell-progress">
+                  <span>{{ sede.implementacion_text }}</span>
+                  <div class="sp-inline-progress tone-{{ 'ok' if sede.implementacion_pct >= 80 else ('warn' if sede.implementacion_pct else 'muted') }}">
+                    <span style="width: {{ sede.implementacion_pct }}%;"></span>
+                  </div>
+                </div>
+              </td>
+              <td>{{ sede.operacion_text }}</td>
+              <td><span class="sp-chip tone-{{ sede.estado_tone }}">{{ sede.estado_general }}</span></td>
+              <td><a class="sp-link" href="{{ sede.detail_url }}">Abrir</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    {% if selected_sede_row %}
+    <article class="sp-card sp-sede-detail" id="sede-{{ selected_sede_row.codigo }}">
+      <div class="sp-sede-head">
+        <div>
+          <p class="sp-kicker">Ficha consolidada</p>
+          <h3>{{ selected_sede_row.codigo }} · {{ selected_sede_row.nombre }}</h3>
+          <p>{{ selected_sede_row.direccion or 'Direccion no cargada' }}{% if selected_sede_row.ciudad %} · {{ selected_sede_row.ciudad }}{% endif %}{% if selected_sede_row.fuero %} · {{ selected_sede_row.fuero }}{% endif %}</p>
+        </div>
+        <div class="sp-sede-head-badges">
+          <span class="sp-chip">Hallazgos {{ selected_sede_row.hallazgos_abiertos }}/{{ selected_sede_row.hallazgos_totales }}</span>
+          <span class="sp-chip">Acciones {{ selected_sede_row.acciones_abiertas }}/{{ selected_sede_row.acciones_totales }}</span>
+          <span class="sp-chip tone-{{ selected_sede_row.estado_tone }}">{{ selected_sede_row.estado_general }}</span>
+        </div>
+      </div>
+
+      <div class="sp-module-grid">
+        {% for module in selected_sede_row.module_rows %}
+        <article class="sp-module-card">
+          <div class="sp-module-top">
+            <strong>{{ module.module }}</strong>
+            <span class="sp-chip tone-{{ module.state_tone }}">{{ module.state_label }}</span>
+          </div>
+          <p>{{ module.result }}</p>
+          <small>{{ module.pending }}</small>
+          <a class="sp-link" href="{{ module.url }}">{{ module.next_action }}</a>
+        </article>
+        {% endfor %}
+      </div>
+
+      <div class="sp-sede-panels">
+        <div class="sp-sede-panel">
+          <div class="sp-subhead">
+            <h4>Hallazgos vinculados</h4>
+            <span>{{ selected_sede_row.hallazgos_totales }}</span>
+          </div>
+          <div class="sp-list">
+            {% for item in selected_sede_row.hallazgos_preview %}
+            <div class="sp-list-row">
+              <div>
+                <strong>{{ item.titulo }}</strong>
+                <small>{{ item.descripcion or item.categoria or item.fuente or 'Hallazgo SG-SST' }}</small>
+              </div>
+              <div class="sp-list-meta">
+                <span class="sp-chip tone-{{ item.state_tone }}">{{ item.state_label }}</span>
+                <span class="sp-chip">{{ item.priority_label }}</span>
+              </div>
+            </div>
+            {% else %}
+            <div class="sp-empty">No hay hallazgos cargados para esta sede.</div>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="sp-sede-panel">
+          <div class="sp-subhead">
+            <h4>Acciones del plan</h4>
+            <span>{{ selected_sede_row.acciones_totales }}</span>
+          </div>
+          <div class="sp-list">
+            {% for item in selected_sede_row.actions_preview %}
+            <div class="sp-list-row">
+              <div>
+                <strong>{{ item.titulo }}</strong>
+                <small>{{ item.accion_requerida or item.modulo_origen or 'Accion SG-SST' }}</small>
+              </div>
+              <div class="sp-list-meta">
+                <span class="sp-chip tone-{{ item.state_tone }}">{{ item.state_label }}</span>
+                <span class="sp-chip">{{ item.fecha_objetivo_label }}</span>
+              </div>
+            </div>
+            {% else %}
+            <div class="sp-empty">No hay acciones cargadas para esta sede.</div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </article>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {% if view_mode in ['general', 'acciones'] %}
+  <section class="sp-section" id="sp-actions">
+    <div class="sp-section-head">
+      <div>
+        <p class="sp-kicker">Hallazgos y acciones</p>
+        <h2>Motor operativo del plan</h2>
+      </div>
+      <p>Una capa nueva para ordenar lo existente sin romper los modulos originales.</p>
+    </div>
+
+    <div class="sp-form-grid">
+      <details class="sp-card sp-form-card" {% if open_form == 'hallazgo' %}open{% endif %}>
+        <summary>
+          <div>
+            <p class="sp-kicker">Carga manual</p>
+            <h3>Crear hallazgo SG-SST</h3>
+          </div>
+          <span class="sp-summary-toggle">Abrir</span>
+        </summary>
+        <form method="post" action="{{ url_for('sst_plan_implementacion', vista='acciones', sede=(prefill.sede_codigo or None), form='hallazgo') }}" class="sp-form-body">
+          <input type="hidden" name="intent" value="hallazgo">
+          <div class="sp-form-row two">
+            <label>
+              <span>Sede</span>
+              <select name="sede_codigo" required>
+                <option value="">Seleccionar</option>
+                {% for sede in sedes %}
+                <option value="{{ sede.codigo }}" {% if prefill.sede_codigo == sede.codigo %}selected{% endif %}>{{ sede.codigo }} · {{ sede.nombre }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <label>
+              <span>Modulo de origen</span>
+              <select name="modulo_origen">
+                <option value="">General</option>
+                {% for item in module_options %}
+                <option value="{{ item }}" {% if prefill.modulo_origen == item %}selected{% endif %}>{{ item }}</option>
+                {% endfor %}
+              </select>
+            </label>
+          </div>
+          <div class="sp-form-row two">
+            <label>
+              <span>Titulo</span>
+              <input type="text" name="titulo" value="{{ prefill.titulo }}" placeholder="Ej: Faltan luces de emergencia" required>
+            </label>
+            <label>
+              <span>Categoria</span>
+              <input type="text" name="categoria" placeholder="Ej: Seguridad contra incendios">
+            </label>
+          </div>
+          <div class="sp-form-row three">
+            <label>
+              <span>Fecha de deteccion</span>
+              <input type="date" name="fecha_deteccion" value="{{ today_iso }}">
+            </label>
+            <label>
+              <span>Prioridad</span>
+              <select name="prioridad">
+                {% for item in priority_options %}
+                <option value="{{ item }}">{{ item }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <label>
+              <span>Fuente</span>
+              <select name="fuente">
+                {% for item in fuente_options %}
+                <option value="{{ item }}">{{ item|replace('_', ' ')|title }}</option>
+                {% endfor %}
+              </select>
+            </label>
+          </div>
+          <label>
+            <span>Descripcion</span>
+            <textarea name="descripcion" rows="3" placeholder="Descripcion breve del hallazgo, contexto y alcance."></textarea>
+          </label>
+          <div class="sp-form-row two">
+            <label>
+              <span>Evidencia inicial</span>
+              <input type="text" name="evidencia_inicial" placeholder="URL, foto o referencia">
+            </label>
+            <label>
+              <span>Observaciones</span>
+              <input type="text" name="observaciones" placeholder="Dato operativo adicional">
+            </label>
+          </div>
+          <div class="sp-form-actions">
+            <button class="sp-btn primary" type="submit">Guardar hallazgo</button>
+          </div>
+        </form>
+      </details>
+
+      <details class="sp-card sp-form-card" {% if open_form == 'accion' %}open{% endif %}>
+        <summary>
+          <div>
+            <p class="sp-kicker">Carga manual</p>
+            <h3>Crear accion del plan</h3>
+          </div>
+          <span class="sp-summary-toggle">Abrir</span>
+        </summary>
+        <form method="post" action="{{ url_for('sst_plan_implementacion', vista='acciones', sede=(prefill.sede_codigo or None), form='accion') }}" class="sp-form-body">
+          <input type="hidden" name="intent" value="accion">
+          <div class="sp-form-row two">
+            <label>
+              <span>Sede</span>
+              <select name="sede_codigo" required>
+                <option value="">Seleccionar</option>
+                {% for sede in sedes %}
+                <option value="{{ sede.codigo }}" {% if prefill.sede_codigo == sede.codigo %}selected{% endif %}>{{ sede.codigo }} · {{ sede.nombre }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <label>
+              <span>Hallazgo manual vinculado</span>
+              <select name="hallazgo_id">
+                <option value="">Sin vincular</option>
+                {% for item in manual_hallazgos %}
+                <option value="{{ item.id }}">{{ item.sede_codigo }} · {{ item.titulo }}</option>
+                {% endfor %}
+              </select>
+            </label>
+          </div>
+          <div class="sp-form-row two">
+            <label>
+              <span>Titulo</span>
+              <input type="text" name="titulo" value="{{ prefill.titulo }}" placeholder="Ej: Regularizar luces faltantes" required>
+            </label>
+            <label>
+              <span>Modulo de origen</span>
+              <select name="modulo_origen">
+                <option value="">General</option>
+                {% for item in module_options %}
+                <option value="{{ item }}" {% if prefill.modulo_origen == item %}selected{% endif %}>{{ item }}</option>
+                {% endfor %}
+              </select>
+            </label>
+          </div>
+          <label>
+            <span>Accion requerida</span>
+            <textarea name="accion_requerida" rows="3" placeholder="Que se debe hacer, por quien y con que dependencia."></textarea>
+          </label>
+          <div class="sp-form-row three">
+            <label>
+              <span>Responsable</span>
+              <input type="text" name="responsable" placeholder="Persona o referente">
+            </label>
+            <label>
+              <span>Area responsable</span>
+              <input type="text" name="area_responsable" placeholder="Ej: Intendencia / Compras">
+            </label>
+            <label>
+              <span>Prioridad</span>
+              <select name="prioridad">
+                {% for item in priority_options %}
+                <option value="{{ item }}">{{ item }}</option>
+                {% endfor %}
+              </select>
+            </label>
+          </div>
+          <div class="sp-form-row three">
+            <label>
+              <span>Fecha de creacion</span>
+              <input type="date" name="fecha_creacion" value="{{ today_iso }}">
+            </label>
+            <label>
+              <span>Fecha objetivo</span>
+              <input type="date" name="fecha_objetivo">
+            </label>
+            <label>
+              <span>Estado</span>
+              <select name="estado">
+                {% for item in action_states %}
+                <option value="{{ item }}">{{ item }}</option>
+                {% endfor %}
+              </select>
+            </label>
+          </div>
+          <div class="sp-form-row three">
+            <label class="is-check">
+              <input type="checkbox" name="compra_requerida" value="1">
+              <span>Compra requerida</span>
+            </label>
+            <label class="is-check">
+              <input type="checkbox" name="intervencion_requerida" value="1">
+              <span>Intervencion requerida</span>
+            </label>
+            <label>
+              <span>Avance %</span>
+              <input type="number" min="0" max="100" name="avance_pct" value="0">
+            </label>
+          </div>
+          <div class="sp-form-row two">
+            <label>
+              <span>Evidencia</span>
+              <input type="text" name="evidencia" placeholder="URL o referencia">
+            </label>
+            <label>
+              <span>Costo estimado</span>
+              <input type="number" step="0.01" min="0" name="costo_estimado" placeholder="Opcional">
+            </label>
+          </div>
+          <label>
+            <span>Observaciones</span>
+            <textarea name="observaciones" rows="2" placeholder="Detalle operativo, dependencia o bloqueo."></textarea>
+          </label>
+          <div class="sp-form-actions">
+            <button class="sp-btn primary" type="submit">Guardar accion</button>
+          </div>
+        </form>
+      </details>
+    </div>
+
+    {% if suggestions %}
+    <article class="sp-card">
+      <div class="sp-card-head">
+        <div>
+          <p class="sp-kicker">Sugerencias controladas</p>
+          <h3>Disparadores detectados en los modulos</h3>
+        </div>
+      </div>
+      <div class="sp-suggest-grid">
+        {% for item in suggestions %}
+        <div class="sp-suggest-card">
+          <span class="sp-chip">{{ item.sede_codigo }}</span>
+          <strong>{{ item.module }}</strong>
+          <p>{{ item.reason }}</p>
+          <a class="sp-link" href="{{ item.action_url }}">{{ item.action_label }}</a>
+        </div>
+        {% endfor %}
+      </div>
+    </article>
+    {% endif %}
+
+    <article class="sp-card">
+      <div class="sp-card-head">
+        <div>
+          <p class="sp-kicker">Listado de acciones</p>
+          <h3>Plan vivo y seguimiento consolidado</h3>
+        </div>
+        <span class="sp-chip">{{ acciones|length }} registros</span>
+      </div>
+      <div class="sp-table-wrap">
+        <table class="sp-table">
+          <thead>
+            <tr>
+              <th>Hallazgo / accion</th>
+              <th>Sede</th>
+              <th>Modulo</th>
+              <th>Responsable</th>
+              <th>Prioridad</th>
+              <th>Fecha objetivo</th>
+              <th>Estado</th>
+              <th>Avance</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in acciones %}
+            <tr>
+              <td>
+                <strong>{{ item.titulo }}</strong>
+                <small>{{ item.accion_requerida or item.hallazgo_title or item.observaciones or 'Accion SG-SST' }}</small>
+              </td>
+              <td>{{ item.sede_codigo or 'General' }}{% if item.sede_nombre %}<small>{{ item.sede_nombre }}</small>{% endif %}</td>
+              <td>{{ item.modulo_origen or '-' }}</td>
+              <td>{{ item.responsable or item.area_responsable or 'Sin responsable' }}</td>
+              <td><span class="sp-chip">{{ item.priority_label }}</span></td>
+              <td><span class="sp-chip {% if item.overdue %}tone-risk{% endif %}">{{ item.fecha_objetivo_label }}</span></td>
+              <td><span class="sp-chip tone-{{ item.state_tone }}">{{ item.state_label }}</span></td>
+              <td>
+                <div class="sp-inline-progress tone-{{ item.state_tone }}">
+                  <span style="width: {{ item.avance_pct }}%;"></span>
+                </div>
+              </td>
+              <td><a class="sp-link" href="{{ item.detail_url }}">Abrir</a></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="9" class="sp-empty td-empty">No hay acciones cargadas todavia.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </article>
+  </section>
+  {% endif %}
+
+  {% if view_mode in ['general', 'responsables'] %}
+  <section class="sp-section" id="sp-responsables">
+    <div class="sp-section-head">
+      <div>
+        <p class="sp-kicker">Responsables</p>
+        <h2>Quien responde por cada frente</h2>
+      </div>
+      <p>Primero estructura base, despues carga operativa real sobre acciones concretas.</p>
+    </div>
+
+    <div class="sp-responsable-grid">
+      {% for item in responsables_rows %}
+      <article class="sp-card sp-owner-card tone-{{ item.tone }}">
+        <small>Responsable</small>
+        <h3>{{ item.responsable }}</h3>
+        <div class="sp-owner-stats">
+          <span>{{ item.open }} abiertas</span>
+          <span>{{ item.overdue }} vencidas</span>
+          <span>{{ item.closed }} cerradas</span>
+        </div>
+        <p>Proxima fecha: {{ item.next_due_label }}</p>
+      </article>
+      {% else %}
+      <article class="sp-card"><div class="sp-empty">Aun no hay responsables asignados en acciones del plan.</div></article>
+      {% endfor %}
+    </div>
+
+    <div class="sp-role-grid">
+      {% for group in role_groups %}
+      <article class="sp-card">
+        <div class="sp-card-head">
+          <div>
+            <p class="sp-kicker">Rol base</p>
+            <h3>{{ group.grupo }}</h3>
+          </div>
+          <span class="sp-chip">{{ group.roles|length }}</span>
+        </div>
+        <div class="sp-role-list">
+          {% for role in group.roles %}
+          <div class="sp-role-item">
+            <strong>{{ role.rol }}</strong>
+            <small>{{ role.referente or 'Referente a definir' }}</small>
+          </div>
+          {% endfor %}
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if view_mode in ['general', 'cronograma'] %}
+  <section class="sp-section" id="sp-cronograma">
+    <div class="sp-section-head">
+      <div>
+        <p class="sp-kicker">Cronograma</p>
+        <h2>Proximas acciones y controles</h2>
+      </div>
+      <p>Una vista simple para anticipar vencimientos, compras, colocaciones y verificaciones.</p>
+    </div>
+    <article class="sp-card">
+      <div class="sp-timeline">
+        {% for item in cronograma_items %}
+        <a class="sp-timeline-item tone-{{ item.state_tone }}" href="{{ item.url }}">
+          <div class="sp-timeline-date">
+            <strong>{{ item.date_label }}</strong>
+            <small>{{ item.sede_codigo or 'General' }}</small>
+          </div>
+          <div class="sp-timeline-copy">
+            <span class="sp-chip">{{ item.phase_key|replace('_', ' ')|title }}</span>
+            <strong>{{ item.title }}</strong>
+            <p>{{ item.detail or 'Sin detalle complementario.' }}</p>
+          </div>
+          <div class="sp-timeline-meta">
+            <span class="sp-chip tone-{{ item.state_tone }}">{{ item.state_label }}</span>
+            <small>{{ item.responsable }}</small>
+          </div>
+        </a>
+        {% else %}
+        <div class="sp-empty">No hay hitos programados por el momento.</div>
+        {% endfor %}
+      </div>
+    </article>
+  </section>
+  {% endif %}
+</section>
+{% endblock %}

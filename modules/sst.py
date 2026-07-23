@@ -73,6 +73,77 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         "Interno Intendencia",
     ]
 
+    SGSST_PLAN_PHASE_META = {
+        "marco": {
+            "key": "marco",
+            "short": "Etapa 1",
+            "title": "Marco y organizacion",
+            "tone": "slate",
+            "description": "Lineamientos, alcance, roles y metodologia institucional.",
+        },
+        "diagnostico": {
+            "key": "diagnostico",
+            "short": "Etapa 2",
+            "title": "Diagnostico",
+            "tone": "blue",
+            "description": "Situacion real por sede, modulos relevados y hallazgos abiertos.",
+        },
+        "implementacion": {
+            "key": "implementacion",
+            "short": "Etapa 3",
+            "title": "Implementacion",
+            "tone": "amber",
+            "description": "Acciones, responsables, compras y regularizacion en curso.",
+        },
+        "operacion": {
+            "key": "operacion",
+            "short": "Etapa 4",
+            "title": "Operacion y control",
+            "tone": "green",
+            "description": "Controles periodicos, vencimientos y verificacion sostenida.",
+        },
+    }
+    SGSST_PLAN_HALLAZGO_STATES = [
+        "Detectado",
+        "En analisis",
+        "Confirmado",
+        "No aplica",
+        "Resuelto",
+        "Cerrado",
+    ]
+    SGSST_PLAN_ACTION_STATES = [
+        "Pendiente",
+        "En analisis",
+        "En gestion",
+        "Programada",
+        "En ejecucion",
+        "Bloqueada",
+        "Implementada",
+        "Verificada",
+        "Cerrada",
+        "Cancelada",
+    ]
+    SGSST_PLAN_PRIORITIES = ["Baja", "Media", "Alta", "Critica"]
+    SGSST_PLAN_ROLE_SEED = [
+        {"grupo": "Autoridad institucional", "rol": "Defensora General", "orden_visual": 10},
+        {"grupo": "Autoridad institucional", "rol": "Defensor General Adjunto", "orden_visual": 20},
+        {"grupo": "Autoridad institucional", "rol": "Administrador General", "orden_visual": 30},
+        {"grupo": "Coordinacion operativa", "rol": "Encargado de Intendencia", "orden_visual": 40},
+        {"grupo": "Coordinacion operativa", "rol": "Responsable SG-SST", "orden_visual": 50},
+        {"grupo": "Coordinacion operativa", "rol": "Responsables administrativos", "orden_visual": 60},
+        {"grupo": "Ejecucion", "rol": "Equipo de mantenimiento", "orden_visual": 70},
+        {"grupo": "Ejecucion", "rol": "Personal de limpieza", "orden_visual": 80},
+        {"grupo": "Ejecucion", "rol": "Choferes", "orden_visual": 90},
+        {"grupo": "Ejecucion", "rol": "Prestadores externos", "orden_visual": 100},
+        {"grupo": "Ejecucion", "rol": "Responsables de sede", "orden_visual": 110},
+        {"grupo": "Apoyo y control", "rol": "ART", "orden_visual": 120},
+        {"grupo": "Apoyo y control", "rol": "Medicina laboral", "orden_visual": 130},
+        {"grupo": "Apoyo y control", "rol": "Compras", "orden_visual": 140},
+        {"grupo": "Apoyo y control", "rol": "Contaduria", "orden_visual": 150},
+        {"grupo": "Apoyo y control", "rol": "Sistemas", "orden_visual": 160},
+        {"grupo": "Apoyo y control", "rol": "Recursos Humanos", "orden_visual": 170},
+    ]
+
     def ensure_sst_general_table(con):
         con.execute("""
         CREATE TABLE IF NOT EXISTS sst_general(
@@ -709,6 +780,229 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             ("justificacion", "TEXT"),
             ("avance_pct", "INTEGER"),
         ])
+        con.commit()
+
+    def ensure_sgsst_implementation_tables(con):
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS sgsst_plan_marco(
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                objetivo TEXT,
+                alcance TEXT,
+                metodologia TEXT,
+                criterios TEXT,
+                prioridades TEXT,
+                estado_plan TEXT DEFAULT 'EN_ELABORACION',
+                aprobado INTEGER DEFAULT 0,
+                responsable_general TEXT,
+                fecha_inicio TEXT,
+                fecha_actualizacion TEXT,
+                observaciones TEXT
+            )
+        """)
+        ensure_cols(con, "sgsst_plan_marco", [
+            ("objetivo", "TEXT"),
+            ("alcance", "TEXT"),
+            ("metodologia", "TEXT"),
+            ("criterios", "TEXT"),
+            ("prioridades", "TEXT"),
+            ("estado_plan", "TEXT DEFAULT 'EN_ELABORACION'"),
+            ("aprobado", "INTEGER DEFAULT 0"),
+            ("responsable_general", "TEXT"),
+            ("fecha_inicio", "TEXT"),
+            ("fecha_actualizacion", "TEXT"),
+            ("observaciones", "TEXT"),
+        ])
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS sgsst_plan_hallazgos(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                sede_codigo TEXT NOT NULL,
+                piso TEXT,
+                dependencia TEXT,
+                modulo_origen TEXT,
+                registro_origen_id TEXT,
+                categoria TEXT,
+                titulo TEXT NOT NULL,
+                descripcion TEXT,
+                fecha_deteccion TEXT,
+                detectado_por TEXT,
+                fuente TEXT,
+                prioridad TEXT DEFAULT 'Media',
+                estado TEXT DEFAULT 'Detectado',
+                evidencia_inicial TEXT,
+                observaciones TEXT,
+                fecha_cierre TEXT,
+                cerrado_por TEXT,
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT
+            )
+        """)
+        ensure_cols(con, "sgsst_plan_hallazgos", [
+            ("piso", "TEXT"),
+            ("dependencia", "TEXT"),
+            ("modulo_origen", "TEXT"),
+            ("registro_origen_id", "TEXT"),
+            ("categoria", "TEXT"),
+            ("descripcion", "TEXT"),
+            ("fecha_deteccion", "TEXT"),
+            ("detectado_por", "TEXT"),
+            ("fuente", "TEXT"),
+            ("prioridad", "TEXT DEFAULT 'Media'"),
+            ("estado", "TEXT DEFAULT 'Detectado'"),
+            ("evidencia_inicial", "TEXT"),
+            ("observaciones", "TEXT"),
+            ("fecha_cierre", "TEXT"),
+            ("cerrado_por", "TEXT"),
+            ("created_at", "TEXT DEFAULT (datetime('now'))"),
+            ("updated_at", "TEXT"),
+        ])
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS sgsst_plan_acciones(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                hallazgo_id INTEGER,
+                sede_codigo TEXT NOT NULL,
+                modulo_origen TEXT,
+                titulo TEXT NOT NULL,
+                accion_requerida TEXT,
+                responsable TEXT,
+                area_responsable TEXT,
+                prioridad TEXT DEFAULT 'Media',
+                fecha_creacion TEXT,
+                fecha_objetivo TEXT,
+                estado TEXT DEFAULT 'Pendiente',
+                avance_pct INTEGER,
+                evidencia TEXT,
+                costo_estimado REAL,
+                compra_requerida INTEGER DEFAULT 0,
+                intervencion_requerida INTEGER DEFAULT 0,
+                observaciones TEXT,
+                fecha_cierre TEXT,
+                cerrado_por TEXT,
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT,
+                FOREIGN KEY(hallazgo_id) REFERENCES sgsst_plan_hallazgos(id)
+            )
+        """)
+        ensure_cols(con, "sgsst_plan_acciones", [
+            ("hallazgo_id", "INTEGER"),
+            ("modulo_origen", "TEXT"),
+            ("accion_requerida", "TEXT"),
+            ("responsable", "TEXT"),
+            ("area_responsable", "TEXT"),
+            ("prioridad", "TEXT DEFAULT 'Media'"),
+            ("fecha_creacion", "TEXT"),
+            ("fecha_objetivo", "TEXT"),
+            ("estado", "TEXT DEFAULT 'Pendiente'"),
+            ("avance_pct", "INTEGER"),
+            ("evidencia", "TEXT"),
+            ("costo_estimado", "REAL"),
+            ("compra_requerida", "INTEGER DEFAULT 0"),
+            ("intervencion_requerida", "INTEGER DEFAULT 0"),
+            ("observaciones", "TEXT"),
+            ("fecha_cierre", "TEXT"),
+            ("cerrado_por", "TEXT"),
+            ("created_at", "TEXT DEFAULT (datetime('now'))"),
+            ("updated_at", "TEXT"),
+        ])
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS sgsst_plan_evidencias(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                accion_id INTEGER NOT NULL,
+                tipo TEXT,
+                descripcion TEXT,
+                archivo_url TEXT,
+                created_at TEXT DEFAULT (datetime('now')),
+                created_by TEXT,
+                FOREIGN KEY(accion_id) REFERENCES sgsst_plan_acciones(id)
+            )
+        """)
+        ensure_cols(con, "sgsst_plan_evidencias", [
+            ("tipo", "TEXT"),
+            ("descripcion", "TEXT"),
+            ("archivo_url", "TEXT"),
+            ("created_at", "TEXT DEFAULT (datetime('now'))"),
+            ("created_by", "TEXT"),
+        ])
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS sgsst_plan_document_links(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                entity_type TEXT NOT NULL,
+                entity_id INTEGER,
+                bloque_codigo TEXT,
+                documento_codigo TEXT,
+                created_at TEXT DEFAULT (datetime('now'))
+            )
+        """)
+        ensure_cols(con, "sgsst_plan_document_links", [
+            ("entity_type", "TEXT"),
+            ("entity_id", "INTEGER"),
+            ("bloque_codigo", "TEXT"),
+            ("documento_codigo", "TEXT"),
+            ("created_at", "TEXT DEFAULT (datetime('now'))"),
+        ])
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS sgsst_plan_roles(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                grupo TEXT NOT NULL,
+                rol TEXT NOT NULL,
+                referente TEXT,
+                activo INTEGER DEFAULT 1,
+                orden_visual INTEGER DEFAULT 0,
+                created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT
+            )
+        """)
+        ensure_cols(con, "sgsst_plan_roles", [
+            ("grupo", "TEXT"),
+            ("rol", "TEXT"),
+            ("referente", "TEXT"),
+            ("activo", "INTEGER DEFAULT 1"),
+            ("orden_visual", "INTEGER DEFAULT 0"),
+            ("created_at", "TEXT DEFAULT (datetime('now'))"),
+            ("updated_at", "TEXT"),
+        ])
+        con.execute("CREATE INDEX IF NOT EXISTS idx_sgsst_plan_hallazgos_sede ON sgsst_plan_hallazgos(sede_codigo, estado)")
+        con.execute("CREATE INDEX IF NOT EXISTS idx_sgsst_plan_acciones_sede ON sgsst_plan_acciones(sede_codigo, estado)")
+        con.execute("CREATE INDEX IF NOT EXISTS idx_sgsst_plan_acciones_hallazgo ON sgsst_plan_acciones(hallazgo_id)")
+        con.execute("CREATE INDEX IF NOT EXISTS idx_sgsst_plan_roles_grupo ON sgsst_plan_roles(grupo, activo)")
+
+        row = con.execute("SELECT COUNT(1) AS n FROM sgsst_plan_marco").fetchone()
+        if int((row["n"] if row else 0) or 0) == 0:
+            now = _sst_now_ts()
+            con.execute("""
+                INSERT INTO sgsst_plan_marco(
+                    id, objetivo, alcance, metodologia, criterios, prioridades,
+                    estado_plan, aprobado, responsable_general, fecha_inicio, fecha_actualizacion, observaciones
+                ) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                "Implementar el SG-SST en forma progresiva, integrada al SGI y orientada a la operacion real de las sedes.",
+                "Sedes, dependencias, modulos operativos SG-SST, biblioteca documental y seguimiento institucional del MPD.",
+                "Diagnostico por sede, definicion de hallazgos, acciones verificables y control periodico sostenido.",
+                "No duplicar modulos, usar datos existentes, crear trazabilidad minima y priorizar regularizacion real.",
+                "Primero base documental y diagnostico; luego acciones, compras, colocacion, verificacion y control.",
+                "EN_ELABORACION",
+                0,
+                "Intendencia / Responsable SG-SST",
+                date.today().isoformat(),
+                now,
+                "Primera capa institucional creada sobre los modulos existentes del SGI.",
+            ))
+
+        row = con.execute("SELECT COUNT(1) AS n FROM sgsst_plan_roles").fetchone()
+        if int((row["n"] if row else 0) or 0) == 0:
+            now = _sst_now_ts()
+            for seed in SGSST_PLAN_ROLE_SEED:
+                con.execute("""
+                    INSERT INTO sgsst_plan_roles(
+                        grupo, rol, referente, activo, orden_visual, created_at, updated_at
+                    ) VALUES (?, ?, ?, 1, ?, ?, ?)
+                """, (
+                    seed["grupo"],
+                    seed["rol"],
+                    "",
+                    int(seed.get("orden_visual") or 0),
+                    now,
+                    now,
+                ))
         con.commit()
 
 
@@ -10749,6 +11043,1125 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             "edit_obj": edit_obj,
             "edit_acc": edit_acc,
         }
+
+    def _sgsst_plan_parse_date(value):
+        txt = str(value or "").strip()
+        if not txt:
+            return None
+        for fmt in ("%Y-%m-%d", "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S"):
+            try:
+                return datetime.strptime(txt[:19], fmt).date()
+            except Exception:
+                continue
+        try:
+            return datetime.fromisoformat(txt.replace("Z", "")[:19]).date()
+        except Exception:
+            return None
+
+    def _sgsst_plan_short_date(value):
+        parsed = value if isinstance(value, date) else _sgsst_plan_parse_date(value)
+        return parsed.strftime("%d/%m/%Y") if parsed else "-"
+
+    def _sgsst_plan_percent(done, total):
+        return int(round((done / total) * 100)) if total else 0
+
+    def _sgsst_plan_progress_class(pct):
+        if pct >= 80:
+            return "ok"
+        if pct >= 45:
+            return "warn"
+        return "risk"
+
+    def _sgsst_plan_priority_label(value):
+        txt = str(value or "").strip().lower()
+        mapping = {
+            "baja": "Baja",
+            "media": "Media",
+            "alta": "Alta",
+            "critica": "Critica",
+            "crítica": "Critica",
+        }
+        return mapping.get(txt, (str(value or "").strip().title() or "Media"))
+
+    def _sgsst_plan_priority_rank(value):
+        label = _sgsst_plan_priority_label(value)
+        if label == "Critica":
+            return 0
+        if label == "Alta":
+            return 1
+        if label == "Media":
+            return 2
+        return 3
+
+    def _sgsst_plan_hallazgo_state_label(value):
+        txt = str(value or "").strip().lower()
+        mapping = {
+            "detectado": "Detectado",
+            "en analisis": "En analisis",
+            "confirmado": "Confirmado",
+            "no aplica": "No aplica",
+            "resuelto": "Resuelto",
+            "cerrado": "Cerrado",
+            "abierto": "Confirmado",
+        }
+        return mapping.get(txt, (str(value or "").strip().title() or "Detectado"))
+
+    def _sgsst_plan_action_state_label(value):
+        txt = str(value or "").strip().lower()
+        mapping = {
+            "pendiente": "Pendiente",
+            "en analisis": "En analisis",
+            "en curso": "En gestion",
+            "en gestión": "En gestion",
+            "en gestion": "En gestion",
+            "programada": "Programada",
+            "programado": "Programada",
+            "en ejecucion": "En ejecucion",
+            "en ejecución": "En ejecucion",
+            "bloqueada": "Bloqueada",
+            "implementada": "Implementada",
+            "verificada": "Verificada",
+            "cerrada": "Cerrada",
+            "cerrado": "Cerrada",
+            "cancelada": "Cancelada",
+            "completado": "Cerrada",
+        }
+        return mapping.get(txt, (str(value or "").strip().title() or "Pendiente"))
+
+    def _sgsst_plan_action_state_tone(value):
+        state = _sgsst_plan_action_state_label(value)
+        if state in {"Verificada", "Cerrada", "Implementada"}:
+            return "ok"
+        if state in {"Bloqueada"}:
+            return "risk"
+        if state in {"Pendiente", "En analisis", "En gestion", "Programada", "En ejecucion"}:
+            return "warn"
+        return "muted"
+
+    def _sgsst_plan_hallazgo_state_tone(value):
+        state = _sgsst_plan_hallazgo_state_label(value)
+        if state in {"Resuelto", "Cerrado", "No aplica"}:
+            return "ok"
+        if state in {"Confirmado", "Detectado"}:
+            return "risk"
+        if state == "En analisis":
+            return "warn"
+        return "muted"
+
+    def _sgsst_plan_is_action_closed(value):
+        return _sgsst_plan_action_state_label(value) in {"Implementada", "Verificada", "Cerrada", "Cancelada"}
+
+    def _sgsst_plan_is_hallazgo_closed(value):
+        return _sgsst_plan_hallazgo_state_label(value) in {"Resuelto", "Cerrado", "No aplica"}
+
+    def _sgsst_plan_status_summary_label(pct, overdue=0, active=0):
+        if overdue > 0:
+            return "Con alertas"
+        if active > 0 and pct >= 80:
+            return "Controlado"
+        if active > 0:
+            return "En despliegue"
+        if pct > 0:
+            return "Iniciado"
+        return "Sin iniciar"
+
+    def build_sgsst_plan_implementation_context(view_mode="general", selected_sede="", open_form=""):
+        con = get_db()
+        ensure_sst_general_table(con)
+        ensure_sst_plan_tables(con)
+        ensure_sgsst_implementation_tables(con)
+        ensure_sst_visitas_docs_tables(con)
+        ensure_sst_desinfecciones_tables(con)
+        ensure_sst_carteleria_tables(con)
+        ensure_sst_luces_tables(con)
+        seed_sgsst_documentacion(con)
+
+        today_ref = date.today()
+        current_year = today_ref.year
+        view_mode = (view_mode or "general").strip().lower()
+        if view_mode not in {"general", "fases", "sedes", "acciones", "responsables", "cronograma"}:
+            view_mode = "general"
+
+        sedes_rows = con.execute("""
+            SELECT
+                UPPER(COALESCE(codigo, '')) AS codigo,
+                COALESCE(nombre, '') AS nombre,
+                COALESCE(ciudad, '') AS ciudad,
+                COALESCE(direccion, '') AS direccion,
+                COALESCE(fuero, '') AS fuero,
+                COALESCE(activa, 1) AS activa
+            FROM sedes_mpd
+            WHERE TRIM(COALESCE(codigo, '')) <> ''
+            ORDER BY codigo
+        """).fetchall()
+        sedes = []
+        sedes_map = {}
+        for row in sedes_rows:
+            item = {key: row[key] for key in row.keys()}
+            if int(item.get("activa", 1) or 1) != 1:
+                continue
+            sedes.append(item)
+            sedes_map[item["codigo"]] = item
+
+        marco_row = con.execute("SELECT * FROM sgsst_plan_marco WHERE id = 1").fetchone()
+        marco = dict(marco_row) if marco_row else {}
+        bloques, estado_prot, estado_ins = _sgsst_build_bloques_home(con)
+        roles_rows = con.execute("""
+            SELECT *
+            FROM sgsst_plan_roles
+            WHERE COALESCE(activo, 1) = 1
+            ORDER BY grupo, orden_visual, rol
+        """).fetchall()
+        roles = [dict(r) for r in roles_rows]
+
+        manual_hallazgos_rows = con.execute("""
+            SELECT
+                h.*,
+                COALESCE(s.nombre, '') AS sede_nombre
+            FROM sgsst_plan_hallazgos h
+            LEFT JOIN sedes_mpd s ON s.codigo = h.sede_codigo
+            ORDER BY
+                CASE LOWER(COALESCE(h.estado, 'detectado'))
+                    WHEN 'confirmado' THEN 0
+                    WHEN 'detectado' THEN 1
+                    WHEN 'en analisis' THEN 2
+                    ELSE 3
+                END,
+                date(COALESCE(h.fecha_deteccion, substr(h.created_at, 1, 10))) DESC,
+                h.id DESC
+        """).fetchall()
+        manual_hallazgos = []
+        for row in manual_hallazgos_rows:
+            item = dict(row)
+            item["source_kind"] = "manual"
+            item["source_label"] = "Hallazgo manual"
+            item["state_label"] = _sgsst_plan_hallazgo_state_label(item.get("estado"))
+            item["state_tone"] = _sgsst_plan_hallazgo_state_tone(item.get("estado"))
+            item["priority_label"] = _sgsst_plan_priority_label(item.get("prioridad"))
+            item["is_closed"] = _sgsst_plan_is_hallazgo_closed(item.get("estado"))
+            item["fecha_deteccion_label"] = _sgsst_plan_short_date(item.get("fecha_deteccion") or item.get("created_at"))
+            manual_hallazgos.append(item)
+
+        legacy_rows = con.execute("""
+            SELECT
+                g.*,
+                COALESCE(s.nombre, '') AS sede_nombre
+            FROM sst_general g
+            LEFT JOIN sedes_mpd s ON s.codigo = g.sede_codigo
+            WHERE LOWER(COALESCE(g.tipo, '')) = 'no_conformidad'
+            ORDER BY date(COALESCE(g.fecha_objetivo, g.fecha)) ASC, g.id DESC
+        """).fetchall()
+        hallazgos = list(manual_hallazgos)
+        acciones = []
+        for row in legacy_rows:
+            base = dict(row)
+            hallazgo_state = "Cerrado" if str(base.get("estado") or "").strip().upper() == "CERRADO" else "Confirmado"
+            hallazgos.append({
+                "id": f"legacy-{base['id']}",
+                "sede_codigo": (base.get("sede_codigo") or "").strip().upper(),
+                "sede_nombre": base.get("sede_nombre") or "",
+                "modulo_origen": "Seguimiento operativo",
+                "categoria": base.get("categoria") or "SG-SST",
+                "titulo": base.get("titulo") or "Hallazgo operativo",
+                "descripcion": base.get("detalle") or "",
+                "fecha_deteccion": base.get("fecha") or "",
+                "fecha_deteccion_label": _sgsst_plan_short_date(base.get("fecha")),
+                "fuente": base.get("origen_tipo") or "relevamiento interno",
+                "priority_label": _sgsst_plan_priority_label(base.get("prioridad")),
+                "state_label": hallazgo_state,
+                "state_tone": _sgsst_plan_hallazgo_state_tone(hallazgo_state),
+                "is_closed": _sgsst_plan_is_hallazgo_closed(hallazgo_state),
+                "source_kind": "legacy",
+                "source_label": "Seguimiento existente",
+                "detail_url": url_for("sst_general", modo="gestion", sede=base.get("sede_codigo") or None, tipo="no_conformidad"),
+            })
+            action_state = "Cerrada" if str(base.get("estado") or "").strip().upper() == "CERRADO" else ("En gestion" if (base.get("responsable") or "").strip() else "Pendiente")
+            due_date = base.get("fecha_objetivo") or ""
+            due_parsed = _sgsst_plan_parse_date(due_date)
+            overdue = bool(due_parsed and due_parsed < today_ref and not _sgsst_plan_is_action_closed(action_state))
+            acciones.append({
+                "id": f"legacy-{base['id']}",
+                "source_kind": "legacy",
+                "source_label": "Seguimiento operativo",
+                "hallazgo_ref": f"legacy-{base['id']}",
+                "hallazgo_title": base.get("titulo") or "Hallazgo operativo",
+                "sede_codigo": (base.get("sede_codigo") or "").strip().upper(),
+                "sede_nombre": base.get("sede_nombre") or "",
+                "modulo_origen": "Seguimiento operativo",
+                "titulo": base.get("titulo") or "Accion operativa",
+                "accion_requerida": (base.get("accion_correctiva") or base.get("titulo") or "").strip(),
+                "responsable": (base.get("responsable") or "").strip(),
+                "area_responsable": (base.get("area") or "").strip(),
+                "priority_label": _sgsst_plan_priority_label(base.get("prioridad")),
+                "priority_rank": _sgsst_plan_priority_rank(base.get("prioridad")),
+                "fecha_creacion": base.get("fecha") or "",
+                "fecha_creacion_label": _sgsst_plan_short_date(base.get("fecha")),
+                "fecha_objetivo": due_date,
+                "fecha_objetivo_label": _sgsst_plan_short_date(due_date) if due_date else "-",
+                "state_label": _sgsst_plan_action_state_label(action_state),
+                "state_tone": _sgsst_plan_action_state_tone(action_state),
+                "avance_pct": 100 if _sgsst_plan_is_action_closed(action_state) else 35,
+                "overdue": overdue,
+                "detail_url": url_for("sst_general", modo="gestion", sede=base.get("sede_codigo") or None, tipo="no_conformidad"),
+                "phase_key": "implementacion",
+                "evidencia": base.get("evidencia_url") or "",
+                "observaciones": base.get("detalle") or "",
+            })
+
+        manual_actions_rows = con.execute("""
+            SELECT
+                a.*,
+                COALESCE(h.titulo, '') AS hallazgo_titulo,
+                COALESCE(s.nombre, '') AS sede_nombre
+            FROM sgsst_plan_acciones a
+            LEFT JOIN sgsst_plan_hallazgos h ON h.id = a.hallazgo_id
+            LEFT JOIN sedes_mpd s ON s.codigo = a.sede_codigo
+            ORDER BY
+                CASE LOWER(COALESCE(a.estado, 'pendiente'))
+                    WHEN 'bloqueada' THEN 0
+                    WHEN 'pendiente' THEN 1
+                    WHEN 'en gestion' THEN 2
+                    WHEN 'programada' THEN 3
+                    WHEN 'en ejecucion' THEN 4
+                    ELSE 5
+                END,
+                CASE LOWER(COALESCE(a.prioridad, 'media'))
+                    WHEN 'critica' THEN 0
+                    WHEN 'crítica' THEN 0
+                    WHEN 'alta' THEN 1
+                    WHEN 'media' THEN 2
+                    ELSE 3
+                END,
+                date(COALESCE(a.fecha_objetivo, a.fecha_creacion, substr(a.created_at, 1, 10))) ASC,
+                a.id DESC
+        """).fetchall()
+        manual_actions = []
+        for row in manual_actions_rows:
+            item = dict(row)
+            state_label = _sgsst_plan_action_state_label(item.get("estado"))
+            due_date = item.get("fecha_objetivo") or ""
+            due_parsed = _sgsst_plan_parse_date(due_date)
+            overdue = bool(due_parsed and due_parsed < today_ref and not _sgsst_plan_is_action_closed(state_label))
+            pct = int(item.get("avance_pct") or (100 if _sgsst_plan_is_action_closed(state_label) else 0))
+            manual_actions.append({
+                "id": f"manual-{item['id']}",
+                "raw_id": int(item["id"] or 0),
+                "source_kind": "manual",
+                "source_label": "Plan SG-SST",
+                "hallazgo_ref": (f"manual-{int(item['hallazgo_id'])}" if int(item.get("hallazgo_id") or 0) > 0 else ""),
+                "hallazgo_title": item.get("hallazgo_titulo") or "",
+                "sede_codigo": (item.get("sede_codigo") or "").strip().upper(),
+                "sede_nombre": item.get("sede_nombre") or "",
+                "modulo_origen": (item.get("modulo_origen") or "Plan de implementacion").strip(),
+                "titulo": item.get("titulo") or "Accion del plan",
+                "accion_requerida": (item.get("accion_requerida") or "").strip(),
+                "responsable": (item.get("responsable") or "").strip(),
+                "area_responsable": (item.get("area_responsable") or "").strip(),
+                "priority_label": _sgsst_plan_priority_label(item.get("prioridad")),
+                "priority_rank": _sgsst_plan_priority_rank(item.get("prioridad")),
+                "fecha_creacion": item.get("fecha_creacion") or "",
+                "fecha_creacion_label": _sgsst_plan_short_date(item.get("fecha_creacion") or item.get("created_at")),
+                "fecha_objetivo": due_date,
+                "fecha_objetivo_label": _sgsst_plan_short_date(due_date) if due_date else "-",
+                "state_label": state_label,
+                "state_tone": _sgsst_plan_action_state_tone(state_label),
+                "avance_pct": max(0, min(100, pct)),
+                "overdue": overdue,
+                "detail_url": url_for("sst_plan_implementacion", vista="acciones", sede=(item.get("sede_codigo") or None)),
+                "phase_key": "implementacion",
+                "evidencia": item.get("evidencia") or "",
+                "observaciones": item.get("observaciones") or "",
+                "compra_requerida": int(item.get("compra_requerida") or 0),
+                "intervencion_requerida": int(item.get("intervencion_requerida") or 0),
+            })
+        acciones.extend(manual_actions)
+
+        objetivo_actions_rows = con.execute("""
+            SELECT
+                a.*,
+                COALESCE(o.sede_codigo, '') AS sede_codigo,
+                COALESCE(o.titulo, '') AS objetivo_titulo,
+                COALESCE(s.nombre, '') AS sede_nombre
+            FROM sst_objetivo_acciones a
+            LEFT JOIN sst_objetivos o ON o.id = a.objetivo_id
+            LEFT JOIN sedes_mpd s ON s.codigo = o.sede_codigo
+            ORDER BY a.id DESC
+        """).fetchall()
+        for row in objetivo_actions_rows:
+            item = dict(row)
+            state_label = _sgsst_plan_action_state_label(item.get("estado"))
+            due_date = item.get("fecha_fin") or ""
+            due_parsed = _sgsst_plan_parse_date(due_date)
+            overdue = bool(due_parsed and due_parsed < today_ref and not _sgsst_plan_is_action_closed(state_label))
+            pct = int(item.get("avance_pct") or (100 if _sgsst_plan_is_action_closed(state_label) else 0))
+            acciones.append({
+                "id": f"objetivo-{item['id']}",
+                "source_kind": "objetivo",
+                "source_label": "Objetivo SST",
+                "hallazgo_ref": "",
+                "hallazgo_title": item.get("objetivo_titulo") or "",
+                "sede_codigo": (item.get("sede_codigo") or "").strip().upper(),
+                "sede_nombre": item.get("sede_nombre") or "",
+                "modulo_origen": (item.get("fase") or "Implementacion").strip(),
+                "titulo": item.get("objetivo_titulo") or item.get("nombre") or "Objetivo SST",
+                "accion_requerida": (item.get("nombre") or item.get("notas") or "").strip(),
+                "responsable": (item.get("responsable_area") or "").strip(),
+                "area_responsable": (item.get("responsable_area") or "").strip(),
+                "priority_label": _sgsst_plan_priority_label("Media"),
+                "priority_rank": _sgsst_plan_priority_rank("Media"),
+                "fecha_creacion": item.get("fecha_inicio") or "",
+                "fecha_creacion_label": _sgsst_plan_short_date(item.get("fecha_inicio") or item.get("created_at")),
+                "fecha_objetivo": due_date,
+                "fecha_objetivo_label": _sgsst_plan_short_date(due_date) if due_date else "-",
+                "state_label": state_label,
+                "state_tone": _sgsst_plan_action_state_tone(state_label),
+                "avance_pct": max(0, min(100, pct)),
+                "overdue": overdue,
+                "detail_url": url_for("sst_plan", vista="gestion"),
+                "phase_key": "implementacion",
+                "evidencia": item.get("evidencia_url") or "",
+                "observaciones": item.get("notas") or "",
+                "compra_requerida": 0,
+                "intervencion_requerida": 0,
+            })
+
+        acciones.sort(key=lambda item: (
+            1 if _sgsst_plan_is_action_closed(item.get("state_label")) else 0,
+            0 if item.get("overdue") else 1,
+            item.get("priority_rank", 3),
+            item.get("fecha_objetivo") or "9999-12-31",
+            item.get("sede_codigo") or "ZZZ",
+        ))
+
+        calendar_raw = _sst_calendar_collect_events(con, current_year)
+        control_events = [
+            event for event in calendar_raw.get("events", [])
+            if event.get("type_key") in {"matafuegos", "desinfeccion", "luces", "carteleria", "visita"}
+        ]
+        control_events.sort(key=lambda event: (event.get("fecha_evento") or "", event.get("sede_codigo") or ""))
+
+        cart_summary = {}
+        if _table_exists(con, "sst_carteleria_registros") and con.execute("SELECT COUNT(*) AS n FROM sst_carteleria_registros WHERE COALESCE(activo, 1) = 1").fetchone()["n"]:
+            cart_summary = _sst_carteleria_aggregate_by_sede(_sst_fetch_carteleria_records(con))
+        luces_summary = {}
+        if _table_exists(con, "sst_luces_registros") and con.execute("SELECT COUNT(*) AS n FROM sst_luces_registros WHERE COALESCE(activo, 1) = 1").fetchone()["n"]:
+            luces_summary = _sst_luces_aggregate_by_sede(_sst_fetch_luces_records(con))
+        desinf_records = _sst_desinf_fetch_records(con)
+
+        visitas_by_sede = defaultdict(list)
+        for row in con.execute("""
+            SELECT
+                UPPER(COALESCE(sede_codigo, '')) AS sede_codigo,
+                COALESCE(fecha, '') AS fecha,
+                COALESCE(tipo_visita, '') AS tipo_visita,
+                COALESCE(estado, '') AS estado,
+                COALESCE(accion_requerida, '') AS accion_requerida,
+                COALESCE(fecha_programada, '') AS fecha_programada
+            FROM sst_visitas
+            ORDER BY date(fecha) DESC, id DESC
+        """).fetchall():
+            sede_codigo = (row["sede_codigo"] or "").strip().upper()
+            if sede_codigo:
+                visitas_by_sede[sede_codigo].append(dict(row))
+
+        docs_by_sede = defaultdict(list)
+        docs_count_by_sede = defaultdict(int)
+        for row in con.execute("""
+            SELECT
+                UPPER(COALESCE(sede_codigo, '')) AS sede_codigo,
+                COALESCE(tipo, '') AS tipo,
+                COALESCE(estado_revision, '') AS estado_revision,
+                COALESCE(fecha_carga, '') AS fecha_carga,
+                COALESCE(fecha_actualizacion, '') AS fecha_actualizacion
+            FROM sst_documentos
+            ORDER BY date(COALESCE(fecha_actualizacion, fecha_carga)) DESC, id DESC
+        """).fetchall():
+            sede_codigo = (row["sede_codigo"] or "").strip().upper()
+            if sede_codigo:
+                docs_by_sede[sede_codigo].append(dict(row))
+                docs_count_by_sede[sede_codigo] += 1
+
+        matafuegos_rows = con.execute("""
+            SELECT
+                UPPER(COALESCE(sede, cod_sede, '')) AS sede_codigo,
+                COALESCE(fecha_vencimiento, '') AS fecha_vencimiento,
+                COALESCE(activo, 1) AS activo
+            FROM matafuegos
+            WHERE COALESCE(activo, 1) = 1
+        """).fetchall() if _table_exists(con, "matafuegos") else []
+        mata_by_sede = defaultdict(lambda: {"total": 0, "vencidos": 0, "proximos": 0, "fecha_proxima": ""})
+        for row in matafuegos_rows:
+            sede_codigo = (row["sede_codigo"] or "").strip().upper()
+            if not sede_codigo:
+                continue
+            due = _sgsst_plan_parse_date(row["fecha_vencimiento"])
+            mata_by_sede[sede_codigo]["total"] += 1
+            if due:
+                if due < today_ref:
+                    mata_by_sede[sede_codigo]["vencidos"] += 1
+                elif due <= (today_ref + timedelta(days=45)):
+                    mata_by_sede[sede_codigo]["proximos"] += 1
+                current_next = _sgsst_plan_parse_date(mata_by_sede[sede_codigo]["fecha_proxima"])
+                if current_next is None or due < current_next:
+                    mata_by_sede[sede_codigo]["fecha_proxima"] = due.isoformat()
+
+        desinf_by_sede = defaultdict(lambda: {"total": 0, "realizadas": 0, "pendientes": 0, "vencidas": 0, "ultima": "", "proxima": ""})
+        for record in desinf_records:
+            sede_codigo = (record.get("sede_codigo") or "").strip().upper()
+            if not sede_codigo:
+                continue
+            desinf_by_sede[sede_codigo]["total"] += 1
+            if record.get("fecha_realizada"):
+                desinf_by_sede[sede_codigo]["realizadas"] += 1
+                if not desinf_by_sede[sede_codigo]["ultima"] or str(record.get("fecha_realizada")) > desinf_by_sede[sede_codigo]["ultima"]:
+                    desinf_by_sede[sede_codigo]["ultima"] = record.get("fecha_realizada")
+            else:
+                desinf_by_sede[sede_codigo]["pendientes"] += 1
+                due = _sgsst_plan_parse_date(record.get("fecha_programada"))
+                if due and due < today_ref:
+                    desinf_by_sede[sede_codigo]["vencidas"] += 1
+                if record.get("fecha_programada"):
+                    current_next = _sgsst_plan_parse_date(desinf_by_sede[sede_codigo]["proxima"])
+                    candidate = _sgsst_plan_parse_date(record.get("fecha_programada"))
+                    if candidate and (current_next is None or candidate < current_next):
+                        desinf_by_sede[sede_codigo]["proxima"] = record.get("fecha_programada")
+
+        hallazgos_by_sede = defaultdict(list)
+        for item in hallazgos:
+            sede_codigo = (item.get("sede_codigo") or "").strip().upper()
+            if sede_codigo:
+                hallazgos_by_sede[sede_codigo].append(item)
+
+        actions_by_sede = defaultdict(list)
+        for item in acciones:
+            sede_codigo = (item.get("sede_codigo") or "").strip().upper()
+            if sede_codigo:
+                actions_by_sede[sede_codigo].append(item)
+
+        controls_by_sede = defaultdict(list)
+        for event in control_events:
+            sede_codigo = (event.get("sede_codigo") or "").strip().upper()
+            if sede_codigo:
+                controls_by_sede[sede_codigo].append(event)
+
+        library_phase_map = {
+            "politica": "marco",
+            "plan_accion": "marco",
+            "roles": "marco",
+            "protocolos": "operacion",
+            "instructivos": "operacion",
+            "riesgos": "diagnostico",
+        }
+        library_cards = []
+        for block in bloques:
+            doc = block.get("doc") or {}
+            auto = block.get("auto") or {}
+            block_key = (block.get("bloque") or "").strip().lower()
+            library_cards.append({
+                "key": block_key,
+                "title": doc.get("titulo") or block_key.replace("_", " ").title(),
+                "subtitle": doc.get("subtitulo") or doc.get("descripcion_corta") or "",
+                "status_label": auto.get("label") or "En armado",
+                "status_tone": ("ok" if (auto.get("label") or "").strip().lower() == "completo" else "warn"),
+                "phase_key": library_phase_map.get(block_key, "marco"),
+                "detail_url": url_for("sgsst_documento_detalle", bloque=block_key),
+            })
+
+        sedes_dashboard = []
+        diagnostic_pct_values = []
+        suggestions = []
+        total_periodic_overdue = 0
+        total_periodic_active = 0
+        for sede in sedes:
+            codigo = sede["codigo"]
+            visits = visitas_by_sede.get(codigo, [])
+            docs = docs_by_sede.get(codigo, [])
+            cart = cart_summary.get(codigo)
+            luces = luces_summary.get(codigo)
+            mata = mata_by_sede.get(codigo, {"total": 0, "vencidos": 0, "proximos": 0, "fecha_proxima": ""})
+            desinf = desinf_by_sede.get(codigo, {"total": 0, "realizadas": 0, "pendientes": 0, "vencidas": 0, "ultima": "", "proxima": ""})
+            hall_list = hallazgos_by_sede.get(codigo, [])
+            act_list = actions_by_sede.get(codigo, [])
+            control_list = controls_by_sede.get(codigo, [])
+
+            hall_open = sum(1 for item in hall_list if not item.get("is_closed"))
+            hall_closed = sum(1 for item in hall_list if item.get("is_closed"))
+            act_open = sum(1 for item in act_list if not _sgsst_plan_is_action_closed(item.get("state_label")))
+            act_closed = sum(1 for item in act_list if _sgsst_plan_is_action_closed(item.get("state_label")))
+            act_overdue = sum(1 for item in act_list if item.get("overdue"))
+            act_impl = sum(1 for item in act_list if item.get("state_label") in {"Implementada", "Verificada", "Cerrada"})
+            periodic_total = len(control_list)
+            periodic_overdue = sum(1 for item in control_list if item.get("state_key") == "vencido")
+            periodic_active = sum(1 for item in control_list if item.get("active"))
+            total_periodic_overdue += periodic_overdue
+            total_periodic_active += periodic_active
+
+            coverage_sources = 0
+            if visits:
+                coverage_sources += 1
+            if docs:
+                coverage_sources += 1
+            if mata["total"] > 0:
+                coverage_sources += 1
+            if cart and int(cart.get("record_count") or 0) > 0:
+                coverage_sources += 1
+            if luces and int(luces.get("record_count") or 0) > 0:
+                coverage_sources += 1
+            if desinf["total"] > 0:
+                coverage_sources += 1
+
+            diagnostic_pct = _sgsst_plan_percent(coverage_sources, 6)
+            diagnostic_pct_values.append(diagnostic_pct)
+            diagnostic_started = coverage_sources > 0 or hall_open > 0
+            diagnostic_complete = coverage_sources >= 4 and (len(visits) > 0 or len(docs) > 0 or hall_open > 0)
+            impl_pct = _sgsst_plan_percent(act_impl, len(act_list))
+            oper_pct = _sgsst_plan_percent(max(periodic_total - periodic_overdue, 0), periodic_total) if periodic_total else 0
+
+            if act_overdue or periodic_overdue or any(item.get("priority_label") == "Critica" and not item.get("is_closed") for item in hall_list):
+                estado_general = "Critico"
+                estado_tone = "risk"
+            elif hall_open or act_open:
+                estado_general = "En despliegue"
+                estado_tone = "warn"
+            elif diagnostic_started:
+                estado_general = "Con base operativa"
+                estado_tone = "ok"
+            else:
+                estado_general = "Sin iniciar"
+                estado_tone = "muted"
+
+            module_rows = []
+            module_rows.append({
+                "module": "Visitas ART",
+                "state_label": ("Visitada" if visits else "Pendiente"),
+                "state_tone": ("ok" if visits else "muted"),
+                "result": (f"{len(visits)} visita(s)" if visits else "Sin visita registrada"),
+                "pending": (f"{sum(1 for d in docs if str(d.get('estado_revision') or '').strip().upper() == 'FALTANTE')} documento(s) pendiente(s)" if docs else "Sin documentacion asociada"),
+                "next_action": ("Cargar documentacion ART" if visits and any(str(d.get("estado_revision") or "").strip().upper() == "FALTANTE" for d in docs) else ("Registrar primera visita" if not visits else "Mantener seguimiento")),
+                "url": url_for("sst_visitas", sede=codigo, open_sede=codigo),
+            })
+            if cart:
+                module_rows.append({
+                    "module": "Carteleria",
+                    "state_label": cart.get("state_meta", {}).get("label", "Con datos"),
+                    "state_tone": ("ok" if int(cart.get("faltantes") or 0) == 0 else "warn"),
+                    "result": f"{int(cart.get('cantidad_instalada') or 0)} / {int(cart.get('cantidad_requerida') or 0)} instaladas",
+                    "pending": f"{int(cart.get('faltantes') or 0)} faltante(s)",
+                    "next_action": cart.get("action_label") or "Abrir carteleria",
+                    "url": url_for("sst_carteleria_home", sede=codigo, open_sede=codigo),
+                })
+            else:
+                module_rows.append({
+                    "module": "Carteleria",
+                    "state_label": "Sin relevar",
+                    "state_tone": "muted",
+                    "result": "Sin base operativa cargada",
+                    "pending": "Iniciar relevamiento",
+                    "next_action": "Cargar carteleria",
+                    "url": url_for("sst_carteleria_home", sede=codigo, open_sede=codigo),
+                })
+            if luces:
+                module_rows.append({
+                    "module": "Luces de emergencia",
+                    "state_label": luces.get("state_meta", {}).get("label", "Con datos"),
+                    "state_tone": ("ok" if int(luces.get("faltantes") or 0) == 0 and int(luces.get("cantidad_fuera_servicio") or 0) == 0 else "warn"),
+                    "result": f"{int(luces.get('cantidad_operativa') or 0)} operativas / {int(luces.get('cantidad_requerida') or 0)} requeridas",
+                    "pending": f"{int(luces.get('faltantes') or 0)} faltante(s) · {int(luces.get('cantidad_fuera_servicio') or 0)} fuera de servicio",
+                    "next_action": luces.get("action_label") or "Abrir luces",
+                    "url": url_for("sst_luces_home", sede=codigo, open_sede=codigo),
+                })
+            else:
+                module_rows.append({
+                    "module": "Luces de emergencia",
+                    "state_label": "Sin relevar",
+                    "state_tone": "muted",
+                    "result": "Sin base operativa cargada",
+                    "pending": "Iniciar relevamiento",
+                    "next_action": "Cargar luces",
+                    "url": url_for("sst_luces_home", sede=codigo, open_sede=codigo),
+                })
+            module_rows.append({
+                "module": "Matafuegos",
+                "state_label": ("Con alertas" if mata["vencidos"] > 0 else ("Vigente" if mata["total"] > 0 else "Sin datos")),
+                "state_tone": ("risk" if mata["vencidos"] > 0 else ("ok" if mata["total"] > 0 else "muted")),
+                "result": (f"{mata['total']} equipo(s) activos" if mata["total"] > 0 else "Sin equipos activos registrados"),
+                "pending": (f"{mata['vencidos']} vencido(s) · {mata['proximos']} proximo(s)" if mata["total"] > 0 else "Controlar carga inicial"),
+                "next_action": ("Regularizar vencimientos" if mata["vencidos"] > 0 else "Controlar proximos vencimientos"),
+                "url": url_for("matafuegos_home", sede=codigo, open_sede=codigo),
+            })
+            module_rows.append({
+                "module": "Desinfeccion",
+                "state_label": ("Con alertas" if desinf["vencidas"] > 0 else ("Activa" if desinf["total"] > 0 else "Sin datos")),
+                "state_tone": ("risk" if desinf["vencidas"] > 0 else ("ok" if desinf["total"] > 0 else "muted")),
+                "result": (f"Ultima: {_sgsst_plan_short_date(desinf['ultima'])}" if desinf["ultima"] else "Sin intervencion realizada"),
+                "pending": (f"{desinf['pendientes']} pendiente(s)" if desinf["total"] > 0 else "Registrar primera programacion"),
+                "next_action": ("Programar proxima intervencion" if desinf["total"] > 0 else "Cargar desinfeccion"),
+                "url": url_for("sst_desinfecciones_home", sede=codigo, open_sede=codigo),
+            })
+
+            if not visits:
+                suggestions.append({
+                    "sede_codigo": codigo,
+                    "module": "Visitas ART",
+                    "reason": "Sin visita registrada en la sede.",
+                    "action_url": url_for("sst_plan_implementacion", vista="acciones", form="accion", prefill_sede=codigo, prefill_modulo="Visitas ART", prefill_titulo=f"Programar visita ART en {codigo}"),
+                    "action_label": "Crear accion",
+                })
+            if cart and int(cart.get("faltantes") or 0) > 0:
+                suggestions.append({
+                    "sede_codigo": codigo,
+                    "module": "Carteleria",
+                    "reason": f"Faltan {int(cart.get('faltantes') or 0)} cartel(es) por regularizar.",
+                    "action_url": url_for("sst_plan_implementacion", vista="acciones", form="accion", prefill_sede=codigo, prefill_modulo="Carteleria", prefill_titulo=f"Completar carteleria en {codigo}"),
+                    "action_label": "Crear accion",
+                })
+            if luces and (int(luces.get("faltantes") or 0) > 0 or int(luces.get("cantidad_fuera_servicio") or 0) > 0):
+                suggestions.append({
+                    "sede_codigo": codigo,
+                    "module": "Luces",
+                    "reason": f"{int(luces.get('faltantes') or 0)} faltante(s) y {int(luces.get('cantidad_fuera_servicio') or 0)} fuera de servicio.",
+                    "action_url": url_for("sst_plan_implementacion", vista="acciones", form="accion", prefill_sede=codigo, prefill_modulo="Luces de emergencia", prefill_titulo=f"Regularizar luces en {codigo}"),
+                    "action_label": "Crear accion",
+                })
+            if mata["vencidos"] > 0:
+                suggestions.append({
+                    "sede_codigo": codigo,
+                    "module": "Matafuegos",
+                    "reason": f"{mata['vencidos']} matafuego(s) vencido(s).",
+                    "action_url": url_for("sst_plan_implementacion", vista="acciones", form="accion", prefill_sede=codigo, prefill_modulo="Matafuegos", prefill_titulo=f"Regularizar matafuegos vencidos en {codigo}"),
+                    "action_label": "Crear accion",
+                })
+
+            sedes_dashboard.append({
+                "codigo": codigo,
+                "nombre": sede.get("nombre") or codigo,
+                "ciudad": sede.get("ciudad") or "",
+                "direccion": sede.get("direccion") or "",
+                "fuero": sede.get("fuero") or "",
+                "diagnostico_pct": diagnostic_pct,
+                "diagnostico_text": f"{coverage_sources}/6 fuentes activas",
+                "diagnostico_state": ("Completo" if diagnostic_complete else ("Iniciado" if diagnostic_started else "Sin iniciar")),
+                "diagnostico_complete": diagnostic_complete,
+                "hallazgos_abiertos": hall_open,
+                "hallazgos_totales": len(hall_list),
+                "hallazgos_cerrados": hall_closed,
+                "acciones_abiertas": act_open,
+                "acciones_totales": len(act_list),
+                "acciones_cerradas": act_closed,
+                "acciones_vencidas": act_overdue,
+                "implementacion_pct": impl_pct,
+                "implementacion_text": (f"{act_impl}/{len(act_list)} implementadas" if act_list else "Sin acciones cargadas"),
+                "operacion_pct": oper_pct,
+                "operacion_text": (f"{periodic_total - periodic_overdue}/{periodic_total} controles en fecha" if periodic_total else "Sin control periodico activo"),
+                "periodic_total": periodic_total,
+                "periodic_overdue": periodic_overdue,
+                "estado_general": estado_general,
+                "estado_tone": estado_tone,
+                "module_rows": module_rows,
+                "actions_preview": act_list[:5],
+                "hallazgos_preview": hall_list[:5],
+                "detail_url": url_for("sst_plan_implementacion", vista="sedes", sede=codigo),
+            })
+
+        selected_sede = (selected_sede or "").strip().upper()
+        selected_sede_row = next((item for item in sedes_dashboard if item["codigo"] == selected_sede), None)
+        if selected_sede_row is None and view_mode == "sedes" and sedes_dashboard:
+            selected_sede_row = sedes_dashboard[0]
+
+        hallazgos_abiertos = sum(1 for item in hallazgos if not item.get("is_closed"))
+        hallazgos_cerrados = sum(1 for item in hallazgos if item.get("is_closed"))
+        acciones_abiertas = sum(1 for item in acciones if not _sgsst_plan_is_action_closed(item.get("state_label")))
+        acciones_cerradas = sum(1 for item in acciones if _sgsst_plan_is_action_closed(item.get("state_label")))
+        acciones_vencidas = sum(1 for item in acciones if item.get("overdue"))
+        acciones_verificadas = sum(1 for item in acciones if item.get("state_label") in {"Verificada", "Cerrada"})
+
+        marco_checks = [
+            {"label": "Objetivo definido", "done": bool((marco.get("objetivo") or "").strip())},
+            {"label": "Alcance definido", "done": bool((marco.get("alcance") or "").strip())},
+            {"label": "Roles definidos", "done": len(roles) > 0},
+            {"label": "Metodologia definida", "done": bool((marco.get("metodologia") or "").strip())},
+            {"label": "Plan documental vinculado", "done": any(card["key"] == "plan_accion" for card in library_cards)},
+            {"label": "Protocolos / instructivos activos", "done": int((estado_prot.get("n_act") or 0) or 0) > 0 and int((estado_ins.get("n_act") or 0) or 0) > 0},
+        ]
+        marco_pct = _sgsst_plan_percent(sum(1 for item in marco_checks if item["done"]), len(marco_checks))
+        diagnostico_iniciado = sum(1 for item in sedes_dashboard if item["diagnostico_pct"] > 0)
+        diagnostico_completo = sum(1 for item in sedes_dashboard if item["diagnostico_complete"])
+        diagnostico_pct = int(round(sum(diagnostic_pct_values) / len(diagnostic_pct_values))) if diagnostic_pct_values else 0
+        implementacion_pct = _sgsst_plan_percent(acciones_verificadas, len(acciones))
+        operacion_pct = _sgsst_plan_percent(max(total_periodic_active - total_periodic_overdue, 0), total_periodic_active) if total_periodic_active else 0
+        overall_pct = int(round((marco_pct + diagnostico_pct + implementacion_pct + operacion_pct) / 4))
+        overall_state = _sgsst_plan_status_summary_label(overall_pct, overdue=(acciones_vencidas + total_periodic_overdue), active=(hallazgos_abiertos + acciones_abiertas))
+        overall_tone = ("risk" if (acciones_vencidas + total_periodic_overdue) > 0 else ("warn" if hallazgos_abiertos or acciones_abiertas else "ok"))
+
+        phase_cards = [
+            {
+                "key": "marco",
+                "short": SGSST_PLAN_PHASE_META["marco"]["short"],
+                "title": SGSST_PLAN_PHASE_META["marco"]["title"],
+                "description": SGSST_PLAN_PHASE_META["marco"]["description"],
+                "pct": marco_pct,
+                "class": _sgsst_plan_progress_class(marco_pct),
+                "stats": [
+                    {"label": "Checklist institucional", "value": f"{sum(1 for item in marco_checks if item['done'])}/{len(marco_checks)}"},
+                    {"label": "Documentos vinculados", "value": str(len(library_cards))},
+                    {"label": "Roles activos", "value": str(len(roles))},
+                ],
+                "items": marco_checks,
+            },
+            {
+                "key": "diagnostico",
+                "short": SGSST_PLAN_PHASE_META["diagnostico"]["short"],
+                "title": SGSST_PLAN_PHASE_META["diagnostico"]["title"],
+                "description": SGSST_PLAN_PHASE_META["diagnostico"]["description"],
+                "pct": diagnostico_pct,
+                "class": _sgsst_plan_progress_class(diagnostico_pct),
+                "stats": [
+                    {"label": "Sedes iniciadas", "value": f"{diagnostico_iniciado}/{len(sedes_dashboard)}"},
+                    {"label": "Sedes con base consolidada", "value": f"{diagnostico_completo}/{len(sedes_dashboard)}"},
+                    {"label": "Hallazgos abiertos", "value": str(hallazgos_abiertos)},
+                ],
+                "items": [
+                    {"label": "Sedes sin iniciar", "done": diagnostico_iniciado < len(sedes_dashboard), "value": str(max(len(sedes_dashboard) - diagnostico_iniciado, 0))},
+                    {"label": "Sedes en relevamiento", "done": diagnostico_iniciado > 0, "value": str(max(diagnostico_iniciado - diagnostico_completo, 0))},
+                    {"label": "Sedes con diagnostico consolidado", "done": diagnostico_completo > 0, "value": str(diagnostico_completo)},
+                ],
+            },
+            {
+                "key": "implementacion",
+                "short": SGSST_PLAN_PHASE_META["implementacion"]["short"],
+                "title": SGSST_PLAN_PHASE_META["implementacion"]["title"],
+                "description": SGSST_PLAN_PHASE_META["implementacion"]["description"],
+                "pct": implementacion_pct,
+                "class": _sgsst_plan_progress_class(implementacion_pct),
+                "stats": [
+                    {"label": "Acciones abiertas", "value": str(acciones_abiertas)},
+                    {"label": "Acciones vencidas", "value": str(acciones_vencidas)},
+                    {"label": "Acciones cerradas", "value": str(acciones_cerradas)},
+                ],
+                "items": [
+                    {"label": "En gestion", "done": any(item.get("state_label") == "En gestion" for item in acciones), "value": str(sum(1 for item in acciones if item.get("state_label") == "En gestion"))},
+                    {"label": "Programadas", "done": any(item.get("state_label") == "Programada" for item in acciones), "value": str(sum(1 for item in acciones if item.get("state_label") == "Programada"))},
+                    {"label": "Implementadas / verificadas", "done": acciones_verificadas > 0, "value": str(acciones_verificadas)},
+                ],
+            },
+            {
+                "key": "operacion",
+                "short": SGSST_PLAN_PHASE_META["operacion"]["short"],
+                "title": SGSST_PLAN_PHASE_META["operacion"]["title"],
+                "description": SGSST_PLAN_PHASE_META["operacion"]["description"],
+                "pct": operacion_pct,
+                "class": _sgsst_plan_progress_class(operacion_pct),
+                "stats": [
+                    {"label": "Controles activos", "value": str(total_periodic_active)},
+                    {"label": "Controles vencidos", "value": str(total_periodic_overdue)},
+                    {"label": "Proximos 45 dias", "value": str(sum(1 for item in control_events if item.get('state_key') in {'proximo', 'programado'}))},
+                ],
+                "items": [
+                    {"label": "Vigentes", "done": total_periodic_active > total_periodic_overdue, "value": str(max(total_periodic_active - total_periodic_overdue, 0))},
+                    {"label": "Vencidos", "done": total_periodic_overdue > 0, "value": str(total_periodic_overdue)},
+                    {"label": "Seguimientos abiertos", "done": hallazgos_abiertos > 0 or acciones_abiertas > 0, "value": str(hallazgos_abiertos + acciones_abiertas)},
+                ],
+            },
+        ]
+
+        cronograma_items = []
+        for item in acciones:
+            due = _sgsst_plan_parse_date(item.get("fecha_objetivo"))
+            if due:
+                cronograma_items.append({
+                    "source": "accion",
+                    "title": item.get("titulo") or item.get("accion_requerida") or "Accion SG-SST",
+                    "detail": item.get("accion_requerida") or item.get("hallazgo_title") or "",
+                    "sede_codigo": item.get("sede_codigo") or "",
+                    "responsable": item.get("responsable") or item.get("area_responsable") or "Sin responsable",
+                    "date": due.isoformat(),
+                    "date_label": _sgsst_plan_short_date(due),
+                    "state_label": item.get("state_label") or "",
+                    "state_tone": ("risk" if item.get("overdue") else item.get("state_tone")),
+                    "phase_key": "implementacion",
+                    "url": item.get("detail_url") or url_for("sst_plan_implementacion", vista="acciones"),
+                })
+        for event in control_events:
+            cronograma_items.append({
+                "source": "control",
+                "title": event.get("title") or event.get("type_label") or "Control SG-SST",
+                "detail": event.get("detail") or "",
+                "sede_codigo": event.get("sede_codigo") or "",
+                "responsable": event.get("responsible") or "Seguimiento SG-SST",
+                "date": event.get("fecha_evento") or "",
+                "date_label": _sgsst_plan_short_date(event.get("fecha_evento")),
+                "state_label": event.get("state_label") or "",
+                "state_tone": ("risk" if event.get("state_key") == "vencido" else ("warn" if event.get("active") else "ok")),
+                "phase_key": event.get("phase_key") or "operacion",
+                "url": event.get("url_detail") or url_for("sst_plan_implementacion", vista="cronograma"),
+            })
+        cronograma_items.sort(key=lambda item: (item.get("date") or "9999-12-31", item.get("sede_codigo") or "ZZZ", item.get("title") or ""))
+        cronograma_items = cronograma_items[:20]
+
+        responsables_count = defaultdict(lambda: {"open": 0, "overdue": 0, "closed": 0, "critical": 0, "next_due": "", "items": []})
+        for action in acciones:
+            key = (action.get("responsable") or action.get("area_responsable") or "Sin responsable").strip()
+            bucket = responsables_count[key]
+            bucket["items"].append(action)
+            if _sgsst_plan_is_action_closed(action.get("state_label")):
+                bucket["closed"] += 1
+            else:
+                bucket["open"] += 1
+            if action.get("overdue"):
+                bucket["overdue"] += 1
+            if action.get("priority_label") == "Critica":
+                bucket["critical"] += 1
+            due = action.get("fecha_objetivo") or ""
+            if due and (not bucket["next_due"] or due < bucket["next_due"]):
+                bucket["next_due"] = due
+        responsables_rows = []
+        for responsable, stats in responsables_count.items():
+            responsables_rows.append({
+                "responsable": responsable,
+                "open": stats["open"],
+                "overdue": stats["overdue"],
+                "closed": stats["closed"],
+                "critical": stats["critical"],
+                "next_due": stats["next_due"],
+                "next_due_label": _sgsst_plan_short_date(stats["next_due"]) if stats["next_due"] else "-",
+                "tone": ("risk" if stats["overdue"] or stats["critical"] else ("warn" if stats["open"] else "ok")),
+            })
+        responsables_rows.sort(key=lambda item: (-item["overdue"], -item["critical"], -item["open"], item["responsable"]))
+
+        roles_grouped = defaultdict(list)
+        for role in roles:
+            roles_grouped[role.get("grupo") or "Sin grupo"].append(role)
+        role_groups = [{"grupo": grupo, "roles": sorted(items, key=lambda role: (int(role.get("orden_visual") or 0), role.get("rol") or ""))} for grupo, items in roles_grouped.items()]
+
+        last_update_candidates = [
+            marco.get("fecha_actualizacion"),
+            marco.get("fecha_inicio"),
+        ]
+        for item in hallazgos[:25]:
+            last_update_candidates.extend([item.get("updated_at"), item.get("created_at"), item.get("fecha_deteccion")])
+        for item in acciones[:25]:
+            last_update_candidates.extend([item.get("fecha_creacion"), item.get("fecha_objetivo")])
+        for block in bloques:
+            doc = block.get("doc") or {}
+            last_update_candidates.append(doc.get("fecha_actualizacion"))
+        last_update = None
+        for candidate in last_update_candidates:
+            parsed = _sgsst_plan_parse_date(candidate)
+            if parsed and (last_update is None or parsed > last_update):
+                last_update = parsed
+
+        prefill = {
+            "sede_codigo": ((request.args.get("prefill_sede") or selected_sede or "").strip().upper()),
+            "modulo_origen": (request.args.get("prefill_modulo") or "").strip(),
+            "titulo": (request.args.get("prefill_titulo") or "").strip(),
+        }
+
+        con.close()
+        return {
+            "sst_section": "plan",
+            "view_mode": view_mode,
+            "hero": {
+                "title": "Plan de Implementacion SG-SST",
+                "subtitle": "Implementacion progresiva del SG-SST integrada al SGI y conectada con la operacion diaria de las sedes.",
+                "last_updated": _sgsst_plan_short_date(last_update) if last_update else _sgsst_plan_short_date(today_ref),
+                "sedes_total": len(sedes_dashboard),
+                "overall_pct": overall_pct,
+                "overall_class": _sgsst_plan_progress_class(overall_pct),
+                "overall_state": overall_state,
+                "overall_tone": overall_tone,
+            },
+            "summary_cards": [
+                {"label": "Sedes incluidas", "value": len(sedes_dashboard), "tone": "muted"},
+                {"label": "Diagnostico iniciado", "value": diagnostico_iniciado, "tone": "blue"},
+                {"label": "Diagnostico consolidado", "value": diagnostico_completo, "tone": "ok"},
+                {"label": "Hallazgos abiertos", "value": hallazgos_abiertos, "tone": "risk"},
+                {"label": "Acciones abiertas", "value": acciones_abiertas, "tone": "warn"},
+                {"label": "Acciones vencidas", "value": acciones_vencidas, "tone": "risk"},
+                {"label": "Acciones cerradas", "value": acciones_cerradas, "tone": "ok"},
+                {"label": "Controles periodicos activos", "value": total_periodic_active, "tone": "blue"},
+                {"label": "Documentacion pendiente", "value": sum(1 for docs in docs_by_sede.values() for doc in docs if str(doc.get('estado_revision') or '').strip().upper() == 'FALTANTE'), "tone": "warn"},
+            ],
+            "phase_cards": phase_cards,
+            "library_cards": library_cards,
+            "library_url": url_for("sgsst_documentacion_home"),
+            "seguimiento_url": url_for("sst_plan"),
+            "sedes_dashboard": sedes_dashboard,
+            "selected_sede_row": selected_sede_row,
+            "hallazgos": hallazgos,
+            "hallazgos_abiertos": hallazgos_abiertos,
+            "hallazgos_cerrados": hallazgos_cerrados,
+            "acciones": acciones,
+            "acciones_abiertas": acciones_abiertas,
+            "acciones_cerradas": acciones_cerradas,
+            "acciones_vencidas": acciones_vencidas,
+            "cronograma_items": cronograma_items,
+            "responsables_rows": responsables_rows[:12],
+            "role_groups": role_groups,
+            "roles_total": len(roles),
+            "suggestions": suggestions[:8],
+            "marco": marco,
+            "open_form": open_form,
+            "prefill": prefill,
+            "sedes": sedes,
+            "manual_hallazgos": manual_hallazgos,
+            "hallazgo_states": SGSST_PLAN_HALLAZGO_STATES,
+            "action_states": SGSST_PLAN_ACTION_STATES,
+            "priority_options": SGSST_PLAN_PRIORITIES,
+            "module_options": [
+                "Carteleria",
+                "Luces de emergencia",
+                "Matafuegos",
+                "Desinfecciones",
+                "Visitas ART",
+                "Biblioteca documental",
+                "General",
+            ],
+            "fuente_options": [
+                "relevamiento interno",
+                "visita ART",
+                "RGRL",
+                "inspeccion",
+                "carteleria",
+                "luces",
+                "matafuegos",
+                "desinfecciones",
+                "otro",
+            ],
+            "today_iso": today_ref.isoformat(),
+        }
+
+    @app.route("/sst/plan-implementacion", methods=["GET", "POST"], endpoint="sst_plan_implementacion")
+    def sst_plan_implementacion():
+        selected_sede = (request.values.get("sede") or request.values.get("prefill_sede") or "").strip().upper()
+        view_mode = (request.values.get("vista") or "general").strip().lower()
+        open_form = (request.values.get("form") or "").strip().lower()
+
+        if request.method == "POST":
+            con = get_db()
+            ensure_sst_general_table(con)
+            ensure_sst_plan_tables(con)
+            ensure_sgsst_implementation_tables(con)
+            ensure_sst_visitas_docs_tables(con)
+            seed_sgsst_documentacion(con)
+            intent = (request.form.get("intent") or "").strip().lower()
+            user_name = _sst_current_user()
+            now = _sst_now_ts()
+            valid_sedes = {
+                str(_row_value(row, "codigo", "") or "").strip().upper()
+                for row in con.execute("SELECT codigo FROM sedes_mpd").fetchall()
+            }
+
+            if intent == "hallazgo":
+                sede_codigo = (request.form.get("sede_codigo") or "").strip().upper()
+                titulo = (request.form.get("titulo") or "").strip()
+                if not sede_codigo or sede_codigo not in valid_sedes:
+                    flash("Selecciona una sede valida para el hallazgo.", "warning")
+                    con.close()
+                    return redirect(url_for("sst_plan_implementacion", vista="acciones", sede=selected_sede or None, form="hallazgo"))
+                if not titulo:
+                    flash("El hallazgo necesita un titulo.", "warning")
+                    con.close()
+                    return redirect(url_for("sst_plan_implementacion", vista="acciones", sede=sede_codigo, form="hallazgo"))
+
+                con.execute("""
+                    INSERT INTO sgsst_plan_hallazgos(
+                        sede_codigo, piso, dependencia, modulo_origen, registro_origen_id,
+                        categoria, titulo, descripcion, fecha_deteccion, detectado_por, fuente,
+                        prioridad, estado, evidencia_inicial, observaciones, created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    sede_codigo,
+                    (request.form.get("piso") or "").strip(),
+                    (request.form.get("dependencia") or "").strip(),
+                    (request.form.get("modulo_origen") or "").strip(),
+                    (request.form.get("registro_origen_id") or "").strip(),
+                    (request.form.get("categoria") or "").strip(),
+                    titulo,
+                    (request.form.get("descripcion") or "").strip(),
+                    (request.form.get("fecha_deteccion") or date.today().isoformat()),
+                    (request.form.get("detectado_por") or user_name).strip(),
+                    (request.form.get("fuente") or "relevamiento interno").strip(),
+                    _sgsst_plan_priority_label(request.form.get("prioridad") or "Media"),
+                    _sgsst_plan_hallazgo_state_label(request.form.get("estado") or "Detectado"),
+                    (request.form.get("evidencia_inicial") or "").strip(),
+                    (request.form.get("observaciones") or "").strip(),
+                    now,
+                    now,
+                ))
+                con.commit()
+                con.close()
+                flash("Hallazgo SG-SST creado.", "success")
+                return redirect(url_for("sst_plan_implementacion", vista="acciones", sede=sede_codigo, form="hallazgo"))
+
+            if intent == "accion":
+                sede_codigo = (request.form.get("sede_codigo") or "").strip().upper()
+                titulo = (request.form.get("titulo") or "").strip()
+                if not sede_codigo or sede_codigo not in valid_sedes:
+                    flash("Selecciona una sede valida para la accion.", "warning")
+                    con.close()
+                    return redirect(url_for("sst_plan_implementacion", vista="acciones", sede=selected_sede or None, form="accion"))
+                if not titulo:
+                    flash("La accion necesita un titulo.", "warning")
+                    con.close()
+                    return redirect(url_for("sst_plan_implementacion", vista="acciones", sede=sede_codigo, form="accion"))
+
+                hallazgo_id = 0
+                try:
+                    hallazgo_id = int(request.form.get("hallazgo_id") or 0)
+                except Exception:
+                    hallazgo_id = 0
+                if hallazgo_id > 0:
+                    row = con.execute("SELECT id FROM sgsst_plan_hallazgos WHERE id = ?", (hallazgo_id,)).fetchone()
+                    if not row:
+                        hallazgo_id = 0
+
+                fecha_creacion = (request.form.get("fecha_creacion") or date.today().isoformat()).strip()
+                fecha_objetivo = (request.form.get("fecha_objetivo") or "").strip()
+                if fecha_objetivo:
+                    fecha_creacion_dt = _sgsst_plan_parse_date(fecha_creacion)
+                    fecha_objetivo_dt = _sgsst_plan_parse_date(fecha_objetivo)
+                    if fecha_creacion_dt and fecha_objetivo_dt and fecha_objetivo_dt < fecha_creacion_dt:
+                        flash("La fecha objetivo no puede ser anterior a la fecha de creacion.", "warning")
+                        con.close()
+                        return redirect(url_for("sst_plan_implementacion", vista="acciones", sede=sede_codigo, form="accion"))
+
+                con.execute("""
+                    INSERT INTO sgsst_plan_acciones(
+                        hallazgo_id, sede_codigo, modulo_origen, titulo, accion_requerida,
+                        responsable, area_responsable, prioridad, fecha_creacion, fecha_objetivo,
+                        estado, avance_pct, evidencia, costo_estimado, compra_requerida,
+                        intervencion_requerida, observaciones, created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    (hallazgo_id or None),
+                    sede_codigo,
+                    (request.form.get("modulo_origen") or "").strip(),
+                    titulo,
+                    (request.form.get("accion_requerida") or "").strip(),
+                    (request.form.get("responsable") or "").strip(),
+                    (request.form.get("area_responsable") or "").strip(),
+                    _sgsst_plan_priority_label(request.form.get("prioridad") or "Media"),
+                    fecha_creacion,
+                    fecha_objetivo or None,
+                    _sgsst_plan_action_state_label(request.form.get("estado") or "Pendiente"),
+                    int(request.form.get("avance_pct") or 0),
+                    (request.form.get("evidencia") or "").strip(),
+                    (float(request.form.get("costo_estimado") or 0) if str(request.form.get("costo_estimado") or "").strip() else None),
+                    _sst_bool_flag(request.form.get("compra_requerida")),
+                    _sst_bool_flag(request.form.get("intervencion_requerida")),
+                    (request.form.get("observaciones") or "").strip(),
+                    now,
+                    now,
+                ))
+                con.commit()
+                con.close()
+                flash("Accion del plan creada.", "success")
+                return redirect(url_for("sst_plan_implementacion", vista="acciones", sede=sede_codigo, form="accion"))
+
+            con.close()
+
+        context = build_sgsst_plan_implementation_context(view_mode=view_mode, selected_sede=selected_sede, open_form=open_form)
+        return render_template("sst_plan_implementacion.html", **context)
 
     def _sst_seguimiento_context():
         con = get_db()
