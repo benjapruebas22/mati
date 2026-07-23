@@ -5885,6 +5885,7 @@ def sede_ficha(codigo):
     luminarias_kpi = {"tubo_fria": 0, "tubo_calido": 0, "foco": 0, "panel": 0, "puestos_trabajo": 0}
     luminarias_operativo_rows_data = []
     luminarias_operativo_table_data = []
+    luminarias_environment_rows = []
     luminarias_selected = None
     luminarias_ambiente_options = []
     luminarias_brand_options = []
@@ -6197,6 +6198,7 @@ def sede_ficha(codigo):
                 "puestos_trabajo": luminarias_operativo_totals["pt"],
             }
 
+        luminarias_environment_rows = _luminarias_operativo_environment_rows(db, codigo, piso, local)
         luminarias_operativo_table_data = _luminarias_operativo_table_rows(db, codigo, piso, local)
         luminarias_history_rows = _luminarias_history_feed(
             db,
@@ -6620,6 +6622,7 @@ def sede_ficha(codigo):
         depositos_rows=depositos_rows,
         luminarias_rows=luminarias_rows,
         luminarias_kpi=luminarias_kpi,
+        luminarias_environment_rows=luminarias_environment_rows,
         luminarias_operativo_table_rows=luminarias_operativo_table_data,
         luminarias_selected=luminarias_selected,
         luminarias_ambiente_options=luminarias_ambiente_options,
@@ -12677,6 +12680,73 @@ def _luminaria_point_detail(con, point_id):
     else:
         point["codigo_origen"] = ""
     return point
+
+
+def _luminarias_operativo_environment_rows(con, sede_codigo, piso_codigo, current_local=""):
+    sede = (sede_codigo or "").upper().strip()
+    piso = _mobiliario_plano_normalize_piso(piso_codigo)
+    local_norm = _mobiliario_plano_normalize_local(current_local) if current_local else ""
+    descriptions = {
+        str(item["codigo"] or "").strip(): str(item["descripcion"] or "").strip()
+        for item in _luminaria_environment_options(con, sede, piso)
+    }
+    rows = con.execute("""
+        SELECT
+            p.ambiente_codigo,
+            COUNT(*) AS total,
+            SUM(
+                CASE
+                    WHEN NULLIF(
+                        TRIM(
+                            CASE
+                                WHEN LOWER(COALESCE(r.marca,'')) = 'otra'
+                                    THEN COALESCE(NULLIF(TRIM(r.marca_otro),''), '')
+                                ELSE COALESCE(NULLIF(TRIM(r.marca),''), '')
+                            END
+                        ),
+                        ''
+                    ) IS NULL THEN 1 ELSE 0
+                END
+            ) AS pendientes
+        FROM luminaria_punto p
+        LEFT JOIN luminaria_recambio r
+          ON r.luminaria_punto_id = p.id
+         AND r.fecha_recambio IS NULL
+        WHERE UPPER(COALESCE(p.sede_codigo,'')) = ?
+          AND p.piso_codigo = ?
+          AND COALESCE(p.activo,1) = 1
+        GROUP BY p.ambiente_codigo
+        ORDER BY p.ambiente_codigo
+    """, (sede, piso)).fetchall()
+    items = []
+    for row in rows:
+        ambiente = _mobiliario_plano_normalize_local(row["ambiente_codigo"])
+        if not ambiente:
+            continue
+        descripcion = descriptions.get(ambiente, "")
+        total = _luminaria_safe_int(row["total"])
+        pendientes = _luminaria_safe_int(row["pendientes"])
+        activas = max(total - pendientes, 0)
+        items.append({
+            "codigo": ambiente,
+            "descripcion": descripcion,
+            "label": f"{ambiente} - {descripcion}" if descripcion else ambiente,
+            "total": total,
+            "activas": activas,
+            "pendientes": pendientes,
+            "selected": ambiente == local_norm,
+            "detail_url": url_for(
+                "sede_ficha",
+                codigo=sede,
+                piso=piso,
+                local="" if ambiente == "SEDE" else ambiente,
+                tab="luminarias",
+                view="operativo",
+                lview="operativo",
+            ),
+        })
+    items.sort(key=lambda item: _mobiliario_plano_local_sort_key(item["codigo"]))
+    return items
 
 
 def _luminarias_operativo_table_rows(con, sede_codigo, piso, local_filter=""):
