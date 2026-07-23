@@ -6287,6 +6287,43 @@
     font-size: 12px;
     color: #64748b;
   }
+  .lum-op-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .lum-op-view-tabs {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px;
+    border: 1px solid #d7deea;
+    border-radius: 999px;
+    background: #fff;
+  }
+  .lum-op-view-tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 0 12px;
+    border-radius: 999px;
+    color: #475467;
+    font-size: 12px;
+    font-weight: 800;
+    text-decoration: none;
+  }
+  .lum-op-view-tab:hover {
+    color: #0f172a;
+    background: #f8fafc;
+  }
+  .lum-op-view-tab.is-active {
+    background: #eff6ff;
+    color: #1d4ed8;
+  }
   .lum-op-table {
     width: 100%;
     border-collapse: collapse;
@@ -6305,6 +6342,34 @@
     color: #64748b;
     text-transform: uppercase;
     letter-spacing: .03em;
+  }
+  .lum-op-table tr.is-selected td {
+    background: #f8fbff;
+  }
+  .lum-op-table-code {
+    font-weight: 900;
+    text-decoration: none;
+  }
+  .lum-op-table-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+  .lum-op-action-link {
+    color: #334155;
+    font-size: 12px;
+    font-weight: 800;
+    text-decoration: none;
+  }
+  .lum-op-action-link:hover {
+    color: #1d4ed8;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .lum-op-action-link.is-muted,
+  .lum-op-action-sep {
+    color: #94a3b8;
   }
   .lum-type-tl,
   .mob-plan-piece.kind-tubo_led,
@@ -6428,6 +6493,17 @@
     resize: vertical;
   }
   .lum-op-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .lum-op-filter-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .lum-op-filter-actions {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
@@ -6567,6 +6643,10 @@
     gap: 8px;
     margin-bottom: 14px;
   }
+  .lum-op-stack--sidebar {
+    display: grid;
+    gap: 14px;
+  }
   .lum-op-confirm {
     border: 1px solid #fecaca;
     border-radius: 12px;
@@ -6587,6 +6667,7 @@
   @media (max-width: 760px) {
     .lum-op-kpis,
     .lum-op-form-grid,
+    .lum-op-filter-grid,
     .lum-op-meta,
     .lum-op-stats {
       grid-template-columns: 1fr;
@@ -12019,6 +12100,350 @@
 
 
         {% elif tab == 'luminarias' %}
+        {% if true %}
+        <div class="panel-section-head">
+          <div>
+            <div class="panel-section-title">Luminarias</div>
+            <div class="panel-section-sub">
+              {{ luminarias_operativo_totals.total }} puntos activos en {{ piso }}{% if local %} · filtro {{ local }}{% endif %}.
+            </div>
+          </div>
+        </div>
+
+        <div class="lum-op-toolbar">
+          <div class="lum-op-view-tabs" aria-label="Vista de luminarias">
+            <a class="lum-op-view-tab {% if luminarias_view != 'historial' %}is-active{% endif %}"
+               href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='luminarias', view='operativo', lview='operativo', lpoint=(luminarias_selected.id if luminarias_selected else None)) }}">Operativo</a>
+            <a class="lum-op-view-tab {% if luminarias_view == 'historial' %}is-active{% endif %}"
+               href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='luminarias', view='operativo', lview='historial', lpoint=(luminarias_selected.id if luminarias_selected else None), lh_codigo=(luminarias_history_filters.codigo if luminarias_history_filters else None), lh_fecha=(luminarias_history_filters.fecha if luminarias_history_filters else None), lh_ambiente=(luminarias_history_filters.ambiente if luminarias_history_filters else None), lh_mov=(luminarias_history_filters.movimiento if luminarias_history_filters else None)) }}">Historial</a>
+          </div>
+          <div class="panel-section-sub">Selecciona un codigo. El sistema completa el resto.</div>
+        </div>
+
+        <div class="lum-op-shell">
+          {% if luminarias_view == 'historial' %}
+          <div class="lum-op-card">
+            <div class="lum-op-card-head">
+              <div>
+                <h3 class="lum-op-card-title">Historial independiente</h3>
+                <p class="lum-op-card-sub">Movimientos del piso actual. La operacion principal sigue en la vista Operativo.</p>
+              </div>
+            </div>
+            <form method="get" action="{{ url_for('sede_ficha', codigo=sede.codigo) }}">
+              <input type="hidden" name="piso" value="{{ piso }}">
+              <input type="hidden" name="tab" value="luminarias">
+              <input type="hidden" name="view" value="operativo">
+              <input type="hidden" name="lview" value="historial">
+              {% if local %}<input type="hidden" name="local" value="{{ local }}">{% endif %}
+              <div class="lum-op-filter-grid">
+                <div class="lum-op-field">
+                  <label>Fecha</label>
+                  <input type="date" name="lh_fecha" value="{{ luminarias_history_filters.fecha or '' }}">
+                </div>
+                <div class="lum-op-field">
+                  <label>Codigo</label>
+                  <input type="text" name="lh_codigo" value="{{ luminarias_history_filters.codigo or '' }}" placeholder="TL10">
+                </div>
+                <div class="lum-op-field">
+                  <label>Ambiente</label>
+                  <select name="lh_ambiente">
+                    <option value="">Todos</option>
+                    {% for ambiente in luminarias_ambiente_options %}
+                    <option value="{{ ambiente.codigo }}" {% if luminarias_history_filters.ambiente == ambiente.codigo %}selected{% endif %}>{{ ambiente.label }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="lum-op-field">
+                  <label>Movimiento</label>
+                  <select name="lh_mov">
+                    <option value="">Todos</option>
+                    <option value="alta" {% if luminarias_history_filters.movimiento == 'alta' %}selected{% endif %}>Alta</option>
+                    <option value="recambio" {% if luminarias_history_filters.movimiento == 'recambio' %}selected{% endif %}>Recambio</option>
+                    <option value="baja" {% if luminarias_history_filters.movimiento == 'baja' %}selected{% endif %}>Baja</option>
+                  </select>
+                </div>
+              </div>
+              <div class="lum-op-filter-actions">
+                <button type="submit" class="btn primary">Filtrar</button>
+                <a class="btn outline-slate" href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='luminarias', view='operativo', lview='historial') }}">Limpiar</a>
+              </div>
+            </form>
+
+            {% if luminarias_history_rows and luminarias_history_rows|length > 0 %}
+            <table class="lum-op-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Movimiento</th>
+                  <th>Codigo</th>
+                  <th>Detalle</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in luminarias_history_rows %}
+                <tr>
+                  <td>{{ item.fecha_display or '—' }}</td>
+                  <td>{{ item.movimiento }}</td>
+                  <td><a class="lum-op-table-code lum-type-text lum-type-{{ item.tipo|lower }}" href="{{ item.point_url }}">{{ item.codigo_corto }}</a></td>
+                  <td>{{ item.detalle }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+            {% else %}
+            <p class="lum-op-note">No hay movimientos para los filtros actuales.</p>
+            {% endif %}
+          </div>
+          {% else %}
+          {% set default_ambiente = local or (luminarias_selected.ambiente_codigo if luminarias_selected else '') %}
+          <div class="lum-op-grid">
+            <div class="lum-op-card">
+              <div class="lum-op-card-head">
+                <div>
+                  <h3 class="lum-op-card-title">Tabla operativa</h3>
+                  <p class="lum-op-card-sub">Tabla central para editar, registrar recambio o dar de baja.</p>
+                </div>
+              </div>
+              {% if luminarias_operativo_table_rows and luminarias_operativo_table_rows|length > 0 %}
+              <table class="lum-op-table">
+                <thead>
+                  <tr>
+                    <th>Codigo</th>
+                    <th>Ambiente</th>
+                    <th>Marca actual</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in luminarias_operativo_table_rows %}
+                  <tr class="{% if luminarias_selected and luminarias_selected.id == row.id %}is-selected{% endif %}">
+                    <td><a class="lum-op-table-code lum-type-text lum-type-{{ row.tipo|lower }}" href="{{ row.detail_url }}">{{ row.codigo_corto }}</a></td>
+                    <td>{{ render_local_badge(sede.codigo, row.ambiente_codigo, row.ambiente_codigo)|safe }}</td>
+                    <td>{{ row.marca_actual or 'Sin registrar' }}</td>
+                    <td>
+                      <div class="lum-op-table-actions">
+                        <a class="lum-op-action-link" href="{{ row.detail_url }}#lum-edit">Editar</a>
+                        <span class="lum-op-action-sep">·</span>
+                        {% if row.supports_replacements %}
+                        <a class="lum-op-action-link" href="{{ row.detail_url }}#lum-recambio">Recambio</a>
+                        {% else %}
+                        <span class="lum-op-action-link is-muted">Recambio</span>
+                        {% endif %}
+                        <span class="lum-op-action-sep">·</span>
+                        <a class="lum-op-action-link" href="{{ row.detail_url }}#lum-baja">Baja</a>
+                      </div>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+              {% else %}
+              <div class="lum-op-empty">No hay puntos activos para este piso o filtro.</div>
+              {% endif %}
+            </div>
+
+            <div class="lum-op-stack--sidebar">
+              <div class="lum-op-card">
+                <div class="lum-op-card-head">
+                  <div>
+                    <h3 class="lum-op-card-title">Agregar luminaria</h3>
+                    <p class="lum-op-card-sub">El sistema genera el codigo y deja lista la luminaria para ubicarla en el plano.</p>
+                  </div>
+                </div>
+                <form method="post" action="{{ url_for('luminarias_punto_alta') }}">
+                  <input type="hidden" name="sede_codigo" value="{{ sede.codigo }}">
+                  <input type="hidden" name="piso_codigo" value="{{ piso }}">
+                  <div class="lum-op-form-grid">
+                    <div class="lum-op-field">
+                      <label>Ambiente</label>
+                      <select name="ambiente_codigo" required {% if not luminarias_ambiente_options %}disabled{% endif %}>
+                        <option value="">{% if luminarias_ambiente_options %}Seleccionar ambiente{% else %}Sin ambientes cargados{% endif %}</option>
+                        {% for ambiente in luminarias_ambiente_options %}
+                        <option value="{{ ambiente.codigo }}" {% if default_ambiente == ambiente.codigo %}selected{% endif %}>{{ ambiente.label }}</option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                    <div class="lum-op-field">
+                      <label>Tipo</label>
+                      <select name="tipo" required>
+                        <option value="TL">TL - Tubo LED</option>
+                        <option value="FO">FO - Foco</option>
+                        <option value="PN">PN - Panel</option>
+                        <option value="PT">PT - Puesto de trabajo</option>
+                      </select>
+                    </div>
+                    <div class="lum-op-field full">
+                      <label>Fecha</label>
+                      <input type="date" name="fecha_creacion" value="{{ fecha_dia }}">
+                    </div>
+                  </div>
+                  {% if not luminarias_ambiente_options %}
+                  <p class="lum-op-note">No hay ambientes cargados para este piso. El sistema solo permite elegir ambientes existentes.</p>
+                  {% endif %}
+                  <div class="lum-op-actions">
+                    <button type="submit" class="btn primary" {% if not luminarias_ambiente_options %}disabled{% endif %}>Agregar</button>
+                  </div>
+                </form>
+              </div>
+
+              <div class="lum-op-card">
+                {% if luminarias_selected %}
+                <div class="lum-op-detail-head">
+                  <div>
+                    <h3 class="lum-op-detail-code lum-type-text lum-type-{{ luminarias_selected.tipo|lower }}">{{ luminarias_selected.codigo_corto }}</h3>
+                  </div>
+                  <span class="lum-op-status {{ luminarias_selected.estado_tone }}">{{ luminarias_selected.estado }}</span>
+                </div>
+
+                <div class="lum-op-detail-list">
+                  <div class="lum-op-detail-line">
+                    <span class="lum-op-detail-label">Sede</span>
+                    <span class="lum-op-detail-text">{{ luminarias_selected.sede_codigo }}</span>
+                  </div>
+                  <div class="lum-op-detail-line">
+                    <span class="lum-op-detail-label">Piso</span>
+                    <span class="lum-op-detail-text">{{ luminarias_selected.piso_codigo }}</span>
+                  </div>
+                  <div class="lum-op-detail-line">
+                    <span class="lum-op-detail-label">Ambiente</span>
+                    <span class="lum-op-detail-text">{{ luminarias_selected.ambiente_codigo }}</span>
+                  </div>
+                  <div class="lum-op-detail-line">
+                    <span class="lum-op-detail-label">Tipo</span>
+                    <span class="lum-op-detail-text">{{ luminarias_selected.tipo_label }}</span>
+                  </div>
+                  <div class="lum-op-detail-line">
+                    <span class="lum-op-detail-label">Marca actual</span>
+                    <span class="lum-op-detail-text">{{ luminarias_selected.marca_actual or 'Sin registrar' }}</span>
+                  </div>
+                  <div class="lum-op-detail-line">
+                    <span class="lum-op-detail-label">Fecha</span>
+                    <span class="lum-op-detail-text">{{ luminarias_selected.fecha_colocacion_actual_display or luminarias_selected.fecha_creacion_display or 'Sin registrar' }}</span>
+                  </div>
+                  <div class="lum-op-detail-line">
+                    <span class="lum-op-detail-label">Recambios</span>
+                    <span class="lum-op-detail-text">{{ luminarias_selected.recambios_completados }}</span>
+                  </div>
+                </div>
+
+                <div class="lum-op-anchor-actions">
+                  {% if luminarias_selected.activo and luminarias_selected.supports_replacements %}
+                  <a class="btn primary" href="#lum-recambio">Registrar recambio</a>
+                  {% endif %}
+                  <a class="btn outline-slate" href="{{ url_for('sede_ficha', codigo=sede.codigo, piso=piso, local=local, tab='luminarias', view='operativo', lview='historial', lpoint=luminarias_selected.id, lh_codigo=luminarias_selected.codigo_corto) }}">Ver historial</a>
+                  {% if luminarias_selected.activo %}
+                  <button type="button" class="btn danger" data-lum-baja-open>Dar de baja</button>
+                  {% endif %}
+                </div>
+
+                {% if luminarias_selected.activo %}
+                <div class="lum-op-section" id="lum-edit">
+                  <h4 class="lum-op-section-title">Editar</h4>
+                  <form method="post" action="{{ url_for('luminarias_punto_editar', point_id=luminarias_selected.id) }}">
+                    <div class="lum-op-form-grid">
+                      <div class="lum-op-field">
+                        <label>Ambiente</label>
+                        <select name="ambiente_codigo" required>
+                          {% for ambiente in luminarias_ambiente_options %}
+                          <option value="{{ ambiente.codigo }}" {% if luminarias_selected.ambiente_codigo == ambiente.codigo %}selected{% endif %}>{{ ambiente.label }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                      <div class="lum-op-field">
+                        <label>Tipo</label>
+                        <select name="tipo" {% if not luminarias_selected.can_edit_type %}disabled{% endif %}>
+                          <option value="TL" {% if luminarias_selected.tipo == 'TL' %}selected{% endif %}>TL - Tubo LED</option>
+                          <option value="FO" {% if luminarias_selected.tipo == 'FO' %}selected{% endif %}>FO - Foco</option>
+                          <option value="PN" {% if luminarias_selected.tipo == 'PN' %}selected{% endif %}>PN - Panel</option>
+                          <option value="PT" {% if luminarias_selected.tipo == 'PT' %}selected{% endif %}>PT - Puesto de trabajo</option>
+                        </select>
+                        {% if not luminarias_selected.can_edit_type %}
+                        <p class="lum-op-note">El tipo queda fijo cuando el punto ya tiene historial.</p>
+                        <input type="hidden" name="tipo" value="{{ luminarias_selected.tipo }}">
+                        {% endif %}
+                      </div>
+                      <div class="lum-op-field full">
+                        <label>Fecha</label>
+                        <input type="date" name="fecha_creacion" value="{{ luminarias_selected.fecha_creacion or fecha_dia }}" required>
+                      </div>
+                    </div>
+                    <div class="lum-op-actions">
+                      <button type="submit" class="btn primary">Guardar cambios</button>
+                    </div>
+                  </form>
+                </div>
+                {% endif %}
+
+                {% if luminarias_selected.activo and luminarias_selected.supports_replacements %}
+                <div class="lum-op-section" id="lum-recambio">
+                  <h4 class="lum-op-section-title">Recambio</h4>
+                  <form method="post" action="{{ url_for('luminarias_punto_recambio', point_id=luminarias_selected.id) }}">
+                    <div class="lum-op-form-grid">
+                      <div class="lum-op-field">
+                        <label>Fecha</label>
+                        <input type="date" name="fecha" value="{{ fecha_dia }}" required>
+                      </div>
+                      <div class="lum-op-field">
+                        <label>Marca</label>
+                        <select name="marca" required data-lum-brand-select>
+                          <option value="">Seleccionar marca</option>
+                          {% for brand in luminarias_brand_options %}
+                          <option value="{{ brand }}">{{ brand }}</option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                      <div class="lum-op-field full" data-lum-brand-other hidden>
+                        <label>Nueva marca</label>
+                        <input type="text" name="marca_otro" placeholder="Ej. Interelec">
+                      </div>
+                      <div class="lum-op-field full">
+                        <label>Observacion opcional</label>
+                        <textarea name="observacion" placeholder="Opcional"></textarea>
+                      </div>
+                    </div>
+                    <div class="lum-op-actions">
+                      <button type="submit" class="btn primary">Registrar recambio</button>
+                    </div>
+                  </form>
+                </div>
+                {% elif luminarias_selected and not luminarias_selected.supports_replacements %}
+                <div class="lum-op-section">
+                  <h4 class="lum-op-section-title">Recambio</h4>
+                  <p class="lum-op-note">Los puestos de trabajo no registran recambios.</p>
+                </div>
+                {% endif %}
+
+                {% if luminarias_selected and luminarias_selected.activo %}
+                <div class="lum-op-section" id="lum-baja">
+                  <h4 class="lum-op-section-title">Dar de baja</h4>
+                  <form method="post" action="{{ url_for('luminarias_punto_baja', point_id=luminarias_selected.id) }}">
+                    <input type="hidden" name="fecha_baja" value="{{ fecha_dia }}">
+                    <div class="lum-op-confirm" id="lum-baja-confirm" hidden>
+                      <p><strong class="lum-type-text lum-type-{{ luminarias_selected.tipo|lower }}">¿Confirmás la baja de {{ luminarias_selected.codigo_corto }}?</strong></p>
+                      <p>Esta accion debe utilizarse unicamente cuando el punto de iluminacion dejo de existir fisicamente. El historial sera conservado.</p>
+                      <div class="lum-op-actions">
+                        <button type="button" class="btn outline-slate" data-lum-baja-cancel>Cancelar</button>
+                        <button type="submit" class="btn danger">Confirmar baja</button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+                {% endif %}
+                {% else %}
+                <div class="lum-op-card-head">
+                  <div>
+                    <h3 class="lum-op-card-title">Ficha operativa</h3>
+                    <p class="lum-op-card-sub">Selecciona un codigo desde la tabla o desde el plano.</p>
+                  </div>
+                </div>
+                <p class="lum-op-note">Al seleccionar una luminaria vas a poder editarla, registrar recambio o darla de baja.</p>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+        {% else %}
 
 
 
@@ -12286,9 +12711,7 @@
 
 
 
-
-
-
+        {% endif %}
         {% elif tab == 'sst_carteleria' %}
 
         <div class="panel-section-head panel-section-head-top">
