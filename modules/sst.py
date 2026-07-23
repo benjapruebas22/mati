@@ -277,7 +277,17 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         "operacion": {"key": "operacion", "short": "F3", "label": "Operacion", "title": "FASE 3 - OPERACION"},
     }
     SST_CALENDAR_REQUIRED_DOCS = ("DEC_351_79", "RGRL")
-    SST_CALENDAR_VISIBLE_TYPES = ("matafuegos", "desinfeccion", "luces", "carteleria", "visita")
+    SST_CALENDAR_VISIBLE_TYPES = (
+        "matafuegos",
+        "desinfeccion",
+        "luces",
+        "carteleria",
+        "visita",
+        "documentacion",
+        "planos",
+        "hallazgo",
+        "seguimiento",
+    )
     SST_CALENDAR_MATAFUEGOS_SCHEDULE = {
         "S01": {"due_date": "2026-09-01", "lot_label": "Lote 1", "lot_month": "Septiembre"},
         "S03": {"due_date": "2026-09-01", "lot_label": "Lote 1", "lot_month": "Septiembre"},
@@ -7205,6 +7215,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
     def sst_implementacion_tablero():
         args = request.args.to_dict(flat=True)
         args["vista"] = "implementacion"
+        if not str(args.get("fase") or "").strip():
+            args["fase"] = "implementacion"
         return redirect(url_for("sst_calendario_operativo", **args))
 
     @app.route("/sst/calendario-operativo", methods=["GET"], endpoint="sst_calendario_operativo")
@@ -7227,6 +7239,12 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 selected_month = max(0, min(12, int(selected_month_raw)))
             except Exception:
                 selected_month = 0
+        phase_filter = (request.args.get("fase") or "").strip().lower()
+        if phase_filter not in {"diagnostico", "implementacion", "operacion"}:
+            phase_filter = ""
+        quick_filter = (request.args.get("quick") or "").strip().lower()
+        if quick_filter not in {"pendientes", "vencidos", "finalizados"}:
+            quick_filter = ""
         filters = {
             "month": selected_month,
             "region": (request.args.get("region") or "").strip(),
@@ -7234,11 +7252,46 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             "tipo": (request.args.get("tipo") or "").strip().lower(),
             "estado": (request.args.get("estado") or "").strip().lower(),
             "responsable": (request.args.get("responsable") or "").strip(),
+            "fase": phase_filter,
+            "quick": quick_filter,
         }
         context_raw = _sst_calendar_collect_events(con, selected_year)
         con.close()
+        plan_context = build_sgsst_plan_implementation_context(view_mode="general", selected_sede=filters["sede"])
 
-        all_events = context_raw["events"]
+        def _calendar_page_url(**overrides):
+            params = {
+                "vista": (view_mode if view_mode != "general" else ""),
+                "year": selected_year,
+                "month": selected_month,
+                "region": filters["region"],
+                "sede": filters["sede"],
+                "tipo": filters["tipo"],
+                "estado": filters["estado"],
+                "responsable": filters["responsable"],
+                "fase": filters["fase"],
+                "quick": filters["quick"],
+            }
+            params.update(overrides)
+            clean = {}
+            for key, value in params.items():
+                if value in ("", None):
+                    continue
+                if key == "month":
+                    try:
+                        if int(value) <= 0:
+                            continue
+                    except Exception:
+                        continue
+                clean[key] = value
+            return url_for("sst_calendario_operativo", **clean)
+
+        for item in (plan_context.get("suggestions") or []):
+            sede_codigo = str(item.get("sede_codigo") or "").strip().upper()
+            if sede_codigo:
+                item["context_url"] = _calendar_page_url(sede=sede_codigo) + "#sstCalendarContext"
+
+        all_events = list(context_raw["events"]) + _sst_calendar_build_plan_events(plan_context, selected_year, context_raw["today"])
         filtered_events = _sst_calendar_filter_events(all_events, filters)
         visible_events = _sst_calendar_visible_events(filtered_events)
         focus_month = selected_month or (context_raw["today"].month if selected_year == context_raw["today"].year else 1)
@@ -7262,6 +7315,10 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             {"value": "luces", "label": "Luces de emergencia", "short": "LUC", "icon": "\U0001F6A8"},
             {"value": "carteleria", "label": "Carteleria", "short": "CAR", "icon": "\U0001F6AA"},
             {"value": "visita", "label": "Visitas ART", "short": "VIS", "icon": "\U0001F477"},
+            {"value": "documentacion", "label": "Documentacion", "short": "DOC", "icon": "\U0001F4C4"},
+            {"value": "planos", "label": "Evacuacion", "short": "PE", "icon": "\U0001F6A8"},
+            {"value": "hallazgo", "label": "Hallazgos", "short": "HAL", "icon": "\u26A0"},
+            {"value": "seguimiento", "label": "Acciones", "short": "SEG", "icon": "\U0001F4CC"},
         ]
         state_options = [
             {"value": key, "label": meta["label"], "class": meta["class"], "icon": meta.get("icon", "")}
@@ -7311,6 +7368,82 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             (sede for sede in context_raw["sedes"] if sede["codigo"] == filters["sede"]),
             None,
         )
+        selected_sede_row = plan_context.get("selected_sede_row")
+        selected_sede_events = []
+        if selected_sede_row:
+            for event in visible_events:
+                if str(event.get("sede_codigo") or "").strip().upper() != selected_sede_row["codigo"]:
+                    continue
+                if event.get("is_suggestion"):
+                    continue
+                selected_sede_events.append({
+                    "title": event.get("title") or event.get("type_label") or "Evento SG-SST",
+                    "detail": event.get("detail") or "",
+                    "date_label": _sst_calendar_short_date(event.get("fecha_evento")),
+                    "sort_date": event.get("fecha_evento") or "",
+                    "phase_title": event.get("phase_title") or "",
+                    "type_icon": event.get("type_icon") or "",
+                    "state_label": event.get("state_label") or "",
+                    "state_class": event.get("state_class") or "muted",
+                    "responsible": event.get("responsible") or "",
+                    "url_detail": event.get("url_detail") or "",
+                })
+            selected_sede_events.sort(key=lambda item: (item["sort_date"] or "9999-12-31", item["title"]))
+        selected_sede_suggestions = []
+        if selected_sede_row:
+            selected_sede_suggestions = [
+                item
+                for item in (plan_context.get("suggestions") or [])
+                if str(item.get("sede_codigo") or "").strip().upper() == selected_sede_row["codigo"]
+            ]
+        selected_sede_phase_cards = []
+        if selected_sede_row:
+            selected_sede_phase_cards = [
+                {
+                    "tone": "tone-blue",
+                    "kicker": "Fase 1",
+                    "title": "Diagnostico",
+                    "lines": [
+                        selected_sede_row.get("diagnostico_text") or "Sin relevamiento consolidado",
+                        f"Hallazgos abiertos: {selected_sede_row.get('hallazgos_abiertos', 0)}",
+                    ],
+                },
+                {
+                    "tone": "tone-warn",
+                    "kicker": "Fase 2",
+                    "title": "Implementacion",
+                    "lines": [
+                        selected_sede_row.get("implementacion_text") or "Sin acciones cargadas",
+                        f"Acciones abiertas: {selected_sede_row.get('acciones_abiertas', 0)}",
+                    ],
+                },
+                {
+                    "tone": "tone-ok",
+                    "kicker": "Fase 3",
+                    "title": "Operacion y control",
+                    "lines": [
+                        selected_sede_row.get("operacion_text") or "Sin controles activos",
+                        ("Proximo control: con alertas" if int(selected_sede_row.get("periodic_overdue") or 0) > 0 else "Proximo control: en fecha"),
+                    ],
+                },
+            ]
+
+        for row in matrix_rows:
+            row["sede_context_url"] = _calendar_page_url(sede=row["sede"]["codigo"]) + "#sstCalendarContext"
+        for row in mobile_rows:
+            row["sede_context_url"] = _calendar_page_url(sede=row["sede_codigo"]) + "#sstCalendarContext"
+
+        quick_phase_filters = [
+            {"label": "Todas", "active": not filters["fase"], "url": _calendar_page_url(fase="")},
+            {"label": "\U0001F4CB Diagnostico", "active": filters["fase"] == "diagnostico", "url": _calendar_page_url(fase="diagnostico")},
+            {"label": "\U0001F527 Implementacion", "active": filters["fase"] == "implementacion", "url": _calendar_page_url(fase="implementacion")},
+            {"label": "\U0001F501 Operacion", "active": filters["fase"] == "operacion", "url": _calendar_page_url(fase="operacion")},
+        ]
+        quick_state_filters = [
+            {"label": "\u26A0\uFE0F Pendientes", "active": filters["quick"] == "pendientes", "url": _calendar_page_url(quick="pendientes")},
+            {"label": "\U0001F534 Vencidos", "active": filters["quick"] == "vencidos", "url": _calendar_page_url(quick="vencidos")},
+            {"label": "\u2705 Finalizados", "active": filters["quick"] == "finalizados", "url": _calendar_page_url(quick="finalizados")},
+        ]
 
         return render_template(
             "sst_calendario_operativo.html",
@@ -7327,6 +7460,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     "tipo": filters["tipo"],
                     "estado": filters["estado"],
                     "responsable": filters["responsable"],
+                    "fase": filters["fase"],
+                    "quick": filters["quick"],
                 },
             ),
             selected_year=selected_year,
@@ -7338,12 +7473,21 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             matrix_rows=matrix_rows,
             matrix_payload=matrix_payload,
             mobile_rows=mobile_rows,
+            quick_phase_filters=quick_phase_filters,
+            quick_state_filters=quick_state_filters,
             source_counts=source_counts,
             matafuegos_overview=matafuegos_overview,
             matafuegos_visible=matafuegos_visible,
             matafuegos_next=matafuegos_next,
             sedes=context_raw["sedes"],
             selected_sede=selected_sede,
+            selected_sede_row=selected_sede_row,
+            selected_sede_events=selected_sede_events[:10],
+            selected_sede_suggestions=selected_sede_suggestions[:6],
+            selected_sede_phase_cards=selected_sede_phase_cards,
+            plan_actions_url=url_for("sst_plan_implementacion", vista="acciones", sede=(filters["sede"] or None)),
+            library_url=url_for("sgsst_documentacion_home"),
+            seguimiento_url=url_for("sst_plan"),
             region_options=region_options,
             responsable_options=responsable_options,
             type_options=type_options,
@@ -11702,33 +11846,41 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             if not visits:
                 suggestions.append({
                     "sede_codigo": codigo,
+                    "sede_nombre": sede.get("nombre") or codigo,
                     "module": "Visitas ART",
                     "reason": "Sin visita registrada en la sede.",
                     "action_url": url_for("sst_plan_implementacion", vista="acciones", form="accion", prefill_sede=codigo, prefill_modulo="Visitas ART", prefill_titulo=f"Programar visita ART en {codigo}"),
+                    "origin_url": url_for("sst_visitas", sede=codigo, open_sede=codigo),
                     "action_label": "Crear accion",
                 })
             if cart and int(cart.get("faltantes") or 0) > 0:
                 suggestions.append({
                     "sede_codigo": codigo,
+                    "sede_nombre": sede.get("nombre") or codigo,
                     "module": "Carteleria",
                     "reason": f"Faltan {int(cart.get('faltantes') or 0)} cartel(es) por regularizar.",
                     "action_url": url_for("sst_plan_implementacion", vista="acciones", form="accion", prefill_sede=codigo, prefill_modulo="Carteleria", prefill_titulo=f"Completar carteleria en {codigo}"),
+                    "origin_url": url_for("sst_carteleria_home", sede=codigo, open_sede=codigo),
                     "action_label": "Crear accion",
                 })
             if luces and (int(luces.get("faltantes") or 0) > 0 or int(luces.get("cantidad_fuera_servicio") or 0) > 0):
                 suggestions.append({
                     "sede_codigo": codigo,
+                    "sede_nombre": sede.get("nombre") or codigo,
                     "module": "Luces",
                     "reason": f"{int(luces.get('faltantes') or 0)} faltante(s) y {int(luces.get('cantidad_fuera_servicio') or 0)} fuera de servicio.",
                     "action_url": url_for("sst_plan_implementacion", vista="acciones", form="accion", prefill_sede=codigo, prefill_modulo="Luces de emergencia", prefill_titulo=f"Regularizar luces en {codigo}"),
+                    "origin_url": url_for("sst_luces_home", sede=codigo, open_sede=codigo),
                     "action_label": "Crear accion",
                 })
             if mata["vencidos"] > 0:
                 suggestions.append({
                     "sede_codigo": codigo,
+                    "sede_nombre": sede.get("nombre") or codigo,
                     "module": "Matafuegos",
                     "reason": f"{mata['vencidos']} matafuego(s) vencido(s).",
                     "action_url": url_for("sst_plan_implementacion", vista="acciones", form="accion", prefill_sede=codigo, prefill_modulo="Matafuegos", prefill_titulo=f"Regularizar matafuegos vencidos en {codigo}"),
+                    "origin_url": url_for("matafuegos_home", sede=codigo, open_sede=codigo),
                     "action_label": "Crear accion",
                 })
 
@@ -12704,12 +12856,17 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
 
     # The lifecycle phase is a visual derivation of the module state; it is never stored manually.
     def _sst_calendar_phase_for_event(event):
+        phase_hint = str(event.get("phase_hint") or "").strip().lower()
+        if phase_hint in SST_CALENDAR_PHASE_META:
+            return _sst_calendar_phase_meta(phase_hint)
         type_key = str(event.get("type_key") or "").strip().lower()
         source_type = str(event.get("source_type") or "").strip().lower()
         module_state_code = _sst_clean_upper(event.get("module_state_code") or event.get("state_code"))
 
-        if type_key in {"visita", "documentacion", "seguimiento", "hallazgo"}:
-            return None
+        if type_key in {"visita", "documentacion", "hallazgo", "planos"}:
+            return _sst_calendar_phase_meta("diagnostico")
+        if type_key == "seguimiento":
+            return _sst_calendar_phase_meta("implementacion")
         if type_key in {"matafuegos", "desinfeccion"}:
             return _sst_calendar_phase_meta("operacion")
         if source_type == "sst_control" and type_key in {"carteleria", "luces"}:
@@ -12729,6 +12886,16 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             if module_state_code in {"COMPLETO", "MANTENIMIENTO"}:
                 return _sst_calendar_phase_meta("operacion")
         return None
+
+    def _sst_calendar_phase_rank(phase_key):
+        phase = str(phase_key or "").strip().lower()
+        if phase == "diagnostico":
+            return 10
+        if phase == "implementacion":
+            return 20
+        if phase == "operacion":
+            return 30
+        return 90
 
     def _sst_calendar_due_state(target_date, today_ref, alert_days=45):
         if not target_date:
@@ -12842,6 +13009,200 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         if not parsed:
             return ""
         return parsed.strftime("%d/%m/%Y")
+
+    def _sst_calendar_plan_module_type_key(module_name):
+        module_txt = str(module_name or "").strip().lower()
+        if not module_txt:
+            return "seguimiento"
+        if "luz" in module_txt:
+            return "luces"
+        if "cartel" in module_txt or "senal" in module_txt or "señal" in module_txt:
+            return "carteleria"
+        if "mataf" in module_txt:
+            return "matafuegos"
+        if "desinf" in module_txt:
+            return "desinfeccion"
+        if "visit" in module_txt or " art" in f" {module_txt} ":
+            return "visita"
+        if "doc" in module_txt:
+            return "documentacion"
+        if "evac" in module_txt or "plano" in module_txt:
+            return "planos"
+        return "seguimiento"
+
+    def _sst_calendar_plan_action_state_key(state_label, due_date, today_ref):
+        state = str(state_label or "").strip().lower()
+        if state in {"cerrada", "cerrado", "verificada", "verificado", "implementada", "implementado", "completada", "completado"}:
+            return "cumplido"
+        if due_date and due_date < today_ref and state not in {"cancelada", "cancelado", "no aplica"}:
+            return "vencido"
+        if state in {"programada", "programado"}:
+            return _sst_calendar_open_state(due_date, today_ref, alert_days=30)
+        if state in {"en ejecucion", "en ejecución", "en gestion", "en gestión", "en analisis", "en análisis", "bloqueada", "bloqueado"}:
+            return "en_seguimiento"
+        if state in {"cancelada", "cancelado"}:
+            return "cumplido"
+        return _sst_calendar_open_state(due_date, today_ref, alert_days=30)
+
+    def _sst_calendar_plan_hallazgo_state_key(state_label):
+        state = str(state_label or "").strip().lower()
+        if state in {"resuelto", "cerrado", "cerrada", "no aplica"}:
+            return "cumplido"
+        if state in {"confirmado", "en analisis", "en análisis"}:
+            return "en_seguimiento"
+        return "pendiente"
+
+    def _sst_calendar_force_phase(event, phase_key):
+        phase_meta = _sst_calendar_phase_meta(phase_key)
+        event["phase_hint"] = str(phase_key or "").strip().lower()
+        event["phase_key"] = phase_meta["key"] if phase_meta else ""
+        event["phase_short"] = phase_meta["short"] if phase_meta else ""
+        event["phase_label"] = phase_meta["label"] if phase_meta else ""
+        event["phase_title"] = phase_meta["title"] if phase_meta else ""
+        return event
+
+    def _sst_calendar_pick_event_date(anchor_date, created_date, selected_year, today_ref, keep_current_open=False):
+        year_start = date(selected_year, 1, 1)
+        if anchor_date and anchor_date.year == selected_year:
+            return anchor_date
+        if created_date and created_date.year == selected_year:
+            return created_date
+        if keep_current_open and selected_year == today_ref.year:
+            if anchor_date and anchor_date < year_start:
+                return today_ref
+            if created_date and created_date < year_start:
+                return today_ref
+        if not anchor_date and not created_date and selected_year == today_ref.year:
+            return today_ref
+        return None
+
+    def _sst_calendar_build_plan_events(plan_context, selected_year, today_ref):
+        events = []
+
+        for item in (plan_context.get("hallazgos") or []):
+            if str(item.get("source_kind") or "").strip().lower() != "manual":
+                continue
+            sede_codigo = str(item.get("sede_codigo") or "").strip().upper()
+            if not sede_codigo:
+                continue
+            detected_date = _sst_calendar_parse_date(item.get("fecha_deteccion"))
+            created_date = _sst_calendar_parse_date(item.get("created_at"))
+            event_date = _sst_calendar_pick_event_date(
+                detected_date,
+                created_date,
+                selected_year,
+                today_ref,
+                keep_current_open=not bool(item.get("is_closed")),
+            )
+            if not event_date:
+                continue
+            detail_parts = [
+                str(item.get("descripcion") or "").strip(),
+                str(item.get("categoria") or "").strip(),
+                str(item.get("fuente") or "").strip(),
+            ]
+            event = _sst_calendar_build_event(
+                source_id=str(item.get("id") or ""),
+                source_type="sgsst_plan_hallazgo",
+                sede_codigo=sede_codigo,
+                sede_nombre=str(item.get("sede_nombre") or "").strip(),
+                region_label="",
+                event_date=event_date,
+                type_key="hallazgo",
+                title=str(item.get("titulo") or "").strip() or "Hallazgo SG-SST",
+                detail=" · ".join(part for part in detail_parts if part) or "Hallazgo detectado en la sede.",
+                state_key=_sst_calendar_plan_hallazgo_state_key(item.get("state_label")),
+                responsible=str(item.get("detectado_por") or "").strip(),
+                url_detail=item.get("detail_url") or url_for("sst_plan_implementacion", vista="acciones", sede=sede_codigo),
+                action_label="Abrir hallazgo",
+                active=not bool(item.get("is_closed")),
+                extra={
+                    "phase_hint": "diagnostico",
+                    "module_origin": str(item.get("modulo_origen") or "").strip(),
+                },
+            )
+            events.append(_sst_calendar_force_phase(event, "diagnostico"))
+
+        for item in (plan_context.get("acciones") or []):
+            if str(item.get("source_kind") or "").strip().lower() not in {"manual", "objetivo"}:
+                continue
+            sede_codigo = str(item.get("sede_codigo") or "").strip().upper()
+            if not sede_codigo:
+                continue
+            due_date = _sst_calendar_parse_date(item.get("fecha_objetivo"))
+            created_date = _sst_calendar_parse_date(item.get("fecha_creacion"))
+            state_label = item.get("state_label") or ""
+            is_closed = _sgsst_plan_is_action_closed(state_label)
+            event_date = _sst_calendar_pick_event_date(
+                due_date,
+                created_date,
+                selected_year,
+                today_ref,
+                keep_current_open=not is_closed,
+            )
+            if not event_date:
+                continue
+            module_origin = str(item.get("modulo_origen") or "").strip()
+            detail_parts = [
+                str(item.get("accion_requerida") or "").strip(),
+                str(item.get("hallazgo_title") or "").strip(),
+                f"Prioridad: {str(item.get('priority_label') or '').strip()}" if str(item.get("priority_label") or "").strip() else "",
+            ]
+            event = _sst_calendar_build_event(
+                source_id=str(item.get("id") or ""),
+                source_type="sgsst_plan_accion",
+                sede_codigo=sede_codigo,
+                sede_nombre=str(item.get("sede_nombre") or "").strip(),
+                region_label="",
+                event_date=event_date,
+                type_key=_sst_calendar_plan_module_type_key(module_origin),
+                title=str(item.get("titulo") or "").strip() or "Accion SG-SST",
+                detail=" · ".join(part for part in detail_parts if part) or "Accion del plan SG-SST.",
+                state_key=_sst_calendar_plan_action_state_key(state_label, due_date or created_date or event_date, today_ref),
+                responsible=str(item.get("responsable") or item.get("area_responsable") or "").strip(),
+                url_detail=item.get("detail_url") or url_for("sst_plan_implementacion", vista="acciones", sede=sede_codigo),
+                action_label="Abrir accion",
+                active=not is_closed,
+                extra={
+                    "phase_hint": "implementacion",
+                    "module_origin": module_origin,
+                    "action_state_label": state_label,
+                },
+            )
+            events.append(_sst_calendar_force_phase(event, "implementacion"))
+
+        if selected_year == today_ref.year:
+            for item in (plan_context.get("suggestions") or []):
+                sede_codigo = str(item.get("sede_codigo") or "").strip().upper()
+                if not sede_codigo:
+                    continue
+                type_key = _sst_calendar_plan_module_type_key(item.get("module"))
+                phase_key = "diagnostico" if type_key in {"visita", "documentacion", "planos", "hallazgo"} else "implementacion"
+                event = _sst_calendar_build_event(
+                    source_id=f"suggestion-{sede_codigo}-{str(item.get('module') or '').strip().lower()}",
+                    source_type="sgsst_plan_suggestion",
+                    sede_codigo=sede_codigo,
+                    sede_nombre=str(item.get("sede_nombre") or "").strip(),
+                    region_label="",
+                    event_date=today_ref,
+                    type_key=type_key,
+                    title=f"Sugerencia: {str(item.get('module') or '').strip() or 'Trabajo detectado'}",
+                    detail=str(item.get("reason") or "").strip() or "Trabajo detectado por el sistema.",
+                    state_key="pendiente",
+                    responsible="Sistema SG-SST",
+                    url_detail=item.get("context_url") or item.get("origin_url") or item.get("action_url") or "",
+                    action_label="Revisar sugerencia",
+                    active=True,
+                    extra={
+                        "phase_hint": phase_key,
+                        "is_suggestion": True,
+                        "suggestion_label": "Sugerencia",
+                        "module_origin": str(item.get("module") or "").strip(),
+                    },
+                )
+                events.append(_sst_calendar_force_phase(event, phase_key))
+
+        return events
 
     def _sst_calendar_count_text(count_value, singular, plural):
         count = max(0, int(count_value or 0))
@@ -13777,6 +14138,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         type_filter = str(filters.get("tipo") or "").strip().lower()
         state_filter = str(filters.get("estado") or "").strip().lower()
         responsable_filter = str(filters.get("responsable") or "").strip().lower()
+        phase_filter = str(filters.get("fase") or "").strip().lower()
+        quick_filter = str(filters.get("quick") or "").strip().lower()
         month_filter = int(filters.get("month") or 0)
         for event in events:
             if month_filter and int(event["month"]) != month_filter:
@@ -13790,6 +14153,15 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             if state_filter and state_filter != str(event.get("state_key", "") or "").strip().lower():
                 continue
             if responsable_filter and responsable_filter != str(event.get("responsible", "") or "").strip().lower():
+                continue
+            if phase_filter and phase_filter != str(event.get("phase_key", "") or "").strip().lower():
+                continue
+            state_key = str(event.get("state_key", "") or "").strip().lower()
+            if quick_filter == "pendientes" and state_key not in {"pendiente", "proximo", "vencido", "en_seguimiento", "sin_datos"}:
+                continue
+            if quick_filter == "vencidos" and state_key != "vencido":
+                continue
+            if quick_filter == "finalizados" and state_key != "cumplido":
                 continue
             filtered.append(event)
         return filtered
@@ -13818,6 +14190,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                     cells.get((sede["codigo"], month_number), []),
                     key=lambda item: (
                         0 if item["type_key"] == "matafuegos" else 1,
+                        _sst_calendar_phase_rank(item.get("phase_key")),
+                        1 if item.get("is_suggestion") else 0,
                         -int(item["state_rank"]),
                         item["day"],
                         item["type_label"],
@@ -13826,8 +14200,14 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 )
                 type_groups = {}
                 for event in cell_events:
-                    group = type_groups.setdefault(event["type_key"], {
-                        "type_key": event["type_key"],
+                    group_key = "::".join([
+                        str(event.get("type_key") or "").strip().lower(),
+                        str(event.get("phase_key") or "sin_fase").strip().lower(),
+                        ("suggestion" if event.get("is_suggestion") else "normal"),
+                    ])
+                    group = type_groups.setdefault(group_key, {
+                        "type_key": group_key,
+                        "base_type_key": event["type_key"],
                         "type_label": event["type_label"],
                         "type_short": event["type_short"],
                         "type_icon": event.get("type_icon", ""),
@@ -13848,10 +14228,13 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                         "phase_short": event.get("phase_short", ""),
                         "phase_label": event.get("phase_label", ""),
                         "phase_title": event.get("phase_title", ""),
+                        "phase_rank": _sst_calendar_phase_rank(event.get("phase_key")),
                         "sede_codigo": sede["codigo"],
                         "sede_nombre": sede["nombre"],
                         "month": month_number,
                         "month_label": month_label,
+                        "is_suggestion": bool(event.get("is_suggestion")),
+                        "suggestion_label": event.get("suggestion_label", ""),
                         "events": [],
                     })
                     group["count"] += int(event.get("units", 1) or 1)
@@ -13880,7 +14263,9 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 indicators = sorted(
                     type_groups.values(),
                     key=lambda item: (
-                        0 if item["type_key"] == "matafuegos" else 1,
+                        0 if item["base_type_key"] == "matafuegos" else 1,
+                        int(item.get("phase_rank") or 90),
+                        1 if item.get("is_suggestion") else 0,
                         -int(item["state_rank"]),
                         -int(item["count"]),
                         item["type_label"],
@@ -13889,7 +14274,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 for indicator in indicators:
                     indicator["badge_count"] = (
                         int(indicator["count"])
-                        if (indicator["events_count"] > 1 or indicator["type_key"] == "matafuegos") and int(indicator["count"]) > 1
+                        if (indicator["events_count"] > 1 or indicator["base_type_key"] == "matafuegos") and int(indicator["count"]) > 1
                         else 0
                     )
                     indicator["tooltip_lines"] = _sst_calendar_group_tooltip_lines(indicator)

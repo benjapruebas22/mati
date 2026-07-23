@@ -1296,6 +1296,78 @@
   font-weight: 700;
 }
 
+.sst-calendar-head-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.sst-calendar-mini-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  border: 1px solid #dce3ec;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #445166;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.sst-calendar-mini-chip.is-warn {
+  background: #fff6df;
+  border-color: #f1d8a6;
+  color: #a06100;
+}
+
+.sst-calendar-mini-chip.is-danger {
+  background: #fff0f0;
+  border-color: #f2caca;
+  color: #b42318;
+}
+
+.sst-calendar-quickbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 10px;
+  border: 1px solid #dfe4ec;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.sst-calendar-quickgroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sst-calendar-quickchip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid #d7dde7;
+  border-radius: 999px;
+  background: #fff;
+  color: #455367;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+  transition: background .16s ease, border-color .16s ease, color .16s ease;
+}
+
+.sst-calendar-quickchip:hover,
+.sst-calendar-quickchip.is-active {
+  border-color: #c6d3e3;
+  background: #eef4ff;
+  color: #2556a8;
+}
+
 .sst-calendar-toolbar-inline {
   align-items: center;
   gap: 8px;
@@ -1733,6 +1805,195 @@
   color: #667085;
 }
 
+.sst-cal-group-link-glyph.is-suggestion {
+  border-style: dashed;
+  background: #f6f9ff;
+  border-color: rgba(83, 110, 170, .28);
+}
+
+.sst-calendar-context-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid #dfe4ec;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.sst-calendar-context-head,
+.sst-calendar-context-block-head,
+.sst-calendar-module-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sst-calendar-context-head h2,
+.sst-calendar-context-block-head h3 {
+  margin: 0;
+  color: #182336;
+}
+
+.sst-calendar-context-actions,
+.sst-calendar-suggestion-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sst-calendar-phase-summary,
+.sst-calendar-module-grid,
+.sst-calendar-suggestion-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.sst-calendar-phase-summary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.sst-calendar-phase-card,
+.sst-calendar-module-card,
+.sst-calendar-suggestion-card {
+  border: 1px solid #dfe4ec;
+  border-radius: 12px;
+  background: #fff;
+  padding: 12px;
+}
+
+.sst-calendar-phase-card {
+  display: grid;
+  gap: 5px;
+}
+
+.sst-calendar-phase-card small,
+.sst-calendar-phase-card span,
+.sst-calendar-record-copy span,
+.sst-calendar-record-meta small,
+.sst-calendar-module-card p,
+.sst-calendar-module-card small,
+.sst-calendar-suggestion-card p {
+  color: #667085;
+}
+
+.sst-calendar-phase-card strong,
+.sst-calendar-module-card strong,
+.sst-calendar-suggestion-card strong,
+.sst-calendar-record-copy strong {
+  color: #182336;
+}
+
+.sst-calendar-phase-card.tone-blue {
+  background: #f5f9ff;
+}
+
+.sst-calendar-phase-card.tone-warn {
+  background: #fff9ee;
+}
+
+.sst-calendar-phase-card.tone-ok {
+  background: #f3fbf6;
+}
+
+.sst-calendar-module-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.sst-calendar-module-card {
+  display: grid;
+  gap: 8px;
+}
+
+.sst-calendar-inline-link {
+  color: #2556a8;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.sst-calendar-inline-link:hover {
+  text-decoration: underline;
+}
+
+.sst-calendar-context-block {
+  display: grid;
+  gap: 10px;
+}
+
+.sst-calendar-suggestion-grid {
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+}
+
+.sst-calendar-suggestion-card {
+  border-style: dashed;
+  background: #f8fbff;
+}
+
+.sst-calendar-suggestion-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  width: fit-content;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #eef4ff;
+  color: #2556a8;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.sst-calendar-records {
+  display: grid;
+  gap: 8px;
+}
+
+.sst-calendar-record-item {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px;
+  border: 1px solid #e3e8ef;
+  border-radius: 12px;
+  background: #fbfcfe;
+  text-decoration: none;
+}
+
+.sst-calendar-record-item:hover {
+  border-color: #cfd9e6;
+  background: #fff;
+}
+
+.sst-calendar-record-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #eef4ff;
+  font-size: 18px;
+}
+
+.sst-calendar-record-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.sst-calendar-record-copy small {
+  line-height: 1.4;
+}
+
+.sst-calendar-record-meta {
+  display: grid;
+  gap: 5px;
+  justify-items: end;
+  text-align: right;
+}
+
 .sst-calendar-page-ops .sst-cal-empty {
   width: 5px;
   height: 5px;
@@ -1803,6 +2064,17 @@
   .sst-calendar-page-ops .sst-calendar-toolbar-main {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+  .sst-calendar-phase-summary {
+    grid-template-columns: 1fr;
+  }
+  .sst-calendar-record-item {
+    grid-template-columns: 34px minmax(0, 1fr);
+  }
+  .sst-calendar-record-meta {
+    grid-column: 2;
+    justify-items: start;
+    text-align: left;
+  }
   .sst-calendar-legend-row {
     align-items: flex-start;
     flex-direction: column;
@@ -1835,6 +2107,15 @@
   .sst-calendar-tooltip { display: none; }
   .sst-calendar-page-ops .sst-calendar-toolbar-main {
     grid-template-columns: 1fr;
+  }
+  .sst-calendar-quickbar,
+  .sst-calendar-context-head,
+  .sst-calendar-context-block-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .sst-calendar-context-actions {
+    width: 100%;
   }
   .sst-calendar-page-ops .sst-calendar-matrix-shell {
     display: none;

@@ -129,7 +129,7 @@
           {% endfor %}
         </div>
         <div class="sp-phase-checks">
-          {% for item in phase.items %}
+          {% for item in phase["items"] %}
           <div class="sp-phase-check {% if item.done %}is-done{% endif %}">
             <span class="sp-check-mark">{% if item.done %}OK{% else %}--{% endif %}</span>
             <div>
@@ -502,7 +502,7 @@
       <div class="sp-card-head">
         <div>
           <p class="sp-kicker">Sugerencias controladas</p>
-          <h3>Disparadores detectados en los modulos</h3>
+          <h3>Trabajo detectado por el sistema</h3>
         </div>
       </div>
       <div class="sp-suggest-grid">
@@ -511,7 +511,12 @@
           <span class="sp-chip">{{ item.sede_codigo }}</span>
           <strong>{{ item.module }}</strong>
           <p>{{ item.reason }}</p>
-          <a class="sp-link" href="{{ item.action_url }}">{{ item.action_label }}</a>
+          <div class="sp-list-meta">
+            <a class="sp-link" href="{{ item.action_url }}">{{ item.action_label }}</a>
+            {% if item.origin_url %}
+            <a class="sp-link" href="{{ item.origin_url }}">Abrir modulo</a>
+            {% endif %}
+          </div>
         </div>
         {% endfor %}
       </div>

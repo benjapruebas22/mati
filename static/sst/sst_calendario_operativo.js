@@ -88,19 +88,30 @@
 
   function buildTooltipLines(group) {
     const lines = [];
+    const event = firstEvent(group);
     if (Array.isArray(group.tooltip_lines)) {
       group.tooltip_lines.forEach((line) => pushIf(lines, line));
     } else {
       pushIf(lines, group.title || '');
       pushIf(lines, group.detail || '');
     }
-    lines.push('Click para abrir.');
+    pushIf(lines, group.state_label ? `Estado: ${group.state_label}` : '');
+    pushIf(lines, group.responsible ? `Responsable: ${group.responsible}` : '');
+    pushIf(lines, group.fecha_evento ? `Fecha: ${formatDate(group.fecha_evento)}` : '');
+    if (event) {
+      pushIf(lines, event.responsible ? `Responsable: ${event.responsible}` : '');
+      pushIf(lines, event.fecha_evento ? `Fecha: ${formatDate(event.fecha_evento)}` : '');
+    }
+    if (group.is_suggestion) {
+      lines.push('Trabajo detectado por el sistema.');
+    }
+    lines.push(group.action_label || 'Click para abrir.');
     return lines;
   }
 
   function renderTooltip(group) {
     const lines = buildTooltipLines(group);
-    const label = group.type_key === 'visita' ? 'Visita' : (group.type_label || 'Evento');
+    const label = group.base_type_key === 'visita' ? 'Visita' : (group.type_label || 'Evento');
     const phaseLine = group.phase_title
       ? `<span class="sst-calendar-tooltip-phase">${escapeHtml(group.phase_title)}</span>`
       : '';
