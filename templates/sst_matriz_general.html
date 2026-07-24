@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block main_class %}container-wide{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-24-01') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sgi/operativa_nav.css', v='2026-07-19-02') }}">
+{% endblock %}
+
+{% block content %}
+<section class="sst-operativo sst-ui sst-matrix-page">
+  {% include '_sst_operational_nav.html' %}
+
+  <header class="sst-op-header">
+    <div>
+      <p class="sst-op-eyebrow">Matriz general SG-SST</p>
+      <h1>Matriz general SG-SST</h1>
+      <p class="sst-calendar-heading-copy">Lectura transversal por sede y componente. La matriz resume fase, paso actual, avance y pendientes sin duplicar los datos fisicos de cada modulo.</p>
+    </div>
+    <div class="sst-op-actions">
+      <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo') }}">Calendario</a>
+      <a class="sst-op-btn" href="{{ url_for('sst_plan_implementacion', vista='acciones') }}">Acciones</a>
+      <a class="sst-op-btn" href="{{ url_for('sst_plan_implementacion') }}">Plan</a>
+    </div>
+  </header>
+
+  <section class="sst-matrix-summary-grid">
+    {% for card in summary_cards %}
+    <article class="sst-op-card sst-matrix-summary-card tone-{{ card.tone }}">
+      <small>{{ card.label }}</small>
+      <strong>{{ card.value }}</strong>
+    </article>
+    {% endfor %}
+  </section>
+
+  <article class="sst-op-card sst-op-section-card">
+    <details class="sst-op-section-details" open>
+      <summary>Filtros de lectura</summary>
+      <div class="sst-op-section-body">
+        <form class="sst-matrix-filter-form" method="get" action="{{ url_for('sst_matriz_general') }}">
+          <label class="sst-op-field">
+            <small>Sede</small>
+            <select name="sede">
+              <option value="">Todas</option>
+              {% for row in matrix_rows %}
+              <option value="{{ row.codigo }}" {% if filters.sede == row.codigo %}selected{% endif %}>{{ row.codigo }} - {{ row.nombre }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label class="sst-op-field">
+            <small>Componente</small>
+            <select name="componente">
+              <option value="">Todos</option>
+              {% for item in component_options %}
+              <option value="{{ item.key }}" {% if filters.componente == item.key %}selected{% endif %}>{{ item.label }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label class="sst-op-field">
+            <small>Fase</small>
+            <select name="fase">
+              <option value="">Todas</option>
+              {% for item in phase_options %}
+              <option value="{{ item.code }}" {% if filters.fase == item.code %}selected{% endif %}>{{ item.label }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label class="sst-op-field">
+            <small>Paso</small>
+            <select name="paso">
+              <option value="">Todos</option>
+              {% for item in step_options %}
+              <option value="{{ item }}" {% if filters.paso == item %}selected{% endif %}>{{ item }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label class="sst-op-field">
+            <small>Region</small>
+            <select name="region">
+              <option value="">Todas</option>
+              {% for item in region_options %}
+              <option value="{{ item }}" {% if filters.region == item %}selected{% endif %}>{{ item }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label class="sst-matrix-flag">
+            <input type="checkbox" name="con_pendientes" value="1" {% if filters.con_pendientes %}checked{% endif %}>
+            <span>Con pendientes</span>
+          </label>
+          <label class="sst-matrix-flag">
+            <input type="checkbox" name="sin_datos" value="1" {% if filters.sin_datos %}checked{% endif %}>
+            <span>Sin datos</span>
+          </label>
+          <div class="sst-matrix-filter-actions">
+            <button class="sst-op-btn" type="submit">Aplicar</button>
+            <a class="sst-op-btn" href="{{ clear_url }}">Limpiar</a>
+          </div>
+        </form>
+      </div>
+    </details>
+  </article>
+
+  <article class="sst-op-card sst-matrix-table-card">
+    <div class="sst-op-card-head">
+      <h2>Lectura por sede y componente</h2>
+      <span class="sst-op-count">{{ matrix_rows|length }} sede(s)</span>
+    </div>
+    <div class="sst-matrix-table-wrap">
+      <table class="sst-matrix-table">
+        <thead>
+          <tr>
+            <th>Sede</th>
+            {% for item in visible_components %}
+            <th>{{ item.short }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in matrix_rows %}
+          <tr>
+            <th class="sst-matrix-sede">
+              <strong>{{ row.codigo }}</strong>
+              <small>{{ row.nombre }}</small>
+              {% if row.region %}<span>{{ row.region }}</span>{% endif %}
+            </th>
+            {% for cell in row.cells %}
+            <td>
+              <article class="sst-matrix-cell tone-{{ cell.phase_meta.tone }} alert-{{ cell.alert_tone }} {% if selected_cell and selected_cell.sede_codigo == cell.sede_codigo and selected_cell.component_key == cell.component_key %}is-selected{% endif %}">
+                <div class="sst-matrix-cell-top">
+                  <span class="sst-matrix-phase">{{ cell.phase_meta.label }}</span>
+                  <span class="sst-matrix-progress-label">{{ cell.progress_pct }}%</span>
+                </div>
+                <strong>{{ cell.step_label }}</strong>
+                <p>{{ cell.summary_text }}</p>
+                <div class="sst-matrix-progress">
+                  <span style="width: {{ cell.progress_pct }}%;"></span>
+                </div>
+                <div class="sst-matrix-meta">
+                  {% if cell.is_no_aplica %}
+                  <span>No aplica</span>
+                  {% elif cell.is_no_data %}
+                  <span>Sin datos base</span>
+                  {% else %}
+                  <span>{{ cell.pending_label }}</span>
+                  {% endif %}
+                  {% if cell.next_step %}
+                  <span>{{ cell.next_step }}</span>
+                  {% endif %}
+                </div>
+                <div class="sst-matrix-actions">
+                  <a href="{{ cell.detail_url }}">Ver detalle</a>
+                  <a href="{{ cell.open_url }}">Abrir modulo</a>
+                </div>
+              </article>
+            </td>
+            {% endfor %}
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="{{ 1 + visible_components|length }}">
+              <div class="sst-op-empty">No hay sedes que coincidan con los filtros seleccionados.</div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  {% if selected_cell %}
+  <article class="sst-op-card sst-matrix-detail-card" id="matriz-detalle">
+    <div class="sst-op-card-head">
+      <h2>{{ selected_cell.sede_codigo }} - {{ selected_cell.sede_nombre }}</h2>
+      <div class="sst-op-actions">
+        <a class="sst-op-btn" href="{{ selected_cell.open_url }}">Abrir modulo</a>
+      </div>
+    </div>
+    <div class="sst-matrix-detail-shell">
+      <div class="sst-matrix-detail-main">
+        <p class="sst-op-eyebrow">{{ selected_cell.component_label }}</p>
+        <div class="sst-matrix-detail-grid">
+          <div>
+            <small>Fase actual</small>
+            <strong>{{ selected_cell.phase_meta.label }}</strong>
+          </div>
+          <div>
+            <small>Paso actual</small>
+            <strong>{{ selected_cell.step_label }}</strong>
+          </div>
+          <div>
+            <small>Avance</small>
+            <strong>{{ selected_cell.progress_pct }}%</strong>
+          </div>
+          <div>
+            <small>Pendientes</small>
+            <strong>{{ selected_cell.pending_label }}</strong>
+          </div>
+          <div>
+            <small>Proximo paso</small>
+            <strong>{{ selected_cell.next_step or 'Sin accion inmediata' }}</strong>
+          </div>
+          <div>
+            <small>Contexto</small>
+            <strong>{{ selected_cell.summary_text }}</strong>
+          </div>
+        </div>
+      </div>
+      <div class="sst-matrix-detail-history">
+        <div class="sst-subhead">
+          <h3>Historial operativo</h3>
+          <span>{{ selected_cell.history_rows|length }}</span>
+        </div>
+        <div class="sst-matrix-history-list">
+          {% for item in selected_cell.history_rows %}
+          <div class="sst-matrix-history-item">
+            <strong>{{ item.accion|replace('_', ' ')|title }}</strong>
+            <small>{{ item.fecha_evento or '-' }}{% if item.usuario %} · {{ item.usuario }}{% endif %}</small>
+            <p>{{ item.detalle or 'Sin detalle adicional.' }}</p>
+          </div>
+          {% else %}
+          <div class="sst-op-empty">Todavia no hay historial operativo registrado para esta combinacion sede + componente.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </article>
+  {% endif %}
+</section>
+{% endblock %}

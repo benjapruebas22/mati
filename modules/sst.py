@@ -229,6 +229,21 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             "fallback_responsible": "Intendencia",
         },
     ]
+    SST_MATRIX_PHASE_META = {
+        "DIAGNOSTICO": {"label": "Diagnostico", "tone": "diagnostico", "order": 10},
+        "PLANIFICACION": {"label": "Planificacion", "tone": "planificacion", "order": 20},
+        "IMPLEMENTACION": {"label": "Implementacion", "tone": "implementacion", "order": 30},
+        "OPERACION": {"label": "Operacion", "tone": "operacion", "order": 40},
+        "NO_APLICA": {"label": "No aplica", "tone": "no-aplica", "order": 90},
+    }
+    SST_MATRIX_COMPONENTS = [
+        {"key": "art", "label": "Visitas ART", "short": "ART", "project_key": "art", "history_component": "visitas_art"},
+        {"key": "matafuegos", "label": "Matafuegos", "short": "Matafuegos", "project_key": "matafuegos", "history_component": "matafuegos"},
+        {"key": "luces", "label": "Luces de emergencia", "short": "Luces", "project_key": "luces", "history_component": "luces"},
+        {"key": "carteleria", "label": "Carteleria", "short": "Carteleria", "project_key": "carteleria", "history_component": "carteleria"},
+        {"key": "evacuacion", "label": "Evacuacion", "short": "Evacuacion", "project_key": "evacuacion", "history_component": "evacuacion"},
+        {"key": "desinfeccion", "label": "Desinfecciones", "short": "Desinfeccion", "project_key": "desinfeccion", "history_component": "desinfecciones"},
+    ]
 
     def _sgsst_command_project_catalog():
         return [dict(item) for item in SGSST_COMMAND_PROJECT_SEED]
@@ -7386,6 +7401,10 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
     def sst_inicio_operativo():
         return render_template("sst_operativo.html", **_sst_operational_home_context())
 
+    @app.route("/sst/matriz-general", methods=["GET"], endpoint="sst_matriz_general")
+    def sst_matriz_general():
+        return render_template("sst_matriz_general.html", **build_sgsst_matriz_general_context())
+
     @app.route("/sst/implementacion", methods=["GET"], endpoint="sst_implementacion_tablero")
     def sst_implementacion_tablero():
         args = request.args.to_dict(flat=True)
@@ -12888,6 +12907,984 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
                 "otro",
             ],
             "today_iso": today_ref.isoformat(),
+        }
+
+    def _sst_matrix_component_map():
+        return {item["key"]: dict(item) for item in SST_MATRIX_COMPONENTS}
+
+    def _sst_matrix_phase_meta(phase_code):
+        key = str(phase_code or "DIAGNOSTICO").strip().upper() or "DIAGNOSTICO"
+        meta = dict(SST_MATRIX_PHASE_META.get(key) or SST_MATRIX_PHASE_META["DIAGNOSTICO"])
+        meta["code"] = key
+        return meta
+
+    def _sst_matrix_normalize_component(value):
+        key = str(value or "").strip().lower()
+        aliases = {
+            "art": "art",
+            "visitas": "art",
+            "visitas_art": "art",
+            "matafuegos": "matafuegos",
+            "luces": "luces",
+            "luces_emergencia": "luces",
+            "carteleria": "carteleria",
+            "evacuacion": "evacuacion",
+            "desinfeccion": "desinfeccion",
+            "desinfecciones": "desinfeccion",
+        }
+        return aliases.get(key, "")
+
+    def _sst_matrix_progress(value):
+        try:
+            return max(0, min(int(round(float(value or 0))), 100))
+        except Exception:
+            return 0
+
+    def _sst_matrix_detail_url(current_args, sede_codigo, component_key):
+        args = dict(current_args or {})
+        args["detalle_sede"] = (_sst_clean_upper(sede_codigo) or "").strip().upper()
+        args["detalle_componente"] = _sst_matrix_normalize_component(component_key)
+        clean = {}
+        for key, value in args.items():
+            if value in ("", None, False):
+                continue
+            clean[key] = value
+        return url_for("sst_matriz_general", **clean)
+
+    def _sst_matrix_make_cell(
+        component_key,
+        sede_codigo,
+        *,
+        phase_code,
+        step_label,
+        progress_pct,
+        pending_count=0,
+        next_step="",
+        summary_text="",
+        open_url="",
+        alert_tone="muted",
+        is_no_data=False,
+        is_no_aplica=False,
+        extra=None,
+    ):
+        component = _sst_matrix_component_map().get(component_key) or {"key": component_key, "label": component_key.title(), "short": component_key.title()}
+        phase_meta = _sst_matrix_phase_meta("NO_APLICA" if is_no_aplica else phase_code)
+        progress = _sst_matrix_progress(progress_pct)
+        pending = max(_sst_int_nonneg(pending_count), 0)
+        step = (str(step_label or "").strip() or phase_meta["label"])
+        summary = (str(summary_text or "").strip() or step)
+        next_action = str(next_step or "").strip()
+        has_pending = bool(
+            pending
+            or alert_tone in {"warn", "risk"}
+            or phase_meta["code"] in {"DIAGNOSTICO", "PLANIFICACION", "IMPLEMENTACION"}
+        ) and not is_no_aplica
+        return {
+            "component_key": component_key,
+            "component_label": component.get("label") or component_key.title(),
+            "component_short": component.get("short") or component_key.title(),
+            "history_component": component.get("history_component") or component_key,
+            "sede_codigo": (_sst_clean_upper(sede_codigo) or "").strip().upper(),
+            "phase_code": phase_meta["code"],
+            "phase_meta": phase_meta,
+            "step_label": step,
+            "summary_text": summary,
+            "progress_pct": progress,
+            "pending_count": pending,
+            "pending_label": (f"{pending} pendiente(s)" if pending else "Sin pendientes"),
+            "next_step": next_action,
+            "open_url": open_url,
+            "detail_url": "",
+            "alert_tone": alert_tone,
+            "is_no_data": bool(is_no_data),
+            "is_no_aplica": bool(is_no_aplica),
+            "has_pending": has_pending,
+            "extra": dict(extra or {}),
+        }
+
+    def _sst_matrix_collect_matafuegos_state(con, today_ref):
+        summary = defaultdict(lambda: {
+            "total": 0,
+            "vencidos": 0,
+            "proximos": 0,
+            "fuera_servicio": 0,
+            "incompletos": 0,
+            "sin_ubicacion": 0,
+            "sin_vencimiento": 0,
+            "ultimo_vencimiento": "",
+        })
+        if not _table_exists(con, "matafuegos"):
+            return summary
+        rows = con.execute("""
+            SELECT
+                UPPER(COALESCE(sede, cod_sede, '')) AS sede_codigo,
+                COALESCE(ubicacion, '') AS ubicacion,
+                COALESCE(fecha_vencimiento, '') AS fecha_vencimiento,
+                COALESCE(numero_serie, '') AS numero_serie,
+                COALESCE(nro_extintor, '') AS nro_extintor,
+                COALESCE(estado, '') AS estado
+            FROM matafuegos
+            WHERE COALESCE(activo, 1) = 1
+        """).fetchall()
+        upcoming_limit = today_ref + timedelta(days=45)
+        for row in rows:
+            sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
+            if not sede_codigo:
+                continue
+            bucket = summary[sede_codigo]
+            bucket["total"] += 1
+            ubicacion = str(_row_value(row, "ubicacion", "") or "").strip()
+            fecha_vencimiento = str(_row_value(row, "fecha_vencimiento", "") or "").strip()
+            estado = str(_row_value(row, "estado", "") or "").strip().lower()
+            identificador = str(_row_value(row, "numero_serie", "") or "").strip() or str(_row_value(row, "nro_extintor", "") or "").strip()
+            incomplete = False
+            if not ubicacion:
+                bucket["sin_ubicacion"] += 1
+                incomplete = True
+            if not fecha_vencimiento:
+                bucket["sin_vencimiento"] += 1
+                incomplete = True
+            if not identificador:
+                incomplete = True
+            if incomplete:
+                bucket["incompletos"] += 1
+            due = _sst_calendar_parse_date(fecha_vencimiento)
+            if due:
+                if not bucket["ultimo_vencimiento"] or fecha_vencimiento > bucket["ultimo_vencimiento"]:
+                    bucket["ultimo_vencimiento"] = fecha_vencimiento
+                if due < today_ref:
+                    bucket["vencidos"] += 1
+                elif due <= upcoming_limit:
+                    bucket["proximos"] += 1
+            if "fuera" in estado:
+                bucket["fuera_servicio"] += 1
+        return summary
+
+    def _sst_matrix_collect_evacuacion_state(con):
+        summary = defaultdict(lambda: {
+            "plan_count": 0,
+            "routes_count": 0,
+            "salidas_count": 0,
+            "responsables_count": 0,
+            "has_point": False,
+            "markers_total": 0,
+            "floors_count": 0,
+            "last_plan_date": "",
+        })
+        if _table_exists(con, "sedes_planos"):
+            for row in con.execute("""
+                SELECT
+                    UPPER(COALESCE(cod_sede, '')) AS sede_codigo,
+                    COALESCE(fecha_carga, '') AS fecha_carga
+                FROM sedes_planos
+                WHERE LOWER(COALESCE(tipo, '')) = 'evacuacion'
+            """).fetchall():
+                sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
+                if not sede_codigo:
+                    continue
+                bucket = summary[sede_codigo]
+                bucket["plan_count"] += 1
+                fecha_carga = str(_row_value(row, "fecha_carga", "") or "").strip()
+                if fecha_carga and fecha_carga > bucket["last_plan_date"]:
+                    bucket["last_plan_date"] = fecha_carga
+        if _table_exists(con, "evacuacion_responsables"):
+            for row in con.execute("""
+                SELECT
+                    UPPER(COALESCE(sede_codigo, '')) AS sede_codigo,
+                    COALESCE(responsable, '') AS responsable
+                FROM evacuacion_responsables
+            """).fetchall():
+                sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
+                responsable = str(_row_value(row, "responsable", "") or "").strip()
+                if sede_codigo and responsable:
+                    summary[sede_codigo]["responsables_count"] += 1
+        sedes_cols = _table_cols(con, "sedes_mpd")
+        if "url_punto_encuentro" in sedes_cols:
+            for row in con.execute("""
+                SELECT
+                    UPPER(COALESCE(codigo, '')) AS sede_codigo,
+                    COALESCE(url_punto_encuentro, '') AS url_punto_encuentro
+                FROM sedes_mpd
+            """).fetchall():
+                sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
+                if not sede_codigo:
+                    continue
+                summary[sede_codigo]["has_point"] = bool(str(_row_value(row, "url_punto_encuentro", "") or "").strip())
+        evacuacion_dir = os.path.join(BASE_DIR, "uploads", "evacuacion_planos")
+        route_types = {"ruta_arriba", "ruta_derecha", "ruta_abajo", "ruta_izquierda"}
+        if os.path.isdir(evacuacion_dir):
+            for sede_codigo in os.listdir(evacuacion_dir):
+                sede_path = os.path.join(evacuacion_dir, sede_codigo)
+                if not os.path.isdir(sede_path):
+                    continue
+                sede_key = str(sede_codigo or "").strip().upper()
+                if not sede_key:
+                    continue
+                for filename in os.listdir(sede_path):
+                    if not filename.lower().endswith(".json"):
+                        continue
+                    path = os.path.join(sede_path, filename)
+                    try:
+                        with open(path, "r", encoding="utf-8") as fh:
+                            payload = json.load(fh)
+                    except Exception:
+                        continue
+                    markers = payload.get("markers") if isinstance(payload, dict) else []
+                    if not isinstance(markers, list):
+                        continue
+                    bucket = summary[sede_key]
+                    bucket["floors_count"] += 1
+                    for marker in markers:
+                        if not isinstance(marker, dict):
+                            continue
+                        marker_type = str(marker.get("type") or "").strip()
+                        if not marker_type:
+                            continue
+                        bucket["markers_total"] += 1
+                        if marker_type in route_types:
+                            bucket["routes_count"] += 1
+                        elif marker_type == "salida":
+                            bucket["salidas_count"] += 1
+        return summary
+
+    def _sst_matrix_build_art_cell(sede_info, record, docs_by_type, today_ref):
+        summary = _sst_visitas_art_build_summary(sede_info, record, docs_by_type, today_ref)
+        docs_missing = sum(1 for item in (summary["rgrl"], summary["dec_351_79"]) if item.get("code") != "CARGADO")
+        overdue_action = False
+        action_date = _sst_calendar_parse_date(summary.get("fecha_programada"))
+        if action_date and action_date < today_ref and not summary.get("ejecutado"):
+            overdue_action = True
+        if not summary.get("primary_record_id"):
+            phase_code = "DIAGNOSTICO"
+            step_label = "Sin visita"
+            progress = 0
+            pending = 1
+            next_step = "Registrar primera visita"
+            alert_tone = "muted"
+            no_data = True
+        elif summary.get("state_code") == "PROGRAMADA":
+            phase_code = "PLANIFICACION"
+            step_label = "Visita programada"
+            progress = 35
+            pending = 1
+            next_step = "Realizar visita"
+            alert_tone = "warn"
+            no_data = False
+        elif summary.get("observation_code") == "OBSERVADA" and not summary.get("accion_requerida"):
+            phase_code = "DIAGNOSTICO"
+            step_label = "Brecha detectada"
+            progress = 45
+            pending = 1
+            next_step = "Definir accion"
+            alert_tone = "warn"
+            no_data = False
+        elif summary.get("accion_requerida") and not summary.get("ejecutado"):
+            phase_code = "PLANIFICACION"
+            step_label = "Accion definida" if (summary.get("accion_responsable") or summary.get("fecha_programada")) else "Accion pendiente de definir"
+            progress = 60 if (summary.get("accion_responsable") or summary.get("fecha_programada")) else 52
+            pending = 1
+            next_step = "Ejecutar accion" if step_label == "Accion definida" else "Definir responsable y fecha"
+            alert_tone = "risk" if overdue_action else "warn"
+            no_data = False
+        elif summary.get("accion_requerida") and summary.get("ejecutado") and summary.get("state_code") != "CERRADA":
+            phase_code = "IMPLEMENTACION"
+            step_label = "Pendiente de verificacion"
+            progress = 82
+            pending = 1
+            next_step = "Verificar cierre"
+            alert_tone = "warn"
+            no_data = False
+        elif docs_missing > 0:
+            phase_code = "DIAGNOSTICO"
+            step_label = "Documentacion incompleta"
+            progress = 50
+            pending = docs_missing
+            next_step = "Cargar documentacion"
+            alert_tone = "warn"
+            no_data = False
+        else:
+            phase_code = "OPERACION"
+            step_label = "Documentacion vigente"
+            progress = 100
+            pending = 0
+            next_step = "Mantener proxima visita"
+            alert_tone = "ok"
+            no_data = False
+        summary_text = f"{summary['state_meta']['label']} · Docs {2 - docs_missing}/2"
+        return _sst_matrix_make_cell(
+            "art",
+            sede_info.get("codigo"),
+            phase_code=phase_code,
+            step_label=step_label,
+            progress_pct=progress,
+            pending_count=pending,
+            next_step=next_step,
+            summary_text=summary_text,
+            open_url=_sgsst_command_project_open_url("art", sede_info.get("codigo")),
+            alert_tone=alert_tone,
+            is_no_data=no_data,
+            extra={
+                "ultima_visita": summary.get("ultima_visita") or "",
+                "docs_missing": docs_missing,
+                "state_label": summary["state_meta"]["label"],
+            },
+        )
+
+    def _sst_matrix_build_matafuegos_cell(sede_codigo, raw_summary):
+        summary = dict(raw_summary or {})
+        total = _sst_int_nonneg(summary.get("total"))
+        vencidos = _sst_int_nonneg(summary.get("vencidos"))
+        proximos = _sst_int_nonneg(summary.get("proximos"))
+        fuera_servicio = _sst_int_nonneg(summary.get("fuera_servicio"))
+        incompletos = _sst_int_nonneg(summary.get("incompletos"))
+        if total <= 0:
+            return _sst_matrix_make_cell(
+                "matafuegos",
+                sede_codigo,
+                phase_code="DIAGNOSTICO",
+                step_label="Sin inventario",
+                progress_pct=0,
+                pending_count=1,
+                next_step="Cargar inventario base",
+                summary_text="Sin equipos activos registrados",
+                open_url=_sgsst_command_project_open_url("matafuegos", sede_codigo),
+                alert_tone="muted",
+                is_no_data=True,
+            )
+        if incompletos > 0:
+            progress = _sst_matrix_progress(((total - incompletos) / max(total, 1)) * 60)
+            return _sst_matrix_make_cell(
+                "matafuegos",
+                sede_codigo,
+                phase_code="DIAGNOSTICO",
+                step_label="Inventario incompleto",
+                progress_pct=progress,
+                pending_count=incompletos,
+                next_step="Completar ubicacion y vencimiento",
+                summary_text=f"{total} equipo(s) · {incompletos} con datos faltantes",
+                open_url=_sgsst_command_project_open_url("matafuegos", sede_codigo),
+                alert_tone="warn",
+            )
+        if fuera_servicio > 0:
+            return _sst_matrix_make_cell(
+                "matafuegos",
+                sede_codigo,
+                phase_code="OPERACION",
+                step_label="Fuera de servicio",
+                progress_pct=35,
+                pending_count=fuera_servicio,
+                next_step="Regularizar equipos inactivos",
+                summary_text=f"{total} equipo(s) activos",
+                open_url=_sgsst_command_project_open_url("matafuegos", sede_codigo),
+                alert_tone="risk",
+            )
+        if vencidos > 0:
+            return _sst_matrix_make_cell(
+                "matafuegos",
+                sede_codigo,
+                phase_code="OPERACION",
+                step_label="Vencido",
+                progress_pct=45,
+                pending_count=vencidos,
+                next_step="Gestionar recarga urgente",
+                summary_text=f"{vencidos} vencido(s) · {proximos} proximo(s)",
+                open_url=_sgsst_command_project_open_url("matafuegos", sede_codigo),
+                alert_tone="risk",
+            )
+        if proximos > 0:
+            return _sst_matrix_make_cell(
+                "matafuegos",
+                sede_codigo,
+                phase_code="OPERACION",
+                step_label="Proximo vencimiento",
+                progress_pct=82,
+                pending_count=proximos,
+                next_step="Programar recarga",
+                summary_text=f"{total} equipo(s) · {proximos} proximos",
+                open_url=_sgsst_command_project_open_url("matafuegos", sede_codigo),
+                alert_tone="warn",
+            )
+        return _sst_matrix_make_cell(
+            "matafuegos",
+            sede_codigo,
+            phase_code="OPERACION",
+            step_label="Al dia",
+            progress_pct=100,
+            pending_count=0,
+            next_step="Mantener control vigente",
+            summary_text=f"{total} equipo(s) activos",
+            open_url=_sgsst_command_project_open_url("matafuegos", sede_codigo),
+            alert_tone="ok",
+        )
+
+    def _sst_matrix_build_luces_cell(sede_info, summary):
+        row = dict(summary or _sst_luces_empty_summary(sede_info))
+        sede_codigo = (_row_value(sede_info, "codigo", "") or "").strip().upper()
+        state_code = str(row.get("state_code") or "").strip().upper()
+        faltantes = _sst_int_nonneg(row.get("cantidad_faltante"))
+        fuera_servicio = _sst_int_nonneg(row.get("cantidad_fuera_servicio"))
+        pending_total = faltantes + fuera_servicio
+        if not _sst_bool_flag(row.get("aplica", 1)):
+            return _sst_matrix_make_cell(
+                "luces",
+                sede_codigo,
+                phase_code="NO_APLICA",
+                step_label="No aplica",
+                progress_pct=0,
+                pending_count=0,
+                next_step="Sin accion requerida",
+                summary_text=(str(row.get("motivo_no_aplica") or "").strip() or "Sin aplicacion operativa"),
+                open_url=_sgsst_command_project_open_url("luces", sede_codigo),
+                alert_tone="muted",
+                is_no_aplica=True,
+            )
+        if int(row.get("record_count") or 0) <= 0 or state_code == "SIN_RELEVAR":
+            return _sst_matrix_make_cell(
+                "luces",
+                sede_codigo,
+                phase_code="DIAGNOSTICO",
+                step_label="Sin relevar",
+                progress_pct=0,
+                pending_count=max(_sst_int_nonneg(row.get("cantidad_requerida")), 1),
+                next_step="Registrar relevamiento",
+                summary_text="Sin base operativa cargada",
+                open_url=_sgsst_command_project_open_url("luces", sede_codigo),
+                alert_tone="muted",
+                is_no_data=True,
+            )
+        if state_code == "RELEVADO":
+            if pending_total > 0:
+                return _sst_matrix_make_cell(
+                    "luces",
+                    sede_codigo,
+                    phase_code="PLANIFICACION",
+                    step_label="Accion pendiente de definir",
+                    progress_pct=55,
+                    pending_count=pending_total,
+                    next_step="Definir compra o reparacion",
+                    summary_text=f"{row.get('cantidad_instalada', 0)} instaladas / {row.get('cantidad_requerida', 0)} requeridas",
+                    open_url=_sgsst_command_project_open_url("luces", sede_codigo),
+                    alert_tone="warn",
+                )
+            return _sst_matrix_make_cell(
+                "luces",
+                sede_codigo,
+                phase_code="OPERACION",
+                step_label="Operativas",
+                progress_pct=100,
+                pending_count=0,
+                next_step="Mantener pruebas periodicas",
+                summary_text=f"{row.get('cantidad_operativa', 0)} operativas",
+                open_url=_sgsst_command_project_open_url("luces", sede_codigo),
+                alert_tone="ok",
+            )
+        implementation_map = {
+            "PENDIENTE_DE_SOLICITUD": ("IMPLEMENTACION", "Pendiente de solicitud", 66, "Enviar solicitud"),
+            "EN_PROCESO_DE_COMPRA": ("IMPLEMENTACION", "Esperando compra", 72, "Confirmar provision"),
+            "MATERIAL_RECIBIDO": ("IMPLEMENTACION", "Material recibido", 82, "Programar instalacion"),
+            "INSTALACION_PROGRAMADA": ("IMPLEMENTACION", "Pendiente de instalacion", 90, "Verificar colocacion"),
+        }
+        if state_code in implementation_map:
+            phase_code, step_label, progress, next_step = implementation_map[state_code]
+            return _sst_matrix_make_cell(
+                "luces",
+                sede_codigo,
+                phase_code=phase_code,
+                step_label=step_label,
+                progress_pct=progress,
+                pending_count=max(pending_total, 1),
+                next_step=next_step,
+                summary_text=f"{row.get('cantidad_operativa', 0)} operativas / {row.get('cantidad_requerida', 0)} requeridas",
+                open_url=_sgsst_command_project_open_url("luces", sede_codigo),
+                alert_tone="warn",
+            )
+        if state_code == "MANTENIMIENTO" or fuera_servicio > 0:
+            return _sst_matrix_make_cell(
+                "luces",
+                sede_codigo,
+                phase_code="OPERACION",
+                step_label="Pendiente de reparacion" if fuera_servicio > 0 else "Control programado",
+                progress_pct=78,
+                pending_count=max(fuera_servicio, 1 if state_code == "MANTENIMIENTO" else 0),
+                next_step="Registrar mantenimiento",
+                summary_text=f"{row.get('cantidad_operativa', 0)} operativas · {fuera_servicio} fuera de servicio",
+                open_url=_sgsst_command_project_open_url("luces", sede_codigo),
+                alert_tone="warn" if fuera_servicio <= 0 else "risk",
+            )
+        return _sst_matrix_make_cell(
+            "luces",
+            sede_codigo,
+            phase_code="OPERACION",
+            step_label="Operativas",
+            progress_pct=100 if pending_total <= 0 else 84,
+            pending_count=pending_total,
+            next_step="Mantener control vigente",
+            summary_text=f"{row.get('cantidad_operativa', 0)} operativas / {row.get('cantidad_requerida', 0)} requeridas",
+            open_url=_sgsst_command_project_open_url("luces", sede_codigo),
+            alert_tone="ok" if pending_total <= 0 else "warn",
+        )
+
+    def _sst_matrix_build_carteleria_cell(sede_info, summary):
+        row = dict(summary or _sst_carteleria_empty_summary(sede_info))
+        sede_codigo = (_row_value(sede_info, "codigo", "") or "").strip().upper()
+        state_code = str(row.get("state_code") or "").strip().upper()
+        faltantes = _sst_int_nonneg(row.get("faltantes"))
+        applies_count = sum(1 for item in (row.get("checklist_items") or []) if str(item.get("aplica") or "").strip().upper() == "SI")
+        if applies_count <= 0 and int(row.get("record_count") or 0) > 0 and int(row.get("tipos_sin_relevar") or 0) == 0:
+            return _sst_matrix_make_cell(
+                "carteleria",
+                sede_codigo,
+                phase_code="NO_APLICA",
+                step_label="No aplica",
+                progress_pct=0,
+                pending_count=0,
+                next_step="Sin accion requerida",
+                summary_text="Sin carteleria requerida para la sede",
+                open_url=_sgsst_command_project_open_url("carteleria", sede_codigo),
+                alert_tone="muted",
+                is_no_aplica=True,
+            )
+        if int(row.get("record_count") or 0) <= 0 or state_code == "NO_RELEVADO":
+            return _sst_matrix_make_cell(
+                "carteleria",
+                sede_codigo,
+                phase_code="DIAGNOSTICO",
+                step_label="Sin relevar",
+                progress_pct=0,
+                pending_count=max(int(row.get("tipos_sin_relevar") or 0), 1),
+                next_step="Iniciar relevamiento",
+                summary_text="Sin base operativa cargada",
+                open_url=_sgsst_command_project_open_url("carteleria", sede_codigo),
+                alert_tone="muted",
+                is_no_data=True,
+            )
+        if state_code == "RELEVADO":
+            if faltantes > 0:
+                return _sst_matrix_make_cell(
+                    "carteleria",
+                    sede_codigo,
+                    phase_code="PLANIFICACION",
+                    step_label="Accion pendiente de definir",
+                    progress_pct=56,
+                    pending_count=faltantes,
+                    next_step="Definir adquisicion",
+                    summary_text=f"{row.get('cantidad_instalada', 0)} instaladas / {row.get('cantidad_requerida', 0)} requeridas",
+                    open_url=_sgsst_command_project_open_url("carteleria", sede_codigo),
+                    alert_tone="warn",
+                )
+            return _sst_matrix_make_cell(
+                "carteleria",
+                sede_codigo,
+                phase_code="OPERACION",
+                step_label="Correcta",
+                progress_pct=100,
+                pending_count=0,
+                next_step="Mantener control visual",
+                summary_text=f"{row.get('cantidad_instalada', 0)} instaladas",
+                open_url=_sgsst_command_project_open_url("carteleria", sede_codigo),
+                alert_tone="ok",
+            )
+        implementation_map = {
+            "PENDIENTE_SOLICITUD": ("IMPLEMENTACION", "Pendiente de solicitud", 66, "Enviar solicitud"),
+            "COMPRA_EN_PROCESO": ("IMPLEMENTACION", "Esperando compra", 74, "Confirmar provision"),
+            "MATERIAL_RECIBIDO": ("IMPLEMENTACION", "Material recibido", 84, "Programar colocacion"),
+            "INSTALACION_PROGRAMADA": ("IMPLEMENTACION", "Pendiente de colocacion", 90, "Verificar instalacion"),
+        }
+        if state_code in implementation_map:
+            phase_code, step_label, progress, next_step = implementation_map[state_code]
+            return _sst_matrix_make_cell(
+                "carteleria",
+                sede_codigo,
+                phase_code=phase_code,
+                step_label=step_label,
+                progress_pct=progress,
+                pending_count=max(faltantes, 1),
+                next_step=next_step,
+                summary_text=f"{row.get('cantidad_instalada', 0)} instaladas / {row.get('cantidad_requerida', 0)} requeridas",
+                open_url=_sgsst_command_project_open_url("carteleria", sede_codigo),
+                alert_tone="warn",
+            )
+        return _sst_matrix_make_cell(
+            "carteleria",
+            sede_codigo,
+            phase_code="OPERACION",
+            step_label="Correcta" if faltantes <= 0 else "Pendiente de reposicion",
+            progress_pct=100 if faltantes <= 0 else 82,
+            pending_count=faltantes,
+            next_step="Mantener control visual",
+            summary_text=f"{row.get('cantidad_instalada', 0)} instaladas / {row.get('cantidad_requerida', 0)} requeridas",
+            open_url=_sgsst_command_project_open_url("carteleria", sede_codigo),
+            alert_tone="ok" if faltantes <= 0 else "warn",
+        )
+
+    def _sst_matrix_build_evacuacion_cell(sede_codigo, raw_summary):
+        summary = dict(raw_summary or {})
+        checks = [
+            ("plano", int(summary.get("plan_count") or 0) > 0, "Cargar plano"),
+            ("rutas", int(summary.get("routes_count") or 0) > 0, "Completar rutas"),
+            ("salidas", int(summary.get("salidas_count") or 0) > 0, "Registrar salidas"),
+            ("responsables", int(summary.get("responsables_count") or 0) > 0, "Definir responsables"),
+            ("punto", bool(summary.get("has_point")), "Definir punto de encuentro"),
+        ]
+        completed = sum(1 for _, ok, _ in checks if ok)
+        pending_labels = [label for _, ok, label in checks if not ok]
+        progress = _sst_matrix_progress((completed / len(checks)) * 100)
+        if completed == 0:
+            return _sst_matrix_make_cell(
+                "evacuacion",
+                sede_codigo,
+                phase_code="DIAGNOSTICO",
+                step_label="Sin relevar",
+                progress_pct=0,
+                pending_count=len(checks),
+                next_step="Cargar plano de evacuacion",
+                summary_text="Sin plano ni configuracion asociada",
+                open_url=_sgsst_command_project_open_url("evacuacion", sede_codigo),
+                alert_tone="muted",
+                is_no_data=True,
+            )
+        if not checks[0][1]:
+            return _sst_matrix_make_cell(
+                "evacuacion",
+                sede_codigo,
+                phase_code="DIAGNOSTICO",
+                step_label="Sin plano cargado",
+                progress_pct=progress,
+                pending_count=len(pending_labels),
+                next_step="Cargar plano base",
+                summary_text=f"{completed}/{len(checks)} requisito(s) resuelto(s)",
+                open_url=_sgsst_command_project_open_url("evacuacion", sede_codigo),
+                alert_tone="risk",
+            )
+        if not checks[1][1] or not checks[2][1]:
+            return _sst_matrix_make_cell(
+                "evacuacion",
+                sede_codigo,
+                phase_code="DIAGNOSTICO",
+                step_label="Relevamiento incompleto",
+                progress_pct=progress,
+                pending_count=len(pending_labels),
+                next_step=(pending_labels[0] if pending_labels else "Completar relevamiento"),
+                summary_text=f"{int(summary.get('routes_count') or 0)} ruta(s) · {int(summary.get('salidas_count') or 0)} salida(s)",
+                open_url=_sgsst_command_project_open_url("evacuacion", sede_codigo),
+                alert_tone="warn",
+            )
+        if not checks[3][1] or not checks[4][1]:
+            step_label = "Completar definiciones"
+            if not checks[3][1] and checks[4][1]:
+                step_label = "Definir responsables"
+            elif checks[3][1] and not checks[4][1]:
+                step_label = "Definir punto de encuentro"
+            return _sst_matrix_make_cell(
+                "evacuacion",
+                sede_codigo,
+                phase_code="IMPLEMENTACION",
+                step_label=step_label,
+                progress_pct=progress,
+                pending_count=len(pending_labels),
+                next_step=(pending_labels[0] if pending_labels else "Preparar simulacro"),
+                summary_text=f"{int(summary.get('markers_total') or 0)} marcador(es) en plano",
+                open_url=_sgsst_command_project_open_url("evacuacion", sede_codigo),
+                alert_tone="warn",
+            )
+        return _sst_matrix_make_cell(
+            "evacuacion",
+            sede_codigo,
+            phase_code="OPERACION",
+            step_label="Plan vigente",
+            progress_pct=100,
+            pending_count=0,
+            next_step="Mantener revision periodica",
+            summary_text=f"{int(summary.get('routes_count') or 0)} ruta(s) · {int(summary.get('responsables_count') or 0)} responsable(s)",
+            open_url=_sgsst_command_project_open_url("evacuacion", sede_codigo),
+            alert_tone="ok",
+        )
+
+    def _sst_matrix_build_desinfeccion_cell(sede_info, summary):
+        row = dict(summary or _sst_desinf_empty_summary(sede_info))
+        sede_codigo = (_row_value(sede_info, "codigo", "") or "").strip().upper()
+        state_code = str(row.get("state_code") or "").strip().upper()
+        if int(row.get("record_count") or 0) <= 0 or state_code == "SIN_REGISTRO":
+            return _sst_matrix_make_cell(
+                "desinfeccion",
+                sede_codigo,
+                phase_code="OPERACION",
+                step_label="Sin antecedentes",
+                progress_pct=0,
+                pending_count=1,
+                next_step="Registrar primera programacion",
+                summary_text="Sin intervencion registrada",
+                open_url=_sgsst_command_project_open_url("desinfeccion", sede_codigo),
+                alert_tone="muted",
+                is_no_data=True,
+            )
+        if state_code == "VENCIDA":
+            return _sst_matrix_make_cell(
+                "desinfeccion",
+                sede_codigo,
+                phase_code="OPERACION",
+                step_label="Vencida",
+                progress_pct=35,
+                pending_count=1,
+                next_step="Reprogramar intervencion",
+                summary_text=f"Ultima {row.get('ultima_desinfeccion') or '-'}",
+                open_url=_sgsst_command_project_open_url("desinfeccion", sede_codigo),
+                alert_tone="risk",
+            )
+        if state_code == "PROGRAMADA":
+            return _sst_matrix_make_cell(
+                "desinfeccion",
+                sede_codigo,
+                phase_code="OPERACION",
+                step_label="Programada",
+                progress_pct=72,
+                pending_count=1,
+                next_step="Coordinar ejecucion",
+                summary_text=f"Proxima {row.get('proxima_prevista') or '-'}",
+                open_url=_sgsst_command_project_open_url("desinfeccion", sede_codigo),
+                alert_tone="warn",
+            )
+        if state_code in {"OBSERVADA", "CANCELADA", "PENDIENTE_DE_PROGRAMACION"}:
+            step_label = {
+                "OBSERVADA": "Pendiente de correccion",
+                "CANCELADA": "Reprogramar",
+                "PENDIENTE_DE_PROGRAMACION": "Pendiente de programacion",
+            }.get(state_code, "Pendiente")
+            return _sst_matrix_make_cell(
+                "desinfeccion",
+                sede_codigo,
+                phase_code="OPERACION",
+                step_label=step_label,
+                progress_pct=48,
+                pending_count=1,
+                next_step=_sst_desinf_next_action(state_code),
+                summary_text=f"Ultima {row.get('ultima_desinfeccion') or '-'}",
+                open_url=_sgsst_command_project_open_url("desinfeccion", sede_codigo),
+                alert_tone="warn",
+            )
+        return _sst_matrix_make_cell(
+            "desinfeccion",
+            sede_codigo,
+            phase_code="OPERACION",
+            step_label="Al dia",
+            progress_pct=100,
+            pending_count=0,
+            next_step="Mantener cronograma",
+            summary_text=f"Ultima {row.get('ultima_desinfeccion') or '-'}",
+            open_url=_sgsst_command_project_open_url("desinfeccion", sede_codigo),
+            alert_tone="ok",
+        )
+
+    def _sst_matrix_cell_matches(cell, phase_filter="", step_filter="", pending_only=False, no_data_only=False):
+        if phase_filter and str(cell.get("phase_code") or "").strip().upper() != str(phase_filter or "").strip().upper():
+            return False
+        if step_filter and str(cell.get("step_label") or "").strip() != str(step_filter or "").strip():
+            return False
+        if pending_only and not bool(cell.get("has_pending")):
+            return False
+        if no_data_only and not bool(cell.get("is_no_data")):
+            return False
+        return True
+
+    def build_sgsst_matriz_general_context():
+        con = get_db()
+        ensure_sst_visitas_docs_tables(con)
+        ensure_sst_general_table(con)
+        ensure_sst_carteleria_tables(con)
+        ensure_sst_luces_tables(con)
+        ensure_sst_desinfecciones_tables(con)
+        ensure_sst_operativo_historial_tables(con)
+        ensure_sgsst_implementation_tables(con)
+
+        today_ref = date.today()
+        sedes_cols = _table_cols(con, "sedes_mpd")
+        region_expr = "''"
+        if "region" in sedes_cols:
+            region_expr = "COALESCE(region, '')"
+        elif "ciudad" in sedes_cols:
+            region_expr = "COALESCE(ciudad, '')"
+        elif "fuero" in sedes_cols:
+            region_expr = "COALESCE(fuero, '')"
+        sedes = []
+        for row in con.execute(f"""
+            SELECT
+                UPPER(COALESCE(codigo, '')) AS codigo,
+                COALESCE(nombre, '') AS nombre,
+                {region_expr} AS region,
+                COALESCE(fuero, '') AS fuero
+            FROM sedes_mpd
+            WHERE TRIM(COALESCE(codigo, '')) <> ''
+              AND COALESCE(activa, 1) = 1
+            ORDER BY codigo
+        """).fetchall():
+            sede_codigo = (_row_value(row, "codigo", "") or "").strip().upper()
+            if not sede_codigo:
+                continue
+            fuero_raw = (_row_value(row, "fuero", "") or "").strip()
+            fuero_class, fuero_color = _sst_sede_fuero_style(sede_codigo, fuero_raw)
+            sedes.append({
+                "codigo": sede_codigo,
+                "nombre": (_row_value(row, "nombre", "") or "").strip(),
+                "region": (_row_value(row, "region", "") or "").strip(),
+                "fuero": fuero_raw,
+                "fuero_class": fuero_class,
+                "fuero_color": fuero_color,
+            })
+
+        latest_visit_by_sede = {}
+        for row in con.execute("""
+            SELECT
+                id,
+                UPPER(COALESCE(sede_codigo, '')) AS sede_codigo,
+                COALESCE(fecha, '') AS fecha,
+                COALESCE(tipo_visita, '') AS tipo_visita,
+                COALESCE(responsable, '') AS responsable,
+                COALESCE(estado, '') AS estado,
+                COALESCE(observaciones, '') AS observaciones,
+                COALESCE(observacion_art, '') AS observacion_art,
+                COALESCE(accion_requerida, '') AS accion_requerida,
+                COALESCE(accion_responsable, '') AS accion_responsable,
+                COALESCE(fecha_programada, '') AS fecha_programada,
+                COALESCE(ejecutado, 0) AS ejecutado,
+                COALESCE(fecha_ejecucion, '') AS fecha_ejecucion,
+                COALESCE(evidencia_url, '') AS evidencia_url,
+                COALESCE(seguimiento_id, 0) AS seguimiento_id
+            FROM sst_visitas
+            ORDER BY UPPER(COALESCE(sede_codigo, '')), date(COALESCE(fecha, '')) DESC, id DESC
+        """).fetchall():
+            sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
+            if sede_codigo and sede_codigo not in latest_visit_by_sede:
+                latest_visit_by_sede[sede_codigo] = dict(row)
+
+        docs_by_sede = defaultdict(dict)
+        for row in con.execute("""
+            SELECT
+                id,
+                UPPER(COALESCE(sede_codigo, '')) AS sede_codigo,
+                UPPER(COALESCE(tipo, '')) AS tipo,
+                COALESCE(fecha_documento, '') AS fecha_documento,
+                COALESCE(fecha_carga, '') AS fecha_carga,
+                COALESCE(archivo, '') AS archivo,
+                COALESCE(drive_url, '') AS drive_url,
+                COALESCE(estado_revision, '') AS estado_revision,
+                COALESCE(notas, '') AS notas
+            FROM sst_documentos
+            WHERE UPPER(COALESCE(tipo, '')) IN ('RGRL', 'DEC_351_79')
+            ORDER BY UPPER(COALESCE(sede_codigo, '')), UPPER(COALESCE(tipo, '')), COALESCE(fecha_documento, fecha_carga, '') DESC, id DESC
+        """).fetchall():
+            sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
+            doc_type = (_row_value(row, "tipo", "") or "").strip().upper()
+            if sede_codigo and doc_type and doc_type not in docs_by_sede[sede_codigo]:
+                docs_by_sede[sede_codigo][doc_type] = dict(row)
+
+        cart_summary = _sst_carteleria_aggregate_by_sede(_sst_fetch_carteleria_records(con))
+        luces_summary = _sst_luces_aggregate_by_sede(_sst_fetch_luces_records(con))
+        desinf_summary = _sst_desinf_aggregate_by_sede(_sst_desinf_fetch_records(con))
+        mata_summary = _sst_matrix_collect_matafuegos_state(con, today_ref)
+        evac_summary = _sst_matrix_collect_evacuacion_state(con)
+
+        current_args = request.args.to_dict(flat=True)
+        component_filter = _sst_matrix_normalize_component(request.args.get("componente"))
+        phase_filter = str(request.args.get("fase") or "").strip().upper()
+        if phase_filter and phase_filter not in SST_MATRIX_PHASE_META:
+            phase_filter = ""
+        sede_filter = (_sst_clean_upper(request.args.get("sede")) or "").strip().upper()
+        region_filter = str(request.args.get("region") or "").strip()
+        step_filter = str(request.args.get("paso") or "").strip()
+        pending_only = _sst_bool_flag(request.args.get("con_pendientes"))
+        no_data_only = _sst_bool_flag(request.args.get("sin_datos"))
+        detail_sede = (_sst_clean_upper(request.args.get("detalle_sede")) or "").strip().upper()
+        detail_component = _sst_matrix_normalize_component(request.args.get("detalle_componente"))
+
+        visible_components = [item for item in SST_MATRIX_COMPONENTS if not component_filter or item["key"] == component_filter]
+        visible_component_keys = [item["key"] for item in visible_components]
+
+        step_values = set()
+        rows = []
+        for sede in sedes:
+            sede_codigo = sede["codigo"]
+            cells_by_key = {}
+            cells_by_key["art"] = _sst_matrix_build_art_cell(sede, latest_visit_by_sede.get(sede_codigo), docs_by_sede.get(sede_codigo, {}), today_ref)
+            cells_by_key["matafuegos"] = _sst_matrix_build_matafuegos_cell(sede_codigo, mata_summary.get(sede_codigo))
+            cells_by_key["luces"] = _sst_matrix_build_luces_cell(sede, luces_summary.get(sede_codigo))
+            cells_by_key["carteleria"] = _sst_matrix_build_carteleria_cell(sede, cart_summary.get(sede_codigo))
+            cells_by_key["evacuacion"] = _sst_matrix_build_evacuacion_cell(sede_codigo, evac_summary.get(sede_codigo))
+            cells_by_key["desinfeccion"] = _sst_matrix_build_desinfeccion_cell(sede, desinf_summary.get(sede_codigo))
+            for component_key, cell in list(cells_by_key.items()):
+                cell["detail_url"] = _sst_matrix_detail_url(current_args, sede_codigo, component_key)
+                step_values.add(cell["step_label"])
+            candidate_cells = [cells_by_key[key] for key in visible_component_keys if key in cells_by_key]
+            if sede_filter and sede_codigo != sede_filter:
+                continue
+            if region_filter and sede["region"] != region_filter:
+                continue
+            if not any(_sst_matrix_cell_matches(cell, phase_filter, step_filter, pending_only, no_data_only) for cell in candidate_cells):
+                continue
+            row = dict(sede)
+            row["cells_by_key"] = cells_by_key
+            row["cells"] = candidate_cells
+            row["pending_cells"] = sum(1 for cell in candidate_cells if cell["has_pending"])
+            rows.append(row)
+
+        selected_cell = None
+        if detail_sede and detail_component:
+            for row in rows:
+                if row["codigo"] != detail_sede:
+                    continue
+                selected_cell = dict(row["cells_by_key"].get(detail_component) or {})
+                if selected_cell:
+                    history_rows = _sst_fetch_historial_rows(con, selected_cell.get("history_component"), detail_sede)
+                    selected_cell["history_rows"] = history_rows
+                    selected_cell["sede_nombre"] = row["nombre"]
+                    selected_cell["region"] = row["region"]
+                    selected_cell["fuero"] = row["fuero"]
+                break
+
+        summary_counts = defaultdict(int)
+        pending_cells_total = 0
+        no_data_cells_total = 0
+        for row in rows:
+            for cell in row["cells"]:
+                summary_counts[cell["phase_code"]] += 1
+                if cell["has_pending"]:
+                    pending_cells_total += 1
+                if cell["is_no_data"]:
+                    no_data_cells_total += 1
+
+        region_options = sorted({item["region"] for item in sedes if item["region"]})
+        step_options = sorted(step_values)
+        con.close()
+        return {
+            "sst_section": "matriz",
+            "matrix_rows": rows,
+            "visible_components": visible_components,
+            "component_options": list(SST_MATRIX_COMPONENTS),
+            "phase_options": [
+                {"code": key, "label": value["label"]}
+                for key, value in sorted(SST_MATRIX_PHASE_META.items(), key=lambda item: item[1]["order"])
+            ],
+            "step_options": step_options,
+            "region_options": region_options,
+            "filters": {
+                "sede": sede_filter,
+                "componente": component_filter,
+                "fase": phase_filter,
+                "paso": step_filter,
+                "region": region_filter,
+                "con_pendientes": pending_only,
+                "sin_datos": no_data_only,
+            },
+            "selected_cell": selected_cell,
+            "clear_url": url_for("sst_matriz_general"),
+            "summary_cards": [
+                {"label": "Sedes visibles", "value": len(rows), "tone": "muted"},
+                {"label": "Diagnostico", "value": summary_counts.get("DIAGNOSTICO", 0), "tone": "diagnostico"},
+                {"label": "Planificacion", "value": summary_counts.get("PLANIFICACION", 0), "tone": "planificacion"},
+                {"label": "Implementacion", "value": summary_counts.get("IMPLEMENTACION", 0), "tone": "implementacion"},
+                {"label": "Operacion", "value": summary_counts.get("OPERACION", 0), "tone": "operacion"},
+                {"label": "Con pendientes", "value": pending_cells_total, "tone": "warn"},
+                {"label": "Sin datos", "value": no_data_cells_total, "tone": "muted"},
+            ],
         }
 
     @app.route("/sst/plan-implementacion", methods=["GET", "POST"], endpoint="sst_plan_implementacion")

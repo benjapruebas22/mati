@@ -1,6 +1,6 @@
 {% set current_section = sst_section or '' %}
 {% set current_stage = '' %}
-{% if current_section in ['inicio', 'calendario'] %}
+{% if current_section in ['inicio', 'calendario', 'matriz'] %}
   {% set current_stage = 'inicio' %}
 {% elif current_section in ['diagnostico', 'luces', 'carteleria'] %}
   {% set current_stage = 'diagnostico' %}
@@ -19,6 +19,10 @@
     <a class="sst-op-nav-home {% if current_stage == 'inicio' %}is-active{% endif %}" href="{{ url_for('sst_calendario_operativo') }}">
       <span class="sst-op-nav-kicker">Inicio</span>
       <strong>Centro Operativo SG-SST</strong>
+    </a>
+    <a class="sst-op-nav-home {% if current_section == 'matriz' %}is-active{% endif %}" href="{{ url_for('sst_matriz_general') }}">
+      <span class="sst-op-nav-kicker">Matriz general</span>
+      <strong>Sede + componente</strong>
     </a>
   </div>
 
