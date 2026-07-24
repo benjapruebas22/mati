@@ -1,90 +1,78 @@
 {% set current_section = sst_section or '' %}
-{% set current_stage = '' %}
-{% if current_section in ['inicio', 'calendario', 'matriz'] %}
-  {% set current_stage = 'inicio' %}
-{% elif current_section in ['diagnostico', 'luces', 'carteleria'] %}
-  {% set current_stage = 'diagnostico' %}
-{% elif current_section == 'implementacion' %}
-  {% set current_stage = 'implementacion' %}
-{% elif current_section == 'plan' %}
-  {% set current_stage = 'plan' %}
-{% elif current_section in ['matafuegos', 'desinfecciones'] %}
-  {% set current_stage = 'operacion' %}
-{% elif current_section in ['visitas', 'seguimiento', 'documentacion'] %}
-  {% set current_stage = 'administracion' %}
+{% set current_component = (request.args.get('componente') or '')|lower %}
+{% set current_group = '' %}
+{% if current_section == 'inicio' %}
+  {% set current_group = 'inicio' %}
+{% elif current_section == 'matriz' %}
+  {% set current_group = 'matriz' %}
+{% elif current_section in ['visitas', 'matafuegos', 'luces', 'carteleria', 'desinfecciones', 'relevamiento_basico'] or current_component == 'evacuacion' %}
+  {% set current_group = 'componentes' %}
+{% elif current_section in ['plan', 'implementacion', 'seguimiento'] %}
+  {% set current_group = 'acciones' %}
+{% elif current_section == 'calendario' %}
+  {% set current_group = 'calendario' %}
+{% elif current_section in ['documentacion', 'administracion'] %}
+  {% set current_group = 'administracion' %}
 {% endif %}
 
 <nav class="sst-op-nav sst-op-nav-stages" aria-label="Navegacion SG-SST">
   <div class="sst-op-nav-start">
-    <a class="sst-op-nav-home {% if current_stage == 'inicio' %}is-active{% endif %}" href="{{ url_for('sst_calendario_operativo') }}">
+    <a class="sst-op-nav-home {% if current_group == 'inicio' %}is-active{% endif %}" href="{{ url_for('sst_inicio_operativo') }}">
       <span class="sst-op-nav-kicker">Inicio</span>
       <strong>Centro Operativo SG-SST</strong>
     </a>
-    <a class="sst-op-nav-home {% if current_section == 'matriz' %}is-active{% endif %}" href="{{ url_for('sst_matriz_general') }}">
+    <a class="sst-op-nav-home {% if current_group == 'matriz' %}is-active{% endif %}" href="{{ url_for('sst_matriz_general') }}">
       <span class="sst-op-nav-kicker">Matriz general</span>
       <strong>Sede + componente</strong>
     </a>
   </div>
 
   <div class="sst-op-nav-center">
-    <details class="sst-op-stage {% if current_stage == 'diagnostico' %}is-active{% endif %}">
+    <details class="sst-op-stage {% if current_group == 'componentes' %}is-active{% endif %}">
       <summary>
-        <span class="sst-op-stage-kicker">Fase 1</span>
-        <strong>Diagnostico</strong>
+        <span class="sst-op-stage-kicker">Componentes</span>
+        <strong>Operacion por modulo</strong>
       </summary>
       <div class="sst-op-stage-menu">
+        <a class="{% if current_section == 'visitas' %}is-active{% endif %}" href="{{ url_for('sst_visitas') }}">Visitas ART</a>
+        <a class="{% if current_section == 'matafuegos' %}is-active{% endif %}" href="{{ url_for('matafuegos_home') }}">Matafuegos</a>
         <a class="{% if current_section == 'luces' %}is-active{% endif %}" href="{{ url_for('sst_luces_home') }}">Luces de emergencia</a>
         <a class="{% if current_section == 'carteleria' %}is-active{% endif %}" href="{{ url_for('sst_carteleria_home') }}">Carteleria</a>
-      </div>
-    </details>
-
-    <details class="sst-op-stage {% if current_stage == 'implementacion' %}is-active{% endif %}">
-      <summary>
-        <span class="sst-op-stage-kicker">Fase 2</span>
-        <strong>Implementacion</strong>
-      </summary>
-      <div class="sst-op-stage-menu">
-        <a class="{% if current_section == 'implementacion' %}is-active{% endif %}" href="{{ url_for('sst_implementacion_tablero') }}">Tablero de implementacion</a>
-      </div>
-    </details>
-
-    <details class="sst-op-stage {% if current_stage == 'plan' %}is-active{% endif %}">
-      <summary>
-        <span class="sst-op-stage-kicker">Programa</span>
-        <strong>Plan</strong>
-      </summary>
-      <div class="sst-op-stage-menu">
-        <a class="{% if current_section == 'plan' %}is-active{% endif %}" href="{{ url_for('sst_plan_implementacion') }}">Plan de implementacion</a>
-        <a href="{{ url_for('sst_plan_implementacion', vista='sedes') }}">Vista por sedes</a>
-        <a href="{{ url_for('sst_plan_implementacion', vista='acciones') }}">Acciones del plan</a>
-        <a href="{{ url_for('sst_plan_implementacion', vista='cronograma') }}">Cronograma</a>
-      </div>
-    </details>
-
-    <details class="sst-op-stage {% if current_stage == 'operacion' %}is-active{% endif %}">
-      <summary>
-        <span class="sst-op-stage-kicker">Fase 3</span>
-        <strong>Operacion</strong>
-      </summary>
-      <div class="sst-op-stage-menu">
-        <a class="{% if current_section == 'matafuegos' %}is-active{% endif %}" href="{{ url_for('matafuegos_home') }}">Matafuegos</a>
+        <a class="{% if current_component == 'evacuacion' %}is-active{% endif %}" href="{{ url_for('sst_matriz_general', componente='evacuacion') }}">Evacuacion</a>
         <a class="{% if current_section == 'desinfecciones' %}is-active{% endif %}" href="{{ url_for('sst_desinfecciones_home') }}">Desinfecciones</a>
-        <a href="{{ url_for('sst_luces_home') }}">Luces verificadas</a>
-        <a href="{{ url_for('sst_carteleria_home') }}">Carteleria verificada</a>
+        <a class="{% if current_section == 'relevamiento_basico' %}is-active{% endif %}" href="{{ url_for('sst_relevamiento_basico_home') }}">Relevamiento basico</a>
       </div>
     </details>
+
+    <details class="sst-op-stage {% if current_group == 'acciones' %}is-active{% endif %}">
+      <summary>
+        <span class="sst-op-stage-kicker">Acciones</span>
+        <strong>Plan y seguimiento</strong>
+      </summary>
+      <div class="sst-op-stage-menu">
+        <a class="{% if current_section == 'plan' and (request.args.get('vista') or 'general') == 'general' %}is-active{% endif %}" href="{{ url_for('sst_plan_implementacion') }}">Plan de implementacion</a>
+        <a class="{% if current_section == 'plan' and (request.args.get('vista') or '') == 'sedes' %}is-active{% endif %}" href="{{ url_for('sst_plan_implementacion', vista='sedes') }}">Vista por sedes</a>
+        <a class="{% if current_section == 'plan' and (request.args.get('vista') or '') == 'acciones' %}is-active{% endif %}" href="{{ url_for('sst_plan_implementacion', vista='acciones') }}">Acciones abiertas</a>
+        <a class="{% if current_section == 'seguimiento' %}is-active{% endif %}" href="{{ url_for('sst_plan') }}">Seguimientos</a>
+      </div>
+    </details>
+
+    <a class="sst-op-stage-link {% if current_group == 'calendario' %}is-active{% endif %}" href="{{ url_for('sst_calendario_operativo') }}">
+      <span class="sst-op-stage-kicker">Calendario</span>
+      <strong>Agenda operativa</strong>
+    </a>
   </div>
 
   <div class="sst-op-nav-end">
-    <details class="sst-op-stage {% if current_stage == 'administracion' %}is-active{% endif %}">
+    <details class="sst-op-stage {% if current_group == 'administracion' %}is-active{% endif %}">
       <summary>
         <span class="sst-op-stage-kicker">Administracion</span>
         <strong>Control y soporte</strong>
       </summary>
       <div class="sst-op-stage-menu">
-        <a class="{% if current_section == 'visitas' %}is-active{% endif %}" href="{{ url_for('sst_visitas') }}">Visitas ART</a>
-        <a href="{{ url_for('sgsst_documentacion_home') }}">Documentacion</a>
-        <a class="{% if current_section == 'seguimiento' %}is-active{% endif %}" href="{{ url_for('sst_plan') }}">Seguimientos</a>
+        <a class="{% if current_section == 'documentacion' %}is-active{% endif %}" href="{{ url_for('sgsst_documentacion_home') }}">Documentacion</a>
+        <a class="{% if current_section == 'plan' and (request.args.get('vista') or '') == 'cronograma' %}is-active{% endif %}" href="{{ url_for('sst_plan_implementacion', vista='cronograma') }}">Cronograma</a>
+        <a href="{{ url_for('sst_matriz_general', sin_datos=1) }}">Sedes sin datos</a>
       </div>
     </details>
 

@@ -236,6 +236,13 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         "OPERACION": {"label": "Operacion", "tone": "operacion", "order": 40},
         "NO_APLICA": {"label": "No aplica", "tone": "no-aplica", "order": 90},
     }
+    SST_MATRIX_PHASE_GROUPS = {
+        "DIAGNOSTICO": {"filter": "F1", "code": "F1", "label": "Diagnostico", "display": "F1 Diagnostico", "tone": "diagnostico", "order": 10},
+        "PLANIFICACION": {"filter": "F2", "code": "F2", "label": "Implementacion", "display": "F2 Implementacion", "tone": "implementacion", "order": 20},
+        "IMPLEMENTACION": {"filter": "F2", "code": "F2", "label": "Implementacion", "display": "F2 Implementacion", "tone": "implementacion", "order": 20},
+        "OPERACION": {"filter": "F3", "code": "F3", "label": "Operacion", "display": "F3 Operacion", "tone": "operacion", "order": 30},
+        "NO_APLICA": {"filter": "NO_APLICA", "code": "NA", "label": "No aplica", "display": "No aplica", "tone": "no-aplica", "order": 90},
+    }
     SST_MATRIX_COMPONENTS = [
         {"key": "art", "label": "Visitas ART", "short": "ART", "project_key": "art", "history_component": "visitas_art"},
         {"key": "matafuegos", "label": "Matafuegos", "short": "Matafuegos", "project_key": "matafuegos", "history_component": "matafuegos"},
@@ -243,6 +250,18 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         {"key": "carteleria", "label": "Carteleria", "short": "Carteleria", "project_key": "carteleria", "history_component": "carteleria"},
         {"key": "evacuacion", "label": "Evacuacion", "short": "Evacuacion", "project_key": "evacuacion", "history_component": "evacuacion"},
         {"key": "desinfeccion", "label": "Desinfecciones", "short": "Desinfeccion", "project_key": "desinfeccion", "history_component": "desinfecciones"},
+        {"key": "relevamiento_basico", "label": "Relevamiento basico", "short": "Basico", "project_key": "relevamiento_basico", "history_component": "relevamiento_basico"},
+    ]
+    SST_BASIC_BOOL_CHOICES = [
+        {"value": "", "label": "-"},
+        {"value": "1", "label": "Si"},
+        {"value": "0", "label": "No"},
+    ]
+    SST_BASIC_ITEM_META = [
+        {"key": "botiquin", "label": "Botiquin"},
+        {"key": "ventilacion", "label": "Ventilacion natural"},
+        {"key": "tableros", "label": "Tableros protegidos"},
+        {"key": "tierra", "label": "Puesta a tierra"},
     ]
 
     def _sgsst_command_project_catalog():
@@ -265,6 +284,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             return url_for("matafuegos_home", sede=sede_key or None, open_sede=sede_key or None)
         if project_key == "desinfeccion":
             return url_for("sst_desinfecciones_home", sede=sede_key or None, open_sede=sede_key or None)
+        if project_key == "relevamiento_basico":
+            return url_for("sst_relevamiento_basico_home", sede=sede_key or None, open_sede=sede_key or None)
         if project_key in {"art", "documentacion"}:
             return url_for("sst_visitas", sede=sede_key or None, open_sede=sede_key or None)
         if project_key == "evacuacion":
@@ -824,6 +845,266 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             _sst_current_user(),
             _sst_now_ts(),
         ))
+
+    def ensure_sst_relevamiento_basico_table(con):
+        con.execute("""
+            CREATE TABLE IF NOT EXISTS sst_relevamiento_basico(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                sede_codigo TEXT NOT NULL UNIQUE,
+                botiquin_aplica INTEGER DEFAULT 1,
+                botiquin_tiene INTEGER,
+                botiquin_completo INTEGER,
+                botiquin_requiere_reposicion INTEGER,
+                botiquin_fecha_control TEXT,
+                botiquin_observaciones TEXT,
+                ventilacion_aplica INTEGER DEFAULT 1,
+                ventilacion_posee INTEGER,
+                ventilacion_suficiente INTEGER,
+                ventilacion_deficiente INTEGER,
+                ventilacion_observaciones TEXT,
+                tableros_aplica INTEGER DEFAULT 1,
+                tableros_identificado INTEGER,
+                tableros_protegido INTEGER,
+                tableros_senalizado INTEGER,
+                tableros_requiere_intervencion INTEGER,
+                tableros_observaciones TEXT,
+                tierra_aplica INTEGER DEFAULT 1,
+                tierra_posee INTEGER,
+                tierra_documentacion INTEGER,
+                tierra_medicion_vigente INTEGER,
+                tierra_requiere_medicion INTEGER,
+                tierra_fecha TEXT,
+                tierra_archivo_url TEXT,
+                tierra_observaciones TEXT,
+                observaciones_generales TEXT,
+                creado_por TEXT,
+                actualizado_por TEXT,
+                fecha_creacion TEXT DEFAULT (datetime('now')),
+                fecha_actualizacion TEXT DEFAULT (datetime('now'))
+            )
+        """)
+        ensure_cols(con, "sst_relevamiento_basico", [
+            ("botiquin_aplica", "INTEGER DEFAULT 1"),
+            ("botiquin_tiene", "INTEGER"),
+            ("botiquin_completo", "INTEGER"),
+            ("botiquin_requiere_reposicion", "INTEGER"),
+            ("botiquin_fecha_control", "TEXT"),
+            ("botiquin_observaciones", "TEXT"),
+            ("ventilacion_aplica", "INTEGER DEFAULT 1"),
+            ("ventilacion_posee", "INTEGER"),
+            ("ventilacion_suficiente", "INTEGER"),
+            ("ventilacion_deficiente", "INTEGER"),
+            ("ventilacion_observaciones", "TEXT"),
+            ("tableros_aplica", "INTEGER DEFAULT 1"),
+            ("tableros_identificado", "INTEGER"),
+            ("tableros_protegido", "INTEGER"),
+            ("tableros_senalizado", "INTEGER"),
+            ("tableros_requiere_intervencion", "INTEGER"),
+            ("tableros_observaciones", "TEXT"),
+            ("tierra_aplica", "INTEGER DEFAULT 1"),
+            ("tierra_posee", "INTEGER"),
+            ("tierra_documentacion", "INTEGER"),
+            ("tierra_medicion_vigente", "INTEGER"),
+            ("tierra_requiere_medicion", "INTEGER"),
+            ("tierra_fecha", "TEXT"),
+            ("tierra_archivo_url", "TEXT"),
+            ("tierra_observaciones", "TEXT"),
+            ("observaciones_generales", "TEXT"),
+            ("creado_por", "TEXT"),
+            ("actualizado_por", "TEXT"),
+            ("fecha_creacion", "TEXT DEFAULT (datetime('now'))"),
+            ("fecha_actualizacion", "TEXT DEFAULT (datetime('now'))"),
+        ])
+        con.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_sst_relevamiento_basico_sede ON sst_relevamiento_basico(sede_codigo)")
+        con.commit()
+
+    def _sst_basic_norm_bool(value):
+        raw = str(value or "").strip().lower()
+        if raw in {"1", "si", "s", "true", "on"}:
+            return 1
+        if raw in {"0", "no", "n", "false", "off"}:
+            return 0
+        return None
+
+    def _sst_basic_label_bool(value):
+        if value == 1:
+            return "Si"
+        if value == 0:
+            return "No"
+        return "-"
+
+    def _sst_basic_form_value(value):
+        normalized = _sst_basic_norm_bool(value)
+        if normalized == 1:
+            return "1"
+        if normalized == 0:
+            return "0"
+        return ""
+
+    def _sst_basic_status_key(summary):
+        if bool((summary or {}).get("is_no_aplica")):
+            return "NO_APLICA"
+        step_label = str((summary or {}).get("step_label") or "").strip().lower()
+        if step_label == "sin relevar":
+            return "SIN_RELEVAR"
+        if step_label == "relevamiento parcial":
+            return "RELEVAMIENTO_PARCIAL"
+        if step_label == "requiere intervencion":
+            return "REQUIERE_INTERVENCION"
+        if step_label == "cumple":
+            return "CUMPLE"
+        return "SIN_RELEVAR"
+
+    def _sst_basic_item_state(item_key, row):
+        prefix = f"{item_key}_"
+        aplica = _sst_basic_norm_bool((row or {}).get(f"{item_key}_aplica"))
+        if aplica == 0:
+            return "NO_APLICA", "No aplica"
+        if item_key == "botiquin":
+            values = {
+                "tiene": _sst_basic_norm_bool((row or {}).get(prefix + "tiene")),
+                "completo": _sst_basic_norm_bool((row or {}).get(prefix + "completo")),
+                "reposicion": _sst_basic_norm_bool((row or {}).get(prefix + "requiere_reposicion")),
+            }
+            if all(value is None for value in values.values()) and not str((row or {}).get(prefix + "fecha_control") or "").strip():
+                return "SIN_RELEVAR", "Sin relevar"
+            if values["tiene"] == 0:
+                return "REQUIERE_INTERVENCION", "Sin botiquin"
+            if values["completo"] == 0 or values["reposicion"] == 1:
+                return "REQUIERE_INTERVENCION", "Requiere reposicion"
+            return "CUMPLE", "Cumple"
+        if item_key == "ventilacion":
+            values = {
+                "posee": _sst_basic_norm_bool((row or {}).get(prefix + "posee")),
+                "suficiente": _sst_basic_norm_bool((row or {}).get(prefix + "suficiente")),
+                "deficiente": _sst_basic_norm_bool((row or {}).get(prefix + "deficiente")),
+            }
+            if all(value is None for value in values.values()):
+                return "SIN_RELEVAR", "Sin relevar"
+            if values["posee"] == 0 or values["deficiente"] == 1 or values["suficiente"] == 0:
+                return "REQUIERE_INTERVENCION", "Requiere mejora"
+            return "CUMPLE", "Cumple"
+        if item_key == "tableros":
+            values = {
+                "identificado": _sst_basic_norm_bool((row or {}).get(prefix + "identificado")),
+                "protegido": _sst_basic_norm_bool((row or {}).get(prefix + "protegido")),
+                "senalizado": _sst_basic_norm_bool((row or {}).get(prefix + "senalizado")),
+                "intervencion": _sst_basic_norm_bool((row or {}).get(prefix + "requiere_intervencion")),
+            }
+            if all(value is None for value in values.values()):
+                return "SIN_RELEVAR", "Sin relevar"
+            if values["intervencion"] == 1 or values["identificado"] == 0 or values["protegido"] == 0 or values["senalizado"] == 0:
+                return "REQUIERE_INTERVENCION", "Requiere intervencion"
+            return "CUMPLE", "Cumple"
+        if item_key == "tierra":
+            values = {
+                "posee": _sst_basic_norm_bool((row or {}).get(prefix + "posee")),
+                "documentacion": _sst_basic_norm_bool((row or {}).get(prefix + "documentacion")),
+                "vigente": _sst_basic_norm_bool((row or {}).get(prefix + "medicion_vigente")),
+                "requiere": _sst_basic_norm_bool((row or {}).get(prefix + "requiere_medicion")),
+            }
+            if all(value is None for value in values.values()) and not str((row or {}).get(prefix + "fecha") or "").strip():
+                return "SIN_RELEVAR", "Sin relevar"
+            if values["requiere"] == 1 or values["posee"] == 0 or values["documentacion"] == 0 or values["vigente"] == 0:
+                return "REQUIERE_INTERVENCION", "Requiere medicion"
+            return "CUMPLE", "Cumple"
+        return "SIN_RELEVAR", "Sin relevar"
+
+    def _sst_basic_summary(sede_info, row=None):
+        data = dict(row or {})
+        item_rows = []
+        counts = {"cumple": 0, "intervencion": 0, "sin_relevar": 0, "no_aplica": 0}
+        for item in SST_BASIC_ITEM_META:
+            state_code, state_label = _sst_basic_item_state(item["key"], data)
+            item_rows.append({
+                "key": item["key"],
+                "label": item["label"],
+                "state_code": state_code,
+                "state_label": state_label,
+            })
+            if state_code == "CUMPLE":
+                counts["cumple"] += 1
+            elif state_code == "REQUIERE_INTERVENCION":
+                counts["intervencion"] += 1
+            elif state_code == "NO_APLICA":
+                counts["no_aplica"] += 1
+            else:
+                counts["sin_relevar"] += 1
+        applicable_total = max(len(item_rows) - counts["no_aplica"], 0)
+        verificados = counts["cumple"]
+        if counts["no_aplica"] == len(item_rows):
+            phase_code = "NO_APLICA"
+            step_label = "No aplica"
+            progress_pct = 0
+            pending_count = 0
+            next_step = "Sin accion requerida"
+            summary_text = "Sin aplicacion operativa"
+            alert_tone = "muted"
+            is_no_data = False
+            is_no_aplica = True
+        elif counts["sin_relevar"] == len(item_rows):
+            phase_code = "DIAGNOSTICO"
+            step_label = "Sin relevar"
+            progress_pct = 0
+            pending_count = len(item_rows)
+            next_step = "Registrar relevamiento"
+            summary_text = "0 de 4 verificados"
+            alert_tone = "muted"
+            is_no_data = True
+            is_no_aplica = False
+        elif counts["sin_relevar"] > 0:
+            phase_code = "DIAGNOSTICO"
+            step_label = "Relevamiento parcial"
+            progress_pct = _sst_matrix_progress((verificados / max(applicable_total, 1)) * 100)
+            pending_count = counts["sin_relevar"] + counts["intervencion"]
+            next_step = "Completar relevamiento"
+            summary_text = f"{verificados} de {max(applicable_total, 1)} verificados"
+            alert_tone = "warn" if counts["intervencion"] else "muted"
+            is_no_data = False
+            is_no_aplica = False
+        elif counts["intervencion"] > 0:
+            phase_code = "IMPLEMENTACION"
+            step_label = "Requiere intervencion"
+            progress_pct = _sst_matrix_progress((verificados / max(applicable_total, 1)) * 100)
+            pending_count = counts["intervencion"]
+            next_step = "Regularizar observaciones"
+            summary_text = f"{verificados} de {max(applicable_total, 1)} verificados"
+            alert_tone = "warn"
+            is_no_data = False
+            is_no_aplica = False
+        else:
+            phase_code = "OPERACION"
+            step_label = "Cumple"
+            progress_pct = 100
+            pending_count = 0
+            next_step = "Mantener control"
+            summary_text = f"{verificados} de {max(applicable_total, 1)} verificados"
+            alert_tone = "ok"
+            is_no_data = False
+            is_no_aplica = False
+        return {
+            "sede_codigo": (_row_value(sede_info, "codigo", "") or "").strip().upper(),
+            "sede_nombre": (_row_value(sede_info, "nombre", "") or "").strip(),
+            "record_id": int(data.get("id") or 0),
+            "item_rows": item_rows,
+            "counts": counts,
+            "applicable_total": applicable_total,
+            "verified_total": verificados,
+            "phase_code": phase_code,
+            "step_label": step_label,
+            "progress_pct": progress_pct,
+            "pending_count": pending_count,
+            "next_step": next_step,
+            "summary_text": summary_text,
+            "alert_tone": alert_tone,
+            "is_no_data": is_no_data,
+            "is_no_aplica": is_no_aplica,
+            "status_key": _sst_basic_status_key({
+                "step_label": step_label,
+                "is_no_aplica": is_no_aplica,
+            }),
+            "raw": data,
+        }
 
     def ensure_sst_visitas_docs_tables(con):
         con.execute("""
@@ -7405,6 +7686,143 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
     def sst_matriz_general():
         return render_template("sst_matriz_general.html", **build_sgsst_matriz_general_context())
 
+    @app.route("/sst/relevamiento-basico", methods=["GET", "POST"], endpoint="sst_relevamiento_basico_home")
+    def sst_relevamiento_basico_home():
+        con = get_db()
+        ensure_sst_relevamiento_basico_table(con)
+        ensure_sst_operativo_historial_tables(con)
+
+        if request.method == "POST":
+            sede_codigo = (_sst_clean_upper(request.form.get("sede_codigo")) or "").strip().upper()
+            sede_row = con.execute("""
+                SELECT UPPER(COALESCE(codigo, '')) AS codigo, COALESCE(nombre, '') AS nombre
+                FROM sedes_mpd
+                WHERE UPPER(COALESCE(codigo, '')) = ?
+                LIMIT 1
+            """, (sede_codigo,)).fetchone()
+            if not sede_row:
+                con.close()
+                flash("Selecciona una sede valida para guardar el relevamiento basico.", "warning")
+                return redirect(url_for("sst_relevamiento_basico_home"))
+
+            user_name = _sst_current_user()
+            now_ts = _sst_now_ts()
+            payload = {
+                "botiquin_aplica": _sst_basic_norm_bool(request.form.get("botiquin_aplica")),
+                "botiquin_tiene": _sst_basic_norm_bool(request.form.get("botiquin_tiene")),
+                "botiquin_completo": _sst_basic_norm_bool(request.form.get("botiquin_completo")),
+                "botiquin_requiere_reposicion": _sst_basic_norm_bool(request.form.get("botiquin_requiere_reposicion")),
+                "botiquin_fecha_control": str(request.form.get("botiquin_fecha_control") or "").strip(),
+                "botiquin_observaciones": str(request.form.get("botiquin_observaciones") or "").strip(),
+                "ventilacion_aplica": _sst_basic_norm_bool(request.form.get("ventilacion_aplica")),
+                "ventilacion_posee": _sst_basic_norm_bool(request.form.get("ventilacion_posee")),
+                "ventilacion_suficiente": _sst_basic_norm_bool(request.form.get("ventilacion_suficiente")),
+                "ventilacion_deficiente": _sst_basic_norm_bool(request.form.get("ventilacion_deficiente")),
+                "ventilacion_observaciones": str(request.form.get("ventilacion_observaciones") or "").strip(),
+                "tableros_aplica": _sst_basic_norm_bool(request.form.get("tableros_aplica")),
+                "tableros_identificado": _sst_basic_norm_bool(request.form.get("tableros_identificado")),
+                "tableros_protegido": _sst_basic_norm_bool(request.form.get("tableros_protegido")),
+                "tableros_senalizado": _sst_basic_norm_bool(request.form.get("tableros_senalizado")),
+                "tableros_requiere_intervencion": _sst_basic_norm_bool(request.form.get("tableros_requiere_intervencion")),
+                "tableros_observaciones": str(request.form.get("tableros_observaciones") or "").strip(),
+                "tierra_aplica": _sst_basic_norm_bool(request.form.get("tierra_aplica")),
+                "tierra_posee": _sst_basic_norm_bool(request.form.get("tierra_posee")),
+                "tierra_documentacion": _sst_basic_norm_bool(request.form.get("tierra_documentacion")),
+                "tierra_medicion_vigente": _sst_basic_norm_bool(request.form.get("tierra_medicion_vigente")),
+                "tierra_requiere_medicion": _sst_basic_norm_bool(request.form.get("tierra_requiere_medicion")),
+                "tierra_fecha": str(request.form.get("tierra_fecha") or "").strip(),
+                "tierra_archivo_url": str(request.form.get("tierra_archivo_url") or "").strip(),
+                "tierra_observaciones": str(request.form.get("tierra_observaciones") or "").strip(),
+                "observaciones_generales": str(request.form.get("observaciones_generales") or "").strip(),
+            }
+
+            existing = con.execute("""
+                SELECT id
+                FROM sst_relevamiento_basico
+                WHERE UPPER(COALESCE(sede_codigo, '')) = ?
+                LIMIT 1
+            """, (sede_codigo,)).fetchone()
+
+            field_names = [
+                "botiquin_aplica",
+                "botiquin_tiene",
+                "botiquin_completo",
+                "botiquin_requiere_reposicion",
+                "botiquin_fecha_control",
+                "botiquin_observaciones",
+                "ventilacion_aplica",
+                "ventilacion_posee",
+                "ventilacion_suficiente",
+                "ventilacion_deficiente",
+                "ventilacion_observaciones",
+                "tableros_aplica",
+                "tableros_identificado",
+                "tableros_protegido",
+                "tableros_senalizado",
+                "tableros_requiere_intervencion",
+                "tableros_observaciones",
+                "tierra_aplica",
+                "tierra_posee",
+                "tierra_documentacion",
+                "tierra_medicion_vigente",
+                "tierra_requiere_medicion",
+                "tierra_fecha",
+                "tierra_archivo_url",
+                "tierra_observaciones",
+                "observaciones_generales",
+            ]
+
+            if existing:
+                record_id = int(existing["id"] or 0)
+                set_clause = ", ".join([f"{field} = ?" for field in field_names] + ["actualizado_por = ?", "fecha_actualizacion = ?"])
+                con.execute(f"""
+                    UPDATE sst_relevamiento_basico
+                    SET {set_clause}
+                    WHERE id = ?
+                """, tuple(payload[field] for field in field_names) + (user_name, now_ts, record_id))
+                action_name = "actualizacion"
+                flash_message = "Relevamiento basico actualizado."
+            else:
+                insert_fields = ["sede_codigo"] + field_names + ["creado_por", "actualizado_por", "fecha_creacion", "fecha_actualizacion"]
+                placeholders = ", ".join(["?"] * len(insert_fields))
+                con.execute(f"""
+                    INSERT INTO sst_relevamiento_basico({", ".join(insert_fields)})
+                    VALUES ({placeholders})
+                """, (sede_codigo,) + tuple(payload[field] for field in field_names) + (user_name, user_name, now_ts, now_ts))
+                record_id = int(con.execute("SELECT last_insert_rowid()").fetchone()[0])
+                action_name = "alta"
+                flash_message = "Relevamiento basico guardado."
+
+            summary = _sst_basic_summary(
+                {"codigo": sede_codigo, "nombre": (_row_value(sede_row, "nombre", "") or "").strip()},
+                dict(payload, id=record_id),
+            )
+            _sst_historial_log(
+                con,
+                "relevamiento_basico",
+                action_name,
+                record_id or None,
+                sede_codigo,
+                "",
+                f"Estado {summary.get('step_label') or '-'} | {summary.get('summary_text') or '-'}",
+            )
+            con.commit()
+            con.close()
+            flash(flash_message, "success")
+
+            return_args = {
+                "open_sede": sede_codigo,
+                "sede": (_sst_clean_upper(request.form.get("return_sede")) or "").strip().upper() or None,
+                "region": str(request.form.get("return_region") or "").strip() or None,
+                "estado": str(request.form.get("return_estado") or "").strip().upper() or None,
+            }
+            clean_args = {key: value for key, value in return_args.items() if value not in ("", None, False)}
+            return redirect(url_for("sst_relevamiento_basico_home", **clean_args))
+
+        context = build_sgsst_relevamiento_basico_context(con)
+        con.close()
+        return render_template("sst_relevamiento_basico.html", **context)
+
     @app.route("/sst/implementacion", methods=["GET"], endpoint="sst_implementacion_tablero")
     def sst_implementacion_tablero():
         args = request.args.to_dict(flat=True)
@@ -12918,6 +13336,12 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         meta["code"] = key
         return meta
 
+    def _sst_matrix_phase_group(phase_code):
+        key = str(phase_code or "DIAGNOSTICO").strip().upper() or "DIAGNOSTICO"
+        meta = dict(SST_MATRIX_PHASE_GROUPS.get(key) or SST_MATRIX_PHASE_GROUPS["DIAGNOSTICO"])
+        meta["raw_code"] = key
+        return meta
+
     def _sst_matrix_normalize_component(value):
         key = str(value or "").strip().lower()
         aliases = {
@@ -12931,6 +13355,9 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             "evacuacion": "evacuacion",
             "desinfeccion": "desinfeccion",
             "desinfecciones": "desinfeccion",
+            "relevamiento_basico": "relevamiento_basico",
+            "basico": "relevamiento_basico",
+            "relevamiento": "relevamiento_basico",
         }
         return aliases.get(key, "")
 
@@ -12969,6 +13396,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
     ):
         component = _sst_matrix_component_map().get(component_key) or {"key": component_key, "label": component_key.title(), "short": component_key.title()}
         phase_meta = _sst_matrix_phase_meta("NO_APLICA" if is_no_aplica else phase_code)
+        phase_group = _sst_matrix_phase_group(phase_meta["code"])
         progress = _sst_matrix_progress(progress_pct)
         pending = max(_sst_int_nonneg(pending_count), 0)
         step = (str(step_label or "").strip() or phase_meta["label"])
@@ -12987,6 +13415,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             "sede_codigo": (_sst_clean_upper(sede_codigo) or "").strip().upper(),
             "phase_code": phase_meta["code"],
             "phase_meta": phase_meta,
+            "phase_group": phase_group,
             "step_label": step,
             "summary_text": summary,
             "progress_pct": progress,
@@ -13725,8 +14154,32 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             alert_tone="ok",
         )
 
+    def _sst_matrix_build_basic_cell(sede_info, summary):
+        row = dict(summary or _sst_basic_summary(sede_info))
+        sede_codigo = (_row_value(sede_info, "codigo", "") or "").strip().upper()
+        return _sst_matrix_make_cell(
+            "relevamiento_basico",
+            sede_codigo,
+            phase_code=row.get("phase_code") or "DIAGNOSTICO",
+            step_label=row.get("step_label") or "Sin relevar",
+            progress_pct=row.get("progress_pct") or 0,
+            pending_count=row.get("pending_count") or 0,
+            next_step=row.get("next_step") or "",
+            summary_text=row.get("summary_text") or "",
+            open_url=_sgsst_command_project_open_url("relevamiento_basico", sede_codigo),
+            alert_tone=row.get("alert_tone") or "muted",
+            is_no_data=bool(row.get("is_no_data")),
+            is_no_aplica=bool(row.get("is_no_aplica")),
+            extra={
+                "verified_total": int(row.get("verified_total") or 0),
+                "applicable_total": int(row.get("applicable_total") or 0),
+                "counts": dict(row.get("counts") or {}),
+            },
+        )
+
     def _sst_matrix_cell_matches(cell, phase_filter="", step_filter="", pending_only=False, no_data_only=False):
-        if phase_filter and str(cell.get("phase_code") or "").strip().upper() != str(phase_filter or "").strip().upper():
+        cell_phase_filter = str(((cell.get("phase_group") or {}).get("filter")) or (cell.get("phase_code") or "")).strip().upper()
+        if phase_filter and cell_phase_filter != str(phase_filter or "").strip().upper():
             return False
         if step_filter and str(cell.get("step_label") or "").strip() != str(step_filter or "").strip():
             return False
@@ -13744,6 +14197,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         ensure_sst_luces_tables(con)
         ensure_sst_desinfecciones_tables(con)
         ensure_sst_operativo_historial_tables(con)
+        ensure_sst_relevamiento_basico_table(con)
         ensure_sgsst_implementation_tables(con)
         _, command_project_scope = _sgsst_command_load_settings(con)
 
@@ -13831,13 +14285,21 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         cart_summary = _sst_carteleria_aggregate_by_sede(_sst_fetch_carteleria_records(con))
         luces_summary = _sst_luces_aggregate_by_sede(_sst_fetch_luces_records(con))
         desinf_summary = _sst_desinf_aggregate_by_sede(_sst_desinf_fetch_records(con))
+        basic_rows = {}
+        for row in con.execute("""
+            SELECT *
+            FROM sst_relevamiento_basico
+        """).fetchall():
+            sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
+            if sede_codigo:
+                basic_rows[sede_codigo] = dict(row)
         mata_summary = _sst_matrix_collect_matafuegos_state(con, today_ref)
         evac_summary = _sst_matrix_collect_evacuacion_state(con)
 
         current_args = request.args.to_dict(flat=True)
         component_filter = _sst_matrix_normalize_component(request.args.get("componente"))
         phase_filter = str(request.args.get("fase") or "").strip().upper()
-        if phase_filter and phase_filter not in SST_MATRIX_PHASE_META:
+        if phase_filter and phase_filter not in {"F1", "F2", "F3", "NO_APLICA"}:
             phase_filter = ""
         sede_filter = (_sst_clean_upper(request.args.get("sede")) or "").strip().upper()
         region_filter = str(request.args.get("region") or "").strip()
@@ -13861,6 +14323,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             cells_by_key["carteleria"] = _sst_matrix_build_carteleria_cell(sede, cart_summary.get(sede_codigo))
             cells_by_key["evacuacion"] = _sst_matrix_build_evacuacion_cell(sede_codigo, evac_summary.get(sede_codigo))
             cells_by_key["desinfeccion"] = _sst_matrix_build_desinfeccion_cell(sede, desinf_summary.get(sede_codigo))
+            cells_by_key["relevamiento_basico"] = _sst_matrix_build_basic_cell(sede, _sst_basic_summary(sede, basic_rows.get(sede_codigo)))
             for component_key, cell in list(cells_by_key.items()):
                 project_key = str((_sst_matrix_component_map().get(component_key) or {}).get("project_key") or component_key).strip().lower()
                 scope_entry = dict(command_project_scope.get(project_key, {}) or {}).get(sede_codigo)
@@ -13900,11 +14363,12 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         no_data_cells_total = 0
         for row in rows:
             for cell in row["cells"]:
-                summary_counts[cell["phase_code"]] += 1
+                summary_counts[str(((cell.get("phase_group") or {}).get("filter")) or (cell.get("phase_code") or "")).strip().upper()] += 1
                 if cell["has_pending"]:
                     pending_cells_total += 1
                 if cell["is_no_data"]:
                     no_data_cells_total += 1
+        risk_cells_total = sum(1 for row in rows for cell in row["cells"] if str(cell.get("alert_tone") or "") == "risk")
 
         region_options = sorted({item["region"] for item in sedes if item["region"]})
         step_options = sorted(step_values)
@@ -13915,8 +14379,8 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             "visible_components": visible_components,
             "component_options": list(SST_MATRIX_COMPONENTS),
             "phase_options": [
-                {"code": key, "label": value["label"]}
-                for key, value in sorted(SST_MATRIX_PHASE_META.items(), key=lambda item: item[1]["order"])
+                {"code": key, "label": value["display"]}
+                for key, value in [("F1", SST_MATRIX_PHASE_GROUPS["DIAGNOSTICO"]), ("F2", SST_MATRIX_PHASE_GROUPS["IMPLEMENTACION"]), ("F3", SST_MATRIX_PHASE_GROUPS["OPERACION"]), ("NO_APLICA", SST_MATRIX_PHASE_GROUPS["NO_APLICA"])]
             ],
             "step_options": step_options,
             "region_options": region_options,
@@ -13933,12 +14397,167 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             "clear_url": url_for("sst_matriz_general"),
             "summary_cards": [
                 {"label": "Sedes visibles", "value": len(rows), "tone": "muted"},
-                {"label": "Diagnostico", "value": summary_counts.get("DIAGNOSTICO", 0), "tone": "diagnostico"},
-                {"label": "Planificacion", "value": summary_counts.get("PLANIFICACION", 0), "tone": "planificacion"},
-                {"label": "Implementacion", "value": summary_counts.get("IMPLEMENTACION", 0), "tone": "implementacion"},
-                {"label": "Operacion", "value": summary_counts.get("OPERACION", 0), "tone": "operacion"},
+                {"label": "F1 Diagnostico", "value": summary_counts.get("F1", 0), "tone": "diagnostico"},
+                {"label": "F2 Implementacion", "value": summary_counts.get("F2", 0), "tone": "implementacion"},
+                {"label": "F3 Operacion", "value": summary_counts.get("F3", 0), "tone": "operacion"},
                 {"label": "Con pendientes", "value": pending_cells_total, "tone": "warn"},
                 {"label": "Sin datos", "value": no_data_cells_total, "tone": "muted"},
+                {"label": "Vencidos", "value": risk_cells_total, "tone": "risk"},
+            ],
+        }
+
+    def build_sgsst_relevamiento_basico_context(con):
+        ensure_sst_relevamiento_basico_table(con)
+        ensure_sst_operativo_historial_tables(con)
+
+        sedes_cols = _table_cols(con, "sedes_mpd")
+        region_expr = "''"
+        if "region" in sedes_cols:
+            region_expr = "COALESCE(region, '')"
+        elif "ciudad" in sedes_cols:
+            region_expr = "COALESCE(ciudad, '')"
+        elif "fuero" in sedes_cols:
+            region_expr = "COALESCE(fuero, '')"
+
+        sedes = []
+        for row in con.execute(f"""
+            SELECT
+                UPPER(COALESCE(codigo, '')) AS codigo,
+                COALESCE(nombre, '') AS nombre,
+                {region_expr} AS region,
+                COALESCE(fuero, '') AS fuero
+            FROM sedes_mpd
+            WHERE TRIM(COALESCE(codigo, '')) <> ''
+              AND COALESCE(activa, 1) = 1
+            ORDER BY codigo
+        """).fetchall():
+            sede_codigo = (_row_value(row, "codigo", "") or "").strip().upper()
+            if not sede_codigo:
+                continue
+            fuero_raw = (_row_value(row, "fuero", "") or "").strip()
+            fuero_class, fuero_color = _sst_sede_fuero_style(sede_codigo, fuero_raw)
+            sedes.append({
+                "codigo": sede_codigo,
+                "nombre": (_row_value(row, "nombre", "") or "").strip(),
+                "region": (_row_value(row, "region", "") or "").strip(),
+                "fuero": fuero_raw,
+                "fuero_class": fuero_class,
+                "fuero_color": fuero_color,
+            })
+
+        records_by_sede = {}
+        for row in con.execute("""
+            SELECT *
+            FROM sst_relevamiento_basico
+            ORDER BY UPPER(COALESCE(sede_codigo, ''))
+        """).fetchall():
+            sede_codigo = (_row_value(row, "sede_codigo", "") or "").strip().upper()
+            if sede_codigo:
+                records_by_sede[sede_codigo] = dict(row)
+
+        filters = {
+            "sede": (_sst_clean_upper(request.args.get("sede")) or "").strip().upper(),
+            "region": str(request.args.get("region") or "").strip(),
+            "estado": str(request.args.get("estado") or "").strip().upper(),
+        }
+        open_sede = (_sst_clean_upper(request.args.get("open_sede")) or "").strip().upper()
+        state_labels = {
+            "SIN_RELEVAR": "Sin relevar",
+            "RELEVAMIENTO_PARCIAL": "Relevamiento parcial",
+            "REQUIERE_INTERVENCION": "Requiere intervencion",
+            "CUMPLE": "Cumple",
+            "NO_APLICA": "No aplica",
+        }
+        state_order = ["SIN_RELEVAR", "RELEVAMIENTO_PARCIAL", "REQUIERE_INTERVENCION", "CUMPLE", "NO_APLICA"]
+
+        rows = []
+        counts = defaultdict(int)
+        for sede in sedes:
+            if filters["sede"] and sede["codigo"] != filters["sede"]:
+                continue
+            if filters["region"] and sede["region"] != filters["region"]:
+                continue
+            summary = _sst_basic_summary(sede, records_by_sede.get(sede["codigo"]))
+            summary["phase_group"] = _sst_matrix_phase_group(summary.get("phase_code"))
+            summary["state_label"] = state_labels.get(summary.get("status_key"), summary.get("step_label") or "Sin relevar")
+            summary["apertura_url"] = url_for(
+                "sst_relevamiento_basico_home",
+                sede=(filters["sede"] or None),
+                region=(filters["region"] or None),
+                estado=(filters["estado"] or None),
+                open_sede=sede["codigo"],
+            )
+            if filters["estado"] and summary["status_key"] != filters["estado"]:
+                continue
+            counts[summary["status_key"]] += 1
+            row = dict(sede)
+            row["summary"] = summary
+            rows.append(row)
+
+        selected_row = None
+        if open_sede:
+            selected_row = next((row for row in rows if row["codigo"] == open_sede), None)
+        if not selected_row and filters["sede"] and len(rows) == 1:
+            selected_row = rows[0]
+
+        selected_summary = None
+        selected_form = None
+        if selected_row:
+            selected_summary = dict(selected_row["summary"])
+            selected_summary["sede_nombre"] = selected_row["nombre"]
+            selected_summary["region"] = selected_row["region"]
+            selected_summary["history_rows"] = _sst_fetch_historial_rows(con, "relevamiento_basico", selected_row["codigo"])
+            raw = dict(selected_summary.get("raw") or {})
+            selected_form = {
+                "record_id": int(raw.get("id") or 0),
+                "sede_codigo": selected_row["codigo"],
+                "botiquin_aplica": _sst_basic_form_value(raw.get("botiquin_aplica")),
+                "botiquin_tiene": _sst_basic_form_value(raw.get("botiquin_tiene")),
+                "botiquin_completo": _sst_basic_form_value(raw.get("botiquin_completo")),
+                "botiquin_requiere_reposicion": _sst_basic_form_value(raw.get("botiquin_requiere_reposicion")),
+                "botiquin_fecha_control": str(raw.get("botiquin_fecha_control") or "").strip(),
+                "botiquin_observaciones": str(raw.get("botiquin_observaciones") or "").strip(),
+                "ventilacion_aplica": _sst_basic_form_value(raw.get("ventilacion_aplica")),
+                "ventilacion_posee": _sst_basic_form_value(raw.get("ventilacion_posee")),
+                "ventilacion_suficiente": _sst_basic_form_value(raw.get("ventilacion_suficiente")),
+                "ventilacion_deficiente": _sst_basic_form_value(raw.get("ventilacion_deficiente")),
+                "ventilacion_observaciones": str(raw.get("ventilacion_observaciones") or "").strip(),
+                "tableros_aplica": _sst_basic_form_value(raw.get("tableros_aplica")),
+                "tableros_identificado": _sst_basic_form_value(raw.get("tableros_identificado")),
+                "tableros_protegido": _sst_basic_form_value(raw.get("tableros_protegido")),
+                "tableros_senalizado": _sst_basic_form_value(raw.get("tableros_senalizado")),
+                "tableros_requiere_intervencion": _sst_basic_form_value(raw.get("tableros_requiere_intervencion")),
+                "tableros_observaciones": str(raw.get("tableros_observaciones") or "").strip(),
+                "tierra_aplica": _sst_basic_form_value(raw.get("tierra_aplica")),
+                "tierra_posee": _sst_basic_form_value(raw.get("tierra_posee")),
+                "tierra_documentacion": _sst_basic_form_value(raw.get("tierra_documentacion")),
+                "tierra_medicion_vigente": _sst_basic_form_value(raw.get("tierra_medicion_vigente")),
+                "tierra_requiere_medicion": _sst_basic_form_value(raw.get("tierra_requiere_medicion")),
+                "tierra_fecha": str(raw.get("tierra_fecha") or "").strip(),
+                "tierra_archivo_url": str(raw.get("tierra_archivo_url") or "").strip(),
+                "tierra_observaciones": str(raw.get("tierra_observaciones") or "").strip(),
+                "observaciones_generales": str(raw.get("observaciones_generales") or "").strip(),
+            }
+
+        return {
+            "sst_section": "relevamiento_basico",
+            "rows": rows,
+            "selected_summary": selected_summary,
+            "selected_form": selected_form,
+            "bool_options": list(SST_BASIC_BOOL_CHOICES),
+            "filters": filters,
+            "open_sede": open_sede,
+            "clear_url": url_for("sst_relevamiento_basico_home"),
+            "region_options": sorted({item["region"] for item in sedes if item["region"]}),
+            "estado_options": [{"code": key, "label": state_labels[key]} for key in state_order],
+            "history_rows": _sst_fetch_historial_rows(con, "relevamiento_basico"),
+            "summary_cards": [
+                {"label": "Sedes visibles", "value": len(rows), "tone": "muted"},
+                {"label": "Sin relevar", "value": counts.get("SIN_RELEVAR", 0), "tone": "diagnostico"},
+                {"label": "Parcial", "value": counts.get("RELEVAMIENTO_PARCIAL", 0), "tone": "diagnostico"},
+                {"label": "Requiere intervencion", "value": counts.get("REQUIERE_INTERVENCION", 0), "tone": "implementacion"},
+                {"label": "Cumple", "value": counts.get("CUMPLE", 0), "tone": "operacion"},
+                {"label": "No aplica", "value": counts.get("NO_APLICA", 0), "tone": "muted"},
             ],
         }
 

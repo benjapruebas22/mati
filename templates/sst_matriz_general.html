@@ -1,40 +1,38 @@
 {% extends "base.html" %}
 
 {% macro component_icon(key) -%}
-  {%- if key == 'art' -%}📋
-  {%- elif key == 'matafuegos' -%}🧯
-  {%- elif key == 'luces' -%}💡
-  {%- elif key == 'carteleria' -%}🪧
-  {%- elif key == 'evacuacion' -%}🚪
-  {%- elif key == 'desinfeccion' -%}🧪
-  {%- else -%}•{%- endif -%}
+  {%- if key == 'art' -%}AR
+  {%- elif key == 'matafuegos' -%}MF
+  {%- elif key == 'luces' -%}LU
+  {%- elif key == 'carteleria' -%}CA
+  {%- elif key == 'evacuacion' -%}EV
+  {%- elif key == 'desinfeccion' -%}DE
+  {%- elif key == 'relevamiento_basico' -%}RB
+  {%- else -%}--{%- endif -%}
 {%- endmacro %}
 
 {% macro component_name(key, fallback='') -%}
   {%- if key == 'art' -%}ART
   {%- elif key == 'matafuegos' -%}Matafuegos
   {%- elif key == 'luces' -%}Luces
-  {%- elif key == 'carteleria' -%}Cartelería
-  {%- elif key == 'evacuacion' -%}Evacuación
-  {%- elif key == 'desinfeccion' -%}Desinfección
+  {%- elif key == 'carteleria' -%}Carteleria
+  {%- elif key == 'evacuacion' -%}Evacuacion
+  {%- elif key == 'desinfeccion' -%}Desinfeccion
+  {%- elif key == 'relevamiento_basico' -%}Relevamiento basico
   {%- else -%}{{ fallback }}{%- endif -%}
 {%- endmacro %}
 
 {% macro phase_label(code, fallback='') -%}
-  {%- if code == 'DIAGNOSTICO' -%}DIAGNÓSTICO
-  {%- elif code == 'PLANIFICACION' -%}PLANIFICACIÓN
-  {%- elif code == 'IMPLEMENTACION' -%}IMPLEMENTACIÓN
-  {%- elif code == 'OPERACION' -%}OPERACIÓN
-  {%- elif code == 'NO_APLICA' -%}NO APLICA
+  {%- if code == 'DIAGNOSTICO' -%}F1 Diagnostico
+  {%- elif code == 'PLANIFICACION' -%}F2 Implementacion
+  {%- elif code == 'IMPLEMENTACION' -%}F2 Implementacion
+  {%- elif code == 'OPERACION' -%}F3 Operacion
+  {%- elif code == 'NO_APLICA' -%}No aplica
   {%- else -%}{{ fallback }}{%- endif -%}
 {%- endmacro %}
 
 {% macro summary_label(label) -%}
   {%- if label == 'Sedes visibles' -%}Sedes
-  {%- elif label == 'Diagnostico' -%}Diagnóstico
-  {%- elif label == 'Planificacion' -%}Planificación
-  {%- elif label == 'Implementacion' -%}Implementación
-  {%- elif label == 'Operacion' -%}Operación
   {%- elif label == 'Con pendientes' -%}Pendientes
   {%- elif label == 'Sin datos' -%}Sin datos
   {%- else -%}{{ label }}{%- endif -%}
@@ -56,7 +54,7 @@
   {%- if cell.next_step -%}
     {{ cell.next_step }}
   {%- elif cell.is_no_aplica -%}
-    Sin acción requerida
+    Sin accion requerida
   {%- elif cell.is_no_data -%}
     Registrar relevamiento
   {%- else -%}
@@ -68,7 +66,7 @@
 
 {% block extra_head %}
   <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-24-02') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-24-03') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='sgi/operativa_nav.css', v='2026-07-19-02') }}">
 {% endblock %}
 
@@ -80,12 +78,12 @@
     <div>
       <p class="sst-op-eyebrow">Matriz general SG-SST</p>
       <h1>Matriz general SG-SST</h1>
-      <p class="sst-calendar-heading-copy">Lectura rápida por sede y componente, con foco en fase, avance y próximo paso.</p>
+      <p class="sst-calendar-heading-copy">Lectura por sede + componente, ordenada por fase, estado y proximo paso operativo.</p>
     </div>
     <div class="sst-op-actions">
       <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo') }}">Calendario</a>
       <a class="sst-op-btn" href="{{ url_for('sst_plan_implementacion', vista='acciones') }}">Acciones</a>
-      <a class="sst-op-btn" href="{{ url_for('sst_plan_implementacion') }}">Plan</a>
+      <a class="sst-op-btn" href="{{ url_for('sst_relevamiento_basico_home') }}">Relevamiento basico</a>
     </div>
   </header>
 
@@ -131,7 +129,7 @@
             </select>
           </label>
           <label class="sst-op-field">
-            <small>Paso</small>
+            <small>Estado</small>
             <select name="paso">
               <option value="">Todos</option>
               {% for item in step_options %}
@@ -196,11 +194,11 @@
             </th>
             {% for cell in row.cells %}
             <td>
-              <article class="sst-matrix-cell tone-{{ cell.phase_meta.tone }} alert-{{ cell.alert_tone }} {% if selected_cell and selected_cell.sede_codigo == cell.sede_codigo and selected_cell.component_key == cell.component_key %}is-selected{% endif %}">
+              <article class="sst-matrix-cell tone-{{ cell.phase_group.tone }} alert-{{ cell.alert_tone }} {% if selected_cell and selected_cell.sede_codigo == cell.sede_codigo and selected_cell.component_key == cell.component_key %}is-selected{% endif %}">
                 <a class="sst-matrix-cell-link" href="{{ cell.detail_url }}">
                   <div class="sst-matrix-cell-top">
                     <span class="sst-matrix-cell-icon" aria-hidden="true">{{ component_icon(cell.component_key) }}</span>
-                    <span class="sst-matrix-phase">{{ phase_label(cell.phase_code, cell.phase_meta.label) }}</span>
+                    <span class="sst-matrix-phase">{{ phase_label(cell.phase_code, cell.phase_group.display) }}</span>
                   </div>
                   <div class="sst-matrix-cell-copy">
                     <strong>{{ cell.step_label }}</strong>
@@ -249,10 +247,10 @@
         <div class="sst-matrix-detail-grid">
           <div>
             <small>Fase actual</small>
-            <strong>{{ phase_label(selected_cell.phase_code, selected_cell.phase_meta.label) }}</strong>
+            <strong>{{ phase_label(selected_cell.phase_code, selected_cell.phase_group.display) }}</strong>
           </div>
           <div>
-            <small>Paso actual</small>
+            <small>Estado actual</small>
             <strong>{{ selected_cell.step_label }}</strong>
           </div>
           <div>

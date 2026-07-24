@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+
+{% macro render_bool_options(current_value, bool_options) -%}
+  {% for option in bool_options %}
+  <option value="{{ option.value }}" {% if current_value == option.value %}selected{% endif %}>{{ option.label }}</option>
+  {% endfor %}
+{%- endmacro %}
+
+{% block main_class %}container-wide{% endblock %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-24-03') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sgi/operativa_nav.css', v='2026-07-19-02') }}">
+{% endblock %}
+
+{% block content %}
+<section class="sst-operativo sst-ui sst-basic-page">
+  {% include '_sst_operational_nav.html' %}
+
+  <header class="sst-op-header">
+    <div>
+      <p class="sst-op-eyebrow">Relevamiento basico SG-SST</p>
+      <h1>Relevamiento basico por sede</h1>
+      <p class="sst-calendar-heading-copy">Botiquin, ventilacion natural, tableros protegidos y puesta a tierra dentro de una unica ficha simple por sede.</p>
+    </div>
+    <div class="sst-op-actions">
+      <a class="sst-op-btn" href="{{ url_for('sst_matriz_general', componente='relevamiento_basico') }}">Ver en matriz</a>
+      <a class="sst-op-btn" href="{{ url_for('sst_plan_implementacion', vista='acciones') }}">Acciones</a>
+    </div>
+  </header>
+
+  <section class="sst-matrix-summary-grid sst-basic-summary-grid">
+    {% for card in summary_cards %}
+    <article class="sst-op-card sst-matrix-summary-card tone-{{ card.tone }}">
+      <strong>{{ card.value }}</strong>
+      <small>{{ card.label }}</small>
+    </article>
+    {% endfor %}
+  </section>
+
+  <article class="sst-op-card sst-op-section-card">
+    <details class="sst-op-section-details" open>
+      <summary>Filtros</summary>
+      <div class="sst-op-section-body">
+        <form class="sst-basic-filter-form" method="get" action="{{ url_for('sst_relevamiento_basico_home') }}">
+          <label class="sst-op-field">
+            <small>Sede</small>
+            <select name="sede">
+              <option value="">Todas</option>
+              {% for row in rows %}
+              <option value="{{ row.codigo }}" {% if filters.sede == row.codigo %}selected{% endif %}>{{ row.codigo }} - {{ row.nombre }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label class="sst-op-field">
+            <small>Region</small>
+            <select name="region">
+              <option value="">Todas</option>
+              {% for item in region_options %}
+              <option value="{{ item }}" {% if filters.region == item %}selected{% endif %}>{{ item }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label class="sst-op-field">
+            <small>Estado</small>
+            <select name="estado">
+              <option value="">Todos</option>
+              {% for item in estado_options %}
+              <option value="{{ item.code }}" {% if filters.estado == item.code %}selected{% endif %}>{{ item.label }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <div class="sst-basic-filter-actions">
+            <button class="sst-op-btn" type="submit">Aplicar</button>
+            <a class="sst-op-btn" href="{{ clear_url }}">Limpiar</a>
+          </div>
+        </form>
+      </div>
+    </details>
+  </article>
+
+  <article class="sst-op-card sst-basic-table-card">
+    <div class="sst-op-card-head">
+      <h2>Resumen por sede</h2>
+      <span class="sst-op-count">{{ rows|length }} sede(s)</span>
+    </div>
+    <div class="sst-basic-table-wrap">
+      <table class="sst-basic-table">
+        <thead>
+          <tr>
+            <th>Sede</th>
+            <th>Region</th>
+            <th>Fase</th>
+            <th>Estado</th>
+            <th>Resumen</th>
+            <th>Pendientes</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr class="{% if selected_summary and selected_summary.sede_codigo == row.codigo %}is-selected{% endif %}">
+            <th>
+              <div class="sst-basic-sede">
+                <strong>{{ row.codigo }}</strong>
+                <small>{{ row.nombre }}</small>
+              </div>
+            </th>
+            <td>{{ row.region or '-' }}</td>
+            <td>
+              <span class="sst-basic-phase tone-{{ row.summary.phase_group.tone }}">{{ row.summary.phase_group.display }}</span>
+            </td>
+            <td>
+              <span class="sst-basic-state state-{{ row.summary.status_key|lower }}">{{ row.summary.state_label }}</span>
+            </td>
+            <td>{{ row.summary.summary_text }}</td>
+            <td>{{ row.summary.pending_count }}</td>
+            <td class="sst-basic-table-action">
+              <a class="sst-op-btn" href="{{ row.summary.apertura_url }}#relevamiento-detalle">Abrir</a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7">
+              <div class="sst-op-empty">No hay sedes que coincidan con los filtros seleccionados.</div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </article>
+
+  {% if selected_summary and selected_form %}
+  <article class="sst-op-card sst-basic-detail-card" id="relevamiento-detalle">
+    <div class="sst-op-card-head">
+      <h2>{{ selected_summary.sede_codigo }} - {{ selected_summary.sede_nombre }}</h2>
+      <div class="sst-op-actions">
+        <a class="sst-op-btn" href="{{ url_for('sst_plan_implementacion', vista='acciones', form='accion', prefill_sede=selected_summary.sede_codigo, prefill_modulo='Relevamiento basico', prefill_titulo='Regularizar relevamiento basico en ' ~ selected_summary.sede_codigo) }}">Crear accion</a>
+      </div>
+    </div>
+    <form class="sst-basic-detail-shell" method="post" action="{{ url_for('sst_relevamiento_basico_home') }}">
+      <input type="hidden" name="sede_codigo" value="{{ selected_form.sede_codigo }}">
+      <input type="hidden" name="return_sede" value="{{ filters.sede }}">
+      <input type="hidden" name="return_region" value="{{ filters.region }}">
+      <input type="hidden" name="return_estado" value="{{ filters.estado }}">
+
+      <div class="sst-basic-detail-main">
+        <div class="sst-basic-headline">
+          <div>
+            <span class="sst-basic-phase tone-{{ selected_summary.phase_group.tone }}">{{ selected_summary.phase_group.display }}</span>
+            <h3>{{ selected_summary.state_label }}</h3>
+            <p>{{ selected_summary.summary_text }}{% if selected_summary.next_step %} · Proximo paso: {{ selected_summary.next_step }}{% endif %}</p>
+          </div>
+          <div class="sst-basic-inline-stats">
+            <div>
+              <small>Verificados</small>
+              <strong>{{ selected_summary.verified_total }} / {{ selected_summary.applicable_total }}</strong>
+            </div>
+            <div>
+              <small>Pendientes</small>
+              <strong>{{ selected_summary.pending_count }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="sst-basic-section-grid">
+          <section class="sst-basic-item-card">
+            <div class="sst-basic-item-head">
+              <div>
+                <span class="sst-basic-item-kicker">BT</span>
+                <h4>Botiquin</h4>
+              </div>
+              {% for item in selected_summary.item_rows if item.key == 'botiquin' %}
+              <span class="sst-basic-state state-{{ item.state_code|lower }}">{{ item.state_label }}</span>
+              {% endfor %}
+            </div>
+            <div class="sst-basic-form-grid">
+              <label class="sst-op-field">
+                <small>Aplica</small>
+                <select name="botiquin_aplica">{{ render_bool_options(selected_form.botiquin_aplica, bool_options) }}</select>
+              </label>
+              <label class="sst-op-field">
+                <small>Tiene</small>
+                <select name="botiquin_tiene">{{ render_bool_options(selected_form.botiquin_tiene, bool_options) }}</select>
+              </label>
+              <label class="sst-op-field">
+                <small>Completo</small>
+                <select name="botiquin_completo">{{ render_bool_options(selected_form.botiquin_completo, bool_options) }}</select>
+              </label>
+              <label class="sst-op-field">
+                <small>Requiere reposicion</small>
+                <select name="botiquin_requiere_reposicion">{{ render_bool_options(selected_form.botiquin_requiere_reposicion, bool_options) }}</select>
+              </label>
+              <label class="sst-op-field">
+                <small>Fecha de control</small>
+                <input type="date" name="botiquin_fecha_control" value="{{ selected_form.botiquin_fecha_control }}">
+              </label>
+              <label class="sst-op-field sst-basic-field-span">
+                <small>Observaciones</small>
+                <textarea name="botiquin_observaciones" rows="3">{{ selected_form.botiquin_observaciones }}</textarea>
+              </label>
+            </div>
+          </section>
+
+          <section class="sst-basic-item-card">
+            <div class="sst-basic-item-head">
+              <div>
+                <span class="sst-basic-item-kicker">VN</span>
+                <h4>Ventilacion natural</h4>
+              </div>
+              {% for item in selected_summary.item_rows if item.key == 'ventilacion' %}
+              <span class="sst-basic-state state-{{ item.state_code|lower }}">{{ item.state_label }}</span>
+              {% endfor %}
+            </div>
+            <div class="sst-basic-form-grid">
+              <label class="sst-op-field">
+                <small>Aplica</small>
+                <select name="ventilacion_aplica">{{ render_bool_options(selected_form.ventilacion_aplica, bool_options) }}</select>
+              </label>
+              <label class="sst-op-field">
+                <small>Posee</small>
+                <select name="ventilacion_posee">{{ render_bool_options(selected_form.ventilacion_posee, bool_options) }}</select>
+              </label>
+              <label class="sst-op-field">
+                <small>Suficiente</small>
+                <select name="ventilacion_suficiente">{{ render_bool_options(selected_form.ventilacion_suficiente, bool_options) }}</select>
+              </label>
+              <label class="sst-op-field">
+                <small>Deficiente</small>
+                <select name="ventilacion_deficiente">{{ render_bool_options(selected_form.ventilacion_deficiente, bool_options) }}</select>
+              </label>
+              <label class="sst-op-field sst-basic-field-span">
+                <small>Observaciones</small>
+                <textarea name="ventilacion_observaciones" rows="3">{{ selected_form.ventilacion_observaciones }}</textarea>
+              </label>
+            </div>
+          </section>
+
+          <section class="sst-basic-item-card">
+            <div class="sst-basic-item-head">
+              <div>
+                <span class="sst-basic-item-kicker">TE</span>
+                <h4>Tableros protegidos</h4>
+              </div>
+              {% for item in selected_summary.item_rows if item.key == 'tableros' %}
+              <span class="sst-basic-state state-{{ item.state_code|lower }}">{{ item.state_label }}</span>
+              {% endfor %}
+            </div>
+            <div class="sst-basic-form-grid">
+              <label class="sst-op-field">
+                <small>Aplica</small>
+                <select name="tableros_aplica">{{ render_bool_options(selected_form.tableros_aplica, bool_options) }}</select>
+              </label>
+              <label class="sst-op-field">
+                <small>Identificado</small>
+                <select name="tableros_identificado">{{ render_bool_options(selected_form.tableros_identificado, bool_options) }}</select>
+              </label>
+              <label class="sst-op-field">
+                <small>Protegido</small>
+                <select name="tableros_protegido">{{ render_bool_options(selected_form.tableros_protegido, bool_options) }}</select>
+              </label>
+              <label class="sst-op-field">
+                <small>Senalizado</small>
+                <select name="tableros_senalizado">{{ render_bool_options(selected_form.tableros_senalizado, bool_options) }}</select>
+              </label>
+              <label class="sst-op-field">
+                <small>Requiere intervencion</small>
+                <select name="tableros_requiere_intervencion">{{ render_bool_options(selected_form.tableros_requiere_intervencion, bool_options) }}</select>
+              </label>
+              <label class="sst-op-field sst-basic-field-span">
+                <small>Observaciones</small>
+                <textarea name="tableros_observaciones" rows="3">{{ selected_form.tableros_observaciones }}</textarea>
+              </label>
+            </div>
+          </section>
+
+          <section class="sst-basic-item-card">
+            <div class="sst-basic-item-head">
+              <div>
+                <span class="sst-basic-item-kicker">PT</span>
+                <h4>Puesta a tierra</h4>
+              </div>
+              {% for item in selected_summary.item_rows if item.key == 'tierra' %}
+              <span class="sst-basic-state state-{{ item.state_code|lower }}">{{ item.state_label }}</span>
+              {% endfor %}
+            </div>
+            <div class="sst-basic-form-grid">
+              <label class="sst-op-field">
+                <small>Aplica</small>
+                <select name="tierra_aplica">{{ render_bool_options(selected_form.tierra_aplica, bool_options) }}</select>
+              </label>
+              <label class="sst-op-field">
+                <small>Posee</small>
+                <select name="tierra_posee">{{ render_bool_options(selected_form.tierra_posee, bool_options) }}</select>
+              </label>
+              <label class="sst-op-field">
+                <small>Documentacion disponible</small>
+                <select name="tierra_documentacion">{{ render_bool_options(selected_form.tierra_documentacion, bool_options) }}</select>
+              </label>
+              <label class="sst-op-field">
+                <small>Medicion vigente</small>
+                <select name="tierra_medicion_vigente">{{ render_bool_options(selected_form.tierra_medicion_vigente, bool_options) }}</select>
+              </label>
+              <label class="sst-op-field">
+                <small>Requiere medicion</small>
+                <select name="tierra_requiere_medicion">{{ render_bool_options(selected_form.tierra_requiere_medicion, bool_options) }}</select>
+              </label>
+              <label class="sst-op-field">
+                <small>Fecha</small>
+                <input type="date" name="tierra_fecha" value="{{ selected_form.tierra_fecha }}">
+              </label>
+              <label class="sst-op-field sst-basic-field-span">
+                <small>Archivo o certificado</small>
+                <input type="url" name="tierra_archivo_url" value="{{ selected_form.tierra_archivo_url }}" placeholder="https://">
+              </label>
+              <label class="sst-op-field sst-basic-field-span">
+                <small>Observaciones</small>
+                <textarea name="tierra_observaciones" rows="3">{{ selected_form.tierra_observaciones }}</textarea>
+              </label>
+            </div>
+          </section>
+        </div>
+
+        <div class="sst-basic-footer-card">
+          <label class="sst-op-field">
+            <small>Observaciones generales</small>
+            <textarea name="observaciones_generales" rows="3">{{ selected_form.observaciones_generales }}</textarea>
+          </label>
+          <div class="sst-op-actions">
+            <button class="sst-op-btn primary" type="submit">Guardar relevamiento</button>
+          </div>
+        </div>
+      </div>
+
+      <aside class="sst-basic-detail-side">
+        <div class="sst-subhead">
+          <h3>Estado por item</h3>
+          <span>{{ selected_summary.item_rows|length }}</span>
+        </div>
+        <div class="sst-basic-state-list">
+          {% for item in selected_summary.item_rows %}
+          <div class="sst-basic-state-row">
+            <strong>{{ item.label }}</strong>
+            <span class="sst-basic-state state-{{ item.state_code|lower }}">{{ item.state_label }}</span>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="sst-subhead">
+          <h3>Historial</h3>
+          <span>{{ selected_summary.history_rows|length }}</span>
+        </div>
+        <div class="sst-matrix-history-list">
+          {% for item in selected_summary.history_rows %}
+          <div class="sst-matrix-history-item">
+            <strong>{{ item.accion|replace('_', ' ')|title }}</strong>
+            <small>{{ item.fecha_evento or '-' }}{% if item.usuario %} &middot; {{ item.usuario }}{% endif %}</small>
+            <p>{{ item.detalle or 'Sin detalle adicional.' }}</p>
+          </div>
+          {% else %}
+          <div class="sst-op-empty">Todavia no hay historial registrado para esta sede.</div>
+          {% endfor %}
+        </div>
+      </aside>
+    </form>
+  </article>
+  {% endif %}
+
+  <article class="sst-op-card sst-op-section-card">
+    <details class="sst-op-section-details">
+      <summary>Historial general del componente</summary>
+      <div class="sst-op-section-body">
+        <div class="sst-matrix-history-list">
+          {% for item in history_rows %}
+          <div class="sst-matrix-history-item">
+            <strong>{{ item.sede_codigo or '-' }} · {{ item.accion|replace('_', ' ')|title }}</strong>
+            <small>{{ item.fecha_evento or '-' }}{% if item.usuario %} &middot; {{ item.usuario }}{% endif %}</small>
+            <p>{{ item.detalle or 'Sin detalle adicional.' }}</p>
+          </div>
+          {% else %}
+          <div class="sst-op-empty">Todavia no hay movimientos registrados.</div>
+          {% endfor %}
+        </div>
+      </div>
+    </details>
+  </article>
+</section>
+{% endblock %}
