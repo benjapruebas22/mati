@@ -13002,6 +13002,56 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             "extra": dict(extra or {}),
         }
 
+    def _sst_matrix_apply_scope_override(cell, scope_entry):
+        base = dict(cell or {})
+        if not base:
+            return base
+        scope_state = str((scope_entry or {}).get("scope_state") or "AUTO").strip().upper() or "AUTO"
+        scope_note = str((scope_entry or {}).get("note") or "").strip()
+        if scope_state == "NO_APLICA":
+            overridden = _sst_matrix_make_cell(
+                base.get("component_key") or "",
+                base.get("sede_codigo") or "",
+                phase_code="NO_APLICA",
+                step_label="No aplica",
+                progress_pct=0,
+                pending_count=0,
+                next_step="Sin accion requerida",
+                summary_text=(scope_note or "Excluido por configuracion del proyecto"),
+                open_url=base.get("open_url") or "",
+                alert_tone="muted",
+                is_no_aplica=True,
+                extra=base.get("extra") or {},
+            )
+            overridden["extra"]["scope_state"] = scope_state
+            overridden["extra"]["scope_note"] = scope_note
+            overridden["extra"]["scope_override"] = True
+            return overridden
+        if scope_state == "FUERA_ALCANCE":
+            overridden = _sst_matrix_make_cell(
+                base.get("component_key") or "",
+                base.get("sede_codigo") or "",
+                phase_code="NO_APLICA",
+                step_label="Fuera de alcance",
+                progress_pct=0,
+                pending_count=0,
+                next_step="Sin accion requerida",
+                summary_text=(scope_note or "Excluido temporalmente del alcance"),
+                open_url=base.get("open_url") or "",
+                alert_tone="muted",
+                is_no_aplica=True,
+                extra=base.get("extra") or {},
+            )
+            overridden["extra"]["scope_state"] = scope_state
+            overridden["extra"]["scope_note"] = scope_note
+            overridden["extra"]["scope_override"] = True
+            return overridden
+        if scope_note:
+            extra = dict(base.get("extra") or {})
+            extra["scope_note"] = scope_note
+            base["extra"] = extra
+        return base
+
     def _sst_matrix_collect_matafuegos_state(con, today_ref):
         summary = defaultdict(lambda: {
             "total": 0,
@@ -13695,6 +13745,7 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
         ensure_sst_desinfecciones_tables(con)
         ensure_sst_operativo_historial_tables(con)
         ensure_sgsst_implementation_tables(con)
+        _, command_project_scope = _sgsst_command_load_settings(con)
 
         today_ref = date.today()
         sedes_cols = _table_cols(con, "sedes_mpd")
@@ -13811,6 +13862,10 @@ def register_sst(app, get_db, ensure_cols, ensure_sedes_mpd_cols, cal_colors, en
             cells_by_key["evacuacion"] = _sst_matrix_build_evacuacion_cell(sede_codigo, evac_summary.get(sede_codigo))
             cells_by_key["desinfeccion"] = _sst_matrix_build_desinfeccion_cell(sede, desinf_summary.get(sede_codigo))
             for component_key, cell in list(cells_by_key.items()):
+                project_key = str((_sst_matrix_component_map().get(component_key) or {}).get("project_key") or component_key).strip().lower()
+                scope_entry = dict(command_project_scope.get(project_key, {}) or {}).get(sede_codigo)
+                cell = _sst_matrix_apply_scope_override(cell, scope_entry)
+                cells_by_key[component_key] = cell
                 cell["detail_url"] = _sst_matrix_detail_url(current_args, sede_codigo, component_key)
                 step_values.add(cell["step_label"])
             candidate_cells = [cells_by_key[key] for key in visible_component_keys if key in cells_by_key]
