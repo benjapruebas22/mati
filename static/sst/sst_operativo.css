@@ -2896,23 +2896,33 @@
 }
 
 .sst-matrix-page {
+  --matrix-text: #172033;
+  --matrix-muted: #667085;
+  --matrix-line: #e6ebf2;
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
 
 .sst-matrix-summary-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
 }
 
 .sst-matrix-summary-card {
-  gap: 4px;
-  padding: 10px 12px;
+  display: grid;
+  align-content: center;
+  gap: 5px;
+  min-height: 78px;
+  padding: 12px 14px;
+  border: 1px solid #e6ebf2;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: none;
 }
 
 .sst-matrix-summary-card small {
-  color: #667085;
+  color: var(--matrix-muted);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: .05em;
@@ -2920,39 +2930,45 @@
 }
 
 .sst-matrix-summary-card strong {
-  color: #172033;
-  font-size: 22px;
+  color: var(--matrix-text);
+  font-size: 28px;
   line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.sst-matrix-summary-card.tone-muted {
+  background: #fbfcfe;
+  border-color: #e6ebf2;
 }
 
 .sst-matrix-summary-card.tone-diagnostico {
-  background: #f4f8ff;
-  border-color: #d8e4f3;
+  background: #f6f9ff;
+  border-color: #d7e3f4;
 }
 
 .sst-matrix-summary-card.tone-planificacion {
-  background: #fff9eb;
-  border-color: #eadcb7;
+  background: #fffaf0;
+  border-color: #eadfbe;
 }
 
 .sst-matrix-summary-card.tone-implementacion {
-  background: #fff4eb;
-  border-color: #efd8c2;
+  background: #fff6ef;
+  border-color: #ecdccc;
 }
 
 .sst-matrix-summary-card.tone-operacion {
-  background: #f4fbf6;
+  background: #f5fbf7;
   border-color: #d8e7dc;
 }
 
 .sst-matrix-summary-card.tone-warn {
-  background: #fff8ee;
-  border-color: #edd9bf;
+  background: #fff8ef;
+  border-color: #ecd9bf;
 }
 
 .sst-matrix-filter-form {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr)) auto auto auto;
+  grid-template-columns: repeat(5, minmax(120px, 1fr)) auto auto auto;
   gap: 10px;
   align-items: end;
 }
@@ -2961,7 +2977,7 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  min-height: 36px;
+  min-height: 38px;
   padding: 0 10px;
   border: 1px solid #dfe4ec;
   border-radius: 10px;
@@ -2978,7 +2994,12 @@
 .sst-matrix-filter-actions {
   display: flex;
   gap: 8px;
+  align-items: flex-end;
   justify-content: flex-end;
+}
+
+.sst-matrix-filter-actions .sst-op-btn {
+  min-height: 38px;
 }
 
 .sst-matrix-table-card {
@@ -2997,10 +3018,10 @@
 }
 
 .sst-matrix-table thead th {
-  padding: 10px 10px;
+  padding: 10px 10px 12px;
   border-bottom: 1px solid #e6ebf2;
   background: #fafbfd;
-  color: #667085;
+  color: var(--matrix-muted);
   font-size: 10px;
   font-weight: 900;
   letter-spacing: .06em;
@@ -3010,92 +3031,186 @@
 
 .sst-matrix-table tbody th,
 .sst-matrix-table tbody td {
-  padding: 10px;
+  padding: 12px 10px;
   border-bottom: 1px solid #eef2f7;
   vertical-align: top;
 }
 
+.sst-matrix-head-cell {
+  width: 196px;
+  min-width: 196px;
+}
+
+.sst-matrix-component-head {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 0 4px;
+}
+
+.sst-matrix-component-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #e1e7ef;
+  border-radius: 11px;
+  background: #fff;
+  font-size: 17px;
+  line-height: 1;
+}
+
+.sst-matrix-component-name {
+  color: var(--matrix-text);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
 .sst-matrix-sede {
-  min-width: 170px;
-  background: #fbfcfe;
+  width: 138px;
+  min-width: 138px;
+  background: transparent;
 }
 
 .sst-matrix-sede strong,
 .sst-matrix-history-item strong {
   display: block;
-  color: #172033;
+  color: var(--matrix-text);
   font-size: 13px;
 }
 
+.sst-matrix-sede-card {
+  display: grid;
+  gap: 4px;
+  padding: 12px 8px 12px 0;
+}
+
 .sst-matrix-sede small,
-.sst-matrix-sede span,
 .sst-matrix-history-item small {
   display: block;
-  margin-top: 3px;
-  color: #667085;
+  color: var(--matrix-muted);
   font-size: 11px;
   line-height: 1.35;
 }
 
 .sst-matrix-cell {
+  --matrix-accent: #94a3b8;
+  --matrix-surface: #fff;
+  --matrix-border: #dfe6ef;
+  --matrix-phase-bg: #f4f7fb;
+  --matrix-phase-text: #516173;
+  --matrix-icon-bg: #fff;
+  --matrix-icon-border: rgba(148, 163, 184, .22);
   display: grid;
-  gap: 8px;
-  min-width: 180px;
-  padding: 10px 11px;
-  border: 1px solid #e2e8f0;
-  border-radius: 11px;
-  background: #fff;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 10px;
+  min-width: 192px;
+  height: 216px;
+  padding: 0;
+  border: 1px solid var(--matrix-border);
+  border-radius: 14px;
+  background: var(--matrix-surface);
+  box-shadow: none;
+  overflow: hidden;
 }
 
 .sst-matrix-cell.is-selected {
-  border-color: #b9cbe0;
-  background: #fcfdff;
+  border-color: #afc2da;
+  box-shadow: inset 0 0 0 1px #cfdeed;
+}
+
+.sst-matrix-cell-link {
+  display: grid;
+  grid-template-rows: auto auto auto 1fr;
+  gap: 12px;
+  min-height: 0;
+  padding: 14px 14px 0;
+  color: inherit;
+  text-decoration: none;
 }
 
 .sst-matrix-cell-top,
-.sst-matrix-actions,
-.sst-matrix-meta {
+.sst-matrix-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  flex-wrap: wrap;
 }
 
-.sst-matrix-phase,
-.sst-matrix-progress-label {
+.sst-matrix-cell-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--matrix-icon-border);
+  border-radius: 11px;
+  background: var(--matrix-icon-bg);
+  font-size: 18px;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+.sst-matrix-phase {
   display: inline-flex;
   align-items: center;
-  min-height: 20px;
-  padding: 0 7px;
+  min-height: 24px;
+  max-width: 100%;
+  padding: 0 8px;
   border-radius: 999px;
-  background: #f6f8fb;
-  color: #516173;
+  background: var(--matrix-phase-bg);
+  color: var(--matrix-phase-text);
   font-size: 9px;
   font-weight: 900;
-  letter-spacing: .04em;
+  letter-spacing: .05em;
   text-transform: uppercase;
 }
 
+.sst-matrix-cell-copy {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  min-height: 0;
+}
+
 .sst-matrix-cell strong {
-  color: #172033;
-  font-size: 13px;
+  color: var(--matrix-text);
+  font-size: 15px;
   line-height: 1.25;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }
 
 .sst-matrix-cell p,
 .sst-matrix-history-item p {
   margin: 0;
-  color: #667085;
+  color: var(--matrix-muted);
   font-size: 11px;
   line-height: 1.4;
 }
 
+.sst-matrix-cell p {
+  min-height: 30px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.sst-matrix-cell-progress {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
 .sst-matrix-progress {
   width: 100%;
-  height: 6px;
+  height: 10px;
   border-radius: 999px;
-  background: #edf1f6;
+  background: #e8edf3;
   overflow: hidden;
 }
 
@@ -3103,92 +3218,118 @@
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: #cbd5e1;
+  background: var(--matrix-accent);
 }
 
-.sst-matrix-meta span,
-.sst-matrix-actions a {
-  color: #516173;
+.sst-matrix-progress-label {
+  color: var(--matrix-text);
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.sst-matrix-meta {
+  min-height: 30px;
+  color: var(--matrix-muted);
   font-size: 11px;
   line-height: 1.35;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }
 
-.sst-matrix-actions a {
-  font-weight: 700;
+.sst-matrix-actions {
+  padding: 0 14px 14px;
+}
+
+.sst-matrix-open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--matrix-border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .84);
+  color: #334155;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  text-decoration: none;
+  transition: background .16s ease, border-color .16s ease, color .16s ease;
+}
+
+.sst-matrix-open:hover {
+  background: #fff;
+  border-color: #cbd5e1;
+  color: var(--matrix-text);
   text-decoration: none;
 }
 
-.sst-matrix-actions a:hover {
-  text-decoration: underline;
-}
-
 .sst-matrix-cell.tone-diagnostico {
-  background: #f8fbff;
-  border-color: #d9e5f4;
+  --matrix-accent: #6f9fdc;
+  --matrix-surface: #f8fbff;
+  --matrix-border: #d9e5f4;
+  --matrix-phase-bg: #edf4ff;
+  --matrix-phase-text: #2450a7;
+  --matrix-icon-border: rgba(36, 80, 167, .12);
 }
 
 .sst-matrix-cell.tone-planificacion {
-  background: #fffaf0;
-  border-color: #eadfbe;
+  --matrix-accent: #d3b05d;
+  --matrix-surface: #fffaf0;
+  --matrix-border: #eadfbe;
+  --matrix-phase-bg: #fff6e3;
+  --matrix-phase-text: #9a6a21;
+  --matrix-icon-border: rgba(154, 106, 33, .12);
 }
 
 .sst-matrix-cell.tone-implementacion {
-  background: #fff6ef;
-  border-color: #ecdccc;
+  --matrix-accent: #d19a64;
+  --matrix-surface: #fff6ef;
+  --matrix-border: #ecdccc;
+  --matrix-phase-bg: #fff1e4;
+  --matrix-phase-text: #a05d24;
+  --matrix-icon-border: rgba(160, 93, 36, .12);
 }
 
 .sst-matrix-cell.tone-operacion {
-  background: #f7fbf8;
-  border-color: #d8e7dc;
+  --matrix-accent: #69a57d;
+  --matrix-surface: #f7fbf8;
+  --matrix-border: #d8e7dc;
+  --matrix-phase-bg: #eff8f2;
+  --matrix-phase-text: #23724c;
+  --matrix-icon-border: rgba(35, 114, 76, .12);
 }
 
 .sst-matrix-cell.tone-no-aplica {
-  background: #f8fafc;
-  border-color: #e2e8f0;
-}
-
-.sst-matrix-cell.tone-diagnostico .sst-matrix-progress > span,
-.sst-matrix-summary-card.tone-diagnostico strong {
-  color: #2450a7;
-}
-
-.sst-matrix-cell.tone-diagnostico .sst-matrix-progress > span {
-  background: #6f9fdc;
-}
-
-.sst-matrix-cell.tone-planificacion .sst-matrix-progress > span {
-  background: #d3b05d;
-}
-
-.sst-matrix-cell.tone-implementacion .sst-matrix-progress > span {
-  background: #d19a64;
-}
-
-.sst-matrix-cell.tone-operacion .sst-matrix-progress > span {
-  background: #69a57d;
+  --matrix-accent: #c1cad6;
+  --matrix-surface: #f8fafc;
+  --matrix-border: #e2e8f0;
+  --matrix-phase-bg: #f1f5f9;
+  --matrix-phase-text: #64748b;
 }
 
 .sst-matrix-cell.alert-risk {
-  border-color: #e9c7c7;
+  --matrix-accent: #cc7777;
+  --matrix-border: #e9c7c7;
+  --matrix-phase-bg: #fff2f2;
+  --matrix-phase-text: #a64545;
+  --matrix-icon-border: rgba(166, 69, 69, .14);
 }
 
-.sst-matrix-cell.alert-risk .sst-matrix-progress > span {
-  background: #cc7777;
+.sst-matrix-cell.alert-warn {
+  --matrix-phase-bg: #fff8ec;
+  --matrix-phase-text: #9a6a21;
 }
 
-.sst-matrix-cell.alert-risk .sst-matrix-phase {
-  background: #fff2f2;
-  color: #a64545;
-}
-
-.sst-matrix-cell.alert-warn .sst-matrix-phase {
-  background: #fff8ec;
-  color: #9a6a21;
-}
-
-.sst-matrix-cell.alert-ok .sst-matrix-phase {
-  background: #f2faf5;
-  color: #23724c;
+.sst-matrix-cell.alert-ok {
+  --matrix-phase-bg: #f2faf5;
+  --matrix-phase-text: #23724c;
 }
 
 .sst-matrix-detail-card {
@@ -3197,8 +3338,8 @@
 
 .sst-matrix-detail-shell {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(320px, .9fr);
-  gap: 14px;
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr);
+  gap: 16px;
   padding: 12px 14px 14px;
 }
 
@@ -3210,20 +3351,20 @@
 .sst-matrix-detail-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
 }
 
 .sst-matrix-detail-grid > div,
 .sst-matrix-history-item {
-  padding: 10px 11px;
+  padding: 11px 12px;
   border: 1px solid #e6ebf2;
   border-radius: 10px;
-  background: #fff;
+  background: #fbfcfe;
 }
 
 .sst-matrix-detail-grid small {
   display: block;
-  color: #667085;
+  color: var(--matrix-muted);
   font-size: 10px;
   font-weight: 800;
   letter-spacing: .05em;
@@ -3233,7 +3374,7 @@
 .sst-matrix-detail-grid strong {
   display: block;
   margin-top: 4px;
-  color: #172033;
+  color: var(--matrix-text);
   font-size: 13px;
   line-height: 1.35;
 }
@@ -3254,7 +3395,7 @@
   }
 
   .sst-matrix-filter-form {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(120px, 1fr));
   }
 
   .sst-matrix-filter-actions {
@@ -3270,8 +3411,16 @@
     grid-template-columns: 1fr;
   }
 
+  .sst-matrix-filter-actions {
+    justify-content: stretch;
+  }
+
+  .sst-matrix-filter-actions .sst-op-btn {
+    flex: 1 1 0;
+  }
+
   .sst-matrix-table {
-    min-width: 820px;
+    min-width: 940px;
   }
 }
 

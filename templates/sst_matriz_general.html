@@ -1,10 +1,74 @@
 {% extends "base.html" %}
 
+{% macro component_icon(key) -%}
+  {%- if key == 'art' -%}📋
+  {%- elif key == 'matafuegos' -%}🧯
+  {%- elif key == 'luces' -%}💡
+  {%- elif key == 'carteleria' -%}🪧
+  {%- elif key == 'evacuacion' -%}🚪
+  {%- elif key == 'desinfeccion' -%}🧪
+  {%- else -%}•{%- endif -%}
+{%- endmacro %}
+
+{% macro component_name(key, fallback='') -%}
+  {%- if key == 'art' -%}ART
+  {%- elif key == 'matafuegos' -%}Matafuegos
+  {%- elif key == 'luces' -%}Luces
+  {%- elif key == 'carteleria' -%}Cartelería
+  {%- elif key == 'evacuacion' -%}Evacuación
+  {%- elif key == 'desinfeccion' -%}Desinfección
+  {%- else -%}{{ fallback }}{%- endif -%}
+{%- endmacro %}
+
+{% macro phase_label(code, fallback='') -%}
+  {%- if code == 'DIAGNOSTICO' -%}DIAGNÓSTICO
+  {%- elif code == 'PLANIFICACION' -%}PLANIFICACIÓN
+  {%- elif code == 'IMPLEMENTACION' -%}IMPLEMENTACIÓN
+  {%- elif code == 'OPERACION' -%}OPERACIÓN
+  {%- elif code == 'NO_APLICA' -%}NO APLICA
+  {%- else -%}{{ fallback }}{%- endif -%}
+{%- endmacro %}
+
+{% macro summary_label(label) -%}
+  {%- if label == 'Sedes visibles' -%}Sedes
+  {%- elif label == 'Diagnostico' -%}Diagnóstico
+  {%- elif label == 'Planificacion' -%}Planificación
+  {%- elif label == 'Implementacion' -%}Implementación
+  {%- elif label == 'Operacion' -%}Operación
+  {%- elif label == 'Con pendientes' -%}Pendientes
+  {%- elif label == 'Sin datos' -%}Sin datos
+  {%- else -%}{{ label }}{%- endif -%}
+{%- endmacro %}
+
+{% macro cell_summary(cell) -%}
+  {%- if cell.is_no_aplica -%}
+    No aplica
+  {%- elif cell.is_no_data -%}
+    Sin datos base
+  {%- elif cell.summary_text and cell.summary_text != cell.step_label -%}
+    {{ cell.summary_text }}
+  {%- else -%}
+    {{ cell.pending_label }}
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro cell_hint(cell) -%}
+  {%- if cell.next_step -%}
+    {{ cell.next_step }}
+  {%- elif cell.is_no_aplica -%}
+    Sin acción requerida
+  {%- elif cell.is_no_data -%}
+    Registrar relevamiento
+  {%- else -%}
+    {{ cell.pending_label }}
+  {%- endif -%}
+{%- endmacro %}
+
 {% block main_class %}container-wide{% endblock %}
 
 {% block extra_head %}
   <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_ui.css', v='2026-05-09') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-24-01') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='sst/sst_operativo.css', v='2026-07-24-02') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='sgi/operativa_nav.css', v='2026-07-19-02') }}">
 {% endblock %}
 
@@ -16,7 +80,7 @@
     <div>
       <p class="sst-op-eyebrow">Matriz general SG-SST</p>
       <h1>Matriz general SG-SST</h1>
-      <p class="sst-calendar-heading-copy">Lectura transversal por sede y componente. La matriz resume fase, paso actual, avance y pendientes sin duplicar los datos fisicos de cada modulo.</p>
+      <p class="sst-calendar-heading-copy">Lectura rápida por sede y componente, con foco en fase, avance y próximo paso.</p>
     </div>
     <div class="sst-op-actions">
       <a class="sst-op-btn" href="{{ url_for('sst_calendario_operativo') }}">Calendario</a>
@@ -28,8 +92,8 @@
   <section class="sst-matrix-summary-grid">
     {% for card in summary_cards %}
     <article class="sst-op-card sst-matrix-summary-card tone-{{ card.tone }}">
-      <small>{{ card.label }}</small>
       <strong>{{ card.value }}</strong>
+      <small>{{ summary_label(card.label) }}</small>
     </article>
     {% endfor %}
   </section>
@@ -112,7 +176,12 @@
           <tr>
             <th>Sede</th>
             {% for item in visible_components %}
-            <th>{{ item.short }}</th>
+            <th class="sst-matrix-head-cell">
+              <div class="sst-matrix-component-head">
+                <span class="sst-matrix-component-icon" aria-hidden="true">{{ component_icon(item.key) }}</span>
+                <span class="sst-matrix-component-name">{{ component_name(item.key, item.short) }}</span>
+              </div>
+            </th>
             {% endfor %}
           </tr>
         </thead>
@@ -120,37 +189,35 @@
           {% for row in matrix_rows %}
           <tr>
             <th class="sst-matrix-sede">
-              <strong>{{ row.codigo }}</strong>
-              <small>{{ row.nombre }}</small>
-              {% if row.region %}<span>{{ row.region }}</span>{% endif %}
+              <div class="sst-matrix-sede-card">
+                <strong>{{ row.codigo }}</strong>
+                <small>{{ row.nombre }}</small>
+              </div>
             </th>
             {% for cell in row.cells %}
             <td>
               <article class="sst-matrix-cell tone-{{ cell.phase_meta.tone }} alert-{{ cell.alert_tone }} {% if selected_cell and selected_cell.sede_codigo == cell.sede_codigo and selected_cell.component_key == cell.component_key %}is-selected{% endif %}">
-                <div class="sst-matrix-cell-top">
-                  <span class="sst-matrix-phase">{{ cell.phase_meta.label }}</span>
-                  <span class="sst-matrix-progress-label">{{ cell.progress_pct }}%</span>
-                </div>
-                <strong>{{ cell.step_label }}</strong>
-                <p>{{ cell.summary_text }}</p>
-                <div class="sst-matrix-progress">
-                  <span style="width: {{ cell.progress_pct }}%;"></span>
-                </div>
-                <div class="sst-matrix-meta">
-                  {% if cell.is_no_aplica %}
-                  <span>No aplica</span>
-                  {% elif cell.is_no_data %}
-                  <span>Sin datos base</span>
-                  {% else %}
-                  <span>{{ cell.pending_label }}</span>
-                  {% endif %}
-                  {% if cell.next_step %}
-                  <span>{{ cell.next_step }}</span>
-                  {% endif %}
-                </div>
+                <a class="sst-matrix-cell-link" href="{{ cell.detail_url }}">
+                  <div class="sst-matrix-cell-top">
+                    <span class="sst-matrix-cell-icon" aria-hidden="true">{{ component_icon(cell.component_key) }}</span>
+                    <span class="sst-matrix-phase">{{ phase_label(cell.phase_code, cell.phase_meta.label) }}</span>
+                  </div>
+                  <div class="sst-matrix-cell-copy">
+                    <strong>{{ cell.step_label }}</strong>
+                    <p>{{ cell_summary(cell) }}</p>
+                  </div>
+                  <div class="sst-matrix-cell-progress">
+                    <div class="sst-matrix-progress">
+                      <span style="width: {{ cell.progress_pct }}%;"></span>
+                    </div>
+                    <span class="sst-matrix-progress-label">{{ cell.progress_pct }}%</span>
+                  </div>
+                  <div class="sst-matrix-meta">
+                    <span>{{ cell_hint(cell) }}</span>
+                  </div>
+                </a>
                 <div class="sst-matrix-actions">
-                  <a href="{{ cell.detail_url }}">Ver detalle</a>
-                  <a href="{{ cell.open_url }}">Abrir modulo</a>
+                  <a class="sst-matrix-open" href="{{ cell.open_url }}">Abrir <span aria-hidden="true">&rarr;</span></a>
                 </div>
               </article>
             </td>
@@ -173,16 +240,16 @@
     <div class="sst-op-card-head">
       <h2>{{ selected_cell.sede_codigo }} - {{ selected_cell.sede_nombre }}</h2>
       <div class="sst-op-actions">
-        <a class="sst-op-btn" href="{{ selected_cell.open_url }}">Abrir modulo</a>
+        <a class="sst-op-btn" href="{{ selected_cell.open_url }}">Abrir &rarr;</a>
       </div>
     </div>
     <div class="sst-matrix-detail-shell">
       <div class="sst-matrix-detail-main">
-        <p class="sst-op-eyebrow">{{ selected_cell.component_label }}</p>
+        <p class="sst-op-eyebrow">{{ component_icon(selected_cell.component_key) }} {{ component_name(selected_cell.component_key, selected_cell.component_label) }}</p>
         <div class="sst-matrix-detail-grid">
           <div>
             <small>Fase actual</small>
-            <strong>{{ selected_cell.phase_meta.label }}</strong>
+            <strong>{{ phase_label(selected_cell.phase_code, selected_cell.phase_meta.label) }}</strong>
           </div>
           <div>
             <small>Paso actual</small>
@@ -215,7 +282,7 @@
           {% for item in selected_cell.history_rows %}
           <div class="sst-matrix-history-item">
             <strong>{{ item.accion|replace('_', ' ')|title }}</strong>
-            <small>{{ item.fecha_evento or '-' }}{% if item.usuario %} · {{ item.usuario }}{% endif %}</small>
+            <small>{{ item.fecha_evento or '-' }}{% if item.usuario %} &middot; {{ item.usuario }}{% endif %}</small>
             <p>{{ item.detalle or 'Sin detalle adicional.' }}</p>
           </div>
           {% else %}
