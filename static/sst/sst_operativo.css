@@ -2947,6 +2947,10 @@
   gap: 8px;
 }
 
+.sst-home-summary-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .sst-matrix-summary-card {
   display: grid;
   align-content: start;
@@ -3763,6 +3767,10 @@
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
+  .sst-home-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .sst-matrix-filter-form {
     grid-template-columns: repeat(4, minmax(120px, 1fr));
   }
@@ -3785,6 +3793,10 @@
   .sst-matrix-detail-grid,
   .sst-matrix-detail-shell,
   .sst-matrix-filter-form {
+    grid-template-columns: 1fr;
+  }
+
+  .sst-home-summary-grid {
     grid-template-columns: 1fr;
   }
 

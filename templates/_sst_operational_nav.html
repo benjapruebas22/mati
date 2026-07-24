@@ -19,7 +19,7 @@
   <div class="sst-op-nav-start">
     <a class="sst-op-nav-home {% if current_group == 'inicio' %}is-active{% endif %}" href="{{ url_for('sst_inicio_operativo') }}">
       <span class="sst-op-nav-kicker">Inicio</span>
-      <strong>Centro Operativo SG-SST</strong>
+      <strong>Inicio operativo SG-SST</strong>
     </a>
     <a class="sst-op-nav-home {% if current_group == 'matriz' %}is-active{% endif %}" href="{{ url_for('sst_matriz_general') }}">
       <span class="sst-op-nav-kicker">Matriz general</span>
@@ -82,7 +82,6 @@
         <a href="{{ url_for('sst_general', modo='gestion') }}">EPP e incidentes</a>
         <a href="{{ url_for('sst_ergonomia_panel') }}">Gestion de riesgos</a>
         <a href="{{ url_for('sst_plan_gantt') }}">Cronograma SST</a>
-        <a href="{{ url_for('sst_inicio_operativo') }}">Respaldo operativo</a>
       </div>
     </details>
   </div>

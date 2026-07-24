@@ -538,23 +538,25 @@
         <span class="nav-dd-caret" aria-hidden="true">&#9662;</span>
         <div class="dropdown-menu">
           <div class="dropdown-title">General</div>
-          <a href="{{ url_for('sst_calendario_operativo') }}">Centro Operativo SG-SST</a>
+          <a href="{{ url_for('sst_inicio_operativo') }}">Inicio operativo SG-SST</a>
+          <a href="{{ url_for('sst_calendario_operativo') }}">Calendario operativo</a>
+          <a href="{{ url_for('sst_matriz_general') }}">Matriz general</a>
           <a href="{{ url_for('sst_plan_implementacion') }}">Plan de implementacion</a>
+          <a href="{{ url_for('sst_relevamiento_basico_home') }}">Relevamiento basico</a>
 
           <div class="dropdown-sep"></div>
-          <div class="dropdown-title">Fase 1</div>
-          <a href="{{ url_for('sst_carteleria_home') }}">Carteleria</a>
-          <a href="{{ url_for('sst_luces_home') }}">Luces de emergencia</a>
-
-          <div class="dropdown-sep"></div>
-          <div class="dropdown-title">Fase 2</div>
-          <a href="{{ url_for('sst_implementacion_tablero') }}">Tablero de implementacion</a>
-
-          <div class="dropdown-sep"></div>
-          <div class="dropdown-title">Fase 3</div>
+          <div class="dropdown-title">Componentes</div>
+          <a href="{{ url_for('sst_visitas') }}">Visitas ART</a>
           <a href="{{ url_for('matafuegos_home') }}">Matafuegos</a>
+          <a href="{{ url_for('sst_luces_home') }}">Luces de emergencia</a>
+          <a href="{{ url_for('sst_carteleria_home') }}">Carteleria</a>
+          <a href="{{ url_for('sst_matriz_general', componente='evacuacion') }}">Evacuacion</a>
           <a href="{{ url_for('sst_desinfecciones_home') }}">Desinfeccion</a>
-          <a href="{{ url_for('sst_luces_home') }}">Luces verificadas</a>
+
+          <div class="dropdown-sep"></div>
+          <div class="dropdown-title">Acciones</div>
+          <a href="{{ url_for('sst_plan_implementacion', vista='acciones') }}">Acciones abiertas</a>
+          <a href="{{ url_for('sst_plan') }}">Seguimientos</a>
         </div>
       </div>
       {% endif %}
@@ -635,7 +637,7 @@
           <a href="{{ url_for('sst_general', modo='gestion') }}">EPP e incidentes</a>
           <a href="{{ url_for('sst_ergonomia_gestion_riesgo') }}">Gestion de riesgos</a>
           <a href="{{ url_for('sst_plan_gantt') }}">Cronograma SST</a>
-          <a href="{{ url_for('sst_inicio_operativo') }}">Respaldo operativo</a>
+          <a href="{{ url_for('sst_inicio_operativo') }}">Inicio operativo SG-SST</a>
           {% if can_access("obras") %}
           <div class="dropdown-sep"></div>
           <div class="dropdown-title">Relevamientos</div>
