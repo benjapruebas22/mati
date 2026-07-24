@@ -2900,30 +2900,53 @@
   --matrix-muted: #667085;
   --matrix-line: #e6ebf2;
   display: grid;
+  gap: 10px;
+}
+
+.sst-matrix-page .sst-op-header {
+  align-items: flex-end;
   gap: 12px;
+  padding-bottom: 2px;
+}
+
+.sst-matrix-page .sst-op-header h1 {
+  margin: 2px 0 0;
+  font-size: 24px;
+  line-height: 1.1;
+}
+
+.sst-matrix-page .sst-calendar-heading-copy {
+  max-width: 560px;
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.sst-matrix-page .sst-op-actions {
+  gap: 6px;
 }
 
 .sst-matrix-summary-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 12px;
+  gap: 8px;
 }
 
 .sst-matrix-summary-card {
   display: grid;
-  align-content: center;
-  gap: 5px;
-  min-height: 78px;
-  padding: 12px 14px;
+  align-content: start;
+  gap: 4px;
+  min-height: 64px;
+  padding: 10px 12px;
   border: 1px solid #e6ebf2;
-  border-radius: 12px;
+  border-radius: 10px;
   background: #fff;
   box-shadow: none;
 }
 
 .sst-matrix-summary-card small {
   color: var(--matrix-muted);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 800;
   letter-spacing: .05em;
   text-transform: uppercase;
@@ -2931,7 +2954,7 @@
 
 .sst-matrix-summary-card strong {
   color: var(--matrix-text);
-  font-size: 28px;
+  font-size: 22px;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
@@ -2969,21 +2992,45 @@
 .sst-matrix-filter-form {
   display: grid;
   grid-template-columns: repeat(5, minmax(120px, 1fr)) auto auto auto;
-  gap: 10px;
+  gap: 8px;
   align-items: end;
+}
+
+.sst-matrix-page .sst-op-section-card {
+  border-radius: 12px;
+}
+
+.sst-matrix-page .sst-op-section-details > summary {
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 12px;
+}
+
+.sst-matrix-page .sst-op-section-body {
+  padding: 10px 12px 12px;
+}
+
+.sst-matrix-page .sst-op-field small {
+  margin-bottom: 4px;
+  font-size: 10px;
+}
+
+.sst-matrix-page .sst-op-field select {
+  min-height: 36px;
+  font-size: 12px;
 }
 
 .sst-matrix-flag {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  min-height: 38px;
+  min-height: 36px;
   padding: 0 10px;
   border: 1px solid #dfe4ec;
   border-radius: 10px;
   background: #fff;
   color: #334155;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
 }
 
@@ -2999,7 +3046,8 @@
 }
 
 .sst-matrix-filter-actions .sst-op-btn {
-  min-height: 38px;
+  min-height: 36px;
+  padding: 0 12px;
 }
 
 .sst-matrix-table-card {
@@ -3018,59 +3066,63 @@
 }
 
 .sst-matrix-table thead th {
-  padding: 10px 10px 12px;
+  padding: 8px 8px 10px;
   border-bottom: 1px solid #e6ebf2;
   background: #fafbfd;
   color: var(--matrix-muted);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 900;
   letter-spacing: .06em;
   text-align: left;
   text-transform: uppercase;
 }
 
+.sst-matrix-table thead th:first-child {
+  padding-left: 0;
+}
+
 .sst-matrix-table tbody th,
 .sst-matrix-table tbody td {
-  padding: 12px 10px;
+  padding: 10px 8px;
   border-bottom: 1px solid #eef2f7;
   vertical-align: top;
 }
 
 .sst-matrix-head-cell {
-  width: 196px;
-  min-width: 196px;
+  width: 180px;
+  min-width: 180px;
 }
 
 .sst-matrix-component-head {
   display: grid;
   justify-items: center;
-  gap: 6px;
-  padding: 0 4px;
+  gap: 5px;
+  padding: 0 2px;
 }
 
 .sst-matrix-component-icon {
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   border: 1px solid #e1e7ef;
-  border-radius: 11px;
+  border-radius: 10px;
   background: #fff;
-  font-size: 17px;
+  font-size: 15px;
   line-height: 1;
 }
 
 .sst-matrix-component-name {
   color: var(--matrix-text);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0;
   text-transform: none;
 }
 
 .sst-matrix-sede {
-  width: 138px;
-  min-width: 138px;
+  width: 118px;
+  min-width: 118px;
   background: transparent;
 }
 
@@ -3083,16 +3135,16 @@
 
 .sst-matrix-sede-card {
   display: grid;
-  gap: 4px;
-  padding: 12px 8px 12px 0;
+  gap: 3px;
+  padding: 10px 6px 10px 0;
 }
 
 .sst-matrix-sede small,
 .sst-matrix-history-item small {
   display: block;
   color: var(--matrix-muted);
-  font-size: 11px;
-  line-height: 1.35;
+  font-size: 10px;
+  line-height: 1.3;
 }
 
 .sst-matrix-cell {
@@ -3105,12 +3157,12 @@
   --matrix-icon-border: rgba(148, 163, 184, .22);
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
-  gap: 10px;
-  min-width: 192px;
-  height: 216px;
+  gap: 8px;
+  min-width: 176px;
+  height: 184px;
   padding: 0;
   border: 1px solid var(--matrix-border);
-  border-radius: 14px;
+  border-radius: 12px;
   background: var(--matrix-surface);
   box-shadow: none;
   overflow: hidden;
@@ -3124,9 +3176,9 @@
 .sst-matrix-cell-link {
   display: grid;
   grid-template-rows: auto auto auto 1fr;
-  gap: 12px;
+  gap: 9px;
   min-height: 0;
-  padding: 14px 14px 0;
+  padding: 11px 11px 0;
   color: inherit;
   text-decoration: none;
 }
@@ -3142,12 +3194,12 @@
 .sst-matrix-cell-icon {
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
   border: 1px solid var(--matrix-icon-border);
-  border-radius: 11px;
+  border-radius: 9px;
   background: var(--matrix-icon-bg);
-  font-size: 18px;
+  font-size: 15px;
   line-height: 1;
   flex: 0 0 auto;
 }
@@ -3155,13 +3207,13 @@
 .sst-matrix-phase {
   display: inline-flex;
   align-items: center;
-  min-height: 24px;
+  min-height: 21px;
   max-width: 100%;
-  padding: 0 8px;
+  padding: 0 7px;
   border-radius: 999px;
   background: var(--matrix-phase-bg);
   color: var(--matrix-phase-text);
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 900;
   letter-spacing: .05em;
   text-transform: uppercase;
@@ -3169,15 +3221,15 @@
 
 .sst-matrix-cell-copy {
   display: grid;
-  gap: 4px;
+  gap: 3px;
   align-content: start;
   min-height: 0;
 }
 
 .sst-matrix-cell strong {
   color: var(--matrix-text);
-  font-size: 15px;
-  line-height: 1.25;
+  font-size: 13px;
+  line-height: 1.2;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -3188,12 +3240,12 @@
 .sst-matrix-history-item p {
   margin: 0;
   color: var(--matrix-muted);
-  font-size: 11px;
-  line-height: 1.4;
+  font-size: 10px;
+  line-height: 1.3;
 }
 
 .sst-matrix-cell p {
-  min-height: 30px;
+  min-height: 24px;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -3202,13 +3254,13 @@
 
 .sst-matrix-cell-progress {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   align-content: start;
 }
 
 .sst-matrix-progress {
   width: 100%;
-  height: 10px;
+  height: 8px;
   border-radius: 999px;
   background: #e8edf3;
   overflow: hidden;
@@ -3223,17 +3275,17 @@
 
 .sst-matrix-progress-label {
   color: var(--matrix-text);
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 900;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 
 .sst-matrix-meta {
-  min-height: 30px;
+  min-height: 24px;
   color: var(--matrix-muted);
-  font-size: 11px;
-  line-height: 1.35;
+  font-size: 10px;
+  line-height: 1.25;
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -3241,7 +3293,7 @@
 }
 
 .sst-matrix-actions {
-  padding: 0 14px 14px;
+  padding: 0 11px 11px;
 }
 
 .sst-matrix-open {
@@ -3250,13 +3302,13 @@
   justify-content: space-between;
   gap: 10px;
   width: 100%;
-  min-height: 38px;
-  padding: 0 12px;
+  min-height: 32px;
+  padding: 0 11px;
   border: 1px solid var(--matrix-border);
-  border-radius: 10px;
+  border-radius: 9px;
   background: rgba(255, 255, 255, .84);
   color: #334155;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   line-height: 1;
   text-decoration: none;
